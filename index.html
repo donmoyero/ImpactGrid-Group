@@ -27,43 +27,58 @@ overflow-x:hidden;
 100%{background-position:0% 50%;}
 }
 
-/* NAV */
+/* NAVBAR */
 nav{
-position:sticky;
+position:fixed;
 top:0;
+width:100%;
 z-index:1000;
-padding:22px 70px;
+padding:30px 80px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-background:rgba(0,0,0,0.9);
-backdrop-filter:blur(14px);
-border-bottom:1px solid rgba(255,255,255,0.05);
+background:rgba(0,0,0,0.85);
+backdrop-filter:blur(12px);
+transition:all 0.4s ease;
 }
 
-.logo{
-display:flex;
-align-items:center;
+nav.shrink{
+padding:15px 80px;
+background:rgba(0,0,0,0.95);
 }
 
 .logo img{
-height:65px;   /* 🔥 BIGGER LOGO */
-margin-right:18px;
+height:95px;   /* 🔥 BIGGER LOGO */
+transition:all 0.4s ease;
+filter:drop-shadow(0 0 15px rgba(255,212,0,0.2));
 }
 
-.logo span{
-font-weight:700;
-letter-spacing:3px;
-color:#FFD400;
-font-size:20px;
+nav.shrink .logo img{
+height:70px;
+}
+
+.logo img:hover{
+filter:drop-shadow(0 0 25px rgba(255,212,0,0.5));
 }
 
 .nav-links a{
 color:#bbb;
 text-decoration:none;
-margin-left:35px;
+margin-left:40px;
 font-size:14px;
 letter-spacing:1px;
+position:relative;
+transition:0.3s;
+}
+
+.nav-links a::after{
+content:"";
+position:absolute;
+left:0;
+bottom:-6px;
+width:0%;
+height:2px;
+background:#FFD400;
 transition:0.3s;
 }
 
@@ -71,10 +86,14 @@ transition:0.3s;
 color:#FFD400;
 }
 
+.nav-links a:hover::after{
+width:100%;
+}
+
 /* HERO */
 header{
 position:relative;
-padding:260px 20px;
+padding:320px 20px 260px 20px;
 text-align:center;
 background:url('Earth.png') center/cover fixed no-repeat;
 }
@@ -91,8 +110,8 @@ header h1{
 position:relative;
 z-index:2;
 font-family:'Playfair Display',serif;
-font-size:68px;
-max-width:1050px;
+font-size:70px;
+max-width:1100px;
 margin:auto;
 line-height:1.2;
 }
@@ -115,7 +134,7 @@ button{
 background:#FFD400;
 color:black;
 border:none;
-padding:18px 50px;
+padding:18px 55px;
 font-weight:600;
 cursor:pointer;
 border-radius:4px;
@@ -130,9 +149,9 @@ transform:translateY(-4px);
 box-shadow:0 15px 40px rgba(255,212,0,0.35);
 }
 
-/* SECTION */
+/* SECTIONS */
 section{
-padding:140px 20px;
+padding:160px 20px;
 text-align:center;
 opacity:0;
 transform:translateY(40px);
@@ -147,17 +166,17 @@ transform:translateY(0);
 section::after{
 content:"";
 display:block;
-width:60px;
+width:70px;
 height:2px;
 background:#FFD400;
-margin:60px auto 0 auto;
-opacity:0.4;
+margin:70px auto 0 auto;
+opacity:0.3;
 }
 
 h2{
-font-size:42px;
+font-size:44px;
 color:#FFD400;
-margin-bottom:60px;
+margin-bottom:70px;
 font-family:'Playfair Display',serif;
 }
 
@@ -165,12 +184,12 @@ font-family:'Playfair Display',serif;
 .counters{
 display:flex;
 justify-content:center;
-gap:120px;
+gap:140px;
 flex-wrap:wrap;
 }
 
 .counter{
-font-size:60px;
+font-size:64px;
 font-weight:700;
 color:#FFD400;
 }
@@ -186,7 +205,7 @@ letter-spacing:1px;
 position:relative;
 max-width:900px;
 margin:40px auto;
-min-height:150px;
+min-height:160px;
 }
 
 .slide{
@@ -206,7 +225,7 @@ position:relative;
 }
 
 .client{
-margin-top:20px;
+margin-top:25px;
 font-size:15px;
 color:#FFD400;
 font-weight:600;
@@ -231,7 +250,7 @@ margin:auto;
 
 footer{
 background:#000;
-padding:80px 20px;
+padding:90px 20px;
 text-align:center;
 color:#666;
 font-size:14px;
@@ -243,11 +262,11 @@ letter-spacing:1px;
 
 <body>
 
-<nav>
+<nav id="navbar">
 <div class="logo">
 <img src="logo.png">
-<span>IMPACTGRID</span>
 </div>
+
 <div class="nav-links">
 <a href="about.html">About</a>
 <a href="services.html">Services</a>
@@ -320,6 +339,15 @@ if(sec.getBoundingClientRect().top<window.innerHeight-100){
 sec.classList.add("visible");
 }
 });
+});
+
+/* Navbar Shrink */
+window.addEventListener("scroll",()=>{
+if(window.scrollY>50){
+document.getElementById("navbar").classList.add("shrink");
+}else{
+document.getElementById("navbar").classList.remove("shrink");
+}
 });
 
 /* Counter Animation */
