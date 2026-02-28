@@ -200,8 +200,7 @@ margin-top:15px;
 letter-spacing:1px;
 }
 
-/* ===== IMPACTGRID PERFORMANCE CALCULATOR ===== */
-
+/* PERFORMANCE CALCULATOR */
 #impact-calculator{
 background:rgba(0,0,0,0.4);
 backdrop-filter:blur(8px);
@@ -359,45 +358,35 @@ letter-spacing:1px;
 </div>
 </section>
 
-<!-- ===== NEW PERFORMANCE CALCULATOR SECTION ===== -->
-
 <section>
 <h2>IMPACTGRID Performance Calculator</h2>
 
 <div id="impact-calculator">
-
 <div class="calc-grid">
-
 <div class="calc-item">
 <label>Strategic Clarity</label>
 <input type="range" min="0" max="10" value="5" id="strategyRange">
 </div>
-
 <div class="calc-item">
 <label>Financial Structure</label>
 <input type="range" min="0" max="10" value="5" id="financeRange">
 </div>
-
 <div class="calc-item">
 <label>Operational Systems</label>
 <input type="range" min="0" max="10" value="5" id="operationsRange">
 </div>
-
 <div class="calc-item">
 <label>Market Positioning</label>
 <input type="range" min="0" max="10" value="5" id="marketRange">
 </div>
-
 </div>
 
 <button onclick="calculateImpact()">Analyze Performance</button>
 
 <div class="score-display" id="scoreDisplay">0%</div>
-
 <div class="progress-bar">
 <div class="progress-fill" id="progressFill"></div>
 </div>
-
 <div class="performance-tier" id="performanceTier"></div>
 
 </div>
@@ -420,7 +409,6 @@ letter-spacing:1px;
 <section id="newsletter">
 <h2>Strategic Insights Newsletter</h2>
 <p>Receive periodic insights on capital readiness and structured growth.</p>
-
 <form action="https://formspree.io/f/meeldvol" method="POST" style="max-width:550px;margin:50px auto;">
 <input type="email" name="email" placeholder="Enter your email address" required>
 <br><br>
@@ -434,7 +422,6 @@ letter-spacing:1px;
 
 <script>
 
-/* Scroll Reveal */
 const sections=document.querySelectorAll("section");
 window.addEventListener("scroll",()=>{
 sections.forEach(sec=>{
@@ -444,7 +431,6 @@ sec.classList.add("visible");
 });
 });
 
-/* Navbar Shrink */
 window.addEventListener("scroll",()=>{
 if(window.scrollY>50){
 document.getElementById("navbar").classList.add("shrink");
@@ -453,7 +439,6 @@ document.getElementById("navbar").classList.remove("shrink");
 }
 });
 
-/* Counter Animation */
 const counters=document.querySelectorAll(".counter");
 counters.forEach(counter=>{
 const update=()=>{
@@ -470,7 +455,6 @@ counter.innerText=target;
 update();
 });
 
-/* Testimonial Slider */
 let slides=document.querySelectorAll(".slide");
 let index=0;
 setInterval(()=>{
@@ -479,36 +463,23 @@ index=(index+1)%slides.length;
 slides[index].classList.add("active");
 },5000);
 
-/* IMPACTGRID CALCULATOR */
 function calculateImpact(){
+let s=parseInt(document.getElementById("strategyRange").value);
+let f=parseInt(document.getElementById("financeRange").value);
+let o=parseInt(document.getElementById("operationsRange").value);
+let m=parseInt(document.getElementById("marketRange").value);
+let total=((s+f+o+m)/40)*100;
+let rounded=Math.round(total);
+document.getElementById("scoreDisplay").innerText=rounded+"%";
+document.getElementById("progressFill").style.width=rounded+"%";
 
-let s = parseInt(document.getElementById("strategyRange").value);
-let f = parseInt(document.getElementById("financeRange").value);
-let o = parseInt(document.getElementById("operationsRange").value);
-let m = parseInt(document.getElementById("marketRange").value);
+let tierText="";
+if(rounded>=80){tierText="Enterprise-Ready Infrastructure – Positioned for Scale.";}
+else if(rounded>=60){tierText="Growth-Stage – Structural Refinement Required.";}
+else if(rounded>=40){tierText="Emerging Structure – Strategic Alignment Needed.";}
+else{tierText="Foundational Risk – Immediate Infrastructure Development Advised.";}
 
-let total = ((s + f + o + m) / 40) * 100;
-let rounded = Math.round(total);
-
-document.getElementById("scoreDisplay").innerText = rounded + "%";
-document.getElementById("progressFill").style.width = rounded + "%";
-
-let tierText = "";
-
-if(rounded >= 80){
-tierText = "Enterprise-Ready Infrastructure – Positioned for Scale.";
-}
-else if(rounded >= 60){
-tierText = "Growth-Stage – Structural Refinement Required.";
-}
-else if(rounded >= 40){
-tierText = "Emerging Structure – Strategic Alignment Needed.";
-}
-else{
-tierText = "Foundational Risk – Immediate Infrastructure Development Advised.";
-}
-
-document.getElementById("performanceTier").innerText = tierText;
+document.getElementById("performanceTier").innerText=tierText;
 }
 
 </script>
