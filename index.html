@@ -7,6 +7,8 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -138,10 +140,18 @@ margin-bottom:40px;
 .calc-item input[type=range]{width:100%;}
 
 .score-display{
-font-size:60px;
+font-size:70px;
 color:#FFD400;
 font-weight:700;
 margin-top:20px;
+text-shadow:0 0 15px rgba(255,212,0,0.7),
+            0 0 30px rgba(255,212,0,0.4);
+animation:glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow{
+from{text-shadow:0 0 10px rgba(255,212,0,0.4);}
+to{text-shadow:0 0 25px rgba(255,212,0,0.9);}
 }
 
 .progress-bar{
@@ -173,16 +183,54 @@ text-align:left;
 }
 
 .faq-item{
-margin-bottom:25px;
-padding:25px;
 background:#111;
 border:1px solid #222;
 border-radius:8px;
+margin-bottom:15px;
+overflow:hidden;
 }
 
-.faq-item h3{
+.faq-question{
+padding:20px;
+cursor:pointer;
 color:#FFD400;
-margin-bottom:10px;
+font-weight:600;
+}
+
+.faq-answer{
+max-height:0;
+overflow:hidden;
+transition:0.4s ease;
+padding:0 20px;
+color:#bbb;
+}
+
+.faq-item.active .faq-answer{
+max-height:200px;
+padding:20px;
+}
+
+/* NEWSLETTER */
+.newsletter{
+background:#111;
+border-top:1px solid #222;
+border-bottom:1px solid #222;
+}
+
+.newsletter-form{
+max-width:600px;
+margin:auto;
+display:flex;
+flex-direction:column;
+gap:20px;
+}
+
+.newsletter-form input{
+padding:15px;
+background:#1a1a1a;
+border:none;
+color:white;
+border-radius:6px;
 }
 
 /* CONTACT */
@@ -199,28 +247,11 @@ text-align:center;
 color:#666;
 }
 
-/* RESPONSIVE */
 @media(max-width:992px){
-
-nav{
-padding:20px 30px;
-flex-direction:column;
-}
-
-.nav-links{
-margin-top:15px;
-}
-
-.nav-links a{
-margin:10px 20px;
-}
-
-header{
-background:url('Earth.png') center center / cover no-repeat;
-background-attachment:scroll;
-min-height:90vh;
-}
-
+nav{padding:20px 30px;flex-direction:column;}
+.nav-links{margin-top:15px;}
+.nav-links a{margin:10px 20px;}
+header{background-attachment:scroll;}
 header h1{font-size:36px;}
 button{width:100%;}
 }
@@ -232,7 +263,7 @@ button{width:100%;}
 
 <nav>
 <div class="logo">
-<a href="index.html"><img src="logo.png" alt="IMPACTGRID Logo"></a>
+<a href="index.html"><img src="logo.png"></a>
 </div>
 <div class="nav-links">
 <a href="about.html">About</a>
@@ -248,16 +279,9 @@ button{width:100%;}
 </header>
 
 <section>
-<h2>Strategic Consulting Built For Scale</h2>
-<p class="intro">
-ImpactGrid Group transforms startups and scaling companies into structured, investment-ready enterprises through business architecture, financial modeling, and digital positioning.
-</p>
-</section>
-
-<section>
 <h2>ImpactGrid Company Strength Calculator</h2>
-
 <div id="impact-calculator">
+
 <div class="calc-grid">
 <div class="calc-item"><label>Business Model Clarity</label><input type="range" min="0" max="100" value="50" id="modelScore"></div>
 <div class="calc-item"><label>Financial Structure</label><input type="range" min="0" max="100" value="50" id="financeScore"></div>
@@ -268,42 +292,46 @@ ImpactGrid Group transforms startups and scaling companies into structured, inve
 <div class="score-display" id="totalScore">50</div>
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 <div class="performance-tier" id="performanceTier">Growth Phase Company</div>
+
+<button onclick="downloadReport()">Download PDF Report</button>
+
 </div>
 </section>
 
 <section>
 <h2>Frequently Asked Questions</h2>
-
 <div class="faq-container">
 
 <div class="faq-item">
-<h3>What type of businesses do you work with?</h3>
-<p>We work with startups, entrepreneurs, and scaling companies seeking structured growth and investor readiness.</p>
+<div class="faq-question">What businesses do you work with?</div>
+<div class="faq-answer">Startups and scaling businesses seeking structured growth.</div>
 </div>
 
 <div class="faq-item">
-<h3>Do you help with investor pitch preparation?</h3>
-<p>Yes. We build structured pitch decks, financial forecasts, and investor-ready presentations.</p>
+<div class="faq-question">Do you prepare investor pitch decks?</div>
+<div class="faq-answer">Yes. We build structured pitch decks and financial forecasts.</div>
 </div>
 
 <div class="faq-item">
-<h3>How long does consulting engagement last?</h3>
-<p>Depending on scope, engagements range from 4 weeks to 6 months of structured advisory.</p>
-</div>
-
-<div class="faq-item">
-<h3>Is the calculator score used in consulting?</h3>
-<p>Yes. The ImpactGrid Calculator is part of our diagnostic process to evaluate company strength.</p>
+<div class="faq-question">How long is consulting engagement?</div>
+<div class="faq-answer">Engagements range from 4 weeks to 6 months.</div>
 </div>
 
 </div>
 </section>
 
+<section class="newsletter">
+<h2>Join The Impact Network</h2>
+<form class="newsletter-form">
+<input type="text" placeholder="Your Name">
+<input type="email" placeholder="Your Email">
+<button type="submit">Subscribe</button>
+</form>
+</section>
+
 <section class="contact-section">
 <h2>Contact Us For Consulting</h2>
-<p class="intro">
-Ready to structure your business for scalable growth? Book a consultation session and start building with precision.
-</p>
+<p class="intro">Book a consultation and structure your growth.</p>
 <button onclick="window.location.href='contact.html'">Schedule Consultation</button>
 </section>
 
@@ -312,6 +340,7 @@ Ready to structure your business for scalable growth? Book a consultation sessio
 </footer>
 
 <script>
+
 const sliders=document.querySelectorAll("input[type=range]");
 const totalScore=document.getElementById("totalScore");
 const progressFill=document.getElementById("progressFill");
@@ -331,6 +360,26 @@ else{performanceTier.textContent="High-Impact Enterprise";}
 
 sliders.forEach(slider=>slider.addEventListener("input",updateScore));
 updateScore();
+
+/* FAQ Toggle */
+document.querySelectorAll(".faq-question").forEach(q=>{
+q.addEventListener("click",()=>{
+q.parentElement.classList.toggle("active");
+});
+});
+
+/* PDF Download */
+function downloadReport(){
+const { jsPDF } = window.jspdf;
+const doc = new jsPDF();
+doc.setFontSize(18);
+doc.text("ImpactGrid Company Strength Report", 20, 20);
+doc.setFontSize(14);
+doc.text("Overall Score: " + totalScore.textContent, 20, 40);
+doc.text("Performance Tier: " + performanceTier.textContent, 20, 55);
+doc.save("ImpactGrid_Report.pdf");
+}
+
 </script>
 
 </body>
