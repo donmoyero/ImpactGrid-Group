@@ -9,8 +9,6 @@
 
 <style>
 
-/* ===== YOUR ORIGINAL STYLES (UNCHANGED) ===== */
-
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
@@ -41,23 +39,9 @@ justify-content:space-between;
 align-items:center;
 background:rgba(0,0,0,0.85);
 backdrop-filter:blur(12px);
-transition:all 0.4s ease;
 }
 
-nav.shrink{
-padding:15px 80px;
-background:rgba(0,0,0,0.95);
-}
-
-.logo img{
-height:95px;
-transition:all 0.4s ease;
-filter:drop-shadow(0 0 15px rgba(255,212,0,0.2));
-}
-
-nav.shrink .logo img{
-height:70px;
-}
+.logo img{height:95px;}
 
 .nav-links a{
 color:#bbb;
@@ -65,13 +49,10 @@ text-decoration:none;
 margin-left:40px;
 font-size:14px;
 letter-spacing:1px;
-position:relative;
 transition:0.3s;
 }
 
-.nav-links a:hover{
-color:#FFD400;
-}
+.nav-links a:hover{color:#FFD400;}
 
 /* HERO */
 header{
@@ -106,22 +87,8 @@ font-size:22px;
 color:#bbb;
 }
 
-button{
-background:#FFD400;
-color:black;
-border:none;
-padding:18px 55px;
-font-weight:600;
-cursor:pointer;
-border-radius:4px;
-transition:0.3s;
-}
-
 /* SECTIONS */
-section{
-padding:160px 20px;
-text-align:center;
-}
+section{padding:160px 20px;text-align:center;}
 
 h2{
 font-size:44px;
@@ -144,7 +111,7 @@ font-weight:700;
 color:#FFD400;
 }
 
-/* PERFORMANCE CALCULATOR */
+/* CALCULATOR */
 #impact-calculator{
 background:rgba(0,0,0,0.4);
 border:1px solid #222;
@@ -161,9 +128,7 @@ gap:40px;
 margin-bottom:50px;
 }
 
-.calc-item input[type=range]{
-width:100%;
-}
+.calc-item input[type=range]{width:100%;}
 
 .score-display{
 font-size:60px;
@@ -193,21 +158,28 @@ margin-top:30px;
 font-size:18px;
 }
 
-/* Radar SVG */
-.radar-container{
-margin-top:60px;
-}
+/* Radar */
+.radar-container{margin-top:60px;}
+.radar-svg{width:360px;height:360px;}
 
-.radar-svg{
-width:320px;
-height:320px;
-}
-
+.radar-grid{stroke:#333;fill:none;}
+.radar-axis{stroke:#333;}
+.radar-label{fill:#bbb;font-size:12px;text-anchor:middle;}
 .radar-polygon{
 fill:rgba(255,212,0,0.3);
 stroke:#FFD400;
 stroke-width:2;
 transition:all 0.4s ease;
+}
+
+/* NEWSLETTER */
+#newsletter input{
+padding:16px;
+width:100%;
+border-radius:4px;
+border:none;
+text-align:center;
+font-size:14px;
 }
 
 footer{
@@ -217,15 +189,22 @@ text-align:center;
 color:#666;
 }
 
+button{
+background:#FFD400;
+color:black;
+border:none;
+padding:16px 45px;
+margin-top:20px;
+cursor:pointer;
+}
+
 </style>
 </head>
 
 <body>
 
-<nav id="navbar">
-<div class="logo">
-<img src="logo.png">
-</div>
+<nav>
+<div class="logo"><img src="logo.png"></div>
 <div class="nav-links">
 <a href="about.html">About</a>
 <a href="services.html">Services</a>
@@ -265,12 +244,41 @@ color:#666;
 
 <div class="radar-container">
 <svg viewBox="0 0 300 300" class="radar-svg">
+
+<!-- Grid Rings -->
+<circle cx="150" cy="150" r="40" class="radar-grid"/>
+<circle cx="150" cy="150" r="80" class="radar-grid"/>
+<circle cx="150" cy="150" r="120" class="radar-grid"/>
+
+<!-- Axes -->
+<line x1="150" y1="150" x2="150" y2="30" class="radar-axis"/>
+<line x1="150" y1="150" x2="270" y2="150" class="radar-axis"/>
+<line x1="150" y1="150" x2="150" y2="270" class="radar-axis"/>
+<line x1="150" y1="150" x2="30" y2="150" class="radar-axis"/>
+
+<!-- Labels -->
+<text x="150" y="20" class="radar-label">Strategy</text>
+<text x="285" y="155" class="radar-label">Finance</text>
+<text x="150" y="295" class="radar-label">Operations</text>
+<text x="15" y="155" class="radar-label">Market</text>
+
 <polygon id="radarShape" class="radar-polygon"
-points="150,50 250,150 150,250 50,150"/>
+points="150,90 210,150 150,210 90,150"/>
 </svg>
 </div>
 
 </div>
+</section>
+
+<section id="newsletter">
+<h2>Strategic Insights Newsletter</h2>
+<p>Receive periodic insights on capital readiness and structured growth.</p>
+
+<form action="https://formspree.io/f/meeldvol" method="POST" style="max-width:550px;margin:50px auto;">
+<input type="email" name="email" placeholder="Enter your email address" required>
+<br><br>
+<button type="submit">Subscribe</button>
+</form>
 </section>
 
 <footer>
@@ -283,6 +291,7 @@ const ranges=document.querySelectorAll("#impact-calculator input[type=range]");
 ranges.forEach(r=>r.addEventListener("input",calculateImpact));
 
 function calculateImpact(){
+
 let s=strategyRange.value/10;
 let f=financeRange.value/10;
 let o=operationsRange.value/10;
@@ -294,19 +303,14 @@ let rounded=Math.round(total);
 scoreDisplay.innerText=rounded+"%";
 progressFill.style.width=rounded+"%";
 
-let centerX=150;
-let centerY=150;
-let radius=100;
+let center=150;
+let radius=120;
 
 let points=[
-centerX,
-centerY - radius*s,
-centerX + radius*f,
-centerY,
-centerX,
-centerY + radius*o,
-centerX - radius*m,
-centerY
+center, center - radius*s,
+center + radius*f, center,
+center, center + radius*o,
+center - radius*m, center
 ];
 
 radarShape.setAttribute("points",
