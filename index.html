@@ -48,7 +48,7 @@ background:rgba(0,0,0,0.95);
 }
 
 .logo img{
-height:95px;   /* 🔥 BIGGER LOGO */
+height:95px;
 transition:all 0.4s ease;
 filter:drop-shadow(0 0 15px rgba(255,212,0,0.2));
 }
@@ -200,6 +200,66 @@ margin-top:15px;
 letter-spacing:1px;
 }
 
+/* ===== IMPACTGRID PERFORMANCE CALCULATOR ===== */
+
+#impact-calculator{
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(8px);
+border:1px solid #222;
+border-radius:12px;
+max-width:1000px;
+margin:0 auto;
+padding:80px 40px;
+}
+
+.calc-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:40px;
+margin-bottom:50px;
+}
+
+.calc-item label{
+display:block;
+margin-bottom:10px;
+color:#bbb;
+letter-spacing:1px;
+}
+
+.calc-item input[type=range]{
+width:100%;
+}
+
+.score-display{
+font-size:60px;
+color:#FFD400;
+font-weight:700;
+margin-top:30px;
+}
+
+.progress-bar{
+width:100%;
+height:8px;
+background:#222;
+border-radius:4px;
+margin-top:20px;
+overflow:hidden;
+}
+
+.progress-fill{
+height:100%;
+width:0%;
+background:#FFD400;
+transition:width 0.6s ease;
+}
+
+.performance-tier{
+margin-top:30px;
+font-size:18px;
+color:#bbb;
+letter-spacing:1px;
+}
+
 /* TESTIMONIAL */
 .testimonial-slider{
 position:relative;
@@ -266,7 +326,6 @@ letter-spacing:1px;
 <div class="logo">
 <img src="logo.png">
 </div>
-
 <div class="nav-links">
 <a href="about.html">About</a>
 <a href="services.html">Services</a>
@@ -297,6 +356,50 @@ letter-spacing:1px;
 <div class="counter" data-target="120">0</div>
 <div class="counter-label">Funding Projects</div>
 </div>
+</div>
+</section>
+
+<!-- ===== NEW PERFORMANCE CALCULATOR SECTION ===== -->
+
+<section>
+<h2>IMPACTGRID Performance Calculator</h2>
+
+<div id="impact-calculator">
+
+<div class="calc-grid">
+
+<div class="calc-item">
+<label>Strategic Clarity</label>
+<input type="range" min="0" max="10" value="5" id="strategyRange">
+</div>
+
+<div class="calc-item">
+<label>Financial Structure</label>
+<input type="range" min="0" max="10" value="5" id="financeRange">
+</div>
+
+<div class="calc-item">
+<label>Operational Systems</label>
+<input type="range" min="0" max="10" value="5" id="operationsRange">
+</div>
+
+<div class="calc-item">
+<label>Market Positioning</label>
+<input type="range" min="0" max="10" value="5" id="marketRange">
+</div>
+
+</div>
+
+<button onclick="calculateImpact()">Analyze Performance</button>
+
+<div class="score-display" id="scoreDisplay">0%</div>
+
+<div class="progress-bar">
+<div class="progress-fill" id="progressFill"></div>
+</div>
+
+<div class="performance-tier" id="performanceTier"></div>
+
 </div>
 </section>
 
@@ -375,6 +478,38 @@ slides.forEach(s=>s.classList.remove("active"));
 index=(index+1)%slides.length;
 slides[index].classList.add("active");
 },5000);
+
+/* IMPACTGRID CALCULATOR */
+function calculateImpact(){
+
+let s = parseInt(document.getElementById("strategyRange").value);
+let f = parseInt(document.getElementById("financeRange").value);
+let o = parseInt(document.getElementById("operationsRange").value);
+let m = parseInt(document.getElementById("marketRange").value);
+
+let total = ((s + f + o + m) / 40) * 100;
+let rounded = Math.round(total);
+
+document.getElementById("scoreDisplay").innerText = rounded + "%";
+document.getElementById("progressFill").style.width = rounded + "%";
+
+let tierText = "";
+
+if(rounded >= 80){
+tierText = "Enterprise-Ready Infrastructure – Positioned for Scale.";
+}
+else if(rounded >= 60){
+tierText = "Growth-Stage – Structural Refinement Required.";
+}
+else if(rounded >= 40){
+tierText = "Emerging Structure – Strategic Alignment Needed.";
+}
+else{
+tierText = "Foundational Risk – Immediate Infrastructure Development Advised.";
+}
+
+document.getElementById("performanceTier").innerText = tierText;
+}
 
 </script>
 
