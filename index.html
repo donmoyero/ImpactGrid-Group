@@ -7,9 +7,6 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<!-- Radar Chart Library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
 
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -237,6 +234,7 @@ font-size:60px;
 color:#FFD400;
 font-weight:700;
 margin-top:30px;
+transition:0.4s ease;
 }
 
 .progress-bar{
@@ -259,12 +257,55 @@ transition:width 0.6s ease;
 margin-top:30px;
 font-size:18px;
 letter-spacing:1px;
+transition:0.4s ease;
 }
 
-/* Radar */
-.chart-container{
-max-width:600px;
-margin:60px auto 0 auto;
+/* TESTIMONIAL */
+.testimonial-slider{
+position:relative;
+max-width:900px;
+margin:40px auto;
+min-height:160px;
+}
+
+.slide{
+position:absolute;
+width:100%;
+opacity:0;
+transition:opacity 1s ease;
+font-style:italic;
+color:#bbb;
+font-size:22px;
+line-height:1.6;
+}
+
+.slide.active{
+opacity:1;
+position:relative;
+}
+
+.client{
+margin-top:25px;
+font-size:15px;
+color:#FFD400;
+font-weight:600;
+letter-spacing:1px;
+}
+
+/* NEWSLETTER */
+#newsletter input{
+padding:16px;
+width:100%;
+border-radius:4px;
+border:none;
+text-align:center;
+font-size:14px;
+}
+
+#newsletter p{
+color:#bbb;
+max-width:650px;
+margin:auto;
 }
 
 footer{
@@ -322,11 +363,6 @@ letter-spacing:1px;
 <div class="score-display" id="scoreDisplay">50%</div>
 <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:50%;"></div></div>
 <div class="performance-tier" id="performanceTier"></div>
-
-<div class="chart-container">
-<canvas id="radarChart"></canvas>
-</div>
-
 </div>
 </section>
 
@@ -354,35 +390,7 @@ letter-spacing:1px;
 
 <script>
 
-/* ===== EXISTING CALCULATOR UPGRADED ===== */
-
-const ctx = document.getElementById('radarChart').getContext('2d');
-
-const radarChart = new Chart(ctx, {
-type: 'radar',
-data: {
-labels: ['Strategy','Finance','Operations','Market'],
-datasets: [{
-data: [5,5,5,5],
-backgroundColor: 'rgba(255,212,0,0.2)',
-borderColor: '#FFD400',
-borderWidth: 2,
-pointBackgroundColor: '#FFD400'
-}]
-},
-options: {
-plugins:{legend:{display:false}},
-scales:{
-r:{
-angleLines:{color:'#333'},
-grid:{color:'#333'},
-pointLabels:{color:'#bbb'},
-ticks:{display:false,min:0,max:10}
-}
-}
-}
-});
-
+/* Live Calculator */
 const ranges=document.querySelectorAll("#impact-calculator input[type=range]");
 ranges.forEach(r=>r.addEventListener("input",calculateImpact));
 
@@ -397,9 +405,6 @@ let rounded=Math.round(total);
 
 scoreDisplay.innerText=rounded+"%";
 progressFill.style.width=rounded+"%";
-
-radarChart.data.datasets[0].data=[s,f,o,m];
-radarChart.update();
 
 let tier="";
 if(rounded>=80){tier="Enterprise-Ready Infrastructure – Positioned for Scale."; performanceTier.style.color="#00ffcc";}
