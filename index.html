@@ -9,6 +9,8 @@
 
 <style>
 
+/* === EVERYTHING BELOW IS UNCHANGED EXCEPT CALCULATOR LOGIC === */
+
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
@@ -234,6 +236,7 @@ font-size:60px;
 color:#FFD400;
 font-weight:700;
 margin-top:30px;
+transition:0.4s ease;
 }
 
 .progress-bar{
@@ -255,8 +258,8 @@ transition:width 0.6s ease;
 .performance-tier{
 margin-top:30px;
 font-size:18px;
-color:#bbb;
 letter-spacing:1px;
+transition:0.4s ease;
 }
 
 /* TESTIMONIAL */
@@ -343,66 +346,33 @@ letter-spacing:1px;
 <section>
 <h2>Performance Metrics</h2>
 <div class="counters">
-<div>
-<div class="counter" data-target="250">0</div>
-<div class="counter-label">Businesses Structured</div>
-</div>
-<div>
-<div class="counter" data-target="95">0</div>
-<div class="counter-label">Client Satisfaction %</div>
-</div>
-<div>
-<div class="counter" data-target="120">0</div>
-<div class="counter-label">Funding Projects</div>
-</div>
+<div><div class="counter" data-target="250">0</div><div class="counter-label">Businesses Structured</div></div>
+<div><div class="counter" data-target="95">0</div><div class="counter-label">Client Satisfaction %</div></div>
+<div><div class="counter" data-target="120">0</div><div class="counter-label">Funding Projects</div></div>
 </div>
 </section>
 
 <section>
 <h2>IMPACTGRID Performance Calculator</h2>
-
 <div id="impact-calculator">
 <div class="calc-grid">
-<div class="calc-item">
-<label>Strategic Clarity</label>
-<input type="range" min="0" max="10" value="5" id="strategyRange">
-</div>
-<div class="calc-item">
-<label>Financial Structure</label>
-<input type="range" min="0" max="10" value="5" id="financeRange">
-</div>
-<div class="calc-item">
-<label>Operational Systems</label>
-<input type="range" min="0" max="10" value="5" id="operationsRange">
-</div>
-<div class="calc-item">
-<label>Market Positioning</label>
-<input type="range" min="0" max="10" value="5" id="marketRange">
-</div>
+<div class="calc-item"><label>Strategic Clarity</label><input type="range" min="0" max="10" value="5" id="strategyRange"></div>
+<div class="calc-item"><label>Financial Structure</label><input type="range" min="0" max="10" value="5" id="financeRange"></div>
+<div class="calc-item"><label>Operational Systems</label><input type="range" min="0" max="10" value="5" id="operationsRange"></div>
+<div class="calc-item"><label>Market Positioning</label><input type="range" min="0" max="10" value="5" id="marketRange"></div>
 </div>
 
-<button onclick="calculateImpact()">Analyze Performance</button>
-
-<div class="score-display" id="scoreDisplay">0%</div>
-<div class="progress-bar">
-<div class="progress-fill" id="progressFill"></div>
-</div>
+<div class="score-display" id="scoreDisplay">50%</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:50%;"></div></div>
 <div class="performance-tier" id="performanceTier"></div>
-
 </div>
 </section>
 
 <section>
 <h2>Client Testimonials</h2>
 <div class="testimonial-slider">
-<div class="slide active">
-"IMPACTGRID transformed our structure and positioned us for serious capital."
-<div class="client">— Venture Founder</div>
-</div>
-<div class="slide">
-"Clear execution. Measurable results. Elite advisory."
-<div class="client">— SME CEO</div>
-</div>
+<div class="slide active">"IMPACTGRID transformed our structure and positioned us for serious capital."<div class="client">— Venture Founder</div></div>
+<div class="slide">"Clear execution. Measurable results. Elite advisory."<div class="client">— SME CEO</div></div>
 </div>
 </section>
 
@@ -421,6 +391,8 @@ letter-spacing:1px;
 </footer>
 
 <script>
+
+/* EXISTING SCRIPTS UNCHANGED */
 
 const sections=document.querySelectorAll("section");
 window.addEventListener("scroll",()=>{
@@ -463,24 +435,33 @@ index=(index+1)%slides.length;
 slides[index].classList.add("active");
 },5000);
 
+/* === LIVE CALCULATOR (AUTO UPDATE) === */
+
+const ranges=document.querySelectorAll("#impact-calculator input[type=range]");
+ranges.forEach(r=>r.addEventListener("input",calculateImpact));
+
 function calculateImpact(){
-let s=parseInt(document.getElementById("strategyRange").value);
-let f=parseInt(document.getElementById("financeRange").value);
-let o=parseInt(document.getElementById("operationsRange").value);
-let m=parseInt(document.getElementById("marketRange").value);
+let s=parseInt(strategyRange.value);
+let f=parseInt(financeRange.value);
+let o=parseInt(operationsRange.value);
+let m=parseInt(marketRange.value);
+
 let total=((s+f+o+m)/40)*100;
 let rounded=Math.round(total);
-document.getElementById("scoreDisplay").innerText=rounded+"%";
-document.getElementById("progressFill").style.width=rounded+"%";
 
-let tierText="";
-if(rounded>=80){tierText="Enterprise-Ready Infrastructure – Positioned for Scale.";}
-else if(rounded>=60){tierText="Growth-Stage – Structural Refinement Required.";}
-else if(rounded>=40){tierText="Emerging Structure – Strategic Alignment Needed.";}
-else{tierText="Foundational Risk – Immediate Infrastructure Development Advised.";}
+scoreDisplay.innerText=rounded+"%";
+progressFill.style.width=rounded+"%";
 
-document.getElementById("performanceTier").innerText=tierText;
+let tier="";
+if(rounded>=80){tier="Enterprise-Ready Infrastructure – Positioned for Scale."; performanceTier.style.color="#00ffcc";}
+else if(rounded>=60){tier="Growth-Stage – Structural Refinement Required."; performanceTier.style.color="#FFD400";}
+else if(rounded>=40){tier="Emerging Structure – Strategic Alignment Needed."; performanceTier.style.color="#ff9f43";}
+else{tier="Foundational Risk – Immediate Infrastructure Development Advised."; performanceTier.style.color="#ff4d4d";}
+
+performanceTier.innerText=tier;
 }
+
+calculateImpact();
 
 </script>
 
