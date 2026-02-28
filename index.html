@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IMPACTGRID | Strategic Growth Infrastructure</title>
 
-<!-- PREMIUM FONT -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
@@ -15,15 +14,24 @@
 
 body{
 font-family:'Inter',sans-serif;
-background:linear-gradient(to bottom,#0e0e0e,#000);
+background:linear-gradient(-45deg,#0e0e0e,#111,#000,#1a1a1a);
+background-size:400% 400%;
+animation:gradientMove 15s ease infinite;
 color:white;
 line-height:1.6;
 overflow-x:hidden;
 }
 
+/* Animated Gradient */
+@keyframes gradientMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
 /* GOLD GLOW */
 .gold-glow{
-text-shadow:0 0 15px rgba(255,212,0,0.4);
+text-shadow:0 0 20px rgba(255,212,0,0.5);
 }
 
 /* ================= NAV ================= */
@@ -66,28 +74,6 @@ transition:0.3s;
 
 .nav-links a:hover{
 color:#FFD400;
-}
-
-.search-bar{
-display:flex;
-align-items:center;
-background:#111;
-padding:6px 15px;
-border-radius:30px;
-border:1px solid #222;
-}
-
-.search-bar img{
-height:18px;
-margin-right:8px;
-}
-
-.search-bar input{
-background:transparent;
-border:none;
-color:white;
-outline:none;
-width:150px;
 }
 
 /* ================= HERO ================= */
@@ -143,6 +129,11 @@ transition:0.3s;
 button:hover{
 background:white;
 transform:translateY(-3px);
+box-shadow:0 10px 30px rgba(255,212,0,0.4);
+}
+
+button:active{
+transform:scale(0.96);
 }
 
 /* ================= SECTION ================= */
@@ -185,6 +176,7 @@ border-radius:8px;
 .card:hover{
 border-color:#FFD400;
 transform:translateY(-8px);
+box-shadow:0 20px 40px rgba(0,0,0,0.3);
 }
 
 /* ================= COUNTERS ================= */
@@ -206,27 +198,19 @@ color:#bbb;
 margin-top:10px;
 }
 
-/* ================= CLIENT LOGO CAROUSEL ================= */
-.logo-carousel{
-overflow:hidden;
-white-space:nowrap;
+/* ================= CALCULATOR ================= */
+#checker input{
+padding:10px;
+width:70px;
+text-align:center;
+margin:10px;
+border-radius:4px;
+border:none;
+}
+
+#result{
 margin-top:40px;
-}
-
-.logo-track{
-display:inline-block;
-animation:scroll 20s linear infinite;
-}
-
-.logo-track img{
-height:40px;
-margin:0 40px;
-opacity:0.6;
-}
-
-@keyframes scroll{
-0%{transform:translateX(0);}
-100%{transform:translateX(-50%);}
+font-size:18px;
 }
 
 /* ================= TESTIMONIAL ================= */
@@ -279,14 +263,9 @@ color:#666;
 </div>
 
 <div class="nav-links">
-<a href="#">Services</a>
-<a href="#">About</a>
-<a href="#">Contact</a>
-</div>
-
-<div class="search-bar">
-<img src="logo.png" alt="logo">
-<input type="text" placeholder="Search...">
+<a href="services.html">Services</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
 </div>
 </nav>
 
@@ -294,7 +273,7 @@ color:#666;
 <h1 class="gold-glow">We Architect Growth Systems For Ambitious Companies</h1>
 <p>Global Strategic Advisory • Capital Structuring • Digital Growth • Workforce Deployment</p>
 <div class="hero-btn">
-<button>Explore Our Services</button>
+<a href="services.html"><button>Explore Our Services</button></a>
 </div>
 </header>
 
@@ -316,18 +295,18 @@ color:#666;
 </div>
 </section>
 
-<section>
-<h2>Trusted By Growth-Focused Leaders</h2>
-<div class="logo-carousel">
-<div class="logo-track">
-<img src="logo.png">
-<img src="logo.png">
-<img src="logo.png">
-<img src="logo.png">
-<img src="logo.png">
-<img src="logo.png">
+<section id="checker">
+<h2>Business Strength Diagnostic</h2>
+<p>Rate your business strength (1–10)</p>
+<div>
+Strategy <input type="number" id="strategy" min="1" max="10">
+Finance <input type="number" id="finance" min="1" max="10">
+Operations <input type="number" id="operations" min="1" max="10">
+Brand <input type="number" id="marketing" min="1" max="10">
 </div>
-</div>
+<br>
+<button onclick="calculate()">Analyze Position</button>
+<h3 id="result"></h3>
 </section>
 
 <section>
@@ -385,6 +364,23 @@ slides.forEach(s=>s.classList.remove("active"));
 index=(index+1)%slides.length;
 slides[index].classList.add("active");
 },5000);
+
+/* IMPACTGRID Calculator */
+function calculate(){
+let s=Number(document.getElementById("strategy").value);
+let f=Number(document.getElementById("finance").value);
+let o=Number(document.getElementById("operations").value);
+let m=Number(document.getElementById("marketing").value);
+let total=(s+f+o+m)/4;
+
+if(total>=8){
+document.getElementById("result").innerText="Enterprise-Level Structure – Positioned for scale.";
+}else if(total>=5){
+document.getElementById("result").innerText="Growth Stage – Strategic refinement required.";
+}else{
+document.getElementById("result").innerText="Foundational risk – Immediate restructuring advised.";
+}
+}
 
 </script>
 
