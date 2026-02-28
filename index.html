@@ -27,7 +27,7 @@ overflow-x:hidden;
 100%{background-position:0% 50%;}
 }
 
-/* NAVBAR */
+/* NAV */
 nav{
 position:fixed;
 top:0;
@@ -87,7 +87,6 @@ font-size:22px;
 color:#bbb;
 }
 
-/* SECTIONS */
 section{padding:160px 20px;text-align:center;}
 
 h2{
@@ -135,6 +134,16 @@ font-size:60px;
 color:#FFD400;
 font-weight:700;
 margin-top:30px;
+transition:0.3s;
+}
+
+.score-glow{
+animation:glowPulse 1.5s infinite alternate;
+}
+
+@keyframes glowPulse{
+from{ text-shadow:0 0 10px rgba(255,212,0,0.4); }
+to{ text-shadow:0 0 30px rgba(255,212,0,0.9); }
 }
 
 .progress-bar{
@@ -172,7 +181,31 @@ stroke-width:2;
 transition:all 0.4s ease;
 }
 
-/* NEWSLETTER */
+/* Lead Capture */
+#reportCapture{
+margin-top:40px;
+display:none;
+}
+
+#reportCapture input{
+padding:14px;
+width:100%;
+border-radius:4px;
+border:none;
+text-align:center;
+margin-bottom:15px;
+}
+
+button{
+background:#FFD400;
+color:black;
+border:none;
+padding:16px 45px;
+margin-top:20px;
+cursor:pointer;
+}
+
+/* Newsletter */
 #newsletter input{
 padding:16px;
 width:100%;
@@ -187,15 +220,6 @@ background:#000;
 padding:90px 20px;
 text-align:center;
 color:#666;
-}
-
-button{
-background:#FFD400;
-color:black;
-border:none;
-padding:16px 45px;
-margin-top:20px;
-cursor:pointer;
 }
 
 </style>
@@ -244,19 +268,15 @@ cursor:pointer;
 
 <div class="radar-container">
 <svg viewBox="0 0 300 300" class="radar-svg">
-
-<!-- Grid Rings -->
 <circle cx="150" cy="150" r="40" class="radar-grid"/>
 <circle cx="150" cy="150" r="80" class="radar-grid"/>
 <circle cx="150" cy="150" r="120" class="radar-grid"/>
 
-<!-- Axes -->
 <line x1="150" y1="150" x2="150" y2="30" class="radar-axis"/>
 <line x1="150" y1="150" x2="270" y2="150" class="radar-axis"/>
 <line x1="150" y1="150" x2="150" y2="270" class="radar-axis"/>
 <line x1="150" y1="150" x2="30" y2="150" class="radar-axis"/>
 
-<!-- Labels -->
 <text x="150" y="20" class="radar-label">Strategy</text>
 <text x="285" y="155" class="radar-label">Finance</text>
 <text x="150" y="295" class="radar-label">Operations</text>
@@ -267,13 +287,21 @@ points="150,90 210,150 150,210 90,150"/>
 </svg>
 </div>
 
+<!-- Executive Report Capture -->
+<div id="reportCapture">
+<h3>Receive Your Strategic Infrastructure Report</h3>
+<form action="https://formspree.io/f/meeldvol" method="POST">
+<input type="email" name="email" placeholder="Enter your email for full report" required>
+<button type="submit">Request Full Strategic Report</button>
+</form>
+</div>
+
 </div>
 </section>
 
 <section id="newsletter">
 <h2>Strategic Insights Newsletter</h2>
 <p>Receive periodic insights on capital readiness and structured growth.</p>
-
 <form action="https://formspree.io/f/meeldvol" method="POST" style="max-width:550px;margin:50px auto;">
 <input type="email" name="email" placeholder="Enter your email address" required>
 <br><br>
@@ -318,12 +346,35 @@ radarShape.setAttribute("points",
 );
 
 let tier="";
-if(rounded>=80){tier="Enterprise-Ready Infrastructure – Positioned for Scale."; performanceTier.style.color="#00ffcc";}
-else if(rounded>=60){tier="Growth-Stage – Structural Refinement Required."; performanceTier.style.color="#FFD400";}
-else if(rounded>=40){tier="Emerging Structure – Strategic Alignment Needed."; performanceTier.style.color="#ff9f43";}
-else{tier="Foundational Risk – Immediate Infrastructure Development Advised."; performanceTier.style.color="#ff4d4d";}
+scoreDisplay.classList.remove("score-glow");
+
+if(rounded>=80){
+tier="Enterprise-Ready Infrastructure – Positioned for Scale.";
+performanceTier.style.color="#00ffcc";
+scoreDisplay.classList.add("score-glow");
+}
+else if(rounded>=60){
+tier="Growth-Stage – Structural Refinement Required.";
+performanceTier.style.color="#FFD400";
+}
+else if(rounded>=40){
+tier="Emerging Structure – Strategic Alignment Needed.";
+performanceTier.style.color="#ff9f43";
+}
+else{
+tier="Foundational Risk – Immediate Infrastructure Development Advised.";
+performanceTier.style.color="#ff4d4d";
+}
 
 performanceTier.innerText=tier;
+
+/* Show Lead Capture If Under 60% */
+if(rounded < 60){
+document.getElementById("reportCapture").style.display="block";
+}else{
+document.getElementById("reportCapture").style.display="none";
+}
+
 }
 
 calculateImpact();
