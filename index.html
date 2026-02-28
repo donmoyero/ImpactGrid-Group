@@ -9,8 +9,6 @@
 
 <style>
 
-/* KEEPING ALL YOUR ORIGINAL STYLES EXACTLY THE SAME */
-
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
@@ -33,6 +31,7 @@ overflow-x:hidden;
 text-shadow:0 0 20px rgba(255,212,0,0.5);
 }
 
+/* NAV */
 nav{
 position:sticky;
 top:0;
@@ -150,29 +149,56 @@ color:#FFD400;
 margin-bottom:50px;
 }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-gap:40px;
-max-width:1200px;
-margin:auto;
+/* COUNTERS */
+.counters{
+display:flex;
+justify-content:center;
+gap:80px;
+flex-wrap:wrap;
 }
 
-.card{
-background:#111;
-padding:40px;
-border:1px solid #222;
-transition:0.4s;
-border-radius:8px;
+.counter{
+font-size:48px;
+font-weight:700;
+color:#FFD400;
 }
 
-.card:hover{
-border-color:#FFD400;
-transform:translateY(-8px);
-box-shadow:0 20px 40px rgba(0,0,0,0.3);
+.counter-label{
+color:#bbb;
+margin-top:10px;
 }
 
-/* NEWSLETTER STYLE */
+/* TESTIMONIAL */
+.testimonial-slider{
+position:relative;
+max-width:800px;
+margin:40px auto;
+min-height:120px;
+}
+
+.slide{
+position:absolute;
+width:100%;
+opacity:0;
+transition:opacity 1s ease;
+font-style:italic;
+color:#bbb;
+font-size:20px;
+}
+
+.slide.active{
+opacity:1;
+position:relative;
+}
+
+.client{
+margin-top:15px;
+font-size:14px;
+color:#FFD400;
+font-weight:bold;
+}
+
+/* NEWSLETTER */
 #newsletter input{
 padding:14px;
 width:100%;
@@ -204,7 +230,6 @@ color:#666;
 <img src="logo.png">
 <span>IMPACTGRID</span>
 </div>
-
 <div class="nav-links">
 <a href="about.html">About</a>
 <a href="services.html">Services</a>
@@ -219,8 +244,6 @@ color:#666;
 <a href="services.html"><button>Explore Our Services</button></a>
 </div>
 </header>
-
-<!-- KEEP ALL YOUR EXISTING SECTIONS BELOW EXACTLY AS THEY ARE -->
 
 <section>
 <h2>Performance Metrics</h2>
@@ -254,8 +277,6 @@ color:#666;
 </div>
 </section>
 
-<!-- NEWSLETTER SECTION ADDED -->
-
 <section id="newsletter">
 <h2>Strategic Insights Newsletter</h2>
 <p>Receive periodic insights on capital readiness and structured growth.</p>
@@ -272,6 +293,8 @@ color:#666;
 </footer>
 
 <script>
+
+/* Scroll Reveal */
 const sections=document.querySelectorAll("section");
 window.addEventListener("scroll",()=>{
 sections.forEach(sec=>{
@@ -280,6 +303,33 @@ sec.classList.add("visible");
 }
 });
 });
+
+/* Counter Animation */
+const counters=document.querySelectorAll(".counter");
+counters.forEach(counter=>{
+const update=()=>{
+const target=+counter.getAttribute("data-target");
+const count=+counter.innerText;
+const increment=target/100;
+if(count<target){
+counter.innerText=Math.ceil(count+increment);
+setTimeout(update,20);
+}else{
+counter.innerText=target;
+}
+};
+update();
+});
+
+/* Testimonial Slider */
+let slides=document.querySelectorAll(".slide");
+let index=0;
+setInterval(()=>{
+slides.forEach(s=>s.classList.remove("active"));
+index=(index+1)%slides.length;
+slides[index].classList.add("active");
+},5000);
+
 </script>
 
 </body>
