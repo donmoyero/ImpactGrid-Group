@@ -1,78 +1,337 @@
-/* ================= MOBILE SIDEBAR SYSTEM ================= */
+/* ================= GLOBAL RESET ================= */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-/* Mobile menu button (hidden on desktop) */
-.mobile-menu-btn {
-    display: none;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    border: none;
-    color: white;
-    padding: 10px 14px;
-    border-radius: 10px;
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #e2e8f0;
+    min-height: 100vh;
+    transition: background 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ================= APP LAYOUT ================= */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+    width: 250px;
+    background: linear-gradient(180deg, #0f172a, #111827);
+    padding: 28px 22px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    transition: width 0.3s ease;
+}
+
+.sidebar.collapsed {
+    width: 85px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-img {
+    height: 36px;
+    object-fit: contain;
+}
+
+.logo-text {
     font-size: 18px;
-    cursor: pointer;
-    margin-right: 15px;
-    transition: 0.25s ease;
+    font-weight: 700;
 }
 
-.mobile-menu-btn:hover {
-    transform: scale(1.05);
-}
-
-/* Overlay for mobile sidebar */
-.sidebar-overlay {
+.sidebar.collapsed .logo-text {
     display: none;
 }
 
-/* ================= RESPONSIVE SIDEBAR ================= */
+.sidebar ul {
+    list-style: none;
+    margin-top: 35px;
+}
 
+.sidebar li {
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: all 0.25s ease;
+    font-size: 14px;
+}
+
+.sidebar li:hover {
+    background: rgba(59,130,246,0.18);
+    color: white;
+}
+
+.sidebar li.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 8px 25px rgba(37,99,235,0.4);
+}
+
+/* ================= MAIN CONTENT ================= */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ================= HEADER ================= */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 40px 6%;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.dashboard-header p {
+    color: #94a3b8;
+    margin-top: 6px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 14px;
+}
+
+/* ================= PAGE SECTIONS ================= */
+.page-section {
+    display: none;
+    padding: 40px 6% 70px 6%;
+    animation: fadeIn 0.35s ease;
+}
+
+.active-section {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================= BUTTONS ================= */
+.btn-primary {
+    padding: 11px 20px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(59,130,246,0.45);
+}
+
+.btn-secondary {
+    padding: 11px 20px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.18);
+}
+
+/* ================= CARD ================= */
+.card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(14px);
+    padding: 32px;
+    border-radius: 22px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 35px;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-6px);
+}
+
+.card h2 {
+    margin-bottom: 22px;
+    font-weight: 600;
+}
+
+/* ================= REPORT BOX ================= */
+.report-box {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #cbd5e1;
+    background: rgba(0,0,0,0.25);
+    padding: 22px;
+    border-radius: 16px;
+}
+
+/* ================= KPI ================= */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 25px;
+}
+
+.kpi {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    padding: 26px;
+    border-radius: 20px;
+    text-align: center;
+    transition: 0.3s ease;
+}
+
+.kpi:hover {
+    transform: scale(1.06);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.45);
+}
+
+.kpi p {
+    font-size: 28px;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+/* ================= CHARTS ================= */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 35px;
+}
+
+.chart-card {
+    padding: 25px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 22px;
+    height: 400px;
+    position: relative;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+.chart-card canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ================= PRICING ================= */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 35px;
+}
+
+.pricing-card {
+    background: rgba(255,255,255,0.07);
+    padding: 35px;
+    border-radius: 24px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: 0.35s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+
+.price {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #3b82f6;
+}
+
+.pricing-card.premium {
+    border: 2px solid #3b82f6;
+    background: linear-gradient(145deg, #1e293b, #111827);
+}
+
+.pricing-card.premium::before {
+    content: "Most Powerful";
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: #3b82f6;
+    color: white;
+    padding: 5px 12px;
+    font-size: 11px;
+    border-radius: 10px;
+}
+
+/* ================= FOOTER ================= */
+.dashboard-footer {
+    text-align: center;
+    padding: 35px;
+    color: #64748b;
+    margin-top: auto;
+    font-size: 13px;
+}
+
+/* ================= LIGHT MODE ================= */
+body.light-mode {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+body.light-mode .sidebar {
+    background: white;
+    border-right: 1px solid #e2e8f0;
+}
+
+body.light-mode .card,
+body.light-mode .pricing-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+}
+
+body.light-mode .report-box {
+    background: #f8fafc;
+}
+
+/* ================= RESPONSIVE ================= */
 @media (max-width: 900px) {
 
-    /* Show mobile menu button */
-    .mobile-menu-btn {
-        display: inline-block;
-    }
-
-    /* Sidebar becomes slide panel */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: -260px;
-        height: 100%;
-        width: 250px;
-        z-index: 1000;
-        transition: left 0.3s ease;
-        box-shadow: 8px 0 30px rgba(0,0,0,0.5);
-    }
-
-    /* When active (toggled in JS) */
-    .sidebar.mobile-active {
-        left: 0;
-    }
-
-    /* Prevent content shift */
     .app-layout {
         flex-direction: column;
     }
 
-    /* Adjust header spacing */
+    .sidebar {
+        display: none;
+    }
+
     .dashboard-header {
-        padding: 25px 6%;
-        gap: 15px;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
     }
 
-    .header-actions {
-        flex-wrap: wrap;
-    }
-
-    /* Make charts full width */
     .charts-grid {
         grid-template-columns: 1fr;
     }
-}
-
-/* ================= LIGHT MODE MOBILE FIX ================= */
-
-body.light-mode .mobile-menu-btn {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
 }
