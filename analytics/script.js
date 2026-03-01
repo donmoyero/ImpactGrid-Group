@@ -1,327 +1,353 @@
-/* ================= BASE RESET ================= */
+/* ================= GLOBAL STATE ================= */
 
-* {
-    box-sizing: border-box;
+let businessData = [];
+let revenueChart = null;
+let profitChart = null;
+let expenseChart = null;
+let forecastChart = null;
+let comparisonChart = null;
+
+let userPlan = localStorage.getItem("impactPlan") || "free";
+
+/* ================= INIT ================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        loadFromStorage();
+        autoLogin();
+        loadTheme();
+        loadBusinessStartDate();
+    } catch (err) {
+        console.error("Initialization error:", err);
+    }
+});
+
+/* ================= BUSINESS START DATE ================= */
+
+function loadBusinessStartDate() {
+    const saved = localStorage.getItem("businessStartDate");
+    if (saved) {
+        document.getElementById("businessStartDate").value = saved;
+    }
 }
 
-body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
+document.addEventListener("change", (e) => {
+    if (e.target.id === "businessStartDate") {
+        localStorage.setItem("businessStartDate", e.target.value);
+        updateAll();
+    }
+});
+
+function getBusinessAgeInMonths() {
+    const start = localStorage.getItem("businessStartDate");
+    if (!start) return null;
+
+    const startDate = new Date(start + "-01");
+    const now = new Date();
+
+    return (now.getFullYear() - startDate.getFullYear()) * 12 +
+           (now.getMonth() - startDate.getMonth());
 }
 
-/* ================= APP LAYOUT ================= */
+/* ================= PLAN ================= */
 
-.app-layout {
-    display: flex;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: #e2e8f0;
+function setPlan(plan) {
+    userPlan = plan;
+    localStorage.setItem("impactPlan", plan);
+    alert("Plan updated to: " + plan.toUpperCase());
 }
 
-.hidden {
-    display: none !important;
+/* ================= AUTH ================= */
+
+function login() {
+    const user = document.getElementById("username")?.value;
+    const pass = document.getElementById("password")?.value;
+
+    if (user && pass) {
+        localStorage.setItem("impactUser", user);
+        showApp();
+    } else {
+        alert("Enter credentials");
+    }
 }
 
-/* ================= AUTH SCREEN ================= */
-
-.auth-screen {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+function autoLogin() {
+    const user = localStorage.getItem("impactUser");
+    if (user) showApp();
 }
 
-.auth-card {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
-    padding: 40px;
-    border-radius: 16px;
-    width: 320px;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+function logout() {
+    localStorage.removeItem("impactUser");
+    location.reload();
 }
 
-.auth-card input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
-    color: white;
+function showApp() {
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("app").classList.remove("hidden");
 }
 
-/* ================= SIDEBAR ================= */
+/* ================= THEME ================= */
 
-.sidebar {
-    width: 240px;
-    background: #0f172a;
-    padding: 25px 20px;
-    border-right: 1px solid rgba(255,255,255,0.05);
-    transition: width 0.3s ease;
+function toggleTheme() {
+    document.body.classList.toggle("light-mode");
+    localStorage.setItem(
+        "impactTheme",
+        document.body.classList.contains("light-mode") ? "light" : "dark"
+    );
 }
 
-.sidebar.collapsed {
-    width: 80px;
+function loadTheme() {
+    if (localStorage.getItem("impactTheme") === "light") {
+        document.body.classList.add("light-mode");
+    }
 }
 
-.sidebar-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
+/* ================= SECTION NAV ================= */
+
+function showSection(id, evt) {
+
+    if ((id === "forecast" || id === "comparison") && userPlan === "free") {
+        alert("Upgrade to Growth or Premium to access this feature.");
+        return;
+    }
+
+    document.querySelectorAll(".page-section")
+        .forEach(s => s.classList.remove("active-section"));
+
+    document.getElementById(id)?.classList.add("active-section");
+
+    document.querySelectorAll(".sidebar li")
+        .forEach(li => li.classList.remove("active"));
+
+    if (evt?.target) evt.target.classList.add("active");
 }
 
-.logo-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+/* ================= DATA ================= */
+
+function addData() {
+
+    if (userPlan === "free" && businessData.length >= 3) {
+        alert("Free plan allows only 3 months of data.");
+        return;
+    }
+
+    const month = document.getElementById("month")?.value;
+    const revenue = parseFloat(document.getElementById("revenue")?.value);
+    const expenses = parseFloat(document.getElementById("expenses")?.value);
+
+    if (!month || isNaN(revenue) || isNaN(expenses)) {
+        alert("Please complete required fields.");
+        return;
+    }
+
+    const profit = revenue - expenses;
+
+    businessData.push({ month, revenue, expenses, profit });
+
+    saveToStorage();
+    updateAll();
 }
 
-.logo-img {
-    height: 28px;  /* FIXED LOGO SIZE */
-    width: auto;
+/* ================= STORAGE ================= */
+
+function saveToStorage() {
+    localStorage.setItem("impactGridData", JSON.stringify(businessData));
 }
 
-.logo-text {
-    font-weight: 700;
-    font-size: 16px;
+function loadFromStorage() {
+    const saved = localStorage.getItem("impactGridData");
+    if (saved) {
+        businessData = JSON.parse(saved);
+        updateAll();
+    }
 }
 
-.collapse-btn {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    font-size: 20px;
-    cursor: pointer;
+function clearAllData() {
+    localStorage.removeItem("impactGridData");
+    location.reload();
 }
 
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+/* ================= MASTER UPDATE ================= */
 
-.sidebar li {
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    color: #94a3b8;
-    transition: 0.2s;
-}
+function updateAll() {
+    if (!businessData.length) return;
 
-.sidebar li:hover {
-    background: rgba(59,130,246,0.1);
-    color: white;
-}
+    renderKPIs();
+    renderCoreCharts();
 
-.sidebar li.active {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-}
+    if (userPlan !== "free") {
+        renderForecast();
+        renderComparison();
+    }
 
-/* ================= MAIN CONTENT ================= */
-
-.main-content {
-    flex: 1;
-    padding-bottom: 40px;
-}
-
-.dashboard-header {
-    padding: 30px 5%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.dashboard-header h1 {
-    font-size: 24px;
-}
-
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
-
-/* ================= SECTIONS ================= */
-
-.page-section {
-    display: none;
-    padding: 0 5% 50px 5%;
-}
-
-.active-section {
-    display: block;
-}
-
-/* ================= CARDS ================= */
-
-.card {
-    background: rgba(255,255,255,0.05);
-    padding: 25px;
-    border-radius: 18px;
-    margin-bottom: 25px;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-/* ================= HOW TO USE SECTION ================= */
-
-.card h2 {
-    margin-bottom: 15px;
-}
-
-.card label {
-    font-size: 13px;
-    color: #94a3b8;
-}
-
-.card p {
-    font-size: 14px;
-}
-
-.card strong {
-    color: #3b82f6;
-}
-
-/* ================= INPUT GRID ================= */
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-}
-
-.grid input {
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
-    color: white;
-}
-
-/* ================= BUTTONS ================= */
-
-.btn-primary {
-    padding: 10px 16px;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.btn-secondary {
-    padding: 10px 16px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    color: #e2e8f0;
-    cursor: pointer;
+    generateReport();
 }
 
 /* ================= KPI ================= */
 
-.kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
+function renderKPIs() {
+    const container = document.getElementById("kpiContainer");
+    if (!container) return;
 
-.kpi {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    padding: 20px;
-    border-radius: 14px;
-    text-align: center;
-}
+    const totalRevenue = sum("revenue");
+    const totalProfit = sum("profit");
 
-.kpi p {
-    font-size: 22px;
-    font-weight: 700;
-    color: #3b82f6;
+    container.innerHTML = `
+        <div class="kpi">
+            <h3>Total Revenue</h3>
+            <p>${formatCurrency(totalRevenue)}</p>
+        </div>
+        <div class="kpi">
+            <h3>Total Profit</h3>
+            <p>${formatCurrency(totalProfit)}</p>
+        </div>
+    `;
 }
 
 /* ================= CHARTS ================= */
 
-.charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+function renderCoreCharts() {
+
+    if (typeof Chart === "undefined") return;
+
+    destroyCharts();
+    const labels = businessData.map(d => d.month);
+
+    revenueChart = createChart("revenueChart", "line", labels, map("revenue"), "#4CAF50", "Revenue");
+    profitChart = createChart("profitChart", "line", labels, map("profit"), "#2196F3", "Profit");
+    expenseChart = createChart("expenseChart", "bar", labels, map("expenses"), "#FF5252", "Expenses");
 }
 
-.chart-card {
-    height: 350px;
-    position: relative;
+function createChart(id, type, labels, data, color, label) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return null;
+
+    return new Chart(ctx, {
+        type,
+        data: {
+            labels,
+            datasets: [{
+                label,
+                data,
+                borderColor: color,
+                backgroundColor: type === "bar" ? color : "transparent",
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
 }
 
-.chart-card canvas {
-    width: 100% !important;
-    height: 100% !important;
+/* ================= FORECAST ================= */
+
+function renderForecast() {
+
+    if (forecastChart) forecastChart.destroy();
+
+    const labels = businessData.map(d => d.month);
+    const values = map("revenue");
+
+    if (values.length < 2) return;
+
+    const predictions = simpleRegression(values, 3);
+
+    forecastChart = new Chart(
+        document.getElementById("forecastChart"),
+        {
+            type: "line",
+            data: {
+                labels: [...labels, "F1", "F2", "F3"],
+                datasets: [{
+                    label: "Revenue Forecast",
+                    data: [...values, ...predictions],
+                    borderColor: "#3b82f6",
+                    borderDash: [5,5],
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        }
+    );
 }
 
-/* ================= PRICING ================= */
+/* ================= REPORT ================= */
 
-.pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
+function generateReport() {
+
+    const reportBox = document.getElementById("performanceReport");
+    if (!reportBox) return;
+
+    const totalRevenue = sum("revenue");
+    const totalProfit = sum("profit");
+
+    if (totalRevenue === 0) return;
+
+    const latest = businessData[businessData.length - 1];
+    const age = getBusinessAgeInMonths();
+
+    let health = "Stable";
+    if (totalProfit <= 0) health = "Critical";
+    else if (totalProfit < totalRevenue * 0.15) health = "Warning";
+
+    reportBox.innerHTML = `
+        <p><strong>Business Health:</strong> ${health}</p>
+        ${age !== null ? `<p>Operating for: ${age} months</p>` : ""}
+        <p>Total Revenue: ${formatCurrency(totalRevenue)}</p>
+        <p>Total Profit: ${formatCurrency(totalProfit)}</p>
+        <p>Latest Month Revenue: ${formatCurrency(latest.revenue)}</p>
+    `;
 }
 
-.pricing-card {
-    background: rgba(255,255,255,0.05);
-    padding: 20px;
-    border-radius: 16px;
-    text-align: center;
-}
+/* ================= PDF LIMIT ================= */
 
-.price {
-    font-size: 22px;
-    font-weight: bold;
-    color: #3b82f6;
-}
+function canExportPDF() {
 
-/* ================= FOOTER ================= */
-
-.dashboard-footer {
-    text-align: center;
-    padding: 20px;
-    color: #64748b;
-}
-
-/* ================= LIGHT MODE ================= */
-
-body.light-mode .app-layout {
-    background: #f1f5f9;
-    color: #1e293b;
-}
-
-body.light-mode .card,
-body.light-mode .pricing-card {
-    background: white;
-    border: 1px solid #e2e8f0;
-}
-
-body.light-mode .sidebar {
-    background: white;
-    border-right: 1px solid #e2e8f0;
-}
-
-/* ================= MOBILE ================= */
-
-@media (max-width: 900px) {
-    .app-layout {
-        flex-direction: column;
+    if (userPlan === "free") {
+        alert("PDF export available on paid plans.");
+        return false;
     }
 
-    .sidebar {
-        width: 100%;
-    }
+    return true;
+}
 
-    .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+/* ================= HELPERS ================= */
+
+function destroyCharts() {
+    revenueChart?.destroy();
+    profitChart?.destroy();
+    expenseChart?.destroy();
+}
+
+function sum(key){ return businessData.reduce((a,b)=>a+b[key],0); }
+function map(key){ return businessData.map(d=>d[key]); }
+
+function formatCurrency(val){
+    return "£"+Number(val).toLocaleString(undefined,{
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+    });
+}
+
+function simpleRegression(data, periods){
+    const n = data.length;
+    const x = [...Array(n).keys()];
+    const sumX = x.reduce((a,b)=>a+b,0);
+    const sumY = data.reduce((a,b)=>a+b,0);
+    const sumXY = x.reduce((s,xi,i)=>s+xi*data[i],0);
+    const sumXX = x.reduce((s,xi)=>s+xi*xi,0);
+
+    const slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
+    const intercept = (sumY - slope*sumX)/n;
+
+    const result = [];
+    for(let i=1;i<=periods;i++){
+        result.push(slope*(n+i-1)+intercept);
     }
+    return result;
 }
