@@ -6,7 +6,7 @@ let profitChart = null;
 let expenseChart = null;
 let forecastChart = null;
 let comparisonChart = null;
-let companyLogoData = null;
+let companyLogoData = localStorage.getItem("impactLogo") || null;
 
 let userPlan = localStorage.getItem("impactPlan") || "free";
 
@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     autoLogin();
     loadTheme();
     setupLogoUpload();
+    restoreLogoPreview();
 
 });
 
@@ -110,6 +111,8 @@ function addData() {
     const month = document.getElementById("month")?.value;
     const revenue = parseFloat(document.getElementById("revenue")?.value);
     const expenses = parseFloat(document.getElementById("expenses")?.value);
+    const customers = parseFloat(document.getElementById("customers")?.value) || 0;
+    const marketing = parseFloat(document.getElementById("marketing")?.value) || 0;
 
     if (!month || isNaN(revenue) || isNaN(expenses)) {
         alert("Fill required fields.");
@@ -118,7 +121,7 @@ function addData() {
 
     const profit = revenue - expenses;
 
-    businessData.push({ month, revenue, expenses, profit });
+    businessData.push({ month, revenue, expenses, profit, customers, marketing });
 
     saveToStorage();
     updateAll();
@@ -164,16 +167,15 @@ function renderKPIs() {
 
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
+    const totalCustomers = sum("customers");
+    const margin = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+    const avgRevenuePerCustomer = totalCustomers ? totalRevenue / totalCustomers : 0;
 
     container.innerHTML = `
-        <div class="kpi">
-            <h3>Total Revenue</h3>
-            <p>${formatCurrency(totalRevenue)}</p>
-        </div>
-        <div class="kpi">
-            <h3>Total Profit</h3>
-            <p>${formatCurrency(totalProfit)}</p>
-        </div>
+        <div class="kpi"><h3>Total Revenue</h3><p>${formatCurrency(totalRevenue)}</p></div>
+        <div class="kpi"><h3>Total Profit</h3><p>${formatCurrency(totalProfit)}</p></div>
+        <div class="kpi"><h3>Profit Margin</h3><p>${margin}%</p></div>
+        <div class="kpi"><h3>Avg Revenue / Customer</h3><p>${formatCurrency(avgRevenuePerCustomer)}</p></div>
     `;
 }
 
@@ -192,28 +194,7 @@ function renderCoreCharts() {
     expenseChart = createChart("expenseChart", "bar", labels, map("expenses"), "#FF5252", "Expenses");
 }
 
-function createChart(id, type, labels, data, color, label) {
-
-    const canvas = document.getElementById(id);
-    if (!canvas) return null;
-
-    return new Chart(canvas, {
-        type,
-        data: {
-            labels,
-            datasets: [{
-                label,
-                data,
-                borderColor: color,
-                backgroundColor: type === "bar" ? color : "transparent",
-                tension: 0.4
-            }]
-        },
-        options: baseChartOptions()
-    });
-}
-
-/* ================= FORECAST ================= */
+/* ================= FORECAST (SMALL BUSINESS OPTIMISED) ================= */
 
 function renderForecast() {
 
@@ -223,7 +204,24 @@ function renderForecast() {
     const values = map("revenue");
     if (values.length < 2) return;
 
-    const predictions = simpleRegression(values, 3);
+    const growthRates = [];
+    for (let i = 1; i < values.length; i++) {
+        if (values[i - 1] > 0) {
+            growthRates.push((values[i] - values[i - 1]) / values[i - 1]);
+        }
+    }
+
+    const avgGrowth = growthRates.length
+        ? growthRates.reduce((a, b) => a + b, 0) / growthRates.length
+        : 0.05; // default 5% growth if limited data
+
+    let lastValue = values[values.length - 1];
+    const predictions = [];
+
+    for (let i = 0; i < 3; i++) {
+        lastValue = lastValue * (1 + avgGrowth);
+        predictions.push(lastValue);
+    }
 
     forecastChart = new Chart(
         document.getElementById("forecastChart"),
@@ -244,40 +242,7 @@ function renderForecast() {
     );
 }
 
-/* ================= MULTI METRIC ================= */
-
-function renderComparison() {
-
-    if (!businessData.length) return;
-    if (comparisonChart) comparisonChart.destroy();
-
-    comparisonChart = new Chart(
-        document.getElementById("comparisonChart"),
-        {
-            type: "line",
-            data: {
-                labels: businessData.map(d => d.month),
-                datasets: [
-                    dataset("Revenue","revenue","#4CAF50"),
-                    dataset("Profit","profit","#2196F3"),
-                    dataset("Expenses","expenses","#FF5252")
-                ]
-            },
-            options: baseChartOptions()
-        }
-    );
-}
-
-function dataset(label,key,color){
-    return {
-        label,
-        data: map(key),
-        borderColor: color,
-        tension: 0.4
-    };
-}
-
-/* ================= SMART REPORT ================= */
+/* ================= REPORT ================= */
 
 function generateReport() {
 
@@ -289,25 +254,27 @@ function generateReport() {
 
     if (!totalRevenue) return;
 
-    const latest = businessData[businessData.length - 1];
+    const margin = ((totalProfit / totalRevenue) * 100).toFixed(1);
 
     let health = "Stable";
     if (totalProfit <= 0) health = "Critical";
-    else if (totalProfit < totalRevenue * 0.15) health = "Warning";
+    else if (margin < 15) health = "Warning";
 
     reportBox.innerHTML = `
         <p><strong>Business Health:</strong> ${health}</p>
         <p>Total Revenue: ${formatCurrency(totalRevenue)}</p>
         <p>Total Profit: ${formatCurrency(totalProfit)}</p>
-        <p>Latest Month Revenue: ${formatCurrency(latest.revenue)}</p>
+        <p>Profit Margin: ${margin}%</p>
     `;
 }
 
-/* ================= LOGO UPLOAD ================= */
+/* ================= LOGO UPLOAD (FIXED) ================= */
 
 function setupLogoUpload() {
 
     const input = document.getElementById("companyLogoInput");
+    const preview = document.getElementById("logoPreview");
+
     if (!input) return;
 
     input.addEventListener("change", function(e) {
@@ -318,43 +285,26 @@ function setupLogoUpload() {
         const reader = new FileReader();
         reader.onload = function(event) {
             companyLogoData = event.target.result;
+            localStorage.setItem("impactLogo", companyLogoData);
+            if (preview) {
+                preview.src = companyLogoData;
+                preview.style.display = "block";
+            }
         };
         reader.readAsDataURL(file);
 
     });
 }
 
-/* ================= EXPORT CONTROL ================= */
-
-function canExportPDF() {
-
-    if (userPlan === "free") {
-        alert("Upgrade to export Executive PDFs.");
-        return false;
+function restoreLogoPreview(){
+    const preview = document.getElementById("logoPreview");
+    if (companyLogoData && preview){
+        preview.src = companyLogoData;
+        preview.style.display = "block";
     }
-
-    if (userPlan === "premium") return true;
-
-    let month = new Date().getMonth();
-    let savedMonth = localStorage.getItem("exportMonth");
-    let count = parseInt(localStorage.getItem("exportCount") || "0");
-
-    if (savedMonth != month) {
-        count = 0;
-        localStorage.setItem("exportMonth", month);
-        localStorage.setItem("exportCount", "0");
-    }
-
-    if (count >= 3) {
-        alert("Monthly export limit reached.");
-        return false;
-    }
-
-    localStorage.setItem("exportCount", count + 1);
-    return true;
 }
 
-/* ================= EXECUTIVE PDF ================= */
+/* ================= EXECUTIVE PDF (IMPROVED DESIGN) ================= */
 
 async function exportExecutivePDF() {
 
@@ -381,12 +331,16 @@ async function exportExecutivePDF() {
     }
 
     doc.setFontSize(18);
-    doc.text("ImpactGrid Intelligence Report", 105, y, { align: "center" });
-    y += 12;
+    doc.text("ImpactGrid Executive Report", 105, y, { align: "center" });
+    y += 15;
 
     doc.setFontSize(12);
-    doc.text("Enterprise Performance Overview", 105, y, { align: "center" });
+    doc.text("Business Performance Summary", 105, y, { align: "center" });
     y += 20;
+
+    doc.setDrawColor(200);
+    doc.line(20, y, 190, y);
+    y += 10;
 
     doc.setFontSize(11);
     doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y);
@@ -394,6 +348,10 @@ async function exportExecutivePDF() {
     doc.text("Total Profit: " + formatCurrency(totalProfit), 20, y);
     y += 8;
     doc.text("Profit Margin: " + margin + "%", 20, y);
+
+    y += 15;
+    doc.setDrawColor(200);
+    doc.line(20, y, 190, y);
 
     doc.save("ImpactGrid_Executive_Report.pdf");
 }
@@ -407,11 +365,11 @@ function destroyCharts(){
 }
 
 function sum(key){
-    return businessData.reduce((a,b)=>a+b[key],0);
+    return businessData.reduce((a,b)=>a+(b[key]||0),0);
 }
 
 function map(key){
-    return businessData.map(d=>d[key]);
+    return businessData.map(d=>d[key]||0);
 }
 
 function formatCurrency(val){
@@ -423,24 +381,4 @@ function formatCurrency(val){
 
 function baseChartOptions(){
     return { responsive:true, maintainAspectRatio:false };
-}
-
-function simpleRegression(data, periods){
-
-    const n = data.length;
-    const x = [...Array(n).keys()];
-    const sumX = x.reduce((a,b)=>a+b,0);
-    const sumY = data.reduce((a,b)=>a+b,0);
-    const sumXY = x.reduce((s,xi,i)=>s+xi*data[i],0);
-    const sumXX = x.reduce((s,xi)=>s+xi*xi,0);
-
-    const slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
-    const intercept = (sumY - slope*sumX)/n;
-
-    const result = [];
-    for(let i=1;i<=periods;i++){
-        result.push(slope*(n+i-1)+intercept);
-    }
-
-    return result;
 }
