@@ -9,47 +9,19 @@ let comparisonChart = null;
 
 let userPlan = localStorage.getItem("impactPlan") || "free";
 
-/* ================= INIT ================= */
+/* ================= SAFE INIT ================= */
 
 document.addEventListener("DOMContentLoaded", () => {
     try {
         loadFromStorage();
         autoLogin();
         loadTheme();
-        loadBusinessStartDate();
     } catch (err) {
         console.error("Initialization error:", err);
     }
 });
 
-/* ================= BUSINESS START DATE ================= */
-
-function loadBusinessStartDate() {
-    const saved = localStorage.getItem("businessStartDate");
-    if (saved) {
-        document.getElementById("businessStartDate").value = saved;
-    }
-}
-
-document.addEventListener("change", (e) => {
-    if (e.target.id === "businessStartDate") {
-        localStorage.setItem("businessStartDate", e.target.value);
-        updateAll();
-    }
-});
-
-function getBusinessAgeInMonths() {
-    const start = localStorage.getItem("businessStartDate");
-    if (!start) return null;
-
-    const startDate = new Date(start + "-01");
-    const now = new Date();
-
-    return (now.getFullYear() - startDate.getFullYear()) * 12 +
-           (now.getMonth() - startDate.getMonth());
-}
-
-/* ================= PLAN ================= */
+/* ================= PLAN SYSTEM ================= */
 
 function setPlan(plan) {
     userPlan = plan;
@@ -60,14 +32,19 @@ function setPlan(plan) {
 /* ================= AUTH ================= */
 
 function login() {
-    const user = document.getElementById("username")?.value;
-    const pass = document.getElementById("password")?.value;
+    const userInput = document.getElementById("username");
+    const passInput = document.getElementById("password");
+
+    if (!userInput || !passInput) return;
+
+    const user = userInput.value.trim();
+    const pass = passInput.value.trim();
 
     if (user && pass) {
         localStorage.setItem("impactUser", user);
         showApp();
     } else {
-        alert("Enter credentials");
+        alert("Enter username and password.");
     }
 }
 
@@ -82,8 +59,13 @@ function logout() {
 }
 
 function showApp() {
-    document.getElementById("authScreen").style.display = "none";
-    document.getElementById("app").classList.remove("hidden");
+    const auth = document.getElementById("authScreen");
+    const app = document.getElementById("app");
+
+    if (!auth || !app) return;
+
+    auth.style.display = "none";
+    app.classList.remove("hidden");
 }
 
 /* ================= THEME ================= */
@@ -102,6 +84,19 @@ function loadTheme() {
     }
 }
 
+/* ================= SIDEBAR ================= */
+
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    if (!sidebar) return;
+
+    if (window.innerWidth <= 900) {
+        sidebar.classList.toggle("mobile-open");
+    } else {
+        sidebar.classList.toggle("collapsed");
+    }
+}
+
 /* ================= SECTION NAV ================= */
 
 function showSection(id, evt) {
@@ -114,12 +109,17 @@ function showSection(id, evt) {
     document.querySelectorAll(".page-section")
         .forEach(s => s.classList.remove("active-section"));
 
-    document.getElementById(id)?.classList.add("active-section");
+    const target = document.getElementById(id);
+    if (target) target.classList.add("active-section");
 
     document.querySelectorAll(".sidebar li")
         .forEach(li => li.classList.remove("active"));
 
     if (evt?.target) evt.target.classList.add("active");
+
+    if (window.innerWidth <= 900) {
+        document.getElementById("sidebar")?.classList.remove("mobile-open");
+    }
 }
 
 /* ================= DATA ================= */
@@ -127,7 +127,7 @@ function showSection(id, evt) {
 function addData() {
 
     if (userPlan === "free" && businessData.length >= 3) {
-        alert("Free plan allows only 3 months of data.");
+        alert("Free plan supports only 3 months of data.");
         return;
     }
 
@@ -136,7 +136,7 @@ function addData() {
     const expenses = parseFloat(document.getElementById("expenses")?.value);
 
     if (!month || isNaN(revenue) || isNaN(expenses)) {
-        alert("Please complete required fields.");
+        alert("Fill required fields.");
         return;
     }
 
@@ -204,7 +204,7 @@ function renderKPIs() {
     `;
 }
 
-/* ================= CHARTS ================= */
+/* ================= CORE CHARTS ================= */
 
 function renderCoreCharts() {
 
@@ -234,10 +234,7 @@ function createChart(id, type, labels, data, color, label) {
                 tension: 0.4
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
+        options: baseChartOptions()
     });
 }
 
@@ -245,6 +242,7 @@ function createChart(id, type, labels, data, color, label) {
 
 function renderForecast() {
 
+    if (typeof Chart === "undefined") return;
     if (forecastChart) forecastChart.destroy();
 
     const labels = businessData.map(d => d.month);
@@ -264,19 +262,49 @@ function renderForecast() {
                     label: "Revenue Forecast",
                     data: [...values, ...predictions],
                     borderColor: "#3b82f6",
-                    borderDash: [5,5],
+                    borderDash: [5, 5],
                     tension: 0.4
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
+            options: baseChartOptions()
         }
     );
 }
 
-/* ================= REPORT ================= */
+/* ================= MULTI METRIC ================= */
+
+function renderComparison() {
+
+    if (typeof Chart === "undefined") return;
+    if (comparisonChart) comparisonChart.destroy();
+
+    comparisonChart = new Chart(
+        document.getElementById("comparisonChart"),
+        {
+            type: "line",
+            data: {
+                labels: businessData.map(d => d.month),
+                datasets: [
+                    dataset("Revenue", "revenue", "#4CAF50"),
+                    dataset("Profit", "profit", "#2196F3"),
+                    dataset("Expenses", "expenses", "#FF5252")
+                ]
+            },
+            options: baseChartOptions()
+        }
+    );
+}
+
+function dataset(label, key, color) {
+    return {
+        label,
+        data: map(key),
+        borderColor: color,
+        tension: 0.4
+    };
+}
+
+/* ================= SMART REPORT ================= */
 
 function generateReport() {
 
@@ -286,10 +314,9 @@ function generateReport() {
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
 
-    if (totalRevenue === 0) return;
+    if (!totalRevenue) return;
 
     const latest = businessData[businessData.length - 1];
-    const age = getBusinessAgeInMonths();
 
     let health = "Stable";
     if (totalProfit <= 0) health = "Critical";
@@ -297,23 +324,73 @@ function generateReport() {
 
     reportBox.innerHTML = `
         <p><strong>Business Health:</strong> ${health}</p>
-        ${age !== null ? `<p>Operating for: ${age} months</p>` : ""}
         <p>Total Revenue: ${formatCurrency(totalRevenue)}</p>
         <p>Total Profit: ${formatCurrency(totalProfit)}</p>
         <p>Latest Month Revenue: ${formatCurrency(latest.revenue)}</p>
     `;
 }
 
-/* ================= PDF LIMIT ================= */
+/* ================= EXPORT CONTROL ================= */
 
 function canExportPDF() {
 
     if (userPlan === "free") {
-        alert("PDF export available on paid plans.");
+        alert("Upgrade to export Executive PDFs.");
         return false;
     }
 
+    if (userPlan === "premium") return true;
+
+    const currentMonth = new Date().getMonth();
+    const savedMonth = localStorage.getItem("exportMonth");
+    let exportCount = parseInt(localStorage.getItem("exportCount") || "0");
+
+    if (savedMonth != currentMonth) {
+        exportCount = 0;
+        localStorage.setItem("exportMonth", currentMonth);
+        localStorage.setItem("exportCount", "0");
+    }
+
+    if (exportCount >= 3) {
+        alert("Monthly export limit reached.");
+        return false;
+    }
+
+    localStorage.setItem("exportCount", exportCount + 1);
     return true;
+}
+
+/* ================= EXECUTIVE PDF ================= */
+
+async function exportExecutivePDF() {
+
+    if (!businessData.length) {
+        alert("No data to export.");
+        return;
+    }
+
+    if (!canExportPDF()) return;
+    if (typeof window.jspdf === "undefined") return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const totalRevenue = sum("revenue");
+    const totalProfit = sum("profit");
+    const margin = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+
+    doc.setFontSize(18);
+    doc.text("ImpactGridGroup", 105, 20, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.text("Enterprise Intelligence Report", 105, 30, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, 50);
+    doc.text("Total Profit: " + formatCurrency(totalProfit), 20, 60);
+    doc.text("Profit Margin: " + margin + "%", 20, 70);
+
+    doc.save("ImpactGrid_Executive_Report.pdf");
 }
 
 /* ================= HELPERS ================= */
@@ -324,30 +401,44 @@ function destroyCharts() {
     expenseChart?.destroy();
 }
 
-function sum(key){ return businessData.reduce((a,b)=>a+b[key],0); }
-function map(key){ return businessData.map(d=>d[key]); }
+function sum(key) {
+    return businessData.reduce((a, b) => a + b[key], 0);
+}
 
-function formatCurrency(val){
-    return "£"+Number(val).toLocaleString(undefined,{
-        minimumFractionDigits:2,
-        maximumFractionDigits:2
+function map(key) {
+    return businessData.map(d => d[key]);
+}
+
+function formatCurrency(val) {
+    return "£" + Number(val).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     });
 }
 
-function simpleRegression(data, periods){
+function baseChartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false
+    };
+}
+
+function simpleRegression(data, periods) {
+
     const n = data.length;
     const x = [...Array(n).keys()];
-    const sumX = x.reduce((a,b)=>a+b,0);
-    const sumY = data.reduce((a,b)=>a+b,0);
-    const sumXY = x.reduce((s,xi,i)=>s+xi*data[i],0);
-    const sumXX = x.reduce((s,xi)=>s+xi*xi,0);
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = data.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((s, xi, i) => s + xi * data[i], 0);
+    const sumXX = x.reduce((s, xi) => s + xi * xi, 0);
 
-    const slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
-    const intercept = (sumY - slope*sumX)/n;
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
 
     const result = [];
-    for(let i=1;i<=periods;i++){
-        result.push(slope*(n+i-1)+intercept);
+    for (let i = 1; i <= periods; i++) {
+        result.push(slope * (n + i - 1) + intercept);
     }
+
     return result;
 }
