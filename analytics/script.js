@@ -22,6 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 
+/* ================= MOBILE SIDEBAR ================= */
+
+function toggleSidebar(){
+    document.getElementById("sidebar")?.classList.toggle("mobile-active");
+}
+
 /* ================= PLAN SYSTEM ================= */
 
 function setPlan(plan) {
@@ -149,13 +155,10 @@ function clearAllData() {
 /* ================= MASTER UPDATE ================= */
 
 function updateAll() {
-
     if (!businessData.length) return;
-
     renderKPIs();
     renderCoreCharts();
     generateReport();
-
 }
 
 /* ================= KPI ================= */
@@ -168,15 +171,33 @@ function renderKPIs() {
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
     const totalCustomers = sum("customers");
+    const totalMarketing = sum("marketing");
+
     const margin = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
     const avgRevenuePerCustomer = totalCustomers ? totalRevenue / totalCustomers : 0;
+
+    const marketingROI = totalMarketing
+        ? (((totalRevenue - totalMarketing) / totalMarketing) * 100).toFixed(1)
+        : 0;
+
+    const breakEven = calculateBreakEven();
 
     container.innerHTML = `
         <div class="kpi"><h3>Total Revenue</h3><p>${formatCurrency(totalRevenue)}</p></div>
         <div class="kpi"><h3>Total Profit</h3><p>${formatCurrency(totalProfit)}</p></div>
         <div class="kpi"><h3>Profit Margin</h3><p>${margin}%</p></div>
+        <div class="kpi"><h3>Marketing ROI</h3><p>${marketingROI}%</p></div>
+        <div class="kpi"><h3>Break-even Target</h3><p>${breakEven}</p></div>
         <div class="kpi"><h3>Avg Revenue / Customer</h3><p>${formatCurrency(avgRevenuePerCustomer)}</p></div>
     `;
+}
+
+function calculateBreakEven(){
+    const avgRevenue = sum("revenue") / businessData.length;
+    const avgExpenses = sum("expenses") / businessData.length;
+    if (avgRevenue <= avgExpenses) return "Not profitable yet";
+    const needed = avgExpenses;
+    return formatCurrency(needed) + " / month";
 }
 
 /* ================= CORE CHARTS ================= */
@@ -194,15 +215,32 @@ function renderCoreCharts() {
     expenseChart = createChart("expenseChart", "bar", labels, map("expenses"), "#FF5252", "Expenses");
 }
 
-/* ================= FORECAST (SMALL BUSINESS OPTIMISED) ================= */
+function createChart(id, type, labels, data, color, label) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return null;
 
-function renderForecast() {
+    return new Chart(canvas, {
+        type,
+        data: {
+            labels,
+            datasets: [{
+                label,
+                data,
+                borderColor: color,
+                backgroundColor: type === "bar" ? color : "transparent",
+                tension: 0.4
+            }]
+        },
+        options: baseChartOptions()
+    });
+}
 
-    if (!businessData.length) return;
-    if (forecastChart) forecastChart.destroy();
+/* ================= FORECAST ================= */
+
+function getForecastValues(){
 
     const values = map("revenue");
-    if (values.length < 2) return;
+    if (values.length < 2) return [];
 
     const growthRates = [];
     for (let i = 1; i < values.length; i++) {
@@ -213,7 +251,7 @@ function renderForecast() {
 
     const avgGrowth = growthRates.length
         ? growthRates.reduce((a, b) => a + b, 0) / growthRates.length
-        : 0.05; // default 5% growth if limited data
+        : 0.05;
 
     let lastValue = values[values.length - 1];
     const predictions = [];
@@ -222,6 +260,19 @@ function renderForecast() {
         lastValue = lastValue * (1 + avgGrowth);
         predictions.push(lastValue);
     }
+
+    return predictions;
+}
+
+function renderForecast() {
+
+    if (!businessData.length) return;
+    if (forecastChart) forecastChart.destroy();
+
+    const values = map("revenue");
+    const predictions = getForecastValues();
+
+    if (!predictions.length) return;
 
     forecastChart = new Chart(
         document.getElementById("forecastChart"),
@@ -251,60 +302,23 @@ function generateReport() {
 
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
+    const margin = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
 
-    if (!totalRevenue) return;
-
-    const margin = ((totalProfit / totalRevenue) * 100).toFixed(1);
-
-    let health = "Stable";
-    if (totalProfit <= 0) health = "Critical";
-    else if (margin < 15) health = "Warning";
+    const breakEven = calculateBreakEven();
+    const forecast = getForecastValues();
 
     reportBox.innerHTML = `
-        <p><strong>Business Health:</strong> ${health}</p>
+        <p><strong>Business Health:</strong> ${margin < 15 ? "Warning" : "Stable"}</p>
         <p>Total Revenue: ${formatCurrency(totalRevenue)}</p>
         <p>Total Profit: ${formatCurrency(totalProfit)}</p>
         <p>Profit Margin: ${margin}%</p>
+        <p>Break-even Target: ${breakEven}</p>
+        ${forecast.length ? `<p>Next 3 Month Forecast: 
+        ${forecast.map(v => formatCurrency(v)).join(" | ")}</p>` : ""}
     `;
 }
 
-/* ================= LOGO UPLOAD (FIXED) ================= */
-
-function setupLogoUpload() {
-
-    const input = document.getElementById("companyLogoInput");
-    const preview = document.getElementById("logoPreview");
-
-    if (!input) return;
-
-    input.addEventListener("change", function(e) {
-
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            companyLogoData = event.target.result;
-            localStorage.setItem("impactLogo", companyLogoData);
-            if (preview) {
-                preview.src = companyLogoData;
-                preview.style.display = "block";
-            }
-        };
-        reader.readAsDataURL(file);
-
-    });
-}
-
-function restoreLogoPreview(){
-    const preview = document.getElementById("logoPreview");
-    if (companyLogoData && preview){
-        preview.src = companyLogoData;
-        preview.style.display = "block";
-    }
-}
-
-/* ================= EXECUTIVE PDF (IMPROVED DESIGN) ================= */
+/* ================= EXECUTIVE PDF ================= */
 
 async function exportExecutivePDF() {
 
@@ -313,10 +327,11 @@ async function exportExecutivePDF() {
         return;
     }
 
-    if (!canExportPDF()) return;
-
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+
+    const businessName = document.getElementById("businessName")?.value || "Business";
+    const startDate = document.getElementById("businessStartDate")?.value || "N/A";
 
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
@@ -324,34 +339,47 @@ async function exportExecutivePDF() {
         ? ((totalProfit / totalRevenue) * 100).toFixed(1)
         : 0;
 
-    let y = 20;
+    /* Gradient Header */
+    doc.setFillColor(37,99,235);
+    doc.rect(0,0,210,40,"F");
 
-    if (companyLogoData && userPlan === "premium") {
-        doc.addImage(companyLogoData, "PNG", 15, 10, 30, 30);
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(16);
+    doc.text(businessName + " Executive Report", 105, 20, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.text("Established: " + startDate, 105, 28, { align: "center" });
+
+    doc.setTextColor(0,0,0);
+
+    let y = 55;
+
+    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y); y+=8;
+    doc.text("Total Profit: " + formatCurrency(totalProfit), 20, y); y+=8;
+    doc.text("Profit Margin: " + margin + "%", 20, y); y+=12;
+
+    /* Forecast in PDF */
+    const forecast = getForecastValues();
+    if (forecast.length){
+        doc.text("Next 3 Month Forecast:", 20, y); y+=8;
+        forecast.forEach((val,i)=>{
+            doc.text("F"+(i+1)+": "+formatCurrency(val), 30, y);
+            y+=8;
+        });
     }
 
-    doc.setFontSize(18);
-    doc.text("ImpactGrid Executive Report", 105, y, { align: "center" });
-    y += 15;
+    /* Embed Chart */
+    if (revenueChart){
+        const imgData = revenueChart.toBase64Image();
+        doc.addImage(imgData, "PNG", 20, y, 170, 60);
+    }
 
-    doc.setFontSize(12);
-    doc.text("Business Performance Summary", 105, y, { align: "center" });
-    y += 20;
-
-    doc.setDrawColor(200);
-    doc.line(20, y, 190, y);
-    y += 10;
-
-    doc.setFontSize(11);
-    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y);
-    y += 8;
-    doc.text("Total Profit: " + formatCurrency(totalProfit), 20, y);
-    y += 8;
-    doc.text("Profit Margin: " + margin + "%", 20, y);
-
-    y += 15;
-    doc.setDrawColor(200);
-    doc.line(20, y, 190, y);
+    /* Premium Watermark */
+    if (userPlan === "premium"){
+        doc.setTextColor(150);
+        doc.setFontSize(40);
+        doc.text("CONFIDENTIAL", 105, 200, { align:"center", angle:45 });
+    }
 
     doc.save("ImpactGrid_Executive_Report.pdf");
 }
