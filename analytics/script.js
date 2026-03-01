@@ -1,3 +1,359 @@
+/* ================= GLOBAL STATE ================= */
+
+let businessData = [];
+let revenueChart = null;
+let profitChart = null;
+let expenseChart = null;
+let forecastChart = null;
+let comparisonChart = null;
+let companyLogoData = null;
+
+let userPlan = localStorage.getItem("impactPlan") || "free";
+
+/* ================= INIT ================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    loadFromStorage();
+    autoLogin();
+    loadTheme();
+    setupLogoUpload();
+
+});
+
+/* ================= PLAN SYSTEM ================= */
+
+function setPlan(plan) {
+    userPlan = plan;
+    localStorage.setItem("impactPlan", plan);
+    alert("Plan updated to: " + plan.toUpperCase());
+}
+
+/* ================= AUTH ================= */
+
+function login() {
+    const user = document.getElementById("username")?.value;
+    const pass = document.getElementById("password")?.value;
+
+    if (user && pass) {
+        localStorage.setItem("impactUser", user);
+        showApp();
+    } else {
+        alert("Enter credentials");
+    }
+}
+
+function autoLogin() {
+    if (localStorage.getItem("impactUser")) {
+        showApp();
+    }
+}
+
+function logout() {
+    localStorage.removeItem("impactUser");
+    location.reload();
+}
+
+function showApp() {
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("app").classList.remove("hidden");
+}
+
+/* ================= THEME ================= */
+
+function toggleTheme() {
+    document.body.classList.toggle("light-mode");
+    localStorage.setItem(
+        "impactTheme",
+        document.body.classList.contains("light-mode") ? "light" : "dark"
+    );
+}
+
+function loadTheme() {
+    if (localStorage.getItem("impactTheme") === "light") {
+        document.body.classList.add("light-mode");
+    }
+}
+
+/* ================= SECTION NAV ================= */
+
+function showSection(id, evt) {
+
+    if ((id === "forecast" || id === "comparison") && userPlan === "free") {
+        alert("Upgrade to Growth or Premium to access this feature.");
+        return;
+    }
+
+    document.querySelectorAll(".page-section")
+        .forEach(s => s.classList.remove("active-section"));
+
+    document.getElementById(id)?.classList.add("active-section");
+
+    document.querySelectorAll(".sidebar li")
+        .forEach(li => li.classList.remove("active"));
+
+    if (evt) evt.target.classList.add("active");
+
+    if (id === "forecast") renderForecast();
+    if (id === "comparison") renderComparison();
+}
+
+/* ================= DATA ================= */
+
+function addData() {
+
+    if (userPlan === "free" && businessData.length >= 3) {
+        alert("Free plan supports only 3 months of data.");
+        return;
+    }
+
+    const month = document.getElementById("month")?.value;
+    const revenue = parseFloat(document.getElementById("revenue")?.value);
+    const expenses = parseFloat(document.getElementById("expenses")?.value);
+
+    if (!month || isNaN(revenue) || isNaN(expenses)) {
+        alert("Fill required fields.");
+        return;
+    }
+
+    const profit = revenue - expenses;
+
+    businessData.push({ month, revenue, expenses, profit });
+
+    saveToStorage();
+    updateAll();
+}
+
+/* ================= STORAGE ================= */
+
+function saveToStorage() {
+    localStorage.setItem("impactGridData", JSON.stringify(businessData));
+}
+
+function loadFromStorage() {
+    const saved = localStorage.getItem("impactGridData");
+    if (saved) {
+        businessData = JSON.parse(saved);
+        updateAll();
+    }
+}
+
+function clearAllData() {
+    localStorage.removeItem("impactGridData");
+    location.reload();
+}
+
+/* ================= MASTER UPDATE ================= */
+
+function updateAll() {
+
+    if (!businessData.length) return;
+
+    renderKPIs();
+    renderCoreCharts();
+    generateReport();
+
+}
+
+/* ================= KPI ================= */
+
+function renderKPIs() {
+
+    const container = document.getElementById("kpiContainer");
+    if (!container) return;
+
+    const totalRevenue = sum("revenue");
+    const totalProfit = sum("profit");
+
+    container.innerHTML = `
+        <div class="kpi">
+            <h3>Total Revenue</h3>
+            <p>${formatCurrency(totalRevenue)}</p>
+        </div>
+        <div class="kpi">
+            <h3>Total Profit</h3>
+            <p>${formatCurrency(totalProfit)}</p>
+        </div>
+    `;
+}
+
+/* ================= CORE CHARTS ================= */
+
+function renderCoreCharts() {
+
+    if (typeof Chart === "undefined") return;
+
+    destroyCharts();
+
+    const labels = businessData.map(d => d.month);
+
+    revenueChart = createChart("revenueChart", "line", labels, map("revenue"), "#4CAF50", "Revenue");
+    profitChart = createChart("profitChart", "line", labels, map("profit"), "#2196F3", "Profit");
+    expenseChart = createChart("expenseChart", "bar", labels, map("expenses"), "#FF5252", "Expenses");
+}
+
+function createChart(id, type, labels, data, color, label) {
+
+    const canvas = document.getElementById(id);
+    if (!canvas) return null;
+
+    return new Chart(canvas, {
+        type,
+        data: {
+            labels,
+            datasets: [{
+                label,
+                data,
+                borderColor: color,
+                backgroundColor: type === "bar" ? color : "transparent",
+                tension: 0.4
+            }]
+        },
+        options: baseChartOptions()
+    });
+}
+
+/* ================= FORECAST ================= */
+
+function renderForecast() {
+
+    if (!businessData.length) return;
+    if (forecastChart) forecastChart.destroy();
+
+    const values = map("revenue");
+    if (values.length < 2) return;
+
+    const predictions = simpleRegression(values, 3);
+
+    forecastChart = new Chart(
+        document.getElementById("forecastChart"),
+        {
+            type: "line",
+            data: {
+                labels: [...businessData.map(d => d.month), "F1", "F2", "F3"],
+                datasets: [{
+                    label: "Revenue Forecast",
+                    data: [...values, ...predictions],
+                    borderColor: "#3b82f6",
+                    borderDash: [5,5],
+                    tension: 0.4
+                }]
+            },
+            options: baseChartOptions()
+        }
+    );
+}
+
+/* ================= MULTI METRIC ================= */
+
+function renderComparison() {
+
+    if (!businessData.length) return;
+    if (comparisonChart) comparisonChart.destroy();
+
+    comparisonChart = new Chart(
+        document.getElementById("comparisonChart"),
+        {
+            type: "line",
+            data: {
+                labels: businessData.map(d => d.month),
+                datasets: [
+                    dataset("Revenue","revenue","#4CAF50"),
+                    dataset("Profit","profit","#2196F3"),
+                    dataset("Expenses","expenses","#FF5252")
+                ]
+            },
+            options: baseChartOptions()
+        }
+    );
+}
+
+function dataset(label,key,color){
+    return {
+        label,
+        data: map(key),
+        borderColor: color,
+        tension: 0.4
+    };
+}
+
+/* ================= SMART REPORT ================= */
+
+function generateReport() {
+
+    const reportBox = document.getElementById("performanceReport");
+    if (!reportBox) return;
+
+    const totalRevenue = sum("revenue");
+    const totalProfit = sum("profit");
+
+    if (!totalRevenue) return;
+
+    const latest = businessData[businessData.length - 1];
+
+    let health = "Stable";
+    if (totalProfit <= 0) health = "Critical";
+    else if (totalProfit < totalRevenue * 0.15) health = "Warning";
+
+    reportBox.innerHTML = `
+        <p><strong>Business Health:</strong> ${health}</p>
+        <p>Total Revenue: ${formatCurrency(totalRevenue)}</p>
+        <p>Total Profit: ${formatCurrency(totalProfit)}</p>
+        <p>Latest Month Revenue: ${formatCurrency(latest.revenue)}</p>
+    `;
+}
+
+/* ================= LOGO UPLOAD ================= */
+
+function setupLogoUpload() {
+
+    const input = document.getElementById("companyLogoInput");
+    if (!input) return;
+
+    input.addEventListener("change", function(e) {
+
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            companyLogoData = event.target.result;
+        };
+        reader.readAsDataURL(file);
+
+    });
+}
+
+/* ================= EXPORT CONTROL ================= */
+
+function canExportPDF() {
+
+    if (userPlan === "free") {
+        alert("Upgrade to export Executive PDFs.");
+        return false;
+    }
+
+    if (userPlan === "premium") return true;
+
+    let month = new Date().getMonth();
+    let savedMonth = localStorage.getItem("exportMonth");
+    let count = parseInt(localStorage.getItem("exportCount") || "0");
+
+    if (savedMonth != month) {
+        count = 0;
+        localStorage.setItem("exportMonth", month);
+        localStorage.setItem("exportCount", "0");
+    }
+
+    if (count >= 3) {
+        alert("Monthly export limit reached.");
+        return false;
+    }
+
+    localStorage.setItem("exportCount", count + 1);
+    return true;
+}
+
 /* ================= EXECUTIVE PDF ================= */
 
 async function exportExecutivePDF() {
@@ -8,7 +364,6 @@ async function exportExecutivePDF() {
     }
 
     if (!canExportPDF()) return;
-    if (typeof window.jspdf === "undefined") return;
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -19,131 +374,73 @@ async function exportExecutivePDF() {
         ? ((totalProfit / totalRevenue) * 100).toFixed(1)
         : 0;
 
-    const latest = businessData[businessData.length - 1];
-
     let y = 20;
 
-    /* ================= HEADER BAR ================= */
-
-    doc.setFillColor(15, 23, 42); // dark navy
-    doc.rect(0, 0, 210, 35, "F");
-
     if (companyLogoData && userPlan === "premium") {
-        doc.addImage(companyLogoData, "PNG", 15, 8, 25, 25);
+        doc.addImage(companyLogoData, "PNG", 15, 10, 30, 30);
     }
 
-    doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
-    doc.text("ImpactGrid Intelligence Report", 105, 18, { align: "center" });
-
-    doc.setFontSize(10);
-    doc.text("Enterprise Performance & Strategic Overview", 105, 26, { align: "center" });
-
-    y = 50;
-
-    doc.setTextColor(0, 0, 0);
-
-    /* ================= KPI SUMMARY BOX ================= */
-
-    doc.setDrawColor(230);
-    doc.setFillColor(245, 247, 250);
-    doc.roundedRect(15, y, 180, 35, 4, 4, "FD");
+    doc.text("ImpactGrid Intelligence Report", 105, y, { align: "center" });
+    y += 12;
 
     doc.setFontSize(12);
-    doc.text("Executive Summary", 20, y + 8);
+    doc.text("Enterprise Performance Overview", 105, y, { align: "center" });
+    y += 20;
 
     doc.setFontSize(11);
-    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y + 18);
-    doc.text("Total Profit: " + formatCurrency(totalProfit), 110, y + 18);
-
-    doc.text("Profit Margin: " + margin + "%", 20, y + 28);
-    doc.text("Latest Revenue: " + formatCurrency(latest.revenue), 110, y + 28);
-
-    y += 50;
-
-    /* ================= PERFORMANCE ANALYSIS ================= */
-
-    let health = "Stable";
-    if (totalProfit <= 0) health = "Critical";
-    else if (totalProfit < totalRevenue * 0.15) health = "Warning";
-
-    doc.setFontSize(14);
-    doc.text("Performance Analysis", 15, y);
-    y += 10;
-
-    doc.setFontSize(11);
-
-    const analysisText =
-        "The business currently shows a " + health +
-        " financial position. Across recorded periods, the company achieved a " +
-        margin + "% profit margin. Continued focus on revenue expansion and operational cost optimization will strengthen long-term sustainability and investor confidence.";
-
-    const analysisLines = doc.splitTextToSize(analysisText, 180);
-    doc.text(analysisLines, 15, y);
-
-    y += analysisLines.length * 7 + 10;
-
-    /* ================= STRATEGIC INSIGHT SECTION ================= */
-
-    doc.setFontSize(14);
-    doc.text("Strategic Outlook", 15, y);
-    y += 10;
-
-    doc.setFontSize(11);
-
-    const outlookText =
-        "Revenue trajectory suggests consistent performance trends. Forecast modeling indicates potential forward growth if current slope continues. Strategic investment into marketing efficiency and customer acquisition could accelerate scaling performance.";
-
-    const outlookLines = doc.splitTextToSize(outlookText, 180);
-    doc.text(outlookLines, 15, y);
-
-    y += outlookLines.length * 7 + 15;
-
-    /* ================= PREMIUM INSIGHTS ================= */
-
-    if (userPlan === "premium") {
-
-        doc.setFontSize(14);
-        doc.text("Advanced Intelligence Insights", 15, y);
-        y += 10;
-
-        doc.setFontSize(11);
-
-        const premiumInsights =
-            "Risk Assessment: Moderate operational exposure.\n" +
-            "Growth Opportunity Index: 82/100.\n" +
-            "Projected Revenue Continuity: Positive Trend.\n" +
-            "Investor Readiness Score: Strong (pending capital efficiency improvements).";
-
-        const premiumLines = doc.splitTextToSize(premiumInsights, 180);
-        doc.text(premiumLines, 15, y);
-
-        y += premiumLines.length * 7 + 10;
-
-        /* Watermark */
-        doc.setFontSize(50);
-        doc.setTextColor(230);
-        doc.text("Premium Intelligence", 105, 200, {
-            align: "center",
-            angle: 45
-        });
-
-        doc.setTextColor(0, 0, 0);
-    }
-
-    /* ================= FOOTER ================= */
-
-    doc.setDrawColor(220);
-    doc.line(15, 280, 195, 280);
-
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text(
-        "Generated by ImpactGrid Enterprise Intelligence Platform | Confidential Business Report",
-        105,
-        287,
-        { align: "center" }
-    );
+    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y);
+    y += 8;
+    doc.text("Total Profit: " + formatCurrency(totalProfit), 20, y);
+    y += 8;
+    doc.text("Profit Margin: " + margin + "%", 20, y);
 
     doc.save("ImpactGrid_Executive_Report.pdf");
+}
+
+/* ================= HELPERS ================= */
+
+function destroyCharts(){
+    revenueChart?.destroy();
+    profitChart?.destroy();
+    expenseChart?.destroy();
+}
+
+function sum(key){
+    return businessData.reduce((a,b)=>a+b[key],0);
+}
+
+function map(key){
+    return businessData.map(d=>d[key]);
+}
+
+function formatCurrency(val){
+    return "£"+Number(val).toLocaleString(undefined,{
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+    });
+}
+
+function baseChartOptions(){
+    return { responsive:true, maintainAspectRatio:false };
+}
+
+function simpleRegression(data, periods){
+
+    const n = data.length;
+    const x = [...Array(n).keys()];
+    const sumX = x.reduce((a,b)=>a+b,0);
+    const sumY = data.reduce((a,b)=>a+b,0);
+    const sumXY = x.reduce((s,xi,i)=>s+xi*data[i],0);
+    const sumXX = x.reduce((s,xi)=>s+xi*xi,0);
+
+    const slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
+    const intercept = (sumY - slope*sumX)/n;
+
+    const result = [];
+    for(let i=1;i<=periods;i++){
+        result.push(slope*(n+i-1)+intercept);
+    }
+
+    return result;
 }
