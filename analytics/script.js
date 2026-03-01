@@ -6,7 +6,7 @@ let profitChart = null;
 let expenseChart = null;
 let forecastChart = null;
 let comparisonChart = null;
-let companyLogoData = localStorage.getItem("impactLogo") || null;
+let companyLogoData = null;
 
 let userPlan = localStorage.getItem("impactPlan") || "free";
 
@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
     autoLogin();
     loadTheme();
     setupLogoUpload();
-    restoreLogoPreview();
 
 });
 
@@ -111,8 +110,6 @@ function addData() {
     const month = document.getElementById("month")?.value;
     const revenue = parseFloat(document.getElementById("revenue")?.value);
     const expenses = parseFloat(document.getElementById("expenses")?.value);
-    const customers = parseFloat(document.getElementById("customers")?.value) || 0;
-    const marketing = parseFloat(document.getElementById("marketing")?.value) || 0;
 
     if (!month || isNaN(revenue) || isNaN(expenses)) {
         alert("Fill required fields.");
@@ -121,14 +118,7 @@ function addData() {
 
     const profit = revenue - expenses;
 
-    businessData.push({
-        month,
-        revenue,
-        expenses,
-        profit,
-        customers,
-        marketing
-    });
+    businessData.push({ month, revenue, expenses, profit });
 
     saveToStorage();
     updateAll();
@@ -144,14 +134,6 @@ function loadFromStorage() {
     const saved = localStorage.getItem("impactGridData");
     if (saved) {
         businessData = JSON.parse(saved);
-
-        // Backward compatibility (older entries without customers/marketing)
-        businessData = businessData.map(d => ({
-            customers: 0,
-            marketing: 0,
-            ...d
-        }));
-
         updateAll();
     }
 }
@@ -170,6 +152,7 @@ function updateAll() {
     renderKPIs();
     renderCoreCharts();
     generateReport();
+
 }
 
 /* ================= KPI ================= */
@@ -335,19 +318,10 @@ function setupLogoUpload() {
         const reader = new FileReader();
         reader.onload = function(event) {
             companyLogoData = event.target.result;
-            localStorage.setItem("impactLogo", companyLogoData);
-            restoreLogoPreview();
         };
         reader.readAsDataURL(file);
-    });
-}
 
-function restoreLogoPreview(){
-    const preview = document.getElementById("logoPreview");
-    if (companyLogoData && preview){
-        preview.src = companyLogoData;
-        preview.style.display = "block";
-    }
+    });
 }
 
 /* ================= EXPORT CONTROL ================= */
@@ -433,11 +407,11 @@ function destroyCharts(){
 }
 
 function sum(key){
-    return businessData.reduce((a,b)=>a+(b[key]||0),0);
+    return businessData.reduce((a,b)=>a+b[key],0);
 }
 
 function map(key){
-    return businessData.map(d=>d[key]||0);
+    return businessData.map(d=>d[key]);
 }
 
 function formatCurrency(val){
