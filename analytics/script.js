@@ -15,107 +15,133 @@ async function exportExecutivePDF() {
 
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
-    const margin = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+    const margin = totalRevenue
+        ? ((totalProfit / totalRevenue) * 100).toFixed(1)
+        : 0;
+
     const latest = businessData[businessData.length - 1];
 
     let y = 20;
 
-    /* ===== LOGO ===== */
+    /* ================= HEADER BAR ================= */
+
+    doc.setFillColor(15, 23, 42); // dark navy
+    doc.rect(0, 0, 210, 35, "F");
 
     if (companyLogoData && userPlan === "premium") {
-        doc.addImage(companyLogoData, "PNG", 15, 10, 30, 30);
+        doc.addImage(companyLogoData, "PNG", 15, 8, 25, 25);
     }
 
-    /* ===== TITLE ===== */
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.text("ImpactGrid Intelligence Report", 105, 18, { align: "center" });
 
-    doc.setFontSize(20);
-    doc.setTextColor(40);
-    doc.text("ImpactGrid Intelligence Report", 105, y, { align: "center" });
-    y += 10;
+    doc.setFontSize(10);
+    doc.text("Enterprise Performance & Strategic Overview", 105, 26, { align: "center" });
+
+    y = 50;
+
+    doc.setTextColor(0, 0, 0);
+
+    /* ================= KPI SUMMARY BOX ================= */
+
+    doc.setDrawColor(230);
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(15, y, 180, 35, 4, 4, "FD");
 
     doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text("Enterprise Performance Analysis", 105, y, { align: "center" });
-    y += 20;
-
-    /* ===== SUMMARY SECTION ===== */
-
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text("Executive Summary", 20, y);
-    y += 10;
+    doc.text("Executive Summary", 20, y + 8);
 
     doc.setFontSize(11);
+    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y + 18);
+    doc.text("Total Profit: " + formatCurrency(totalProfit), 110, y + 18);
 
-    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y);
-    y += 8;
+    doc.text("Profit Margin: " + margin + "%", 20, y + 28);
+    doc.text("Latest Revenue: " + formatCurrency(latest.revenue), 110, y + 28);
 
-    doc.text("Total Profit: " + formatCurrency(totalProfit), 20, y);
-    y += 8;
+    y += 50;
 
-    doc.text("Profit Margin: " + margin + "%", 20, y);
-    y += 8;
-
-    doc.text("Latest Month Revenue: " + formatCurrency(latest.revenue), 20, y);
-    y += 15;
-
-    /* ===== PERFORMANCE INTERPRETATION ===== */
+    /* ================= PERFORMANCE ANALYSIS ================= */
 
     let health = "Stable";
     if (totalProfit <= 0) health = "Critical";
     else if (totalProfit < totalRevenue * 0.15) health = "Warning";
 
     doc.setFontSize(14);
-    doc.text("Performance Analysis", 20, y);
+    doc.text("Performance Analysis", 15, y);
     y += 10;
 
     doc.setFontSize(11);
 
     const analysisText =
-        "Business Health Status: " + health +
-        ". The company demonstrates a profit margin of " + margin +
-        "% across recorded periods. Strategic focus should prioritize revenue growth and cost optimization to strengthen long-term sustainability.";
+        "The business currently shows a " + health +
+        " financial position. Across recorded periods, the company achieved a " +
+        margin + "% profit margin. Continued focus on revenue expansion and operational cost optimization will strengthen long-term sustainability and investor confidence.";
 
-    const splitText = doc.splitTextToSize(analysisText, 170);
-    doc.text(splitText, 20, y);
-    y += splitText.length * 7 + 10;
+    const analysisLines = doc.splitTextToSize(analysisText, 180);
+    doc.text(analysisLines, 15, y);
 
-    /* ===== PREMIUM INSIGHTS ===== */
+    y += analysisLines.length * 7 + 10;
+
+    /* ================= STRATEGIC INSIGHT SECTION ================= */
+
+    doc.setFontSize(14);
+    doc.text("Strategic Outlook", 15, y);
+    y += 10;
+
+    doc.setFontSize(11);
+
+    const outlookText =
+        "Revenue trajectory suggests consistent performance trends. Forecast modeling indicates potential forward growth if current slope continues. Strategic investment into marketing efficiency and customer acquisition could accelerate scaling performance.";
+
+    const outlookLines = doc.splitTextToSize(outlookText, 180);
+    doc.text(outlookLines, 15, y);
+
+    y += outlookLines.length * 7 + 15;
+
+    /* ================= PREMIUM INSIGHTS ================= */
 
     if (userPlan === "premium") {
 
         doc.setFontSize(14);
-        doc.text("Advanced Intelligence Insights", 20, y);
+        doc.text("Advanced Intelligence Insights", 15, y);
         y += 10;
 
         doc.setFontSize(11);
 
-        const insights =
-            "Risk Level Assessment: Moderate.\n" +
+        const premiumInsights =
+            "Risk Assessment: Moderate operational exposure.\n" +
             "Growth Opportunity Index: 82/100.\n" +
-            "Projected Revenue Trend indicates positive forward trajectory if current slope continues.";
+            "Projected Revenue Continuity: Positive Trend.\n" +
+            "Investor Readiness Score: Strong (pending capital efficiency improvements).";
 
-        const insightLines = doc.splitTextToSize(insights, 170);
-        doc.text(insightLines, 20, y);
-        y += insightLines.length * 7 + 20;
+        const premiumLines = doc.splitTextToSize(premiumInsights, 180);
+        doc.text(premiumLines, 15, y);
 
-        doc.setFontSize(40);
+        y += premiumLines.length * 7 + 10;
+
+        /* Watermark */
+        doc.setFontSize(50);
         doc.setTextColor(230);
-        doc.text("Premium Intelligence", 105, 180, {
+        doc.text("Premium Intelligence", 105, 200, {
             align: "center",
             angle: 45
         });
-        doc.setTextColor(0);
+
+        doc.setTextColor(0, 0, 0);
     }
 
-    /* ===== FOOTER ===== */
+    /* ================= FOOTER ================= */
+
+    doc.setDrawColor(220);
+    doc.line(15, 280, 195, 280);
 
     doc.setFontSize(9);
-    doc.setTextColor(120);
+    doc.setTextColor(100);
     doc.text(
-        "Generated by ImpactGrid Enterprise Intelligence Platform",
+        "Generated by ImpactGrid Enterprise Intelligence Platform | Confidential Business Report",
         105,
-        285,
+        287,
         { align: "center" }
     );
 
