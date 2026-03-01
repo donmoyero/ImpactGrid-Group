@@ -7,36 +7,30 @@ let expenseChart = null;
 let forecastChart = null;
 let comparisonChart = null;
 
-/* ================= PLAN SYSTEM ================= */
-
 let userPlan = localStorage.getItem("impactPlan") || "free";
 
 /* ================= INIT ================= */
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    /* ===== STRIPE PLAN ACTIVATION ===== */
-
+    // Stripe return handling
     const params = new URLSearchParams(window.location.search);
     const planFromURL = params.get("plan");
 
     if (planFromURL === "pro" || planFromURL === "premium") {
-        localStorage.setItem("impactPlan", planFromURL);
         userPlan = planFromURL;
-
+        localStorage.setItem("impactPlan", planFromURL);
         showActivationBanner(planFromURL);
-
-        // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    loadFromStorage();
-    autoLogin();
     loadTheme();
+    autoLogin();
+    loadFromStorage();
     updateUIByPlan();
 });
 
-/* ================= PROFESSIONAL ACTIVATION BANNER ================= */
+/* ================= SAFE ACTIVATION BANNER ================= */
 
 function showActivationBanner(plan) {
     const banner = document.createElement("div");
@@ -49,22 +43,19 @@ function showActivationBanner(plan) {
     banner.style.color = "white";
     banner.style.borderRadius = "8px";
     banner.style.zIndex = "9999";
-    banner.style.boxShadow = "0 10px 25px rgba(0,0,0,0.3)";
     document.body.appendChild(banner);
 
     setTimeout(() => banner.remove(), 4000);
 }
 
-/* ================= UI CONTROL BY PLAN ================= */
+/* ================= UI CONTROL ================= */
 
 function updateUIByPlan() {
+    const brandingInput = document.getElementById("companyLogoInput");
+    if (!brandingInput) return;
 
-    const brandingSection = document.getElementById("companyLogoInput");
-
-    if (brandingSection) {
-        brandingSection.parentElement.style.display =
-            userPlan === "premium" ? "block" : "none";
-    }
+    brandingInput.parentElement.style.display =
+        userPlan === "premium" ? "block" : "none";
 }
 
 /* ================= AUTH ================= */
@@ -73,17 +64,17 @@ function login() {
     const user = document.getElementById("username").value;
     const pass = document.getElementById("password").value;
 
-    if (user && pass) {
-        localStorage.setItem("impactUser", user);
-        showApp();
-    } else {
+    if (!user || !pass) {
         alert("Enter credentials");
+        return;
     }
+
+    localStorage.setItem("impactUser", user);
+    showApp();
 }
 
 function autoLogin() {
-    const user = localStorage.getItem("impactUser");
-    if (user) showApp();
+    if (localStorage.getItem("impactUser")) showApp();
 }
 
 function logout() {
@@ -115,10 +106,11 @@ function loadTheme() {
 /* ================= SIDEBAR ================= */
 
 function toggleSidebar() {
-    document.getElementById("sidebar").classList.toggle("collapsed");
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.classList.toggle("collapsed");
 }
 
-/* ================= SECTION NAV ================= */
+/* ================= NAVIGATION ================= */
 
 function showSection(id, evt) {
 
@@ -127,11 +119,12 @@ function showSection(id, evt) {
         return;
     }
 
-    document.querySelectorAll(".page-section").forEach(s =>
-        s.classList.remove("active-section")
+    document.querySelectorAll(".page-section").forEach(section =>
+        section.classList.remove("active-section")
     );
 
-    document.getElementById(id).classList.add("active-section");
+    const target = document.getElementById(id);
+    if (target) target.classList.add("active-section");
 
     document.querySelectorAll(".sidebar li").forEach(li =>
         li.classList.remove("active")
@@ -159,6 +152,7 @@ function addData() {
     }
 
     const profit = revenue - expenses;
+
     businessData.push({ month, revenue, expenses, profit });
 
     saveToStorage();
@@ -187,6 +181,7 @@ function clearAllData() {
 /* ================= MASTER UPDATE ================= */
 
 function updateAll() {
+
     if (businessData.length === 0) return;
 
     renderKPIs();
@@ -203,7 +198,9 @@ function updateAll() {
 /* ================= KPI ================= */
 
 function renderKPIs() {
+
     const container = document.getElementById("kpiContainer");
+    if (!container) return;
 
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
@@ -225,6 +222,7 @@ function renderKPIs() {
 function renderCoreCharts() {
 
     destroyCharts();
+
     const labels = businessData.map(d => d.month);
 
     revenueChart = new Chart(document.getElementById("revenueChart"), {
@@ -272,10 +270,12 @@ function renderCoreCharts() {
 /* ================= FORECAST ================= */
 
 function renderForecast() {
+
     if (forecastChart) forecastChart.destroy();
 
     const labels = businessData.map(d => d.month);
     const values = map("revenue");
+
     if (values.length < 2) return;
 
     const predictions = simpleRegression(values, 3);
@@ -298,6 +298,7 @@ function renderForecast() {
 /* ================= MULTI METRIC ================= */
 
 function renderComparison() {
+
     if (comparisonChart) comparisonChart.destroy();
 
     comparisonChart = new Chart(document.getElementById("comparisonChart"), {
@@ -314,14 +315,18 @@ function renderComparison() {
     });
 }
 
-/* ================= SMART REPORT ================= */
+/* ================= REPORT ================= */
 
 function generateReport() {
+
     const reportBox = document.getElementById("performanceReport");
+    if (!reportBox) return;
 
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
     const latest = businessData[businessData.length - 1];
+
+    if (!latest) return;
 
     let health = "Stable";
     if (totalProfit <= 0) health = "Critical";
@@ -343,11 +348,16 @@ function destroyCharts() {
     if (expenseChart) expenseChart.destroy();
 }
 
-function sum(key){ return businessData.reduce((a,b)=>a+b[key],0); }
-function map(key){ return businessData.map(d=>d[key]); }
+function sum(key){
+    return businessData.reduce((a,b)=>a + (b[key] || 0), 0);
+}
+
+function map(key){
+    return businessData.map(d => d[key] || 0);
+}
 
 function formatCurrency(val){
-    return "£"+Number(val).toLocaleString(undefined,{
+    return "£" + Number(val).toLocaleString(undefined,{
         minimumFractionDigits:2,
         maximumFractionDigits:2
     });
@@ -363,8 +373,8 @@ function baseChartOptions(){
 function simpleRegression(data, periods){
     const n = data.length;
     const x = [...Array(n).keys()];
-    const sumX = x.reduce((a,b)=>a+b);
-    const sumY = data.reduce((a,b)=>a+b);
+    const sumX = x.reduce((a,b)=>a+b,0);
+    const sumY = data.reduce((a,b)=>a+b,0);
     const sumXY = x.reduce((s,xi,i)=>s+xi*data[i],0);
     const sumXX = x.reduce((s,xi)=>s+xi*xi,0);
 
