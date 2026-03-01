@@ -1,32 +1,23 @@
-/* ================= SAFE ISOLATION ================= */
-
-.app-layout,
-.app-layout * {
+/* ================= GLOBAL RESET ================= */
+* {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    margin: 0;
-    padding: 0;
     font-family: 'Inter', sans-serif;
-}
-
-/* ================= APP LAYOUT ================= */
-
-.app-layout {
-    display: flex;
-    min-height: 100vh;
     background: linear-gradient(135deg, #0f172a, #1e293b);
     color: #e2e8f0;
-    overflow-x: hidden;
+    min-height: 100vh;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* ================= AUTH ================= */
-
+/* ================= AUTH SCREEN ================= */
 .auth-screen {
     display: flex;
     justify-content: center;
@@ -54,26 +45,29 @@ body {
     color: white;
 }
 
-/* ================= SIDEBAR ================= */
+/* ================= APP LAYOUT ================= */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
 
+/* ================= SIDEBAR ================= */
 .sidebar {
     width: 240px;
     background: #0f172a;
     padding: 25px 20px;
     border-right: 1px solid rgba(255,255,255,0.05);
     transition: all 0.3s ease;
-    flex-shrink: 0;
+    position: relative;
+    z-index: 1000;
 }
 
 .sidebar.collapsed {
     width: 80px;
 }
 
-.sidebar-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
+.sidebar.mobile-open {
+    left: 0;
 }
 
 .logo-container {
@@ -88,8 +82,12 @@ body {
 }
 
 .logo-text {
-    font-weight: 700;
     font-size: 16px;
+    font-weight: 700;
+}
+
+.sidebar.collapsed .logo-text {
+    display: none;
 }
 
 .collapse-btn {
@@ -102,8 +100,7 @@ body {
 
 .sidebar ul {
     list-style: none;
-    padding: 0;
-    margin-top: 10px;
+    margin-top: 25px;
 }
 
 .sidebar li {
@@ -112,7 +109,7 @@ body {
     border-radius: 8px;
     cursor: pointer;
     color: #94a3b8;
-    transition: 0.2s ease;
+    transition: all 0.2s ease;
     font-size: 14px;
 }
 
@@ -127,7 +124,6 @@ body {
 }
 
 /* ================= MAIN CONTENT ================= */
-
 .main-content {
     flex: 1;
     display: flex;
@@ -135,7 +131,6 @@ body {
 }
 
 /* ================= HEADER ================= */
-
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -146,12 +141,12 @@ body {
 
 .dashboard-header h1 {
     font-size: 24px;
-    margin-bottom: 4px;
 }
 
 .dashboard-header p {
-    font-size: 14px;
     color: #94a3b8;
+    font-size: 14px;
+    margin-top: 5px;
 }
 
 .header-actions {
@@ -159,71 +154,23 @@ body {
     gap: 12px;
 }
 
-/* ================= SECTIONS ================= */
-
+/* ================= PAGE SECTIONS ================= */
 .page-section {
     display: none;
     padding: 0 5% 50px 5%;
+    animation: fadeIn 0.3s ease;
 }
 
 .active-section {
     display: block;
 }
 
-/* ================= CARDS ================= */
-
-.card {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
-    padding: 25px;
-    border-radius: 18px;
-    border: 1px solid rgba(255,255,255,0.05);
-    margin-bottom: 25px;
-}
-
-/* ================= HOW TO USE SECTION ================= */
-
-.card h2 {
-    margin-bottom: 15px;
-}
-
-.card p {
-    font-size: 14px;
-    line-height: 1.7;
-}
-
-.card strong {
-    color: #3b82f6;
-}
-
-#businessStartDate {
-    margin-top: 6px;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
-    color: white;
-    width: 100%;
-}
-
-/* ================= INPUT GRID ================= */
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-}
-
-.grid input {
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
-    color: white;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* ================= BUTTONS ================= */
-
 .btn-primary {
     padding: 10px 18px;
     background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -232,11 +179,12 @@ body {
     border-radius: 10px;
     cursor: pointer;
     font-weight: 600;
-    transition: 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59,130,246,0.4);
 }
 
 .btn-secondary {
@@ -248,8 +196,31 @@ body {
     cursor: pointer;
 }
 
-/* ================= KPI ================= */
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.15);
+}
 
+/* ================= CARD ================= */
+.card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 25px;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card h2 {
+    margin-bottom: 20px;
+}
+
+/* ================= KPI ================= */
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -261,6 +232,11 @@ body {
     padding: 20px;
     border-radius: 16px;
     text-align: center;
+    transition: 0.2s ease;
+}
+
+.kpi:hover {
+    transform: scale(1.04);
 }
 
 .kpi p {
@@ -270,7 +246,6 @@ body {
 }
 
 /* ================= CHARTS ================= */
-
 .charts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -278,6 +253,7 @@ body {
 }
 
 .chart-card {
+    padding: 20px;
     background: rgba(255,255,255,0.04);
     border-radius: 16px;
     height: 350px;
@@ -290,7 +266,6 @@ body {
 }
 
 /* ================= PRICING ================= */
-
 .pricing-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -303,10 +278,25 @@ body {
     border-radius: 18px;
     text-align: center;
     border: 1px solid rgba(255,255,255,0.08);
+    transition: 0.3s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-6px);
+}
+
+.price {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #3b82f6;
+}
+
+.pricing-card.premium {
+    border: 1px solid #3b82f6;
 }
 
 /* ================= FOOTER ================= */
-
 .dashboard-footer {
     text-align: center;
     padding: 25px;
@@ -315,8 +305,7 @@ body {
 }
 
 /* ================= LIGHT MODE ================= */
-
-body.light-mode .app-layout {
+body.light-mode {
     background: #f1f5f9;
     color: #1e293b;
 }
@@ -332,14 +321,11 @@ body.light-mode .pricing-card {
     border: 1px solid #e2e8f0;
 }
 
-body.light-mode #businessStartDate,
-body.light-mode .grid input {
+body.light-mode .kpi {
     background: #f8fafc;
-    color: #1e293b;
 }
 
-/* ================= RESPONSIVE ================= */
-
+/* ================= MOBILE ================= */
 @media (max-width: 900px) {
 
     .app-layout {
@@ -347,12 +333,25 @@ body.light-mode .grid input {
     }
 
     .sidebar {
-        width: 100%;
+        position: fixed;
+        top: 0;
+        left: -260px;
+        height: 100vh;
+        width: 240px;
+        transition: left 0.3s ease;
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
     }
 
     .dashboard-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
     }
 }
