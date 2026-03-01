@@ -35,17 +35,20 @@ function login() {
     const user = document.getElementById("username")?.value;
     const pass = document.getElementById("password")?.value;
 
-    if (user && pass) {
-        localStorage.setItem("impactUser", user);
-        showApp();
-    } else {
+    if (!user || !pass) {
         alert("Enter credentials");
+        return;
     }
+
+    localStorage.setItem("impactUser", user);
+    showApp();
+    updateAll();
 }
 
 function autoLogin() {
     if (localStorage.getItem("impactUser")) {
         showApp();
+        updateAll();
     }
 }
 
@@ -55,8 +58,8 @@ function logout() {
 }
 
 function showApp() {
-    document.getElementById("authScreen").style.display = "none";
-    document.getElementById("app").classList.remove("hidden");
+    document.getElementById("authScreen")?.classList.add("hidden");
+    document.getElementById("app")?.classList.remove("hidden");
 }
 
 /* ================= THEME ================= */
@@ -93,6 +96,11 @@ function showSection(id, evt) {
         .forEach(li => li.classList.remove("active"));
 
     if (evt) evt.target.classList.add("active");
+
+    // Mobile auto-close sidebar
+    if (window.innerWidth < 768) {
+        document.getElementById("sidebar")?.classList.remove("show");
+    }
 
     if (id === "forecast") renderForecast();
     if (id === "comparison") renderComparison();
@@ -134,20 +142,18 @@ function loadFromStorage() {
     const saved = localStorage.getItem("impactGridData");
     if (saved) {
         businessData = JSON.parse(saved);
-        updateAll();
     }
 }
 
 function clearAllData() {
     localStorage.removeItem("impactGridData");
-    location.reload();
+    businessData = [];
+    updateAll();
 }
 
 /* ================= MASTER UPDATE ================= */
 
 function updateAll() {
-
-    if (!businessData.length) return;
 
     renderKPIs();
     renderCoreCharts();
@@ -161,6 +167,11 @@ function renderKPIs() {
 
     const container = document.getElementById("kpiContainer");
     if (!container) return;
+
+    if (!businessData.length) {
+        container.innerHTML = "";
+        return;
+    }
 
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
@@ -184,6 +195,8 @@ function renderCoreCharts() {
     if (typeof Chart === "undefined") return;
 
     destroyCharts();
+
+    if (!businessData.length) return;
 
     const labels = businessData.map(d => d.month);
 
@@ -218,30 +231,31 @@ function createChart(id, type, labels, data, color, label) {
 function renderForecast() {
 
     if (!businessData.length) return;
+
     if (forecastChart) forecastChart.destroy();
+
+    const canvas = document.getElementById("forecastChart");
+    if (!canvas) return;
 
     const values = map("revenue");
     if (values.length < 2) return;
 
     const predictions = simpleRegression(values, 3);
 
-    forecastChart = new Chart(
-        document.getElementById("forecastChart"),
-        {
-            type: "line",
-            data: {
-                labels: [...businessData.map(d => d.month), "F1", "F2", "F3"],
-                datasets: [{
-                    label: "Revenue Forecast",
-                    data: [...values, ...predictions],
-                    borderColor: "#3b82f6",
-                    borderDash: [5,5],
-                    tension: 0.4
-                }]
-            },
-            options: baseChartOptions()
-        }
-    );
+    forecastChart = new Chart(canvas, {
+        type: "line",
+        data: {
+            labels: [...businessData.map(d => d.month), "F1", "F2", "F3"],
+            datasets: [{
+                label: "Revenue Forecast",
+                data: [...values, ...predictions],
+                borderColor: "#3b82f6",
+                borderDash: [5,5],
+                tension: 0.4
+            }]
+        },
+        options: baseChartOptions()
+    });
 }
 
 /* ================= MULTI METRIC ================= */
@@ -249,23 +263,24 @@ function renderForecast() {
 function renderComparison() {
 
     if (!businessData.length) return;
+
     if (comparisonChart) comparisonChart.destroy();
 
-    comparisonChart = new Chart(
-        document.getElementById("comparisonChart"),
-        {
-            type: "line",
-            data: {
-                labels: businessData.map(d => d.month),
-                datasets: [
-                    dataset("Revenue","revenue","#4CAF50"),
-                    dataset("Profit","profit","#2196F3"),
-                    dataset("Expenses","expenses","#FF5252")
-                ]
-            },
-            options: baseChartOptions()
-        }
-    );
+    const canvas = document.getElementById("comparisonChart");
+    if (!canvas) return;
+
+    comparisonChart = new Chart(canvas, {
+        type: "line",
+        data: {
+            labels: businessData.map(d => d.month),
+            datasets: [
+                dataset("Revenue","revenue","#4CAF50"),
+                dataset("Profit","profit","#2196F3"),
+                dataset("Expenses","expenses","#FF5252")
+            ]
+        },
+        options: baseChartOptions()
+    });
 }
 
 function dataset(label,key,color){
@@ -284,11 +299,13 @@ function generateReport() {
     const reportBox = document.getElementById("performanceReport");
     if (!reportBox) return;
 
+    if (!businessData.length) {
+        reportBox.innerHTML = "<p>No analysis available yet.</p>";
+        return;
+    }
+
     const totalRevenue = sum("revenue");
     const totalProfit = sum("profit");
-
-    if (!totalRevenue) return;
-
     const latest = businessData[businessData.length - 1];
 
     let health = "Stable";
@@ -303,101 +320,6 @@ function generateReport() {
     `;
 }
 
-/* ================= LOGO UPLOAD ================= */
-
-function setupLogoUpload() {
-
-    const input = document.getElementById("companyLogoInput");
-    if (!input) return;
-
-    input.addEventListener("change", function(e) {
-
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            companyLogoData = event.target.result;
-        };
-        reader.readAsDataURL(file);
-
-    });
-}
-
-/* ================= EXPORT CONTROL ================= */
-
-function canExportPDF() {
-
-    if (userPlan === "free") {
-        alert("Upgrade to export Executive PDFs.");
-        return false;
-    }
-
-    if (userPlan === "premium") return true;
-
-    let month = new Date().getMonth();
-    let savedMonth = localStorage.getItem("exportMonth");
-    let count = parseInt(localStorage.getItem("exportCount") || "0");
-
-    if (savedMonth != month) {
-        count = 0;
-        localStorage.setItem("exportMonth", month);
-        localStorage.setItem("exportCount", "0");
-    }
-
-    if (count >= 3) {
-        alert("Monthly export limit reached.");
-        return false;
-    }
-
-    localStorage.setItem("exportCount", count + 1);
-    return true;
-}
-
-/* ================= EXECUTIVE PDF ================= */
-
-async function exportExecutivePDF() {
-
-    if (!businessData.length) {
-        alert("No data to export.");
-        return;
-    }
-
-    if (!canExportPDF()) return;
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    const totalRevenue = sum("revenue");
-    const totalProfit = sum("profit");
-    const margin = totalRevenue
-        ? ((totalProfit / totalRevenue) * 100).toFixed(1)
-        : 0;
-
-    let y = 20;
-
-    if (companyLogoData && userPlan === "premium") {
-        doc.addImage(companyLogoData, "PNG", 15, 10, 30, 30);
-    }
-
-    doc.setFontSize(18);
-    doc.text("ImpactGrid Intelligence Report", 105, y, { align: "center" });
-    y += 12;
-
-    doc.setFontSize(12);
-    doc.text("Enterprise Performance Overview", 105, y, { align: "center" });
-    y += 20;
-
-    doc.setFontSize(11);
-    doc.text("Total Revenue: " + formatCurrency(totalRevenue), 20, y);
-    y += 8;
-    doc.text("Total Profit: " + formatCurrency(totalProfit), 20, y);
-    y += 8;
-    doc.text("Profit Margin: " + margin + "%", 20, y);
-
-    doc.save("ImpactGrid_Executive_Report.pdf");
-}
-
 /* ================= HELPERS ================= */
 
 function destroyCharts(){
@@ -407,11 +329,11 @@ function destroyCharts(){
 }
 
 function sum(key){
-    return businessData.reduce((a,b)=>a+b[key],0);
+    return businessData.reduce((a,b)=>a+(b[key]||0),0);
 }
 
 function map(key){
-    return businessData.map(d=>d[key]);
+    return businessData.map(d=>d[key]||0);
 }
 
 function formatCurrency(val){
@@ -428,13 +350,18 @@ function baseChartOptions(){
 function simpleRegression(data, periods){
 
     const n = data.length;
+    if (n < 2) return [];
+
     const x = [...Array(n).keys()];
     const sumX = x.reduce((a,b)=>a+b,0);
     const sumY = data.reduce((a,b)=>a+b,0);
     const sumXY = x.reduce((s,xi,i)=>s+xi*data[i],0);
     const sumXX = x.reduce((s,xi)=>s+xi*xi,0);
 
-    const slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
+    const denominator = (n*sumXX - sumX*sumX);
+    if (denominator === 0) return [];
+
+    const slope = (n*sumXY - sumX*sumY) / denominator;
     const intercept = (sumY - slope*sumX)/n;
 
     const result = [];
@@ -444,4 +371,3 @@ function simpleRegression(data, periods){
 
     return result;
 }
-
