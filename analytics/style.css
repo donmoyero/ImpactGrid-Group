@@ -1,95 +1,78 @@
-/* ================= INPUT FIELDS ================= */
+/* ================= MOBILE SIDEBAR SYSTEM ================= */
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px;
-}
-
-input[type="text"],
-input[type="number"],
-input[type="month"],
-input[type="date"],
-input[type="password"] {
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.06);
-    color: #e2e8f0;
-    font-size: 14px;
-    transition: all 0.25s ease;
-}
-
-input::placeholder {
-    color: #94a3b8;
-}
-
-input:focus {
-    outline: none;
-    border: 1px solid #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
-}
-
-/* ================= FILE INPUT ================= */
-
-input[type="file"] {
-    padding: 10px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.08);
+/* Mobile menu button (hidden on desktop) */
+.mobile-menu-btn {
+    display: none;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 18px;
     cursor: pointer;
+    margin-right: 15px;
     transition: 0.25s ease;
 }
 
-input[type="file"]:hover {
-    background: rgba(59,130,246,0.15);
+.mobile-menu-btn:hover {
+    transform: scale(1.05);
 }
 
-/* ================= LOGO PREVIEW ================= */
-
-#logoPreview {
-    margin-top: 12px;
-    padding: 10px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.08);
-    max-height: 70px;
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+    display: none;
 }
 
-/* ================= BUSINESS PROFILE CARD ================= */
+/* ================= RESPONSIVE SIDEBAR ================= */
 
-.card h2 {
-    font-size: 18px;
+@media (max-width: 900px) {
+
+    /* Show mobile menu button */
+    .mobile-menu-btn {
+        display: inline-block;
+    }
+
+    /* Sidebar becomes slide panel */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -260px;
+        height: 100%;
+        width: 250px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 8px 0 30px rgba(0,0,0,0.5);
+    }
+
+    /* When active (toggled in JS) */
+    .sidebar.mobile-active {
+        left: 0;
+    }
+
+    /* Prevent content shift */
+    .app-layout {
+        flex-direction: column;
+    }
+
+    /* Adjust header spacing */
+    .dashboard-header {
+        padding: 25px 6%;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .header-actions {
+        flex-wrap: wrap;
+    }
+
+    /* Make charts full width */
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
-/* ================= REPORT ENHANCEMENT ================= */
+/* ================= LIGHT MODE MOBILE FIX ================= */
 
-.report-box strong {
-    color: #3b82f6;
-}
-
-/* ================= LIGHT MODE INPUT FIX ================= */
-
-body.light-mode input[type="text"],
-body.light-mode input[type="number"],
-body.light-mode input[type="month"],
-body.light-mode input[type="date"],
-body.light-mode input[type="password"] {
-    background: white;
-    color: #1e293b;
-    border: 1px solid #e2e8f0;
-}
-
-body.light-mode input::placeholder {
-    color: #94a3b8;
-}
-
-body.light-mode input[type="file"] {
-    background: white;
-    border: 1px solid #e2e8f0;
-}
-
-body.light-mode #logoPreview {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+body.light-mode .mobile-menu-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
 }
