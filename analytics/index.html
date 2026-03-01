@@ -5,35 +5,39 @@
     <title>ImpactGrid SaaS Intelligence Platform</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Prevent subfolder path issues -->
-    <base href="./">
-
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Chart.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js (must load before script.js uses it) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- jsPDF -->
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <!-- Local CSS -->
-    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+<!-- ================= AUTH SCREEN ================= -->
+<div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+        <h2>ImpactGrid Login</h2>
+        <input type="text" id="username" placeholder="Username" autocomplete="off">
+        <input type="password" id="password" placeholder="Password" autocomplete="off">
+        <button class="btn-primary" type="button" onclick="login()">Login</button>
+    </div>
+</div>
+
 <!-- ================= MAIN APP ================= -->
-<div class="app-layout">
+<div id="app" class="app-layout hidden">
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-top">
-            <div class="logo-container">
-                <img src="./logo.png" alt="ImpactGrid Logo" class="logo-img">
-                <span class="logo-text">ImpactGrid</span>
-            </div>
-            <button class="collapse-btn" type="button" onclick="toggleSidebar()">☰</button>
+
+        <div class="logo-container" style="margin-bottom:20px;">
+            <img src="logo.png" alt="ImpactGrid Logo" class="logo-img">
+            <span class="logo-text">ImpactGrid</span>
         </div>
 
         <nav>
@@ -43,8 +47,10 @@
                 <li onclick="showSection('comparison', event)">Multi-Metric</li>
                 <li onclick="showSection('pricing', event)">Pricing</li>
                 <li onclick="clearAllData()">Reset Data</li>
+                <li onclick="logout()">Logout</li>
             </ul>
         </nav>
+
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -69,29 +75,8 @@
         <!-- ================= DASHBOARD ================= -->
         <section id="dashboard" class="page-section active-section">
 
-            <!-- HOW TO USE -->
+            <!-- INPUT -->
             <section class="card">
-                <h2>Getting Started</h2>
-
-                <div class="grid">
-                    <div>
-                        <label><strong>Business Start Date</strong></label>
-                        <input type="month" id="businessStartDate">
-                    </div>
-                </div>
-
-                <div style="margin-top:15px; font-size:14px; line-height:1.7;">
-                    <p><strong>Step 1:</strong> Enter your business start date.</p>
-                    <p><strong>Step 2:</strong> Add monthly revenue and expenses.</p>
-                    <p><strong>Step 3:</strong> Monitor KPI metrics and profit margin.</p>
-                    <p><strong>Step 4:</strong> Use Forecasting to project the next 3 months.</p>
-                    <p><strong>Step 5:</strong> Use Multi-Metric to compare Revenue, Profit & Expenses together.</p>
-                    <p><strong>Step 6:</strong> Export a professional executive PDF report.</p>
-                </div>
-            </section>
-
-            <!-- DATA INPUT -->
-            <section class="card input-card">
                 <h2>Business Data Input</h2>
                 <div class="grid">
                     <input type="month" id="month">
@@ -99,9 +84,7 @@
                     <input type="number" id="expenses" placeholder="Expenses">
                     <input type="number" id="customers" placeholder="Customers">
                     <input type="number" id="marketing" placeholder="Marketing Spend">
-                    <button class="btn-primary" type="button" onclick="addData()">
-                        Add Data
-                    </button>
+                    <button class="btn-primary" type="button" onclick="addData()">Add Data</button>
                 </div>
             </section>
 
@@ -115,15 +98,9 @@
             <section class="card">
                 <h2>Core Performance</h2>
                 <div class="charts-grid">
-                    <div class="chart-card">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <canvas id="profitChart"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <canvas id="expenseChart"></canvas>
-                    </div>
+                    <div class="chart-card"><canvas id="revenueChart"></canvas></div>
+                    <div class="chart-card"><canvas id="profitChart"></canvas></div>
+                    <div class="chart-card"><canvas id="expenseChart"></canvas></div>
                 </div>
             </section>
 
@@ -135,10 +112,10 @@
                 </div>
             </section>
 
-            <!-- BRANDING -->
+            <!-- LOGO UPLOAD -->
             <section class="card">
                 <h2>Company Branding (Premium Only)</h2>
-                <p>Upload your company logo. It will appear at the top of your Executive PDF report.</p>
+                <p>Upload your company logo to appear in Executive Reports.</p>
                 <input type="file" id="companyLogoInput" accept="image/*">
             </section>
 
@@ -147,7 +124,7 @@
         <!-- ================= FORECAST ================= -->
         <section id="forecast" class="page-section">
             <section class="card">
-                <h2>Revenue Forecast (Next 3 Months Projection)</h2>
+                <h2>Revenue Forecast</h2>
                 <div class="chart-card">
                     <canvas id="forecastChart"></canvas>
                 </div>
@@ -158,9 +135,6 @@
         <section id="comparison" class="page-section">
             <section class="card">
                 <h2>Multi-Metric Comparison</h2>
-                <p style="font-size:14px; margin-bottom:15px; color:#94a3b8;">
-                    Compare Revenue, Profit and Expenses trends over time in one unified performance view.
-                </p>
                 <div class="chart-card">
                     <canvas id="comparisonChart"></canvas>
                 </div>
@@ -179,14 +153,10 @@
                         <p class="price">Free</p>
                         <ul>
                             <li>Core Analytics</li>
-                            <li>Basic Report</li>
-                            <li>Limited History</li>
                             <li>No Forecast</li>
                             <li>No PDF Export</li>
                         </ul>
-                        <button class="btn-secondary" type="button" onclick="setPlan('free')">
-                            Select
-                        </button>
+                        <button class="btn-secondary" type="button" onclick="setPlan('free')">Select</button>
                     </div>
 
                     <div class="pricing-card">
@@ -197,9 +167,7 @@
                             <li>Multi-Metric</li>
                             <li>Executive PDF (3/month)</li>
                         </ul>
-                        <button class="btn-primary" type="button" onclick="setPlan('pro')">
-                            Select
-                        </button>
+                        <button class="btn-primary" type="button" onclick="setPlan('pro')">Select</button>
                     </div>
 
                     <div class="pricing-card premium">
@@ -208,12 +176,9 @@
                         <ul>
                             <li>Unlimited Executive PDFs</li>
                             <li>Company Logo Branding</li>
-                            <li>Advanced Executive Summary</li>
-                            <li>Risk & Growth Insights</li>
+                            <li>Advanced Insights</li>
                         </ul>
-                        <button class="btn-primary" type="button" onclick="setPlan('premium')">
-                            Select
-                        </button>
+                        <button class="btn-primary" type="button" onclick="setPlan('premium')">Select</button>
                     </div>
 
                 </div>
@@ -227,7 +192,8 @@
     </div>
 </div>
 
-<script defer src="./script.js"></script>
+<!-- Load script LAST -->
+<script src="script.js"></script>
 
 </body>
 </html>
