@@ -11,12 +11,6 @@ let comparisonChart = null;
 
 let userPlan = localStorage.getItem("impactPlan") || "free";
 
-function setPlan(plan) {
-    userPlan = plan;
-    localStorage.setItem("impactPlan", plan);
-    alert("Plan updated to: " + plan.toUpperCase());
-}
-
 /* ================= INIT ================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -30,18 +24,48 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("impactPlan", planFromURL);
         userPlan = planFromURL;
 
-        alert("Subscription activated: " + planFromURL.toUpperCase());
+        showActivationBanner(planFromURL);
 
-        // Clean URL after activation
+        // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    /* ===== NORMAL INIT ===== */
 
     loadFromStorage();
     autoLogin();
     loadTheme();
+    updateUIByPlan();
 });
+
+/* ================= PROFESSIONAL ACTIVATION BANNER ================= */
+
+function showActivationBanner(plan) {
+    const banner = document.createElement("div");
+    banner.innerText = "Subscription Activated: " + plan.toUpperCase();
+    banner.style.position = "fixed";
+    banner.style.top = "20px";
+    banner.style.right = "20px";
+    banner.style.padding = "12px 20px";
+    banner.style.background = "#3b82f6";
+    banner.style.color = "white";
+    banner.style.borderRadius = "8px";
+    banner.style.zIndex = "9999";
+    banner.style.boxShadow = "0 10px 25px rgba(0,0,0,0.3)";
+    document.body.appendChild(banner);
+
+    setTimeout(() => banner.remove(), 4000);
+}
+
+/* ================= UI CONTROL BY PLAN ================= */
+
+function updateUIByPlan() {
+
+    const brandingSection = document.getElementById("companyLogoInput");
+
+    if (brandingSection) {
+        brandingSection.parentElement.style.display =
+            userPlan === "premium" ? "block" : "none";
+    }
+}
 
 /* ================= AUTH ================= */
 
@@ -99,7 +123,7 @@ function toggleSidebar() {
 function showSection(id, evt) {
 
     if ((id === "forecast" || id === "comparison") && userPlan === "free") {
-        alert("This feature is available on Growth and Premium plans.");
+        alert("Upgrade to Growth or Premium to unlock this feature.");
         return;
     }
 
@@ -121,7 +145,7 @@ function showSection(id, evt) {
 function addData() {
 
     if (userPlan === "free" && businessData.length >= 3) {
-        alert("Free plan supports only 3 months of data. Upgrade to unlock unlimited history.");
+        alert("Free plan supports only 3 months of data.");
         return;
     }
 
