@@ -1,222 +1,443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Upload Video — ImpactGrid Creator Engine</title>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    .output-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px; transition:border-color 0.2s,transform 0.2s; }
-    .output-card:hover { border-color:var(--orange); transform:translateY(-2px); }
-    .output-type { font-size:0.59rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--orange); font-weight:700; margin-bottom:6px; }
-    .output-card h4 { font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:700; margin-bottom:5px; }
-    .output-card p { font-size:0.75rem; color:var(--white-dim); line-height:1.5; }
-    .output-foot { display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
-    .dl-btn { background:var(--orange); color:white; border:none; padding:5px 11px; border-radius:6px; font-size:0.7rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }
-    .dl-btn:hover { background:var(--orange-dim); }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Upload Video — ImpactGrid Creator Engine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+:root{--black:#080808;--surf:#0f0f0f;--card:#141414;--b:#222;--b2:#2e2e2e;--white:#f0ebe5;--dim:#777;--or:#ff5c1a;--od:#c94010;--gr:#1fd97a;--yw:#f0c93a;--bl:#4a8ff5;--sw:262px;--r:11px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
 
-    /* Processing steps */
-    .step-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--border); }
-    .step-row:last-child { border-bottom:none; }
-    .step-ico { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0; }
-    .step-ico.idle   { background:var(--border); }
-    .step-ico.active { background:rgba(255,92,26,0.15); animation:stepPulse 1s infinite; }
-    .step-ico.done   { background:rgba(31,217,122,0.15); }
-    @keyframes stepPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-    .step-text h4 { font-size:0.82rem; font-weight:600; margin-bottom:1px; }
-    .step-text p  { font-size:0.7rem; color:var(--white-dim); }
+/* SIDEBAR */
+#sb{position:fixed;left:0;top:0;width:var(--sw);height:100vh;background:var(--surf);border-right:1px solid var(--b);display:flex;flex-direction:column;z-index:200;overflow:hidden;transition:transform .35s cubic-bezier(.77,0,.18,1)}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--b);flex-shrink:0}
+.sb-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;color:var(--white);line-height:1.25}
+.sb-brand em{color:var(--or);font-style:normal}
+.sb-sub{font-size:.54rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.nlb{font-size:.53rem;text-transform:uppercase;letter-spacing:2.5px;color:#353535;padding:10px 18px 3px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 18px;color:#555;font-size:.8rem;border-left:2px solid transparent;transition:all .15s}
+.ni:hover,.ni.on{color:var(--white);border-left-color:var(--or);background:rgba(255,92,26,.06)}
+.ni svg{width:14px;height:14px;flex-shrink:0;opacity:.5}
+.ni:hover svg,.ni.on svg{opacity:1}
+.nbdg{margin-left:auto;background:var(--or);color:#fff;font-size:.5rem;font-weight:700;padding:1px 5px;border-radius:8px}
+.sb-foot{flex-shrink:0;border-top:1px solid var(--b)}
+.sb-ap{display:flex;align-items:center;gap:9px;margin:11px 13px 5px;background:rgba(74,143,245,.1);border:1px solid rgba(74,143,245,.2);border-radius:9px;padding:9px 11px;transition:border-color .2s}
+.sb-ap:hover{border-color:rgba(74,143,245,.5)}
+.sb-ai{width:27px;height:27px;background:linear-gradient(135deg,var(--bl),#2460d9);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0}
+.sb-at strong{display:block;font-size:.7rem;font-weight:700;color:var(--white)}
+.sb-at span{font-size:.57rem;color:var(--bl)}
+.sb-aa{margin-left:auto;color:var(--bl);font-size:.75rem}
+.sb-cta{margin:5px 13px 15px;background:linear-gradient(135deg,var(--or),var(--od));border-radius:9px;padding:11px 12px}
+.sb-cta strong{font-family:'Syne',sans-serif;font-size:.74rem;display:block;margin-bottom:3px}
+.sb-cta p{font-size:.63rem;color:rgba(255,255,255,.82);margin-bottom:7px;line-height:1.4}
+.sb-cta a{background:#fff;color:var(--od);font-size:.68rem;font-weight:700;padding:5px 10px;border-radius:5px;display:inline-block}
 
-    .spec-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.8rem; }
-    .spec-row:last-child { border-bottom:none; }
-    .spec-val { color:var(--green); font-weight:600; font-size:0.76rem; }
+/* TOPBAR */
+.topbar{position:sticky;top:0;height:52px;background:rgba(8,8,8,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--b);padding:0 30px;display:flex;align-items:center;justify-content:space-between;z-index:100;gap:10px}
+.tl{display:flex;align-items:center;gap:10px}
+.tr{display:flex;align-items:center;gap:8px}
+.hbg{display:none;background:transparent;border:1px solid var(--b2);color:var(--white);width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:1rem;align-items:center;justify-content:center}
+.tbdg{background:rgba(31,217,122,.1);border:1px solid rgba(31,217,122,.22);color:var(--gr);font-size:.64rem;padding:3px 9px;border-radius:20px;font-weight:500}
+.tbtl{font-family:'Syne',sans-serif;font-weight:700;font-size:.84rem}
 
-    /* State panels */
-    #stateIdle    { display:block; }
-    #stateProcess { display:none; }
-    #stateDone    { display:none; }
-  </style>
+/* MAIN */
+.main{margin-left:var(--sw);min-height:100vh}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 17px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .18s;text-decoration:none;white-space:nowrap}
+.bp{background:var(--or);color:#fff}.bp:hover{background:var(--od)}
+.bs{background:var(--card);border:1px solid var(--b2);color:var(--white)}.bs:hover{border-color:var(--or);color:var(--or)}
+.bb{background:var(--bl);color:#fff}.bb:hover{opacity:.88}
+.bg{background:transparent;border:1px solid var(--b2);color:var(--dim)}.bg:hover{color:var(--white)}
+.sm{padding:5px 11px;font-size:.72rem}
+.lg{padding:12px 26px;font-size:.88rem}
+
+/* HERO */
+.hero{padding:56px 40px 46px;border-bottom:1px solid var(--b);background:radial-gradient(ellipse at 80% 50%,rgba(255,92,26,.12) 0%,transparent 55%);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;right:0;width:40%;height:100%;background:repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(255,92,26,.02) 24px,rgba(255,92,26,.02) 25px);pointer-events:none}
+.ew{display:inline-flex;align-items:center;gap:6px;background:rgba(255,92,26,.09);border:1px solid rgba(255,92,26,.2);color:var(--or);font-size:.61rem;text-transform:uppercase;letter-spacing:2.5px;padding:4px 11px;border-radius:20px;margin-bottom:16px;font-weight:600}
+.ew::before{content:'●';font-size:.37rem;animation:bk 1.8s infinite}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
+.ht{font-family:'Syne',sans-serif;font-size:clamp(1.9rem,3.6vw,3.2rem);font-weight:800;line-height:1.08;max-width:660px;margin-bottom:14px;position:relative;z-index:1}
+.ht em{color:var(--or);font-style:normal}
+.hd{font-size:.93rem;color:var(--dim);max-width:470px;margin-bottom:26px;line-height:1.75;position:relative;z-index:1}
+.ha{display:flex;gap:9px;flex-wrap:wrap;position:relative;z-index:1}
+.hst{display:flex;gap:40px;margin-top:40px;padding-top:22px;border-top:1px solid var(--b);flex-wrap:wrap;position:relative;z-index:1}
+.hst strong{display:block;font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--or);line-height:1}
+.hst span{font-size:.7rem;color:var(--dim);margin-top:3px;display:block}
+
+/* SECTION */
+.sec{padding:44px 40px}
+.sec+.sec,section+section{border-top:1px solid var(--b)}
+.slb{font-size:.57rem;text-transform:uppercase;letter-spacing:3px;color:var(--or);font-weight:700;margin-bottom:6px}
+.stl{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:800;margin-bottom:7px;line-height:1.15}
+.stl em{color:var(--or);font-style:normal}
+.sdc{color:var(--dim);font-size:.87rem;max-width:490px;margin-bottom:22px;line-height:1.7}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--b);border-radius:var(--r);transition:border-color .2s,transform .2s}
+.card:hover{border-color:rgba(255,92,26,.4)}
+.cl:hover{transform:translateY(-3px)}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:13px}
+.gas{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px}
+
+/* TAGS */
+.tag{display:inline-block;font-size:.59rem;padding:3px 7px;border-radius:4px;font-weight:500;background:rgba(255,255,255,.06);color:#999}
+.tor{background:rgba(255,92,26,.15);color:var(--or)}
+.tgr{background:rgba(31,217,122,.15);color:var(--gr)}
+.tbl{background:rgba(74,143,245,.15);color:var(--bl)}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:.75rem;font-weight:500;margin-bottom:5px;color:var(--dim)}
+.fi,.ft,.fs{width:100%;background:var(--card);border:1px solid var(--b2);color:var(--white);padding:9px 12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.875rem;transition:border-color .18s;outline:none}
+.fi:focus,.ft:focus,.fs:focus{border-color:var(--or)}
+.fi::placeholder,.ft::placeholder{color:#2e2e2e}
+.ft{resize:vertical;min-height:105px;line-height:1.6}
+.fs{cursor:pointer;appearance:none}
+
+/* CALENDAR */
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.ch{text-align:center;font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:3px 0 8px}
+.cc{background:var(--card);border:1px solid var(--b);border-radius:7px;padding:7px;min-height:76px;cursor:pointer;transition:border-color .18s}
+.cc:hover{border-color:rgba(255,92,26,.5)}
+.cc.on{border-color:rgba(255,92,26,.22)}
+.cn{font-size:.67rem;color:var(--dim);margin-bottom:3px}
+.cp{font-size:.53rem;padding:2px 4px;border-radius:3px;margin-bottom:2px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp.rl{background:rgba(255,92,26,.18);color:var(--or)}
+.cp.st{background:rgba(240,201,58,.18);color:var(--yw)}
+.cp.po{background:rgba(31,217,122,.18);color:var(--gr)}
+.cp.ca{background:rgba(160,170,255,.18);color:#a0aaff}
+
+/* PROGRESS */
+.pb{background:var(--b);border-radius:3px;height:4px;overflow:hidden}
+.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--or),var(--yw))}
+
+/* MAP */
+.mapbox{background:var(--card);border:1px solid var(--b);border-radius:16px;height:250px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-top:14px}
+.mapbox::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 38% 58%,rgba(255,92,26,.1),transparent 45%),repeating-linear-gradient(0deg,transparent,transparent 26px,rgba(255,255,255,.015) 26px,rgba(255,255,255,.015) 27px),repeating-linear-gradient(90deg,transparent,transparent 26px,rgba(255,255,255,.015) 26px,rgba(255,255,255,.015) 27px)}
+.mdt{width:13px;height:13px;background:var(--or);border-radius:50%;animation:gp 2.2s infinite;position:relative;z-index:1}
+@keyframes gp{0%,100%{box-shadow:0 0 0 5px rgba(255,92,26,.2)}50%{box-shadow:0 0 0 18px rgba(255,92,26,.03)}}
+.mlb{position:absolute;bottom:13px;left:13px;font-size:.68rem;color:var(--dim);z-index:1}
+.mlb strong{color:var(--or);font-size:.75rem;display:block;margin-bottom:1px}
+
+/* UPLOAD */
+.uz{border:2px dashed var(--b2);border-radius:16px;padding:48px 28px;text-align:center;background:var(--card);cursor:pointer;transition:all .2s;position:relative;overflow:hidden;display:block}
+.uz:hover{border-color:var(--or);background:rgba(255,92,26,.03)}
+.uz h3{font-family:'Syne',sans-serif;font-weight:700;font-size:.97rem;margin:9px 0 4px}
+.uz p{font-size:.76rem;color:var(--dim)}
+
+/* FOOTER */
+.ft2{border-top:1px solid var(--b);padding:24px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:11px}
+.fb .br{font-family:'Syne',sans-serif;font-weight:800;font-size:.88rem}
+.fb .br em{color:var(--or);font-style:normal}
+.fb p{font-size:.68rem;color:var(--dim);margin-top:2px}
+.fl2{display:flex;gap:15px;flex-wrap:wrap}
+.fl2 a{font-size:.73rem;color:var(--dim);transition:color .15s}
+.fl2 a:hover{color:var(--white)}
+.fl2 .lbl{color:var(--bl)}
+.fc{font-size:.67rem;color:#2e2e2e}
+
+/* FADE */
+.fu{opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease}
+.fu.in{opacity:1;transform:translateY(0)}
+
+/* OVERLAY */
+#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:199;backdrop-filter:blur(2px)}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  #sb{transform:translateX(-100%)}
+  #sb.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hbg{display:inline-flex}
+  .hero,.sec{padding-left:18px;padding-right:18px}
+  .hero{padding-top:36px;padding-bottom:32px}
+  .topbar{padding:0 14px}
+  .ft2{padding:18px}
+  .ht{font-size:clamp(1.65rem,6vw,2.3rem)}
+  .hst{gap:18px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .cg{grid-template-columns:repeat(4,1fr)}
+  .tbdg{display:none}
+}
+@media(max-width:500px){
+  .ha{flex-direction:column}
+  .ha .btn{width:100%;justify-content:center}
+}
+</style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar"></aside>
+<div id="ov"></div>
+<aside id="sb"></aside>
 <div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <button class="hamburger" onclick="openNav()">☰</button>
-      <span class="topbar-page-title">Upload Video</span>
-    </div>
-    <div class="topbar-right">
-      <a href="https://impactgridanalytics.com/" target="_blank" class="btn btn-ghost btn-sm" style="border-color:rgba(74,143,245,0.3);color:var(--blue)">📊 Analytics</a>
-    </div>
+<div class="topbar">
+  <div class="tl"><button class="hbg" onclick="openNav()">&#9776;</button>
+    <span class="tbtl">Upload Video</span></div>
+  <div class="tr">
+    <a href="https://impactgridanalytics.com/" target="_blank" class="btn bg sm" style="border-color:rgba(74,143,245,.3);color:var(--bl)">&#128202; Analytics</a>
   </div>
-
-  <div class="page-hero">
-    <div class="eyebrow">AI Content Engine</div>
-    <h1 class="hero-title">Turn raw footage into<br><em>professional content</em></h1>
-    <p class="hero-desc">Upload any video from your business. Our AI edits it, captions it, adapts it for every platform, and builds your content calendar — all in minutes.</p>
-  </div>
-
-  <section class="section fade-up">
-    <div style="display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:start" id="uploadGrid">
-
-      <!-- LEFT COLUMN: changes state -->
-      <div>
-
-        <!-- STATE: IDLE — show upload zone -->
-        <div id="stateIdle">
-          <p class="section-label" style="margin-bottom:14px">Drop Your Video</p>
-          <label class="upload-zone" for="videoFile">
-            <div style="font-size:3rem">🎬</div>
-            <h3>Drop your video here or click to browse</h3>
-            <p style="margin-top:6px">MP4, MOV, AVI, MKV — up to 2GB per upload</p>
-            <p style="margin-top:4px;font-size:0.7rem;color:#444">Reels · TikToks · Shorts · LinkedIn · Twitter/X · Carousels · Captions — all included</p>
-            <input type="file" id="videoFile" accept="video/*" onchange="startUpload(this)"/>
-          </label>
-        </div>
-
-        <!-- STATE: PROCESSING -->
-        <div id="stateProcess">
-          <p class="section-label" style="margin-bottom:14px">Processing Your Video</p>
-          <div class="card" style="padding:22px">
-            <div id="stepRows"></div>
-            <div style="margin-top:16px">
-              <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--white-dim);margin-bottom:6px">
-                <span>Overall progress</span><span id="pctLabel">0%</span>
-              </div>
-              <div class="progress"><div class="progress-fill" id="progressBar" style="width:0%;transition:width 0.5s ease"></div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- STATE: DONE — show output cards -->
-        <div id="stateDone">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <div>
-              <p class="section-label" style="margin-bottom:2px">Content Ready</p>
-              <h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--green)">✅ 6 pieces generated</h3>
-            </div>
-            <button class="btn btn-secondary btn-sm" onclick="resetUpload()">+ Upload Another</button>
-          </div>
-          <div class="grid-auto">
-            <div class="output-card"><div class="output-type">Instagram Reel</div><h4>Behind the scenes 🔥</h4><p>30s vertical cut, trending audio matched, captions burned in. Caption + 15 hashtags.</p><div class="output-foot"><span class="tag">Instagram</span><button class="dl-btn">↓ Download</button></div></div>
-            <div class="output-card"><div class="output-type">TikTok</div><h4>Why we do what we do</h4><p>60s story with trend-matched hook, subtitle overlay, voiceover script generated.</p><div class="output-foot"><span class="tag">TikTok</span><button class="dl-btn">↓ Download</button></div></div>
-            <div class="output-card"><div class="output-type">LinkedIn Post</div><h4>What building a business really looks like</h4><p>Long-form post with storytelling hook, extracted insights, and engagement CTA.</p><div class="output-foot"><span class="tag">LinkedIn</span><button class="dl-btn">↓ Download</button></div></div>
-            <div class="output-card"><div class="output-type">Twitter / X Thread</div><h4>7 things I've learned</h4><p>10-tweet thread with hook, value tweets, CTA — from your video transcript.</p><div class="output-foot"><span class="tag">Twitter/X</span><button class="dl-btn">↓ Download</button></div></div>
-            <div class="output-card"><div class="output-type">YouTube Short</div><h4>Quick tip from our shoot ⚡</h4><p>Optimised thumbnail, title, description and tags auto-generated.</p><div class="output-foot"><span class="tag">YouTube</span><button class="dl-btn">↓ Download</button></div></div>
-            <div class="output-card"><div class="output-type">Instagram Carousel</div><h4>5 reasons to choose us [Swipe →]</h4><p>6-slide carousel design brief with copy, visual direction, and CTA slide.</p><div class="output-foot"><span class="tag">Instagram</span><button class="dl-btn">↓ Download</button></div></div>
-          </div>
-          <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
-            <a href="calendar.html" class="btn btn-primary">View Content Calendar →</a>
-          </div>
-        </div>
-
-      </div><!-- /left -->
-
-      <!-- RIGHT COLUMN: always visible -->
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="card" style="padding:20px">
-          <p class="section-label" style="margin-bottom:12px">What You'll Receive</p>
-          <div class="spec-row"><span>Instagram Reels</span><span class="spec-val">✓ 2 cuts</span></div>
-          <div class="spec-row"><span>TikTok videos</span><span class="spec-val">✓ 2 cuts</span></div>
-          <div class="spec-row"><span>YouTube Shorts</span><span class="spec-val">✓ 1 cut</span></div>
-          <div class="spec-row"><span>LinkedIn post</span><span class="spec-val">✓ Full copy</span></div>
-          <div class="spec-row"><span>Twitter/X thread</span><span class="spec-val">✓ 10 tweets</span></div>
-          <div class="spec-row"><span>Carousel brief</span><span class="spec-val">✓ 6 slides</span></div>
-          <div class="spec-row"><span>Captions &amp; hashtags</span><span class="spec-val">✓ All posts</span></div>
-          <div class="spec-row"><span>Calendar update</span><span class="spec-val">✓ Auto</span></div>
-        </div>
-        <div class="card" style="padding:20px">
-          <p class="section-label" style="margin-bottom:10px">Tips for Best Results</p>
-          <div style="font-size:0.77rem;color:var(--white-dim);line-height:1.7">
-            <p>💡 Film in good natural light</p>
-            <p style="margin-top:6px">🎙️ Clear audio for auto-captions</p>
-            <p style="margin-top:6px">📐 Vertical (9:16) works best</p>
-            <p style="margin-top:6px">⏱️ 2–10 minutes ideal length</p>
-            <p style="margin-top:6px">🔄 Upload weekly to stay full</p>
-          </div>
-        </div>
-      </div><!-- /right -->
-
-    </div><!-- /grid -->
-  </section>
-
-  <footer class="site-footer">
-    <div class="footer-brand"><div class="brand">ImpactGrid <em>Creator Engine</em></div><p>AI Content Platform</p></div>
-    <div class="footer-links">
-      <a href="index.html">Dashboard</a><a href="calendar.html">Calendar</a>
-      <a href="creators.html">Book a Creator</a><a href="contact.html">Contact</a>
-      <a href="https://impactgridanalytics.com/" target="_blank" class="link-blue">Analytics ↗</a>
-    </div>
-    <p class="footer-copy">© 2025 ImpactGrid Creator Engine. All rights reserved.</p>
-  </footer>
+</div>
+<div class="hero">
+  <div class="ew">AI Content Engine</div>
+  <h1 class="ht">Turn raw footage into<br><em>professional content</em></h1>
+  <p class="hd">Upload any business video. Our AI edits it, captions it, adapts it for every platform, and updates your content calendar — in minutes.</p>
 </div>
 
-<script src="nav.js"></script>
+<section class="sec fu">
+<div id="twoCol" style="display:grid;grid-template-columns:1fr 285px;gap:20px;align-items:start">
+
+  <!-- LEFT -->
+  <div>
+    <!-- IDLE -->
+    <div id="stIdle">
+      <p class="slb" style="margin-bottom:12px">Drop Your Footage</p>
+      <label class="uz" id="uzLabel" for="vfile">
+        <div style="font-size:2.6rem">&#127916;</div>
+        <h3>Drop video here or click to browse</h3>
+        <p style="margin-top:6px">MP4 &middot; MOV &middot; AVI &middot; MKV &mdash; up to 2GB</p>
+        <p style="margin-top:4px;font-size:.67rem;color:#333">Reels &middot; TikToks &middot; Shorts &middot; LinkedIn &middot; Twitter/X &middot; Carousels &middot; Captions &mdash; all generated</p>
+        <input type="file" id="vfile" accept="video/*" style="display:none"/>
+      </label>
+    </div>
+
+    <!-- PROCESSING -->
+    <div id="stProc" style="display:none">
+      <p class="slb" style="margin-bottom:11px">Processing Your Video</p>
+      <div class="card" style="padding:18px">
+        <div id="stepList"></div>
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--dim);margin-bottom:5px">
+            <span>Processing&hellip;</span><span id="pct">0%</span>
+          </div>
+          <div class="pb"><div class="pf" id="pbar" style="width:0;transition:width .5s ease"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DONE -->
+    <div id="stDone" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:9px">
+        <div>
+          <p class="slb" style="margin-bottom:2px">Content Ready</p>
+          <h3 style="font-family:'Syne',sans-serif;font-size:1.02rem;color:var(--gr)">&#10003; 6 pieces generated</h3>
+        </div>
+        <button class="btn bs sm" onclick="resetUp()">+ Upload Another</button>
+      </div>
+      <div class="ga">
+        <div class="card" style="padding:16px"><div style="font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">Instagram Reel</div><h4 style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:4px">Behind the scenes &#128293;</h4><p style="font-size:.73rem;color:var(--dim);line-height:1.5">30s vertical cut, trending audio, captions + 15 hashtags.</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--b)"><span class="tag">Instagram</span><button style="background:var(--or);color:#fff;border:none;padding:4px 10px;border-radius:5px;font-size:.68rem;font-weight:700;cursor:pointer">&#8595; Download</button></div></div>
+        <div class="card" style="padding:16px"><div style="font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">TikTok</div><h4 style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:4px">Why we do what we do</h4><p style="font-size:.73rem;color:var(--dim);line-height:1.5">60s story, trend-matched hook, subtitle overlay, voiceover script.</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--b)"><span class="tag">TikTok</span><button style="background:var(--or);color:#fff;border:none;padding:4px 10px;border-radius:5px;font-size:.68rem;font-weight:700;cursor:pointer">&#8595; Download</button></div></div>
+        <div class="card" style="padding:16px"><div style="font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">LinkedIn Post</div><h4 style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:4px">What building a business looks like</h4><p style="font-size:.73rem;color:var(--dim);line-height:1.5">Long-form post, storytelling hook, insights, engagement CTA.</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--b)"><span class="tag">LinkedIn</span><button style="background:var(--or);color:#fff;border:none;padding:4px 10px;border-radius:5px;font-size:.68rem;font-weight:700;cursor:pointer">&#8595; Download</button></div></div>
+        <div class="card" style="padding:16px"><div style="font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">Twitter / X Thread</div><h4 style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:4px">7 things I've learned</h4><p style="font-size:.73rem;color:var(--dim);line-height:1.5">10-tweet thread, hook, value tweets, CTA from your transcript.</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--b)"><span class="tag">Twitter/X</span><button style="background:var(--or);color:#fff;border:none;padding:4px 10px;border-radius:5px;font-size:.68rem;font-weight:700;cursor:pointer">&#8595; Download</button></div></div>
+        <div class="card" style="padding:16px"><div style="font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">YouTube Short</div><h4 style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:4px">Quick tip from our shoot &#9889;</h4><p style="font-size:.73rem;color:var(--dim);line-height:1.5">Optimised thumbnail direction, title, description and tags.</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--b)"><span class="tag">YouTube</span><button style="background:var(--or);color:#fff;border:none;padding:4px 10px;border-radius:5px;font-size:.68rem;font-weight:700;cursor:pointer">&#8595; Download</button></div></div>
+        <div class="card" style="padding:16px"><div style="font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">Instagram Carousel</div><h4 style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:4px">5 reasons to choose us &#8594;</h4><p style="font-size:.73rem;color:var(--dim);line-height:1.5">6-slide carousel brief with copy, visual direction, CTA slide.</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--b)"><span class="tag">Instagram</span><button style="background:var(--or);color:#fff;border:none;padding:4px 10px;border-radius:5px;font-size:.68rem;font-weight:700;cursor:pointer">&#8595; Download</button></div></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:9px;flex-wrap:wrap">
+        <a href="calendar.html" class="btn bp">View Content Calendar &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="card" style="padding:17px">
+      <p class="slb" style="margin-bottom:10px">What You'll Receive</p>
+      <div style="font-size:.77rem">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)"><span>Instagram Reels</span><span style="color:var(--gr);font-weight:600">&#10003; 2 cuts</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)"><span>TikTok videos</span><span style="color:var(--gr);font-weight:600">&#10003; 2 cuts</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)"><span>YouTube Short</span><span style="color:var(--gr);font-weight:600">&#10003; 1 cut</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)"><span>LinkedIn post</span><span style="color:var(--gr);font-weight:600">&#10003; Full copy</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)"><span>Twitter/X thread</span><span style="color:var(--gr);font-weight:600">&#10003; 10 tweets</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)"><span>Carousel brief</span><span style="color:var(--gr);font-weight:600">&#10003; 6 slides</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)"><span>Captions &amp; hashtags</span><span style="color:var(--gr);font-weight:600">&#10003; All posts</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0"><span>Calendar update</span><span style="color:var(--gr);font-weight:600">&#10003; Auto</span></div>
+      </div>
+    </div>
+    <div class="card" style="padding:17px">
+      <p class="slb" style="margin-bottom:8px">Tips for Best Results</p>
+      <div style="font-size:.74rem;color:var(--dim);line-height:1.85">
+        <p>&#128161; Film in good natural light</p>
+        <p>&#127897;&#65039; Clear audio helps captions</p>
+        <p>&#128208; Vertical 9:16 works best</p>
+        <p>&#9203; Aim for 2&ndash;10 minutes</p>
+        <p>&#128260; Upload weekly to stay full</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
 <script>
-  initNav('upload.html');
-
-  // Responsive grid
-  function checkGrid() {
-    const g = document.getElementById('uploadGrid');
-    if (g) g.style.gridTemplateColumns = window.innerWidth < 760 ? '1fr' : '1fr 300px';
+(function(){
+  function resize(){
+    var g=document.getElementById('twoCol');
+    if(g) g.style.gridTemplateColumns=window.innerWidth<740?'1fr':'1fr 285px';
   }
-  checkGrid();
-  window.addEventListener('resize', checkGrid);
+  resize(); window.addEventListener('resize',resize);
 
-  const stepDefs = [
-    { icon:'📥', label:'Receive video',     desc:'Uploading your file…' },
-    { icon:'🔍', label:'Analyse content',   desc:'AI scanning your footage…' },
-    { icon:'✂️', label:'Edit & trim',       desc:'Creating platform-specific cuts…' },
-    { icon:'💬', label:'Generate captions', desc:'Auto-captioning all formats…' },
-    { icon:'📝', label:'Write copy',        desc:'Generating posts, threads & hooks…' },
-    { icon:'📅', label:'Update calendar',   desc:'Scheduling your content…' },
+  document.getElementById('vfile').addEventListener('change',function(){
+    if(!this.files||!this.files.length) return;
+    startProcessing();
+  });
+
+  var steps=[
+    {i:'&#128229;',l:'Receive video',d:'Uploading your file&hellip;'},
+    {i:'&#128269;',l:'Analyse content',d:'AI scanning your footage&hellip;'},
+    {i:'&#9986;&#65039;',l:'Edit &amp; trim',d:'Creating platform cuts&hellip;'},
+    {i:'&#128172;',l:'Generate captions',d:'Auto-captioning all formats&hellip;'},
+    {i:'&#128221;',l:'Write copy',d:'Generating posts, hooks &amp; threads&hellip;'},
+    {i:'&#128197;',l:'Update calendar',d:'Scheduling your content&hellip;'}
   ];
 
-  function renderSteps(activeIdx) {
-    document.getElementById('stepRows').innerHTML = stepDefs.map((s, i) => {
-      const cls = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'idle';
-      const ico = i < activeIdx ? '✅' : s.icon;
-      const desc = i <= activeIdx ? s.desc : 'Waiting…';
-      return `<div class="step-row">
-        <div class="step-ico ${cls}">${ico}</div>
-        <div class="step-text"><h4>${s.label}</h4><p>${desc}</p></div>
-      </div>`;
+  function renderSteps(cur){
+    document.getElementById('stepList').innerHTML=steps.map(function(s,i){
+      var cls=i<cur?'done':i===cur?'active':'idle';
+      var ico=i<cur?'&#10003;':s.i;
+      var bg=cls==='done'?'rgba(31,217,122,.15)':cls==='active'?'rgba(255,92,26,.15)':'var(--b)';
+      var anim=cls==='active'?'animation:sp 1s infinite':'';
+      return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--b)">'+
+        '<div style="width:30px;height:30px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:.82rem;flex-shrink:0;'+anim+'">'+ico+'</div>'+
+        '<div><div style="font-size:.8rem;font-weight:600;margin-bottom:1px">'+s.l+'</div>'+
+        '<div style="font-size:.67rem;color:var(--dim)">'+(i<=cur?s.d:'Waiting&hellip;')+'</div></div>'+
+      '</div>';
     }).join('');
   }
 
-  function startUpload(input) {
-    if (!input.files.length) return;
-    // Switch to processing state
-    document.getElementById('stateIdle').style.display = 'none';
-    document.getElementById('stateProcess').style.display = 'block';
-
-    let step = 0;
-    const bar = document.getElementById('progressBar');
-    const pct = document.getElementById('pctLabel');
-
-    renderSteps(0);
-
-    const timer = setInterval(() => {
-      step++;
-      const percent = Math.round((step / stepDefs.length) * 100);
-      bar.style.width = percent + '%';
-      pct.textContent = percent + '%';
-      renderSteps(step);
-
-      if (step >= stepDefs.length) {
-        clearInterval(timer);
-        setTimeout(() => {
-          document.getElementById('stateProcess').style.display = 'none';
-          document.getElementById('stateDone').style.display = 'block';
-        }, 500);
+  window.startProcessing=function(){
+    document.getElementById('stIdle').style.display='none';
+    document.getElementById('stProc').style.display='block';
+    var cur=0; renderSteps(0);
+    var t=setInterval(function(){
+      cur++;
+      var pct=Math.round(cur/steps.length*100);
+      document.getElementById('pbar').style.width=pct+'%';
+      document.getElementById('pct').textContent=pct+'%';
+      renderSteps(cur);
+      if(cur>=steps.length){
+        clearInterval(t);
+        setTimeout(function(){
+          document.getElementById('stProc').style.display='none';
+          document.getElementById('stDone').style.display='block';
+        },500);
       }
-    }, 700);
-  }
+    },680);
+  };
 
-  function resetUpload() {
-    document.getElementById('stateDone').style.display = 'none';
-    document.getElementById('stateIdle').style.display = 'block';
-    document.getElementById('progressBar').style.width = '0%';
+  window.resetUp=function(){
+    document.getElementById('stDone').style.display='none';
+    document.getElementById('stIdle').style.display='block';
+    document.getElementById('pbar').style.width='0';
+    document.getElementById('vfile').value='';
+  };
+})();
+</script>
+
+<footer class="ft2">
+  <div class="fb"><div class="br">ImpactGrid <em>Creator Engine</em></div><p>impactgridgroup.com</p></div>
+  <div class="fl2">
+    <a href="index.html">Dashboard</a>
+    <a href="upload.html">Upload</a>
+    <a href="services.html">Services</a>
+    <a href="creators.html">Creators</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="https://impactgridanalytics.com/" target="_blank" class="lbl">Analytics &#8599;</a>
+  </div>
+  <p class="fc">&copy; 2025 ImpactGrid Creator Engine.</p>
+</footer>
+
+</div>
+<script>window._PAGE='upload.html';</script>
+<script>
+(function(){
+  // Build sidebar
+  var pg = window._PAGE || 'index.html';
+  var svg = {
+    grid:    '<rect x="3" y="3" w="7" h="7"/><rect x="14" y="3" w="7" h="7"/><rect x="3" y="14" w="7" h="7"/><rect x="14" y="14" w="7" h="7"/>',
+    upload:  '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+    cal:     '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    clk:     '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    tnd:     '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    usr:     '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    loc:     '<circle cx="12" cy="12" r="3"/><path d="M22 12h-4M6 12H2M12 2v4M12 18v4"/>',
+    star:    '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    cam:     '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+    inf:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    mail:    '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+  };
+  function ic(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svg[k]+'</svg>'}
+  function lnk(href,ik,label,badge){
+    var a=pg===href?' on':'';
+    var b=badge?'<span class="nbdg">'+badge+'</span>':'';
+    return '<a href="'+href+'" class="ni'+a+'">'+ic(ik)+label+b+'</a>';
   }
+  var html = 
+    '<div class="sb-logo">'+
+      '<div class="sb-brand">ImpactGrid <em>Creator Engine</em></div>'+
+      '<div class="sb-sub">AI Content Platform</div>'+
+    '</div>'+
+    '<nav class="sb-nav">'+
+      '<div class="nlb">Platform</div>'+
+      lnk('index.html','grid','Dashboard')+
+      lnk('upload.html','upload','Upload Video','NEW')+
+      lnk('calendar.html','cal','Content Calendar')+
+      lnk('schedule.html','clk','Posting Schedule')+
+      lnk('trending.html','tnd','Trending Topics')+
+      '<div class="nlb">Services</div>'+
+      lnk('creators.html','usr','Book a Creator')+
+      lnk('tracker.html','loc','Live Tracker')+
+      lnk('services.html','star','All Services')+
+      lnk('photography.html','cam','Photography')+
+      '<div class="nlb">Company</div>'+
+      lnk('about.html','inf','About Us')+
+      lnk('contact.html','mail','Contact')+
+    '</nav>'+
+    '<div class="sb-foot">'+
+      '<a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="sb-ap">'+
+        '<div class="sb-ai">&#128202;</div>'+
+        '<div class="sb-at"><strong>ImpactGrid Analytics</strong><span>Track your growth</span></div>'+
+        '<span class="sb-aa">&#8599;</span>'+
+      '</a>'+
+      '<div class="sb-cta">'+
+        '<strong>&#127916; Start creating</strong>'+
+        '<p>Upload a video, get 30 days of content instantly.</p>'+
+        '<a href="upload.html">Upload Now &rarr;</a>'+
+      '</div>'+
+    '</div>';
+  var sb = document.getElementById('sb');
+  if(sb) sb.innerHTML = html;
+
+  // overlay close
+  var ov = document.getElementById('ov');
+  if(ov) ov.onclick = closeNav;
+
+  // fade-up
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('in'); });
+  },{threshold:0.06});
+  document.querySelectorAll('.fu').forEach(function(el){ obs.observe(el); });
+})();
+
+function openNav(){
+  document.getElementById('sb').classList.add('open');
+  document.getElementById('ov').style.display='block';
+}
+function closeNav(){
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('ov').style.display='none';
+}
 </script>
 </body>
 </html>
