@@ -1,26 +1,6 @@
 /* nav.js — ImpactGrid Creator Engine */
 
 function buildSidebar(activePage) {
-  const links = [
-    { group: 'Platform', items: [
-      { href: 'index.html',       icon: 'grid',     label: 'Dashboard' },
-      { href: 'upload.html',      icon: 'upload',   label: 'Upload Video', badge: 'NEW' },
-      { href: 'calendar.html',    icon: 'calendar', label: 'Content Calendar' },
-      { href: 'schedule.html',    icon: 'clock',    label: 'Posting Schedule' },
-      { href: 'trending.html',    icon: 'trend',    label: 'Trending Topics' },
-    ]},
-    { group: 'Services', items: [
-      { href: 'creators.html',    icon: 'users',    label: 'Book a Creator' },
-      { href: 'tracker.html',     icon: 'locate',   label: 'Live Tracker' },
-      { href: 'services.html',    icon: 'star',     label: 'All Services' },
-      { href: 'photography.html', icon: 'camera',   label: 'Photography' },
-    ]},
-    { group: 'Company', items: [
-      { href: 'about.html',       icon: 'info',     label: 'About Us' },
-      { href: 'contact.html',     icon: 'mail',     label: 'Contact' },
-    ]}
-  ];
-
   const icons = {
     grid:     `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>`,
     upload:   `<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>`,
@@ -35,66 +15,71 @@ function buildSidebar(activePage) {
     mail:     `<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>`,
   };
 
-  const navHTML = links.map(group => `
-    <div class="nav-group">
-      <p class="nav-group-label">${group.group}</p>
-      ${group.items.map(item => `
-        <a href="${item.href}" class="nav-item${activePage === item.href ? ' active' : ''}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icons[item.icon]}</svg>
-          ${item.label}
-          ${item.badge ? `<span class="badge">${item.badge}</span>` : ''}
-        </a>`).join('')}
-    </div>`).join('');
+  function link(href, icon, label, badge) {
+    const active = activePage === href ? ' active' : '';
+    const bdg = badge ? `<span class="nbadge">${badge}</span>` : '';
+    return `<a href="${href}" class="nitem${active}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icons[icon]}</svg>${label}${bdg}</a>`;
+  }
 
   return `
-    <div class="sidebar-logo">
-      <div class="brand">ImpactGrid <em>Creator Engine</em></div>
-      <span class="brand-sub">AI Content Platform</span>
-    </div>
-    <nav class="sidebar-nav-scroll">${navHTML}</nav>
-    <div class="sidebar-bottom">
-      <div class="sidebar-analytics">
-        <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="analytics-pill">
-          <div class="analytics-pill-icon">📊</div>
-          <div class="analytics-pill-text">
-            <strong>ImpactGrid Analytics</strong>
-            <span>Track your growth</span>
-          </div>
-          <span class="analytics-pill-arrow">↗</span>
-        </a>
-      </div>
-      <div class="sidebar-cta">
-        <strong>🎬 Start creating</strong>
-        <p>Upload a video and get 30 days of content planned instantly.</p>
-        <a href="upload.html">Upload Now →</a>
-      </div>
-    </div>`;
+<div class="sbar-logo">
+  <div class="sbar-brand">ImpactGrid <em>Creator Engine</em></div>
+  <div class="sbar-sub">AI Content Platform</div>
+</div>
+<nav class="sbar-nav">
+  <div class="nlabel">Platform</div>
+  ${link('index.html','grid','Dashboard')}
+  ${link('upload.html','upload','Upload Video','NEW')}
+  ${link('calendar.html','calendar','Content Calendar')}
+  ${link('schedule.html','clock','Posting Schedule')}
+  ${link('trending.html','trend','Trending Topics')}
+  <div class="nlabel">Services</div>
+  ${link('creators.html','users','Book a Creator')}
+  ${link('tracker.html','locate','Live Tracker')}
+  ${link('services.html','star','All Services')}
+  ${link('photography.html','camera','Photography')}
+  <div class="nlabel">Company</div>
+  ${link('about.html','info','About Us')}
+  ${link('contact.html','mail','Contact')}
+</nav>
+<div class="sbar-foot">
+  <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="sbar-analytics">
+    <div class="sbar-a-icon">📊</div>
+    <div class="sbar-a-text"><strong>ImpactGrid Analytics</strong><span>Track your growth</span></div>
+    <span class="sbar-a-arrow">↗</span>
+  </a>
+  <div class="sbar-cta">
+    <strong>🎬 Start creating</strong>
+    <p>Upload a video, get 30 days of content instantly.</p>
+    <a href="upload.html">Upload Now →</a>
+  </div>
+</div>`;
 }
 
 function initNav(activePage) {
-  // Inject overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'sidebar-overlay';
-  overlay.id = 'sidebarOverlay';
-  overlay.onclick = closeNav;
-  document.body.prepend(overlay);
+  // overlay
+  const ov = document.createElement('div');
+  ov.id = 'navOverlay';
+  ov.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:199;backdrop-filter:blur(2px)';
+  ov.onclick = closeNav;
+  document.body.prepend(ov);
 
-  // Inject sidebar
-  const sidebar = document.getElementById('sidebar');
-  if (sidebar) sidebar.innerHTML = buildSidebar(activePage);
+  // build sidebar
+  const sb = document.getElementById('sidebar');
+  if (sb) sb.innerHTML = buildSidebar(activePage);
 
-  // Fade-up observer
-  const observer = new IntersectionObserver(entries => {
+  // fade-up
+  const obs = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
   }, { threshold: 0.07 });
-  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
 }
 
 function openNav() {
   document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebarOverlay').classList.add('show');
+  document.getElementById('navOverlay').style.display = 'block';
 }
 function closeNav() {
   document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('show');
+  document.getElementById('navOverlay').style.display = 'none';
 }
