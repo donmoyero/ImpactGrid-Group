@@ -1,165 +1,367 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Contact — ImpactGrid Creator Engine</title>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    .contact-info-item { display:flex; align-items:flex-start; gap:12px; padding:16px 0; border-bottom:1px solid var(--border); }
-    .contact-info-item:last-child { border-bottom:none; }
-    .contact-icon { width:36px; height:36px; background:rgba(255,92,26,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
-    .contact-icon-label { font-size:0.68rem; color:var(--white-dim); margin-bottom:2px; text-transform:uppercase; letter-spacing:1px; }
-    .contact-icon-val { font-size:0.88rem; font-weight:500; }
-    #formSuccess { display:none; text-align:center; padding:40px; }
-    #formSuccess div { font-size:3rem; margin-bottom:12px; }
-    #formSuccess h3 { font-family:'Syne',sans-serif; font-size:1.2rem; margin-bottom:8px; color:var(--green); }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Contact — ImpactGrid Creator Engine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+:root{--black:#080808;--surf:#0f0f0f;--card:#141414;--b:#222;--b2:#2e2e2e;--white:#f0ebe5;--dim:#777;--or:#ff5c1a;--od:#c94010;--gr:#1fd97a;--yw:#f0c93a;--bl:#4a8ff5;--sw:262px;--r:11px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
+
+/* SIDEBAR */
+#sb{position:fixed;left:0;top:0;width:var(--sw);height:100vh;background:var(--surf);border-right:1px solid var(--b);display:flex;flex-direction:column;z-index:200;overflow:hidden;transition:transform .35s cubic-bezier(.77,0,.18,1)}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--b);flex-shrink:0}
+.sb-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;color:var(--white);line-height:1.25}
+.sb-brand em{color:var(--or);font-style:normal}
+.sb-sub{font-size:.54rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.nlb{font-size:.53rem;text-transform:uppercase;letter-spacing:2.5px;color:#353535;padding:10px 18px 3px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 18px;color:#555;font-size:.8rem;border-left:2px solid transparent;transition:all .15s}
+.ni:hover,.ni.on{color:var(--white);border-left-color:var(--or);background:rgba(255,92,26,.06)}
+.ni svg{width:14px;height:14px;flex-shrink:0;opacity:.5}
+.ni:hover svg,.ni.on svg{opacity:1}
+.nbdg{margin-left:auto;background:var(--or);color:#fff;font-size:.5rem;font-weight:700;padding:1px 5px;border-radius:8px}
+.sb-foot{flex-shrink:0;border-top:1px solid var(--b)}
+.sb-ap{display:flex;align-items:center;gap:9px;margin:11px 13px 5px;background:rgba(74,143,245,.1);border:1px solid rgba(74,143,245,.2);border-radius:9px;padding:9px 11px;transition:border-color .2s}
+.sb-ap:hover{border-color:rgba(74,143,245,.5)}
+.sb-ai{width:27px;height:27px;background:linear-gradient(135deg,var(--bl),#2460d9);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0}
+.sb-at strong{display:block;font-size:.7rem;font-weight:700;color:var(--white)}
+.sb-at span{font-size:.57rem;color:var(--bl)}
+.sb-aa{margin-left:auto;color:var(--bl);font-size:.75rem}
+.sb-cta{margin:5px 13px 15px;background:linear-gradient(135deg,var(--or),var(--od));border-radius:9px;padding:11px 12px}
+.sb-cta strong{font-family:'Syne',sans-serif;font-size:.74rem;display:block;margin-bottom:3px}
+.sb-cta p{font-size:.63rem;color:rgba(255,255,255,.82);margin-bottom:7px;line-height:1.4}
+.sb-cta a{background:#fff;color:var(--od);font-size:.68rem;font-weight:700;padding:5px 10px;border-radius:5px;display:inline-block}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;height:52px;background:rgba(8,8,8,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--b);padding:0 30px;display:flex;align-items:center;justify-content:space-between;z-index:100;gap:10px}
+.tl{display:flex;align-items:center;gap:10px}
+.tr{display:flex;align-items:center;gap:8px}
+.hbg{display:none;background:transparent;border:1px solid var(--b2);color:var(--white);width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:1rem;align-items:center;justify-content:center}
+.tbdg{background:rgba(31,217,122,.1);border:1px solid rgba(31,217,122,.22);color:var(--gr);font-size:.64rem;padding:3px 9px;border-radius:20px;font-weight:500}
+.tbtl{font-family:'Syne',sans-serif;font-weight:700;font-size:.84rem}
+
+/* MAIN */
+.main{margin-left:var(--sw);min-height:100vh}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 17px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .18s;text-decoration:none;white-space:nowrap}
+.bp{background:var(--or);color:#fff}.bp:hover{background:var(--od)}
+.bs{background:var(--card);border:1px solid var(--b2);color:var(--white)}.bs:hover{border-color:var(--or);color:var(--or)}
+.bb{background:var(--bl);color:#fff}.bb:hover{opacity:.88}
+.bg{background:transparent;border:1px solid var(--b2);color:var(--dim)}.bg:hover{color:var(--white)}
+.sm{padding:5px 11px;font-size:.72rem}
+.lg{padding:12px 26px;font-size:.88rem}
+
+/* HERO */
+.hero{padding:56px 40px 46px;border-bottom:1px solid var(--b);background:radial-gradient(ellipse at 80% 50%,rgba(255,92,26,.12) 0%,transparent 55%);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;right:0;width:40%;height:100%;background:repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(255,92,26,.02) 24px,rgba(255,92,26,.02) 25px);pointer-events:none}
+.ew{display:inline-flex;align-items:center;gap:6px;background:rgba(255,92,26,.09);border:1px solid rgba(255,92,26,.2);color:var(--or);font-size:.61rem;text-transform:uppercase;letter-spacing:2.5px;padding:4px 11px;border-radius:20px;margin-bottom:16px;font-weight:600}
+.ew::before{content:'●';font-size:.37rem;animation:bk 1.8s infinite}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
+.ht{font-family:'Syne',sans-serif;font-size:clamp(1.9rem,3.6vw,3.2rem);font-weight:800;line-height:1.08;max-width:660px;margin-bottom:14px;position:relative;z-index:1}
+.ht em{color:var(--or);font-style:normal}
+.hd{font-size:.93rem;color:var(--dim);max-width:470px;margin-bottom:26px;line-height:1.75;position:relative;z-index:1}
+.ha{display:flex;gap:9px;flex-wrap:wrap;position:relative;z-index:1}
+.hst{display:flex;gap:40px;margin-top:40px;padding-top:22px;border-top:1px solid var(--b);flex-wrap:wrap;position:relative;z-index:1}
+.hst strong{display:block;font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--or);line-height:1}
+.hst span{font-size:.7rem;color:var(--dim);margin-top:3px;display:block}
+
+/* SECTION */
+.sec{padding:44px 40px}
+.sec+.sec,section+section{border-top:1px solid var(--b)}
+.slb{font-size:.57rem;text-transform:uppercase;letter-spacing:3px;color:var(--or);font-weight:700;margin-bottom:6px}
+.stl{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:800;margin-bottom:7px;line-height:1.15}
+.stl em{color:var(--or);font-style:normal}
+.sdc{color:var(--dim);font-size:.87rem;max-width:490px;margin-bottom:22px;line-height:1.7}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--b);border-radius:var(--r);transition:border-color .2s,transform .2s}
+.card:hover{border-color:rgba(255,92,26,.4)}
+.cl:hover{transform:translateY(-3px)}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:13px}
+.gas{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px}
+
+/* TAGS */
+.tag{display:inline-block;font-size:.59rem;padding:3px 7px;border-radius:4px;font-weight:500;background:rgba(255,255,255,.06);color:#999}
+.tor{background:rgba(255,92,26,.15);color:var(--or)}
+.tgr{background:rgba(31,217,122,.15);color:var(--gr)}
+.tbl{background:rgba(74,143,245,.15);color:var(--bl)}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:.75rem;font-weight:500;margin-bottom:5px;color:var(--dim)}
+.fi,.ft,.fs{width:100%;background:var(--card);border:1px solid var(--b2);color:var(--white);padding:9px 12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.875rem;transition:border-color .18s;outline:none}
+.fi:focus,.ft:focus,.fs:focus{border-color:var(--or)}
+.fi::placeholder,.ft::placeholder{color:#2e2e2e}
+.ft{resize:vertical;min-height:105px;line-height:1.6}
+.fs{cursor:pointer;appearance:none}
+
+/* CALENDAR */
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.ch{text-align:center;font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:3px 0 8px}
+.cc{background:var(--card);border:1px solid var(--b);border-radius:7px;padding:7px;min-height:76px;cursor:pointer;transition:border-color .18s}
+.cc:hover{border-color:rgba(255,92,26,.5)}
+.cc.on{border-color:rgba(255,92,26,.22)}
+.cn{font-size:.67rem;color:var(--dim);margin-bottom:3px}
+.cp{font-size:.53rem;padding:2px 4px;border-radius:3px;margin-bottom:2px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp.rl{background:rgba(255,92,26,.18);color:var(--or)}
+.cp.st{background:rgba(240,201,58,.18);color:var(--yw)}
+.cp.po{background:rgba(31,217,122,.18);color:var(--gr)}
+.cp.ca{background:rgba(160,170,255,.18);color:#a0aaff}
+
+/* PROGRESS */
+.pb{background:var(--b);border-radius:3px;height:4px;overflow:hidden}
+.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--or),var(--yw))}
+
+/* MAP */
+.mapbox{background:var(--card);border:1px solid var(--b);border-radius:16px;height:250px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-top:14px}
+.mapbox::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 38% 58%,rgba(255,92,26,.1),transparent 45%),repeating-linear-gradient(0deg,transparent,transparent 26px,rgba(255,255,255,.015) 26px,rgba(255,255,255,.015) 27px),repeating-linear-gradient(90deg,transparent,transparent 26px,rgba(255,255,255,.015) 26px,rgba(255,255,255,.015) 27px)}
+.mdt{width:13px;height:13px;background:var(--or);border-radius:50%;animation:gp 2.2s infinite;position:relative;z-index:1}
+@keyframes gp{0%,100%{box-shadow:0 0 0 5px rgba(255,92,26,.2)}50%{box-shadow:0 0 0 18px rgba(255,92,26,.03)}}
+.mlb{position:absolute;bottom:13px;left:13px;font-size:.68rem;color:var(--dim);z-index:1}
+.mlb strong{color:var(--or);font-size:.75rem;display:block;margin-bottom:1px}
+
+/* UPLOAD */
+.uz{border:2px dashed var(--b2);border-radius:16px;padding:48px 28px;text-align:center;background:var(--card);cursor:pointer;transition:all .2s;position:relative;overflow:hidden;display:block}
+.uz:hover{border-color:var(--or);background:rgba(255,92,26,.03)}
+.uz h3{font-family:'Syne',sans-serif;font-weight:700;font-size:.97rem;margin:9px 0 4px}
+.uz p{font-size:.76rem;color:var(--dim)}
+
+/* FOOTER */
+.ft2{border-top:1px solid var(--b);padding:24px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:11px}
+.fb .br{font-family:'Syne',sans-serif;font-weight:800;font-size:.88rem}
+.fb .br em{color:var(--or);font-style:normal}
+.fb p{font-size:.68rem;color:var(--dim);margin-top:2px}
+.fl2{display:flex;gap:15px;flex-wrap:wrap}
+.fl2 a{font-size:.73rem;color:var(--dim);transition:color .15s}
+.fl2 a:hover{color:var(--white)}
+.fl2 .lbl{color:var(--bl)}
+.fc{font-size:.67rem;color:#2e2e2e}
+
+/* FADE */
+.fu{opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease}
+.fu.in{opacity:1;transform:translateY(0)}
+
+/* OVERLAY */
+#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:199;backdrop-filter:blur(2px)}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  #sb{transform:translateX(-100%)}
+  #sb.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hbg{display:inline-flex}
+  .hero,.sec{padding-left:18px;padding-right:18px}
+  .hero{padding-top:36px;padding-bottom:32px}
+  .topbar{padding:0 14px}
+  .ft2{padding:18px}
+  .ht{font-size:clamp(1.65rem,6vw,2.3rem)}
+  .hst{gap:18px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .cg{grid-template-columns:repeat(4,1fr)}
+  .tbdg{display:none}
+}
+@media(max-width:500px){
+  .ha{flex-direction:column}
+  .ha .btn{width:100%;justify-content:center}
+}
+</style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar"></aside>
+<div id="ov"></div>
+<aside id="sb"></aside>
 <div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <button class="hamburger" onclick="openNav()">☰</button>
-      <span class="topbar-page-title">Contact</span>
-    </div>
-    <div class="topbar-right">
-      <a href="services.html" class="btn btn-secondary btn-sm">View Pricing</a>
-    </div>
-  </div>
-
-  <div class="page-hero">
-    <div class="eyebrow">Get in Touch</div>
-    <h1 class="hero-title">Let's talk about<br>growing your <em>business</em></h1>
-    <p class="hero-desc">Whether you're ready to book or just exploring — we'd love to hear about your business and show you what's possible.</p>
-  </div>
-
-  <section class="section fade-up">
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:32px;align-items:start" id="contactLayout">
-
-      <!-- FORM -->
-      <div>
-        <p class="section-label" style="margin-bottom:16px">Send a Message</p>
-        <div id="contactForm">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-            <div class="form-group">
-              <label class="form-label">Your Name</label>
-              <input type="text" class="form-input" placeholder="Jane Smith"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Business Name</label>
-              <input type="text" class="form-input" placeholder="Your Business Ltd"/>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Email Address</label>
-            <input type="email" class="form-input" placeholder="hello@yourbusiness.com"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Phone (optional)</label>
-            <input type="tel" class="form-input" placeholder="+44 7700 000000"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">What are you interested in?</label>
-            <select class="form-select">
-              <option value="">Select a service…</option>
-              <option>AI Content Engine (£49/month)</option>
-              <option>Creator Day Shoot (£299/day)</option>
-              <option>Managed Social (£349/month)</option>
-              <option>Growth Bundle (£599/month)</option>
-              <option>Photography</option>
-              <option>Book a specific creator</option>
-              <option>Just exploring / general enquiry</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tell us about your business</label>
-            <textarea class="form-textarea" placeholder="What does your business do? What are your content goals? Any platforms you focus on?"></textarea>
-          </div>
-          <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="submitForm()">Send Message →</button>
-          <p style="font-size:0.72rem;color:var(--white-dim);margin-top:10px;text-align:center">We reply within 2 working hours during business days.</p>
-        </div>
-        <div id="formSuccess">
-          <div>✅</div>
-          <h3>Message sent!</h3>
-          <p style="font-size:0.88rem;color:var(--white-dim)">Thanks for reaching out. We'll be in touch within 2 hours.</p>
-        </div>
-      </div>
-
-      <!-- CONTACT INFO -->
-      <div>
-        <div class="card" style="padding:22px;margin-bottom:14px">
-          <p class="section-label" style="margin-bottom:14px">Contact Details</p>
-          <div class="contact-info-item">
-            <div class="contact-icon">📍</div>
-            <div><div class="contact-icon-label">Location</div><div class="contact-icon-val">Manchester, UK</div></div>
-          </div>
-          <div class="contact-info-item">
-            <div class="contact-icon">📧</div>
-            <div><div class="contact-icon-label">Email</div><div class="contact-icon-val">hello@impactgridgroup.com</div></div>
-          </div>
-          <div class="contact-info-item">
-            <div class="contact-icon">📱</div>
-            <div><div class="contact-icon-label">Phone</div><div class="contact-icon-val">+44 161 000 0000</div></div>
-          </div>
-          <div class="contact-info-item">
-            <div class="contact-icon">🕐</div>
-            <div><div class="contact-icon-label">Hours</div><div class="contact-icon-val">Mon–Fri 9am–6pm</div></div>
-          </div>
-        </div>
-
-        <div class="card" style="padding:22px;margin-bottom:14px">
-          <p class="section-label" style="margin-bottom:12px">Quick Links</p>
-          <a href="services.html" class="btn btn-secondary" style="width:100%;justify-content:center;margin-bottom:8px">View All Services</a>
-          <a href="creators.html" class="btn btn-secondary" style="width:100%;justify-content:center;margin-bottom:8px">Book a Creator</a>
-          <a href="https://impactgridanalytics.com/" target="_blank" class="btn btn-ghost" style="width:100%;justify-content:center;border-color:rgba(74,143,245,0.3);color:var(--blue)">📊 Open Analytics ↗</a>
-        </div>
-
-        <div class="card" style="padding:22px;background:linear-gradient(135deg,rgba(255,92,26,0.08),var(--card))">
-          <div style="font-size:1.6rem;margin-bottom:8px">🚀</div>
-          <strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:6px">Ready to start?</strong>
-          <p style="font-size:0.76rem;color:var(--white-dim);line-height:1.5;margin-bottom:12px">Upload your first video right now and see the AI content engine in action — no commitment needed.</p>
-          <a href="upload.html" class="btn btn-primary" style="width:100%;justify-content:center">Try It Free →</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <footer class="site-footer">
-    <div class="footer-brand"><div class="brand">ImpactGrid <em>Creator Engine</em></div><p>AI AI Content Platform</p></div>
-    <div class="footer-links">
-      <a href="index.html">Dashboard</a><a href="services.html">Services</a>
-      <a href="about.html">About</a>
-      <a href="https://impactgridanalytics.com/" target="_blank" class="link-blue">Analytics ↗</a>
-    </div>
-    <p class="footer-copy">© 2025 ImpactGrid Creator Engine. All rights reserved.</p>
-  </footer>
+<div class="topbar">
+  <div class="tl"><button class="hbg" onclick="openNav()">&#9776;</button>
+    <span class="tbtl">Contact</span></div>
+  <div class="tr"><a href="services.html" class="btn bs sm">View Pricing</a></div>
 </div>
-<script src="nav.js"></script>
+<div class="hero">
+  <div class="ew">Get in Touch</div>
+  <h1 class="ht">Let's talk about<br>growing your <em>business</em></h1>
+  <p class="hd">Whether you're ready to book or just exploring — we'd love to hear about your business and show you what's possible.</p>
+</div>
+<section class="sec fu">
+  <div id="cGrid" style="display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start">
+    <div>
+      <p class="slb" style="margin-bottom:14px">Send a Message</p>
+      <div id="cForm">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="fg"><label class="fl">Your Name</label><input class="fi" type="text" placeholder="Jane Smith"/></div>
+          <div class="fg"><label class="fl">Business Name</label><input class="fi" type="text" placeholder="Your Business Ltd"/></div>
+        </div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" type="email" placeholder="hello@yourbusiness.com"/></div>
+        <div class="fg"><label class="fl">Phone (optional)</label><input class="fi" type="tel" placeholder="+44 7700 000000"/></div>
+        <div class="fg"><label class="fl">Interested in?</label>
+          <select class="fs">
+            <option>Select a service&hellip;</option>
+            <option>AI Content Engine (&#163;49/month)</option>
+            <option>Creator Day Shoot (&#163;299/day)</option>
+            <option>Managed Social (&#163;349/month)</option>
+            <option>Growth Bundle (&#163;599/month)</option>
+            <option>Photography</option>
+            <option>Book a specific creator</option>
+            <option>General enquiry</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Tell us about your business</label>
+          <textarea class="ft" placeholder="What does your business do? What are your content goals?"></textarea>
+        </div>
+        <button class="btn bp lg" style="width:100%;justify-content:center" onclick="submitForm()">Send Message &rarr;</button>
+        <p style="font-size:.7rem;color:var(--dim);margin-top:9px;text-align:center">We reply within 2 working hours during business days.</p>
+      </div>
+      <div id="cSuccess" style="display:none;text-align:center;padding:50px 20px">
+        <div style="font-size:3rem;margin-bottom:12px">&#10003;</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1.2rem;color:var(--gr);margin-bottom:8px">Message sent!</h3>
+        <p style="font-size:.86rem;color:var(--dim)">Thanks for reaching out. We'll be in touch within 2 hours.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="padding:20px">
+        <p class="slb" style="margin-bottom:12px">Contact Details</p>
+        <div style="font-size:.8rem">
+          <div style="display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--b)">
+            <div style="width:32px;height:32px;background:rgba(255,92,26,.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#128205;</div>
+            <div><div style="font-size:.63rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Location</div>United Kingdom</div>
+          </div>
+          <div style="display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--b)">
+            <div style="width:32px;height:32px;background:rgba(255,92,26,.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#128231;</div>
+            <div><div style="font-size:.63rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Email</div>hello@impactgridgroup.com</div>
+          </div>
+          <div style="display:flex;gap:11px;align-items:flex-start;padding:11px 0">
+            <div style="width:32px;height:32px;background:rgba(255,92,26,.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#128336;</div>
+            <div><div style="font-size:.63rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Hours</div>Mon&ndash;Fri 9am&ndash;6pm</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px;background:linear-gradient(135deg,rgba(255,92,26,.07),var(--card))">
+        <div style="font-size:1.5rem;margin-bottom:8px">&#128640;</div>
+        <strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:5px">Ready to start?</strong>
+        <p style="font-size:.74rem;color:var(--dim);line-height:1.5;margin-bottom:11px">Upload your first video right now and see the AI content engine in action.</p>
+        <a href="upload.html" class="btn bp" style="width:100%;justify-content:center">Try It Now &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
 <script>
-  initNav('contact.html');
-  function checkLayout() {
-    const el = document.getElementById('contactLayout');
-    if (el) el.style.gridTemplateColumns = window.innerWidth < 760 ? '1fr' : '1fr 340px';
+(function(){
+  function resize(){
+    var g=document.getElementById('cGrid');
+    if(g) g.style.gridTemplateColumns=window.innerWidth<740?'1fr':'1fr 320px';
   }
-  checkLayout();
-  window.addEventListener('resize', checkLayout);
+  resize(); window.addEventListener('resize',resize);
+  window.submitForm=function(){
+    document.getElementById('cForm').style.display='none';
+    document.getElementById('cSuccess').style.display='block';
+  };
+})();
+</script>
 
-  function submitForm() {
-    document.getElementById('contactForm').style.display = 'none';
-    document.getElementById('formSuccess').style.display = 'block';
-  }
+<footer class="ft2">
+  <div class="fb"><div class="br">ImpactGrid <em>Creator Engine</em></div><p>impactgridgroup.com</p></div>
+  <div class="fl2">
+    <a href="index.html">Dashboard</a>
+    <a href="upload.html">Upload</a>
+    <a href="services.html">Services</a>
+    <a href="creators.html">Creators</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="https://impactgridanalytics.com/" target="_blank" class="lbl">Analytics &#8599;</a>
+  </div>
+  <p class="fc">&copy; 2025 ImpactGrid Creator Engine.</p>
+</footer>
 
-  // Pre-select creator if passed in URL
-  const params = new URLSearchParams(window.location.search);
-  const creator = params.get('creator');
-  if (creator) {
-    const sel = document.querySelector('.form-select');
-    if (sel) sel.value = 'Book a specific creator';
-    const msg = document.querySelector('.form-textarea');
-    if (msg) msg.value = `I'd like to book ${creator.charAt(0).toUpperCase() + creator.slice(1)} for a content shoot.`;
+</div>
+<script>window._PAGE='contact.html';</script>
+<script>
+(function(){
+  // Build sidebar
+  var pg = window._PAGE || 'index.html';
+  var svg = {
+    grid:    '<rect x="3" y="3" w="7" h="7"/><rect x="14" y="3" w="7" h="7"/><rect x="3" y="14" w="7" h="7"/><rect x="14" y="14" w="7" h="7"/>',
+    upload:  '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+    cal:     '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    clk:     '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    tnd:     '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    usr:     '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    loc:     '<circle cx="12" cy="12" r="3"/><path d="M22 12h-4M6 12H2M12 2v4M12 18v4"/>',
+    star:    '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    cam:     '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+    inf:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    mail:    '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+  };
+  function ic(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svg[k]+'</svg>'}
+  function lnk(href,ik,label,badge){
+    var a=pg===href?' on':'';
+    var b=badge?'<span class="nbdg">'+badge+'</span>':'';
+    return '<a href="'+href+'" class="ni'+a+'">'+ic(ik)+label+b+'</a>';
   }
+  var html = 
+    '<div class="sb-logo">'+
+      '<div class="sb-brand">ImpactGrid <em>Creator Engine</em></div>'+
+      '<div class="sb-sub">AI Content Platform</div>'+
+    '</div>'+
+    '<nav class="sb-nav">'+
+      '<div class="nlb">Platform</div>'+
+      lnk('index.html','grid','Dashboard')+
+      lnk('upload.html','upload','Upload Video','NEW')+
+      lnk('calendar.html','cal','Content Calendar')+
+      lnk('schedule.html','clk','Posting Schedule')+
+      lnk('trending.html','tnd','Trending Topics')+
+      '<div class="nlb">Services</div>'+
+      lnk('creators.html','usr','Book a Creator')+
+      lnk('tracker.html','loc','Live Tracker')+
+      lnk('services.html','star','All Services')+
+      lnk('photography.html','cam','Photography')+
+      '<div class="nlb">Company</div>'+
+      lnk('about.html','inf','About Us')+
+      lnk('contact.html','mail','Contact')+
+    '</nav>'+
+    '<div class="sb-foot">'+
+      '<a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="sb-ap">'+
+        '<div class="sb-ai">&#128202;</div>'+
+        '<div class="sb-at"><strong>ImpactGrid Analytics</strong><span>Track your growth</span></div>'+
+        '<span class="sb-aa">&#8599;</span>'+
+      '</a>'+
+      '<div class="sb-cta">'+
+        '<strong>&#127916; Start creating</strong>'+
+        '<p>Upload a video, get 30 days of content instantly.</p>'+
+        '<a href="upload.html">Upload Now &rarr;</a>'+
+      '</div>'+
+    '</div>';
+  var sb = document.getElementById('sb');
+  if(sb) sb.innerHTML = html;
+
+  // overlay close
+  var ov = document.getElementById('ov');
+  if(ov) ov.onclick = closeNav;
+
+  // fade-up
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('in'); });
+  },{threshold:0.06});
+  document.querySelectorAll('.fu').forEach(function(el){ obs.observe(el); });
+})();
+
+function openNav(){
+  document.getElementById('sb').classList.add('open');
+  document.getElementById('ov').style.display='block';
+}
+function closeNav(){
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('ov').style.display='none';
+}
 </script>
 </body>
 </html>
