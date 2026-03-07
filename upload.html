@@ -1,177 +1,100 @@
 <script>
-(function(){
 
-/* ---------- RESPONSIVE GRID ---------- */
+document.addEventListener("DOMContentLoaded", function(){
 
 function resize(){
   var g=document.getElementById('twoCol');
   if(g) g.style.gridTemplateColumns=window.innerWidth<740?'1fr':'1fr 285px';
 }
+
 resize();
 window.addEventListener('resize',resize);
 
-/* ---------- VIDEO INPUT ---------- */
-
 const fileInput = document.getElementById('vfile');
-const dropZone  = document.getElementById('uzLabel');
 
-let uploadedVideos = JSON.parse(localStorage.getItem("impactgrid_videos") || "[]");
-
-/* ---------- FILE SELECT ---------- */
+if(!fileInput) return;
 
 fileInput.addEventListener('change',function(){
+
   if(!this.files.length) return;
 
-  const files = [...this.files];
-
-  files.forEach(file=>{
-    if(!file.type.startsWith("video")) return;
-
-    const videoObj = {
-      name:file.name,
-      size:file.size,
-      date:new Date().toISOString()
-    };
-
-    uploadedVideos.push(videoObj);
-  });
-
-  localStorage.setItem("impactgrid_videos",JSON.stringify(uploadedVideos));
-
-  previewVideo(files[0]);
   startProcessing();
+
 });
-
-/* ---------- DRAG DROP ---------- */
-
-dropZone.addEventListener("dragover",e=>{
-  e.preventDefault();
-  dropZone.style.borderColor="var(--or)";
-});
-
-dropZone.addEventListener("dragleave",()=>{
-  dropZone.style.borderColor="var(--b2)";
-});
-
-dropZone.addEventListener("drop",e=>{
-  e.preventDefault();
-  const file=e.dataTransfer.files[0];
-  if(!file || !file.type.startsWith("video")) return;
-
-  fileInput.files=e.dataTransfer.files;
-
-  previewVideo(file);
-  startProcessing();
-});
-
-/* ---------- VIDEO PREVIEW ---------- */
-
-function previewVideo(file){
-
-  const reader = new FileReader();
-
-  reader.onload=function(e){
-
-    const preview = document.createElement("video");
-    preview.src = e.target.result;
-    preview.controls = true;
-    preview.style.width="100%";
-    preview.style.marginTop="12px";
-    preview.style.borderRadius="12px";
-
-    const idle = document.getElementById("stIdle");
-    idle.appendChild(preview);
-
-  };
-
-  reader.readAsDataURL(file);
-}
-
-/* ---------- PROCESS STEPS ---------- */
 
 const steps=[
-  {i:'📥',l:'Receive video',d:'Uploading your file…'},
-  {i:'🔍',l:'Analyse content',d:'AI scanning your footage…'},
-  {i:'✂️',l:'Edit & trim',d:'Creating platform cuts…'},
-  {i:'💬',l:'Generate captions',d:'Auto-captioning all formats…'},
-  {i:'📝',l:'Write copy',d:'Generating posts & hashtags…'},
-  {i:'📅',l:'Update calendar',d:'Scheduling your content…'}
+{l:'Receive video',d:'Uploading your file…'},
+{l:'Analyse content',d:'AI scanning your footage…'},
+{l:'Edit & trim',d:'Creating platform cuts…'},
+{l:'Generate captions',d:'Auto-captioning formats…'},
+{l:'Write copy',d:'Generating posts…'},
+{l:'Update calendar',d:'Scheduling content…'}
 ];
-
-/* ---------- RENDER STEPS ---------- */
 
 function renderSteps(cur){
 
-  document.getElementById('stepList').innerHTML = steps.map(function(s,i){
+document.getElementById('stepList').innerHTML = steps.map(function(s,i){
 
-    const ico = i<cur?'✔':s.i;
-    const bg  = i<cur?'rgba(31,217,122,.15)':i===cur?'rgba(255,92,26,.15)':'var(--b)';
+return `
+<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--b)">
+<div style="width:30px;height:30px;border-radius:50%;background:${i<=cur?'rgba(31,217,122,.15)':'var(--b)'};display:flex;align-items:center;justify-content:center;font-size:.82rem">
+${i<cur?'✔':i+1}
+</div>
+<div>
+<div style="font-size:.8rem;font-weight:600">${s.l}</div>
+<div style="font-size:.67rem;color:var(--dim)">${i<=cur?s.d:'Waiting…'}</div>
+</div>
+</div>
+`;
 
-    return `
-    <div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--b)">
-      <div style="width:30px;height:30px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:.82rem">
-        ${ico}
-      </div>
-      <div>
-        <div style="font-size:.8rem;font-weight:600">${s.l}</div>
-        <div style="font-size:.67rem;color:var(--dim)">${i<=cur?s.d:'Waiting…'}</div>
-      </div>
-    </div>
-    `;
-
-  }).join("");
+}).join("");
 
 }
-
-/* ---------- START PROCESS ---------- */
 
 window.startProcessing=function(){
 
-  document.getElementById('stIdle').style.display='none';
-  document.getElementById('stProc').style.display='block';
+document.getElementById('stIdle').style.display='none';
+document.getElementById('stProc').style.display='block';
 
-  let cur=0;
+let cur=0;
+renderSteps(cur);
 
-  renderSteps(cur);
+const t=setInterval(()=>{
 
-  const t=setInterval(()=>{
+cur++;
 
-    cur++;
+const pct=Math.round(cur/steps.length*100);
 
-    const pct=Math.round(cur/steps.length*100);
+document.getElementById('pbar').style.width=pct+'%';
+document.getElementById('pct').textContent=pct+'%';
 
-    document.getElementById('pbar').style.width=pct+'%';
-    document.getElementById('pct').textContent=pct+'%';
+renderSteps(cur);
 
-    renderSteps(cur);
+if(cur>=steps.length){
 
-    if(cur>=steps.length){
+clearInterval(t);
 
-      clearInterval(t);
-
-      setTimeout(()=>{
-        document.getElementById('stProc').style.display='none';
-        document.getElementById('stDone').style.display='block';
-      },700);
-
-    }
-
-  },900);
+setTimeout(()=>{
+document.getElementById('stProc').style.display='none';
+document.getElementById('stDone').style.display='block';
+},600);
 
 }
 
-/* ---------- RESET ---------- */
-
-window.resetUp=function(){
-
-  document.getElementById('stDone').style.display='none';
-  document.getElementById('stIdle').style.display='block';
-
-  document.getElementById('pbar').style.width='0';
-
-  fileInput.value="";
+},900);
 
 };
 
-})();
+window.resetUp=function(){
+
+document.getElementById('stDone').style.display='none';
+document.getElementById('stIdle').style.display='block';
+document.getElementById('pbar').style.width='0';
+
+fileInput.value='';
+
+};
+
+});
+
 </script>
