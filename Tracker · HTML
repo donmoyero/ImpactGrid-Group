@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Tracker — ImpactGrid Group</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .tracker-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; }
+    .tracker-card.active { border-color:rgba(31,217,122,0.3); }
+    .status-live { display:inline-flex; align-items:center; gap:6px; background:rgba(31,217,122,0.12); border:1px solid rgba(31,217,122,0.25); color:var(--green); font-size:0.68rem; font-weight:600; padding:3px 10px; border-radius:20px; margin-bottom:12px; }
+    .status-live::before { content:'●'; font-size:0.4rem; animation:blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+    .eta-badge { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; color:var(--orange); }
+    .eta-label { font-size:0.72rem; color:var(--white-dim); }
+    .step-list { list-style:none; }
+    .step-list li { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.8rem; }
+    .step-list li:last-child { border-bottom:none; }
+    .step-check { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.6rem; flex-shrink:0; margin-top:1px; }
+    .step-check.done { background:rgba(31,217,122,0.2); color:var(--green); }
+    .step-check.now  { background:rgba(255,92,26,0.2); color:var(--orange); }
+    .step-check.next { background:var(--border); color:#444; }
+  </style>
+</head>
+<body>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="openNav()">☰</button>
+      <span class="topbar-badge" style="background:rgba(31,217,122,0.12);border-color:rgba(31,217,122,0.25);color:var(--green)">🟢 1 creator en route</span>
+    </div>
+    <div class="topbar-right">
+      <a href="creators.html" class="btn btn-primary btn-sm">Book a Creator</a>
+    </div>
+  </div>
+
+  <div class="page-hero">
+    <div class="eyebrow">Live GPS Tracking</div>
+    <h1 class="hero-title">Track your creator<br><em>in real time</em></h1>
+    <p class="hero-desc">Once booked, follow your ImpactGrid creator as they travel to your business. Know exactly when they'll arrive — like Uber, but for professional content creation.</p>
+  </div>
+
+  <!-- LIVE TRACKING -->
+  <section class="section fade-up">
+    <p class="section-label">Currently Active</p>
+    <h2 class="section-title" style="margin-bottom:20px">Live <em>creator status</em></h2>
+
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:20px" id="trackerLayout">
+      <!-- MAP -->
+      <div>
+        <div class="map-box" style="height:340px">
+          <div class="map-dot"></div>
+          <div class="map-label">
+            <strong>Jordan O. — Live Location</strong>
+            Oxford Rd, Manchester → Your Business · ETA 14 mins
+          </div>
+          <!-- Route line simulation -->
+          <div style="position:absolute;top:50%;left:30%;width:35%;height:2px;background:linear-gradient(90deg,var(--orange),transparent);opacity:0.4;transform:rotate(-20deg)"></div>
+          <!-- Destination marker -->
+          <div style="position:absolute;top:35%;right:25%;font-size:1.2rem">📍</div>
+        </div>
+        <p style="font-size:0.72rem;color:var(--white-dim);margin-top:10px">Full turn-by-turn Google Maps integration available after booking confirmation.</p>
+      </div>
+
+      <!-- TRACKING PANEL -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="tracker-card active">
+          <div class="status-live">Live Tracking</div>
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+            <div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ff9960);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;flex-shrink:0">JO</div>
+            <div>
+              <div style="font-weight:600;font-size:0.92rem">Jordan Osei</div>
+              <div style="font-size:0.72rem;color:var(--white-dim)">Video & Reels Specialist</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-end;margin-bottom:14px">
+            <div><div class="eta-badge">14</div><div class="eta-label">minutes away</div></div>
+            <div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem">2.3</div><div class="eta-label">miles remaining</div></div>
+          </div>
+          <div class="progress" style="margin-bottom:6px"><div class="progress-fill" style="width:72%"></div></div>
+          <div style="font-size:0.68rem;color:var(--white-dim);margin-bottom:14px">72% of journey complete</div>
+          <div style="font-size:0.76rem;color:var(--white-dim);padding:10px;background:rgba(255,255,255,0.03);border-radius:7px">📍 Currently on Oxford Road, heading north toward your location</div>
+        </div>
+
+        <div class="tracker-card">
+          <p class="section-label" style="margin-bottom:12px">Journey Progress</p>
+          <ul class="step-list">
+            <li><div class="step-check done">✓</div><div><strong>Departed</strong><br><span style="color:var(--white-dim)">Left Northern Quarter at 10:22 AM</span></div></li>
+            <li><div class="step-check done">✓</div><div><strong>On route</strong><br><span style="color:var(--white-dim)">Via Oxford Road</span></div></li>
+            <li><div class="step-check now">→</div><div><strong style="color:var(--orange)">2 mins from M1</strong><br><span style="color:var(--white-dim)">Approaching your area</span></div></li>
+            <li><div class="step-check next">○</div><div><strong>Arrival</strong><br><span style="color:var(--white-dim)">Est. 10:47 AM</span></div></li>
+            <li><div class="step-check next">○</div><div><strong>Shoot begins</strong><br><span style="color:var(--white-dim)">Est. 11:00 AM</span></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section fade-up">
+    <p class="section-label">Tracking Feature</p>
+    <h2 class="section-title">How <em>live tracking works</em></h2>
+    <div class="grid-3">
+      <div class="card" style="padding:22px">
+        <div style="font-size:1.8rem;margin-bottom:10px">📱</div>
+        <strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:6px">Creator shares location</strong>
+        <p style="font-size:0.78rem;color:var(--white-dim);line-height:1.5">When your booking is confirmed and the creator departs, they activate live GPS sharing through our app.</p>
+      </div>
+      <div class="card" style="padding:22px">
+        <div style="font-size:1.8rem;margin-bottom:10px">🔔</div>
+        <strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:6px">You get notified</strong>
+        <p style="font-size:0.78rem;color:var(--white-dim);line-height:1.5">Receive a text and email with your tracking link when your creator sets off. No app download needed.</p>
+      </div>
+      <div class="card" style="padding:22px">
+        <div style="font-size:1.8rem;margin-bottom:10px">🗺️</div>
+        <strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:6px">Track in real time</strong>
+        <p style="font-size:0.78rem;color:var(--white-dim);line-height:1.5">See their live location on a Google Maps view. ETA updates every 30 seconds. No more waiting and wondering.</p>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <a href="creators.html" class="btn btn-primary btn-lg">Book a Creator Now</a>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-brand"><div class="brand">ImpactGrid<em>Group</em></div><p>AI Content Engine · Manchester, UK</p></div>
+    <div class="footer-links">
+      <a href="index.html">Dashboard</a><a href="creators.html">Book a Creator</a>
+      <a href="services.html">Services</a><a href="contact.html">Contact</a>
+      <a href="https://impactgridanalytics.com/" target="_blank" class="link-blue">Analytics ↗</a>
+    </div>
+    <p class="footer-copy">© 2025 ImpactGrid Group. All rights reserved.</p>
+  </footer>
+</div>
+<script src="nav.js"></script>
+<script>
+  initNav('tracker.html');
+  function checkLayout() {
+    const el = document.getElementById('trackerLayout');
+    if (el) el.style.gridTemplateColumns = window.innerWidth < 760 ? '1fr' : '1fr 300px';
+  }
+  checkLayout();
+  window.addEventListener('resize', checkLayout);
+</script>
+</body>
+</html>
