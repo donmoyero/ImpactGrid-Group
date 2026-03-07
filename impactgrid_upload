@@ -1,9 +1,118 @@
-<!-- VIDEO PROCESS + CLOUDINARY UPLOAD SCRIPT -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Upload Video — ImpactGrid Creator Engine</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<aside id="sidebar" class="sidebar"></aside>
+
+<div class="main">
+
+<div class="topbar">
+
+<div class="topbar-left">
+<button class="hamburger" onclick="openNav()">☰</button>
+<span class="topbar-title">Upload Video</span>
+</div>
+
+<div class="topbar-right">
+<a href="https://impactgridanalytics.com/" target="_blank" class="btn btn-ghost btn-sm">
+📊 Analytics
+</a>
+</div>
+
+</div>
+
+<section class="page-hero">
+
+<div class="eyebrow">AI Content Engine</div>
+
+<h1 class="hero-title">
+Turn raw footage into<br>
+<em>professional content</em>
+</h1>
+
+<p class="hero-desc">
+Upload any business video. Our AI edits it, captions it, adapts it for every platform,
+and updates your content calendar automatically.
+</p>
+
+</section>
+
+<section class="section fade-up">
+
+<p class="section-label">Upload Your Video</p>
+<h2 class="section-title">Start creating content</h2>
+
+<div class="card" style="padding:40px;text-align:center">
+
+<input type="file" id="videoFile" accept="video/*">
+
+<p style="margin-top:10px;color:var(--white-dim)">
+MP4 • MOV • AVI • MKV
+</p>
+
+</div>
+
+</section>
+
+<section class="section fade-up" id="processing" style="display:none">
+
+<p class="section-label">AI Processing</p>
+
+<div class="card" style="padding:20px">
+
+<div id="steps"></div>
+
+<div style="margin-top:15px">
+
+<div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--white-dim)">
+<span>Processing</span>
+<span id="percent">0%</span>
+</div>
+
+<div class="progress-bar">
+<div class="progress-fill" id="bar"></div>
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="section fade-up" id="results" style="display:none">
+
+<p class="section-label">Generated Content</p>
+
+<h2 class="section-title">Your content is ready</h2>
+
+</section>
+
+<footer class="site-footer">
+
+<div class="footer-brand">
+<div class="brand">ImpactGrid <em>Creator Engine</em></div>
+<p>impactgridgroup.com</p>
+</div>
+
+</footer>
+
+</div>
 
 <script>
 
-const CLOUD_NAME = "impactgrid";        // your Cloudinary cloud name
-const UPLOAD_PRESET = "impactgrid_upload"; // your unsigned preset
+const CLOUD_NAME = "impactgrid";
+const UPLOAD_PRESET = "impactgrid_upload";
 
 const steps = [
 "Uploading video",
@@ -14,11 +123,20 @@ const steps = [
 "Updating calendar"
 ];
 
-document.getElementById("videoFile").addEventListener("change", uploadVideo);
+document.addEventListener("DOMContentLoaded", () => {
+
+const input = document.getElementById("videoFile");
+
+if(!input) return;
+
+input.addEventListener("change", uploadVideo);
+
+});
 
 async function uploadVideo(e){
 
 const file = e.target.files[0];
+
 if(!file) return;
 
 startProcessing();
@@ -38,14 +156,12 @@ body:formData
 
 const data = await res.json();
 
-console.log("Cloudinary response:", data);
-
-if(data.secure_url){
-console.log("Video URL:", data.secure_url);
-}
+console.log("Upload result:", data);
 
 }catch(err){
-console.error("Upload failed:", err);
+
+console.error("Upload error:", err);
+
 }
 
 }
@@ -86,3 +202,11 @@ document.getElementById("results").style.display="block";
 }
 
 </script>
+
+<script src="nav.js"></script>
+<script>
+initNav('upload.html');
+</script>
+
+</body>
+</html>
