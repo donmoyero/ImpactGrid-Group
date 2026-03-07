@@ -1,23 +1,23 @@
-/* nav.js — ImpactGrid Group shared sidebar + overlay logic */
+/* nav.js — ImpactGrid Creator Engine */
 
 function buildSidebar(activePage) {
   const links = [
     { group: 'Platform', items: [
-      { href: 'index.html',        icon: 'grid',     label: 'Dashboard' },
-      { href: 'upload.html',       icon: 'upload',   label: 'Upload Video', badge: 'NEW' },
-      { href: 'calendar.html',     icon: 'calendar', label: 'Content Calendar' },
-      { href: 'schedule.html',     icon: 'clock',    label: 'Posting Schedule' },
-      { href: 'trending.html',     icon: 'trend',    label: 'Trending Topics' },
+      { href: 'index.html',       icon: 'grid',     label: 'Dashboard' },
+      { href: 'upload.html',      icon: 'upload',   label: 'Upload Video', badge: 'NEW' },
+      { href: 'calendar.html',    icon: 'calendar', label: 'Content Calendar' },
+      { href: 'schedule.html',    icon: 'clock',    label: 'Posting Schedule' },
+      { href: 'trending.html',    icon: 'trend',    label: 'Trending Topics' },
     ]},
     { group: 'Services', items: [
-      { href: 'creators.html',     icon: 'users',    label: 'Book a Creator' },
-      { href: 'tracker.html',      icon: 'locate',   label: 'Live Tracker' },
-      { href: 'services.html',     icon: 'star',     label: 'All Services' },
-      { href: 'photography.html',  icon: 'camera',   label: 'Photography' },
+      { href: 'creators.html',    icon: 'users',    label: 'Book a Creator' },
+      { href: 'tracker.html',     icon: 'locate',   label: 'Live Tracker' },
+      { href: 'services.html',    icon: 'star',     label: 'All Services' },
+      { href: 'photography.html', icon: 'camera',   label: 'Photography' },
     ]},
     { group: 'Company', items: [
-      { href: 'about.html',        icon: 'info',     label: 'About Us' },
-      { href: 'contact.html',      icon: 'mail',     label: 'Contact' },
+      { href: 'about.html',       icon: 'info',     label: 'About Us' },
+      { href: 'contact.html',     icon: 'mail',     label: 'Contact' },
     ]}
   ];
 
@@ -47,13 +47,12 @@ function buildSidebar(activePage) {
     </div>`).join('');
 
   return `
-    <div class="sidebar-inner">
-      <div class="sidebar-logo">
-        <div class="brand">ImpactGrid<em>Group</em></div>
-        <span class="brand-sub">Content Engine · Manchester</span>
-      </div>
-      <nav>${navHTML}</nav>
-      <div style="flex:1"></div>
+    <div class="sidebar-logo">
+      <div class="brand">ImpactGrid <em>Creator Engine</em></div>
+      <span class="brand-sub">AI Content Platform</span>
+    </div>
+    <nav class="sidebar-nav-scroll">${navHTML}</nav>
+    <div class="sidebar-bottom">
       <div class="sidebar-analytics">
         <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="analytics-pill">
           <div class="analytics-pill-icon">📊</div>
@@ -83,15 +82,6 @@ function initNav(activePage) {
   // Inject sidebar
   const sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.innerHTML = buildSidebar(activePage);
-
-  // Scroll-based active nav
-  const sections = document.querySelectorAll('section[id], .section[id]');
-  if (sections.length) {
-    window.addEventListener('scroll', () => {
-      let cur = '';
-      sections.forEach(s => { if (window.scrollY >= s.offsetTop - 140) cur = s.id; });
-    }, { passive: true });
-  }
 
   // Fade-up observer
   const observer = new IntersectionObserver(entries => {
