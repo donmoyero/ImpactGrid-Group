@@ -1,100 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Upload Video — ImpactGrid Creator Engine</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar" class="sidebar"></aside>
+
+<div class="main">
+
+<!-- TOPBAR -->
+
+<div class="topbar">
+
+<div class="topbar-left">
+<button class="hamburger" onclick="openNav()">☰</button>
+<span class="topbar-title">Upload Video</span>
+</div>
+
+<div class="topbar-right">
+<a href="https://impactgridanalytics.com/" target="_blank" class="btn btn-ghost btn-sm">
+📊 Analytics
+</a>
+</div>
+
+</div>
+
+
+<!-- HERO -->
+
+<section class="page-hero">
+
+<div class="eyebrow">AI Content Engine</div>
+
+<h1 class="hero-title">
+Turn raw footage into<br>
+<em>professional content</em>
+</h1>
+
+<p class="hero-desc">
+Upload any business video. Our AI edits it, captions it, adapts it for every platform,
+and updates your content calendar automatically.
+</p>
+
+</section>
+
+
+
+<!-- UPLOAD SECTION -->
+
+<section class="section fade-up">
+
+<p class="section-label">Upload Your Video</p>
+<h2 class="section-title">Start creating content</h2>
+
+<div class="card" style="padding:40px;text-align:center">
+
+<input type="file" id="videoFile" accept="video/*" style="display:none">
+
+<button class="btn btn-primary btn-lg" onclick="document.getElementById('videoFile').click()">
+Upload Video
+</button>
+
+<p style="margin-top:10px;color:var(--white-dim)">
+MP4 • MOV • AVI • MKV
+</p>
+
+</div>
+
+</section>
+
+
+
+<!-- PROCESSING -->
+
+<section class="section fade-up" id="processing" style="display:none">
+
+<p class="section-label">AI Processing</p>
+
+<div class="card" style="padding:20px">
+
+<div id="steps"></div>
+
+<div style="margin-top:15px">
+
+<div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--white-dim)">
+<span>Processing</span>
+<span id="percent">0%</span>
+</div>
+
+<div class="progress-bar">
+<div class="progress-fill" id="bar"></div>
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- RESULTS -->
+
+<section class="section fade-up" id="results" style="display:none">
+
+<p class="section-label">Generated Content</p>
+
+<h2 class="section-title">Your content is ready</h2>
+
+<div class="grid-3">
+
+<div class="card" style="padding:20px">
+<strong>Instagram Reel</strong>
+<p>30s vertical clip with captions.</p>
+</div>
+
+<div class="card" style="padding:20px">
+<strong>TikTok Video</strong>
+<p>Optimised hook + subtitles.</p>
+</div>
+
+<div class="card" style="padding:20px">
+<strong>YouTube Short</strong>
+<p>SEO title and tags included.</p>
+</div>
+
+<div class="card" style="padding:20px">
+<strong>LinkedIn Post</strong>
+<p>Thought-leadership content.</p>
+</div>
+
+<div class="card" style="padding:20px">
+<strong>Twitter Thread</strong>
+<p>10 tweet story.</p>
+</div>
+
+<div class="card" style="padding:20px">
+<strong>Instagram Carousel</strong>
+<p>6 slide content brief.</p>
+</div>
+
+</div>
+
+<div style="margin-top:20px">
+
+<a href="calendar.html" class="btn btn-primary">
+View Content Calendar →
+</a>
+
+</div>
+
+</section>
+
+
+
+<footer class="site-footer">
+
+<div class="footer-brand">
+<div class="brand">ImpactGrid <em>Creator Engine</em></div>
+<p>impactgridgroup.com</p>
+</div>
+
+<div class="footer-links">
+<a href="index.html">Dashboard</a>
+<a href="upload.html">Upload</a>
+<a href="services.html">Services</a>
+<a href="creators.html">Creators</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+</div>
+
+<p class="footer-copy">© 2025 ImpactGrid Creator Engine.</p>
+
+</footer>
+
+</div>
+
+
+
+<!-- VIDEO PROCESS SCRIPT -->
+
 <script>
 
-document.addEventListener("DOMContentLoaded", function(){
-
-function resize(){
-  var g=document.getElementById('twoCol');
-  if(g) g.style.gridTemplateColumns=window.innerWidth<740?'1fr':'1fr 285px';
-}
-
-resize();
-window.addEventListener('resize',resize);
-
-const fileInput = document.getElementById('vfile');
-
-if(!fileInput) return;
-
-fileInput.addEventListener('change',function(){
-
-  if(!this.files.length) return;
-
-  startProcessing();
-
-});
-
-const steps=[
-{l:'Receive video',d:'Uploading your file…'},
-{l:'Analyse content',d:'AI scanning your footage…'},
-{l:'Edit & trim',d:'Creating platform cuts…'},
-{l:'Generate captions',d:'Auto-captioning formats…'},
-{l:'Write copy',d:'Generating posts…'},
-{l:'Update calendar',d:'Scheduling content…'}
+const steps = [
+"Uploading video",
+"Analysing content",
+"Editing clips",
+"Generating captions",
+"Writing posts",
+"Updating calendar"
 ];
 
-function renderSteps(cur){
+document.getElementById("videoFile").addEventListener("change", startProcessing);
 
-document.getElementById('stepList').innerHTML = steps.map(function(s,i){
+function startProcessing(){
 
-return `
-<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--b)">
-<div style="width:30px;height:30px;border-radius:50%;background:${i<=cur?'rgba(31,217,122,.15)':'var(--b)'};display:flex;align-items:center;justify-content:center;font-size:.82rem">
-${i<cur?'✔':i+1}
-</div>
-<div>
-<div style="font-size:.8rem;font-weight:600">${s.l}</div>
-<div style="font-size:.67rem;color:var(--dim)">${i<=cur?s.d:'Waiting…'}</div>
-</div>
-</div>
-`;
+document.getElementById("processing").style.display="block";
 
-}).join("");
+let current = 0;
 
-}
+const stepContainer = document.getElementById("steps");
 
-window.startProcessing=function(){
+const interval = setInterval(()=>{
 
-document.getElementById('stIdle').style.display='none';
-document.getElementById('stProc').style.display='block';
+current++;
 
-let cur=0;
-renderSteps(cur);
+stepContainer.innerHTML = steps.map((s,i)=>
+`<div style="margin-bottom:6px">
+${i<current ? "✔" : "•"} ${s}
+</div>`
+).join("");
 
-const t=setInterval(()=>{
+const percent = Math.round(current/steps.length*100);
 
-cur++;
+document.getElementById("bar").style.width = percent+"%";
+document.getElementById("percent").innerText = percent+"%";
 
-const pct=Math.round(cur/steps.length*100);
+if(current >= steps.length){
 
-document.getElementById('pbar').style.width=pct+'%';
-document.getElementById('pct').textContent=pct+'%';
+clearInterval(interval);
 
-renderSteps(cur);
-
-if(cur>=steps.length){
-
-clearInterval(t);
-
-setTimeout(()=>{
-document.getElementById('stProc').style.display='none';
-document.getElementById('stDone').style.display='block';
-},600);
+document.getElementById("results").style.display="block";
 
 }
 
-},900);
+},800);
 
-};
-
-window.resetUp=function(){
-
-document.getElementById('stDone').style.display='none';
-document.getElementById('stIdle').style.display='block';
-document.getElementById('pbar').style.width='0';
-
-fileInput.value='';
-
-};
-
-});
+}
 
 </script>
+
+
+
+<!-- NAV SYSTEM -->
+
+<script src="nav.js"></script>
+<script>
+initNav('upload.html');
+</script>
+
+</body>
+</html>
