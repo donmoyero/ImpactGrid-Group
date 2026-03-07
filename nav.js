@@ -18,8 +18,9 @@ info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><lin
 mail:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>'
 };
 
-function ic(k){
-return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+icons[k]+'</svg>';
+function ic(key){
+var icon=icons[key]||'';
+return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+icon+'</svg>';
 }
 
 function lnk(href,icon,label,badge){
@@ -31,6 +32,7 @@ var cls='nitem ni'+(active?' active on':'');
 var bdg=badge?'<span class="nbadge nbdg">'+badge+'</span>':'';
 
 return '<a href="'+href+'" class="'+cls+'">'+ic(icon)+label+bdg+'</a>';
+
 }
 
 return ''+
@@ -84,28 +86,32 @@ lnk('contact.html','mail','Contact')+
 
 function initNav(activePage){
 
-var sb=document.getElementById('sidebar')||document.getElementById('sb');
+var sidebar=document.getElementById('sidebar')||document.getElementById('sb');
 
-if(sb){
-sb.innerHTML=buildSidebar(activePage);
+if(sidebar){
+sidebar.innerHTML=buildSidebar(activePage);
 }
 
-var ov=document.getElementById('ov')||document.getElementById('navOverlay');
+var overlay=document.getElementById('ov')||document.getElementById('navOverlay');
 
-if(!ov){
+if(!overlay){
 
-ov=document.createElement('div');
-ov.id='ov';
+overlay=document.createElement('div');
+overlay.id='ov';
 
-document.body.insertBefore(ov,document.body.firstChild);
+document.body.insertBefore(overlay,document.body.firstChild);
 
 }
 
-ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:199;backdrop-filter:blur(2px)';
+overlay.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:199;backdrop-filter:blur(2px)';
 
-ov.onclick=closeNav;
+overlay.onclick=closeNav;
 
 if('IntersectionObserver' in window){
+
+var elements=document.querySelectorAll('.fade-up, .fu');
+
+if(elements.length){
 
 var obs=new IntersectionObserver(function(entries){
 
@@ -117,7 +123,7 @@ e.target.classList.add('in');
 
 },{threshold:0.07});
 
-document.querySelectorAll('.fade-up, .fu').forEach(function(el){
+elements.forEach(function(el){
 obs.observe(el);
 });
 
@@ -125,24 +131,34 @@ obs.observe(el);
 
 }
 
+}
+
 function openNav(){
 
-var sb=document.getElementById('sidebar')||document.getElementById('sb');
-var ov=document.getElementById('ov')||document.getElementById('navOverlay');
+var sidebar=document.getElementById('sidebar')||document.getElementById('sb');
+var overlay=document.getElementById('ov')||document.getElementById('navOverlay');
 
-if(sb) sb.classList.add('open');
+if(sidebar){
+sidebar.classList.add('open');
+}
 
-if(ov) ov.style.display='block';
+if(overlay){
+overlay.style.display='block';
+}
 
 }
 
 function closeNav(){
 
-var sb=document.getElementById('sidebar')||document.getElementById('sb');
-var ov=document.getElementById('ov')||document.getElementById('navOverlay');
+var sidebar=document.getElementById('sidebar')||document.getElementById('sb');
+var overlay=document.getElementById('ov')||document.getElementById('navOverlay');
 
-if(sb) sb.classList.remove('open');
+if(sidebar){
+sidebar.classList.remove('open');
+}
 
-if(ov) ov.style.display='none';
+if(overlay){
+overlay.style.display='none';
+}
 
 }
