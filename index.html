@@ -1,667 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ImpactDrid — AI Content Engine for Business</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --black: #0a0a0a;
-      --white: #f5f0eb;
-      --orange: #ff5c1a;
-      --orange-dim: #c94010;
-      --card-bg: #141414;
-      --border: #2a2a2a;
-      --muted: #888;
-      --green: #22d17a;
-      --yellow: #f5c842;
-      --blue: #4f8ef7;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--black);
-      color: var(--white);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 16px;
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
-
-    /* ─── SIDEBAR ─── */
-    .sidebar {
-      position: fixed;
-      left: 0; top: 0;
-      width: 264px; height: 100vh;
-      background: #0d0d0d;
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      z-index: 100;
-      padding: 28px 0 20px;
-      transition: transform 0.35s cubic-bezier(.77,0,.18,1);
-      overflow-y: auto;
-    }
-
-    .sidebar-logo {
-      padding: 0 24px 24px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .sidebar-logo .wordmark {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.45rem;
-      letter-spacing: -0.5px;
-    }
-    .sidebar-logo .wordmark em { color: var(--orange); font-style: normal; }
-    .sidebar-logo small {
-      display: block;
-      font-size: 0.63rem;
-      color: var(--muted);
-      margin-top: 3px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    .sidebar-nav { flex: 1; padding: 16px 0; }
-
-    .nav-section-label {
-      font-size: 0.6rem;
-      text-transform: uppercase;
-      letter-spacing: 2.5px;
-      color: #555;
-      padding: 14px 24px 5px;
-    }
-
-    .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 24px;
-      color: #888;
-      text-decoration: none;
-      font-size: 0.855rem;
-      font-weight: 400;
-      border-left: 2px solid transparent;
-      transition: all 0.18s;
-    }
-    .nav-link:hover, .nav-link.active {
-      color: var(--white);
-      border-left-color: var(--orange);
-      background: rgba(255,92,26,0.06);
-    }
-    .nav-link .icon { width: 16px; height: 16px; opacity: 0.65; flex-shrink: 0; }
-
-    /* ─── ANALYTICS SISTER LINK ─── */
-    .analytics-link-wrap {
-      padding: 16px;
-      flex-shrink: 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .analytics-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(135deg, rgba(79,142,247,0.12), rgba(79,142,247,0.05));
-      border: 1px solid rgba(79,142,247,0.25);
-      border-radius: 10px;
-      padding: 12px 14px;
-      text-decoration: none;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .analytics-link:hover {
-      border-color: rgba(79,142,247,0.6);
-      background: rgba(79,142,247,0.15);
-    }
-    .analytics-icon {
-      width: 34px; height: 34px;
-      background: linear-gradient(135deg, var(--blue), #2563eb);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
-    .analytics-link-text strong {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--white);
-      line-height: 1.2;
-    }
-    .analytics-link-text span {
-      font-size: 0.65rem;
-      color: var(--blue);
-      font-weight: 500;
-    }
-    .analytics-arrow { margin-left: auto; color: var(--blue); font-size: 0.9rem; opacity: 0.7; }
-
-    /* ─── SIDEBAR CTA ─── */
-    .sidebar-cta {
-      margin: 14px 16px 0;
-      background: linear-gradient(135deg, var(--orange), var(--orange-dim));
-      border-radius: 12px;
-      padding: 15px;
-      flex-shrink: 0;
-    }
-    .sidebar-cta strong { font-family: 'Syne', sans-serif; font-size: 0.85rem; display: block; margin-bottom: 4px; }
-    .sidebar-cta p { font-size: 0.72rem; color: rgba(255,255,255,0.82); margin-bottom: 10px; line-height: 1.4; }
-    .sidebar-cta a { background: white; color: var(--orange-dim); font-size: 0.75rem; font-weight: 700; padding: 7px 14px; border-radius: 7px; text-decoration: none; display: inline-block; }
-
-    /* ─── MAIN ─── */
-    .main { margin-left: 264px; min-height: 100vh; }
-
-    /* ─── TOPBAR ─── */
-    .topbar {
-      position: sticky; top: 0;
-      background: rgba(10,10,10,0.94);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
-      padding: 13px 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 90;
-    }
-    .topbar-left { display: flex; align-items: center; gap: 12px; }
-    .hamburger {
-      display: none;
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--white);
-      padding: 7px 11px;
-      border-radius: 7px;
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-    }
-    .topbar-right { display: flex; gap: 10px; align-items: center; }
-    .badge-trend { background: rgba(34,209,122,0.13); border: 1px solid rgba(34,209,122,0.28); color: var(--green); font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; font-weight: 500; }
-    .btn-primary { background: var(--orange); color: white; border: none; padding: 9px 18px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: background 0.2s; text-decoration: none; display: inline-block; }
-    .btn-primary:hover { background: var(--orange-dim); }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--white); padding: 9px 18px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; text-decoration: none; display: inline-block; transition: border-color 0.2s, color 0.2s; }
-    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-blue { background: var(--blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.82rem; cursor: pointer; text-decoration: none; display: inline-block; transition: opacity 0.2s; white-space: nowrap; }
-    .btn-blue:hover { opacity: 0.85; }
-
-    /* ─── SECTIONS ─── */
-    section { padding: 52px 44px; }
-    section + section { border-top: 1px solid var(--border); }
-    .section-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 2.5px; color: var(--orange); font-weight: 600; margin-bottom: 8px; }
-    h2 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; line-height: 1.12; margin-bottom: 10px; }
-    h2 span { color: var(--orange); }
-    .section-sub { color: var(--muted); font-size: 0.92rem; max-width: 540px; margin-bottom: 30px; line-height: 1.65; }
-
-    /* ─── HERO ─── */
-    #hero {
-      background: radial-gradient(ellipse at 75% 40%, rgba(255,92,26,0.11) 0%, transparent 62%);
-      padding: 68px 44px 60px;
-      border-bottom: 1px solid var(--border);
-    }
-    .hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,92,26,0.09); border: 1px solid rgba(255,92,26,0.22); color: var(--orange); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 2px; padding: 5px 12px; border-radius: 20px; margin-bottom: 22px; font-weight: 600; }
-    .hero-eyebrow::before { content:'●'; font-size: 0.45rem; animation: pulse 1.6s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
-    .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(2.2rem, 3.8vw, 3.5rem); font-weight: 800; line-height: 1.07; max-width: 660px; margin-bottom: 20px; }
-    .hero-title span { color: var(--orange); }
-    .hero-desc { font-size: 0.98rem; color: #999; max-width: 500px; margin-bottom: 34px; line-height: 1.75; }
-    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
-    .hero-stats { display: flex; gap: 40px; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-    .stat-item strong { display: block; font-family: 'Syne', sans-serif; font-size: 1.9rem; font-weight: 800; color: var(--orange); line-height: 1; }
-    .stat-item span { font-size: 0.76rem; color: var(--muted); margin-top: 3px; display: block; }
-
-    /* ─── UPLOAD ─── */
-    .upload-zone { border: 2px dashed var(--border); border-radius: 16px; padding: 52px 32px; text-align: center; background: var(--card-bg); cursor: pointer; transition: border-color 0.2s, background 0.2s; position: relative; overflow: hidden; }
-    .upload-zone:hover { border-color: var(--orange); background: rgba(255,92,26,0.03); }
-    .upload-zone::after { content:''; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(255,92,26,0.05), transparent 70%); pointer-events: none; }
-    .upload-icon { font-size: 2.8rem; margin-bottom: 12px; }
-    .upload-zone h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; }
-    .upload-zone p { color: var(--muted); font-size: 0.82rem; }
-    .upload-zone input { display: none; }
-    .content-output-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 14px; margin-top: 26px; }
-    .content-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; transition: border-color 0.2s, transform 0.2s; }
-    .content-card:hover { border-color: var(--orange); transform: translateY(-2px); }
-    .content-card-type { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--orange); font-weight: 600; margin-bottom: 7px; }
-    .content-card h4 { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; }
-    .content-card p { font-size: 0.76rem; color: var(--muted); line-height: 1.5; }
-    .content-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--border); }
-    .platform-tag { background: rgba(255,255,255,0.05); font-size: 0.62rem; padding: 3px 8px; border-radius: 4px; color: #bbb; }
-    .dl-btn { background: var(--orange); color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; }
-
-    /* ─── CALENDAR ─── */
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; }
-    .cal-day-label { text-align: center; font-size: 0.67rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 5px 0 9px; }
-    .cal-day { background: var(--card-bg); border: 1px solid var(--border); border-radius: 9px; padding: 9px; min-height: 86px; cursor: pointer; transition: border-color 0.2s; }
-    .cal-day:hover { border-color: var(--orange); }
-    .cal-day.has-content { border-color: rgba(255,92,26,0.3); }
-    .cal-day-num { font-size: 0.74rem; color: var(--muted); margin-bottom: 5px; }
-    .cal-pill { font-size: 0.58rem; padding: 2px 6px; border-radius: 3px; margin-bottom: 3px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cal-pill.reel { background: rgba(255,92,26,0.18); color: var(--orange); }
-    .cal-pill.story { background: rgba(245,200,66,0.18); color: var(--yellow); }
-    .cal-pill.post { background: rgba(34,209,122,0.18); color: var(--green); }
-    .cal-pill.carousel { background: rgba(120,130,255,0.18); color: #a0aaff; }
-
-    /* ─── TRENDING ─── */
-    .analytics-banner { background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(79,142,247,0.04)); border: 1px solid rgba(79,142,247,0.22); border-radius: 16px; padding: 26px 28px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-bottom: 28px; }
-    .analytics-banner-icon { font-size: 2.4rem; flex-shrink: 0; }
-    .analytics-banner-text { flex: 1; min-width: 200px; }
-    .analytics-banner-text strong { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; display: block; margin-bottom: 4px; }
-    .analytics-banner-text p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
-    .trend-list { display: flex; flex-direction: column; gap: 10px; }
-    .trend-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; transition: border-color 0.2s; }
-    .trend-item:hover { border-color: var(--orange); }
-    .trend-rank { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: #333; width: 30px; flex-shrink: 0; }
-    .trend-info { flex: 1; }
-    .trend-info h4 { font-weight: 600; font-size: 0.88rem; margin-bottom: 3px; }
-    .trend-info p { font-size: 0.76rem; color: var(--muted); }
-    .trend-score { text-align: right; font-family: 'Syne', sans-serif; }
-    .trend-score strong { display: block; color: var(--green); font-size: 0.95rem; }
-    .trend-score span { font-size: 0.68rem; color: var(--muted); }
-
-    /* ─── SCHEDULE ─── */
-    .schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 11px; }
-    .schedule-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
-    .schedule-day { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; color: var(--orange); margin-bottom: 9px; text-transform: uppercase; letter-spacing: 1px; }
-    .schedule-slot { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.76rem; }
-    .schedule-slot:last-child { border-bottom: none; }
-    .schedule-time { color: var(--muted); }
-    .schedule-type { color: var(--white); font-weight: 500; }
-
-    /* ─── CREATORS ─── */
-    .creators-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 15px; }
-    .creator-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: border-color 0.2s; }
-    .creator-card:hover { border-color: var(--orange); }
-    .creator-header { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
-    .creator-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--orange), #ff9960); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; }
-    .creator-name { font-weight: 600; font-size: 0.92rem; }
-    .creator-spec { font-size: 0.72rem; color: var(--muted); }
-    .creator-location { display: flex; align-items: center; gap: 5px; font-size: 0.76rem; color: var(--muted); margin-bottom: 9px; }
-    .creator-location::before { content: '📍'; font-size: 0.68rem; }
-    .creator-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 11px; }
-    .creator-tag { background: rgba(255,255,255,0.05); border-radius: 4px; padding: 3px 7px; font-size: 0.62rem; color: #aaa; }
-    .creator-footer { margin-top: 13px; }
-    .creator-footer .btn-primary { width: 100%; text-align: center; padding: 9px; font-size: 0.78rem; border-radius: 8px; }
-
-    /* ─── TRACKER ─── */
-    .tracker-bar { background: var(--border); border-radius: 4px; height: 5px; margin: 8px 0 4px; overflow: hidden; }
-    .tracker-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--orange), var(--yellow)); }
-    .tracker-status { font-size: 0.7rem; color: var(--green); font-weight: 600; }
-    .map-placeholder { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; height: 250px; display: flex; align-items: center; justify-content: center; margin-top: 18px; position: relative; overflow: hidden; }
-    .map-placeholder::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 40% 60%, rgba(255,92,26,0.1), transparent 50%), repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(255,255,255,0.018) 28px, rgba(255,255,255,0.018) 29px), repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(255,255,255,0.018) 28px, rgba(255,255,255,0.018) 29px); }
-    .map-dot { width: 13px; height: 13px; background: var(--orange); border-radius: 50%; box-shadow: 0 0 0 5px rgba(255,92,26,0.2), 0 0 18px rgba(255,92,26,0.5); animation: ping 2s infinite; }
-    @keyframes ping { 0%,100%{box-shadow:0 0 0 5px rgba(255,92,26,0.2)} 50%{box-shadow:0 0 0 15px rgba(255,92,26,0.04)} }
-    .map-label { position: absolute; bottom: 18px; left: 18px; font-size: 0.76rem; color: var(--muted); }
-    .map-label strong { color: var(--orange); font-size: 0.82rem; display: block; margin-bottom: 2px; }
-
-    /* ─── PRICING ─── */
-    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-    .service-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 22px 18px; transition: border-color 0.2s, transform 0.2s; cursor: pointer; }
-    .service-card:hover { border-color: var(--orange); transform: translateY(-3px); }
-    .service-icon { font-size: 1.9rem; margin-bottom: 11px; }
-    .service-card h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
-    .service-card p { font-size: 0.76rem; color: var(--muted); line-height: 1.55; margin-bottom: 13px; }
-    .service-price { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--orange); }
-    .service-price small { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
-
-    /* ─── FOOTER ─── */
-    footer { border-top: 1px solid var(--border); padding: 30px 44px; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 0.78rem; flex-wrap: wrap; gap: 12px; }
-
-    /* ─── OVERLAY ─── */
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 99; }
-    .sidebar-overlay.show { display: block; }
-
-    /* ─── FADE UP ─── */
-    .fade-up { opacity: 0; transform: translateY(22px); transition: opacity 0.55s ease, transform 0.55s ease; }
-    .fade-up.visible { opacity: 1; transform: translateY(0); }
-
-    /* ─── RESPONSIVE ─── */
-    @media (max-width: 920px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
-      .main { margin-left: 0; }
-      .hamburger { display: block; }
-      section { padding: 36px 20px; }
-      #hero { padding: 44px 20px 38px; }
-      .topbar { padding: 12px 20px; }
-      footer { padding: 24px 20px; }
-      h2 { font-size: 1.55rem; }
-      .calendar-grid { grid-template-columns: repeat(4, 1fr); }
-      .hero-stats { gap: 24px; }
-      .badge-trend { display: none; }
-    }
-  </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ImpactGrid Group — AI Content Engine</title>
+  <meta name="description" content="ImpactGrid Group turns raw business videos into professional content, schedules your posts, and connects you with Manchester creators."/>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar"></aside>
 
-<!-- ─── SIDEBAR ─── -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div class="wordmark">Impact<em>Drid</em></div>
-    <small>Content Engine · Manchester</small>
-  </div>
-
-  <nav class="sidebar-nav">
-    <p class="nav-section-label">Platform</p>
-    <a href="#hero" class="nav-link active">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </a>
-    <a href="#upload" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-      Upload Video
-    </a>
-    <a href="#calendar" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Content Calendar
-    </a>
-    <a href="#schedule" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Posting Schedule
-    </a>
-    <a href="#trending" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-      Trending Topics
-    </a>
-
-    <p class="nav-section-label">Services</p>
-    <a href="#services" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Book a Creator
-    </a>
-    <a href="#tracker" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M22 12h-4M6 12H2M12 2v4M12 18v4"/></svg>
-      Live Tracker
-    </a>
-    <a href="#pricing" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      Pricing
-    </a>
-
-    <p class="nav-section-label">Company</p>
-    <a href="about.html" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      About Us
-    </a>
-    <a href="photography.html" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      Photography
-    </a>
-    <a href="contact.html" class="nav-link">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      Contact
-    </a>
-  </nav>
-
-  <!-- ─── ANALYTICS SISTER PLATFORM ─── -->
-  <div class="analytics-link-wrap">
-    <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="analytics-link">
-      <div class="analytics-icon">📊</div>
-      <div class="analytics-link-text">
-        <strong>ImpactGrid Analytics</strong>
-        <span>Track your growth →</span>
-      </div>
-      <span class="analytics-arrow">↗</span>
-    </a>
-  </div>
-
-  <div class="sidebar-cta">
-    <strong>🎬 Ready to grow?</strong>
-    <p>Upload your first video and get 30 days of content planned instantly.</p>
-    <a href="#upload">Start Now →</a>
-  </div>
-</aside>
-
-<!-- ─── MAIN ─── -->
 <div class="main">
-
   <div class="topbar">
     <div class="topbar-left">
-      <button class="hamburger" onclick="openSidebar()">☰</button>
-      <span class="badge-trend">🔥 3 trends matched your niche today</span>
+      <button class="hamburger" onclick="openNav()">☰</button>
+      <span class="topbar-badge">🔥 3 trends matched your niche today</span>
     </div>
     <div class="topbar-right">
-      <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="btn-outline" style="border-color:rgba(79,142,247,0.35);color:var(--blue);font-size:0.78rem;padding:8px 14px;">📊 Analytics</a>
-      <a href="#upload" class="btn-primary">+ Upload Video</a>
+      <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="border-color:rgba(74,143,245,0.3);color:var(--blue)">📊 Analytics</a>
+      <a href="upload.html" class="btn btn-primary btn-sm">+ Upload Video</a>
     </div>
   </div>
 
   <!-- HERO -->
-  <section id="hero">
-    <div class="hero-eyebrow">AI-Powered · Manchester-Based</div>
+  <div class="page-hero">
+    <div class="eyebrow">AI-Powered · Manchester-Based</div>
     <h1 class="hero-title">
       Upload your video.<br>
       We plan your entire<br>
-      <span>content strategy.</span>
+      <em>content strategy.</em>
     </h1>
     <p class="hero-desc">
-      Feed ImpactDrid raw footage from your business. Our AI builds platform-specific content, tracks trending topics, plans your calendar, and tells you exactly when to post — every single day.
+      Feed ImpactGrid Group raw footage from your business. Our platform builds platform-ready content, tracks trending topics, plans your calendar, and tells you exactly when to post — every single day.
     </p>
     <div class="hero-actions">
-      <a href="#upload" class="btn-primary">Upload a Video Now</a>
-      <a href="#services" class="btn-outline">Book a Creator in Manchester</a>
+      <a href="upload.html" class="btn btn-primary btn-lg">Upload a Video Now</a>
+      <a href="creators.html" class="btn btn-secondary btn-lg">Book a Manchester Creator</a>
     </div>
     <div class="hero-stats">
-      <div class="stat-item"><strong>30+</strong><span>Content pieces per video</span></div>
-      <div class="stat-item"><strong>7</strong><span>Platforms supported</span></div>
-      <div class="stat-item"><strong>100%</strong><span>Ready to download</span></div>
-      <div class="stat-item"><strong>Live</strong><span>Creator GPS tracking</span></div>
+      <div class="stat"><strong>30+</strong><span>Content pieces per video</span></div>
+      <div class="stat"><strong>7</strong><span>Platforms supported</span></div>
+      <div class="stat"><strong>100%</strong><span>Download-ready output</span></div>
+      <div class="stat"><strong>Live</strong><span>GPS creator tracking</span></div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section class="section fade-up">
+    <p class="section-label">How It Works</p>
+    <h2 class="section-title">Four steps to a <em>full content strategy</em></h2>
+    <p class="section-sub">No editing skills needed. No agency required. Just upload and we handle the rest.</p>
+
+    <div class="grid-4" style="margin-top:8px">
+      <a href="upload.html" class="card card-lift" style="padding:24px 20px;display:block">
+        <div style="font-size:2rem;margin-bottom:14px">🎬</div>
+        <div class="section-label" style="margin-bottom:6px">Step 01</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:8px">Upload Your Video</h3>
+        <p style="font-size:0.8rem;color:var(--white-dim);line-height:1.55">Drop any raw business footage — walkthrough, demo, day-in-the-life. We handle the rest.</p>
+      </a>
+      <a href="calendar.html" class="card card-lift" style="padding:24px 20px;display:block">
+        <div style="font-size:2rem;margin-bottom:14px">✂️</div>
+        <div class="section-label" style="margin-bottom:6px">Step 02</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:8px">AI Edits & Captions</h3>
+        <p style="font-size:0.8rem;color:var(--white-dim);line-height:1.55">Platform-specific cuts, auto-captions, hashtags, hooks, and scripts generated automatically.</p>
+      </a>
+      <a href="calendar.html" class="card card-lift" style="padding:24px 20px;display:block">
+        <div style="font-size:2rem;margin-bottom:14px">📅</div>
+        <div class="section-label" style="margin-bottom:6px">Step 03</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:8px">Get Your Calendar</h3>
+        <p style="font-size:0.8rem;color:var(--white-dim);line-height:1.55">A full 30-day content calendar built and scheduled with optimal posting times per platform.</p>
+      </a>
+      <a href="creators.html" class="card card-lift" style="padding:24px 20px;display:block">
+        <div style="font-size:2rem;margin-bottom:14px">📍</div>
+        <div class="section-label" style="margin-bottom:6px">Step 04</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:8px">Book a Real Creator</h3>
+        <p style="font-size:0.8rem;color:var(--white-dim);line-height:1.55">Need human hands? Book a Manchester creator and track them live as they travel to you.</p>
+      </a>
     </div>
   </section>
 
-  <!-- UPLOAD ENGINE -->
-  <section id="upload" class="fade-up">
-    <p class="section-label">Step 1 — Content Engine</p>
-    <h2>Upload Your <span>Business Video</span></h2>
-    <p class="section-sub">Drop any raw footage — a walkthrough, product demo, or a day in the life. Our AI turns it into a full month of platform-ready content.</p>
+  <!-- WHAT WE PRODUCE -->
+  <section class="section fade-up">
+    <p class="section-label">Output Formats</p>
+    <h2 class="section-title">One video. <em>Every platform.</em></h2>
+    <p class="section-sub">Upload once and receive professionally edited, captioned, and branded content ready to post across all major channels.</p>
 
-    <label class="upload-zone" for="videoInput">
-      <div class="upload-icon">🎬</div>
-      <h3>Drop your video here or click to browse</h3>
-      <p>MP4, MOV, AVI — up to 2GB · Reels, TikToks, Shorts, LinkedIn posts &amp; more generated automatically</p>
-      <input type="file" id="videoInput" accept="video/*" onchange="handleUpload(this)" />
-    </label>
-
-    <div class="content-output-grid" id="contentOutput" style="display:none">
-      <div class="content-card"><div class="content-card-type">Instagram Reel</div><h4>Behind the scenes of your business 🔥</h4><p>30-second vertical cut, trending audio matched, caption + 15 hashtags included.</p><div class="content-card-footer"><span class="platform-tag">Instagram</span><button class="dl-btn">↓ Download</button></div></div>
-      <div class="content-card"><div class="content-card-type">TikTok</div><h4>Why we do what we do — 60s story</h4><p>Trend-matched hook, subtitle overlay, and voiceover script generated from your footage.</p><div class="content-card-footer"><span class="platform-tag">TikTok</span><button class="dl-btn">↓ Download</button></div></div>
-      <div class="content-card"><div class="content-card-type">LinkedIn Post</div><h4>What building a business really looks like</h4><p>Long-form professional post with storytelling hook and engagement CTA.</p><div class="content-card-footer"><span class="platform-tag">LinkedIn</span><button class="dl-btn">↓ Download</button></div></div>
-      <div class="content-card"><div class="content-card-type">Twitter / X Thread</div><h4>7 things I learned building this business</h4><p>10-tweet thread with hook, value tweets, and CTA — auto-generated from your video.</p><div class="content-card-footer"><span class="platform-tag">Twitter/X</span><button class="dl-btn">↓ Download</button></div></div>
-      <div class="content-card"><div class="content-card-type">YouTube Short</div><h4>Quick tip from our latest shoot ⚡</h4><p>Optimised thumbnail, title, description and tags generated automatically.</p><div class="content-card-footer"><span class="platform-tag">YouTube</span><button class="dl-btn">↓ Download</button></div></div>
-      <div class="content-card"><div class="content-card-type">Instagram Carousel</div><h4>5 reasons to choose us [Swipe →]</h4><p>6-slide carousel with on-brand graphics, copy, and strong final CTA slide.</p><div class="content-card-footer"><span class="platform-tag">Instagram</span><button class="dl-btn">↓ Download</button></div></div>
-    </div>
-  </section>
-
-  <!-- CALENDAR -->
-  <section id="calendar" class="fade-up">
-    <p class="section-label">Step 2 — Planning</p>
-    <h2>Your <span>Content Calendar</span></h2>
-    <p class="section-sub">AI-built 30-day calendar auto-populated from your uploaded videos. Every day has content ready to post.</p>
-    <div class="calendar-grid">
-      <div class="cal-day-label">Mon</div><div class="cal-day-label">Tue</div><div class="cal-day-label">Wed</div><div class="cal-day-label">Thu</div><div class="cal-day-label">Fri</div><div class="cal-day-label">Sat</div><div class="cal-day-label">Sun</div>
-      <div class="cal-day has-content"><div class="cal-day-num">10</div><span class="cal-pill reel">Reel</span><span class="cal-pill story">Story</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">11</div><span class="cal-pill post">Post</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">12</div><span class="cal-pill carousel">Carousel</span><span class="cal-pill reel">Reel</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">13</div><span class="cal-pill story">Story</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">14</div><span class="cal-pill reel">Reel</span><span class="cal-pill post">Post</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">15</div><span class="cal-pill carousel">Carousel</span></div>
-      <div class="cal-day"><div class="cal-day-num">16</div></div>
-      <div class="cal-day has-content"><div class="cal-day-num">17</div><span class="cal-pill reel">Reel</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">18</div><span class="cal-pill post">Post</span><span class="cal-pill story">Story</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">19</div><span class="cal-pill reel">Reel</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">20</div><span class="cal-pill carousel">Carousel</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">21</div><span class="cal-pill reel">Reel</span><span class="cal-pill post">Post</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">22</div><span class="cal-pill story">Story</span></div>
-      <div class="cal-day"><div class="cal-day-num">23</div></div>
-      <div class="cal-day has-content"><div class="cal-day-num">24</div><span class="cal-pill post">Post</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">25</div><span class="cal-pill reel">Reel</span><span class="cal-pill carousel">Carousel</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">26</div><span class="cal-pill story">Story</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">27</div><span class="cal-pill reel">Reel</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">28</div><span class="cal-pill post">Post</span><span class="cal-pill story">Story</span></div>
-      <div class="cal-day has-content"><div class="cal-day-num">29</div><span class="cal-pill carousel">Carousel</span></div>
-      <div class="cal-day"><div class="cal-day-num">30</div></div>
-    </div>
-  </section>
-
-  <!-- SCHEDULE -->
-  <section id="schedule" class="fade-up">
-    <p class="section-label">Step 3 — Scheduling</p>
-    <h2>AI-Optimised <span>Posting Times</span></h2>
-    <p class="section-sub">We analyse your audience and tell you the best time to post every single day — like having a social media manager on call 24/7.</p>
-    <div class="schedule-grid">
-      <div class="schedule-card"><div class="schedule-day">Monday</div><div class="schedule-slot"><span class="schedule-time">7:30 AM</span><span class="schedule-type">IG Story</span></div><div class="schedule-slot"><span class="schedule-time">12:00 PM</span><span class="schedule-type">TikTok</span></div><div class="schedule-slot"><span class="schedule-time">6:00 PM</span><span class="schedule-type">LinkedIn</span></div></div>
-      <div class="schedule-card"><div class="schedule-day">Tuesday</div><div class="schedule-slot"><span class="schedule-time">8:00 AM</span><span class="schedule-type">X Thread</span></div><div class="schedule-slot"><span class="schedule-time">5:30 PM</span><span class="schedule-type">IG Reel</span></div></div>
-      <div class="schedule-card"><div class="schedule-day">Wednesday</div><div class="schedule-slot"><span class="schedule-time">7:00 AM</span><span class="schedule-type">IG Story</span></div><div class="schedule-slot"><span class="schedule-time">12:30 PM</span><span class="schedule-type">Carousel</span></div><div class="schedule-slot"><span class="schedule-time">7:00 PM</span><span class="schedule-type">YT Short</span></div></div>
-      <div class="schedule-card"><div class="schedule-day">Thursday</div><div class="schedule-slot"><span class="schedule-time">9:00 AM</span><span class="schedule-type">TikTok</span></div><div class="schedule-slot"><span class="schedule-time">6:00 PM</span><span class="schedule-type">IG Reel</span></div></div>
-      <div class="schedule-card"><div class="schedule-day">Friday</div><div class="schedule-slot"><span class="schedule-time">7:30 AM</span><span class="schedule-type">IG Story</span></div><div class="schedule-slot"><span class="schedule-time">1:00 PM</span><span class="schedule-type">Carousel</span></div><div class="schedule-slot"><span class="schedule-time">5:00 PM</span><span class="schedule-type">TikTok</span></div></div>
-      <div class="schedule-card"><div class="schedule-day">Saturday</div><div class="schedule-slot"><span class="schedule-time">10:00 AM</span><span class="schedule-type">Lifestyle Reel</span></div><div class="schedule-slot"><span class="schedule-time">3:00 PM</span><span class="schedule-type">BTS Video</span></div></div>
-      <div class="schedule-card"><div class="schedule-day">Sunday</div><div class="schedule-slot"><span class="schedule-time">Rest 😴</span><span class="schedule-type">or schedule ahead</span></div></div>
-    </div>
-  </section>
-
-  <!-- TRENDING -->
-  <section id="trending" class="fade-up">
-    <p class="section-label">Always Current</p>
-    <h2>What's <span>Trending</span> Right Now</h2>
-    <p class="section-sub">Our AI scans TikTok, Instagram, LinkedIn and X daily to find what's working in your niche — so your content always rides the wave.</p>
-
-    <div class="analytics-banner">
-      <div class="analytics-banner-icon">📊</div>
-      <div class="analytics-banner-text">
-        <strong>See how your content is actually performing</strong>
-        <p>Connect to ImpactGrid Analytics to track reach, engagement, follower growth and ROI across every platform in one place.</p>
+    <div class="grid-auto" style="margin-top:4px">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.5rem">📱</span>
+          <div>
+            <div class="section-label" style="margin-bottom:0">Instagram Reel</div>
+            <strong style="font-family:'Syne',sans-serif;font-size:0.9rem">30s vertical cut + audio match</strong>
+          </div>
+        </div>
+        <p style="font-size:0.76rem;color:var(--white-dim);line-height:1.5">Auto-trimmed to 30s, trending audio suggestion, captions burned in, caption + 15 hashtags included.</p>
       </div>
-      <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="btn-blue">Open Analytics ↗</a>
-    </div>
-
-    <div class="trend-list">
-      <div class="trend-item"><div class="trend-rank">01</div><div class="trend-info"><h4>Day in the life — behind the scenes</h4><p>Raw, unfiltered business footage outperforming polished ads by 4× on TikTok &amp; Instagram this week.</p></div><div class="trend-score"><strong>+420%</strong><span>Engagement lift</span></div></div>
-      <div class="trend-item"><div class="trend-rank">02</div><div class="trend-info"><h4>Before &amp; After transformation content</h4><p>Side-by-side business transformations performing exceptionally well on LinkedIn and Instagram.</p></div><div class="trend-score"><strong>+280%</strong><span>Reach boost</span></div></div>
-      <div class="trend-item"><div class="trend-rank">03</div><div class="trend-info"><h4>"The truth about running a business" hooks</h4><p>Honest storytelling hooks driving massive saves and shares in the entrepreneur niche.</p></div><div class="trend-score"><strong>+195%</strong><span>Share rate</span></div></div>
-      <div class="trend-item"><div class="trend-rank">04</div><div class="trend-info"><h4>Staff spotlight &amp; team culture videos</h4><p>Authenticity-driven content about the people behind the brand seeing huge organic reach.</p></div><div class="trend-score"><strong>+160%</strong><span>Follower growth</span></div></div>
-    </div>
-  </section>
-
-  <!-- BOOK A CREATOR -->
-  <section id="services" class="fade-up">
-    <p class="section-label">Manchester-Based</p>
-    <h2>Book a Real <span>Content Creator</span></h2>
-    <p class="section-sub">Need a human touch? Book a professional from our Manchester creator network. Track them live as they travel to you.</p>
-    <div class="creators-grid">
-      <div class="creator-card">
-        <div class="creator-header"><div class="creator-avatar">JO</div><div><div class="creator-name">Jordan Osei</div><div class="creator-spec">Video + Reels Specialist</div></div></div>
-        <div class="creator-location">Northern Quarter, Manchester</div>
-        <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-bottom:8px">High-energy Reels and TikToks. Specialises in food, lifestyle, and service businesses.</p>
-        <div class="creator-tags"><span class="creator-tag">Reels</span><span class="creator-tag">TikTok</span><span class="creator-tag">Food</span><span class="creator-tag">Lifestyle</span></div>
-        <div class="creator-footer"><a href="contact.html" class="btn-primary">Book Jordan</a></div>
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.5rem">🎵</span>
+          <div>
+            <div class="section-label" style="margin-bottom:0">TikTok</div>
+            <strong style="font-family:'Syne',sans-serif;font-size:0.9rem">60s story with hook script</strong>
+          </div>
+        </div>
+        <p style="font-size:0.76rem;color:var(--white-dim);line-height:1.5">Trend-matched hook, subtitle overlay, voiceover script, and sound recommendations.</p>
       </div>
-      <div class="creator-card">
-        <div class="creator-header"><div class="creator-avatar" style="background:linear-gradient(135deg,#7c5cbf,#a87eff)">AM</div><div><div class="creator-name">Amara Mensah</div><div class="creator-spec">Photography + Carousel</div></div></div>
-        <div class="creator-location">Salford, Manchester</div>
-        <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-bottom:8px">Studio-quality brand photography. One shoot becomes 30+ pieces of downloadable content.</p>
-        <div class="creator-tags"><span class="creator-tag">Photography</span><span class="creator-tag">Branding</span><span class="creator-tag">Carousel</span></div>
-        <div class="creator-footer"><a href="contact.html" class="btn-primary">Book Amara</a></div>
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.5rem">💼</span>
+          <div>
+            <div class="section-label" style="margin-bottom:0">LinkedIn</div>
+            <strong style="font-family:'Syne',sans-serif;font-size:0.9rem">Long-form post + thought leadership</strong>
+          </div>
+        </div>
+        <p style="font-size:0.76rem;color:var(--white-dim);line-height:1.5">Professional post with storytelling hook, extracted insight, and engagement CTA.</p>
       </div>
-      <div class="creator-card">
-        <div class="creator-header"><div class="creator-avatar" style="background:linear-gradient(135deg,#1a8c5b,#22d17a)">TW</div><div><div class="creator-name">Theo Williams</div><div class="creator-spec">Full-Day Content Shoots</div></div></div>
-        <div class="creator-location">Didsbury, Manchester</div>
-        <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-bottom:8px">Full-day shoots for 60–90 days of content in one session. Brings full kit, drone, and editing rig.</p>
-        <div class="creator-tags"><span class="creator-tag">Full-Day</span><span class="creator-tag">Drone</span><span class="creator-tag">Editing</span></div>
-        <div class="creator-footer"><a href="contact.html" class="btn-primary">Book Theo</a></div>
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.5rem">🐦</span>
+          <div>
+            <div class="section-label" style="margin-bottom:0">Twitter / X</div>
+            <strong style="font-family:'Syne',sans-serif;font-size:0.9rem">10-tweet thread</strong>
+          </div>
+        </div>
+        <p style="font-size:0.76rem;color:var(--white-dim);line-height:1.5">Full thread with hook, value tweets, and strong CTA — generated from your video transcript.</p>
+      </div>
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.5rem">▶️</span>
+          <div>
+            <div class="section-label" style="margin-bottom:0">YouTube Short</div>
+            <strong style="font-family:'Syne',sans-serif;font-size:0.9rem">Thumbnail + title + description</strong>
+          </div>
+        </div>
+        <p style="font-size:0.76rem;color:var(--white-dim);line-height:1.5">SEO-optimised title, description, tags, and custom thumbnail direction.</p>
+      </div>
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.5rem">🖼️</span>
+          <div>
+            <div class="section-label" style="margin-bottom:0">Instagram Carousel</div>
+            <strong style="font-family:'Syne',sans-serif;font-size:0.9rem">6-slide branded carousel</strong>
+          </div>
+        </div>
+        <p style="font-size:0.76rem;color:var(--white-dim);line-height:1.5">On-brand slide designs with copy, visual direction, and final CTA slide included.</p>
       </div>
     </div>
   </section>
 
-  <!-- LIVE TRACKER -->
-  <section id="tracker" class="fade-up">
-    <p class="section-label">Live GPS</p>
-    <h2>Track Your Creator <span>in Real Time</span></h2>
-    <p class="section-sub">Once booked, follow your content creator as they travel to you — just like Uber, but for creative professionals.</p>
-    <div class="creators-grid">
-      <div class="creator-card">
-        <div class="creator-header"><div class="creator-avatar">JO</div><div><div class="creator-name">Jordan Osei</div><div class="creator-spec">En route to your location</div></div></div>
-        <div class="tracker-bar"><div class="tracker-fill" style="width:72%"></div></div>
-        <div class="tracker-status">🟢 On the way — arrives in ~14 mins</div>
-        <p style="font-size:0.73rem;color:var(--muted);margin-top:7px">Currently on Oxford Road heading toward your address</p>
-      </div>
-    </div>
-    <div class="map-placeholder">
-      <div class="map-dot"></div>
-      <div class="map-label"><strong>Jordan O. — Live Location</strong>Oxford Rd → Your Business · 14 min ETA</div>
-    </div>
-    <p style="font-size:0.74rem;color:var(--muted);margin-top:11px">Full live GPS tracking activates after booking. Google Maps integration available.</p>
-  </section>
-
-  <!-- PRICING -->
-  <section id="pricing" class="fade-up">
-    <p class="section-label">Plans</p>
-    <h2>Choose Your <span>Package</span></h2>
-    <p class="section-sub">From AI-only content to full in-person Manchester shoots — a plan that fits where your business is right now.</p>
-    <div class="services-grid">
-      <div class="service-card"><div class="service-icon">🤖</div><h4>AI Content Engine</h4><p>Upload videos and get a full month of content across all platforms, calendar included.</p><div class="service-price">£49<small>/month</small></div></div>
-      <div class="service-card"><div class="service-icon">📸</div><h4>Creator Day Shoot</h4><p>A Manchester creator visits your business for a full shoot day. 60+ content pieces delivered.</p><div class="service-price">£299<small>/day</small></div></div>
-      <div class="service-card"><div class="service-icon">🎯</div><h4>Managed Social</h4><p>We run your pages for you. AI + human managed. Monthly strategy calls, live posting, reporting.</p><div class="service-price">£349<small>/month</small></div></div>
-      <div class="service-card"><div class="service-icon">🚀</div><h4>Growth Bundle</h4><p>Everything included — AI engine, monthly shoot, page management, ad creative and more.</p><div class="service-price">£599<small>/month</small></div></div>
+  <!-- QUICK LINKS -->
+  <section class="section fade-up" style="background:var(--surface)">
+    <p class="section-label">Quick Access</p>
+    <h2 class="section-title">Everything in <em>one place</em></h2>
+    <div class="grid-3" style="margin-top:20px">
+      <a href="trending.html" class="card" style="padding:22px;display:flex;align-items:center;gap:14px">
+        <span style="font-size:1.8rem">🔥</span>
+        <div><strong style="font-family:'Syne',sans-serif;font-size:0.95rem;display:block">Trending Now</strong><span style="font-size:0.76rem;color:var(--white-dim)">Today's top content trends for your niche</span></div>
+      </a>
+      <a href="schedule.html" class="card" style="padding:22px;display:flex;align-items:center;gap:14px">
+        <span style="font-size:1.8rem">⏰</span>
+        <div><strong style="font-family:'Syne',sans-serif;font-size:0.95rem;display:block">Best Posting Times</strong><span style="font-size:0.76rem;color:var(--white-dim)">AI-optimised schedule for your audience</span></div>
+      </a>
+      <a href="https://impactgridanalytics.com/" target="_blank" class="card" style="padding:22px;display:flex;align-items:center;gap:14px;border-color:rgba(74,143,245,0.2)">
+        <span style="font-size:1.8rem">📊</span>
+        <div><strong style="font-family:'Syne',sans-serif;font-size:0.95rem;display:block;color:var(--blue)">Analytics Dashboard ↗</strong><span style="font-size:0.76rem;color:var(--white-dim)">Track reach, engagement &amp; growth</span></div>
+      </a>
     </div>
   </section>
 
-  <footer>
-    <div>
-      <strong style="font-family:'Syne',sans-serif;color:var(--white);font-size:1rem">Impact<span style="color:var(--orange)">Drid</span></strong>
-      <p style="margin-top:3px">AI Content Engine · Manchester, UK</p>
+  <footer class="site-footer">
+    <div class="footer-brand"><div class="brand">ImpactGrid<em>Group</em></div><p>AI Content Engine · Manchester, UK</p></div>
+    <div class="footer-links">
+      <a href="about.html">About</a><a href="services.html">Services</a>
+      <a href="photography.html">Photography</a><a href="contact.html">Contact</a>
+      <a href="https://impactgridanalytics.com/" target="_blank" class="link-blue">Analytics ↗</a>
     </div>
-    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
-      <a href="about.html" style="color:var(--muted);text-decoration:none">About</a>
-      <a href="photography.html" style="color:var(--muted);text-decoration:none">Photography</a>
-      <a href="contact.html" style="color:var(--muted);text-decoration:none">Contact</a>
-      <a href="https://impactgridanalytics.com/" target="_blank" style="color:var(--blue);text-decoration:none;font-weight:600">📊 Analytics ↗</a>
-    </div>
-    <p>© 2025 ImpactDrid. All rights reserved.</p>
+    <p class="footer-copy">© 2025 ImpactGrid Group. All rights reserved.</p>
   </footer>
 </div>
 
-<script>
-  function openSidebar() {
-    document.getElementById('sidebar').classList.add('open');
-    document.getElementById('overlay').classList.add('show');
-  }
-  function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('overlay').classList.remove('show');
-  }
-
-  // Active nav on scroll
-  const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.nav-link');
-  window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 130) current = s.id; });
-    navLinks.forEach(l => {
-      l.classList.remove('active');
-      if (l.getAttribute('href') === '#' + current) l.classList.add('active');
-    });
-  }, { passive: true });
-
-  // Fade in
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.08 });
-  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
-
-  // Upload demo
-  function handleUpload(input) {
-    if (!input.files.length) return;
-    const zone = input.closest('.upload-zone');
-    zone.innerHTML = `<div class="upload-icon">⚙️</div><h3 style="color:var(--orange)">Analysing your video…</h3><p style="color:var(--muted)">AI is generating content for 7 platforms. Just a moment.</p>`;
-    setTimeout(() => {
-      zone.innerHTML = `<div class="upload-icon">✅</div><h3 style="color:var(--green)">Content ready — 6 pieces generated!</h3><p style="color:var(--muted)">Your content calendar has been updated automatically.</p>`;
-      const out = document.getElementById('contentOutput');
-      out.style.display = 'grid';
-      out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 2600);
-  }
-</script>
+<script src="nav.js"></script>
+<script>initNav('index.html');</script>
 </body>
 </html>
