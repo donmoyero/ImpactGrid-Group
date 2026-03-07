@@ -1,309 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Services | IMPACTGRID</title>
-
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-
-body{
-font-family:Segoe UI, sans-serif;
-background:linear-gradient(180deg,#0e0e0e,#111);
-color:white;
-line-height:1.6;
-}
-
-/* NAV */
-nav{
-padding:25px 70px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:#000;
-box-shadow:0 2px 10px rgba(0,0,0,0.6);
-}
-
-.logo a{
-font-size:24px;
-font-weight:800;
-color:#FFD400;
-letter-spacing:2px;
-text-decoration:none;
-}
-
-nav a{
-color:#ccc;
-text-decoration:none;
-margin-left:30px;
-transition:0.3s;
-}
-
-nav a:hover{
-color:#FFD400;
-}
-
-/* HEADER */
-header{
-padding:120px 20px;
-text-align:center;
-background:linear-gradient(180deg,#111,#000);
-}
-
-header h1{
-font-size:48px;
-margin-bottom:20px;
-}
-
-header p{
-color:#bbb;
-}
-
-/* SECTIONS */
-section{
-padding:90px 20px;
-max-width:1100px;
-margin:auto;
-}
-
-h2{
-color:#FFD400;
-margin-bottom:40px;
-font-size:32px;
-}
-
-/* PACKAGE GRID */
-.packages{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:40px;
-margin-bottom:70px;
-}
-
-.package{
-background:#151515;
-padding:35px;
-border-radius:12px;
-border:1px solid #222;
-transition:0.4s;
-box-shadow:0 0 0 transparent;
-}
-
-.package:hover{
-transform:translateY(-5px);
-border-color:#FFD400;
-box-shadow:0 0 25px rgba(255,212,0,0.15);
-}
-
-.package h3{
-color:#FFD400;
-margin-bottom:15px;
-}
-
-.price{
-font-size:28px;
-font-weight:bold;
-margin:15px 0;
-}
-
-ul{
-padding-left:20px;
-}
-
-li{
-margin-bottom:8px;
-color:#bbb;
-}
-
-/* LINK BUTTON */
-.service-link{
-display:inline-block;
-margin-top:15px;
-color:#FFD400;
-text-decoration:none;
-font-weight:bold;
-}
-
-/* FORM */
-form{
-margin-top:60px;
-background:#151515;
-padding:40px;
-border-radius:12px;
-border:1px solid #222;
-}
-
-form h3{
-margin-bottom:20px;
-}
-
-input, textarea, select{
-width:100%;
-padding:12px;
-margin:10px 0;
-border-radius:6px;
-border:none;
-background:#222;
-color:white;
-}
-
-button{
-background:#FFD400;
-color:black;
-border:none;
-padding:14px 30px;
-font-weight:bold;
-margin-top:15px;
-cursor:pointer;
-border-radius:6px;
-transition:0.3s;
-}
-
-button:hover{
-background:white;
-}
-
-footer{
-background:#000;
-padding:50px 20px;
-text-align:center;
-color:#666;
-margin-top:80px;
-}
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Services & Pricing — ImpactGrid Group</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .price-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:26px 22px; transition:border-color 0.2s,transform 0.2s; }
+    .price-card:hover { border-color:var(--orange); transform:translateY(-4px); }
+    .price-card.featured { border-color:var(--orange); background:linear-gradient(160deg,rgba(255,92,26,0.06),var(--card)); }
+    .price-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:8px; }
+    .price-name { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; margin-bottom:6px; }
+    .price-amount { font-family:'Syne',sans-serif; font-size:2.2rem; font-weight:800; color:var(--orange); line-height:1; margin:12px 0 4px; }
+    .price-period { font-size:0.72rem; color:var(--white-dim); margin-bottom:16px; }
+    .price-desc { font-size:0.78rem; color:var(--white-dim); line-height:1.55; margin-bottom:16px; }
+    .feature-list { list-style:none; margin-bottom:20px; }
+    .feature-list li { font-size:0.78rem; padding:5px 0; border-bottom:1px solid var(--border); display:flex; gap:8px; }
+    .feature-list li:last-child { border-bottom:none; }
+    .feature-list li::before { content:'✓'; color:var(--green); flex-shrink:0; }
+    .feature-list li.no::before { content:'×'; color:#444; }
+    .feature-list li.no { color:#444; }
+  </style>
 </head>
-
 <body>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="openNav()">☰</button>
+      <span class="topbar-page-title">Services & Pricing</span>
+    </div>
+    <div class="topbar-right">
+      <a href="contact.html" class="btn btn-primary btn-sm">Get in Touch</a>
+    </div>
+  </div>
 
-<nav>
-<div class="logo">
-<a href="index.html">IMPACTGRID</a>
+  <div class="page-hero">
+    <div class="eyebrow">Packages & Pricing</div>
+    <h1 class="hero-title">Everything your business<br>needs to <em>grow online</em></h1>
+    <p class="hero-desc">From AI-only content to full-service social media management with Manchester creators — a package for every stage of your business.</p>
+  </div>
+
+  <!-- PRICING -->
+  <section class="section fade-up">
+    <p class="section-label">Plans</p>
+    <h2 class="section-title">Choose your <em>package</em></h2>
+    <p class="section-sub">All plans include our AI content engine. Upgrade to add creator shoots and full page management.</p>
+
+    <div class="grid-4" style="margin-top:8px">
+      <div class="price-card">
+        <div class="price-label" style="color:var(--white-dim)">Starter</div>
+        <div class="price-name">AI Engine</div>
+        <div class="price-amount">£49</div>
+        <div class="price-period">per month</div>
+        <p class="price-desc">Upload your own videos and get a full month of platform-ready content, calendar and posting schedule.</p>
+        <ul class="feature-list">
+          <li>Up to 8 video uploads/month</li>
+          <li>6 content pieces per video</li>
+          <li>Content calendar</li>
+          <li>Posting schedule</li>
+          <li>Captions &amp; hashtags</li>
+          <li>Trending insights</li>
+          <li class="no">Creator day shoot</li>
+          <li class="no">Page management</li>
+        </ul>
+        <a href="contact.html" class="btn btn-secondary" style="width:100%;justify-content:center">Get Started</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-label" style="color:var(--white-dim)">Professional</div>
+        <div class="price-name">Creator Shoot</div>
+        <div class="price-amount">£299</div>
+        <div class="price-period">per shoot day</div>
+        <p class="price-desc">A Manchester creator visits your business for a full shoot day. We process everything into 60+ ready pieces.</p>
+        <ul class="feature-list">
+          <li>Full day on-location shoot</li>
+          <li>60+ content pieces</li>
+          <li>Professional editing</li>
+          <li>Live GPS tracking</li>
+          <li>All platforms covered</li>
+          <li>30-day calendar update</li>
+          <li class="no">Monthly shoots</li>
+          <li class="no">Page management</li>
+        </ul>
+        <a href="contact.html" class="btn btn-secondary" style="width:100%;justify-content:center">Book a Shoot</a>
+      </div>
+
+      <div class="price-card featured">
+        <div class="price-label" style="color:var(--orange)">Most Popular ★</div>
+        <div class="price-name">Managed Social</div>
+        <div class="price-amount">£349</div>
+        <div class="price-period">per month</div>
+        <p class="price-desc">We run your social pages for you. AI + human managed, with monthly strategy calls and full reporting.</p>
+        <ul class="feature-list">
+          <li>Full AI content engine</li>
+          <li>We post for you daily</li>
+          <li>Comments &amp; DM management</li>
+          <li>Monthly strategy call</li>
+          <li>Performance reporting</li>
+          <li>Trending integration</li>
+          <li>1 creator shoot/month</li>
+          <li class="no">Paid ads included</li>
+        </ul>
+        <a href="contact.html" class="btn btn-primary" style="width:100%;justify-content:center">Start Today</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-label" style="color:var(--white-dim)">Enterprise</div>
+        <div class="price-name">Growth Bundle</div>
+        <div class="price-amount">£599</div>
+        <div class="price-period">per month</div>
+        <p class="price-desc">The complete package — everything included. AI, creators, management, ad creative, and priority support.</p>
+        <ul class="feature-list">
+          <li>Everything in Managed</li>
+          <li>2 creator shoots/month</li>
+          <li>Paid ad creative</li>
+          <li>Drone footage option</li>
+          <li>Analytics dashboard</li>
+          <li>Competitor tracking</li>
+          <li>Dedicated account manager</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="contact.html" class="btn btn-secondary" style="width:100%;justify-content:center">Enquire Now</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD-ONS -->
+  <section class="section fade-up">
+    <p class="section-label">Add-Ons</p>
+    <h2 class="section-title">Bolt-on <em>extras</em></h2>
+    <div class="grid-3">
+      <div class="card" style="padding:22px"><div style="font-size:1.6rem;margin-bottom:10px">🚁</div><strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:5px">Drone Footage</strong><p style="font-size:0.78rem;color:var(--white-dim);margin-bottom:10px">Add aerial drone footage to any shoot day. CAA-certified operator.</p><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--orange)">+£120</span><span style="font-size:0.68rem;color:var(--white-dim)"> per shoot</span></div>
+      <div class="card" style="padding:22px"><div style="font-size:1.6rem;margin-bottom:10px">🎨</div><strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:5px">Brand Kit</strong><p style="font-size:0.78rem;color:var(--white-dim);margin-bottom:10px">Logo, colour palette, and visual identity for use across all content.</p><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--orange)">£249</span><span style="font-size:0.68rem;color:var(--white-dim)"> one-off</span></div>
+      <div class="card" style="padding:22px"><div style="font-size:1.6rem;margin-bottom:10px">📣</div><strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:5px">Paid Ads Creative</strong><p style="font-size:0.78rem;color:var(--white-dim);margin-bottom:10px">Meta and TikTok ad creatives produced from your existing content.</p><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--orange)">+£99</span><span style="font-size:0.68rem;color:var(--white-dim)"> per month</span></div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-brand"><div class="brand">ImpactGrid<em>Group</em></div><p>AI Content Engine · Manchester, UK</p></div>
+    <div class="footer-links">
+      <a href="index.html">Dashboard</a><a href="creators.html">Creators</a>
+      <a href="about.html">About</a><a href="contact.html">Contact</a>
+      <a href="https://impactgridanalytics.com/" target="_blank" class="link-blue">Analytics ↗</a>
+    </div>
+    <p class="footer-copy">© 2025 ImpactGrid Group. All rights reserved.</p>
+  </footer>
 </div>
-<div>
-<a href="index.html">Home</a>
-<a href="about.html">About</a>
-<a href="services.html">Services</a>
-<a href="contact.html">Contact</a>
-</div>
-</nav>
-
-<header>
-<h1>Strategic Business Services</h1>
-<p>Structured solutions designed to position your company for clarity, growth and capital readiness.</p>
-</header>
-
-<section>
-
-<h2>Business Planning & Capital Strategy</h2>
-
-<div class="packages">
-
-<div class="package">
-<h3>Foundational Plan</h3>
-<div class="price">£20</div>
-<ul>
-<li>Executive Summary</li>
-<li>Company Overview</li>
-<li>Core Offering Breakdown</li>
-<li>Strategic Direction Outline</li>
-</ul>
-<a href="business-plan.html" class="service-link">View Full Details →</a>
-</div>
-
-<div class="package">
-<h3>Growth Plan</h3>
-<div class="price">£80</div>
-<ul>
-<li>SWOT Strategic Analysis</li>
-<li>Customer & Competitor Review</li>
-<li>Marketing Strategy Framework</li>
-<li>Structured Growth Roadmap</li>
-</ul>
-<a href="business-plan.html" class="service-link">View Full Details →</a>
-</div>
-
-<div class="package">
-<h3>Investor & Financial Plan</h3>
-<div class="price">£160</div>
-<ul>
-<li>Full Strategic Plan</li>
-<li>Market Opportunity Assessment</li>
-<li>TAM Overview</li>
-<li>3–5 Year Financial Forecast</li>
-<li>Investor Pitch Deck</li>
-</ul>
-<a href="financial-forecast.html" class="service-link">View Full Details →</a>
-</div>
-
-</div>
-
-<h2>Photography & Brand Media</h2>
-
-<div class="packages">
-
-<div class="package">
-<h3>Basic Shoot</h3>
-<div class="price">£50</div>
-<ul>
-<li>Professional Headshots</li>
-<li>Brand Visual Assets</li>
-</ul>
-<a href="photography.html" class="service-link">View Full Details →</a>
-</div>
-
-<div class="package">
-<h3>Brand Shoot Package</h3>
-<div class="price">£100</div>
-<ul>
-<li>Extended Brand Session</li>
-<li>Social Media Ready Content</li>
-<li>Edited High Resolution Files</li>
-</ul>
-<a href="photography.html" class="service-link">View Full Details →</a>
-</div>
-
-</div>
-
-<h2>Freelance & Marketing Support</h2>
-
-<div class="package">
-<p>Social Media Manager – From £12.21/hr</p>
-<p>Content Creator – From £12.21/hr</p>
-<p>Digital Marketing Assistant – From £12.21/hr</p>
-<p>Business Analyst – From £12.21/hr</p>
-<p>Financial Analyst – From £12.21/hr</p>
-<p>Graphic Designer – From £12.21/hr</p>
-<p>Video Editor – From £12.21/hr</p>
-
-<a href="workforce.html" class="service-link">View Workforce Services →</a>
-</div>
-
-<form action="https://formspree.io/f/meeldvol" method="POST">
-<h3>Request a Service</h3>
-
-<select name="service_selected" required>
-<option value="">Select Service</option>
-<option>Foundational Plan (£20)</option>
-<option>Growth Plan (£80)</option>
-<option>Investor Plan (£160)</option>
-<option>Basic Shoot (£50)</option>
-<option>Brand Shoot (£100)</option>
-<option>Freelance Support (Hourly)</option>
-</select>
-
-<input type="text" name="business_name" placeholder="Business Name" required>
-<input type="email" name="email" placeholder="Email" required>
-<textarea name="details" placeholder="Briefly describe your needs" required></textarea>
-
-<button type="submit">Submit Request</button>
-</form>
-
-</section>
-
-<footer>
-© 2026 IMPACTGRID GROUP
-</footer>
-
+<script src="nav.js"></script>
+<script>initNav('services.html');</script>
 </body>
 </html>
