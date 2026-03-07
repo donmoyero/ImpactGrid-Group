@@ -1,153 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Services & Pricing — ImpactGrid Creator Engine</title>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    .price-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:26px 22px; transition:border-color 0.2s,transform 0.2s; }
-    .price-card:hover { border-color:var(--orange); transform:translateY(-4px); }
-    .price-card.featured { border-color:var(--orange); background:linear-gradient(160deg,rgba(255,92,26,0.06),var(--card)); }
-    .price-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:8px; }
-    .price-name { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; margin-bottom:6px; }
-    .price-amount { font-family:'Syne',sans-serif; font-size:2.2rem; font-weight:800; color:var(--orange); line-height:1; margin:12px 0 4px; }
-    .price-period { font-size:0.72rem; color:var(--white-dim); margin-bottom:16px; }
-    .price-desc { font-size:0.78rem; color:var(--white-dim); line-height:1.55; margin-bottom:16px; }
-    .feature-list { list-style:none; margin-bottom:20px; }
-    .feature-list li { font-size:0.78rem; padding:5px 0; border-bottom:1px solid var(--border); display:flex; gap:8px; }
-    .feature-list li:last-child { border-bottom:none; }
-    .feature-list li::before { content:'✓'; color:var(--green); flex-shrink:0; }
-    .feature-list li.no::before { content:'×'; color:#444; }
-    .feature-list li.no { color:#444; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Services & Pricing — ImpactGrid Creator Engine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+:root{--black:#080808;--surf:#0f0f0f;--card:#141414;--b:#222;--b2:#2e2e2e;--white:#f0ebe5;--dim:#777;--or:#ff5c1a;--od:#c94010;--gr:#1fd97a;--yw:#f0c93a;--bl:#4a8ff5;--sw:262px;--r:11px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
+
+/* SIDEBAR */
+#sb{position:fixed;left:0;top:0;width:var(--sw);height:100vh;background:var(--surf);border-right:1px solid var(--b);display:flex;flex-direction:column;z-index:200;overflow:hidden;transition:transform .35s cubic-bezier(.77,0,.18,1)}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--b);flex-shrink:0}
+.sb-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;color:var(--white);line-height:1.25}
+.sb-brand em{color:var(--or);font-style:normal}
+.sb-sub{font-size:.54rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.nlb{font-size:.53rem;text-transform:uppercase;letter-spacing:2.5px;color:#353535;padding:10px 18px 3px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 18px;color:#555;font-size:.8rem;border-left:2px solid transparent;transition:all .15s}
+.ni:hover,.ni.on{color:var(--white);border-left-color:var(--or);background:rgba(255,92,26,.06)}
+.ni svg{width:14px;height:14px;flex-shrink:0;opacity:.5}
+.ni:hover svg,.ni.on svg{opacity:1}
+.nbdg{margin-left:auto;background:var(--or);color:#fff;font-size:.5rem;font-weight:700;padding:1px 5px;border-radius:8px}
+.sb-foot{flex-shrink:0;border-top:1px solid var(--b)}
+.sb-ap{display:flex;align-items:center;gap:9px;margin:11px 13px 5px;background:rgba(74,143,245,.1);border:1px solid rgba(74,143,245,.2);border-radius:9px;padding:9px 11px;transition:border-color .2s}
+.sb-ap:hover{border-color:rgba(74,143,245,.5)}
+.sb-ai{width:27px;height:27px;background:linear-gradient(135deg,var(--bl),#2460d9);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0}
+.sb-at strong{display:block;font-size:.7rem;font-weight:700;color:var(--white)}
+.sb-at span{font-size:.57rem;color:var(--bl)}
+.sb-aa{margin-left:auto;color:var(--bl);font-size:.75rem}
+.sb-cta{margin:5px 13px 15px;background:linear-gradient(135deg,var(--or),var(--od));border-radius:9px;padding:11px 12px}
+.sb-cta strong{font-family:'Syne',sans-serif;font-size:.74rem;display:block;margin-bottom:3px}
+.sb-cta p{font-size:.63rem;color:rgba(255,255,255,.82);margin-bottom:7px;line-height:1.4}
+.sb-cta a{background:#fff;color:var(--od);font-size:.68rem;font-weight:700;padding:5px 10px;border-radius:5px;display:inline-block}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;height:52px;background:rgba(8,8,8,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--b);padding:0 30px;display:flex;align-items:center;justify-content:space-between;z-index:100;gap:10px}
+.tl{display:flex;align-items:center;gap:10px}
+.tr{display:flex;align-items:center;gap:8px}
+.hbg{display:none;background:transparent;border:1px solid var(--b2);color:var(--white);width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:1rem;align-items:center;justify-content:center}
+.tbdg{background:rgba(31,217,122,.1);border:1px solid rgba(31,217,122,.22);color:var(--gr);font-size:.64rem;padding:3px 9px;border-radius:20px;font-weight:500}
+.tbtl{font-family:'Syne',sans-serif;font-weight:700;font-size:.84rem}
+
+/* MAIN */
+.main{margin-left:var(--sw);min-height:100vh}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 17px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .18s;text-decoration:none;white-space:nowrap}
+.bp{background:var(--or);color:#fff}.bp:hover{background:var(--od)}
+.bs{background:var(--card);border:1px solid var(--b2);color:var(--white)}.bs:hover{border-color:var(--or);color:var(--or)}
+.bb{background:var(--bl);color:#fff}.bb:hover{opacity:.88}
+.bg{background:transparent;border:1px solid var(--b2);color:var(--dim)}.bg:hover{color:var(--white)}
+.sm{padding:5px 11px;font-size:.72rem}
+.lg{padding:12px 26px;font-size:.88rem}
+
+/* HERO */
+.hero{padding:56px 40px 46px;border-bottom:1px solid var(--b);background:radial-gradient(ellipse at 80% 50%,rgba(255,92,26,.12) 0%,transparent 55%);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;right:0;width:40%;height:100%;background:repeating-linear-gradient(-45deg,transparent,transparent 24px,rgba(255,92,26,.02) 24px,rgba(255,92,26,.02) 25px);pointer-events:none}
+.ew{display:inline-flex;align-items:center;gap:6px;background:rgba(255,92,26,.09);border:1px solid rgba(255,92,26,.2);color:var(--or);font-size:.61rem;text-transform:uppercase;letter-spacing:2.5px;padding:4px 11px;border-radius:20px;margin-bottom:16px;font-weight:600}
+.ew::before{content:'●';font-size:.37rem;animation:bk 1.8s infinite}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
+.ht{font-family:'Syne',sans-serif;font-size:clamp(1.9rem,3.6vw,3.2rem);font-weight:800;line-height:1.08;max-width:660px;margin-bottom:14px;position:relative;z-index:1}
+.ht em{color:var(--or);font-style:normal}
+.hd{font-size:.93rem;color:var(--dim);max-width:470px;margin-bottom:26px;line-height:1.75;position:relative;z-index:1}
+.ha{display:flex;gap:9px;flex-wrap:wrap;position:relative;z-index:1}
+.hst{display:flex;gap:40px;margin-top:40px;padding-top:22px;border-top:1px solid var(--b);flex-wrap:wrap;position:relative;z-index:1}
+.hst strong{display:block;font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--or);line-height:1}
+.hst span{font-size:.7rem;color:var(--dim);margin-top:3px;display:block}
+
+/* SECTION */
+.sec{padding:44px 40px}
+.sec+.sec,section+section{border-top:1px solid var(--b)}
+.slb{font-size:.57rem;text-transform:uppercase;letter-spacing:3px;color:var(--or);font-weight:700;margin-bottom:6px}
+.stl{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:800;margin-bottom:7px;line-height:1.15}
+.stl em{color:var(--or);font-style:normal}
+.sdc{color:var(--dim);font-size:.87rem;max-width:490px;margin-bottom:22px;line-height:1.7}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--b);border-radius:var(--r);transition:border-color .2s,transform .2s}
+.card:hover{border-color:rgba(255,92,26,.4)}
+.cl:hover{transform:translateY(-3px)}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:13px}
+.gas{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px}
+
+/* TAGS */
+.tag{display:inline-block;font-size:.59rem;padding:3px 7px;border-radius:4px;font-weight:500;background:rgba(255,255,255,.06);color:#999}
+.tor{background:rgba(255,92,26,.15);color:var(--or)}
+.tgr{background:rgba(31,217,122,.15);color:var(--gr)}
+.tbl{background:rgba(74,143,245,.15);color:var(--bl)}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:.75rem;font-weight:500;margin-bottom:5px;color:var(--dim)}
+.fi,.ft,.fs{width:100%;background:var(--card);border:1px solid var(--b2);color:var(--white);padding:9px 12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.875rem;transition:border-color .18s;outline:none}
+.fi:focus,.ft:focus,.fs:focus{border-color:var(--or)}
+.fi::placeholder,.ft::placeholder{color:#2e2e2e}
+.ft{resize:vertical;min-height:105px;line-height:1.6}
+.fs{cursor:pointer;appearance:none}
+
+/* CALENDAR */
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.ch{text-align:center;font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:3px 0 8px}
+.cc{background:var(--card);border:1px solid var(--b);border-radius:7px;padding:7px;min-height:76px;cursor:pointer;transition:border-color .18s}
+.cc:hover{border-color:rgba(255,92,26,.5)}
+.cc.on{border-color:rgba(255,92,26,.22)}
+.cn{font-size:.67rem;color:var(--dim);margin-bottom:3px}
+.cp{font-size:.53rem;padding:2px 4px;border-radius:3px;margin-bottom:2px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp.rl{background:rgba(255,92,26,.18);color:var(--or)}
+.cp.st{background:rgba(240,201,58,.18);color:var(--yw)}
+.cp.po{background:rgba(31,217,122,.18);color:var(--gr)}
+.cp.ca{background:rgba(160,170,255,.18);color:#a0aaff}
+
+/* PROGRESS */
+.pb{background:var(--b);border-radius:3px;height:4px;overflow:hidden}
+.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--or),var(--yw))}
+
+/* MAP */
+.mapbox{background:var(--card);border:1px solid var(--b);border-radius:16px;height:250px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-top:14px}
+.mapbox::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 38% 58%,rgba(255,92,26,.1),transparent 45%),repeating-linear-gradient(0deg,transparent,transparent 26px,rgba(255,255,255,.015) 26px,rgba(255,255,255,.015) 27px),repeating-linear-gradient(90deg,transparent,transparent 26px,rgba(255,255,255,.015) 26px,rgba(255,255,255,.015) 27px)}
+.mdt{width:13px;height:13px;background:var(--or);border-radius:50%;animation:gp 2.2s infinite;position:relative;z-index:1}
+@keyframes gp{0%,100%{box-shadow:0 0 0 5px rgba(255,92,26,.2)}50%{box-shadow:0 0 0 18px rgba(255,92,26,.03)}}
+.mlb{position:absolute;bottom:13px;left:13px;font-size:.68rem;color:var(--dim);z-index:1}
+.mlb strong{color:var(--or);font-size:.75rem;display:block;margin-bottom:1px}
+
+/* UPLOAD */
+.uz{border:2px dashed var(--b2);border-radius:16px;padding:48px 28px;text-align:center;background:var(--card);cursor:pointer;transition:all .2s;position:relative;overflow:hidden;display:block}
+.uz:hover{border-color:var(--or);background:rgba(255,92,26,.03)}
+.uz h3{font-family:'Syne',sans-serif;font-weight:700;font-size:.97rem;margin:9px 0 4px}
+.uz p{font-size:.76rem;color:var(--dim)}
+
+/* FOOTER */
+.ft2{border-top:1px solid var(--b);padding:24px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:11px}
+.fb .br{font-family:'Syne',sans-serif;font-weight:800;font-size:.88rem}
+.fb .br em{color:var(--or);font-style:normal}
+.fb p{font-size:.68rem;color:var(--dim);margin-top:2px}
+.fl2{display:flex;gap:15px;flex-wrap:wrap}
+.fl2 a{font-size:.73rem;color:var(--dim);transition:color .15s}
+.fl2 a:hover{color:var(--white)}
+.fl2 .lbl{color:var(--bl)}
+.fc{font-size:.67rem;color:#2e2e2e}
+
+/* FADE */
+.fu{opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease}
+.fu.in{opacity:1;transform:translateY(0)}
+
+/* OVERLAY */
+#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:199;backdrop-filter:blur(2px)}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  #sb{transform:translateX(-100%)}
+  #sb.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hbg{display:inline-flex}
+  .hero,.sec{padding-left:18px;padding-right:18px}
+  .hero{padding-top:36px;padding-bottom:32px}
+  .topbar{padding:0 14px}
+  .ft2{padding:18px}
+  .ht{font-size:clamp(1.65rem,6vw,2.3rem)}
+  .hst{gap:18px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .cg{grid-template-columns:repeat(4,1fr)}
+  .tbdg{display:none}
+}
+@media(max-width:500px){
+  .ha{flex-direction:column}
+  .ha .btn{width:100%;justify-content:center}
+}
+</style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar"></aside>
+<div id="ov"></div>
+<aside id="sb"></aside>
 <div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <button class="hamburger" onclick="openNav()">☰</button>
-      <span class="topbar-page-title">Services & Pricing</span>
-    </div>
-    <div class="topbar-right">
-      <a href="contact.html" class="btn btn-primary btn-sm">Get in Touch</a>
-    </div>
-  </div>
-
-  <div class="page-hero">
-    <div class="eyebrow">Packages & Pricing</div>
-    <h1 class="hero-title">Everything your business<br>needs to <em>grow online</em></h1>
-    <p class="hero-desc">From AI-only content to full-service social media management with Manchester creators — a package for every stage of your business.</p>
-  </div>
-
-  <!-- PRICING -->
-  <section class="section fade-up">
-    <p class="section-label">Plans</p>
-    <h2 class="section-title">Choose your <em>package</em></h2>
-    <p class="section-sub">All plans include our AI content engine. Upgrade to add creator shoots and full page management.</p>
-
-    <div class="grid-4" style="margin-top:8px">
-      <div class="price-card">
-        <div class="price-label" style="color:var(--white-dim)">Starter</div>
-        <div class="price-name">AI Engine</div>
-        <div class="price-amount">£49</div>
-        <div class="price-period">per month</div>
-        <p class="price-desc">Upload your own videos and get a full month of platform-ready content, calendar and posting schedule.</p>
-        <ul class="feature-list">
-          <li>Up to 8 video uploads/month</li>
-          <li>6 content pieces per video</li>
-          <li>Content calendar</li>
-          <li>Posting schedule</li>
-          <li>Captions &amp; hashtags</li>
-          <li>Trending insights</li>
-          <li class="no">Creator day shoot</li>
-          <li class="no">Page management</li>
-        </ul>
-        <a href="contact.html" class="btn btn-secondary" style="width:100%;justify-content:center">Get Started</a>
-      </div>
-
-      <div class="price-card">
-        <div class="price-label" style="color:var(--white-dim)">Professional</div>
-        <div class="price-name">Creator Shoot</div>
-        <div class="price-amount">£299</div>
-        <div class="price-period">per shoot day</div>
-        <p class="price-desc">A Manchester creator visits your business for a full shoot day. We process everything into 60+ ready pieces.</p>
-        <ul class="feature-list">
-          <li>Full day on-location shoot</li>
-          <li>60+ content pieces</li>
-          <li>Professional editing</li>
-          <li>Live GPS tracking</li>
-          <li>All platforms covered</li>
-          <li>30-day calendar update</li>
-          <li class="no">Monthly shoots</li>
-          <li class="no">Page management</li>
-        </ul>
-        <a href="contact.html" class="btn btn-secondary" style="width:100%;justify-content:center">Book a Shoot</a>
-      </div>
-
-      <div class="price-card featured">
-        <div class="price-label" style="color:var(--orange)">Most Popular ★</div>
-        <div class="price-name">Managed Social</div>
-        <div class="price-amount">£349</div>
-        <div class="price-period">per month</div>
-        <p class="price-desc">We run your social pages for you. AI + human managed, with monthly strategy calls and full reporting.</p>
-        <ul class="feature-list">
-          <li>Full AI content engine</li>
-          <li>We post for you daily</li>
-          <li>Comments &amp; DM management</li>
-          <li>Monthly strategy call</li>
-          <li>Performance reporting</li>
-          <li>Trending integration</li>
-          <li>1 creator shoot/month</li>
-          <li class="no">Paid ads included</li>
-        </ul>
-        <a href="contact.html" class="btn btn-primary" style="width:100%;justify-content:center">Start Today</a>
-      </div>
-
-      <div class="price-card">
-        <div class="price-label" style="color:var(--white-dim)">Enterprise</div>
-        <div class="price-name">Growth Bundle</div>
-        <div class="price-amount">£599</div>
-        <div class="price-period">per month</div>
-        <p class="price-desc">The complete package — everything included. AI, creators, management, ad creative, and priority support.</p>
-        <ul class="feature-list">
-          <li>Everything in Managed</li>
-          <li>2 creator shoots/month</li>
-          <li>Paid ad creative</li>
-          <li>Drone footage option</li>
-          <li>Analytics dashboard</li>
-          <li>Competitor tracking</li>
-          <li>Dedicated account manager</li>
-          <li>Priority support</li>
-        </ul>
-        <a href="contact.html" class="btn btn-secondary" style="width:100%;justify-content:center">Enquire Now</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ADD-ONS -->
-  <section class="section fade-up">
-    <p class="section-label">Add-Ons</p>
-    <h2 class="section-title">Bolt-on <em>extras</em></h2>
-    <div class="grid-3">
-      <div class="card" style="padding:22px"><div style="font-size:1.6rem;margin-bottom:10px">🚁</div><strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:5px">Drone Footage</strong><p style="font-size:0.78rem;color:var(--white-dim);margin-bottom:10px">Add aerial drone footage to any shoot day. CAA-certified operator.</p><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--orange)">+£120</span><span style="font-size:0.68rem;color:var(--white-dim)"> per shoot</span></div>
-      <div class="card" style="padding:22px"><div style="font-size:1.6rem;margin-bottom:10px">🎨</div><strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:5px">Brand Kit</strong><p style="font-size:0.78rem;color:var(--white-dim);margin-bottom:10px">Logo, colour palette, and visual identity for use across all content.</p><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--orange)">£249</span><span style="font-size:0.68rem;color:var(--white-dim)"> one-off</span></div>
-      <div class="card" style="padding:22px"><div style="font-size:1.6rem;margin-bottom:10px">📣</div><strong style="font-family:'Syne',sans-serif;display:block;margin-bottom:5px">Paid Ads Creative</strong><p style="font-size:0.78rem;color:var(--white-dim);margin-bottom:10px">Meta and TikTok ad creatives produced from your existing content.</p><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--orange)">+£99</span><span style="font-size:0.68rem;color:var(--white-dim)"> per month</span></div>
-    </div>
-  </section>
-
-  <footer class="site-footer">
-    <div class="footer-brand"><div class="brand">ImpactGrid <em>Creator Engine</em></div><p>AI AI Content Platform</p></div>
-    <div class="footer-links">
-      <a href="index.html">Dashboard</a><a href="creators.html">Creators</a>
-      <a href="about.html">About</a><a href="contact.html">Contact</a>
-      <a href="https://impactgridanalytics.com/" target="_blank" class="link-blue">Analytics ↗</a>
-    </div>
-    <p class="footer-copy">© 2025 ImpactGrid Creator Engine. All rights reserved.</p>
-  </footer>
+<div class="topbar">
+  <div class="tl"><button class="hbg" onclick="openNav()">&#9776;</button>
+    <span class="tbtl">Services &amp; Pricing</span></div>
+  <div class="tr"><a href="contact.html" class="btn bp sm">Get in Touch</a></div>
 </div>
-<script src="nav.js"></script>
-<script>initNav('services.html');</script>
+<div class="hero">
+  <div class="ew">Packages &amp; Pricing</div>
+  <h1 class="ht">Everything your business<br>needs to <em>grow online</em></h1>
+  <p class="hd">From AI-only content to full-service social media management with real creators — a package for every stage of your business.</p>
+</div>
+<section class="sec fu">
+  <p class="slb">Plans</p>
+  <h2 class="stl">Choose your <em>package</em></h2>
+  <p class="sdc">All plans include our AI content engine. Upgrade to add creator shoots and full page management.</p>
+  <div class="g4">
+    <div class="card" style="padding:24px 20px">
+      <div style="font-size:.59rem;text-transform:uppercase;letter-spacing:2px;font-weight:700;color:var(--dim);margin-bottom:7px">Starter</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">AI Engine</div>
+      <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--or);line-height:1">&#163;49</div>
+      <div style="font-size:.7rem;color:var(--dim);margin-bottom:14px">per month</div>
+      <p style="font-size:.76rem;color:var(--dim);line-height:1.55;margin-bottom:14px">Upload your own videos and get a full month of platform-ready content, calendar and posting schedule.</p>
+      <ul style="list-style:none;margin-bottom:18px;font-size:.76rem">
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Up to 8 video uploads/month</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>6 content pieces per video</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Content calendar</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Posting schedule</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Captions &amp; hashtags</li>
+        <li style="padding:5px 0;display:flex;gap:7px"><span style="color:#333">&#10007;</span><span style="color:#444">Creator day shoot</span></li>
+      </ul>
+      <a href="contact.html" class="btn bs" style="width:100%;justify-content:center">Get Started</a>
+    </div>
+    <div class="card" style="padding:24px 20px">
+      <div style="font-size:.59rem;text-transform:uppercase;letter-spacing:2px;font-weight:700;color:var(--dim);margin-bottom:7px">Professional</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">Creator Shoot</div>
+      <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--or);line-height:1">&#163;299</div>
+      <div style="font-size:.7rem;color:var(--dim);margin-bottom:14px">per shoot day</div>
+      <p style="font-size:.76rem;color:var(--dim);line-height:1.55;margin-bottom:14px">A creator visits your business for a full shoot day. We process everything into 60+ ready pieces.</p>
+      <ul style="list-style:none;margin-bottom:18px;font-size:.76rem">
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Full day on-location shoot</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>60+ content pieces</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Professional editing</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Live GPS tracking</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>30-day calendar update</li>
+        <li style="padding:5px 0;display:flex;gap:7px"><span style="color:#333">&#10007;</span><span style="color:#444">Page management</span></li>
+      </ul>
+      <a href="contact.html" class="btn bs" style="width:100%;justify-content:center">Book a Shoot</a>
+    </div>
+    <div class="card" style="padding:24px 20px;border-color:var(--or);background:linear-gradient(160deg,rgba(255,92,26,.06),var(--card))">
+      <div style="font-size:.59rem;text-transform:uppercase;letter-spacing:2px;font-weight:700;color:var(--or);margin-bottom:7px">Most Popular &#9733;</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">Managed Social</div>
+      <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--or);line-height:1">&#163;349</div>
+      <div style="font-size:.7rem;color:var(--dim);margin-bottom:14px">per month</div>
+      <p style="font-size:.76rem;color:var(--dim);line-height:1.55;margin-bottom:14px">We run your social pages for you. AI + human managed, with monthly strategy calls and full reporting.</p>
+      <ul style="list-style:none;margin-bottom:18px;font-size:.76rem">
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Full AI content engine</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>We post for you daily</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Comments &amp; DM management</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Monthly strategy call</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>1 creator shoot/month</li>
+        <li style="padding:5px 0;display:flex;gap:7px"><span style="color:#333">&#10007;</span><span style="color:#444">Paid ads included</span></li>
+      </ul>
+      <a href="contact.html" class="btn bp" style="width:100%;justify-content:center">Start Today</a>
+    </div>
+    <div class="card" style="padding:24px 20px">
+      <div style="font-size:.59rem;text-transform:uppercase;letter-spacing:2px;font-weight:700;color:var(--dim);margin-bottom:7px">Enterprise</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">Growth Bundle</div>
+      <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--or);line-height:1">&#163;599</div>
+      <div style="font-size:.7rem;color:var(--dim);margin-bottom:14px">per month</div>
+      <p style="font-size:.76rem;color:var(--dim);line-height:1.55;margin-bottom:14px">The complete package — everything included with dedicated account manager and priority support.</p>
+      <ul style="list-style:none;margin-bottom:18px;font-size:.76rem">
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Everything in Managed</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>2 creator shoots/month</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Paid ad creative</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Drone footage option</li>
+        <li style="padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Analytics dashboard</li>
+        <li style="padding:5px 0;display:flex;gap:7px"><span style="color:var(--gr)">&#10003;</span>Dedicated account manager</li>
+      </ul>
+      <a href="contact.html" class="btn bs" style="width:100%;justify-content:center">Enquire Now</a>
+    </div>
+  </div>
+</section>
+
+<footer class="ft2">
+  <div class="fb"><div class="br">ImpactGrid <em>Creator Engine</em></div><p>impactgridgroup.com</p></div>
+  <div class="fl2">
+    <a href="index.html">Dashboard</a>
+    <a href="upload.html">Upload</a>
+    <a href="services.html">Services</a>
+    <a href="creators.html">Creators</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="https://impactgridanalytics.com/" target="_blank" class="lbl">Analytics &#8599;</a>
+  </div>
+  <p class="fc">&copy; 2025 ImpactGrid Creator Engine.</p>
+</footer>
+
+</div>
+<script>window._PAGE='services.html';</script>
+<script>
+(function(){
+  // Build sidebar
+  var pg = window._PAGE || 'index.html';
+  var svg = {
+    grid:    '<rect x="3" y="3" w="7" h="7"/><rect x="14" y="3" w="7" h="7"/><rect x="3" y="14" w="7" h="7"/><rect x="14" y="14" w="7" h="7"/>',
+    upload:  '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+    cal:     '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    clk:     '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    tnd:     '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    usr:     '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    loc:     '<circle cx="12" cy="12" r="3"/><path d="M22 12h-4M6 12H2M12 2v4M12 18v4"/>',
+    star:    '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    cam:     '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+    inf:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    mail:    '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+  };
+  function ic(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svg[k]+'</svg>'}
+  function lnk(href,ik,label,badge){
+    var a=pg===href?' on':'';
+    var b=badge?'<span class="nbdg">'+badge+'</span>':'';
+    return '<a href="'+href+'" class="ni'+a+'">'+ic(ik)+label+b+'</a>';
+  }
+  var html = 
+    '<div class="sb-logo">'+
+      '<div class="sb-brand">ImpactGrid <em>Creator Engine</em></div>'+
+      '<div class="sb-sub">AI Content Platform</div>'+
+    '</div>'+
+    '<nav class="sb-nav">'+
+      '<div class="nlb">Platform</div>'+
+      lnk('index.html','grid','Dashboard')+
+      lnk('upload.html','upload','Upload Video','NEW')+
+      lnk('calendar.html','cal','Content Calendar')+
+      lnk('schedule.html','clk','Posting Schedule')+
+      lnk('trending.html','tnd','Trending Topics')+
+      '<div class="nlb">Services</div>'+
+      lnk('creators.html','usr','Book a Creator')+
+      lnk('tracker.html','loc','Live Tracker')+
+      lnk('services.html','star','All Services')+
+      lnk('photography.html','cam','Photography')+
+      '<div class="nlb">Company</div>'+
+      lnk('about.html','inf','About Us')+
+      lnk('contact.html','mail','Contact')+
+    '</nav>'+
+    '<div class="sb-foot">'+
+      '<a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="sb-ap">'+
+        '<div class="sb-ai">&#128202;</div>'+
+        '<div class="sb-at"><strong>ImpactGrid Analytics</strong><span>Track your growth</span></div>'+
+        '<span class="sb-aa">&#8599;</span>'+
+      '</a>'+
+      '<div class="sb-cta">'+
+        '<strong>&#127916; Start creating</strong>'+
+        '<p>Upload a video, get 30 days of content instantly.</p>'+
+        '<a href="upload.html">Upload Now &rarr;</a>'+
+      '</div>'+
+    '</div>';
+  var sb = document.getElementById('sb');
+  if(sb) sb.innerHTML = html;
+
+  // overlay close
+  var ov = document.getElementById('ov');
+  if(ov) ov.onclick = closeNav;
+
+  // fade-up
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('in'); });
+  },{threshold:0.06});
+  document.querySelectorAll('.fu').forEach(function(el){ obs.observe(el); });
+})();
+
+function openNav(){
+  document.getElementById('sb').classList.add('open');
+  document.getElementById('ov').style.display='block';
+}
+function closeNav(){
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('ov').style.display='none';
+}
+</script>
 </body>
 </html>
