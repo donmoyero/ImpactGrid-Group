@@ -147,6 +147,7 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
       <p style="margin-top:4px;font-size:.67rem;color:#333">
         Real editing: captions &middot; 9:16 crop &middot; silence trim &middot; intro &middot; watermark &middot; music
       </p>
+      <p id="serverStatus" style="margin-top:8px;font-size:.68rem;color:var(--yw)">&#9679; Waking server&hellip; (may take 30&ndash;60s)</p>
       <input type="file" id="vfile" accept="video/*" style="display:none"/>
     </label>
   </div>
@@ -406,6 +407,33 @@ var RENDER_URL = 'https://impactgrid-processor.onrender.com';
   }
   loadRecent();
 
+  // ── Wake up Render server as soon as page loads ──────────────────
+  // Free tier spins down after inactivity — ping it now so it's ready
+  var _serverReady = false;
+  var _serverWaking = true;
+
+  function wakeServer() {
+    var statusEl = document.getElementById('serverStatus');
+    fetch(RENDER_URL + '/', { method: 'GET', signal: AbortSignal.timeout(90000) })
+      .then(function(r) {
+        _serverReady = true;
+        _serverWaking = false;
+        if(statusEl) {
+          statusEl.innerHTML = '<span style="color:var(--gr)">&#9679; Server ready — upload anytime</span>';
+        }
+        console.log('Server is awake');
+      })
+      .catch(function(e) {
+        _serverReady = false;
+        _serverWaking = false;
+        if(statusEl) {
+          statusEl.innerHTML = '<span style="color:var(--or)">&#9679; Server offline — try again shortly</span>';
+        }
+        console.warn('Server wake failed:', e);
+      });
+  }
+  wakeServer();
+
   document.getElementById('vfile').addEventListener('change',function(){
     if(!this.files||!this.files.length)return;
     handleUpload(this.files[0]);
@@ -472,9 +500,26 @@ var RENDER_URL = 'https://impactgrid-processor.onrender.com';
       _vid=rows&&rows[0]?rows[0].id:null;
       if(!_vid)throw new Error('Failed to save to database');
 
-      // 3. Call Render.com processing server
+      // 3. Wait for server to wake if needed, then call it
       setState('stProc');
       setStep(STEPS,0);
+      // If server still waking, wait up to 90s
+      if(_serverWaking) {
+        toast('&#9201; Waiting for server to wake up…','ok');
+        var waitStart = Date.now();
+        while(_serverWaking && Date.now()-waitStart < 90000) {
+          await wait(2000);
+        }
+      }
+      if(!_serverReady) {
+        // Try one more direct ping
+        try {
+          await fetch(RENDER_URL+'/', {signal: AbortSignal.timeout(30000)});
+          _serverReady = true;
+        } catch(e) {
+          throw new Error('Server is offline. Please try again in 1 minute.');
+        }
+      }
 
       var procResp=await fetch(RENDER_URL+'/process',{
         method:'POST',
