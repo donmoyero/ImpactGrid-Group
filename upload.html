@@ -209,11 +209,35 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
 
   <!-- ERROR -->
   <div id="stError" style="display:none">
-    <div class="card" style="padding:28px;border-color:rgba(255,92,26,.4);text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:10px">&#9888;&#65039;</div>
-      <h3 style="font-family:'Syne',sans-serif;color:var(--or);margin-bottom:8px">Processing Failed</h3>
-      <p style="font-size:.8rem;color:var(--dim);margin-bottom:16px" id="errMsg">Something went wrong.</p>
-      <button class="btn bp" onclick="resetUp()">Try Again</button>
+    <div class="card" style="padding:28px;border-color:rgba(255,92,26,.3)">
+      <div id="errServer" style="display:none;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:12px">&#9881;&#65039;</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:10px">Processing Server Not Set Up Yet</h3>
+        <p style="font-size:.8rem;color:var(--dim);line-height:1.6;margin-bottom:18px">
+          Your video was <strong style="color:var(--gr)">uploaded to Cloudinary successfully</strong> and saved to your database.<br><br>
+          The editing server (Render.com) hasn't been deployed yet — that's what handles the FFmpeg editing, captions, and cropping.
+          Once the server is live, uploads will be processed automatically.
+        </p>
+        <div style="background:rgba(255,92,26,.07);border:1px solid rgba(255,92,26,.2);border-radius:9px;padding:14px;text-align:left;margin-bottom:18px;font-size:.77rem">
+          <strong style="display:block;margin-bottom:8px">To enable real editing:</strong>
+          <div style="color:var(--dim);line-height:2">
+            1. Push the <code style="background:var(--b2);padding:1px 5px;border-radius:3px">impactgrid-server</code> files to GitHub<br>
+            2. Deploy to <a href="https://render.com" target="_blank" style="color:var(--bl)">render.com</a> as a Web Service<br>
+            3. Update <code style="background:var(--b2);padding:1px 5px;border-radius:3px">RENDER_URL</code> in upload.html with your server URL
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;justify-content:center;flex-wrap:wrap">
+          <button class="btn bp" onclick="resetUp()">Upload Another Video</button>
+          <a href="index.html" class="btn bs">Go to Dashboard</a>
+        </div>
+      </div>
+      <div id="errGeneral" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:10px">&#9888;&#65039;</div>
+        <h3 style="font-family:'Syne',sans-serif;color:var(--or);margin-bottom:8px">Processing Failed</h3>
+        <p style="font-size:.8rem;color:var(--dim);margin-bottom:6px" id="errMsg">Something went wrong.</p>
+        <p style="font-size:.74rem;color:var(--dim);margin-bottom:16px">Your video was saved — check the <a href="index.html" style="color:var(--bl)">Dashboard</a> to retry.</p>
+        <button class="btn bp" onclick="resetUp()">Try Again</button>
+      </div>
     </div>
   </div>
 
@@ -471,9 +495,20 @@ var RENDER_URL = 'https://impactgrid-processor.onrender.com';
       await pollForCompletion(_vid);
 
     }catch(err){
-      document.getElementById('errMsg').textContent=err.message||'Upload failed.';
+      var msg=err.message||'';
+      var serverDown=msg.includes('Failed to fetch')||msg.includes('NetworkError')||
+                     msg.includes('Processing server error')||msg.includes('fetch');
       setState('stError');
-      toast('Error: '+(err.message||'unknown'),'err');
+      if(serverDown){
+        document.getElementById('errServer').style.display='block';
+        document.getElementById('errGeneral').style.display='none';
+        toast('Video saved — editing server not deployed yet','err');
+      } else {
+        document.getElementById('errServer').style.display='none';
+        document.getElementById('errGeneral').style.display='block';
+        document.getElementById('errMsg').textContent=msg||'Upload failed.';
+        toast('Error: '+(msg||'unknown'),'err');
+      }
       if(_vid)sbUpdate('videos',_vid,{status:'error'});
     }
   }
