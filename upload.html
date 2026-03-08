@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin"/>
-<meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp"/>
 <title>Upload & Edit — ImpactGrid Creator Engine</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
@@ -498,26 +496,21 @@ function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
 // ── Load FFmpeg.wasm ───────────────────────────────────────────────
 async function loadFFmpeg(){
   if(_ffmpegLoaded)return _ffmpeg;
-  await new Promise(function(res,rej){
-    var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js';
-    s.crossOrigin='anonymous';
-    s.onload=res;s.onerror=rej;
-    document.head.appendChild(s);
+  var mod = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/esm/ffmpeg.js');
+  var FFmpeg = mod.FFmpeg;
+  var toBlobURL = mod.toBlobURL;
+  if(typeof toBlobURL !== 'function') throw new Error('toBlobURL not found — use Chrome or Edge');
+  _ffmpeg = new FFmpeg();
+  _ffmpeg.on('progress', function(p){
+    var pct = Math.min(95, Math.round(10 + p.progress * 80));
+    setProgress(pct, 'Editing video...', Math.round(p.progress * 100) + '% of current render');
   });
-  var FFmpeg=FFmpegWASM.FFmpeg;
-  var toBlobURL=FFmpegWASM.toBlobURL;
-  _ffmpeg=new FFmpeg();
-  _ffmpeg.on('progress',function(p){
-    var pct=Math.min(95,Math.round(10+p.progress*80));
-    setProgress(pct,'Editing video…',Math.round(p.progress*100)+'% of current render');
-  });
-  var base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/umd';
+  var base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm';
   await _ffmpeg.load({
-    coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
-    wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')
+    coreURL: await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript'),
+    wasmURL: await toBlobURL(base + '/ffmpeg-core.wasm', 'application/wasm'),
   });
-  _ffmpegLoaded=true;
+  _ffmpegLoaded = true;
   return _ffmpeg;
 }
 
@@ -597,7 +590,7 @@ async function startRender(){
 
     // 2. Write all clips to FFmpeg filesystem
     setProgress(10,'Loading clips\u2026','Reading your video files\u2026');
-    var fetchFile=FFmpegWASM.fetchFile;
+    var {fetchFile} = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/esm/ffmpeg.js');
     var inputList=[];
     for(var i=0;i<clips.length;i++){
       var fname='clip'+i+'.mp4';
