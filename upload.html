@@ -496,20 +496,23 @@ function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
 // ── Load FFmpeg.wasm ───────────────────────────────────────────────
 async function loadFFmpeg(){
   if(_ffmpegLoaded)return _ffmpeg;
-  var mod = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/esm/ffmpeg.js');
-  var FFmpeg = mod.FFmpeg;
-  var toBlobURL = mod.toBlobURL;
-  if(typeof toBlobURL !== 'function') throw new Error('toBlobURL not found — use Chrome or Edge');
-  _ffmpeg = new FFmpeg();
-  _ffmpeg.on('progress', function(p){
-    var pct = Math.min(95, Math.round(10 + p.progress * 80));
-    setProgress(pct, 'Editing video...', Math.round(p.progress * 100) + '% of current render');
+  // Use @ffmpeg/ffmpeg 0.11.x — stable, no Worker CORS issues, confirmed CDN paths
+  await new Promise(function(res,rej){
+    var s=document.createElement('script');
+    s.src='https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
+    s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
   });
-  var base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm';
-  await _ffmpeg.load({
-    coreURL: await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript'),
-    wasmURL: await toBlobURL(base + '/ffmpeg-core.wasm', 'application/wasm'),
+  var {createFFmpeg} = FFmpeg;
+  _ffmpeg = createFFmpeg({
+    log: false,
+    corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+    progress: function(p){
+      var pct = Math.min(95, Math.round(10 + p.ratio * 80));
+      setProgress(pct, 'Editing video...', Math.round(p.ratio * 100) + '% of current render');
+    }
   });
+  await _ffmpeg.load();
   _ffmpegLoaded = true;
   return _ffmpeg;
 }
@@ -590,11 +593,11 @@ async function startRender(){
 
     // 2. Write all clips to FFmpeg filesystem
     setProgress(10,'Loading clips\u2026','Reading your video files\u2026');
-    var {fetchFile} = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/esm/ffmpeg.js');
+    var fetchFile = FFmpeg.fetchFile;
     var inputList=[];
     for(var i=0;i<clips.length;i++){
       var fname='clip'+i+'.mp4';
-      await ff.writeFile(fname,await fetchFile(clips[i]));
+      ff.FS('writeFile', fname,await fetchFile(clips[i]));
       inputList.push(fname);
       setProgress(10+Math.round(i/clips.length*8),'Loading clips\u2026','Loaded: '+clips[i].name);
     }
@@ -603,12 +606,12 @@ async function startRender(){
     setProgress(18,'Stitching clips\u2026','Joining '+clips.length+' clip'+(clips.length>1?'s':'')+'...');
     var stitched='stitched.mp4';
     if(clips.length===1){
-      await ff.exec(['-i','clip0.mp4','-c','copy',stitched]);
+      await ff.run('-i','clip0.mp4','-c','copy',stitched);
     } else {
       // Write concat list
       var concatTxt=inputList.map(function(f){return 'file '+f;}).join('\n');
-      await ff.writeFile('concat.txt',concatTxt);
-      await ff.exec(['-f','concat','-safe','0','-i','concat.txt','-c','copy',stitched]);
+      ff.FS('writeFile', 'concat.txt', new TextEncoder().encode(concatTxt));
+      await ff.run('-f','concat','-safe','0','-i','concat.txt','-c','copy',stitched);
     }
     setProgress(25,'Clips stitched','All clips joined into one video');
 
@@ -639,7 +642,7 @@ async function startRender(){
           var mresp=await fetch(MUSIC_URLS[_music]);
           musicBuf=new Uint8Array(await mresp.arrayBuffer());
         }
-        if(musicBuf)await ff.writeFile('music.mp3',musicBuf);
+        if(musicBuf)ff.FS('writeFile', 'music.mp3',musicBuf);
       } catch(e){
         toast('Music fetch failed, continuing without','err');
         musicBuf=null;
@@ -674,7 +677,7 @@ async function startRender(){
       // Captions via subtitles filter
       var captionFilter='';
       if(srtData){
-        await ff.writeFile('captions.srt',srtData);
+        ff.FS('writeFile', 'captions.srt', new TextEncoder().encode(srtData));
         var fc=s.captionBg.replace(/[^0-9a-fA-F]/g,'');
         captionFilter=',subtitles=captions.srt:force_style=\'FontName=Arial,FontSize=22,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Bold=1,Outline=2,MarginV=60,Alignment=2\'';
       }
@@ -701,9 +704,9 @@ async function startRender(){
         outFile
       ]);
 
-      await ff.exec(ffArgs);
+      await ff.run(...ffArgs);
 
-      var data=await ff.readFile(outFile);
+      var data=ff.FS('readFile', outFile);
       var blob=new Blob([data.buffer],{type:'video/mp4'});
       var url=URL.createObjectURL(blob);
       results.push({fmt:fmt,url:url,name:'impactgrid_'+fmt+'_'+_style+'.mp4',platform:p,sizeMB:(blob.size/1024/1024).toFixed(1)});
