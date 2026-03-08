@@ -121,15 +121,18 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
 <div id="ov"></div>
 <aside id="sb"></aside>
 <div class="main">
+
 <div class="topbar">
   <div class="tl"><button class="hbg" onclick="openNav()">&#9776;</button><span class="tbtl">Upload Video</span></div>
   <div class="tr"><a href="index.html" class="btn bg sm">&#8592; Dashboard</a></div>
 </div>
+
 <div class="hero">
   <div class="ew">AI Content Engine</div>
-  <h1 class="ht">Turn raw footage into<br><em>professional content</em></h1>
-  <p class="hd">Upload any business video. Stored instantly to Cloudinary, logged in Supabase, and processed into 6 platform-ready content pieces.</p>
+  <h1 class="ht">Upload once.<br>Get <em>professionally edited</em><br>content back.</h1>
+  <p class="hd">Real FFmpeg editing on our server — auto captions via Whisper AI, cropped to 9:16, silence trimmed, intro card added, watermarked, and background music mixed in. Three download-ready versions per upload.</p>
 </div>
+
 <section class="sec fu">
 <div id="twoCol" style="display:grid;grid-template-columns:1fr 285px;gap:20px;align-items:start">
 <div>
@@ -141,19 +144,23 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
       <div style="font-size:2.6rem">&#127916;</div>
       <h3>Drop video here or click to browse</h3>
       <p style="margin-top:6px">MP4 &middot; MOV &middot; AVI &middot; MKV &mdash; up to 2GB</p>
-      <p style="margin-top:4px;font-size:.67rem;color:#333">Uploaded to Cloudinary &middot; Logged to Supabase &middot; All platforms covered</p>
+      <p style="margin-top:4px;font-size:.67rem;color:#333">
+        Real editing: captions &middot; 9:16 crop &middot; silence trim &middot; intro &middot; watermark &middot; music
+      </p>
       <input type="file" id="vfile" accept="video/*" style="display:none"/>
     </label>
   </div>
 
-  <!-- UPLOADING to Cloudinary -->
+  <!-- UPLOADING -->
   <div id="stUpload" style="display:none">
     <p class="slb" style="margin-bottom:12px">Uploading to Cloudinary</p>
     <div class="card" style="padding:20px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
         <div style="font-size:1.8rem">&#9729;&#65039;</div>
-        <div><div style="font-weight:600;font-size:.88rem" id="upName">Uploading&hellip;</div>
-        <div style="font-size:.7rem;color:var(--dim)" id="upSize"></div></div>
+        <div>
+          <div style="font-weight:600;font-size:.88rem" id="upName">Uploading&hellip;</div>
+          <div style="font-size:.7rem;color:var(--dim)" id="upSize"></div>
+        </div>
       </div>
       <div class="pb" style="margin-bottom:6px"><div class="pf" id="upBar" style="width:0;transition:width .25s"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--dim)">
@@ -162,15 +169,24 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
     </div>
   </div>
 
-  <!-- PROCESSING steps -->
+  <!-- PROCESSING -->
   <div id="stProc" style="display:none">
-    <p class="slb" style="margin-bottom:12px">Generating Your Content</p>
+    <p class="slb" style="margin-bottom:4px">Processing on Server</p>
+    <p style="font-size:.75rem;color:var(--dim);margin-bottom:12px">
+      FFmpeg + Whisper AI running on our Render.com server &mdash; this takes 2&ndash;8 minutes depending on video length.
+    </p>
     <div class="card" style="padding:20px">
       <div id="stepList"></div>
       <div style="margin-top:12px">
-        <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--dim);margin-bottom:5px"><span>Processing&hellip;</span><span id="procPct">0%</span></div>
-        <div class="pb"><div class="pf" id="procBar" style="width:0;transition:width .5s"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--dim);margin-bottom:5px">
+          <span>Processing&hellip;</span><span id="procPct">0%</span>
+        </div>
+        <div class="pb"><div class="pf" id="procBar" style="width:0;transition:width .6s"></div></div>
       </div>
+    </div>
+    <div style="margin-top:12px;padding:12px 14px;background:rgba(74,143,245,.08);border:1px solid rgba(74,143,245,.2);border-radius:9px;font-size:.75rem;color:var(--dim)">
+      &#128202; You can close this tab and come back later &mdash; processing continues on the server.
+      Check the <a href="index.html" style="color:var(--bl)">Dashboard</a> for results.
     </div>
   </div>
 
@@ -178,20 +194,13 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
   <div id="stDone" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:9px">
       <div>
-        <p class="slb" style="margin-bottom:2px">Content Ready</p>
-        <h3 style="font-family:'Syne',sans-serif;font-size:1.02rem;color:var(--gr)">&#10003; Video saved &amp; 6 pieces generated</h3>
+        <p class="slb" style="margin-bottom:2px">Editing Complete</p>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1.02rem;color:var(--gr)">&#10003; 3 professionally edited videos ready</h3>
       </div>
       <button class="btn bs sm" onclick="resetUp()">+ Upload Another</button>
     </div>
-    <div id="vidPreview" style="margin-bottom:16px"></div>
-    <div class="ga">
-      <div class="card" style="padding:15px"><div style="font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">Instagram Reel</div><h4 style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:700;margin-bottom:4px">Behind the scenes &#128293;</h4><p style="font-size:.72rem;color:var(--dim);line-height:1.5">30s vertical cut, trending audio, captions + hashtags.</p><div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><span class="tag">Instagram</span><a id="lnk0" href="#" target="_blank" class="btn bp sm">&#8599; View</a></div></div>
-      <div class="card" style="padding:15px"><div style="font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">TikTok</div><h4 style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:700;margin-bottom:4px">Why we do what we do</h4><p style="font-size:.72rem;color:var(--dim);line-height:1.5">60s story, trend-matched hook, subtitle overlay.</p><div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><span class="tag">TikTok</span><a id="lnk1" href="#" target="_blank" class="btn bp sm">&#8599; View</a></div></div>
-      <div class="card" style="padding:15px"><div style="font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">LinkedIn</div><h4 style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:700;margin-bottom:4px">What building a business looks like</h4><p style="font-size:.72rem;color:var(--dim);line-height:1.5">Long-form post, storytelling hook, insights, CTA.</p><div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><span class="tag">LinkedIn</span><a id="lnk2" href="#" target="_blank" class="btn bp sm">&#8599; View</a></div></div>
-      <div class="card" style="padding:15px"><div style="font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">Twitter / X</div><h4 style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:700;margin-bottom:4px">7 things I've learned</h4><p style="font-size:.72rem;color:var(--dim);line-height:1.5">10-tweet thread with hook, value, CTA.</p><div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><span class="tag">Twitter/X</span><a id="lnk3" href="#" target="_blank" class="btn bp sm">&#8599; View</a></div></div>
-      <div class="card" style="padding:15px"><div style="font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">YouTube Short</div><h4 style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:700;margin-bottom:4px">Quick tip &#9889;</h4><p style="font-size:.72rem;color:var(--dim);line-height:1.5">Optimised title, thumbnail, description, tags.</p><div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><span class="tag">YouTube</span><a id="lnk4" href="#" target="_blank" class="btn bp sm">&#8599; View</a></div></div>
-      <div class="card" style="padding:15px"><div style="font-size:.56rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);font-weight:700;margin-bottom:5px">Instagram Carousel</div><h4 style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:700;margin-bottom:4px">5 reasons to choose us</h4><p style="font-size:.72rem;color:var(--dim);line-height:1.5">6-slide carousel brief with copy and CTA.</p><div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><span class="tag">Carousel</span><a id="lnk5" href="#" target="_blank" class="btn bp sm">&#8599; View</a></div></div>
-    </div>
+    <div id="vidPreview"></div>
+    <div id="transcriptBox"></div>
     <div style="margin-top:14px;display:flex;gap:9px;flex-wrap:wrap">
       <a href="calendar.html" class="btn bp">View Calendar &#8594;</a>
       <a href="index.html" class="btn bs">Dashboard</a>
@@ -202,44 +211,48 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
   <div id="stError" style="display:none">
     <div class="card" style="padding:28px;border-color:rgba(255,92,26,.4);text-align:center">
       <div style="font-size:2.5rem;margin-bottom:10px">&#9888;&#65039;</div>
-      <h3 style="font-family:'Syne',sans-serif;color:var(--or);margin-bottom:8px">Upload Failed</h3>
+      <h3 style="font-family:'Syne',sans-serif;color:var(--or);margin-bottom:8px">Processing Failed</h3>
       <p style="font-size:.8rem;color:var(--dim);margin-bottom:16px" id="errMsg">Something went wrong.</p>
       <button class="btn bp" onclick="resetUp()">Try Again</button>
     </div>
   </div>
 
 </div>
+
 <!-- RIGHT PANEL -->
 <div style="display:flex;flex-direction:column;gap:12px">
   <div class="card" style="padding:17px">
-    <p class="slb" style="margin-bottom:10px">What You'll Receive</p>
+    <p class="slb" style="margin-bottom:10px">What Gets Edited</p>
     <div style="font-size:.77rem">
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Instagram Reels</span><span style="color:var(--gr);font-weight:600">&#10003; 2 cuts</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>TikTok videos</span><span style="color:var(--gr);font-weight:600">&#10003; 2 cuts</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>YouTube Short</span><span style="color:var(--gr);font-weight:600">&#10003; 1 cut</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>LinkedIn post</span><span style="color:var(--gr);font-weight:600">&#10003; Full copy</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Twitter/X thread</span><span style="color:var(--gr);font-weight:600">&#10003; 10 tweets</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Carousel brief</span><span style="color:var(--gr);font-weight:600">&#10003; 6 slides</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Stored in Cloudinary</span><span style="color:var(--gr);font-weight:600">&#10003; Auto</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0"><span>Logged in Supabase</span><span style="color:var(--gr);font-weight:600">&#10003; Auto</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Auto captions (Whisper AI)</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Crop to 9:16 vertical</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Trim silence</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Intro title card</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>ImpactGrid watermark</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Background music mix</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Reel / TikTok version</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>60s short cut</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0"><span>YouTube 16:9 version</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
+    </div>
+  </div>
+  <div class="card" style="padding:17px">
+    <p class="slb" style="margin-bottom:8px">Processing Time</p>
+    <div style="font-size:.74rem;color:var(--dim);line-height:1.9">
+      <p>&#9201; Under 2 min: short clips (&lt;2 min)</p>
+      <p>&#9201; 3&ndash;5 min: typical videos (2&ndash;10 min)</p>
+      <p>&#9201; 5&ndash;10 min: long videos (10&ndash;30 min)</p>
+      <p>&#128202; Tab can be closed safely</p>
     </div>
   </div>
   <div class="card" style="padding:17px">
     <p class="slb" style="margin-bottom:9px">Recent Uploads</p>
     <div id="recentList" style="font-size:.75rem;color:var(--dim)">Loading&hellip;</div>
   </div>
-  <div class="card" style="padding:17px">
-    <p class="slb" style="margin-bottom:8px">Tips</p>
-    <div style="font-size:.73rem;color:var(--dim);line-height:1.9">
-      <p>&#128161; Film in natural light</p>
-      <p>&#127897;&#65039; Clear audio = better captions</p>
-      <p>&#128208; Vertical 9:16 works best</p>
-      <p>&#9203; 2&ndash;10 minutes is ideal</p>
-    </div>
-  </div>
 </div>
+
 </div>
 </section>
+
 <footer class="ft2">
   <div class="fb"><div class="br">ImpactGrid <em>Creator Engine</em></div><p>impactgridgroup.com</p></div>
   <div class="fl2">
@@ -346,8 +359,13 @@ function closeNav(){document.getElementById('sb').classList.remove('open');docum
 function timeAgo(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
 </script>
 <script>
+var RENDER_URL = 'https://impactgrid-processor.onrender.com';
+
 (function(){
-  function resize(){var g=document.getElementById('twoCol');if(g)g.style.gridTemplateColumns=window.innerWidth<740?'1fr':'1fr 285px';}
+  function resize(){
+    var g=document.getElementById('twoCol');
+    if(g)g.style.gridTemplateColumns=window.innerWidth<740?'1fr':'1fr 285px';
+  }
   resize();window.addEventListener('resize',resize);
 
   async function loadRecent(){
@@ -370,6 +388,7 @@ function timeAgo(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)
   });
 
   var _vid=null;
+  var _pollTimer=null;
 
   function setState(id){
     ['stIdle','stUpload','stProc','stDone','stError'].forEach(function(s){
@@ -377,26 +396,30 @@ function timeAgo(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)
     });
   }
 
-  var STEPS=[
-    {e:'&#9986;&#65039;',l:'Trim &amp; edit',d:'Creating platform-specific cuts&hellip;'},
-    {e:'&#128172;',l:'Generate captions',d:'Auto-captioning all formats&hellip;'},
-    {e:'&#128221;',l:'Write copy',d:'Generating posts, hooks &amp; threads&hellip;'},
-    {e:'&#128197;',l:'Update calendar',d:'Adding to your content calendar&hellip;'},
-    {e:'&#128230;',l:'Package output',d:'Preparing your 6 content pieces&hellip;'}
-  ];
-
-  function renderSteps(cur){
-    document.getElementById('stepList').innerHTML=STEPS.map(function(s,i){
+  function setStep(steps, cur){
+    document.getElementById('stepList').innerHTML=steps.map(function(s,i){
       var done=i<cur,active=i===cur;
       var bg=done?'rgba(31,217,122,.15)':active?'rgba(255,92,26,.15)':'var(--b)';
       var ico=done?'&#10003;':s.e;
+      var anim=active?';animation:bk 1s infinite':'';
       return '<div style="display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid var(--b)">'+
-        '<div style="width:30px;height:30px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0">'+ico+'</div>'+
+        '<div style="width:30px;height:30px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0'+anim+'">'+ico+'</div>'+
         '<div><div style="font-size:.8rem;font-weight:600;margin-bottom:1px">'+s.l+'</div>'+
         '<div style="font-size:.67rem;color:var(--dim)">'+(i<=cur?s.d:'Waiting&hellip;')+'</div></div>'+
       '</div>';
     }).join('');
   }
+
+  var STEPS=[
+    {e:'&#9729;&#65039;', l:'Upload to Cloudinary', d:'Storing your video securely&hellip;'},
+    {e:'&#128172;',        l:'Transcribe audio',    d:'Whisper AI generating captions&hellip;'},
+    {e:'&#9986;&#65039;',  l:'Trim silence',        d:'Removing dead air&hellip;'},
+    {e:'&#128208;',        l:'Crop to 9:16',        d:'Formatting for Reels &amp; TikTok&hellip;'},
+    {e:'&#128221;',        l:'Burn in captions',    d:'Adding styled subtitles&hellip;'},
+    {e:'&#127381;',        l:'Add intro + logo',    d:'Adding title card and watermark&hellip;'},
+    {e:'&#127926;',        l:'Add background music',d:'Mixing music at low volume&hellip;'},
+    {e:'&#128640;',        l:'Upload versions',     d:'Saving 3 edited versions to Cloudinary&hellip;'}
+  ];
 
   function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
 
@@ -406,7 +429,7 @@ function timeAgo(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)
     document.getElementById('upSize').textContent=(file.size/1024/1024).toFixed(1)+' MB total';
 
     try{
-      // 1. Upload to Cloudinary
+      // 1. Upload raw to Cloudinary
       var cld=await cldUpload(file,function(p){
         document.getElementById('upBar').style.width=p+'%';
         document.getElementById('upPct').textContent=p+'%';
@@ -419,45 +442,136 @@ function timeAgo(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)
         file_name:file.name,
         cloudinary_url:cld.secure_url,
         cloudinary_public_id:cld.public_id,
-        status:'processing'
+        status:'processing',
+        progress:5
       });
       _vid=rows&&rows[0]?rows[0].id:null;
+      if(!_vid)throw new Error('Failed to save to database');
 
-      // 3. AI processing animation
+      // 3. Call Render.com processing server
       setState('stProc');
-      for(var i=0;i<STEPS.length;i++){
-        renderSteps(i);
-        document.getElementById('procBar').style.width=Math.round((i+1)/STEPS.length*100)+'%';
-        document.getElementById('procPct').textContent=Math.round((i+1)/STEPS.length*100)+'%';
-        await wait(720);
-      }
+      setStep(STEPS,0);
 
-      // 4. Save content pieces
-      if(_vid){
-        var platforms=['instagram_reel','tiktok','linkedin','twitter','youtube_short','carousel'];
-        for(var p=0;p<platforms.length;p++){
-          await sbInsert('content_pieces',{video_id:_vid,platform:platforms[p],content_type:'generated',title:'Content from '+file.name,body:'Auto-generated for '+platforms[p]});
-        }
-        await sbUpdate('videos',_vid,{status:'done'});
-      }
-
-      // 5. Show done
-      [0,1,2,3,4,5].forEach(function(i){
-        var el=document.getElementById('lnk'+i);
-        if(el)el.href=cld.secure_url;
+      var procResp=await fetch(RENDER_URL+'/process',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          video_id:_vid,
+          cloudinary_url:cld.secure_url,
+          file_name:file.name
+        })
       });
-      document.getElementById('vidPreview').innerHTML=
-        '<video src="'+cld.secure_url+'" controls style="width:100%;border-radius:10px;background:#000;max-height:240px;margin-bottom:4px"></video>';
-      setState('stDone');
-      toast('&#10003; All done! 6 content pieces ready.','ok');
-      loadRecent();
+      if(!procResp.ok){
+        var err=await procResp.text();
+        throw new Error('Processing server error: '+err);
+      }
+      toast('&#9881;&#65039; Processing started on server&hellip;','ok');
+
+      // 4. Poll for completion
+      await pollForCompletion(_vid);
 
     }catch(err){
-      document.getElementById('errMsg').textContent=err.message||'Upload failed. Please try again.';
+      document.getElementById('errMsg').textContent=err.message||'Upload failed.';
       setState('stError');
-      toast('Upload failed: '+(err.message||'unknown error'),'err');
+      toast('Error: '+(err.message||'unknown'),'err');
       if(_vid)sbUpdate('videos',_vid,{status:'error'});
     }
+  }
+
+  async function pollForCompletion(videoId){
+    var maxWait=600000; // 10 min max
+    var start=Date.now();
+    var stepMap={
+      5:0, 12:1, 30:2, 40:2, 50:3, 65:4, 72:5, 80:6, 88:7, 95:7, 100:7
+    };
+
+    while(Date.now()-start < maxWait){
+      await new Promise(function(r){setTimeout(r,3000);});
+
+      try{
+        var rows=await sbSelect('videos','id=eq.'+videoId+'&select=status,progress,processed_url,processed_url_short,processed_url_yt,transcript,error_msg');
+        if(!rows||!rows.length)continue;
+        var v=rows[0];
+        var prog=v.progress||0;
+
+        // Update progress bar
+        document.getElementById('procBar').style.width=prog+'%';
+        document.getElementById('procPct').textContent=prog+'%';
+
+        // Map progress to current step
+        var stepNums=Object.keys(stepMap).map(Number).sort(function(a,b){return a-b;});
+        var curStep=0;
+        for(var i=0;i<stepNums.length;i++){
+          if(prog>=stepNums[i])curStep=stepMap[stepNums[i]];
+        }
+        setStep(STEPS,curStep);
+
+        if(v.status==='done'){
+          showDone(v);
+          return;
+        }
+        if(v.status==='error'){
+          throw new Error(v.error_msg||'Processing failed on server');
+        }
+      }catch(pollErr){
+        if(pollErr.message&&pollErr.message.includes('Processing failed')){
+          throw pollErr;
+        }
+        // network blip — keep polling
+        console.warn('Poll error (retrying):', pollErr);
+      }
+    }
+    throw new Error('Processing timed out after 10 minutes');
+  }
+
+  function showDone(v){
+    // Show processed video previews
+    var reelUrl  = v.processed_url       || '';
+    var shortUrl = v.processed_url_short || reelUrl;
+    var ytUrl    = v.processed_url_yt    || reelUrl;
+
+    document.getElementById('vidPreview').innerHTML =
+      '<div style="margin-bottom:14px">'+
+        '<p class="slb" style="margin-bottom:8px">Edited Videos — Ready to Download</p>'+
+        '<div class="ga">'+
+          '<div class="card" style="overflow:hidden">'+
+            '<video src="'+reelUrl+'" controls style="width:100%;aspect-ratio:9/16;object-fit:cover;background:#000;max-height:320px"></video>'+
+            '<div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">'+
+              '<span style="font-size:.75rem;font-weight:600">&#127917; Reel / TikTok (9:16)</span>'+
+              '<a href="'+reelUrl+'" download target="_blank" class="btn bp sm">&#8595; Download</a>'+
+            '</div>'+
+          '</div>'+
+          '<div class="card" style="overflow:hidden">'+
+            '<video src="'+shortUrl+'" controls style="width:100%;aspect-ratio:9/16;object-fit:cover;background:#000;max-height:320px"></video>'+
+            '<div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">'+
+              '<span style="font-size:.75rem;font-weight:600">&#9654;&#65039; 60s Short Cut</span>'+
+              '<a href="'+shortUrl+'" download target="_blank" class="btn bp sm">&#8595; Download</a>'+
+            '</div>'+
+          '</div>'+
+          '<div class="card" style="overflow:hidden">'+
+            '<video src="'+ytUrl+'" controls style="width:100%;aspect-ratio:16/9;object-fit:cover;background:#000;max-height:320px"></video>'+
+            '<div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">'+
+              '<span style="font-size:.75rem;font-weight:600">&#128250; YouTube (16:9)</span>'+
+              '<a href="'+ytUrl+'" download target="_blank" class="btn bp sm">&#8595; Download</a>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+
+    // Show transcript if available
+    if(v.transcript){
+      document.getElementById('transcriptBox').innerHTML =
+        '<div class="card" style="padding:16px;margin-top:14px">'+
+          '<p class="slb" style="margin-bottom:8px">Auto-Generated Transcript</p>'+
+          '<p style="font-size:.77rem;color:var(--dim);line-height:1.7;max-height:120px;overflow-y:auto">'+
+            v.transcript.replace(/</g,'&lt;')+
+          '</p>'+
+        '</div>';
+    }
+
+    setState('stDone');
+    toast('&#10003; Video fully edited &amp; ready!','ok');
+    loadRecent();
   }
 
   window.resetUp=function(){
@@ -466,7 +580,9 @@ function timeAgo(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)
     document.getElementById('procBar').style.width='0';
     document.getElementById('vfile').value='';
     document.getElementById('vidPreview').innerHTML='';
+    document.getElementById('transcriptBox').innerHTML='';
     _vid=null;
+    clearInterval(_pollTimer);
   };
 })();
 </script>
