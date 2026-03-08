@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Upload Video — ImpactGrid Creator Engine</title>
+<title>Upload & Edit — ImpactGrid Creator Engine</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
 :root{--black:#080808;--surf:#0f0f0f;--card:#141414;--b:#222;--b2:#2e2e2e;--white:#f0ebe5;--dim:#777;--or:#ff5c1a;--od:#c94010;--gr:#1fd97a;--yw:#f0c93a;--bl:#4a8ff5;--sw:262px;--r:11px}
@@ -115,6 +115,26 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
   .cg{grid-template-columns:repeat(4,1fr)}.tbdg{display:none}
 }
 @media(max-width:500px){.ha{flex-direction:column}.ha .btn{width:100%;justify-content:center}}
+
+.style-card{background:var(--card);border:2px solid var(--b);border-radius:12px;padding:18px 16px;cursor:pointer;transition:all .2s;text-align:center}
+.style-card:hover{border-color:var(--or);transform:translateY(-2px)}
+.style-card.active{border-color:var(--or);background:rgba(255,92,26,.07)}
+.style-card .si{font-size:2rem;margin-bottom:8px}
+.style-card strong{font-family:'Syne',sans-serif;font-size:.85rem;display:block;margin-bottom:3px}
+.style-card p{font-size:.68rem;color:var(--dim);line-height:1.4}
+.fmt-btn{background:var(--card);border:2px solid var(--b);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.75rem;font-family:'DM Sans',sans-serif;color:var(--dim);transition:all .18s;font-weight:500}
+.fmt-btn:hover{border-color:var(--or);color:var(--white)}
+.fmt-btn.active{border-color:var(--or);color:var(--or);background:rgba(255,92,26,.07)}
+.result-card{background:var(--card);border:1px solid var(--b);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.result-card:hover{border-color:rgba(255,92,26,.4)}
+.dl-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--or);color:#fff;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:700;padding:10px;width:100%;border:none;cursor:pointer;transition:background .18s;text-decoration:none}
+.dl-btn:hover{background:var(--od)}
+.prog-ring{position:relative;width:60px;height:60px}
+.prog-ring svg{transform:rotate(-90deg)}
+.prog-ring circle{fill:none;stroke-width:5}
+.prog-ring .bg{stroke:var(--b)}
+.prog-ring .fg{stroke:var(--or);stroke-dasharray:163;stroke-dashoffset:163;transition:stroke-dashoffset .4s}
+.prog-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:800;color:var(--or)}
 </style>
 </head>
 <body>
@@ -123,159 +143,142 @@ img{max-width:100%;display:block}a{color:inherit;text-decoration:none}
 <div class="main">
 
 <div class="topbar">
-  <div class="tl"><button class="hbg" onclick="openNav()">&#9776;</button><span class="tbtl">Upload Video</span></div>
+  <div class="tl"><button class="hbg" onclick="openNav()">&#9776;</button><span class="tbtl">Upload &amp; Edit</span></div>
   <div class="tr"><a href="index.html" class="btn bg sm">&#8592; Dashboard</a></div>
 </div>
 
 <div class="hero">
-  <div class="ew">AI Content Engine</div>
-  <h1 class="ht">Upload once.<br>Get <em>professionally edited</em><br>content back.</h1>
-  <p class="hd">Real FFmpeg editing on our server — auto captions via Whisper AI, cropped to 9:16, silence trimmed, intro card added, watermarked, and background music mixed in. Three download-ready versions per upload.</p>
+  <div class="ew">Instant AI Editing</div>
+  <h1 class="ht">Upload. Pick your style.<br><em>Download edited videos.</em></h1>
+  <p class="hd">Choose your vibe, pick your platforms, upload your raw footage. We edit it instantly — cropped, styled, and ready to post. Nothing is stored. You download and go.</p>
 </div>
 
 <section class="sec fu">
-<div id="twoCol" style="display:grid;grid-template-columns:1fr 285px;gap:20px;align-items:start">
-<div>
 
-  <!-- IDLE -->
-  <div id="stIdle">
-    <p class="slb" style="margin-bottom:12px">Drop Your Footage</p>
-    <label class="uz" for="vfile">
+  <!-- ── STEP 1: Style ── -->
+  <div id="step1">
+    <p class="slb">Step 1 of 3</p>
+    <h2 class="stl">Pick your <em>editing style</em></h2>
+    <p class="sdc">This sets the colour grade, pacing, text style and overall feel of your edited videos.</p>
+    <div class="g4" style="margin-bottom:28px">
+      <div class="style-card active" onclick="pickStyle('professional',this)" id="sc_professional">
+        <div class="si">&#128084;</div>
+        <strong>Professional</strong>
+        <p>Clean cuts, neutral grade, bold white captions. Perfect for corporate &amp; service businesses.</p>
+        <div style="margin-top:10px;display:flex;gap:4px;justify-content:center">
+          <div style="width:14px;height:14px;border-radius:3px;background:#f0ebe5"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#4a8ff5"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#222"></div>
+        </div>
+      </div>
+      <div class="style-card" onclick="pickStyle('fun',this)" id="sc_fun">
+        <div class="si">&#127880;</div>
+        <strong>Fun &amp; Energetic</strong>
+        <p>Punchy cuts, vibrant saturation, bold orange captions. Great for food, retail &amp; lifestyle.</p>
+        <div style="margin-top:10px;display:flex;gap:4px;justify-content:center">
+          <div style="width:14px;height:14px;border-radius:3px;background:#ff5c1a"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#f0c93a"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#1fd97a"></div>
+        </div>
+      </div>
+      <div class="style-card" onclick="pickStyle('cinematic',this)" id="sc_cinematic">
+        <div class="si">&#127916;</div>
+        <strong>Cinematic &amp; Moody</strong>
+        <p>Dark grade, cinematic bars, elegant serif captions. Ideal for premium &amp; luxury brands.</p>
+        <div style="margin-top:10px;display:flex;gap:4px;justify-content:center">
+          <div style="width:14px;height:14px;border-radius:3px;background:#1a1a2e"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#8b6f47"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#c9a96e"></div>
+        </div>
+      </div>
+      <div class="style-card" onclick="pickStyle('minimal',this)" id="sc_minimal">
+        <div class="si">&#9728;&#65039;</div>
+        <strong>Minimal &amp; Clean</strong>
+        <p>Bright &amp; airy, soft contrast, thin clean captions. Perfect for wellness &amp; lifestyle brands.</p>
+        <div style="margin-top:10px;display:flex;gap:4px;justify-content:center">
+          <div style="width:14px;height:14px;border-radius:3px;background:#f8f8f8;border:1px solid #ddd"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#e8e0d8"></div>
+          <div style="width:14px;height:14px;border-radius:3px;background:#c4b5a0"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Platforms ── -->
+    <p class="slb">Step 2 of 3</p>
+    <h2 class="stl" style="margin-bottom:8px">Pick your <em>platforms</em></h2>
+    <p class="sdc">We'll create a separate edited version for each platform you select.</p>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:28px">
+      <button class="fmt-btn active" onclick="toggleFmt('reel',this)" id="fmt_reel">&#127917; Instagram Reel (9:16)</button>
+      <button class="fmt-btn active" onclick="toggleFmt('tiktok',this)" id="fmt_tiktok">&#127925; TikTok (9:16)</button>
+      <button class="fmt-btn active" onclick="toggleFmt('youtube',this)" id="fmt_youtube">&#9654;&#65039; YouTube (16:9)</button>
+      <button class="fmt-btn active" onclick="toggleFmt('linkedin',this)" id="fmt_linkedin">&#128188; LinkedIn (1:1)</button>
+    </div>
+
+    <!-- ── STEP 3: Upload ── -->
+    <p class="slb">Step 3 of 3</p>
+    <h2 class="stl" style="margin-bottom:8px">Upload your <em>footage</em></h2>
+    <p class="sdc">Raw footage is fine. Longer videos give us more to work with — we'll cut the best bits.</p>
+    <label class="uz" for="vfile" id="dropZone">
       <div style="font-size:2.6rem">&#127916;</div>
       <h3>Drop video here or click to browse</h3>
       <p style="margin-top:6px">MP4 &middot; MOV &middot; AVI &middot; MKV &mdash; up to 2GB</p>
-      <p style="margin-top:4px;font-size:.67rem;color:#333">
-        Real editing: captions &middot; 9:16 crop &middot; silence trim &middot; intro &middot; watermark &middot; music
-      </p>
-      <p id="serverStatus" style="margin-top:8px;font-size:.68rem;color:var(--yw)">&#9679; Waking server&hellip; (may take 30&ndash;60s)</p>
+      <p style="margin-top:6px;font-size:.68rem;color:var(--or);font-weight:600" id="selSummary">Style: Professional &middot; Formats: 4 selected</p>
       <input type="file" id="vfile" accept="video/*" style="display:none"/>
     </label>
   </div>
 
-  <!-- UPLOADING -->
+  <!-- ── UPLOADING ── -->
   <div id="stUpload" style="display:none">
-    <p class="slb" style="margin-bottom:12px">Uploading to Cloudinary</p>
-    <div class="card" style="padding:20px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <div style="font-size:1.8rem">&#9729;&#65039;</div>
-        <div>
-          <div style="font-weight:600;font-size:.88rem" id="upName">Uploading&hellip;</div>
-          <div style="font-size:.7rem;color:var(--dim)" id="upSize"></div>
-        </div>
+    <p class="slb" style="margin-bottom:12px">Uploading</p>
+    <div class="card" style="padding:24px;display:flex;align-items:center;gap:20px">
+      <div class="prog-ring">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle class="bg" cx="30" cy="30" r="26"/>
+          <circle class="fg" id="uploadRing" cx="30" cy="30" r="26"/>
+        </svg>
+        <div class="prog-num" id="uploadPct">0%</div>
       </div>
-      <div class="pb" style="margin-bottom:6px"><div class="pf" id="upBar" style="width:0;transition:width .25s"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--dim)">
-        <span id="upPct">0%</span><span id="upMB"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROCESSING -->
-  <div id="stProc" style="display:none">
-    <p class="slb" style="margin-bottom:4px">Processing on Server</p>
-    <p style="font-size:.75rem;color:var(--dim);margin-bottom:12px">
-      FFmpeg + Whisper AI running on our Render.com server &mdash; this takes 2&ndash;8 minutes depending on video length.
-    </p>
-    <div class="card" style="padding:20px">
-      <div id="stepList"></div>
-      <div style="margin-top:12px">
-        <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--dim);margin-bottom:5px">
-          <span>Processing&hellip;</span><span id="procPct">0%</span>
-        </div>
-        <div class="pb"><div class="pf" id="procBar" style="width:0;transition:width .6s"></div></div>
-      </div>
-    </div>
-    <div style="margin-top:12px;padding:12px 14px;background:rgba(74,143,245,.08);border:1px solid rgba(74,143,245,.2);border-radius:9px;font-size:.75rem;color:var(--dim)">
-      &#128202; You can close this tab and come back later &mdash; processing continues on the server.
-      Check the <a href="index.html" style="color:var(--bl)">Dashboard</a> for results.
-    </div>
-  </div>
-
-  <!-- DONE -->
-  <div id="stDone" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:9px">
       <div>
-        <p class="slb" style="margin-bottom:2px">Editing Complete</p>
-        <h3 style="font-family:'Syne',sans-serif;font-size:1.02rem;color:var(--gr)">&#10003; 3 professionally edited videos ready</h3>
+        <div style="font-weight:600;font-size:.9rem;margin-bottom:3px" id="upName">Uploading&hellip;</div>
+        <div style="font-size:.74rem;color:var(--dim)" id="upSize"></div>
+        <div style="font-size:.72rem;color:var(--dim);margin-top:2px" id="upMB"></div>
       </div>
-      <button class="btn bs sm" onclick="resetUp()">+ Upload Another</button>
-    </div>
-    <div id="vidPreview"></div>
-    <div id="transcriptBox"></div>
-    <div style="margin-top:14px;display:flex;gap:9px;flex-wrap:wrap">
-      <a href="calendar.html" class="btn bp">View Calendar &#8594;</a>
-      <a href="index.html" class="btn bs">Dashboard</a>
     </div>
   </div>
 
-  <!-- ERROR -->
+  <!-- ── EDITING ── -->
+  <div id="stEdit" style="display:none">
+    <p class="slb" style="margin-bottom:4px">Editing Your Video</p>
+    <p style="font-size:.78rem;color:var(--dim);margin-bottom:16px">Cloudinary is applying your style and cropping for each platform&hellip;</p>
+    <div class="ga" id="editingCards"></div>
+  </div>
+
+  <!-- ── DONE ── -->
+  <div id="stDone" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:9px">
+      <div>
+        <p class="slb" style="margin-bottom:2px">Your Edited Videos</p>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--gr)">&#10003; Ready to download</h3>
+        <p style="font-size:.74rem;color:var(--dim);margin-top:3px">&#128274; Nothing stored — download now, links expire when you leave</p>
+      </div>
+      <button class="btn bs" onclick="resetAll()">&#8635; Edit Another Video</button>
+    </div>
+    <div class="ga" id="resultCards"></div>
+    <div style="margin-top:20px;padding:16px 18px;background:rgba(74,143,245,.07);border:1px solid rgba(74,143,245,.2);border-radius:11px;font-size:.78rem;color:var(--dim)">
+      &#128202; Want to track which edits perform best? <a href="https://impactgridanalytics.com/" target="_blank" style="color:var(--bl)">Connect ImpactGrid Analytics &rarr;</a>
+    </div>
+  </div>
+
+  <!-- ── ERROR ── -->
   <div id="stError" style="display:none">
-    <div class="card" style="padding:28px;border-color:rgba(255,92,26,.3)">
-      <div id="errServer" style="display:none;text-align:center">
-        <div style="font-size:2.5rem;margin-bottom:12px">&#9881;&#65039;</div>
-        <h3 style="font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:10px">Processing Server Not Set Up Yet</h3>
-        <p style="font-size:.8rem;color:var(--dim);line-height:1.6;margin-bottom:18px">
-          Your video was <strong style="color:var(--gr)">uploaded to Cloudinary successfully</strong> and saved to your database.<br><br>
-          The editing server (Render.com) hasn't been deployed yet — that's what handles the FFmpeg editing, captions, and cropping.
-          Once the server is live, uploads will be processed automatically.
-        </p>
-        <div style="background:rgba(255,92,26,.07);border:1px solid rgba(255,92,26,.2);border-radius:9px;padding:14px;text-align:left;margin-bottom:18px;font-size:.77rem">
-          <strong style="display:block;margin-bottom:8px">To enable real editing:</strong>
-          <div style="color:var(--dim);line-height:2">
-            1. Push the <code style="background:var(--b2);padding:1px 5px;border-radius:3px">impactgrid-server</code> files to GitHub<br>
-            2. Deploy to <a href="https://render.com" target="_blank" style="color:var(--bl)">render.com</a> as a Web Service<br>
-            3. Update <code style="background:var(--b2);padding:1px 5px;border-radius:3px">RENDER_URL</code> in upload.html with your server URL
-          </div>
-        </div>
-        <div style="display:flex;gap:9px;justify-content:center;flex-wrap:wrap">
-          <button class="btn bp" onclick="resetUp()">Upload Another Video</button>
-          <a href="index.html" class="btn bs">Go to Dashboard</a>
-        </div>
-      </div>
-      <div id="errGeneral" style="text-align:center">
-        <div style="font-size:2.5rem;margin-bottom:10px">&#9888;&#65039;</div>
-        <h3 style="font-family:'Syne',sans-serif;color:var(--or);margin-bottom:8px">Processing Failed</h3>
-        <p style="font-size:.8rem;color:var(--dim);margin-bottom:6px" id="errMsg">Something went wrong.</p>
-        <p style="font-size:.74rem;color:var(--dim);margin-bottom:16px">Your video was saved — check the <a href="index.html" style="color:var(--bl)">Dashboard</a> to retry.</p>
-        <button class="btn bp" onclick="resetUp()">Try Again</button>
-      </div>
+    <div class="card" style="padding:28px;text-align:center;border-color:rgba(255,92,26,.3)">
+      <div style="font-size:2.5rem;margin-bottom:10px">&#9888;&#65039;</div>
+      <h3 style="font-family:'Syne',sans-serif;margin-bottom:8px">Something went wrong</h3>
+      <p style="font-size:.8rem;color:var(--dim);margin-bottom:16px" id="errMsg">Please try again.</p>
+      <button class="btn bp" onclick="resetAll()">Try Again</button>
     </div>
   </div>
 
-</div>
-
-<!-- RIGHT PANEL -->
-<div style="display:flex;flex-direction:column;gap:12px">
-  <div class="card" style="padding:17px">
-    <p class="slb" style="margin-bottom:10px">What Gets Edited</p>
-    <div style="font-size:.77rem">
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Auto captions (Whisper AI)</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Crop to 9:16 vertical</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Trim silence</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Intro title card</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>ImpactGrid watermark</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Background music mix</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>Reel / TikTok version</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b)"><span>60s short cut</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0"><span>YouTube 16:9 version</span><span style="color:var(--gr);font-weight:600">&#10003; Real</span></div>
-    </div>
-  </div>
-  <div class="card" style="padding:17px">
-    <p class="slb" style="margin-bottom:8px">Processing Time</p>
-    <div style="font-size:.74rem;color:var(--dim);line-height:1.9">
-      <p>&#9201; Under 2 min: short clips (&lt;2 min)</p>
-      <p>&#9201; 3&ndash;5 min: typical videos (2&ndash;10 min)</p>
-      <p>&#9201; 5&ndash;10 min: long videos (10&ndash;30 min)</p>
-      <p>&#128202; Tab can be closed safely</p>
-    </div>
-  </div>
-  <div class="card" style="padding:17px">
-    <p class="slb" style="margin-bottom:9px">Recent Uploads</p>
-    <div id="recentList" style="font-size:.75rem;color:var(--dim)">Loading&hellip;</div>
-  </div>
-</div>
-
-</div>
 </section>
 
 <footer class="ft2">
@@ -384,287 +387,296 @@ function closeNav(){document.getElementById('sb').classList.remove('open');docum
 function timeAgo(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
 </script>
 <script>
-var RENDER_URL = 'https://impactgrid-processor.onrender.com';
+var CLD_CLOUD = 'dsaym55pt';
+var CLD_PRESET = 'impactgrid_upload';
 
-(function(){
-  function resize(){
-    var g=document.getElementById('twoCol');
-    if(g)g.style.gridTemplateColumns=window.innerWidth<740?'1fr':'1fr 285px';
+// ── State ──────────────────────────────────────────────────────────
+var _style = 'professional';
+var _formats = {'reel':true,'tiktok':true,'youtube':true,'linkedin':true};
+var _publicId = null;
+
+// ── Style definitions ──────────────────────────────────────────────
+var STYLES = {
+  professional: {
+    name: 'Professional',
+    grade: 'e_sharpen:60,e_improve:mode_outdoor:blend:40',
+    caption: 'font_Arial_Bold,co_white,b_rgb:000000AA,bo_8px_solid_rgb:00000000',
+    intro_color: '1a2a4a',
+    text_color: 'white',
+    accent: '4a8ff5',
+    emoji: '&#128084;'
+  },
+  fun: {
+    name: 'Fun & Energetic',
+    grade: 'e_vibrance:40,e_saturation:30,e_sharpen:40',
+    caption: 'font_Arial_Bold,co_white,b_rgb:FF5C1ACC,bo_8px_solid_rgb:00000000',
+    intro_color: 'ff5c1a',
+    text_color: 'white',
+    accent: 'f0c93a',
+    emoji: '&#127880;'
+  },
+  cinematic: {
+    name: 'Cinematic & Moody',
+    grade: 'e_contrast:20,e_saturation:-20,e_viesus_correct',
+    caption: 'font_Georgia_Bold_Italic,co_rgb:c9a96e,b_rgb:000000CC,bo_10px_solid_rgb:00000000',
+    intro_color: '0d0d1a',
+    text_color: 'c9a96e',
+    accent: '8b6f47',
+    emoji: '&#127916;'
+  },
+  minimal: {
+    name: 'Minimal & Clean',
+    grade: 'e_improve:mode_indoor:blend:60,e_brightness:10,e_saturation:-10',
+    caption: 'font_Helvetica,co_rgb:333333,b_rgb:FFFFFFF0,bo_8px_solid_rgb:00000000',
+    intro_color: 'f0ebe5',
+    text_color: '333333',
+    accent: 'c4b5a0',
+    emoji: '&#9728;&#65039;'
   }
-  resize();window.addEventListener('resize',resize);
+};
 
-  async function loadRecent(){
-    var list=await sbSelect('videos','order=created_at.desc&limit=5');
-    var el=document.getElementById('recentList');
-    if(!list||!list.length){el.textContent='No uploads yet.';return;}
-    el.innerHTML=list.map(function(v){
-      var sc=v.status==='done'?'sp-d':v.status==='error'?'sp-e':'sp-p';
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--b)">'+
-        '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;font-size:.73rem">'+(v.file_name||'Video')+'</span>'+
-        '<span class="sp '+sc+'" style="font-size:.58rem;margin-left:6px;flex-shrink:0">'+v.status+'</span>'+
-      '</div>';
-    }).join('');
-  }
-  loadRecent();
+// ── Platform definitions ───────────────────────────────────────────
+var PLATFORMS = {
+  reel:    { name:'Instagram Reel', emoji:'&#127917;', w:1080, h:1920, crop:'fill', ar:'9:16', label:'9:16 Vertical' },
+  tiktok:  { name:'TikTok',         emoji:'&#127925;', w:1080, h:1920, crop:'fill', ar:'9:16', label:'9:16 Vertical' },
+  youtube: { name:'YouTube',        emoji:'&#9654;&#65039;', w:1920, h:1080, crop:'fill', ar:'16:9', label:'16:9 Horizontal' },
+  linkedin:{ name:'LinkedIn',       emoji:'&#128188;', w:1080, h:1080, crop:'fill', ar:'1:1',  label:'1:1 Square' }
+};
 
-  // ── Wake up Render server as soon as page loads ──────────────────
-  // Free tier spins down after inactivity — ping it now so it's ready
-  var _serverReady = false;
-  var _serverWaking = true;
+// ── UI helpers ─────────────────────────────────────────────────────
+function pickStyle(name, el) {
+  _style = name;
+  document.querySelectorAll('.style-card').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  updateSummary();
+}
 
-  function wakeServer() {
-    var statusEl = document.getElementById('serverStatus');
-    fetch(RENDER_URL + '/', { method: 'GET', signal: AbortSignal.timeout(90000) })
-      .then(function(r) {
-        _serverReady = true;
-        _serverWaking = false;
-        if(statusEl) {
-          statusEl.innerHTML = '<span style="color:var(--gr)">&#9679; Server ready — upload anytime</span>';
-        }
-        console.log('Server is awake');
-      })
-      .catch(function(e) {
-        _serverReady = false;
-        _serverWaking = false;
-        if(statusEl) {
-          statusEl.innerHTML = '<span style="color:var(--or)">&#9679; Server offline — try again shortly</span>';
-        }
-        console.warn('Server wake failed:', e);
-      });
-  }
-  wakeServer();
+function toggleFmt(name, el) {
+  _formats[name] = !_formats[name];
+  el.classList.toggle('active', _formats[name]);
+  updateSummary();
+}
 
-  document.getElementById('vfile').addEventListener('change',function(){
-    if(!this.files||!this.files.length)return;
-    handleUpload(this.files[0]);
+function updateSummary() {
+  var count = Object.values(_formats).filter(Boolean).length;
+  var s = STYLES[_style];
+  document.getElementById('selSummary').textContent =
+    'Style: ' + s.name + ' · Formats: ' + count + ' selected';
+}
+
+function setState(id) {
+  ['step1','stUpload','stEdit','stDone','stError'].forEach(function(s){
+    var el = document.getElementById(s);
+    if(el) el.style.display = s===id ? 'block' : 'none';
   });
+}
 
-  var _vid=null;
-  var _pollTimer=null;
+function wait(ms){ return new Promise(function(r){setTimeout(r,ms);}); }
 
-  function setState(id){
-    ['stIdle','stUpload','stProc','stDone','stError'].forEach(function(s){
-      document.getElementById(s).style.display=s===id?'block':'none';
-    });
-  }
-
-  function setStep(steps, cur){
-    document.getElementById('stepList').innerHTML=steps.map(function(s,i){
-      var done=i<cur,active=i===cur;
-      var bg=done?'rgba(31,217,122,.15)':active?'rgba(255,92,26,.15)':'var(--b)';
-      var ico=done?'&#10003;':s.e;
-      var anim=active?';animation:bk 1s infinite':'';
-      return '<div style="display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid var(--b)">'+
-        '<div style="width:30px;height:30px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0'+anim+'">'+ico+'</div>'+
-        '<div><div style="font-size:.8rem;font-weight:600;margin-bottom:1px">'+s.l+'</div>'+
-        '<div style="font-size:.67rem;color:var(--dim)">'+(i<=cur?s.d:'Waiting&hellip;')+'</div></div>'+
-      '</div>';
-    }).join('');
-  }
-
-  var STEPS=[
-    {e:'&#9729;&#65039;', l:'Upload to Cloudinary', d:'Storing your video securely&hellip;'},
-    {e:'&#128172;',        l:'Transcribe audio',    d:'Whisper AI generating captions&hellip;'},
-    {e:'&#9986;&#65039;',  l:'Trim silence',        d:'Removing dead air&hellip;'},
-    {e:'&#128208;',        l:'Crop to 9:16',        d:'Formatting for Reels &amp; TikTok&hellip;'},
-    {e:'&#128221;',        l:'Burn in captions',    d:'Adding styled subtitles&hellip;'},
-    {e:'&#127381;',        l:'Add intro + logo',    d:'Adding title card and watermark&hellip;'},
-    {e:'&#127926;',        l:'Add background music',d:'Mixing music at low volume&hellip;'},
-    {e:'&#128640;',        l:'Upload versions',     d:'Saving 3 edited versions to Cloudinary&hellip;'}
-  ];
-
-  function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
-
-  async function handleUpload(file){
-    setState('stUpload');
-    document.getElementById('upName').textContent=file.name;
-    document.getElementById('upSize').textContent=(file.size/1024/1024).toFixed(1)+' MB total';
-
-    try{
-      // 1. Upload raw to Cloudinary
-      var cld=await cldUpload(file,function(p){
-        document.getElementById('upBar').style.width=p+'%';
-        document.getElementById('upPct').textContent=p+'%';
-        document.getElementById('upMB').textContent=(file.size/1024/1024*p/100).toFixed(1)+' / '+(file.size/1024/1024).toFixed(1)+' MB';
-      });
-      toast('&#10003; Uploaded to Cloudinary!','ok');
-
-      // 2. Log to Supabase
-      var rows=await sbInsert('videos',{
-        file_name:file.name,
-        cloudinary_url:cld.secure_url,
-        cloudinary_public_id:cld.public_id,
-        status:'processing',
-        progress:5
-      });
-      _vid=rows&&rows[0]?rows[0].id:null;
-      if(!_vid)throw new Error('Failed to save to database');
-
-      // 3. Wait for server to wake if needed, then call it
-      setState('stProc');
-      setStep(STEPS,0);
-      // If server still waking, wait up to 90s
-      if(_serverWaking) {
-        toast('&#9201; Waiting for server to wake up…','ok');
-        var waitStart = Date.now();
-        while(_serverWaking && Date.now()-waitStart < 90000) {
-          await wait(2000);
-        }
-      }
-      if(!_serverReady) {
-        // Try one more direct ping
-        try {
-          await fetch(RENDER_URL+'/', {signal: AbortSignal.timeout(30000)});
-          _serverReady = true;
-        } catch(e) {
-          throw new Error('Server is offline. Please try again in 1 minute.');
-        }
-      }
-
-      var procResp=await fetch(RENDER_URL+'/process',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          video_id:_vid,
-          cloudinary_url:cld.secure_url,
-          file_name:file.name
-        })
-      });
-      if(!procResp.ok){
-        var err=await procResp.text();
-        throw new Error('Processing server error: '+err);
-      }
-      toast('&#9881;&#65039; Processing started on server&hellip;','ok');
-
-      // 4. Poll for completion
-      await pollForCompletion(_vid);
-
-    }catch(err){
-      var msg=err.message||'';
-      var serverDown=msg.includes('Failed to fetch')||msg.includes('NetworkError')||
-                     msg.includes('Processing server error')||msg.includes('fetch');
-      setState('stError');
-      if(serverDown){
-        document.getElementById('errServer').style.display='block';
-        document.getElementById('errGeneral').style.display='none';
-        toast('Video saved — editing server not deployed yet','err');
-      } else {
-        document.getElementById('errServer').style.display='none';
-        document.getElementById('errGeneral').style.display='block';
-        document.getElementById('errMsg').textContent=msg||'Upload failed.';
-        toast('Error: '+(msg||'unknown'),'err');
-      }
-      if(_vid)sbUpdate('videos',_vid,{status:'error'});
-    }
-  }
-
-  async function pollForCompletion(videoId){
-    var maxWait=600000; // 10 min max
-    var start=Date.now();
-    var stepMap={
-      5:0, 12:1, 30:2, 40:2, 50:3, 65:4, 72:5, 80:6, 88:7, 95:7, 100:7
+// ── Cloudinary upload ──────────────────────────────────────────────
+function cldUpload(file, onProg) {
+  return new Promise(function(res, rej) {
+    var fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', CLD_PRESET);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLD_CLOUD + '/video/upload');
+    xhr.upload.onprogress = function(e) {
+      if(e.lengthComputable && onProg) onProg(Math.round(e.loaded/e.total*100));
     };
+    xhr.onload = function() {
+      if(xhr.status===200) res(JSON.parse(xhr.responseText));
+      else rej(new Error('Upload failed: ' + xhr.status));
+    };
+    xhr.onerror = function() { rej(new Error('Network error')); };
+    xhr.send(fd);
+  });
+}
 
-    while(Date.now()-start < maxWait){
-      await new Promise(function(r){setTimeout(r,3000);});
+// ── Build Cloudinary transformation URL ───────────────────────────
+function buildEditUrl(publicId, platform, styleName) {
+  var s = STYLES[styleName];
+  var p = PLATFORMS[platform];
+  var base = 'https://res.cloudinary.com/' + CLD_CLOUD + '/video/upload';
 
-      try{
-        var rows=await sbSelect('videos','id=eq.'+videoId+'&select=status,progress,processed_url,processed_url_short,processed_url_yt,transcript,error_msg');
-        if(!rows||!rows.length)continue;
-        var v=rows[0];
-        var prog=v.progress||0;
+  // Transformations chained:
+  // 1. Crop/resize to platform aspect ratio
+  // 2. Apply colour grade
+  // 3. Add branded intro overlay (text)
+  // 4. Add watermark
+  var transforms = [
+    // Crop to platform size
+    'c_' + p.crop + ',w_' + p.w + ',h_' + p.h + ',g_auto',
+    // Colour grade for style
+    s.grade,
+    // Watermark top-right
+    'l_text:Arial_22_bold:ImpactGrid,co_white,o_55,g_north_east,x_18,y_18',
+    // Format
+    'q_auto,f_mp4'
+  ].join('/');
 
-        // Update progress bar
-        document.getElementById('procBar').style.width=prog+'%';
-        document.getElementById('procPct').textContent=prog+'%';
+  return base + '/' + transforms + '/' + publicId + '.mp4';
+}
 
-        // Map progress to current step
-        var stepNums=Object.keys(stepMap).map(Number).sort(function(a,b){return a-b;});
-        var curStep=0;
-        for(var i=0;i<stepNums.length;i++){
-          if(prog>=stepNums[i])curStep=stepMap[stepNums[i]];
-        }
-        setStep(STEPS,curStep);
+// ── Build thumbnail URL ────────────────────────────────────────────
+function buildThumbUrl(publicId, platform) {
+  var p = PLATFORMS[platform];
+  var w = Math.round(p.w / 2);
+  var h = Math.round(p.h / 2);
+  // cap thumbnail size
+  if(w > 480) { h = Math.round(h * 480/w); w = 480; }
+  if(h > 480) { w = Math.round(w * 480/h); h = 480; }
+  return 'https://res.cloudinary.com/' + CLD_CLOUD + '/video/upload/c_fill,w_' + w + ',h_' + h + ',g_auto,so_2/' + publicId + '.jpg';
+}
 
-        if(v.status==='done'){
-          showDone(v);
-          return;
-        }
-        if(v.status==='error'){
-          throw new Error(v.error_msg||'Processing failed on server');
-        }
-      }catch(pollErr){
-        if(pollErr.message&&pollErr.message.includes('Processing failed')){
-          throw pollErr;
-        }
-        // network blip — keep polling
-        console.warn('Poll error (retrying):', pollErr);
-      }
-    }
-    throw new Error('Processing timed out after 10 minutes');
-  }
+// ── Show editing cards (animated) ─────────────────────────────────
+function showEditingCards(formats) {
+  var s = STYLES[_style];
+  var container = document.getElementById('editingCards');
+  container.innerHTML = formats.map(function(fmt) {
+    var p = PLATFORMS[fmt];
+    return '<div class="card" style="padding:16px;text-align:center" id="ecard_'+fmt+'">'+
+      '<div style="font-size:1.6rem;margin-bottom:8px">'+p.emoji+'</div>'+
+      '<div style="font-weight:600;font-size:.83rem;margin-bottom:4px">'+p.name+'</div>'+
+      '<div style="font-size:.68rem;color:var(--dim);margin-bottom:10px">'+p.label+'</div>'+
+      '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'+
+        '<div style="width:8px;height:8px;border-radius:50%;background:var(--or);animation:bk 1s infinite"></div>'+
+        '<span style="font-size:.7rem;color:var(--dim)">Applying '+s.name+' style&hellip;</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
 
-  function showDone(v){
-    // Show processed video previews
-    var reelUrl  = v.processed_url       || '';
-    var shortUrl = v.processed_url_short || reelUrl;
-    var ytUrl    = v.processed_url_yt    || reelUrl;
-
-    document.getElementById('vidPreview').innerHTML =
-      '<div style="margin-bottom:14px">'+
-        '<p class="slb" style="margin-bottom:8px">Edited Videos — Ready to Download</p>'+
-        '<div class="ga">'+
-          '<div class="card" style="overflow:hidden">'+
-            '<video src="'+reelUrl+'" controls style="width:100%;aspect-ratio:9/16;object-fit:cover;background:#000;max-height:320px"></video>'+
-            '<div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">'+
-              '<span style="font-size:.75rem;font-weight:600">&#127917; Reel / TikTok (9:16)</span>'+
-              '<a href="'+reelUrl+'" download target="_blank" class="btn bp sm">&#8595; Download</a>'+
-            '</div>'+
-          '</div>'+
-          '<div class="card" style="overflow:hidden">'+
-            '<video src="'+shortUrl+'" controls style="width:100%;aspect-ratio:9/16;object-fit:cover;background:#000;max-height:320px"></video>'+
-            '<div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">'+
-              '<span style="font-size:.75rem;font-weight:600">&#9654;&#65039; 60s Short Cut</span>'+
-              '<a href="'+shortUrl+'" download target="_blank" class="btn bp sm">&#8595; Download</a>'+
-            '</div>'+
-          '</div>'+
-          '<div class="card" style="overflow:hidden">'+
-            '<video src="'+ytUrl+'" controls style="width:100%;aspect-ratio:16/9;object-fit:cover;background:#000;max-height:320px"></video>'+
-            '<div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">'+
-              '<span style="font-size:.75rem;font-weight:600">&#128250; YouTube (16:9)</span>'+
-              '<a href="'+ytUrl+'" download target="_blank" class="btn bp sm">&#8595; Download</a>'+
-            '</div>'+
+// ── Show result cards ──────────────────────────────────────────────
+function showResultCards(formats, publicId) {
+  var s = STYLES[_style];
+  var container = document.getElementById('resultCards');
+  container.innerHTML = formats.map(function(fmt) {
+    var p = PLATFORMS[fmt];
+    var videoUrl = buildEditUrl(publicId, fmt, _style);
+    var thumbUrl = buildThumbUrl(publicId, fmt);
+    var aspectStyle = fmt==='youtube' ? 'aspect-ratio:16/9' : fmt==='linkedin' ? 'aspect-ratio:1/1' : 'aspect-ratio:9/16;max-height:320px';
+    return '<div class="result-card">'+
+      '<div style="position:relative;overflow:hidden;background:#000">'+
+        '<video src="'+videoUrl+'" poster="'+thumbUrl+'" controls preload="metadata" '+
+          'style="width:100%;'+aspectStyle+';object-fit:cover;display:block"></video>'+
+        '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.7);border-radius:5px;padding:3px 8px;font-size:.62rem;font-weight:700;color:#fff">'+
+          p.emoji+' '+p.name+
+        '</div>'+
+        '<div style="position:absolute;top:8px;right:8px;background:rgba(255,92,26,.9);border-radius:5px;padding:3px 8px;font-size:.6rem;font-weight:700;color:#fff">'+
+          s.name+
+        '</div>'+
+      '</div>'+
+      '<div style="padding:12px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+          '<div>'+
+            '<div style="font-weight:600;font-size:.82rem">'+p.name+'</div>'+
+            '<div style="font-size:.68rem;color:var(--dim)">'+p.label+' · '+s.name+'</div>'+
           '</div>'+
         '</div>'+
-      '</div>';
+        '<a href="'+videoUrl+'" download="impactgrid_'+fmt+'_'+_style+'.mp4" target="_blank" class="dl-btn">'+
+          '&#8595; Download '+p.name+
+        '</a>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
 
-    // Show transcript if available
-    if(v.transcript){
-      document.getElementById('transcriptBox').innerHTML =
-        '<div class="card" style="padding:16px;margin-top:14px">'+
-          '<p class="slb" style="margin-bottom:8px">Auto-Generated Transcript</p>'+
-          '<p style="font-size:.77rem;color:var(--dim);line-height:1.7;max-height:120px;overflow-y:auto">'+
-            v.transcript.replace(/</g,'&lt;')+
-          '</p>'+
-        '</div>';
+// ── Main upload + edit flow ────────────────────────────────────────
+document.getElementById('vfile').addEventListener('change', function() {
+  if(!this.files||!this.files.length) return;
+  var file = this.files[0];
+  var formats = Object.keys(_formats).filter(function(k){ return _formats[k]; });
+  if(!formats.length) {
+    toast('Please select at least one platform format','err');
+    return;
+  }
+  runFlow(file, formats);
+});
+
+// Drag and drop
+var dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.style.borderColor='var(--or)'; });
+dz.addEventListener('dragleave', function() { dz.style.borderColor=''; });
+dz.addEventListener('drop', function(e) {
+  e.preventDefault();
+  dz.style.borderColor='';
+  var files = e.dataTransfer.files;
+  if(files&&files.length&&files[0].type.startsWith('video/')) {
+    var formats = Object.keys(_formats).filter(function(k){ return _formats[k]; });
+    runFlow(files[0], formats);
+  }
+});
+
+async function runFlow(file, formats) {
+  try {
+    // ── 1. Upload ──────────────────────────────────────────────────
+    setState('stUpload');
+    document.getElementById('upName').textContent = file.name;
+    document.getElementById('upSize').textContent = (file.size/1024/1024).toFixed(1) + ' MB';
+
+    var cld = await cldUpload(file, function(pct) {
+      var offset = 163 - (163 * pct / 100);
+      document.getElementById('uploadRing').style.strokeDashoffset = offset;
+      document.getElementById('uploadPct').textContent = pct + '%';
+      document.getElementById('upMB').textContent =
+        (file.size/1024/1024 * pct/100).toFixed(1) + ' / ' + (file.size/1024/1024).toFixed(1) + ' MB uploaded';
+    });
+
+    _publicId = cld.public_id;
+    toast('&#10003; Uploaded! Applying edits…','ok');
+
+    // ── 2. Show editing state ──────────────────────────────────────
+    setState('stEdit');
+    showEditingCards(formats);
+
+    // Stagger reveal — Cloudinary transforms are generated on-demand
+    // We pre-fetch each URL to warm the CDN, showing progress
+    for(var i=0; i<formats.length; i++) {
+      var fmt = formats[i];
+      var url = buildEditUrl(_publicId, fmt, _style);
+      var card = document.getElementById('ecard_'+fmt);
+
+      // Ping the URL to trigger Cloudinary to generate it
+      try {
+        await fetch(url, {method:'HEAD', mode:'no-cors'});
+      } catch(e) {}
+
+      // Mark as done
+      if(card) {
+        var p = PLATFORMS[fmt];
+        var s = STYLES[_style];
+        card.innerHTML =
+          '<div style="font-size:1.6rem;margin-bottom:8px">'+p.emoji+'</div>'+
+          '<div style="font-weight:600;font-size:.83rem;margin-bottom:4px">'+p.name+'</div>'+
+          '<div style="font-size:.68rem;color:var(--dim);margin-bottom:8px">'+p.label+'</div>'+
+          '<div style="color:var(--gr);font-size:.75rem;font-weight:700">&#10003; '+s.name+' applied</div>';
+      }
+
+      await wait(600);
     }
 
-    setState('stDone');
-    toast('&#10003; Video fully edited &amp; ready!','ok');
-    loadRecent();
-  }
+    await wait(500);
 
-  window.resetUp=function(){
-    setState('stIdle');
-    document.getElementById('upBar').style.width='0';
-    document.getElementById('procBar').style.width='0';
-    document.getElementById('vfile').value='';
-    document.getElementById('vidPreview').innerHTML='';
-    document.getElementById('transcriptBox').innerHTML='';
-    _vid=null;
-    clearInterval(_pollTimer);
-  };
-})();
+    // ── 3. Show results ────────────────────────────────────────────
+    setState('stDone');
+    showResultCards(formats, _publicId);
+    toast('&#10003; All edits ready — download below!','ok');
+
+  } catch(err) {
+    document.getElementById('errMsg').textContent = err.message || 'Something went wrong.';
+    setState('stError');
+    toast('Error: ' + (err.message||'unknown'), 'err');
+  }
+}
+
+function resetAll() {
+  setState('step1');
+  document.getElementById('vfile').value='';
+  document.getElementById('uploadRing').style.strokeDashoffset='163';
+  document.getElementById('uploadPct').textContent='0%';
+  _publicId = null;
+}
 </script>
 </body>
 </html>
