@@ -513,17 +513,16 @@ async function renderVideo(clipFiles, platform, style, captions, musicBuf, music
       var animFrame=null;
       var captionIdx=0;
       var done=false;
+      var safetyTimer=null;
 
       function finish(){
         if(done)return; done=true;
+        if(safetyTimer)clearTimeout(safetyTimer);
         cancelAnimationFrame(animFrame);
         vid.pause();
         URL.revokeObjectURL(clipUrl);
         resolve();
       }
-
-      // Timeout safety
-      var safetyTimer=null;
 
       vid.onloadedmetadata=function(){
         safetyTimer=setTimeout(finish,(vid.duration*1000||20000)+8000);
@@ -605,7 +604,6 @@ async function renderVideo(clipFiles, platform, style, captions, musicBuf, music
       vid.load();
     });
 
-    if(safetyTimer)clearTimeout(safetyTimer);
   }
 
   // Fade out
