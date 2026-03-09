@@ -359,115 +359,6 @@ footer{border-top:1px solid var(--b);padding:18px 32px;display:flex;align-items:
         <div id="suggItems"></div>
       </div>
 
-      <!-- VOICE EDIT DIRECTOR -->
-      <div class="step-card" id="voiceDirectorCard">
-        <div class="step-hd">
-          <div class="step-num" style="background:linear-gradient(135deg,#e8520f,#c04010)">🎙</div>
-          <div style="flex:1">
-            <div class="step-lbl">Voice Director</div>
-            <div class="step-title">Talk your edits in real-time</div>
-          </div>
-          <div id="vdStatus" style="font-size:.62rem;padding:3px 9px;border-radius:12px;background:var(--b);color:var(--dim);font-weight:600">OFF</div>
-        </div>
-        <div class="step-body" style="padding:14px 18px">
-
-          <!-- Scrubber / preview player -->
-          <div id="vdPlayerWrap" style="display:none;margin-bottom:14px">
-            <div style="position:relative;background:#000;border-radius:9px;overflow:hidden;margin-bottom:8px">
-              <video id="vdVideo" style="width:100%;max-height:260px;display:block;object-fit:contain" preload="auto" playsinline></video>
-              <div id="vdOverlay" style="position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:flex-end">
-                <!-- Live command flash -->
-                <div id="vdFlash" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(232,82,15,.92);color:#fff;padding:5px 14px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none"></div>
-                <!-- Timeline bar with markers -->
-                <div style="padding:0 10px 8px">
-                  <div id="vdTimeline" style="position:relative;height:28px;background:rgba(255,255,255,.08);border-radius:5px;cursor:pointer;overflow:visible" onclick="vdSeek(event)">
-                    <div id="vdProgress" style="height:100%;background:linear-gradient(90deg,var(--or),var(--gold));border-radius:5px;width:0;transition:width .1s;pointer-events:none"></div>
-                    <div id="vdMarkers"></div>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;margin-top:3px">
-                    <span id="vdTime" style="font-size:.6rem;color:rgba(255,255,255,.6)">0:00</span>
-                    <span id="vdDur" style="font-size:.6rem;color:rgba(255,255,255,.6)">0:00</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Transport + voice btn -->
-            <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
-              <button onclick="vdPlayPause()" id="vdPlayBtn" class="btn bs sm">▶ Play</button>
-              <button onclick="vdRewind()" class="btn bs sm">⏮ Rewind</button>
-              <div style="flex:1"></div>
-              <div id="vdClipSelect" style="display:flex;gap:5px;flex-wrap:wrap"></div>
-            </div>
-          </div>
-
-          <!-- Voice toggle + transcript -->
-          <div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:12px">
-            <button id="vdMicBtn" onclick="vdToggleMic()" class="btn bp" style="flex-shrink:0;gap:7px">
-              <span id="vdMicIcon">🎙</span> <span id="vdMicLabel">Start Listening</span>
-            </button>
-            <div style="flex:1;background:var(--surf);border:1px solid var(--b);border-radius:8px;padding:9px 12px;min-height:44px">
-              <div id="vdTranscript" style="font-size:.75rem;color:var(--dim);line-height:1.6">Say a command while your clip plays — edits are marked instantly on the timeline.</div>
-            </div>
-          </div>
-
-          <!-- Edit markers list -->
-          <div id="vdMarkerList" style="display:none">
-            <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700;margin-bottom:7px">Edit Markers</div>
-            <div id="vdMarkerItems"></div>
-            <button onclick="vdClearMarkers()" class="btn bs sm" style="margin-top:6px">🗑 Clear all markers</button>
-          </div>
-
-          <!-- B-ROLL LIVE SUGGESTIONS (appear as user speaks) -->
-          <div id="brollPanel" style="display:none;margin-top:14px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-              <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700">
-                🖼 B-Roll Suggestions — <span id="brollKeyword" style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--dim)">listening for topics...</span>
-              </div>
-              <button onclick="brollClearAll()" class="btn bs sm" style="font-size:.6rem;padding:3px 8px">Clear</button>
-            </div>
-            <!-- Live fetch spinner -->
-            <div id="brollSpinner" style="display:none;align-items:center;gap:8px;padding:8px 0;font-size:.7rem;color:var(--dim)">
-              <div style="width:14px;height:14px;border:2px solid var(--b2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
-              Fetching B-roll for "<span id="brollSpinWord"></span>"...
-            </div>
-            <!-- Image grid -->
-            <div id="brollGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px"></div>
-            <!-- Queued B-roll list -->
-            <div id="brollQueued" style="margin-top:10px"></div>
-            <!-- API key input (Pexels) -->
-            <div id="brollApiWrap" style="margin-top:10px;padding:10px 12px;background:var(--surf);border:1px solid var(--b);border-radius:8px">
-              <div style="font-size:.68rem;color:var(--tx);font-weight:600;margin-bottom:4px">🔑 Pexels API Key <span style="font-weight:400;color:var(--dim)">(free at pexels.com/api — takes 30 sec)</span></div>
-              <div style="display:flex;gap:7px">
-                <input type="text" id="pexelsKey" placeholder="Paste your free Pexels API key here..." style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:7px 10px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.75rem;outline:none" oninput="savePexelsKey(this.value)"/>
-                <a href="https://www.pexels.com/api/" target="_blank" class="btn bs sm">Get Free Key ↗</a>
-              </div>
-              <p style="font-size:.62rem;color:var(--dim);margin-top:5px">100% free · 200 req/hour · no credit card needed. Without a key, Unsplash Source is used as fallback (no key required).</p>
-            </div>
-          </div>
-
-          <!-- Command reference -->
-          <div style="background:var(--surf);border:1px solid var(--b);border-radius:8px;padding:11px 13px;margin-top:10px">
-            <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700;margin-bottom:8px">🎙 Voice Commands + Auto B-Roll</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px">
-              <div class="vcmd-row"><span class="vcmd-kw">"cut here"</span><span>Jump cut at current time</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"slow motion"</span><span>0.5× speed from here</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"speed up"</span><span>1.5× speed from here</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"zoom in"</span><span>Zoom effect at this point</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"fade out"</span><span>Fade to black here</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"flash"</span><span>White flash transition</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"cinematic"</span><span>Switch colour grade</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"beat drop"</span><span>High-energy burst effect</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"text [words]"</span><span>Pin text overlay here</span></div>
-              <div class="vcmd-row"><span class="vcmd-kw">"end here"</span><span>Trim clip at this point</span></div>
-            </div>
-            <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b);font-size:.68rem;color:var(--dim)">
-              💡 <strong style="color:var(--tx)">B-Roll auto-trigger:</strong> When the mic detects topics like "marriage", "wedding", "men", "business" etc. — relevant images instantly appear as clickable B-roll suggestions. Click any image to queue it at the current timestamp.
-            </div>
-          </div>
-
-        </div>
-      </div>
-
       <!-- Step 1: CLIPS + Smart Assemble -->
       <div class="step-card">
         <div class="step-hd"><div class="step-num">1</div><div><div class="step-lbl">Step 1</div><div class="step-title">Add &amp; arrange clips</div></div></div>
@@ -758,6 +649,7 @@ function removeClip(i){URL.revokeObjectURL(clips[i].url);clips.splice(i,1);rende
 function toggleClipExpand(i){clips[i].expanded=!clips[i].expanded;renderClipList();}
 function setClipTrim(i,field,val){var v=parseFloat(val);if(!isNaN(v))clips[i][field]=v;}
 function setClipSpeed(i,spd){clips[i].speed=spd;renderClipList();}
+function toggleClipMute(i){clips[i].muted=!clips[i].muted;renderClipList();toast(clips[i].muted?'Clip '+(i+1)+' muted':'Clip '+(i+1)+' unmuted','ok');}
 function loadClipDurations(){clips.forEach(function(c,i){if(!c.duration){var v=document.createElement('video');v.src=c.url;v.onloadedmetadata=function(){clips[i].duration=v.duration;checkAssembleBtn();};v.load();}});}
 function checkAssembleBtn(){var btn=document.getElementById('assembleBtn');if(btn)btn.style.display=clips.length>=2?'flex':'none';}
 var _dragIdx=null;
@@ -775,7 +667,8 @@ function renderClipList(){
       +'<button class="clip-expand" onclick="toggleClipExpand('+i+')">'+(c.expanded?'&#9650; Less':'&#9660; Edit')+'</button>'
       +'<button class="clip-rm" onclick="removeClip('+i+')">&#10005;</button></div>'
       +'<div class="clip-controls'+(c.expanded?' open':'')+'"><div class="trim-row"><span class="trim-label">Trim in</span><input class="trim-input" type="number" min="0" step="0.5" placeholder="0s" value="'+(c.trimIn||'')+'" onchange="setClipTrim('+i+',\'trimIn\',this.value)"/><span class="trim-label" style="width:auto;margin-left:8px">Trim out</span><input class="trim-input" type="number" min="0" step="0.5" placeholder="end" value="'+(c.trimOut||'')+'" onchange="setClipTrim('+i+',\'trimOut\',this.value)"/></div>'
-      +'<div style="margin-top:7px"><span style="font-size:.66rem;color:var(--dim);display:block;margin-bottom:3px">Speed</span><div class="speed-btns">'+sb+'</div></div></div></div>';
+      +'<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap"><div><span style="font-size:.66rem;color:var(--dim);display:block;margin-bottom:3px">Speed</span><div class="speed-btns">'+sb+'</div></div>'
+      +'<div style="margin-left:auto"><span style="font-size:.66rem;color:var(--dim);display:block;margin-bottom:3px">Audio</span><button onclick="toggleClipMute('+i+')" id="muteBtn_'+i+'" class="btn bs sm" style="'+(c.muted?'border-color:var(--or);color:var(--or)':'')+'\">'+(c.muted?'🔇 Muted':'🔊 Audible')+'</button></div></div></div></div>';
   }).join('');
   document.getElementById('dropZone').style.display=clips.length>=5?'none':'block';
   checkAssembleBtn();
@@ -1057,7 +950,7 @@ function vdInit(){
       return '<button class="btn bs sm'+(i===vdActiveClip?' on':'')+'" onclick="vdSwitchClip('+i+')" style="'+(i===vdActiveClip?'border-color:var(--gold);color:var(--gold)':'')+'">'+(c.role||'Clip '+(i+1))+'</button>';
     }).join('');
   }
-  document.getElementById('vdPlayerWrap').style.display='block';
+  var _vdpw=document.getElementById('vdPlayerWrap');if(_vdpw)_vdpw.style.display='block';
   vdLoadClip(vdActiveClip);
   vdRenderMarkerList();
 }
@@ -1068,15 +961,15 @@ function vdLoadClip(idx){
   if(!clips[idx]) return;
   vid.src=clips[idx].url;
   vid.onloadedmetadata=function(){
-    document.getElementById('vdDur').textContent=vdFmtTime(vid.duration);
+    var _vdd=document.getElementById('vdDur');if(_vdd)_vdd.textContent=vdFmtTime(vid.duration);
     vdRenderTimelineMarkers();
   };
   vid.ontimeupdate=function(){
     var pct=vid.duration?vid.currentTime/vid.duration*100:0;
     document.getElementById('vdProgress').style.width=pct+'%';
-    document.getElementById('vdTime').textContent=vdFmtTime(vid.currentTime);
+    var _vdt=document.getElementById('vdTime');if(_vdt)_vdt.textContent=vdFmtTime(vid.currentTime);
   };
-  vid.onended=function(){document.getElementById('vdPlayBtn').textContent='▶ Play';};
+  vid.onended=function(){var _vdpb=document.getElementById('vdPlayBtn');if(_vdpb)_vdpb.textContent='▶ Play';};
 }
 
 function vdSwitchClip(idx){
@@ -1098,7 +991,7 @@ function vdPlayPause(){
 function vdRewind(){
   var vid=document.getElementById('vdVideo');
   vid.currentTime=0;
-  document.getElementById('vdPlayBtn').textContent='▶ Play';
+  var _vdpb=document.getElementById('vdPlayBtn');if(_vdpb)_vdpb.textContent='▶ Play';
 }
 
 function vdSeek(e){
@@ -1122,7 +1015,7 @@ function vdToggleMic(){
   // Auto-play clip when mic starts
   var vid=document.getElementById('vdVideo');
   if(vid.paused&&vid.src) vid.play();
-  document.getElementById('vdPlayBtn').textContent='⏸ Pause';
+  var _vdpb=document.getElementById('vdPlayBtn');if(_vdpb)_vdpb.textContent='⏸ Pause';
   vdRec=new SR();
   vdRec.continuous=true;
   vdRec.interimResults=true;
@@ -1135,11 +1028,11 @@ function vdToggleMic(){
       else interim+=e.results[i][0].transcript.toLowerCase();
     }
     // Show interim
-    if(interim){document.getElementById('vdTranscript').innerHTML='<em style="color:var(--dim)">'+interim+'...</em>';}
+    if(interim){var _vdtr=document.getElementById('vdTranscript');if(_vdtr)_vdtr.innerHTML='<em style="color:var(--dim)">'+interim+'...</em>';}
     // Process final
     if(final&&final!==lastFinal){
       lastFinal=final;
-      document.getElementById('vdTranscript').innerHTML='<strong>'+final+'</strong>';
+      var _vdtr=document.getElementById('vdTranscript');if(_vdtr)_vdtr.innerHTML='<strong>'+final+'</strong>';
       vdProcessCommand(final.trim());
     }
   };
@@ -1147,24 +1040,24 @@ function vdToggleMic(){
   vdRec.onend=function(){if(vdMicOn)try{vdRec.start();}catch(e){vdStopMic();}};
   vdRec.start();
   vdMicOn=true;
-  document.getElementById('vdMicBtn').style.background='var(--or)';
-  document.getElementById('vdMicIcon').textContent='🔴';
-  document.getElementById('vdMicLabel').textContent='Listening...';
-  document.getElementById('vdStatus').textContent='LIVE';
-  document.getElementById('vdStatus').style.background='rgba(232,82,15,.15)';
-  document.getElementById('vdStatus').style.color='var(--or)';
+  var _vdmb=document.getElementById('vdMicBtn');if(_vdmb)_vdmb.style.background='var(--or)';
+  var _vdmi=document.getElementById('vdMicIcon');if(_vdmi)_vdmi.textContent='🔴';
+  var _vdml=document.getElementById('vdMicLabel');if(_vdml)_vdml.textContent='Listening...';
+  var _vds=document.getElementById('vdStatus');if(_vds)_vds.textContent='LIVE';
+  if(_vds)_vds.style.background='rgba(232,82,15,.15)';
+  if(_vds)_vds.style.color='var(--or)';
   toast('🎙 Listening — say "cut here", "slow motion", "zoom in"...','ok');
 }
 
 function vdStopMic(){
   if(vdRec)try{vdRec.abort();}catch(e){}
   vdMicOn=false;
-  document.getElementById('vdMicBtn').style.background='';
-  document.getElementById('vdMicIcon').textContent='🎙';
-  document.getElementById('vdMicLabel').textContent='Start Listening';
-  document.getElementById('vdStatus').textContent='OFF';
-  document.getElementById('vdStatus').style.background='var(--b)';
-  document.getElementById('vdStatus').style.color='var(--dim)';
+  var _vdmb=document.getElementById('vdMicBtn');if(_vdmb)_vdmb.style.background='';
+  var _vdmi=document.getElementById('vdMicIcon');if(_vdmi)_vdmi.textContent='🎙';
+  var _vdml=document.getElementById('vdMicLabel');if(_vdml)_vdml.textContent='Start Listening';
+  var _vds=document.getElementById('vdStatus');if(_vds)_vds.textContent='OFF';
+  if(_vds)_vds.style.background='var(--b)';
+  if(_vds)_vds.style.color='var(--dim)';
 }
 
 function vdProcessCommand(cmd){
@@ -1188,7 +1081,7 @@ function vdProcessCommand(cmd){
     // Apply immediate effect to player for feedback
     vdApplyLiveEffect(matched.type,vid);
   } else {
-    document.getElementById('vdTranscript').innerHTML='<span style="color:var(--dim)">Not recognised: "'+cmd+'" — try "cut here", "slow motion", "zoom in"...</span>';
+    var _vdtr=document.getElementById('vdTranscript');if(_vdtr)_vdtr.innerHTML='<span style="color:var(--dim)">Not recognised: "'+cmd+'" — try "cut here", "slow motion", "zoom in"...</span>';
   }
 }
 
@@ -1205,7 +1098,7 @@ function vdApplyLiveEffect(type,vid){
   else if(type==='grade'){vid.style.filter='contrast(1.3) brightness(0.85) saturate(0.55) sepia(0.15)';setTimeout(function(){vid.style.filter='';},2000);}
   else if(type==='grade2'){vid.style.filter='contrast(1.06) brightness(1.1) saturate(1.4)';setTimeout(function(){vid.style.filter='';},2000);}
   else if(type==='beatdrop'){vid.style.filter='contrast(1.5) saturate(1.8)';setTimeout(function(){vid.style.filter='';},600);}
-  else if(type==='endclip'){vid.pause();document.getElementById('vdPlayBtn').textContent='▶ Play';}
+  else if(type==='endclip'){vid.pause();var _vdpb=document.getElementById('vdPlayBtn');if(_vdpb)_vdpb.textContent='▶ Play';}
 }
 
 function vdFlash(label,t){
@@ -1332,7 +1225,7 @@ async function renderVideo(clipDefs,platform,style,captions,musicBuf,musicVol){
   await new Promise(function(res){var start=performance.now(),dur=2500;function di(){var prog=Math.min(1,(performance.now()-start)/dur);ctx.fillStyle=s.introBg;ctx.fillRect(0,0,p.w,p.h);ctx.strokeStyle=s.accentColor;ctx.lineWidth=1;ctx.globalAlpha=0.1;for(var l=1;l<8;l++){ctx.beginPath();ctx.moveTo(0,p.h*l/8);ctx.lineTo(p.w,p.h*l/8);ctx.stroke();ctx.beginPath();ctx.moveTo(p.w*l/8,0);ctx.lineTo(p.w*l/8,p.h);ctx.stroke();}ctx.globalAlpha=1;var fs1=Math.round(p.w*0.03);ctx.fillStyle=s.accentColor;ctx.font='bold '+fs1+'px Arial';ctx.textAlign='center';ctx.fillText('IMPACTGRID CONTENT AGENCY',p.w/2,p.h*0.44);ctx.fillStyle=s.accentColor;ctx.globalAlpha=0.4;ctx.fillRect(p.w*0.28,p.h*0.46,p.w*0.44,2);ctx.globalAlpha=1;var fs2=Math.round(p.w*0.05);ctx.fillStyle=s.introColor;ctx.font='bold '+fs2+'px Arial';var words=introText.split(' '),lines=[],line='';words.forEach(function(w){var test=line?line+' '+w:w;if(ctx.measureText(test).width>p.w*0.8&&line){lines.push(line);line=w;}else line=test;});if(line)lines.push(line);lines.forEach(function(ln,i){ctx.fillText(ln,p.w/2,p.h*0.52+(i-(lines.length-1)/2)*fs2*1.3);});if(prog<0.2){ctx.fillStyle='rgba(0,0,0,'+(1-prog/0.2)+')';ctx.fillRect(0,0,p.w,p.h);}if(prog>0.8){ctx.fillStyle='rgba(0,0,0,'+((prog-0.8)/0.2)+')';ctx.fillRect(0,0,p.w,p.h);}if(prog<1)requestAnimationFrame(di);else res();}requestAnimationFrame(di);});
   // Clips
   var pos=document.getElementById('captionPos').value;
-  for(var ci=0;ci<clipDefs.length;ci++){var def=clipDefs[ci];var clipUrl=URL.createObjectURL(def.file);await new Promise(function(resolve){var vid=document.createElement('video');vid.src=clipUrl;vid.playsInline=true;vid.preload='auto';vid.playbackRate=def.speed||1;var animFrame=null,done=false,safetyTimer=null,captionIdx=0;function finish(){if(done)return;done=true;if(safetyTimer)clearTimeout(safetyTimer);cancelAnimationFrame(animFrame);vid.pause();URL.revokeObjectURL(clipUrl);resolve();}vid.onloadedmetadata=function(){var trimIn=def.trimIn||0,trimOut=def.trimOut||vid.duration;vid.currentTime=trimIn;var duration=trimOut-trimIn;safetyTimer=setTimeout(finish,(duration*1000/def.speed||20000)+8000);try{var vsrc=audioCtx.createMediaElementSource(vid);var sg=audioCtx.createGain();sg.gain.value=musicBuf?0.8:1;vsrc.connect(sg);sg.connect(dest);}catch(e){}function drawFrame(){if(done)return;var t=vid.currentTime-trimIn;if(vid.ended||vid.currentTime>=trimOut){finish();return;}
+  for(var ci=0;ci<clipDefs.length;ci++){var def=clipDefs[ci];var clipUrl=URL.createObjectURL(def.file);await new Promise(function(resolve){var vid=document.createElement('video');vid.src=clipUrl;vid.playsInline=true;vid.preload='auto';vid.playbackRate=def.speed||1;var animFrame=null,done=false,safetyTimer=null,captionIdx=0;function finish(){if(done)return;done=true;if(safetyTimer)clearTimeout(safetyTimer);cancelAnimationFrame(animFrame);vid.pause();URL.revokeObjectURL(clipUrl);resolve();}vid.onloadedmetadata=function(){var trimIn=def.trimIn||0,trimOut=def.trimOut||vid.duration;vid.currentTime=trimIn;var duration=trimOut-trimIn;safetyTimer=setTimeout(finish,(duration*1000/def.speed||20000)+8000);try{var vsrc=audioCtx.createMediaElementSource(vid);var sg=audioCtx.createGain();sg.gain.value=def.muted?0:(musicBuf?0.8:1);vsrc.connect(sg);sg.connect(dest);}catch(e){}function drawFrame(){if(done)return;var t=vid.currentTime-trimIn;if(vid.ended||vid.currentTime>=trimOut){finish();return;}
               // Get active markers for this clip at time t
               var clipMs=vdMarkers.filter(function(m){return m.clipIdx===ci;});
               var activeGrade=null,zoomScale=1,isBeatDrop=false;
@@ -1433,7 +1326,7 @@ async function startRender(){
       setProgress(26,'Ready to render','');
     }
 
-    var clipDefs=clips.map(function(c){return{file:c.file,trimIn:c.trimIn||0,trimOut:c.trimOut||null,speed:c.speed||1};});
+    var clipDefs=clips.map(function(c){return{file:c.file,trimIn:c.trimIn||0,trimOut:c.trimOut||null,speed:c.speed||1,muted:!!c.muted};});
     var results=[];
     for(var fi=0;fi<fmts.length;fi++){
       var fmt=fmts[fi],basePct=26+Math.round(fi/fmts.length*70);
