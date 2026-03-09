@@ -467,9 +467,10 @@ footer{border-top:1px solid var(--b);padding:18px 32px;display:flex;align-items:
             <div id="brollKeyword" style="font-size:.7rem;color:var(--dim);margin-bottom:6px"></div>
             <div id="brollQueued"></div>
             <details style="margin-top:8px">
-              <summary style="font-size:.65rem;color:var(--dim);cursor:pointer">🔑 Pexels API key (optional — better images)</summary>
+              <summary style="font-size:.65rem;color:var(--dim);cursor:pointer">🔑 Pexels API key (optional — highest quality images, free)</summary>
+              <div style="margin-top:5px;font-size:.65rem;color:var(--dim);margin-bottom:6px">Works without a key — Loremflickr, Picsum &amp; Wikipedia are used automatically. Add a Pexels key for professional stock photos.</div>
               <div style="display:flex;gap:7px;margin-top:6px">
-                <input type="text" id="pexelsKey" placeholder="Free key from pexels.com/api" style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:5px 9px;border-radius:6px;font-size:.72rem;outline:none" oninput="savePexelsKey(this.value)"/>
+                <input type="text" id="pexelsKey" placeholder="Paste free Pexels key here..." style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:5px 9px;border-radius:6px;font-size:.72rem;outline:none" oninput="savePexelsKey(this.value)"/>
                 <a href="https://www.pexels.com/api/" target="_blank" class="btn bs sm" style="font-size:.65rem">Get Key ↗</a>
               </div>
             </details>
@@ -832,11 +833,16 @@ function savePexelsKey(v){try{localStorage.setItem('ig-pexels-key',v);}catch(e){
 function getPexelsKey(){var el=document.getElementById('pexelsKey');return el?el.value.trim():'';}
 
 // Fetch from all 3 APIs in parallel, pick first result
+// ── B-ROLL IMAGE FETCHING — 4 sources, all free, no key required ─
+// Priority: Pexels (if key) → Loremflickr → Picsum → Wikipedia Commons
+
 async function brollFetchBest(keyword){
+  // Run all in parallel, return first that succeeds
   var results=await Promise.allSettled([
-    brollFetchPexels(keyword),
-    brollFetchPixabay(keyword),
-    brollFetchUnsplash(keyword)
+    getPexelsKey()?brollFetchPexels(keyword):Promise.resolve(null),
+    brollFetchLoremflickr(keyword),
+    brollFetchPicsum(keyword),
+    brollFetchWikimedia(keyword)
   ]);
   for(var r of results){
     if(r.status==='fulfilled'&&r.value&&r.value.url) return r.value;
@@ -849,37 +855,78 @@ async function brollFetchPexels(keyword){
   if(!key) return null;
   var ctrl=new AbortController();
   setTimeout(function(){ctrl.abort();},5000);
-  var r=await fetch('https://api.pexels.com/v1/search?query='+encodeURIComponent(keyword)+'&per_page=1&orientation=landscape&per_page=3',{
-    headers:{'Authorization':key},signal:ctrl.signal
-  });
-  if(!r.ok) return null;
-  var d=await r.json();
-  if(!d.photos||!d.photos.length) return null;
-  var p=d.photos[Math.floor(Math.random()*Math.min(3,d.photos.length))];
-  return {url:p.src.medium,thumb:p.src.tiny,credit:p.photographer,source:'Pexels'};
+  try{
+    var r=await fetch('https://api.pexels.com/v1/search?query='+encodeURIComponent(keyword)+'&per_page=3&orientation=landscape',{
+      headers:{'Authorization':key},signal:ctrl.signal
+    });
+    if(!r.ok) return null;
+    var d=await r.json();
+    if(!d.photos||!d.photos.length) return null;
+    var p=d.photos[Math.floor(Math.random()*d.photos.length)];
+    return {url:p.src.medium,thumb:p.src.tiny,credit:p.photographer,source:'Pexels'};
+  }catch(e){return null;}
 }
 
-async function brollFetchPixabay(keyword){
-  var ctrl=new AbortController();
-  setTimeout(function(){ctrl.abort();},5000);
-  var r=await fetch('https://pixabay.com/api/?key=47018766-1ae8bc5c0ed854a49dbab63a7&q='+encodeURIComponent(keyword)+'&image_type=photo&per_page=5&safesearch=true',{signal:ctrl.signal});
-  if(!r.ok) return null;
-  var d=await r.json();
-  if(!d.hits||!d.hits.length) return null;
-  var img=d.hits[Math.floor(Math.random()*Math.min(5,d.hits.length))];
-  return {url:img.webformatURL,thumb:img.previewURL,credit:img.user,source:'Pixabay'};
+async function brollFetchLoremflickr(keyword){
+  // loremflickr.com — free, no key, returns real themed photos
+  // Returns a redirect to a real Flickr image
+  try{
+    var seed=Math.floor(Math.random()*9999);
+    var url='https://loremflickr.com/800/450/'+encodeURIComponent(keyword)+'?lock='+seed;
+    var ctrl=new AbortController();
+    setTimeout(function(){ctrl.abort();},6000);
+    var r=await fetch(url,{signal:ctrl.signal,mode:'no-cors'});
+    // no-cors means we can't read the response but the image URL itself works as <img> src
+    return {url:url,thumb:'https://loremflickr.com/200/112/'+encodeURIComponent(keyword)+'?lock='+seed,credit:'Flickr',source:'Loremflickr'};
+  }catch(e){return null;}
 }
 
-async function brollFetchUnsplash(keyword){
-  // Unsplash Source — no key, no CORS, direct image redirect
-  var seed=Date.now()%10000;
-  var url='https://source.unsplash.com/800x450/?'+encodeURIComponent(keyword)+'&sig='+seed;
-  // Validate it responds
-  var ctrl=new AbortController();
-  setTimeout(function(){ctrl.abort();},5000);
-  var r=await fetch(url,{signal:ctrl.signal});
-  if(!r.ok&&r.status!==302) return null;
-  return {url:r.url||url,thumb:r.url||url,credit:'Unsplash',source:'Unsplash'};
+async function brollFetchPicsum(keyword){
+  // picsum.photos — always works, no key, beautiful random photos
+  // Use keyword hash for consistent-ish results per topic
+  try{
+    var hash=0;
+    for(var i=0;i<keyword.length;i++) hash=(hash*31+keyword.charCodeAt(i))&0xffff;
+    var id=(hash%900)+100; // IDs 100-999
+    var url='https://picsum.photos/id/'+id+'/800/450';
+    var thumb='https://picsum.photos/id/'+id+'/200/112';
+    // Verify it exists
+    var ctrl=new AbortController();
+    setTimeout(function(){ctrl.abort();},5000);
+    var r=await fetch('https://picsum.photos/id/'+id+'/info',{signal:ctrl.signal});
+    if(!r.ok) return null;
+    var info=await r.json();
+    return {url:url,thumb:thumb,credit:info.author||'Picsum',source:'Picsum'};
+  }catch(e){return null;}
+}
+
+async function brollFetchWikimedia(keyword){
+  // Wikimedia Commons — massive free image database, no key
+  try{
+    var ctrl=new AbortController();
+    setTimeout(function(){ctrl.abort();},6000);
+    var apiUrl='https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='
+      +encodeURIComponent(keyword)+'&gsrnamespace=6&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=800&format=json&origin=*&gsrlimit=5';
+    var r=await fetch(apiUrl,{signal:ctrl.signal});
+    if(!r.ok) return null;
+    var d=await r.json();
+    if(!d.query||!d.query.pages) return null;
+    var pages=Object.values(d.query.pages);
+    // Filter to actual images (jpg/png only, skip svg/gif)
+    var imgs=pages.filter(function(p){
+      var u=(p.imageinfo&&p.imageinfo[0]&&p.imageinfo[0].url)||'';
+      return /\.(jpg|jpeg|png)/i.test(u);
+    });
+    if(!imgs.length) return null;
+    var pick=imgs[Math.floor(Math.random()*imgs.length)];
+    var info=pick.imageinfo[0];
+    return {
+      url:info.thumburl||info.url,
+      thumb:info.thumburl||info.url,
+      credit:'Wikimedia Commons',
+      source:'Wikipedia'
+    };
+  }catch(e){return null;}
 }
 
 // Main auto-trigger: called every time final speech comes in
