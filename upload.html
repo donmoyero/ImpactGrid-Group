@@ -1388,9 +1388,9 @@ function autoCapStart(){
     }
     if(finalText&&finalText!==lastFinal){
       lastFinal=finalText;
-      // Timestamp = current preview position, or wall-clock fallback
-      var vid=document.getElementById('prevVideo');
-      var t=(vid&&vid.duration&&!vid.paused)?vid.currentTime:((Date.now()-_capRecStart)/1000);
+      // Timestamp — use globally tracked ref first for accuracy
+      var vid=_prevVideoRef||document.getElementById('prevVideo');
+      var t=(vid&&vid.duration&&vid.readyState>=2)?vid.currentTime:((Date.now()-_capRecStart)/1000);
       // Trigger B-roll search from spoken words
       triggerBrollFromSpeech(finalText);
       // Split long sentences into ≤6-word chunks for readable subtitles
@@ -1514,11 +1514,18 @@ function prevInit(){
   var vid=document.getElementById('prevVideo');
   var canvas=document.getElementById('prevCanvas');
   var empty=document.getElementById('prevEmpty');
-  if(!clips.length){empty.style.display='flex';return;}
+
+  if(!clips.length){
+    empty.style.display='flex';
+    return;
+  }
+
   empty.style.display='none';
   vid.src=clips[0].url;
 
-  // Set canvas aspect based on platform
+  // Make preview video globally available for AI listening
+  _prevVideoRef=vid;
+
   var aspects={reel:'9/16',tiktok:'9/16',youtube:'16/9',linkedin:'1/1'};
   canvas.style.aspectRatio=aspects[_prevPlatform]||'9/16';
 
@@ -1527,7 +1534,13 @@ function prevInit(){
     scrub.max=vid.duration||100;
     document.getElementById('prevTimeLabel').textContent=capFmtTime(vid.duration||0);
     prevStartDrawLoop();
+
+    // Auto-initialise captions when video loads (if mic already granted)
+    if(_capMicGranted&&!_autoCapOn){
+      autoCapStart();
+    }
   };
+
   vid.load();
 }
 
