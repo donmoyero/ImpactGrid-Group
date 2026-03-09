@@ -809,7 +809,7 @@ var brollRecentKeywords=new Set(); // avoid re-inserting same topic
 var BROLL_STOPWORDS=new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','could','should','may','might','shall','can','now','lets','look','into','talk','about','i','we','you','they','he','she','it','this','that','these','those','my','your','our','his','her','its','their','what','when','where','who','how','so','if','then','there','here','like','just','also','more','some','any','all','not','no','up','out','as','by','from','going','get','got','let','said','say','think','know','see','want','need','make','take','come','go','new','old','good','great','very','really','well','much','many','most','only','even','still','back','way','too','than','other','time','people','person','things','thing','world','life','day','year']);
 
 function brollExtractKeywords(text){
-  var words=text.toLowerCase().replace(/[^a-z\s'-]/g,'').split(/\s+/).filter(function(w){return w.length>2;});
+  text=text.replace(/[.,!?;:]/g,' ');var words=text.toLowerCase().replace(/[^a-z\s'-]/g,'').split(/\s+/).filter(function(w){return w.length>2;});
   var kws=[];
   // Bigrams (two-word phrases are better search terms)
   for(var i=0;i<words.length-1;i++){
@@ -837,15 +837,18 @@ function getPexelsKey(){var el=document.getElementById('pexelsKey');return el?el
 // Priority: Pexels (if key) → Loremflickr → Picsum → Wikipedia Commons
 
 async function brollFetchBest(keyword){
-  // Run all in parallel, return first that succeeds
+  // Try Pexels first if key available (best quality)
+  if(getPexelsKey()){
+    try{var px=await brollFetchPexels(keyword);if(px&&px.url)return px;}catch(e){}
+  }
+  // Run free sources in parallel, pick first winner
   var results=await Promise.allSettled([
-    getPexelsKey()?brollFetchPexels(keyword):Promise.resolve(null),
     brollFetchLoremflickr(keyword),
     brollFetchPicsum(keyword),
     brollFetchWikimedia(keyword)
   ]);
   for(var r of results){
-    if(r.status==='fulfilled'&&r.value&&r.value.url) return r.value;
+    if(r.status==='fulfilled'&&r.value&&r.value.url)return r.value;
   }
   return null;
 }
@@ -954,7 +957,7 @@ async function brollOnSpeech(text,timestamp){
     }
 
     // AUTO-INSERT — no click needed
-    var t=timestamp||0;
+    var vid=_prevVideoRef||document.getElementById('prevVideo');var t=(vid&&vid.duration)?vid.currentTime:(timestamp||0);
     // Stagger multiple B-rolls so they don't overlap
     var existingAtTime=brollQueue.filter(function(b){return b.clipIdx===vdActiveClip&&Math.abs(b.time-t)<4;});
     if(existingAtTime.length) t+=existingAtTime.length*4;
@@ -979,7 +982,7 @@ async function brollOnSpeech(text,timestamp){
     toast('🖼 B-Roll auto-added: "'+kw+'" at '+vdFmtTime(t)+' ('+img.source+')','ok');
 
     // Preload image for renderer
-    var preload=new Image();preload.crossOrigin='anonymous';preload.src=img.url;
+    var preload=new Image();preload.crossOrigin='anonymous';preload.decoding='async';preload.loading='eager';preload.src=img.url;
     brollQueue[brollQueue.length-1]._img=preload;
 
     // Add thumbnail to grid
@@ -1370,6 +1373,7 @@ function autoCapStart(){
   _capRec=new SR();
   _capRec.continuous=true;
   _capRec.interimResults=true;
+  _capRec.maxAlternatives=1;
   _capRec.lang='en-GB';
   _capRecStart=Date.now();
   var lastFinal='';
