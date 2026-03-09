@@ -121,19 +121,17 @@
             </div>
             <div style="flex:1"></div>
             <button id="autoCapBtn" onclick="autoCapToggle()" class="btn bs sm" style="font-size:.65rem">
-              🎙 Mic Captions
+              🎙 Start Listening
             </button>
           </div>
 
-          <!-- Whisper AI transcription (video's own audio) -->
-          <div style="background:var(--surf);border:1px solid var(--b);border-radius:9px;padding:11px 13px;margin-bottom:12px">
-            <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700;margin-bottom:7px">⚡ Auto-Transcribe Video Audio</div>
-            <p style="font-size:.7rem;color:var(--dim);margin-bottom:9px;line-height:1.6">Paste your OpenAI key — captions are generated automatically from the video's own audio when you add a clip. Free tier: $0.006/min.</p>
-            <div style="display:flex;gap:7px;margin-bottom:7px">
-              <input type="password" id="openaiKey" placeholder="sk-..." style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:6px 10px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.75rem;outline:none" oninput="saveOpenAIKey(this.value)"/>
-              <a href="https://platform.openai.com/api-keys" target="_blank" class="btn bs sm" style="font-size:.64rem;white-space:nowrap">Get Key ↗</a>
-            </div>
-            <div id="whisperStatus" style="display:none;font-size:.7rem;font-weight:600;padding:4px 0"></div>
+          <!-- How it works hint -->
+          <div style="background:var(--surf);border:1px solid var(--b);border-radius:9px;padding:10px 13px;margin-bottom:12px;font-size:.7rem;color:var(--dim);line-height:1.7">
+            <strong style="color:var(--tx)">How auto-captions work (100% free):</strong><br>
+            1. Add your clip — mic starts automatically (allow when prompted)<br>
+            2. Press ▶ Play on the preview so audio plays through your speakers<br>
+            3. The mic picks up the audio → captions + B-roll images appear live<br>
+            <span style="color:var(--or);font-weight:600">Chrome / Edge only</span> — Firefox does not support this API
           </div>
 
           <!-- Live mic transcript -->
@@ -157,29 +155,15 @@
             </div>
           </details>
 
-          <!-- B-Roll search -->
-          <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:13px 14px;margin-top:14px">
-            <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700;margin-bottom:8px">🖼 B-Roll Images</div>
-            <p style="font-size:.72rem;color:var(--dim);margin-bottom:10px;line-height:1.5">Auto-detected from speech, or search any topic — images cut into the video at the current preview position.</p>
-            <div style="display:flex;gap:7px;margin-bottom:8px">
-              <input type="text" id="brollSearchInput" placeholder="e.g. business, wedding, city..." style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:7px 10px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.75rem;outline:none" onkeydown="if(event.key==='Enter')brollManualSearch()"/>
-              <button class="btn bp sm" onclick="brollManualSearch()">Search</button>
-            </div>
-            <div id="brollSpinner" style="display:none;align-items:center;gap:8px;font-size:.7rem;color:var(--dim);margin-bottom:6px">
-              <div style="width:13px;height:13px;border:2px solid var(--b2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite"></div>
-              Searching "<span id="brollSpinWord"></span>"...
-            </div>
-            <div id="brollKeyword" style="font-size:.7rem;color:var(--dim);margin-bottom:6px"></div>
-            <div id="brollQueued"></div>
-            <details style="margin-top:8px">
-              <summary style="font-size:.65rem;color:var(--dim);cursor:pointer">🔑 Pexels API key (optional — highest quality images, free)</summary>
-              <div style="margin-top:5px;font-size:.65rem;color:var(--dim);margin-bottom:6px">Works without a key — Loremflickr, Picsum &amp; Wikipedia are used automatically. Add a Pexels key for professional stock photos.</div>
-              <div style="display:flex;gap:7px;margin-top:6px">
-                <input type="text" id="pexelsKey" placeholder="Paste free Pexels key here..." style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:5px 9px;border-radius:6px;font-size:.72rem;outline:none" oninput="savePexelsKey(this.value)"/>
-                <a href="https://www.pexels.com/api/" target="_blank" class="btn bs sm" style="font-size:.65rem">Get Key ↗</a>
-              </div>
-            </details>
+          <!-- B-Roll — fully automatic, no UI needed -->
+          <div id="brollSpinner" style="display:none;align-items:center;gap:8px;font-size:.7rem;color:var(--dim);margin-top:10px">
+            <div style="width:13px;height:13px;border:2px solid var(--b2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite"></div>
+            Finding images for "<span id="brollSpinWord"></span>"…
           </div>
+          <div id="brollKeyword" style="display:none"></div>
+          <div id="brollQueued" style="margin-top:8px"></div>
+          <input type="hidden" id="brollSearchInput"/>
+          <input type="hidden" id="pexelsKey"/>
 
         </div>
       </div>
@@ -306,25 +290,8 @@
           <button onclick="captureThumbnail()" style="width:100%;margin-top:6px;background:var(--surf);border:1px solid var(--b2);color:var(--dim);font-size:.63rem;padding:5px;border-radius:6px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--b2)'">📷 Grab Thumbnail</button>
         </div>
       </div>
-      <div class="panel-card" style="margin-top:10px">
-        <div class="panel-lbl">What you get</div>
-        <div class="feat-row"><span>Smart clip assembly</span><span>&#10003;</span></div>
-        <div class="feat-row"><span>Voice commands</span><span>&#10003;</span></div>
-        <div class="feat-row"><span>Image search &amp; insert</span><span>&#10003;</span></div>
-        <div class="feat-row"><span>AI style suggestions</span><span>&#10003;</span></div>
-        <div class="feat-row"><span>TikTok-style captions</span><span>&#10003;</span></div>
-        <div class="feat-row"><span>Colour grade</span><span>&#10003;</span></div>
-        <div class="feat-row"><span>Background music</span><span>&#10003;</span></div>
-        <div class="feat-row"><span>Thumbnail export</span><span>&#10003;</span></div>
-      </div>
-      <div class="panel-card" style="margin-top:10px">
-        <div class="panel-lbl">Voice Commands</div>
-        <div class="tip-row">&#127908; <em>"add [topic] images"</em></div>
-        <div class="tip-row">&#127908; <em>"switch to cinematic"</em></div>
-        <div class="tip-row">&#127908; <em>"set speed fast / slow"</em></div>
-        <div class="tip-row">&#127908; <em>"tiktok captions"</em></div>
-        <div class="tip-row">&#127908; <em>"export tiktok / youtube"</em></div>
-      </div>
+
+
     </div>
   </div>
 
