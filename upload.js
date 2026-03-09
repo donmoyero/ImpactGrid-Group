@@ -192,10 +192,9 @@ function brollExtractKeywords(text){
 // Pexels key persistence
 (function(){
   try{var k=localStorage.getItem('ig-pexels-key');if(k){var el=document.getElementById('pexelsKey');if(el)el.value=k;}}catch(e){}
-  try{var ok=localStorage.getItem('ig-openai-key');if(ok){var oel=document.getElementById('openaiKey');if(oel)oel.value=ok;}}catch(e){}
 })();
-function savePexelsKey(v){try{localStorage.setItem('ig-pexels-key',v);}catch(e){}}
-function getPexelsKey(){var el=document.getElementById('pexelsKey');return el?el.value.trim():'';}
+function savePexelsKey(v){}
+function getPexelsKey(){return '';}
 
 // Fetch from all 3 APIs in parallel, pick first result
 // ── B-ROLL IMAGE FETCHING — 4 sources, all free, no key required ─
@@ -394,16 +393,7 @@ function brollClearAll(){
 }
 
 // Manual search entry point — called from the search button in Step 3
-async function brollManualSearch(){
-  var input=document.getElementById('brollSearchInput');
-  var kw=(input?input.value.trim():'');
-  if(!kw){toast('Enter a topic to search','err');return;}
-  var vid=document.getElementById('prevVideo');
-  var t=(vid&&vid.duration)?vid.currentTime:0;
-  brollRecentKeywords.delete(kw); // allow re-search
-  await brollOnSpeech(kw,t);
-  if(input)input.value='';
-}
+async function brollManualSearch(){/* removed — auto only */}
 
 // Patch vdProcessCommand to always trigger B-roll scan alongside edit commands
 var _origVdProcessCommand=vdProcessCommand;
@@ -415,10 +405,10 @@ vdProcessCommand=function(cmd){
   brollDebounceTimer=setTimeout(function(){brollOnSpeech(cmd,t);},600);
 };
 
-// Also expose brollOnSpeech for direct calls from caption recording
-function triggerBrollFromSpeech(text){
-  var vid=document.getElementById('prevVideo');
-  var t=(vid&&vid.duration)?vid.currentTime:0;
+// Trigger B-roll from speech — accepts optional timestamp from caption engine
+function triggerBrollFromSpeech(text, ts){
+  var vid=_prevVideoRef||document.getElementById('prevVideo');
+  var t=(ts!==undefined)?ts:(vid&&vid.duration&&!vid.paused)?vid.currentTime:0;
   clearTimeout(brollDebounceTimer);
   brollDebounceTimer=setTimeout(function(){brollOnSpeech(text,t);},400);
 }
@@ -680,7 +670,10 @@ function vdRenderMarkerList(){
 var _origAddClips=addClips;
 addClips=function(files){
   _origAddClips(files);
-  setTimeout(function(){vdInit();prevInit();autoCapInit();},300);
+  setTimeout(function(){
+    prevInit();
+    autoCapInit();  // request mic permission + start listening immediately
+  },300);
 };
 
 // ── Preview ───────────────────────────────────────────────────────
@@ -704,118 +697,51 @@ function captureThumbnail(){
 }
 function setProgress(pct,label,log){document.getElementById('procBar').style.width=pct+'%';document.getElementById('procPct').textContent=Math.round(pct)+'%';if(label)document.getElementById('procLabel').textContent=label;if(log)document.getElementById('procLog').textContent=log;}
 
-// ── CAPTION RECORDING SYSTEM (mic-based, real timestamps) ────────
-// ── CAPTION + B-ROLL ENGINE ──────────────────────────────────────
-// Two modes work together automatically:
-//   1. Whisper API  — transcribes the video's own audio (needs OpenAI key)
-//   2. Mic listener — captures your voiceover in real time (no key needed)
-// Both feed the same B-roll keyword engine simultaneously.
+// ── FREE CAPTION + B-ROLL ENGINE ────────────────────────────────
+// 100% browser-side, zero cost, zero external APIs required.
+//
+// HOW IT WORKS:
+//   Step 1 — User drops a clip. Preview video plays.
+//   Step 2 — Mic auto-starts (asks permission once, remembers it).
+//   Step 3 — User plays preview and speaks/the video audio plays out loud.
+//   Step 4 — Speech API captures every word with real video timestamps.
+//   Step 5 — Words are turned into captions AND B-roll keywords simultaneously.
+//   Step 6 — B-roll images fetched from free sources, inserted at those timestamps.
+//
+// IMPORTANT BROWSER RULE: Speech API reads the MIC, not video audio.
+// So either: speak your narration while preview plays, OR
+//            turn up speakers so the browser mic picks up the video audio.
 
 var _recordedCaptions = [];
 var _manualCaptions   = [];
-var _autoCapOn        = false;
-var _capMicGranted    = false;
-var _capRec           = null;
-var _capRecStart      = 0;
-var _prevVideoRef     = null;
-var _whisperLoading   = false;
+var _autoCapOn        = false;   // mic is currently open
+var _capMicGranted    = false;   // mic permission ever granted this session
+var _capRec           = null;    // SpeechRecognition instance
+var _capRecStart      = 0;       // wall-clock time mic opened
+var _prevVideoRef     = null;    // set by prevInit(), used for timestamps
 
-// ── Whisper transcription (OpenAI) ───────────────────────────────
-function getOpenAIKey(){
-  var el=document.getElementById('openaiKey');
-  var stored='';
-  try{stored=localStorage.getItem('ig-openai-key')||'';}catch(e){}
-  return (el?el.value.trim():'')||stored;
-}
-function saveOpenAIKey(v){
-  try{localStorage.setItem('ig-openai-key',v);}catch(e){}
-}
-// Called automatically when a clip is loaded
-async function whisperTranscribe(clipFile){
-  var key=getOpenAIKey();
-  if(!key||_whisperLoading) return;
-  _whisperLoading=true;
-  whisperSetStatus('loading','Transcribing audio with Whisper…');
-  try{
-    // Extract audio as webm blob — slice first 25MB max (Whisper limit)
-    var blob=clipFile.size>25*1024*1024
-      ? clipFile.slice(0,25*1024*1024,clipFile.type)
-      : clipFile;
-    var form=new FormData();
-    form.append('file', blob, 'audio.'+((clipFile.name||'a').split('.').pop()||'mp4'));
-    form.append('model','whisper-1');
-    form.append('response_format','verbose_json'); // gives word-level timestamps
-    form.append('language','en');
-    var r=await fetch('https://api.openai.com/v1/audio/transcriptions',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+key},
-      body:form
-    });
-    if(!r.ok){
-      var err=await r.json().catch(function(){return {};});
-      throw new Error(err.error&&err.error.message||'Whisper API error '+r.status);
-    }
-    var data=await r.json();
-    // Parse segments into caption chunks
-    _recordedCaptions=[];
-    if(data.segments&&data.segments.length){
-      data.segments.forEach(function(seg){
-        // Split long segments at ~6 words
-        var words=seg.text.trim().split(/\s+/);
-        var chunk=[],chunkStart=seg.start;
-        var segDur=(seg.end-seg.start)/Math.max(1,Math.ceil(words.length/6));
-        words.forEach(function(w,wi){
-          chunk.push(w);
-          if(chunk.length>=6||(wi===words.length-1)){
-            _recordedCaptions.push({text:chunk.join(' '),t:Math.max(0,chunkStart)});
-            chunkStart+=segDur;
-            chunk=[];
-          }
-        });
-        // Also extract keywords from each segment for B-roll
-        triggerBrollFromSpeech(seg.text);
-      });
-    } else if(data.text){
-      // Fallback: no segment timestamps, distribute evenly
-      var words=data.text.trim().split(/\s+/);
-      var vid=_prevVideoRef;
-      var total=vid&&vid.duration?vid.duration:words.length*0.5;
-      var chunk=[],t=0,wps=words.length/total;
-      words.forEach(function(w,wi){
-        chunk.push(w);
-        if(chunk.length>=6||(wi===words.length-1)){
-          _recordedCaptions.push({text:chunk.join(' '),t:Math.max(0,t)});
-          t+=chunk.length/Math.max(wps,0.5);
-          chunk=[];
-        }
-      });
-      triggerBrollFromSpeech(data.text);
-    }
-    autoCapRenderList();
-    whisperSetStatus('done','✓ '+_recordedCaptions.length+' captions from video audio');
-    toast('✓ Whisper: '+_recordedCaptions.length+' captions generated','ok');
-  }catch(err){
-    whisperSetStatus('err','Whisper failed: '+err.message+' — mic captions still active');
-    toast('Whisper: '+err.message,'err');
-  }
-  _whisperLoading=false;
-}
-function whisperSetStatus(state,msg){
-  var el=document.getElementById('whisperStatus');
-  if(!el) return;
-  var colours={loading:'var(--gold)',done:'#1a9e5a',err:'var(--or)'};
-  el.style.color=colours[state]||'var(--dim)';
-  el.textContent=msg;
-  el.style.display='block';
-}
-
-// ── Mic-based captions (always running as fallback/voiceover) ─────
+// ── Auto-init: called whenever clips change ───────────────────────
 function autoCapInit(){
-  // Auto-start mic if permission already granted
-  if(_capMicGranted&&!_autoCapOn) autoCapStart();
-  // Auto-run Whisper if key is set and clip just loaded
-  if(clips.length&&getOpenAIKey()&&!_whisperLoading){
-    whisperTranscribe(clips[0].file);
+  if(!clips.length) return;
+  if(_autoCapOn) return; // already running
+  _startMicSilently();   // always try — handles first-time permission + restarts
+}
+
+// Request mic in the background — if granted, start listening
+function _startMicSilently(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return; // not Chrome/Edge — user must click button
+  // navigator.mediaDevices.getUserMedia triggers the permission prompt
+  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      // Permission granted — stop the raw stream, Speech API manages its own
+      stream.getTracks().forEach(function(t){t.stop();});
+      _capMicGranted=true;
+      autoCapStart();
+    }).catch(function(){
+      // Denied or unavailable — show button so user can try manually
+      autoCapSetUI(false);
+    });
   }
 }
 
@@ -827,126 +753,163 @@ function autoCapToggle(){
 function autoCapStart(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){
-    toast('Mic captions need Chrome or Edge','err');
+    toast('Auto-captions need Chrome or Edge (not Firefox)','err');
     return;
   }
   if(!clips.length){toast('Add a clip first','err');return;}
+  if(_autoCapOn) return; // already running
 
-  _capRec=new SR();
-  _capRec.continuous=true;
-  _capRec.interimResults=true;
-  _capRec.maxAlternatives=1;
-  _capRec.lang='en-GB';
-  _capRecStart=Date.now();
-  var lastFinal='';
+  _capRec = new SR();
+  _capRec.continuous     = true;
+  _capRec.interimResults = true;
+  _capRec.maxAlternatives = 1;
+  _capRec.lang           = 'en-GB';
+  _capRecStart           = Date.now();
 
-  _capRec.onresult=function(e){
-    var interim='',finalText='';
-    for(var i=e.resultIndex;i<e.results.length;i++){
-      if(e.results[i].isFinal) finalText+=e.results[i][0].transcript+' ';
-      else interim+=e.results[i][0].transcript;
+  var lastFinal = '';
+
+  _capRec.onresult = function(e){
+    var interim = '', finalText = '';
+    for(var i=e.resultIndex; i<e.results.length; i++){
+      if(e.results[i].isFinal) finalText += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
     }
-    var liveEl=document.getElementById('autoCapLive');
+
+    // Show live what's being heard
+    var liveEl = document.getElementById('autoCapLive');
     if(liveEl){
-      liveEl.style.display='block';
-      if(interim) liveEl.innerHTML='<em style="color:var(--dim)">'+interim+'…</em>';
+      liveEl.style.display = 'block';
+      if(interim) liveEl.innerHTML = '<em style="color:var(--dim)">' + interim + '…</em>';
     }
-    if(finalText&&finalText!==lastFinal){
-      lastFinal=finalText;
-      var vid=_prevVideoRef||document.getElementById('prevVideo');
-      var t=(vid&&vid.duration&&vid.readyState>=2)?vid.currentTime:((Date.now()-_capRecStart)/1000);
-      triggerBrollFromSpeech(finalText);
-      var words=finalText.trim().split(/\s+/);
-      var chunk=[],chunkStart=t;
-      words.forEach(function(w,wi){
+
+    if(finalText && finalText !== lastFinal){
+      lastFinal = finalText;
+
+      // Timestamp: use actual video playhead if video is playing, else wall-clock
+      var vid = _prevVideoRef || document.getElementById('prevVideo');
+      var t = (vid && vid.duration && vid.readyState >= 2 && !vid.paused)
+        ? vid.currentTime
+        : (Date.now() - _capRecStart) / 1000;
+
+      // Feed to B-roll engine (keyword detection + image fetch)
+      triggerBrollFromSpeech(finalText, t);
+
+      // Split into subtitle-sized chunks (max 5 words each for readability)
+      var words = finalText.trim().split(/\s+/);
+      var chunk = [], chunkT = t;
+      words.forEach(function(w, wi){
         chunk.push(w);
-        if(chunk.length>=6||(wi===words.length-1)){
-          _recordedCaptions.push({text:chunk.join(' '),t:Math.max(0,chunkStart)});
-          chunkStart+=chunk.length*0.4;
-          chunk=[];
+        if(chunk.length >= 5 || wi === words.length - 1){
+          _recordedCaptions.push({ text: chunk.join(' '), t: Math.max(0, chunkT) });
+          chunkT += chunk.length * 0.38; // ~380ms per word
+          chunk = [];
         }
       });
-      if(liveEl) liveEl.innerHTML='<span style="color:var(--tx);font-weight:600">'+finalText+'</span>';
+
+      if(liveEl) liveEl.innerHTML =
+        '<span style="color:var(--tx);font-weight:600">' + finalText.trim() + '</span>';
       autoCapRenderList();
     }
   };
 
-  _capRec.onerror=function(e){
-    if(e.error==='not-allowed'||e.error==='denied'){
-      toast('Mic blocked — allow mic in browser settings','err');
+  _capRec.onerror = function(e){
+    if(e.error === 'not-allowed' || e.error === 'denied'){
+      toast('Mic blocked — allow mic permission in browser bar','err');
+      _capMicGranted = false;
       autoCapSetUI(false);
-    } else if(e.error!=='no-speech'){
-      if(_autoCapOn) setTimeout(autoCapStart,800);
+    } else if(e.error === 'no-speech'){
+      // silence — fine, keep running
+    } else {
+      // any other error: wait and restart
+      if(_autoCapOn) setTimeout(function(){ if(_autoCapOn) _restartMic(); }, 1000);
     }
   };
-  _capRec.onend=function(){
-    if(_autoCapOn) try{_capRec.start();}catch(ex){autoCapStop();}
+
+  _capRec.onend = function(){
+    // Chrome kills the session after ~60s of silence — restart automatically
+    if(_autoCapOn) setTimeout(_restartMic, 200);
   };
 
+  _startCapRec();
+}
+
+function _startCapRec(){
   try{
     _capRec.start();
-    _autoCapOn=true;
-    _capMicGranted=true;
+    _autoCapOn    = true;
+    _capMicGranted = true;
     autoCapSetUI(true);
-    toast('🎙 Mic listening — speak your narration','ok');
   }catch(ex){
-    toast('Mic error: '+ex.message,'err');
+    // Already started or other error — ignore
+  }
+}
+
+function _restartMic(){
+  if(!_autoCapOn) return;
+  try{ _capRec.start(); }catch(ex){
+    // If can't restart existing instance, create fresh one
+    setTimeout(autoCapStart, 300);
   }
 }
 
 function autoCapStop(){
-  if(_capRec) try{_capRec.abort();}catch(e){}
-  _autoCapOn=false;
+  _autoCapOn = false;
+  if(_capRec) try{ _capRec.abort(); }catch(e){}
   autoCapSetUI(false);
-  var n=_recordedCaptions.length;
-  if(n) toast('✓ '+n+' caption'+(n>1?'s':'')+' ready','ok');
+  var n = _recordedCaptions.length;
+  if(n) toast('✓ ' + n + ' caption' + (n > 1 ? 's' : '') + ' ready','ok');
 }
 
 function autoCapSetUI(on){
-  var btn=document.getElementById('autoCapBtn');
-  var pill=document.getElementById('autoCapPill');
-  var liveEl=document.getElementById('autoCapLive');
+  var btn  = document.getElementById('autoCapBtn');
+  var pill = document.getElementById('autoCapPill');
+  var live = document.getElementById('autoCapLive');
   if(btn){
-    btn.innerHTML=on?'⏹ Stop Mic':'🎙 Mic Captions';
-    btn.style.borderColor=on?'var(--or)':'';
-    btn.style.color=on?'var(--or)':'';
+    btn.textContent = on ? '⏹ Stop' : '🎙 Start Listening';
+    btn.style.background    = on ? 'var(--or)' : '';
+    btn.style.color         = on ? '#fff' : '';
+    btn.style.borderColor   = on ? 'var(--or)' : '';
   }
   if(pill){
-    pill.style.display=on?'flex':'none';
-    var pt=document.getElementById('autoCapPillText');
-    if(pt) pt.textContent=on?'Listening…':'Off';
+    pill.style.display = on ? 'flex' : 'none';
+    var pt = document.getElementById('autoCapPillText');
+    if(pt) pt.textContent = on ? 'Listening…' : '';
   }
-  if(!on&&liveEl) liveEl.style.display='none';
+  if(!on && live) live.style.display = 'none';
 }
 
 function capRecClear(){
-  _recordedCaptions=[];
+  _recordedCaptions = [];
   autoCapRenderList();
-  var liveEl=document.getElementById('autoCapLive');
-  if(liveEl) liveEl.innerHTML='';
-  var ws=document.getElementById('whisperStatus');
-  if(ws) ws.style.display='none';
+  var live = document.getElementById('autoCapLive');
+  if(live){ live.innerHTML = ''; live.style.display = 'none'; }
 }
 
 function autoCapRenderList(){
-  var all=_recordedCaptions.slice();
-  var wrap=document.getElementById('capRecList');
-  var items=document.getElementById('capRecItems');
-  var count=document.getElementById('capRecCount');
-  if(!wrap||!items) return;
-  wrap.style.display=all.length?'block':'none';
-  if(count) count.textContent=all.length+' caption'+(all.length!==1?'s':'')+' ready';
-  items.innerHTML=all.map(function(c,i){
-    return '<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--surf);border:1px solid var(--b);border-radius:6px;margin-bottom:4px">'
-      +'<span style="font-size:.6rem;font-family:Syne,sans-serif;font-weight:700;color:var(--gold);min-width:30px;flex-shrink:0">'+capFmtTime(c.t)+'</span>'
-      +'<input value="'+c.text.replace(/"/g,'&quot;')+'" style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:3px 7px;border-radius:5px;font-size:.72rem;font-family:DM Sans,sans-serif;outline:none" onchange="_recordedCaptions['+i+'].text=this.value"/>'
-      +'<button onclick="_recordedCaptions.splice('+i+',1);autoCapRenderList()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:.8rem;flex-shrink:0">✕</button>'
-      +'</div>';
+  var all   = _recordedCaptions.slice();
+  var wrap  = document.getElementById('capRecList');
+  var items = document.getElementById('capRecItems');
+  var count = document.getElementById('capRecCount');
+  if(!wrap || !items) return;
+  wrap.style.display = all.length ? 'block' : 'none';
+  if(count) count.textContent = all.length + ' caption' + (all.length !== 1 ? 's' : '') + ' ready';
+  items.innerHTML = all.map(function(c, i){
+    return '<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;'
+      + 'background:var(--surf);border:1px solid var(--b);border-radius:6px;margin-bottom:4px">'
+      + '<span style="font-size:.6rem;font-family:Syne,sans-serif;font-weight:700;'
+      + 'color:var(--gold);min-width:30px;flex-shrink:0">' + capFmtTime(c.t) + '</span>'
+      + '<input value="' + c.text.replace(/"/g,'&quot;') + '" '
+      + 'style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);'
+      + 'padding:3px 7px;border-radius:5px;font-size:.72rem;font-family:DM Sans,sans-serif;outline:none" '
+      + 'onchange="_recordedCaptions[' + i + '].text=this.value"/>'
+      + '<button onclick="_recordedCaptions.splice(' + i + ',1);autoCapRenderList()" '
+      + 'style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:.8rem;flex-shrink:0">✕</button>'
+      + '</div>';
   }).join('');
 }
 
-function capRecRenderList(){autoCapRenderList();}
-function capFmtTime(s){var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+function capRecRenderList(){ autoCapRenderList(); }
+function capFmtTime(s){ var m=Math.floor(s/60),sec=Math.floor(s%60); return m+':'+(sec<10?'0':'')+sec; }
 
 function addManualCap(){
   _manualCaptions.push({text:'',t:0});
@@ -996,11 +959,15 @@ function prevInit(){
     scrub.max=vid.duration||100;
     document.getElementById('prevTimeLabel').textContent=capFmtTime(vid.duration||0);
     prevStartDrawLoop();
-
-    // Auto-initialise captions when video loads (if mic already granted)
-    if(_capMicGranted&&!_autoCapOn){
-      autoCapStart();
-    }
+    // Auto-play so mic can pick up audio immediately
+    vid.muted=false;
+    vid.volume=0.8;
+    vid.play().catch(function(){
+      // Autoplay blocked by browser — unmute button still works
+      vid.muted=true;
+    });
+    // Start mic if not already running
+    if(!_autoCapOn) autoCapStart();
   };
 
   vid.load();
@@ -1268,6 +1235,8 @@ async function startRender(){
   if(!clips.length){toast('Add at least one clip','err');return;}
   var fmts=Object.keys(_formats).filter(function(k){return _formats[k];});
   if(!fmts.length){toast('Select at least one platform','err');return;}
+  // Ensure mic is listening during render for live captions
+  if(!_autoCapOn) autoCapStart();
   // Save prefs before rendering
   savePref('style',_style);savePref('capStyle',_capStyle);
   document.getElementById('renderSection').style.display='none';
