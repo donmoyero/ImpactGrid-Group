@@ -13,6 +13,8 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;line-
 a{color:inherit;text-decoration:none}
 @keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
 @keyframes flashFade{0%{opacity:.9}100%{opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
 /* SIDEBAR */
 #sb{position:fixed;left:0;top:0;width:var(--sw);height:100vh;background:var(--surf);border-right:1px solid var(--b);display:flex;flex-direction:column;z-index:200;transition:transform .35s cubic-bezier(.77,0,.18,1),background .3s,border-color .3s;overflow:hidden}
 .sb-head{padding:15px 15px 13px;border-bottom:1px solid var(--b);flex-shrink:0;display:flex;align-items:center;gap:10px}
@@ -390,9 +392,19 @@ footer{border-top:1px solid var(--b);padding:18px 32px;display:flex;align-items:
 
       <!-- Step 3: Captions -->
       <div class="step-card">
-        <div class="step-hd"><div class="step-num">3</div><div><div class="step-lbl">Step 3</div><div class="step-title">Caption style</div></div></div>
+        <div class="step-hd">
+          <div class="step-num">3</div>
+          <div style="flex:1"><div class="step-lbl">Step 3</div><div class="step-title">Caption style</div></div>
+          <!-- Live auto-caption status pill -->
+          <div id="autoCapPill" style="display:none;align-items:center;gap:5px;background:rgba(232,82,15,.12);border:1px solid rgba(232,82,15,.3);border-radius:20px;padding:3px 10px;font-size:.62rem;font-weight:700;color:var(--or)">
+            <div style="width:7px;height:7px;border-radius:50%;background:var(--or);animation:pulse 1s infinite"></div>
+            <span id="autoCapPillText">Listening...</span>
+          </div>
+        </div>
         <div class="step-body">
-          <div class="cap-grid">
+
+          <!-- Style picker -->
+          <div class="cap-grid" style="margin-bottom:14px">
             <div class="cs-card on" onclick="pickCapStyle('tiktok',this)">
               <div class="cs-preview" style="background:#000"><span style="background:#ff5c1a;color:#fff;padding:1px 6px;border-radius:3px;font-size:.58rem;font-weight:700">WORD BY WORD</span></div>
               <span>TikTok Pop</span>
@@ -406,12 +418,63 @@ footer{border-top:1px solid var(--b);padding:18px 32px;display:flex;align-items:
               <span>Word Highlight</span>
             </div>
           </div>
-          <div class="cap-opts">
-            <label><input type="checkbox" id="captionsOn" checked/> Auto-captions <span style="font-size:.68rem;color:var(--dim)">(Chrome/Edge)</span></label>
-            <div style="display:flex;align-items:center;gap:7px"><label style="font-size:.72rem;color:var(--dim)">Position</label>
+
+          <!-- Position + mic permission button -->
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <label style="font-size:.72rem;color:var(--dim)">Position</label>
               <select id="captionPos" class="cap-sel"><option value="bottom">Bottom</option><option value="top">Top</option></select>
             </div>
+            <div style="flex:1"></div>
+            <button id="autoCapBtn" onclick="autoCapToggle()" class="btn bs sm" style="font-size:.65rem;gap:5px">
+              🎙 Enable Auto-Captions
+            </button>
           </div>
+
+          <!-- Live transcript — shows what's being heard -->
+          <div id="autoCapLive" style="display:none;background:var(--surf);border:1px solid var(--b);border-radius:8px;padding:9px 12px;font-size:.75rem;color:var(--dim);line-height:1.7;min-height:36px;margin-bottom:10px"></div>
+
+          <!-- Captured captions list -->
+          <div id="capRecList" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700" id="capRecCount"></div>
+              <button onclick="capRecClear()" class="btn bs sm" style="font-size:.6rem;padding:2px 7px">🗑 Clear</button>
+            </div>
+            <div id="capRecItems"></div>
+          </div>
+
+          <!-- Manual add -->
+          <details style="margin-top:10px">
+            <summary style="font-size:.68rem;color:var(--dim);cursor:pointer;user-select:none">✏️ Add captions manually</summary>
+            <div style="margin-top:8px">
+              <div id="manualCapList"></div>
+              <button class="btn bs sm" onclick="addManualCap()" style="margin-top:6px">+ Add</button>
+            </div>
+          </details>
+
+          <!-- B-Roll search -->
+          <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:13px 14px;margin-top:14px">
+            <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700;margin-bottom:8px">🖼 B-Roll Images</div>
+            <p style="font-size:.72rem;color:var(--dim);margin-bottom:10px;line-height:1.5">Auto-detected from speech, or search any topic — images cut into the video at the current preview position.</p>
+            <div style="display:flex;gap:7px;margin-bottom:8px">
+              <input type="text" id="brollSearchInput" placeholder="e.g. business, wedding, city..." style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:7px 10px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.75rem;outline:none" onkeydown="if(event.key==='Enter')brollManualSearch()"/>
+              <button class="btn bp sm" onclick="brollManualSearch()">Search</button>
+            </div>
+            <div id="brollSpinner" style="display:none;align-items:center;gap:8px;font-size:.7rem;color:var(--dim);margin-bottom:6px">
+              <div style="width:13px;height:13px;border:2px solid var(--b2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite"></div>
+              Searching "<span id="brollSpinWord"></span>"...
+            </div>
+            <div id="brollKeyword" style="font-size:.7rem;color:var(--dim);margin-bottom:6px"></div>
+            <div id="brollQueued"></div>
+            <details style="margin-top:8px">
+              <summary style="font-size:.65rem;color:var(--dim);cursor:pointer">🔑 Pexels API key (optional — better images)</summary>
+              <div style="display:flex;gap:7px;margin-top:6px">
+                <input type="text" id="pexelsKey" placeholder="Free key from pexels.com/api" style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:5px 9px;border-radius:6px;font-size:.72rem;outline:none" oninput="savePexelsKey(this.value)"/>
+                <a href="https://www.pexels.com/api/" target="_blank" class="btn bs sm" style="font-size:.65rem">Get Key ↗</a>
+              </div>
+            </details>
+          </div>
+
         </div>
       </div>
 
@@ -512,16 +575,29 @@ footer{border-top:1px solid var(--b);padding:18px 32px;display:flex;align-items:
           <div class="prev-tab" onclick="switchPreview('linkedin',this)">LinkedIn</div>
         </div>
         <div id="previewWrap" style="position:relative">
-          <div id="prevReel" class="preview-box" style="aspect-ratio:9/16;max-height:290px">
-            <div style="font-size:1.5rem">&#127916;</div>
-            <div style="font-size:.66rem;color:var(--dim);text-align:center;padding:0 8px">Add clips to preview</div>
+          <!-- Canvas-based live preview — shows B-roll overlays, captions, grade in real time -->
+          <div style="position:relative;background:#000;border-radius:8px;overflow:hidden">
+            <canvas id="prevCanvas" style="width:100%;display:block;border-radius:8px;aspect-ratio:9/16;max-height:290px"></canvas>
+            <video id="prevVideo" style="display:none" muted loop playsinline preload="auto"></video>
+            <!-- Hidden fallback boxes kept for switchPreview compat -->
+            <div id="prevReel" style="display:none"></div>
+            <div id="prevTiktok" style="display:none"></div>
+            <div id="prevYoutube" style="display:none"></div>
+            <div id="prevLinkedin" style="display:none"></div>
+            <!-- No-clip state -->
+            <div id="prevEmpty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;pointer-events:none">
+              <div style="font-size:1.5rem">🎬</div>
+              <div style="font-size:.66rem;color:rgba(255,255,255,.4);text-align:center;padding:0 8px">Add clips to preview</div>
+            </div>
+            <div id="prevWatermark" style="position:absolute;top:7px;right:7px;font-size:.54rem;color:rgba(255,255,255,.55);font-weight:700;pointer-events:none">ImpactGrid</div>
           </div>
-          <div id="prevTiktok" class="preview-box" style="aspect-ratio:9/16;max-height:290px;display:none"></div>
-          <div id="prevYoutube" class="preview-box" style="aspect-ratio:16/9;display:none"></div>
-          <div id="prevLinkedin" class="preview-box" style="aspect-ratio:1/1;display:none"></div>
-          <div id="prevWatermark" style="position:absolute;top:7px;right:7px;font-size:.54rem;color:rgba(255,255,255,.55);font-weight:700;pointer-events:none">ImpactGrid</div>
-          <div id="prevCaption" style="position:absolute;bottom:14%;left:50%;transform:translateX(-50%);width:86%;text-align:center;padding:4px 8px;border-radius:4px;font-weight:bold;font-size:.68rem;background:rgba(0,0,0,.75);color:#fff;pointer-events:none">Your caption here</div>
-          <button onclick="captureThumbnail()" style="position:absolute;bottom:7px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.58rem;padding:3px 9px;border-radius:5px;cursor:pointer;white-space:nowrap">&#128247; Grab Thumbnail</button>
+          <!-- Preview controls -->
+          <div style="display:flex;gap:6px;margin-top:7px;align-items:center">
+            <button onclick="prevPlayPause()" id="prevPlayBtn" class="btn bs sm" style="font-size:.65rem">▶</button>
+            <input type="range" id="prevScrub" min="0" max="100" value="0" style="flex:1;accent-color:var(--gold)" oninput="prevScrubTo(this.value)"/>
+            <span id="prevTimeLabel" style="font-size:.6rem;color:var(--dim);white-space:nowrap">0:00</span>
+          </div>
+          <button onclick="captureThumbnail()" style="width:100%;margin-top:6px;background:var(--surf);border:1px solid var(--b2);color:var(--dim);font-size:.63rem;padding:5px;border-radius:6px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--b2)'">📷 Grab Thumbnail</button>
         </div>
       </div>
       <div class="panel-card" style="margin-top:10px">
@@ -709,7 +785,7 @@ function smartAssemble(){
 }
 
 // ── Pickers ───────────────────────────────────────────────────────
-function pickStyle(name,el){_style=name;document.querySelectorAll('.style-card').forEach(function(c){c.classList.remove('on');});el.classList.add('on');updatePreviewStyle();savePref('style',name);}
+function pickStyle(name,el){_style=name;document.querySelectorAll('.style-card').forEach(function(c){c.classList.remove('on');});el.classList.add('on');if(clips.length)prevInit();savePref('style',name);}
 function pickCapStyle(name,el){_capStyle=name;document.querySelectorAll('.cs-card').forEach(function(c){c.classList.remove('on');});el.classList.add('on');savePref('capStyle',name);}
 function pickMusic(name,el){_music=name;document.querySelectorAll('.mc').forEach(function(c){c.classList.remove('on');});el.classList.add('on');document.getElementById('uploadMusicWrap').style.display=name==='upload'?'block':'none';}
 function toggleFmt(name,el){_formats[name]=!_formats[name];el.classList.toggle('on',_formats[name]);if(_formats[name])savePref('format',name);}
@@ -817,16 +893,15 @@ async function brollOnSpeech(text,timestamp){
     brollRecentKeywords.add(kw);
 
     // Show "fetching" state in panel
-    document.getElementById('brollPanel').style.display='block';
-    document.getElementById('brollKeyword').textContent='"'+kw+'" — auto-fetching...';
-    document.getElementById('brollSpinWord').textContent=kw;
-    document.getElementById('brollSpinner').style.display='flex';
+    var _bkw=document.getElementById('brollKeyword');if(_bkw)_bkw.textContent='"'+kw+'" — fetching...';
+    var _bsw=document.getElementById('brollSpinWord');if(_bsw)_bsw.textContent=kw;
+    var _bsp=document.getElementById('brollSpinner');if(_bsp)_bsp.style.display='flex';
 
     var img=await brollFetchBest(kw);
-    document.getElementById('brollSpinner').style.display='none';
+    var _bsp2=document.getElementById('brollSpinner');if(_bsp2)_bsp2.style.display='none';
 
     if(!img){
-      document.getElementById('brollKeyword').textContent='"'+kw+'" — no image found, trying next...';
+      var _bnf=document.getElementById('brollKeyword');if(_bnf)_bnf.textContent='"'+kw+'" — no image found, trying next...';
       brollRecentKeywords.delete(kw); // allow retry
       continue;
     }
@@ -853,7 +928,7 @@ async function brollOnSpeech(text,timestamp){
     brollRenderQueued();
 
     // Update panel
-    document.getElementById('brollKeyword').textContent='"'+kw+'" — auto-inserted ✓';
+    var _bki=document.getElementById('brollKeyword');if(_bki)_bki.textContent='"'+kw+'" — added ✓';
     toast('🖼 B-Roll auto-added: "'+kw+'" at '+vdFmtTime(t)+' ('+img.source+')','ok');
 
     // Preload image for renderer
@@ -862,12 +937,14 @@ async function brollOnSpeech(text,timestamp){
 
     // Add thumbnail to grid
     var grid=document.getElementById('brollGrid');
-    var card=document.createElement('div');
-    card.className='broll-img queued';
-    card.innerHTML='<img src="'+img.thumb+'" loading="lazy" alt="'+kw+'">'
-      +'<div class="broll-kw">'+kw+' · '+vdFmtTime(t)+'</div>'
-      +'<div class="broll-tick" style="display:flex">✓</div>';
-    grid.appendChild(card);
+    if(grid){
+      var card=document.createElement('div');
+      card.className='broll-img queued';
+      card.innerHTML='<img src="'+img.thumb+'" loading="lazy" alt="'+kw+'">'
+        +'<div class="broll-kw">'+kw+' · '+vdFmtTime(t)+'</div>'
+        +'<div class="broll-tick" style="display:flex">✓</div>';
+      grid.appendChild(card);
+    }
   }
 }
 
@@ -896,20 +973,40 @@ function brollClearAll(){
   brollQueue=[];
   brollLastKeyword='';
   brollRecentKeywords.clear();
-  document.getElementById('brollGrid').innerHTML='';
-  document.getElementById('brollQueued').innerHTML='';
-  document.getElementById('brollPanel').style.display='none';
+  var bg=document.getElementById('brollGrid');if(bg)bg.innerHTML='';
+  var bq=document.getElementById('brollQueued');if(bq)bq.innerHTML='';
+  var bp=document.getElementById('brollPanel');if(bp)bp.style.display='none';
+}
+
+// Manual search entry point — called from the search button in Step 3
+async function brollManualSearch(){
+  var input=document.getElementById('brollSearchInput');
+  var kw=(input?input.value.trim():'');
+  if(!kw){toast('Enter a topic to search','err');return;}
+  var vid=document.getElementById('prevVideo');
+  var t=(vid&&vid.duration)?vid.currentTime:0;
+  brollRecentKeywords.delete(kw); // allow re-search
+  await brollOnSpeech(kw,t);
+  if(input)input.value='';
 }
 
 // Patch vdProcessCommand to always trigger B-roll scan alongside edit commands
 var _origVdProcessCommand=vdProcessCommand;
 vdProcessCommand=function(cmd){
   _origVdProcessCommand(cmd);
-  var vid=document.getElementById('vdVideo');
-  var t=vid?vid.currentTime:0;
+  var vid=document.getElementById('prevVideo');
+  var t=(vid&&vid.duration)?vid.currentTime:0;
   clearTimeout(brollDebounceTimer);
   brollDebounceTimer=setTimeout(function(){brollOnSpeech(cmd,t);},600);
 };
+
+// Also expose brollOnSpeech for direct calls from caption recording
+function triggerBrollFromSpeech(text){
+  var vid=document.getElementById('prevVideo');
+  var t=(vid&&vid.duration)?vid.currentTime:0;
+  clearTimeout(brollDebounceTimer);
+  brollDebounceTimer=setTimeout(function(){brollOnSpeech(text,t);},400);
+}
 
 // ── VOICE DIRECTOR ENGINE ─────────────────────────────────────────
 // Edit markers: {clipIdx, time, type, param, color}
@@ -1165,26 +1262,381 @@ function vdRenderMarkerList(){
   }).join('');
 }
 
-// Hook into addClips so director initialises when first clip is added
 var _origAddClips=addClips;
 addClips=function(files){
   _origAddClips(files);
-  setTimeout(vdInit,300);
+  setTimeout(function(){vdInit();prevInit();autoCapInit();},300);
 };
 
 // ── Preview ───────────────────────────────────────────────────────
-function switchPreview(platform,el){_prevPlatform=platform;document.querySelectorAll('.prev-tab').forEach(function(t){t.classList.remove('on');});el.classList.add('on');['reel','tiktok','youtube','linkedin'].forEach(function(p){var box=document.getElementById('prev'+p.charAt(0).toUpperCase()+p.slice(1));if(box)box.style.display=p===platform?'':'none';});updatePreview();}
-function updatePreview(){if(!clips.length)return;var pid=_prevPlatform.charAt(0).toUpperCase()+_prevPlatform.slice(1);var box=document.getElementById('prev'+pid);if(!box)return;var vid=box.querySelector('video');if(!vid){box.innerHTML='';vid=document.createElement('video');vid.muted=true;vid.loop=true;vid.autoplay=true;vid.playsInline=true;vid.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:8px';box.appendChild(vid);}vid.src=clips[0].url;updatePreviewStyle();}
-function updatePreviewStyle(){var s=STYLES[_style];['prevReel','prevTiktok','prevYoutube','prevLinkedin'].forEach(function(id){var box=document.getElementById(id);if(!box)return;var vid=box.querySelector('video');if(vid)vid.style.filter=s.filter;});var cap=document.getElementById('prevCaption');if(cap){cap.style.background=s.captionBg;cap.style.color=s.captionColor;}}
-function clearPreview(){['Reel','Tiktok','Youtube','Linkedin'].forEach(function(p){var b=document.getElementById('prev'+p);if(b)b.innerHTML='<div style="font-size:1.5rem">&#127916;</div><div style="font-size:.66rem;color:var(--dim);text-align:center;padding:0 8px">Add clips to preview</div>';});}
-function captureThumbnail(){var pid=_prevPlatform.charAt(0).toUpperCase()+_prevPlatform.slice(1);var box=document.getElementById('prev'+pid);if(!box){toast('No preview','err');return;}var vid=box.querySelector('video');if(!vid||!vid.src){toast('Add clips first','err');return;}var p=PLATFORMS[_prevPlatform],s=STYLES[_style];var tc=document.createElement('canvas');tc.width=p.w;tc.height=p.h;var tctx=tc.getContext('2d');tctx.filter=s.filter;var vr=vid.videoWidth/vid.videoHeight,cr=p.w/p.h;var sw,sh,sx,sy;if(vr>cr){sh=vid.videoHeight;sw=sh*cr;sx=(vid.videoWidth-sw)/2;sy=0;}else{sw=vid.videoWidth;sh=sw/cr;sy=(vid.videoHeight-sh)/2;sx=0;}tctx.drawImage(vid,sx,sy,sw,sh,0,0,p.w,p.h);tctx.filter='none';tctx.globalAlpha=0.5;tctx.fillStyle='#fff';tctx.font='bold '+Math.round(p.w*0.024)+'px Arial';tctx.textAlign='right';tctx.fillText('ImpactGrid',p.w-12,Math.round(p.w*0.024)+10);tctx.globalAlpha=1;tc.toBlob(function(blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='thumbnail_'+_prevPlatform+'_'+_style+'.jpg';a.click();toast('Thumbnail downloaded!','ok');},'image/jpeg',0.92);}
+function switchPreview(platform,el){_prevPlatform=platform;document.querySelectorAll('.prev-tab').forEach(function(t){t.classList.remove('on');});el.classList.add('on');prevInit();}
+function updatePreview(){prevInit();}
+function updatePreviewStyle(){prevInit();}
+function clearPreview(){
+  if(_prevRAF){cancelAnimationFrame(_prevRAF);_prevRAF=null;}
+  var canvas=document.getElementById('prevCanvas');
+  if(canvas){var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
+  document.getElementById('prevEmpty').style.display='flex';
+}
+function captureThumbnail(){
+  var canvas=document.getElementById('prevCanvas');
+  if(!canvas||!clips.length){toast('Add clips first','err');return;}
+  canvas.toBlob(function(blob){
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='thumbnail_'+_prevPlatform+'_'+_style+'.jpg';a.click();
+    toast('Thumbnail saved!','ok');
+  },'image/jpeg',0.92);
+}
 function setProgress(pct,label,log){document.getElementById('procBar').style.width=pct+'%';document.getElementById('procPct').textContent=Math.round(pct)+'%';if(label)document.getElementById('procLabel').textContent=label;if(log)document.getElementById('procLog').textContent=log;}
 
-// ── Speech captions ───────────────────────────────────────────────
-function getCaptions(videoFile){return new Promise(function(resolve){if(!document.getElementById('captionsOn').checked){resolve([]);return;}var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){resolve([]);return;}var rec=new SR();rec.continuous=true;rec.interimResults=false;var results=[],startTime=Date.now();rec.onresult=function(e){for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)results.push({text:e.results[i][0].transcript.trim(),t:(Date.now()-startTime)/1000});}};rec.onerror=rec.onend=function(){resolve(results);};var vid=document.createElement('video');vid.src=URL.createObjectURL(videoFile);vid.volume=0.01;vid.onended=function(){try{rec.stop();}catch(e){}};vid.onerror=function(){resolve([]);};rec.start();vid.play().catch(function(){resolve([]);});setTimeout(function(){try{rec.stop();}catch(e){}resolve(results);},120000);});}
+// ── CAPTION RECORDING SYSTEM (mic-based, real timestamps) ────────
+// ── AUTO CAPTION SYSTEM ─────────────────────────────────────────
+// Fully automatic: starts listening as soon as mic permission is granted.
+// User speaks while preview plays — words stamped with video timestamps.
+var _recordedCaptions=[];
+var _manualCaptions=[];
+var _autoCapOn=false;       // mic is open and listening
+var _capMicGranted=false;   // mic permission has been given
+var _capRec=null;
+var _capRecStart=0;
+var _prevVideoRef=null;     // reference to preview video for timestamps
+
+// Called once when clips are added — auto-starts if mic already granted
+function autoCapInit(){
+  if(_capMicGranted&&!_autoCapOn) autoCapStart();
+}
+
+// Toggle button handler — first call requests mic permission
+function autoCapToggle(){
+  if(_autoCapOn){autoCapStop();return;}
+  autoCapStart();
+}
+
+function autoCapStart(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    toast('Auto-captions need Chrome or Edge','err');
+    return;
+  }
+  if(!clips.length){toast('Add a clip first','err');return;}
+
+  _capRec=new SR();
+  _capRec.continuous=true;
+  _capRec.interimResults=true;
+  _capRec.lang='en-GB';
+  _capRecStart=Date.now();
+  var lastFinal='';
+
+  _capRec.onresult=function(e){
+    var interim='',finalText='';
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText+=e.results[i][0].transcript+' ';
+      else interim+=e.results[i][0].transcript;
+    }
+    // Show interim in live box
+    var liveEl=document.getElementById('autoCapLive');
+    if(liveEl){
+      liveEl.style.display='block';
+      if(interim) liveEl.innerHTML='<em style="color:var(--dim)">'+interim+'…</em>';
+    }
+    if(finalText&&finalText!==lastFinal){
+      lastFinal=finalText;
+      // Timestamp = current preview position, or wall-clock fallback
+      var vid=document.getElementById('prevVideo');
+      var t=(vid&&vid.duration&&!vid.paused)?vid.currentTime:((Date.now()-_capRecStart)/1000);
+      // Trigger B-roll search from spoken words
+      triggerBrollFromSpeech(finalText);
+      // Split long sentences into ≤6-word chunks for readable subtitles
+      var words=finalText.trim().split(/\s+/);
+      var chunk=[],chunkStart=t;
+      var wps=words.length/(Math.max(finalText.length/30,1)); // words per segment
+      words.forEach(function(w,wi){
+        chunk.push(w);
+        if(chunk.length>=6||(wi===words.length-1)){
+          _recordedCaptions.push({text:chunk.join(' '),t:Math.max(0,chunkStart)});
+          chunkStart+=chunk.length*(1/Math.max(wps,2));
+          chunk=[];
+        }
+      });
+      if(liveEl) liveEl.innerHTML='<span style="color:var(--tx);font-weight:600">'+finalText+'</span>';
+      autoCapRenderList();
+    }
+  };
+
+  _capRec.onerror=function(e){
+    if(e.error==='not-allowed'||e.error==='denied'){
+      toast('Mic access denied — allow mic in browser settings','err');
+      autoCapSetUI(false);
+    } else if(e.error!=='no-speech'){
+      // restart on other errors
+      if(_autoCapOn) setTimeout(autoCapStart,500);
+    }
+  };
+  _capRec.onend=function(){
+    if(_autoCapOn) try{_capRec.start();}catch(ex){autoCapStop();}
+  };
+
+  try{
+    _capRec.start();
+    _autoCapOn=true;
+    _capMicGranted=true;
+    autoCapSetUI(true);
+    toast('🎙 Listening — speak now, captions appear automatically','ok');
+  } catch(ex){
+    toast('Could not start mic: '+ex.message,'err');
+  }
+}
+
+function autoCapStop(){
+  if(_capRec) try{_capRec.abort();}catch(e){}
+  _autoCapOn=false;
+  autoCapSetUI(false);
+  var n=_recordedCaptions.length;
+  if(n) toast('✓ '+n+' caption'+(n>1?'s':'')+' saved','ok');
+}
+
+function autoCapSetUI(on){
+  var btn=document.getElementById('autoCapBtn');
+  var pill=document.getElementById('autoCapPill');
+  var liveEl=document.getElementById('autoCapLive');
+  if(btn){
+    btn.innerHTML=on?'⏹ Stop Listening':'🎙 Enable Auto-Captions';
+    btn.style.borderColor=on?'var(--or)':'';
+    btn.style.color=on?'var(--or)':'';
+  }
+  if(pill){
+    pill.style.display=on?'flex':'none';
+    var pt=document.getElementById('autoCapPillText');
+    if(pt) pt.textContent=on?'Listening…':'Off';
+  }
+  if(!on&&liveEl) liveEl.style.display='none';
+}
+
+function capRecClear(){
+  _recordedCaptions=[];
+  autoCapRenderList();
+  var liveEl=document.getElementById('autoCapLive');
+  if(liveEl) liveEl.innerHTML='';
+}
+
+function autoCapRenderList(){
+  var all=_recordedCaptions.slice();
+  var wrap=document.getElementById('capRecList');
+  var items=document.getElementById('capRecItems');
+  var count=document.getElementById('capRecCount');
+  if(!wrap||!items) return;
+  wrap.style.display=all.length?'block':'none';
+  if(count) count.textContent=all.length+' caption'+(all.length!==1?'s':'')+' captured';
+  items.innerHTML=all.map(function(c,i){
+    return '<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--surf);border:1px solid var(--b);border-radius:6px;margin-bottom:4px">'
+      +'<span style="font-size:.6rem;font-family:Syne,sans-serif;font-weight:700;color:var(--gold);min-width:30px;flex-shrink:0">'+capFmtTime(c.t)+'</span>'
+      +'<input value="'+c.text.replace(/"/g,'&quot;')+'" style="flex:1;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:3px 7px;border-radius:5px;font-size:.72rem;font-family:DM Sans,sans-serif;outline:none" onchange="_recordedCaptions['+i+'].text=this.value"/>'
+      +'<button onclick="_recordedCaptions.splice('+i+',1);autoCapRenderList()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:.8rem;flex-shrink:0">✕</button>'
+      +'</div>';
+  }).join('');
+}
+
+// Keep old name as alias so nothing breaks
+function capRecRenderList(){autoCapRenderList();}
+
+function capFmtTime(s){var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+
+function addManualCap(){
+  _manualCaptions.push({text:'',t:0});
+  renderManualCaps();
+}
+function renderManualCaps(){
+  document.getElementById('manualCapList').innerHTML=_manualCaptions.map(function(c,i){
+    return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap">'
+      +'<input type="number" placeholder="0" min="0" step="0.5" value="'+(c.t||'')+'" style="width:52px;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:4px 6px;border-radius:5px;font-size:.72rem" onchange="_manualCaptions['+i+'].t=parseFloat(this.value)||0"/>'
+      +'<span style="font-size:.65rem;color:var(--dim)">s</span>'
+      +'<input value="'+c.text.replace(/"/g,'&quot;')+'" placeholder="Caption text..." style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:4px 8px;border-radius:5px;font-size:.72rem;font-family:DM Sans,sans-serif;outline:none" onchange="_manualCaptions['+i+'].text=this.value"/>'
+      +'<button onclick="_manualCaptions.splice('+i+',1);renderManualCaps()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:.8rem">✕</button></div>';
+  }).join('');
+}
+
+function getAllCaptions(){
+  return _recordedCaptions.concat(_manualCaptions).filter(function(c){return c.text.trim();}).sort(function(a,b){return a.t-b.t;});
+}
+
+// ── CANVAS LIVE PREVIEW — shows B-roll, captions, grade ──────────
+var _prevRAF=null;
+var _prevPlaying=false;
+
+function prevInit(){
+  var vid=document.getElementById('prevVideo');
+  var canvas=document.getElementById('prevCanvas');
+  var empty=document.getElementById('prevEmpty');
+  if(!clips.length){empty.style.display='flex';return;}
+  empty.style.display='none';
+  vid.src=clips[0].url;
+
+  // Set canvas aspect based on platform
+  var aspects={reel:'9/16',tiktok:'9/16',youtube:'16/9',linkedin:'1/1'};
+  canvas.style.aspectRatio=aspects[_prevPlatform]||'9/16';
+
+  vid.onloadedmetadata=function(){
+    var scrub=document.getElementById('prevScrub');
+    scrub.max=vid.duration||100;
+    document.getElementById('prevTimeLabel').textContent=capFmtTime(vid.duration||0);
+    prevStartDrawLoop();
+  };
+  vid.load();
+}
+
+function prevStartDrawLoop(){
+  if(_prevRAF) cancelAnimationFrame(_prevRAF);
+  var canvas=document.getElementById('prevCanvas');
+  var vid=document.getElementById('prevVideo');
+  var ctx=canvas.getContext('2d');
+  var lastPlatform=_prevPlatform;
+  var p=PLATFORMS[_prevPlatform]||PLATFORMS.reel;
+  canvas.width=p.w; canvas.height=p.h;
+
+  function drawPrevFrame(){
+    p=PLATFORMS[_prevPlatform]||PLATFORMS.reel;
+    var s=STYLES[_style];
+    if(canvas.width!==p.w||canvas.height!==p.h){canvas.width=p.w;canvas.height=p.h;}
+    ctx.clearRect(0,0,p.w,p.h);
+
+    if(vid.readyState>=2&&vid.videoWidth){
+      ctx.save();ctx.filter=s.filter;
+      var vr=vid.videoWidth/vid.videoHeight,cr=p.w/p.h;
+      var sw,sh,sx,sy;
+      if(vr>cr){sh=vid.videoHeight;sw=sh*cr;sx=(vid.videoWidth-sw)/2;sy=0;}
+      else{sw=vid.videoWidth;sh=sw/cr;sy=(vid.videoHeight-sh)/2;sx=0;}
+      ctx.drawImage(vid,sx,sy,sw,sh,0,0,p.w,p.h);
+      ctx.restore();
+
+      var ct=vid.currentTime;
+
+      // Preload broll images eagerly
+      brollQueue.forEach(function(b){if(!b._img){b._img=new Image();b._img.crossOrigin='anonymous';b._img.src=b.imageUrl;}});
+      var activeBroll=brollQueue.find(function(b){return b.clipIdx===0&&ct>=b.time&&ct<b.time+b.duration;});
+      if(activeBroll&&activeBroll._img&&activeBroll._img.complete&&activeBroll._img.naturalWidth){
+        var bimg=activeBroll._img;
+        ctx.save();ctx.filter=s.filter;
+        var bir=bimg.naturalWidth/bimg.naturalHeight,bcr=p.w/p.h;
+        var bsw,bsh,bsx,bsy;
+        if(bir>bcr){bsh=bimg.naturalHeight;bsw=bsh*bcr;bsx=(bimg.naturalWidth-bsw)/2;bsy=0;}
+        else{bsw=bimg.naturalWidth;bsh=bsw/bcr;bsy=(bimg.naturalHeight-bsh)/2;bsx=0;}
+        ctx.drawImage(bimg,bsx,bsy,bsw,bsh,0,0,p.w,p.h);
+        ctx.restore();
+        var lh=Math.round(p.h*0.075);
+        ctx.fillStyle='rgba(0,0,0,.72)';ctx.fillRect(0,p.h-lh,p.w,lh);
+        ctx.fillStyle='rgba(201,160,48,.95)';
+        ctx.font='bold '+Math.round(p.w*0.034)+'px Arial';ctx.textAlign='center';
+        ctx.fillText(activeBroll.keyword.toUpperCase(),p.w/2,p.h-Math.round(lh*0.2));
+      }
+
+      var caps=getAllCaptions();
+      if(caps.length){
+        var capIdx=0;
+        for(var ci2=0;ci2<caps.length-1;ci2++){if(caps[ci2+1].t<=ct)capIdx=ci2+1;}
+        var cap=caps[capIdx];
+        if(cap&&ct>=cap.t&&ct-cap.t<4){
+          drawCaption(ctx,cap,ct,p.w,p.h,_capStyle,_style,document.getElementById('captionPos').value);
+        }
+      }
+
+      ctx.save();ctx.globalAlpha=0.4;ctx.fillStyle='#fff';
+      ctx.font='bold '+Math.round(p.w*0.022)+'px Arial';ctx.textAlign='right';
+      ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=3;
+      ctx.fillText('ImpactGrid',p.w-10,Math.round(p.w*0.022)+8);
+      ctx.restore();
+    } else {
+      ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,p.w,p.h);
+    }
+
+    if(vid.duration){
+      document.getElementById('prevScrub').value=vid.currentTime;
+      document.getElementById('prevTimeLabel').textContent=capFmtTime(vid.currentTime)+' / '+capFmtTime(vid.duration);
+    }
+    _prevRAF=requestAnimationFrame(drawPrevFrame);
+  }
+  drawPrevFrame();
+}
+
+function prevPlayPause(){
+  var vid=document.getElementById('prevVideo');
+  var btn=document.getElementById('prevPlayBtn');
+  if(!vid.src||!clips.length) return;
+  if(vid.paused){vid.play();btn.textContent='⏸';_prevPlaying=true;}
+  else{vid.pause();btn.textContent='▶';_prevPlaying=false;}
+}
+
+function prevScrubTo(val){
+  var vid=document.getElementById('prevVideo');
+  if(vid.duration) vid.currentTime=parseFloat(val);
+}
+
+// getCaptions now returns recorded+manual captions (no more broken hidden video)
+function getCaptions(){
+  return Promise.resolve(getAllCaptions());
+}
 
 // ── Draw caption / overlays ───────────────────────────────────────
-function drawCaption(ctx,cap,t,pw,ph,capStyle,style,pos){if(!cap)return;var s=STYLES[style];var cfs=Math.round(pw*0.044);var cy=pos==='top'?ph*0.07:ph*0.79;if(capStyle==='tiktok'){var words=cap.text.split(' ');var wordIdx=Math.floor((t-cap.t)/0.4)%words.length;words.forEach(function(w,wi){ctx.save();var isCurrent=(wi===wordIdx);ctx.font='bold '+Math.round(pw*(isCurrent?0.052:0.044))+'px Arial';var ww=ctx.measureText(w).width;var startX=pw/2-(ctx.measureText(cap.text).width/2);var wx=startX;for(var k=0;k<wi;k++)wx+=ctx.measureText(words[k]+' ').width;var wh=Math.round(pw*(isCurrent?0.052:0.044))+12;ctx.fillStyle=isCurrent?s.highlightColor:s.captionBg;if(ctx.roundRect)ctx.roundRect(wx-4,cy-wh+4,ww+8,wh,5);else ctx.rect(wx-4,cy-wh+4,ww+8,wh);ctx.fill();ctx.fillStyle=isCurrent?'#000':s.captionColor;ctx.textAlign='left';ctx.fillText(w,wx,cy);ctx.restore();});}else if(capStyle==='bar'){ctx.save();ctx.fillStyle=s.captionBg;ctx.fillRect(0,cy-cfs-8,pw,cfs+22);ctx.fillStyle=s.captionColor;ctx.font=s.captionFont.replace(/[0-9]+px/,cfs+'px');ctx.textAlign='center';ctx.fillText(cap.text,pw/2,cy+cfs*0.1);ctx.restore();}else{ctx.save();ctx.font=s.captionFont.replace(/[0-9]+px/,cfs+'px');var tw=Math.min(ctx.measureText(cap.text).width+28,pw*0.9);var ch=cfs+22;var cx=(pw-tw)/2;ctx.fillStyle=s.highlightColor;if(ctx.roundRect)ctx.roundRect(cx,cy,tw,ch,8);else ctx.rect(cx,cy,tw,ch);ctx.fill();ctx.fillStyle='#000';ctx.textAlign='center';ctx.fillText(cap.text,pw/2,cy+cfs+4);ctx.restore();}}
+function drawCaption(ctx,cap,t,pw,ph,capStyle,style,pos){
+  if(!cap||!cap.text)return;
+  var s=STYLES[style]||STYLES.professional;
+  var fs=Math.round(pw*0.048); // font size relative to canvas width
+  // cy = baseline Y for text. Bottom = 88% down, Top = 10% down
+  var cy=pos==='top'? Math.round(ph*0.10)+fs : Math.round(ph*0.82);
+  ctx.save();
+  if(capStyle==='tiktok'){
+    // Word-by-word: each word gets its own pill, active word is bigger/orange
+    var words=cap.text.split(' ');
+    var elapsed=t-cap.t;
+    var wordIdx=Math.min(Math.floor(elapsed/0.38),words.length-1);
+    // measure total width to center row
+    ctx.font='bold '+fs+'px Arial';
+    var totalW=0;
+    words.forEach(function(w){totalW+=ctx.measureText(w).width+Math.round(pw*0.018);});
+    var startX=pw/2-totalW/2;
+    var rx=startX;
+    words.forEach(function(w,wi){
+      var isCurrent=(wi===wordIdx);
+      var wfs=isCurrent?Math.round(fs*1.15):fs;
+      ctx.font='bold '+wfs+'px Arial';
+      var ww=ctx.measureText(w).width;
+      var pad=Math.round(pw*0.012);
+      var boxH=wfs+Math.round(ph*0.014);
+      var boxY=cy-wfs;
+      ctx.fillStyle=isCurrent?'#ff5c1a':'rgba(0,0,0,0.72)';
+      if(ctx.roundRect)ctx.roundRect(rx-pad,boxY,ww+pad*2,boxH,4);
+      else{ctx.beginPath();ctx.rect(rx-pad,boxY,ww+pad*2,boxH);}
+      ctx.fill();
+      ctx.fillStyle='#ffffff';
+      ctx.textAlign='left';
+      ctx.fillText(w,rx,cy-Math.round(ph*0.003));
+      rx+=ww+pad*2+Math.round(pw*0.006);
+    });
+  } else if(capStyle==='bar'){
+    // Full-width bar behind text
+    var barH=fs+Math.round(ph*0.025);
+    ctx.fillStyle='rgba(0,0,0,0.78)';
+    ctx.fillRect(0,cy-fs-Math.round(ph*0.008),pw,barH);
+    ctx.fillStyle='#ffffff';
+    ctx.font='bold '+fs+'px Arial';
+    ctx.textAlign='center';
+    ctx.fillText(cap.text,pw/2,cy);
+  } else {
+    // Highlight style: yellow pill around full sentence
+    ctx.font='bold '+fs+'px Arial';
+    var tw=Math.min(ctx.measureText(cap.text).width+Math.round(pw*0.06),pw*0.92);
+    var boxH=fs+Math.round(ph*0.024);
+    var bx=(pw-tw)/2;
+    var by=cy-fs-Math.round(ph*0.006);
+    ctx.fillStyle='#f0c93a';
+    if(ctx.roundRect)ctx.roundRect(bx,by,tw,boxH,6);
+    else{ctx.beginPath();ctx.rect(bx,by,tw,boxH);}
+    ctx.fill();
+    ctx.fillStyle='#111111';
+    ctx.textAlign='center';
+    ctx.fillText(cap.text,pw/2,cy);
+  }
+  ctx.restore();
+}
 function drawOverlays(ctx,t,duration,pw,ph,style){var s=STYLES[style];overlays.forEach(function(o){if(!o.text)return;var show=(o.timing==='full')||(o.timing==='start'&&t<3)||(o.timing==='end'&&t>duration-3);if(!show)return;ctx.save();var ofs=Math.round(pw*0.046);ctx.font='bold '+ofs+'px Arial';var tw=ctx.measureText(o.text).width+24;var ox=(pw-tw)/2;var oy=o.position==='top'?ph*0.05:o.position==='middle'?ph*0.46:ph*0.88;ctx.fillStyle='rgba(0,0,0,0.75)';if(ctx.roundRect)ctx.roundRect(ox,oy,tw,ofs+18,7);else ctx.rect(ox,oy,tw,ofs+18);ctx.fill();ctx.fillStyle=s.accentColor;ctx.textAlign='center';ctx.fillText(o.text,pw/2,oy+ofs+2);ctx.restore();});}
 
 // ── FIXED music fetch with timeout ────────────────────────────────
@@ -1300,11 +1752,8 @@ async function startRender(){
   document.getElementById('stProc').style.display='block';
   document.getElementById('stDone').style.display='none';
   try{
-    // Captions — short timeout so it never hangs
-    setProgress(2,'Getting captions...','Listening for speech...');
-    var captionPromise=getCaptions(clips[0].file);
-    var captionTimeout=new Promise(function(r){setTimeout(function(){r([]);},15000);});
-    var captions=await Promise.race([captionPromise,captionTimeout]);
+    setProgress(2,'Getting captions...','Reading recorded captions...');
+    var captions=await getCaptions();
     setProgress(15,'Captions ready',captions.length+' segments');
 
     // FIXED: music with 6s timeout — will never hang at 25% again
