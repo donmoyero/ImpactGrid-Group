@@ -233,10 +233,12 @@ function setListeningUI(on){
 function showCaptionOverlay(text){
   captionPreview.textContent = text;
   captionPreview.style.display = 'block';
+  captionPreview.style.opacity = '1';
   clearTimeout(captionPreview._t);
   captionPreview._t = setTimeout(function(){
-    captionPreview.style.display = 'none';
-  }, 3000);
+    captionPreview.style.opacity = '0';
+    setTimeout(function(){ captionPreview.style.display = 'none'; }, 400);
+  }, 2800);
 }
 
 // ── Save captions ──────────────────────────────────────────────
@@ -304,80 +306,76 @@ function extractKeywords(text){
 }
 
 // ── B-Roll image fetch — 3 free sources, no key needed ────────
+// Uses allSettled so all 3 run in parallel; first valid result wins.
 async function fetchBrollImage(keyword, timestamp){
-  brollStatus.textContent = 'Finding image for "' + keyword + '"…';
+  brollStatus.textContent = 'Finding "' + keyword + '"…';
 
-  var img = await Promise.any([
-    fetchFromPicsum(keyword),
-    fetchFromLoremflickr(keyword),
-    fetchFromWikipedia(keyword)
-  ]).catch(function(){ return null; });
+  // Build candidate URLs immediately — no pre-flight needed
+  var candidates = buildImageCandidates(keyword);
 
-  if(!img){
-    brollStatus.textContent = 'No image found for "' + keyword + '"';
+  // Try each URL as an actual loadable image
+  var url = await firstLoadableImage(candidates);
+
+  if(!url){
+    brollStatus.textContent = 'Could not find image for "' + keyword + '"';
     return;
   }
 
-  brollStatus.textContent = 'Images auto-detected from speech';
+  brollStatus.textContent = 'Auto-detected: ' + keyword;
 
-  // Add to grid
+  // Add thumbnail to B-Roll grid
   var el = document.createElement('img');
-  el.src   = img.url;
-  el.title = keyword + ' · ' + img.source;
+  el.src     = url;
+  el.title   = keyword;
   el.loading = 'eager';
-  el.onerror = function(){ this.parentNode && this.parentNode.removeChild(this); };
-  el.onclick = function(){ overlayBroll(img.url); };
+  el.onerror = function(){ this.remove(); };
+  el.onclick = function(){ overlayBroll(url); };
   brollGrid.prepend(el);
 
-  // Auto-insert as B-roll at the given timestamp
-  autoBroll.push({ url: img.url, t: timestamp, dur: 2.5, el: el });
+  // Queue for auto-overlay when video reaches this timestamp
+  autoBroll.push({ url: url, t: timestamp, dur: 3, shown: false });
 }
 
-// Picsum — always works, beautiful photography, no key
-async function fetchFromPicsum(keyword){
-  // Hash keyword to a consistent image ID
+// Generate candidate image URLs for a keyword — no fetch needed upfront
+function buildImageCandidates(keyword){
+  var enc  = encodeURIComponent(keyword);
   var hash = 0;
   for(var i=0;i<keyword.length;i++) hash = (hash*31+keyword.charCodeAt(i)) & 0xffff;
-  var id = (hash % 850) + 50;
-  var ctrl = new AbortController();
-  setTimeout(function(){ ctrl.abort(); }, 5000);
-  var r = await fetch('https://picsum.photos/id/' + id + '/info', { signal: ctrl.signal });
-  if(!r.ok) throw new Error('picsum');
-  var info = await r.json();
-  return {
-    url:    'https://picsum.photos/id/' + id + '/800/450',
-    source: 'Picsum / ' + (info.author || 'photographer')
-  };
+  var seed = (hash % 9000) + 100;
+
+  return [
+    // Loremflickr — real themed photos, redirects to actual Flickr image
+    'https://loremflickr.com/800/450/' + enc + '?lock=' + seed,
+    'https://loremflickr.com/800/450/' + enc + '?lock=' + (seed+1),
+    // Picsum — beautiful curated photos (random, not keyword-based but always loads)
+    'https://picsum.photos/seed/' + enc + '/800/450',
+    'https://picsum.photos/seed/' + enc + '2/800/450',
+    // Placeholder fallback with keyword label
+    'https://placehold.co/800x450/1a1a1a/f0c93a?text=' + enc
+  ];
 }
 
-// Loremflickr — real themed stock photos, no key
-async function fetchFromLoremflickr(keyword){
-  var seed = Math.floor(Math.random() * 9999);
-  var url  = 'https://loremflickr.com/800/450/' + encodeURIComponent(keyword) + '?lock=' + seed;
-  // Returns redirect — use as img src directly (no-cors safe for images)
-  return { url: url, source: 'Loremflickr' };
-}
-
-// Wikipedia Commons — huge free image library
-async function fetchFromWikipedia(keyword){
-  var ctrl = new AbortController();
-  setTimeout(function(){ ctrl.abort(); }, 6000);
-  var api = 'https://en.wikipedia.org/w/api.php?action=query&generator=search' +
-    '&gsrsearch=' + encodeURIComponent(keyword) +
-    '&gsrnamespace=6&prop=imageinfo&iiprop=url&iiurlwidth=800' +
-    '&format=json&origin=*&gsrlimit=5';
-  var r = await fetch(api, { signal: ctrl.signal });
-  if(!r.ok) throw new Error('wiki');
-  var d = await r.json();
-  if(!d.query || !d.query.pages) throw new Error('wiki empty');
-  var pages = Object.values(d.query.pages);
-  var imgs  = pages.filter(function(p){
-    var u = (p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url) || '';
-    return /\.(jpg|jpeg|png)/i.test(u);
+// Try loading each URL as an <img> — return first that loads successfully
+function firstLoadableImage(urls){
+  return new Promise(function(resolve){
+    var resolved = false;
+    var failed   = 0;
+    urls.forEach(function(url){
+      var img    = new Image();
+      img.onload = function(){
+        if(!resolved){ resolved = true; resolve(url); }
+      };
+      img.onerror = function(){
+        failed++;
+        if(failed === urls.length && !resolved) resolve(null);
+      };
+      img.src = url;
+    });
+    // Safety timeout — 8 seconds max
+    setTimeout(function(){
+      if(!resolved){ resolved = true; resolve(urls[2]); } // fall back to picsum
+    }, 8000);
   });
-  if(!imgs.length) throw new Error('wiki no images');
-  var pick = imgs[Math.floor(Math.random() * imgs.length)];
-  return { url: pick.imageinfo[0].url, source: 'Wikipedia Commons' };
 }
 
 // ── Auto B-roll overlay on preview ────────────────────────────
@@ -386,22 +384,32 @@ setInterval(function(){
   if(prevVideo.paused || !prevVideo.duration) return;
   var now = prevVideo.currentTime;
   autoBroll.forEach(function(b){
-    if(!b._shown && now >= b.t && now < b.t + b.dur){
-      b._shown = true;
+    if(!b.shown && now >= b.t && now < b.t + b.dur){
+      b.shown = true;
       overlayBroll(b.url);
     }
   });
 }, 200);
 
 function overlayBroll(url){
+  var preview = document.querySelector('.preview');
+  if(!preview) return;
   var img = document.createElement('img');
   img.src = url;
   img.style.cssText =
-    'position:absolute;inset:0;width:100%;height:100%;' +
+    'position:absolute;top:0;left:0;width:100%;height:100%;' +
     'object-fit:cover;z-index:10;border-radius:10px;' +
-    'animation:fadeIn .3s ease';
-  document.getElementById('previewBox').appendChild(img);
-  setTimeout(function(){ img.remove(); }, 2500);
+    'opacity:0;transition:opacity .35s ease;';
+  preview.appendChild(img);
+  // Fade in
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){ img.style.opacity = '1'; });
+  });
+  // Fade out and remove
+  setTimeout(function(){
+    img.style.opacity = '0';
+    setTimeout(function(){ img.remove(); }, 400);
+  }, 2600);
 }
 
 // ── Export ─────────────────────────────────────────────────────
