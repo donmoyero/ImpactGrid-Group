@@ -1,203 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>ImpactGrid Creator Studio</title>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="upload.css">
-
-<style>
-
-body{
-background:#080808;
-color:#f0ebe5;
-font-family:DM Sans,Arial;
-margin:0;
-}
-
-.topbar{
-height:56px;
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 24px;
-border-bottom:1px solid #222;
-background:#0f0f0f;
-}
-
-.main{
-display:grid;
-grid-template-columns:1fr 320px;
-gap:20px;
-padding:20px;
-}
-
-.card{
-background:#141414;
-border:1px solid #222;
-border-radius:10px;
-padding:16px;
-}
-
-.btn{
-background:#ff5c1a;
-color:#fff;
-border:none;
-padding:10px 16px;
-border-radius:6px;
-cursor:pointer;
-font-weight:600;
-}
-
-.btn:hover{
-background:#c94010;
-}
-
-.clip-zone{
-border:2px dashed #333;
-border-radius:10px;
-padding:30px;
-text-align:center;
-cursor:pointer;
-}
-
-.clip-zone:hover{
-border-color:#ff5c1a;
-}
-
-.preview{
-position:relative;
-background:#000;
-border-radius:10px;
-overflow:hidden;
-aspect-ratio:9/16;
-}
-
-.preview video{
-width:100%;
-height:100%;
-object-fit:cover;
-}
-
-.caption-preview{
-position:absolute;
-bottom:12%;
-left:50%;
-transform:translateX(-50%);
-background:rgba(0,0,0,.75);
-padding:6px 10px;
-border-radius:6px;
-font-weight:bold;
-}
-
-.broll-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:6px;
-margin-top:10px;
-}
-
-.broll-grid img{
-width:100%;
-border-radius:6px;
-cursor:pointer;
-}
-
-</style>
-
 </head>
-
 <body>
 
+<!-- TOPBAR -->
 <div class="topbar">
-<div style="font-weight:700">ImpactGrid Creator Studio</div>
-<div>
-<button class="btn" onclick="startRender()">Export Video</button>
-</div>
+  <div class="topbar-brand">
+    <img src="logo.png" alt="" class="topbar-logo" onerror="this.style.display='none'">
+    <span>ImpactGrid Creator Studio</span>
+  </div>
+  <div class="topbar-right">
+    <div id="listenPill" class="listen-pill" style="display:none">
+      <span class="listen-dot"></span>
+      <span id="listenLabel">Listening…</span>
+    </div>
+    <a href="dashboard.html" class="btn-ghost-top">← Dashboard</a>
+    <button class="btn-export" onclick="startRender()">⬇ Export</button>
+  </div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
-<div>
+  <!-- LEFT -->
+  <div class="left-col">
 
-<div class="card">
+    <!-- Step 1: Upload -->
+    <div class="card">
+      <div class="card-label">Step 1 — Add Clips</div>
+      <label class="clip-zone" id="clipZone">
+        <input type="file" id="clipInput" accept="video/*" multiple style="display:none">
+        <div class="cz-icon">🎬</div>
+        <div class="cz-main">Drop clips here or click to browse</div>
+        <div class="cz-sub">Up to 5 clips · MP4 MOV WebM</div>
+      </label>
+      <div id="clipList"></div>
+    </div>
 
-<h3>Upload Clips</h3>
+    <!-- Step 2: AI Edit -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-label">Step 2 — AI Auto-Edit</div>
+      <button class="btn-primary full" onclick="autoEdit()">▶ Auto Edit &amp; Listen</button>
+      <div class="hint">
+        Plays preview · mic captures speech · captions + B-roll images generated automatically
+      </div>
+      <!-- Live transcript box -->
+      <div id="liveBox" class="live-box" style="display:none"></div>
+      <!-- Saved captions -->
+      <div id="captionList" style="display:none;margin-top:10px">
+        <div class="cap-list-hd">
+          <span id="capCount" style="font-size:11px;color:#888"></span>
+          <button onclick="clearCaptions()" class="btn-tiny">🗑 Clear</button>
+        </div>
+        <div id="capItems"></div>
+      </div>
+      <!-- Stop button -->
+      <button id="stopBtn" class="btn-stop" style="display:none;margin-top:10px" onclick="stopListening()">⏹ Stop Listening</button>
+    </div>
 
-<label class="clip-zone">
+    <!-- Step 3: Export -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-label">Step 3 — Export</div>
+      <div class="plat-grid">
+        <label class="plat-opt"><input type="checkbox" id="fmtReel" checked><span>Instagram Reel</span></label>
+        <label class="plat-opt"><input type="checkbox" id="fmtTiktok" checked><span>TikTok</span></label>
+        <label class="plat-opt"><input type="checkbox" id="fmtYoutube"><span>YouTube</span></label>
+        <label class="plat-opt"><input type="checkbox" id="fmtLinkedin"><span>LinkedIn</span></label>
+      </div>
+      <button class="btn-primary full" style="margin-top:12px" onclick="startRender()">⬇ Render &amp; Download</button>
+      <div id="renderStatus" style="display:none;margin-top:10px">
+        <div class="rbar-wrap"><div class="rbar" id="rbar"></div></div>
+        <div id="rLabel" class="rlabel">Starting…</div>
+      </div>
+    </div>
 
-<input type="file" id="clipInput" accept="video/*" multiple style="display:none">
+  </div>
 
-<div>
-🎬 Drop clips here or click
+  <!-- RIGHT -->
+  <div class="right-col">
+
+    <!-- Preview -->
+    <div class="card">
+      <div class="card-label">Preview</div>
+      <div class="preview" id="previewBox">
+        <video id="prevVideo" playsinline></video>
+        <div class="cap-overlay" id="captionPreview"></div>
+        <div class="prev-empty" id="prevEmpty">
+          <div style="font-size:2.2rem">🎬</div>
+          <div style="font-size:12px;color:#555;margin-top:6px">Add clips to preview</div>
+        </div>
+      </div>
+      <div class="prev-ctrl">
+        <button class="btn-ctrl" onclick="playPreview()">▶</button>
+        <button class="btn-ctrl" onclick="pausePreview()">⏸</button>
+        <span id="timeLbl" class="time-lbl">0:00</span>
+      </div>
+    </div>
+
+    <!-- B-Roll -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-label">AI B-Roll Images</div>
+      <div id="brollStatus" class="broll-status">Detected images appear here as you speak…</div>
+      <div id="brollGrid" class="broll-grid"></div>
+    </div>
+
+  </div>
 </div>
 
-</label>
-
-<div id="clipList"></div>
-
-</div>
-
-
-<div class="card" style="margin-top:16px">
-
-<h3>AI Editing</h3>
-
-<button class="btn" onclick="autoEdit()">Auto Edit Story</button>
-
-<p style="font-size:12px;color:#777;margin-top:6px">
-Speech detection → captions → visuals → render
-</p>
-
-</div>
-
-</div>
-
-
-<div>
-
-<div class="card">
-
-<h3>Preview</h3>
-
-<div class="preview">
-
-<video id="prevVideo" muted playsinline></video>
-
-<div class="caption-preview" id="captionPreview">
-Caption preview
-</div>
-
-</div>
-
-<div style="margin-top:10px">
-
-<button class="btn" onclick="playPreview()">Play</button>
-
-<button class="btn" onclick="pausePreview()">Pause</button>
-
-</div>
-
-</div>
-
-
-<div class="card" style="margin-top:16px">
-
-<h3>AI B-Roll Images</h3>
-
-<div id="brollGrid" class="broll-grid"></div>
-
-</div>
-
-</div>
-
-</div>
-
-
+<div id="toast" class="toast"></div>
 <script src="upload.js"></script>
-
 </body>
 </html>
