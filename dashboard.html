@@ -441,7 +441,8 @@ async function sbSelect(t,q){
 
 // ── Sidebar ────────────────────────────────────────
 (function(){
-  function svg(d){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0">'+d+'</svg>';}
+  var pg=_PAGE;
+  function s(d){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0">'+d+'</svg>';}
   var I={
     db:  '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
     up:  '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
@@ -455,68 +456,65 @@ async function sbSelect(t,q){
     inf: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>',
     mail:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
     doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
-    chev:'<polyline points="9 18 15 12 9 6"/>',
   };
-  var SECS={studio:I.up, tools:I.cal, market:I.usr, svc:I.star, co:I.inf};
+  var chevSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev" style="width:11px;height:11px;margin-left:auto;opacity:.38;transition:transform .22s"><polyline points="9 18 15 12 9 6"/></svg>';
 
-  function sec(id, iconKey, label, items){
-    var hasActive=items.some(function(it){return it.href && it.href===_PAGE;});
-    var html='<div class="sb-sec'+(hasActive?' open':'')+'" id="sec_'+id+'">';
-    html+='<div class="sb-sec-hd" onclick="toggleSec(\''+id+'\')">'+
-      svg(SECS[iconKey])+label+
-      svg(I.chev).replace('style="width:13px;height:13px;flex-shrink:0"','class="chev" style="width:11px;height:11px;flex-shrink:0;margin-left:auto;opacity:.4;transition:transform .22s"')+
-    '</div><div class="sb-sub">';
-    items.forEach(function(it){
+  // Build a section with sub-items
+  function sec(id, secIcon, label, items){
+    var hasActive=false;
+    for(var i=0;i<items.length;i++){if(items[i].href&&items[i].href===pg){hasActive=true;break;}}
+    var out='<div class="sb-sec'+(hasActive?' open':'')+'" id="sec_'+id+'">';
+    out+='<div class="sb-sec-hd" onclick="toggleSec(this)">'+s(secIcon)+label+chevSvg+'</div>';
+    out+='<div class="sb-sub">';
+    for(var j=0;j<items.length;j++){
+      var it=items[j];
       if(it.soon){
-        html+='<div class="si-soon">'+svg(it.ic||I.inf)+it.label+'<span class="soon-tag">soon</span></div>';
+        out+='<div class="si-soon">'+s(it.ic)+it.label+'<span class="soon-tag">soon</span></div>';
       } else {
-        var on=_PAGE===it.href?' on':'';
-        var tag=it.isnew?'<span class="new-tag">NEW</span>':'';
-        html+='<a href="'+it.href+'" class="si'+on+'">'+svg(it.ic||I.inf)+it.label+tag+'</a>';
+        out+='<a href="'+it.href+'" class="si'+(pg===it.href?' on':'')+'">'+s(it.ic)+it.label+(it.isnew?'<span class="new-tag">NEW</span>':'')+'</a>';
       }
-    });
-    html+='</div></div>';
-    return html;
+    }
+    out+='</div></div>';
+    return out;
   }
 
-  var dashOn=_PAGE==='dashboard.html'?' on':'';
   var html=
-    '<a href="dashboard.html" class="sb-dash'+dashOn+'">'+svg(I.db)+'Dashboard</a>'+
-    sec('studio','studio','Creator Studio',[
-      {href:'upload.html', ic:I.up,   label:'Upload & Edit', isnew:true},
-      {soon:true,          ic:I.doc,  label:'Projects'},
-      {soon:true,          ic:I.cam,  label:'Media Library'},
+    '<a href="dashboard.html" class="sb-dash'+(pg==='dashboard.html'?' on':'')+'">'+s(I.db)+'Dashboard</a>'+
+    sec('studio', I.up, 'Creator Studio', [
+      {href:'upload.html',     ic:I.up,   label:'Upload & Edit', isnew:true},
+      {soon:true,              ic:I.doc,  label:'Projects'},
+      {soon:true,              ic:I.cam,  label:'Media Library'},
     ])+
-    sec('tools','tools','Content Tools',[
-      {href:'calendar.html', ic:I.cal,  label:'Content Calendar'},
-      {href:'schedule.html', ic:I.clk,  label:'Posting Schedule'},
-      {href:'trending.html', ic:I.tnd,  label:'Trending Topics'},
-      {soon:true,            ic:I.star, label:'Campaign Planner'},
+    sec('tools', I.cal, 'Content Tools', [
+      {href:'calendar.html',   ic:I.cal,  label:'Content Calendar'},
+      {href:'schedule.html',   ic:I.clk,  label:'Posting Schedule'},
+      {href:'trending.html',   ic:I.tnd,  label:'Trending Topics'},
+      {soon:true,              ic:I.star, label:'Campaign Planner'},
     ])+
-    sec('market','market','Marketplace',[
-      {href:'creators.html', ic:I.usr,  label:'Book a Creator'},
-      {soon:true,            ic:I.usr,  label:'Creator Profiles'},
-      {soon:true,            ic:I.doc,  label:'My Jobs'},
-      {href:'tracker.html',  ic:I.map,  label:'Live Tracker'},
+    sec('market', I.usr, 'Marketplace', [
+      {href:'creators.html',   ic:I.usr,  label:'Book a Creator'},
+      {soon:true,              ic:I.usr,  label:'Creator Profiles'},
+      {soon:true,              ic:I.doc,  label:'My Jobs'},
+      {href:'tracker.html',    ic:I.map,  label:'Live Tracker'},
     ])+
-    sec('svc','svc','Services',[
-      {href:'photography.html', ic:I.cam,  label:'Photography'},
-      {soon:true,               ic:I.up,   label:'Video Production'},
-      {soon:true,               ic:I.star, label:'Brand Campaigns'},
-      {href:'services.html',    ic:I.star, label:'All Services'},
+    sec('svc', I.star, 'Services', [
+      {href:'photography.html',ic:I.cam,  label:'Photography'},
+      {soon:true,              ic:I.up,   label:'Video Production'},
+      {soon:true,              ic:I.star, label:'Brand Campaigns'},
+      {href:'services.html',   ic:I.star, label:'All Services'},
     ])+
-    sec('co','co','Company',[
-      {href:'about.html',    ic:I.inf,  label:'About Us'},
-      {href:'contact.html',  ic:I.mail, label:'Contact'},
-      {href:'contact.html',  ic:I.doc,  label:'Support'},
+    sec('co', I.inf, 'Company', [
+      {href:'about.html',      ic:I.inf,  label:'About Us'},
+      {href:'contact.html',    ic:I.mail, label:'Contact'},
+      {href:'contact.html',    ic:I.doc,  label:'Support'},
     ]);
 
   document.getElementById('sbNav').innerHTML=html;
 })();
 
-function toggleSec(id){
-  var el=document.getElementById('sec_'+id);
-  if(el)el.classList.toggle('open');
+function toggleSec(el){
+  var sec=el.closest('.sb-sec');
+  if(sec)sec.classList.toggle('open');
 }
 
 function openNav(){document.getElementById('sb').classList.add('open');document.getElementById('ov').style.display='block';}
