@@ -190,7 +190,10 @@ function brollExtractKeywords(text){
 }
 
 // Pexels key persistence
-(function(){try{var k=localStorage.getItem('ig-pexels-key');if(k){var el=document.getElementById('pexelsKey');if(el)el.value=k;}}catch(e){}})();
+(function(){
+  try{var k=localStorage.getItem('ig-pexels-key');if(k){var el=document.getElementById('pexelsKey');if(el)el.value=k;}}catch(e){}
+  try{var ok=localStorage.getItem('ig-openai-key');if(ok){var oel=document.getElementById('openaiKey');if(oel)oel.value=ok;}}catch(e){}
+})();
 function savePexelsKey(v){try{localStorage.setItem('ig-pexels-key',v);}catch(e){}}
 function getPexelsKey(){var el=document.getElementById('pexelsKey');return el?el.value.trim():'';}
 
@@ -702,23 +705,120 @@ function captureThumbnail(){
 function setProgress(pct,label,log){document.getElementById('procBar').style.width=pct+'%';document.getElementById('procPct').textContent=Math.round(pct)+'%';if(label)document.getElementById('procLabel').textContent=label;if(log)document.getElementById('procLog').textContent=log;}
 
 // ── CAPTION RECORDING SYSTEM (mic-based, real timestamps) ────────
-// ── AUTO CAPTION SYSTEM ─────────────────────────────────────────
-// Fully automatic: starts listening as soon as mic permission is granted.
-// User speaks while preview plays — words stamped with video timestamps.
-var _recordedCaptions=[];
-var _manualCaptions=[];
-var _autoCapOn=false;       // mic is open and listening
-var _capMicGranted=false;   // mic permission has been given
-var _capRec=null;
-var _capRecStart=0;
-var _prevVideoRef=null;     // reference to preview video for timestamps
+// ── CAPTION + B-ROLL ENGINE ──────────────────────────────────────
+// Two modes work together automatically:
+//   1. Whisper API  — transcribes the video's own audio (needs OpenAI key)
+//   2. Mic listener — captures your voiceover in real time (no key needed)
+// Both feed the same B-roll keyword engine simultaneously.
 
-// Called once when clips are added — auto-starts if mic already granted
-function autoCapInit(){
-  if(_capMicGranted&&!_autoCapOn) autoCapStart();
+var _recordedCaptions = [];
+var _manualCaptions   = [];
+var _autoCapOn        = false;
+var _capMicGranted    = false;
+var _capRec           = null;
+var _capRecStart      = 0;
+var _prevVideoRef     = null;
+var _whisperLoading   = false;
+
+// ── Whisper transcription (OpenAI) ───────────────────────────────
+function getOpenAIKey(){
+  var el=document.getElementById('openaiKey');
+  var stored='';
+  try{stored=localStorage.getItem('ig-openai-key')||'';}catch(e){}
+  return (el?el.value.trim():'')||stored;
+}
+function saveOpenAIKey(v){
+  try{localStorage.setItem('ig-openai-key',v);}catch(e){}
+}
+// Called automatically when a clip is loaded
+async function whisperTranscribe(clipFile){
+  var key=getOpenAIKey();
+  if(!key||_whisperLoading) return;
+  _whisperLoading=true;
+  whisperSetStatus('loading','Transcribing audio with Whisper…');
+  try{
+    // Extract audio as webm blob — slice first 25MB max (Whisper limit)
+    var blob=clipFile.size>25*1024*1024
+      ? clipFile.slice(0,25*1024*1024,clipFile.type)
+      : clipFile;
+    var form=new FormData();
+    form.append('file', blob, 'audio.'+((clipFile.name||'a').split('.').pop()||'mp4'));
+    form.append('model','whisper-1');
+    form.append('response_format','verbose_json'); // gives word-level timestamps
+    form.append('language','en');
+    var r=await fetch('https://api.openai.com/v1/audio/transcriptions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+key},
+      body:form
+    });
+    if(!r.ok){
+      var err=await r.json().catch(function(){return {};});
+      throw new Error(err.error&&err.error.message||'Whisper API error '+r.status);
+    }
+    var data=await r.json();
+    // Parse segments into caption chunks
+    _recordedCaptions=[];
+    if(data.segments&&data.segments.length){
+      data.segments.forEach(function(seg){
+        // Split long segments at ~6 words
+        var words=seg.text.trim().split(/\s+/);
+        var chunk=[],chunkStart=seg.start;
+        var segDur=(seg.end-seg.start)/Math.max(1,Math.ceil(words.length/6));
+        words.forEach(function(w,wi){
+          chunk.push(w);
+          if(chunk.length>=6||(wi===words.length-1)){
+            _recordedCaptions.push({text:chunk.join(' '),t:Math.max(0,chunkStart)});
+            chunkStart+=segDur;
+            chunk=[];
+          }
+        });
+        // Also extract keywords from each segment for B-roll
+        triggerBrollFromSpeech(seg.text);
+      });
+    } else if(data.text){
+      // Fallback: no segment timestamps, distribute evenly
+      var words=data.text.trim().split(/\s+/);
+      var vid=_prevVideoRef;
+      var total=vid&&vid.duration?vid.duration:words.length*0.5;
+      var chunk=[],t=0,wps=words.length/total;
+      words.forEach(function(w,wi){
+        chunk.push(w);
+        if(chunk.length>=6||(wi===words.length-1)){
+          _recordedCaptions.push({text:chunk.join(' '),t:Math.max(0,t)});
+          t+=chunk.length/Math.max(wps,0.5);
+          chunk=[];
+        }
+      });
+      triggerBrollFromSpeech(data.text);
+    }
+    autoCapRenderList();
+    whisperSetStatus('done','✓ '+_recordedCaptions.length+' captions from video audio');
+    toast('✓ Whisper: '+_recordedCaptions.length+' captions generated','ok');
+  }catch(err){
+    whisperSetStatus('err','Whisper failed: '+err.message+' — mic captions still active');
+    toast('Whisper: '+err.message,'err');
+  }
+  _whisperLoading=false;
+}
+function whisperSetStatus(state,msg){
+  var el=document.getElementById('whisperStatus');
+  if(!el) return;
+  var colours={loading:'var(--gold)',done:'#1a9e5a',err:'var(--or)'};
+  el.style.color=colours[state]||'var(--dim)';
+  el.textContent=msg;
+  el.style.display='block';
 }
 
-// Toggle button handler — first call requests mic permission
+// ── Mic-based captions (always running as fallback/voiceover) ─────
+function autoCapInit(){
+  // Auto-start mic if permission already granted
+  if(_capMicGranted&&!_autoCapOn) autoCapStart();
+  // Auto-run Whisper if key is set and clip just loaded
+  if(clips.length&&getOpenAIKey()&&!_whisperLoading){
+    whisperTranscribe(clips[0].file);
+  }
+}
+
 function autoCapToggle(){
   if(_autoCapOn){autoCapStop();return;}
   autoCapStart();
@@ -727,7 +827,7 @@ function autoCapToggle(){
 function autoCapStart(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){
-    toast('Auto-captions need Chrome or Edge','err');
+    toast('Mic captions need Chrome or Edge','err');
     return;
   }
   if(!clips.length){toast('Add a clip first','err');return;}
@@ -746,7 +846,6 @@ function autoCapStart(){
       if(e.results[i].isFinal) finalText+=e.results[i][0].transcript+' ';
       else interim+=e.results[i][0].transcript;
     }
-    // Show interim in live box
     var liveEl=document.getElementById('autoCapLive');
     if(liveEl){
       liveEl.style.display='block';
@@ -754,20 +853,16 @@ function autoCapStart(){
     }
     if(finalText&&finalText!==lastFinal){
       lastFinal=finalText;
-      // Timestamp — use globally tracked ref first for accuracy
       var vid=_prevVideoRef||document.getElementById('prevVideo');
       var t=(vid&&vid.duration&&vid.readyState>=2)?vid.currentTime:((Date.now()-_capRecStart)/1000);
-      // Trigger B-roll search from spoken words
       triggerBrollFromSpeech(finalText);
-      // Split long sentences into ≤6-word chunks for readable subtitles
       var words=finalText.trim().split(/\s+/);
       var chunk=[],chunkStart=t;
-      var wps=words.length/(Math.max(finalText.length/30,1)); // words per segment
       words.forEach(function(w,wi){
         chunk.push(w);
         if(chunk.length>=6||(wi===words.length-1)){
           _recordedCaptions.push({text:chunk.join(' '),t:Math.max(0,chunkStart)});
-          chunkStart+=chunk.length*(1/Math.max(wps,2));
+          chunkStart+=chunk.length*0.4;
           chunk=[];
         }
       });
@@ -778,11 +873,10 @@ function autoCapStart(){
 
   _capRec.onerror=function(e){
     if(e.error==='not-allowed'||e.error==='denied'){
-      toast('Mic access denied — allow mic in browser settings','err');
+      toast('Mic blocked — allow mic in browser settings','err');
       autoCapSetUI(false);
     } else if(e.error!=='no-speech'){
-      // restart on other errors
-      if(_autoCapOn) setTimeout(autoCapStart,500);
+      if(_autoCapOn) setTimeout(autoCapStart,800);
     }
   };
   _capRec.onend=function(){
@@ -794,9 +888,9 @@ function autoCapStart(){
     _autoCapOn=true;
     _capMicGranted=true;
     autoCapSetUI(true);
-    toast('🎙 Listening — speak now, captions appear automatically','ok');
-  } catch(ex){
-    toast('Could not start mic: '+ex.message,'err');
+    toast('🎙 Mic listening — speak your narration','ok');
+  }catch(ex){
+    toast('Mic error: '+ex.message,'err');
   }
 }
 
@@ -805,7 +899,7 @@ function autoCapStop(){
   _autoCapOn=false;
   autoCapSetUI(false);
   var n=_recordedCaptions.length;
-  if(n) toast('✓ '+n+' caption'+(n>1?'s':'')+' saved','ok');
+  if(n) toast('✓ '+n+' caption'+(n>1?'s':'')+' ready','ok');
 }
 
 function autoCapSetUI(on){
@@ -813,7 +907,7 @@ function autoCapSetUI(on){
   var pill=document.getElementById('autoCapPill');
   var liveEl=document.getElementById('autoCapLive');
   if(btn){
-    btn.innerHTML=on?'⏹ Stop Listening':'🎙 Enable Auto-Captions';
+    btn.innerHTML=on?'⏹ Stop Mic':'🎙 Mic Captions';
     btn.style.borderColor=on?'var(--or)':'';
     btn.style.color=on?'var(--or)':'';
   }
@@ -830,6 +924,8 @@ function capRecClear(){
   autoCapRenderList();
   var liveEl=document.getElementById('autoCapLive');
   if(liveEl) liveEl.innerHTML='';
+  var ws=document.getElementById('whisperStatus');
+  if(ws) ws.style.display='none';
 }
 
 function autoCapRenderList(){
@@ -839,7 +935,7 @@ function autoCapRenderList(){
   var count=document.getElementById('capRecCount');
   if(!wrap||!items) return;
   wrap.style.display=all.length?'block':'none';
-  if(count) count.textContent=all.length+' caption'+(all.length!==1?'s':'')+' captured';
+  if(count) count.textContent=all.length+' caption'+(all.length!==1?'s':'')+' ready';
   items.innerHTML=all.map(function(c,i){
     return '<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--surf);border:1px solid var(--b);border-radius:6px;margin-bottom:4px">'
       +'<span style="font-size:.6rem;font-family:Syne,sans-serif;font-weight:700;color:var(--gold);min-width:30px;flex-shrink:0">'+capFmtTime(c.t)+'</span>'
@@ -849,9 +945,7 @@ function autoCapRenderList(){
   }).join('');
 }
 
-// Keep old name as alias so nothing breaks
 function capRecRenderList(){autoCapRenderList();}
-
 function capFmtTime(s){var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
 
 function addManualCap(){
@@ -859,7 +953,9 @@ function addManualCap(){
   renderManualCaps();
 }
 function renderManualCaps(){
-  document.getElementById('manualCapList').innerHTML=_manualCaptions.map(function(c,i){
+  var el=document.getElementById('manualCapList');
+  if(!el) return;
+  el.innerHTML=_manualCaptions.map(function(c,i){
     return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap">'
       +'<input type="number" placeholder="0" min="0" step="0.5" value="'+(c.t||'')+'" style="width:52px;background:var(--bg);border:1px solid var(--b2);color:var(--tx);padding:4px 6px;border-radius:5px;font-size:.72rem" onchange="_manualCaptions['+i+'].t=parseFloat(this.value)||0"/>'
       +'<span style="font-size:.65rem;color:var(--dim)">s</span>'
