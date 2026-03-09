@@ -1,312 +1,203 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Creator Studio — ImpactGrid Content Agency</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>ImpactGrid Creator Studio</title>
+
 <link rel="stylesheet" href="upload.css">
+
+<style>
+
+body{
+background:#080808;
+color:#f0ebe5;
+font-family:DM Sans,Arial;
+margin:0;
+}
+
+.topbar{
+height:56px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 24px;
+border-bottom:1px solid #222;
+background:#0f0f0f;
+}
+
+.main{
+display:grid;
+grid-template-columns:1fr 320px;
+gap:20px;
+padding:20px;
+}
+
+.card{
+background:#141414;
+border:1px solid #222;
+border-radius:10px;
+padding:16px;
+}
+
+.btn{
+background:#ff5c1a;
+color:#fff;
+border:none;
+padding:10px 16px;
+border-radius:6px;
+cursor:pointer;
+font-weight:600;
+}
+
+.btn:hover{
+background:#c94010;
+}
+
+.clip-zone{
+border:2px dashed #333;
+border-radius:10px;
+padding:30px;
+text-align:center;
+cursor:pointer;
+}
+
+.clip-zone:hover{
+border-color:#ff5c1a;
+}
+
+.preview{
+position:relative;
+background:#000;
+border-radius:10px;
+overflow:hidden;
+aspect-ratio:9/16;
+}
+
+.preview video{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+.caption-preview{
+position:absolute;
+bottom:12%;
+left:50%;
+transform:translateX(-50%);
+background:rgba(0,0,0,.75);
+padding:6px 10px;
+border-radius:6px;
+font-weight:bold;
+}
+
+.broll-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:6px;
+margin-top:10px;
+}
+
+.broll-grid img{
+width:100%;
+border-radius:6px;
+cursor:pointer;
+}
+
+</style>
+
 </head>
+
 <body>
-<div id="ov"></div>
-<aside id="sb">
-  <div class="sb-head">
-    <img src="logo.png" alt="ImpactGrid" class="sb-logo-img" id="sbImg" onerror="this.style.display='none';document.getElementById('sbFb').style.display='flex'"/>
-    <div class="sb-logo-fb" id="sbFb">IG</div>
-    <div><div class="sb-brand">ImpactGrid Content Agency</div><div class="sb-sub">AI Creator Platform</div></div>
-  </div>
-  <div class="sb-scroll" id="sbNav"></div>
-  <div class="sb-foot">
-    <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="sb-an-row">
-      <div class="sb-an-icon">&#128202;</div>
-      <div class="sb-an-name">ImpactGrid Analysis</div>
-      <span class="sb-an-arr">&#8599;</span>
-    </a>
-    <button class="sb-auth-btn" onclick="handleAuth()" id="authBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <div style="flex:1;text-align:left"><span class="sb-user-name" id="authName">Sign In</span><span class="sb-user-role" id="authRole">Access your account</span></div>
-    </button>
-  </div>
-</aside>
-<div class="main">
-  <div class="topbar">
-    <div class="tb-l">
-      <button class="hbg" onclick="openNav()">&#9776;</button>
-      <span class="tb-title">&#127916; Creator Studio</span>
-      <div class="tb-badge"><div class="tb-dot"></div>AI Browser Editor</div>
-    </div>
-    <div class="tb-r">
-      <a href="index.html" class="btn bs sm">&#8592; Group Home</a>
-      <a href="dashboard.html" class="btn bs sm">&#8592; Dashboard</a>
-      <button class="tbtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
-    </div>
-  </div>
-  <div class="hero">
-    <div class="h-badge">AI Browser Editor</div>
-    <h1 class="h-title">Smart editing. <em>Zero cost. Zero uploads.</em></h1>
-    <p class="h-desc">Voice commands, smart assembly, image search, AI suggestions — all running in your browser. Nothing leaves your device until you download.</p>
-  </div>
-  <div id="mainGrid" style="display:grid;grid-template-columns:1fr 292px;gap:0;align-items:start">
-    <div class="steps-wrap">
 
-      <!-- AI SUGGESTIONS PANEL -->
-      <div id="suggPanel" class="sugg-panel" style="display:none">
-        <div class="sugg-title">&#128161; AI Suggestions — based on your editing history</div>
-        <div id="suggItems"></div>
-      </div>
-
-      <!-- Step 1: CLIPS + Smart Assemble -->
-      <div class="step-card">
-        <div class="step-hd"><div class="step-num">1</div><div><div class="step-lbl">Step 1</div><div class="step-title">Add &amp; arrange clips</div></div></div>
-        <div class="step-body">
-          <button class="assemble-btn" onclick="smartAssemble()" id="assembleBtn" style="display:none">&#9889; Smart Assemble — auto-organise into Intro · Main · Highlight · Support · Outro</button>
-          <p style="font-size:.73rem;color:var(--dim);margin-bottom:10px">Up to 5 clips. Drag &#8942;&#8942; to reorder. Click <em>Edit</em> to trim &amp; set speed.</p>
-          <div id="clipList"></div>
-          <label class="clip-zone" for="clipInput" id="dropZone">
-            <div style="font-size:1.5rem">&#127916;</div>
-            <h3>Drop clips here or click to browse</h3>
-            <p>MP4 · MOV · WebM — up to 5 clips</p>
-            <input type="file" id="clipInput" accept="video/*" multiple style="display:none"/>
-          </label>
-        </div>
-      </div>
-
-      <!-- Step 2: Style -->
-      <div class="step-card">
-        <div class="step-hd"><div class="step-num">2</div><div><div class="step-lbl">Step 2</div><div class="step-title">Editing style</div></div></div>
-        <div class="step-body">
-          <div class="style-grid">
-            <div class="style-card on" onclick="pickStyle('professional',this)"><div class="sc-icon">&#128084;</div><strong>Professional</strong><p>Sharp, clean, white captions</p></div>
-            <div class="style-card" onclick="pickStyle('fun',this)"><div class="sc-icon">&#127880;</div><strong>Fun &amp; Energetic</strong><p>Vibrant, bold orange captions</p></div>
-            <div class="style-card" onclick="pickStyle('cinematic',this)"><div class="sc-icon">&#127916;</div><strong>Cinematic</strong><p>Moody dark, gold captions</p></div>
-            <div class="style-card" onclick="pickStyle('minimal',this)"><div class="sc-icon">&#9728;&#65039;</div><strong>Minimal</strong><p>Bright, airy, soft captions</p></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3: Captions -->
-      <div class="step-card">
-        <div class="step-hd">
-          <div class="step-num">3</div>
-          <div style="flex:1"><div class="step-lbl">Step 3</div><div class="step-title">Caption style</div></div>
-          <!-- Live auto-caption status pill -->
-          <div id="autoCapPill" style="display:none;align-items:center;gap:5px;background:rgba(232,82,15,.12);border:1px solid rgba(232,82,15,.3);border-radius:20px;padding:3px 10px;font-size:.62rem;font-weight:700;color:var(--or)">
-            <div style="width:7px;height:7px;border-radius:50%;background:var(--or);animation:pulse 1s infinite"></div>
-            <span id="autoCapPillText">Listening...</span>
-          </div>
-        </div>
-        <div class="step-body">
-
-          <!-- Style picker -->
-          <div class="cap-grid" style="margin-bottom:14px">
-            <div class="cs-card on" onclick="pickCapStyle('tiktok',this)">
-              <div class="cs-preview" style="background:#000"><span style="background:#ff5c1a;color:#fff;padding:1px 6px;border-radius:3px;font-size:.58rem;font-weight:700">WORD BY WORD</span></div>
-              <span>TikTok Pop</span>
-            </div>
-            <div class="cs-card" onclick="pickCapStyle('bar',this)">
-              <div class="cs-preview" style="background:var(--b)"><span style="font-size:.58rem;color:var(--dim)">Bottom bar caption</span></div>
-              <span>Bottom Bar</span>
-            </div>
-            <div class="cs-card" onclick="pickCapStyle('highlight',this)">
-              <div class="cs-preview" style="background:var(--b)"><span style="background:#f0c93a;color:#000;padding:1px 5px;border-radius:2px;font-size:.58rem;font-weight:600">Highlighted</span></div>
-              <span>Word Highlight</span>
-            </div>
-          </div>
-
-          <!-- Position + mic button -->
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-            <div style="display:flex;align-items:center;gap:7px">
-              <label style="font-size:.72rem;color:var(--dim)">Position</label>
-              <select id="captionPos" class="cap-sel"><option value="bottom">Bottom</option><option value="top">Top</option></select>
-            </div>
-            <div style="flex:1"></div>
-            <button id="autoCapBtn" onclick="autoCapToggle()" class="btn bs sm" style="font-size:.65rem">
-              🎙 Start Listening
-            </button>
-          </div>
-
-          <!-- How it works hint -->
-          <div style="background:var(--surf);border:1px solid var(--b);border-radius:9px;padding:10px 13px;margin-bottom:12px;font-size:.7rem;color:var(--dim);line-height:1.7">
-            <strong style="color:var(--tx)">How auto-captions work (100% free):</strong><br>
-            1. Add your clip — mic starts automatically (allow when prompted)<br>
-            2. Press ▶ Play on the preview so audio plays through your speakers<br>
-            3. The mic picks up the audio → captions + B-roll images appear live<br>
-            <span style="color:var(--or);font-weight:600">Chrome / Edge only</span> — Firefox does not support this API
-          </div>
-
-          <!-- Live mic transcript -->
-          <div id="autoCapLive" style="display:none;background:var(--surf);border:1px solid var(--b);border-radius:8px;padding:9px 12px;font-size:.75rem;color:var(--dim);line-height:1.7;min-height:36px;margin-bottom:10px"></div>
-
-          <!-- Captured captions list -->
-          <div id="capRecList" style="display:none">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-              <div style="font-size:.52rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700" id="capRecCount"></div>
-              <button onclick="capRecClear()" class="btn bs sm" style="font-size:.6rem;padding:2px 7px">🗑 Clear</button>
-            </div>
-            <div id="capRecItems"></div>
-          </div>
-
-          <!-- Manual add -->
-          <details style="margin-top:10px">
-            <summary style="font-size:.68rem;color:var(--dim);cursor:pointer;user-select:none">✏️ Add captions manually</summary>
-            <div style="margin-top:8px">
-              <div id="manualCapList"></div>
-              <button class="btn bs sm" onclick="addManualCap()" style="margin-top:6px">+ Add</button>
-            </div>
-          </details>
-
-          <!-- B-Roll — fully automatic, no UI needed -->
-          <div id="brollSpinner" style="display:none;align-items:center;gap:8px;font-size:.7rem;color:var(--dim);margin-top:10px">
-            <div style="width:13px;height:13px;border:2px solid var(--b2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite"></div>
-            Finding images for "<span id="brollSpinWord"></span>"…
-          </div>
-          <div id="brollKeyword" style="display:none"></div>
-          <div id="brollQueued" style="margin-top:8px"></div>
-          <input type="hidden" id="brollSearchInput"/>
-          <input type="hidden" id="pexelsKey"/>
-
-        </div>
-      </div>
-
-      <!-- Step 4: Text Overlays -->
-      <div class="step-card">
-        <div class="step-hd"><div class="step-num">4</div><div><div class="step-lbl">Step 4</div><div class="step-title">Text overlays</div></div></div>
-        <div class="step-body">
-          <p style="font-size:.73rem;color:var(--dim);margin-bottom:9px">Add titles, CTAs, hashtags — shown on screen.</p>
-          <div id="overlayList"></div>
-          <button class="btn bs sm" onclick="addOverlay()">+ Add Text Overlay</button>
-          <div class="intro-wrap">
-            <label>Intro title card text</label>
-            <input type="text" id="introText" class="intro-input" value="ImpactGrid Content Agency" maxlength="40"/>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 5: Music -->
-      <div class="step-card">
-        <div class="step-hd"><div class="step-num">5</div><div><div class="step-lbl">Step 5</div><div class="step-title">Background music</div></div></div>
-        <div class="step-body">
-          <div class="music-grid">
-            <div class="mc on" onclick="pickMusic('none',this)" id="mc_none"><div class="mi" style="background:var(--b)">&#128263;</div><div><strong>No Music</strong><span>Speech only</span></div></div>
-            <div class="mc" onclick="pickMusic('upload',this)" id="mc_upload"><div class="mi" style="background:rgba(74,143,245,.14)">&#128190;</div><div><strong>Upload Track</strong><span>MP3 / WAV</span></div></div>
-            <div class="mc" onclick="pickMusic('corporate',this)" id="mc_corporate"><div class="mi" style="background:rgba(74,143,245,.12)">&#128084;</div><div><strong>Corporate</strong><span>Clean &amp; pro</span></div></div>
-            <div class="mc" onclick="pickMusic('upbeat',this)" id="mc_upbeat"><div class="mi" style="background:rgba(255,92,26,.12)">&#127880;</div><div><strong>Upbeat</strong><span>Fun &amp; energetic</span></div></div>
-            <div class="mc" onclick="pickMusic('cinematic',this)" id="mc_cinematic"><div class="mi" style="background:rgba(160,130,80,.12)">&#127916;</div><div><strong>Cinematic</strong><span>Moody &amp; dramatic</span></div></div>
-            <div class="mc" onclick="pickMusic('minimal',this)" id="mc_minimal"><div class="mi" style="background:rgba(200,190,180,.12)">&#9728;&#65039;</div><div><strong>Minimal</strong><span>Soft &amp; airy</span></div></div>
-          </div>
-          <div id="uploadMusicWrap"><input type="file" id="musicFile" accept="audio/*"/></div>
-          <div class="vol-row">
-            <label>Music vol</label>
-            <input type="range" id="musicVol" min="5" max="50" value="18" oninput="document.getElementById('volLabel').textContent=this.value+'%'"/>
-            <span id="volLabel">18%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 6: Platforms -->
-      <div class="step-card">
-        <div class="step-hd"><div class="step-num">6</div><div><div class="step-lbl">Step 6</div><div class="step-title">Pick platforms</div></div></div>
-        <div class="step-body">
-          <div class="fmt-row">
-            <button class="fmt-btn on" onclick="toggleFmt('reel',this)">&#127917; Instagram Reel (9:16)</button>
-            <button class="fmt-btn on" onclick="toggleFmt('tiktok',this)">&#127925; TikTok (9:16)</button>
-            <button class="fmt-btn on" onclick="toggleFmt('youtube',this)">&#9654; YouTube (16:9)</button>
-            <button class="fmt-btn on" onclick="toggleFmt('linkedin',this)">&#128188; LinkedIn (1:1)</button>
-          </div>
-          <p style="font-size:.67rem;color:var(--dim)">Each platform gets its own cropped &amp; optimised version.</p>
-        </div>
-      </div>
-
-      <!-- Render -->
-      <div id="renderSection">
-        <div class="render-card">
-          <button class="btn bp lg" onclick="startRender()" style="width:100%;justify-content:center">&#9881;&#65039; Edit My Videos</button>
-          <p>Runs in your browser &nbsp;·&nbsp; ~1–3 min per video &nbsp;·&nbsp; Keep tab open</p>
-        </div>
-      </div>
-
-      <!-- Processing -->
-      <div id="stProc" style="display:none">
-        <div class="proc-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <div><p style="font-size:.5rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--gold);font-weight:700;margin-bottom:2px">Editing in browser</p>
-            <h3 style="font-family:'Syne',sans-serif;font-size:.88rem;font-weight:800" id="procLabel">Starting...</h3></div>
-            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold)" id="procPct">0%</div>
-          </div>
-          <div class="pb"><div class="pf" id="procBar" style="width:0"></div></div>
-          <p style="font-size:.67rem;color:var(--dim);margin-top:4px" id="procLog">Initialising...</p>
-          <canvas id="editCanvas" style="display:none;max-width:100%;margin-top:11px;border-radius:7px"></canvas>
-        </div>
-      </div>
-
-      <!-- Done -->
-      <div id="stDone" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;flex-wrap:wrap;gap:8px">
-          <div>
-            <p style="font-size:.5rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--gr);font-weight:700;margin-bottom:2px">Complete</p>
-            <h3 style="font-family:'Syne',sans-serif;font-size:.96rem;color:var(--gr)">&#10003; Your edited videos are ready</h3>
-            <p style="font-size:.67rem;color:var(--dim);margin-top:2px">&#128274; Processed locally — nothing stored</p>
-          </div>
-          <button class="btn bs sm" onclick="resetAll()">&#8635; Edit Again</button>
-        </div>
-        <div id="resultCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px"></div>
-      </div>
-
-    </div><!-- left col -->
-
-    <!-- RIGHT PANEL -->
-    <div style="padding:22px 18px 22px 0;display:flex;flex-direction:column;position:sticky;top:52px">
-      <div class="panel-card">
-        <div class="panel-lbl">Platform Preview</div>
-        <div class="prev-tabs">
-          <div class="prev-tab on" onclick="switchPreview('reel',this)">Reel</div>
-          <div class="prev-tab" onclick="switchPreview('tiktok',this)">TikTok</div>
-          <div class="prev-tab" onclick="switchPreview('youtube',this)">YouTube</div>
-          <div class="prev-tab" onclick="switchPreview('linkedin',this)">LinkedIn</div>
-        </div>
-        <div id="previewWrap" style="position:relative">
-          <!-- Canvas-based live preview — shows B-roll overlays, captions, grade in real time -->
-          <div style="position:relative;background:#000;border-radius:8px;overflow:hidden">
-            <canvas id="prevCanvas" style="width:100%;display:block;border-radius:8px;aspect-ratio:9/16;max-height:290px"></canvas>
-            <video id="prevVideo" style="display:none" muted loop playsinline preload="auto"></video>
-            <!-- Hidden fallback boxes kept for switchPreview compat -->
-            <div id="prevReel" style="display:none"></div>
-            <div id="prevTiktok" style="display:none"></div>
-            <div id="prevYoutube" style="display:none"></div>
-            <div id="prevLinkedin" style="display:none"></div>
-            <!-- No-clip state -->
-            <div id="prevEmpty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;pointer-events:none">
-              <div style="font-size:1.5rem">🎬</div>
-              <div style="font-size:.66rem;color:rgba(255,255,255,.4);text-align:center;padding:0 8px">Add clips to preview</div>
-            </div>
-            <div id="prevWatermark" style="position:absolute;top:7px;right:7px;font-size:.54rem;color:rgba(255,255,255,.55);font-weight:700;pointer-events:none">ImpactGrid</div>
-          </div>
-          <!-- Preview controls -->
-          <div style="display:flex;gap:6px;margin-top:7px;align-items:center">
-            <button onclick="prevPlayPause()" id="prevPlayBtn" class="btn bs sm" style="font-size:.65rem">▶</button>
-            <input type="range" id="prevScrub" min="0" max="100" value="0" style="flex:1;accent-color:var(--gold)" oninput="prevScrubTo(this.value)"/>
-            <span id="prevTimeLabel" style="font-size:.6rem;color:var(--dim);white-space:nowrap">0:00</span>
-          </div>
-          <button onclick="captureThumbnail()" style="width:100%;margin-top:6px;background:var(--surf);border:1px solid var(--b2);color:var(--dim);font-size:.63rem;padding:5px;border-radius:6px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--b2)'">📷 Grab Thumbnail</button>
-        </div>
-      </div>
-
-
-    </div>
-  </div>
-
-  <footer>
-    <div class="ft-brand">ImpactGrid Content Agency</div>
-    <div class="ft-links">
-      <a href="index.html">Group Home</a><a href="dashboard.html">Dashboard</a>
-      <a href="services.html">Services</a><a href="creators.html">Creators</a>
-      <a href="about.html">About</a><a href="contact.html">Contact</a>
-      <a href="https://impactgridanalytics.com/" target="_blank" class="ext">Analysis &#8599;</a>
-    </div>
-    <p class="ft-copy">&copy; 2025 ImpactGrid Content Agency</p>
-  </footer>
+<div class="topbar">
+<div style="font-weight:700">ImpactGrid Creator Studio</div>
+<div>
+<button class="btn" onclick="startRender()">Export Video</button>
 </div>
-<div id="toast" class="toast"></div>
+</div>
+
+<div class="main">
+
+<div>
+
+<div class="card">
+
+<h3>Upload Clips</h3>
+
+<label class="clip-zone">
+
+<input type="file" id="clipInput" accept="video/*" multiple style="display:none">
+
+<div>
+🎬 Drop clips here or click
+</div>
+
+</label>
+
+<div id="clipList"></div>
+
+</div>
+
+
+<div class="card" style="margin-top:16px">
+
+<h3>AI Editing</h3>
+
+<button class="btn" onclick="autoEdit()">Auto Edit Story</button>
+
+<p style="font-size:12px;color:#777;margin-top:6px">
+Speech detection → captions → visuals → render
+</p>
+
+</div>
+
+</div>
+
+
+<div>
+
+<div class="card">
+
+<h3>Preview</h3>
+
+<div class="preview">
+
+<video id="prevVideo" muted playsinline></video>
+
+<div class="caption-preview" id="captionPreview">
+Caption preview
+</div>
+
+</div>
+
+<div style="margin-top:10px">
+
+<button class="btn" onclick="playPreview()">Play</button>
+
+<button class="btn" onclick="pausePreview()">Pause</button>
+
+</div>
+
+</div>
+
+
+<div class="card" style="margin-top:16px">
+
+<h3>AI B-Roll Images</h3>
+
+<div id="brollGrid" class="broll-grid"></div>
+
+</div>
+
+</div>
+
+</div>
+
+
 <script src="upload.js"></script>
+
 </body>
 </html>
