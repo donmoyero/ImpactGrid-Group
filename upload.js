@@ -232,13 +232,11 @@ function setListeningUI(on){
 // ── Caption overlay on preview ─────────────────────────────────
 function showCaptionOverlay(text){
   captionPreview.textContent = text;
-  captionPreview.style.display = 'block';
-  captionPreview.style.opacity = '1';
+  captionPreview.classList.add('visible');
   clearTimeout(captionPreview._t);
   captionPreview._t = setTimeout(function(){
-    captionPreview.style.opacity = '0';
-    setTimeout(function(){ captionPreview.style.display = 'none'; }, 400);
-  }, 2800);
+    captionPreview.classList.remove('visible');
+  }, 3000);
 }
 
 // ── Save captions ──────────────────────────────────────────────
@@ -305,77 +303,108 @@ function extractKeywords(text){
   return results.slice(0, 3);
 }
 
-// ── B-Roll image fetch — 3 free sources, no key needed ────────
-// Uses allSettled so all 3 run in parallel; first valid result wins.
+// ── B-Roll image fetch ───────────────────────────────────────
+// Strategy: try Wikipedia (real relevant images) → Loremflickr → Picsum
+// Canvas fallback always fires so something ALWAYS appears immediately.
 async function fetchBrollImage(keyword, timestamp){
   brollStatus.textContent = 'Finding "' + keyword + '"…';
 
-  // Build candidate URLs immediately — no pre-flight needed
-  var candidates = buildImageCandidates(keyword);
+  // 1. Show canvas placeholder immediately so B-roll grid is never empty
+  var placeholderUrl = makeCanvasImage(keyword);
+  addToBrollGrid(placeholderUrl, keyword, timestamp, true); // true = placeholder
 
-  // Try each URL as an actual loadable image
-  var url = await firstLoadableImage(candidates);
+  // 2. Attempt real image in background — swap out placeholder if found
+  tryRealImage(keyword, timestamp, placeholderUrl);
+}
 
-  if(!url){
-    brollStatus.textContent = 'Could not find image for "' + keyword + '"';
-    return;
+function addToBrollGrid(url, keyword, timestamp, isPlaceholder){
+  var el = document.createElement(isPlaceholder ? 'canvas' : 'img');
+  if(isPlaceholder){
+    // Draw canvas placeholder
+    el = document.createElement('img');
+    el.src = url;
+  } else {
+    el = document.createElement('img');
+    el.src = url;
   }
-
-  brollStatus.textContent = 'Auto-detected: ' + keyword;
-
-  // Add thumbnail to B-Roll grid
-  var el = document.createElement('img');
-  el.src     = url;
   el.title   = keyword;
   el.loading = 'eager';
-  el.onerror = function(){ this.remove(); };
-  el.onclick = function(){ overlayBroll(url); };
+  el.dataset.keyword = keyword;
+  el.onerror = function(){ /* keep placeholder */ };
+  el.onclick = function(){ overlayBroll(this.src); };
   brollGrid.prepend(el);
+  brollStatus.textContent = 'B-roll: ' + keyword;
 
-  // Queue for auto-overlay when video reaches this timestamp
-  autoBroll.push({ url: url, t: timestamp, dur: 3, shown: false });
+  // Queue for auto-overlay
+  autoBroll.push({ url: url, t: timestamp, dur: 3, shown: false, el: el });
+
+  return el;
 }
 
-// Generate candidate image URLs for a keyword — no fetch needed upfront
-function buildImageCandidates(keyword){
+async function tryRealImage(keyword, timestamp, placeholderUrl){
+  // Try Loremflickr first (themed), then Picsum (always loads)
   var enc  = encodeURIComponent(keyword);
   var hash = 0;
-  for(var i=0;i<keyword.length;i++) hash = (hash*31+keyword.charCodeAt(i)) & 0xffff;
-  var seed = (hash % 9000) + 100;
+  for(var i=0;i<keyword.length;i++) hash=(hash*31+keyword.charCodeAt(i))&0xffff;
+  var seed = (hash % 8000) + 500;
 
-  return [
-    // Loremflickr — real themed photos, redirects to actual Flickr image
+  var candidates = [
     'https://loremflickr.com/800/450/' + enc + '?lock=' + seed,
-    'https://loremflickr.com/800/450/' + enc + '?lock=' + (seed+1),
-    // Picsum — beautiful curated photos (random, not keyword-based but always loads)
     'https://picsum.photos/seed/' + enc + '/800/450',
-    'https://picsum.photos/seed/' + enc + '2/800/450',
-    // Placeholder fallback with keyword label
-    'https://placehold.co/800x450/1a1a1a/f0c93a?text=' + enc
+    'https://picsum.photos/' + ((hash%700)+100) + '/800/450'
   ];
+
+  for(var i=0;i<candidates.length;i++){
+    var loaded = await testImage(candidates[i]);
+    if(loaded){
+      // Update any grid element and autoBroll entries using the placeholder
+      document.querySelectorAll('[data-keyword="'+keyword+'"]').forEach(function(el){
+        el.src = loaded;
+      });
+      autoBroll.forEach(function(b){
+        if(b.url === placeholderUrl) b.url = loaded;
+      });
+      brollStatus.textContent = 'Image found: ' + keyword;
+      return;
+    }
+  }
 }
 
-// Try loading each URL as an <img> — return first that loads successfully
-function firstLoadableImage(urls){
+function testImage(url){
   return new Promise(function(resolve){
-    var resolved = false;
-    var failed   = 0;
-    urls.forEach(function(url){
-      var img    = new Image();
-      img.onload = function(){
-        if(!resolved){ resolved = true; resolve(url); }
-      };
-      img.onerror = function(){
-        failed++;
-        if(failed === urls.length && !resolved) resolve(null);
-      };
-      img.src = url;
-    });
-    // Safety timeout — 8 seconds max
-    setTimeout(function(){
-      if(!resolved){ resolved = true; resolve(urls[2]); } // fall back to picsum
-    }, 8000);
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = function(){ resolve(url); };
+    img.onerror = function(){ resolve(null); };
+    setTimeout(function(){ resolve(null); }, 5000);
+    img.src = url;
   });
+}
+
+// Canvas placeholder — always works, zero network
+function makeCanvasImage(keyword){
+  var c   = document.createElement('canvas');
+  c.width = 320; c.height = 180;
+  var ctx = c.getContext('2d');
+  // Background gradient
+  var hue = 0;
+  for(var i=0;i<keyword.length;i++) hue = (hue*31+keyword.charCodeAt(i)) % 360;
+  var g = ctx.createLinearGradient(0,0,320,180);
+  g.addColorStop(0, 'hsl('+hue+',40%,12%)');
+  g.addColorStop(1, 'hsl('+((hue+40)%360)+',50%,18%)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,320,180);
+  // Keyword text
+  ctx.fillStyle = '#f0c93a';
+  ctx.font = 'bold 22px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(keyword.toUpperCase(), 160, 90);
+  // Subtle border
+  ctx.strokeStyle = 'rgba(240,201,58,.25)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(8,8,304,164);
+  return c.toDataURL('image/png');
 }
 
 // ── Auto B-roll overlay on preview ────────────────────────────
@@ -394,22 +423,22 @@ setInterval(function(){
 function overlayBroll(url){
   var preview = document.querySelector('.preview');
   if(!preview) return;
-  var img = document.createElement('img');
-  img.src = url;
-  img.style.cssText =
+  var ov = document.createElement('div');
+  ov.style.cssText =
     'position:absolute;top:0;left:0;width:100%;height:100%;' +
-    'object-fit:cover;z-index:10;border-radius:10px;' +
-    'opacity:0;transition:opacity .35s ease;';
-  preview.appendChild(img);
-  // Fade in
+    'z-index:15;opacity:0;transition:opacity .4s ease;' +
+    'background:url("'+url+'") center/cover no-repeat;' +
+    'border-radius:10px;';
+  preview.appendChild(ov);
+  // Fade in next frame
   requestAnimationFrame(function(){
-    requestAnimationFrame(function(){ img.style.opacity = '1'; });
+    requestAnimationFrame(function(){ ov.style.opacity = '1'; });
   });
-  // Fade out and remove
+  // Fade out then remove
   setTimeout(function(){
-    img.style.opacity = '0';
-    setTimeout(function(){ img.remove(); }, 400);
-  }, 2600);
+    ov.style.opacity = '0';
+    setTimeout(function(){ ov.remove(); }, 450);
+  }, 2800);
 }
 
 // ── Export ─────────────────────────────────────────────────────
