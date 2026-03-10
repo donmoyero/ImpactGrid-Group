@@ -544,7 +544,8 @@ function submitTranscript(audioUrl){
       'content-type':   'application/json'
     },
     body: JSON.stringify({
-      audio_url: audioUrl
+      audio_url:     audioUrl,
+      speech_model:  'universal-2'
     })
   })
   .then(function(r){
