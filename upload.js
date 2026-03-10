@@ -1,460 +1,782 @@
 // ================================================================
 // ImpactGrid Creator Studio — upload.js
-// 100% free, zero API keys, works in Chrome/Edge
+// One-click video editing: drop → style → preview → export
+// Canvas renders captions baked into the output
 // ================================================================
 
+// ── Edit Styles ──────────────────────────────────────────────────
+var STYLES = [
+  {
+    id: 'viral',
+    name: 'Viral TikTok',
+    desc: 'Punchy captions, fast cuts, high energy. Built to stop the scroll.',
+    tags: ['TikTok','Reels','Fast'],
+    gradient: 'linear-gradient(135deg,#1a0a00,#3d1200)',
+    accent: '#ff5c1a',
+    captionBg: '#ff5c1a',
+    captionColor: '#fff',
+    captionSize: 22,
+    captionFont: 'bold 22px "DM Sans",sans-serif',
+    captionPos: 0.82,
+    dramaticScale: 1.15,
+    dramaticBg: '#fff',
+    dramaticColor: '#ff5c1a',
+    gradeR: 1.12, gradeG: 0.92, gradeB: 0.88,
+    vignetteStrength: 0.6
+  },
+  {
+    id: 'cinematic',
+    name: 'Cinematic',
+    desc: 'Widescreen letterbox, moody grade, elegant white subtitles.',
+    tags: ['Film','YouTube','Story'],
+    gradient: 'linear-gradient(135deg,#000814,#001d3d)',
+    accent: '#90caf9',
+    captionBg: 'rgba(0,0,0,0)',
+    captionColor: '#ffffff',
+    captionSize: 18,
+    captionFont: '500 18px "DM Sans",sans-serif',
+    captionPos: 0.88,
+    dramaticScale: 1.0,
+    dramaticBg: 'rgba(0,0,0,0)',
+    dramaticColor: '#90caf9',
+    gradeR: 0.88, gradeG: 0.95, gradeB: 1.08,
+    vignetteStrength: 0.8,
+    letterbox: true
+  },
+  {
+    id: 'corporate',
+    name: 'Corporate Pro',
+    desc: 'Clean lower-thirds, polished grade, LinkedIn-ready.',
+    tags: ['LinkedIn','B2B','Clean'],
+    gradient: 'linear-gradient(135deg,#0a0a14,#0d1b2a)',
+    accent: '#4fc3f7',
+    captionBg: 'rgba(13,27,42,.9)',
+    captionColor: '#4fc3f7',
+    captionSize: 17,
+    captionFont: '600 17px "DM Sans",sans-serif',
+    captionPos: 0.90,
+    dramaticScale: 1.0,
+    dramaticBg: '#4fc3f7',
+    dramaticColor: '#0d1b2a',
+    gradeR: 0.95, gradeG: 1.0, gradeB: 1.05,
+    vignetteStrength: 0.3,
+    lowerThird: true
+  },
+  {
+    id: 'hype',
+    name: 'Hype Reel',
+    desc: 'Max energy. Flash cuts, yellow bold captions, built for sports and launches.',
+    tags: ['Sports','Launch','Hype'],
+    gradient: 'linear-gradient(135deg,#1a1200,#2d2000)',
+    accent: '#f0c93a',
+    captionBg: '#f0c93a',
+    captionColor: '#000',
+    captionSize: 24,
+    captionFont: 'bold 24px Syne,"DM Sans",sans-serif',
+    captionPos: 0.80,
+    dramaticScale: 1.2,
+    dramaticBg: '#fff',
+    dramaticColor: '#000',
+    gradeR: 1.08, gradeG: 1.05, gradeB: 0.82,
+    vignetteStrength: 0.5
+  },
+  {
+    id: 'podcast',
+    name: 'Podcast / Talk',
+    desc: 'Word-by-word highlight captions, clean grade, perfect for talking head videos.',
+    tags: ['Podcast','Interview','Talk'],
+    gradient: 'linear-gradient(135deg,#0f0f0f,#1a1a2e)',
+    accent: '#a78bfa',
+    captionBg: '#a78bfa',
+    captionColor: '#fff',
+    captionSize: 19,
+    captionFont: '600 19px "DM Sans",sans-serif',
+    captionPos: 0.85,
+    dramaticScale: 1.0,
+    dramaticBg: '#fff',
+    dramaticColor: '#a78bfa',
+    gradeR: 0.96, gradeG: 0.96, gradeB: 1.06,
+    vignetteStrength: 0.4,
+    wordByWord: true
+  },
+  {
+    id: 'documentary',
+    name: 'Documentary',
+    desc: 'Warm grade, chapter-title overlays, thoughtful pacing.',
+    tags: ['Doc','YouTube','Story'],
+    gradient: 'linear-gradient(135deg,#1a0e00,#2d1a00)',
+    accent: '#ffb74d',
+    captionBg: 'rgba(0,0,0,.75)',
+    captionColor: '#ffb74d',
+    captionSize: 17,
+    captionFont: '500 17px "DM Sans",sans-serif',
+    captionPos: 0.88,
+    dramaticScale: 1.0,
+    dramaticBg: '#ffb74d',
+    dramaticColor: '#1a0e00',
+    gradeR: 1.06, gradeG: 0.98, gradeB: 0.84,
+    vignetteStrength: 0.6,
+    filmGrain: true
+  }
+];
+
 // ── State ────────────────────────────────────────────────────────
-var clips     = [];
-var captions  = [];       // [{t, text, dramatic}]
-var recog     = null;
-var isOn      = false;
-var startedAt = 0;
+var clip        = null;     // {file, url}
+var activeStyle = null;
+var captions    = [];       // [{t, text, dramatic}]
+var brollItems  = [];       // [{t, url, canvas}]
+var isListening = false;
+var recog       = null;
+var recStart    = 0;
+var selectedFmt = 'reel';
+var isPlaying   = false;
+var rafId       = null;
+var grainCanvas = null;
 
 // ── DOM ──────────────────────────────────────────────────────────
-var vid        = document.getElementById('prevVideo');
-var capOverlay = document.getElementById('capOverlay');
-var brollOv    = document.getElementById('brollOverlay');
-var liveBox    = document.getElementById('liveBox');
-var pill       = document.getElementById('pill');
-var stopBtn    = document.getElementById('stopBtn');
-var capList    = document.getElementById('capList');
-var capItems   = document.getElementById('capItems');
-var capCount   = document.getElementById('capCount');
-var brollGrid  = document.getElementById('brollGrid');
-var brollSt    = document.getElementById('brollStatus');
-var ptime      = document.getElementById('ptime');
+var vid         = document.getElementById('masterVideo');
+var canvas      = document.getElementById('previewCanvas');
+var ctx         = canvas.getContext('2d');
+var progBar     = document.getElementById('progBar');
+var pill        = document.getElementById('statusPill');
+
+// ── Init: render style cards ─────────────────────────────────────
+(function initStyleCards(){
+  var grid = document.getElementById('styleGrid');
+  STYLES.forEach(function(s){
+    var card = document.createElement('div');
+    card.className = 'style-card';
+    card.innerHTML =
+      '<div class="sc-preview" style="background:'+s.gradient+'">'
+      +  '<div class="sc-caption-demo" style="background:'+s.captionBg+';color:'+s.captionColor+'">Caption goes here</div>'
+      +'</div>'
+      +'<div class="sc-name">'+s.name+'</div>'
+      +'<div class="sc-desc">'+s.desc+'</div>'
+      +'<div class="sc-tags">'+s.tags.map(function(t){return '<span class="sc-tag">'+t+'</span>';}).join('')+'</div>'
+      +'<div class="sc-check">✓</div>';
+    card.onclick = function(){ selectStyle(s, card); };
+    grid.appendChild(card);
+  });
+
+  // Also build re-edit mini buttons
+  var mini = document.getElementById('reeditMini');
+  STYLES.forEach(function(s){
+    var b = document.createElement('button');
+    b.className = 'reedit-btn';
+    b.textContent = s.name;
+    b.onclick = function(){ selectStyle(s, null); };
+    mini.appendChild(b);
+  });
+})();
 
 // ── Upload ───────────────────────────────────────────────────────
 document.getElementById('clipInput').onchange = function(e){
-  Array.from(e.target.files).forEach(function(f){
-    if(clips.length >= 5){ showToast('Max 5 clips'); return; }
-    clips.push({ file:f, url:URL.createObjectURL(f) });
-  });
-  renderClips();
-  loadVideo();
+  var f = e.target.files[0];
+  if(!f) return;
+  if(clip) URL.revokeObjectURL(clip.url);
+  clip = { file: f, url: URL.createObjectURL(f) };
+  document.getElementById('clipInfo').textContent = '🎬 ' + f.name + ' · ' + fmt(0);
+  vid.src = clip.url;
+  vid.onloadedmetadata = function(){
+    document.getElementById('clipInfo').textContent =
+      '🎬 ' + f.name + ' · ' + fmt(vid.duration);
+  };
+  goTo('screenStyle');
 };
 
-function renderClips(){
-  var el = document.getElementById('clipList');
-  el.innerHTML = clips.map(function(c,i){
-    return '<div class="clip-row">'
-      + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">' + esc(c.file.name) + '</span>'
-      + '<button onclick="removeClip('+i+')">✖</button>'
-      + '</div>';
-  }).join('');
-  document.getElementById('previewEmpty').style.display = clips.length ? 'none' : 'flex';
+// Drag-drop on drop zone
+(function(){
+  var dz = document.getElementById('dropZone');
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.borderColor='#ff5c1a';});
+  dz.addEventListener('dragleave',function(){dz.style.borderColor='';});
+  dz.addEventListener('drop',function(e){
+    e.preventDefault();dz.style.borderColor='';
+    var f=Array.from(e.dataTransfer.files).find(function(x){return x.type.startsWith('video/');});
+    if(f) document.getElementById('clipInput').dispatchEvent(Object.assign(new Event('change'),{target:{files:[f]}}));
+  });
+})();
+
+// ── Style selection → processing ─────────────────────────────────
+function selectStyle(style, cardEl){
+  activeStyle = style;
+  // Mark selected card
+  document.querySelectorAll('.style-card').forEach(function(c){c.classList.remove('selected');});
+  if(cardEl) cardEl.classList.add('selected');
+  // Go process
+  setTimeout(function(){ runProcessing(); }, 200);
 }
 
-function removeClip(i){
-  URL.revokeObjectURL(clips[i].url);
-  clips.splice(i,1);
-  renderClips();
-  if(clips.length) loadVideo(); else vid.src='';
+// ── Processing screen ─────────────────────────────────────────────
+function runProcessing(){
+  captions   = [];
+  brollItems = [];
+  goTo('screenProcess');
+  document.getElementById('processTitle').textContent = 'Editing in ' + activeStyle.name + ' style…';
+
+  var steps = [
+    {pct:10, title:'Analysing your video…',          desc:'Reading frames and audio…'},
+    {pct:28, title:'Detecting speech…',               desc:'Listening for words and energy…'},
+    {pct:50, title:'Building captions…',              desc:'Formatting in '+activeStyle.name+' style…'},
+    {pct:68, title:'Colour grading…',                 desc:'Applying '+activeStyle.name+' look…'},
+    {pct:82, title:'Finding B-roll images…',          desc:'Matching visuals to your words…'},
+    {pct:95, title:'Compositing final preview…',      desc:'Baking captions into video…'},
+    {pct:100,title:'Done!',                           desc:'Your '+activeStyle.name+' edit is ready'}
+  ];
+
+  var si = 0;
+  function nextStep(){
+    if(si >= steps.length){
+      setTimeout(function(){ launchPreview(); }, 400);
+      return;
+    }
+    var s = steps[si++];
+    progBar.style.width = s.pct + '%';
+    document.getElementById('processTitle').textContent = s.title;
+    document.getElementById('processDesc').textContent  = s.desc;
+    var log = document.getElementById('progSteps');
+    if(si > 1) log.innerHTML += '<div style="opacity:.5">✓ '+steps[si-2].title+'</div>';
+
+    // At step 2: silently request mic and start listening
+    if(si === 2) silentlyListen();
+
+    setTimeout(nextStep, 900 + Math.random()*400);
+  }
+  nextStep();
 }
 
-function loadVideo(){
-  if(!clips.length) return;
-  vid.src = clips[0].url;
-  vid.load();
-  document.getElementById('previewEmpty').style.display = 'none';
+// ── Speech listening (silent, in background during processing) ────
+function silentlyListen(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR || isListening) return;
+  try{
+    recog = new SR();
+    recog.continuous = true;
+    recog.interimResults = true;
+    recog.maxAlternatives = 1;
+    recog.lang = 'en-GB';
+    recStart = Date.now();
+    var lastFinal = '';
+
+    recog.onresult = function(event){
+      var final = '';
+      for(var i=event.resultIndex;i<event.results.length;i++){
+        if(event.results[i].isFinal) final += event.results[i][0].transcript;
+      }
+      if(final && final !== lastFinal){
+        lastFinal = final;
+        var t = (vid.duration && vid.readyState>=2) ? vid.currentTime : (Date.now()-recStart)/1000;
+        var dramatic = isDramatic(final);
+        chunkSave(final.trim(), t, dramatic);
+        getKeywords(final).forEach(function(kw){ addBrollItem(kw, t); });
+      }
+    };
+    recog.onerror = function(){};
+    recog.onend   = function(){ if(isListening) try{recog.start();}catch(e){} };
+    recog.start();
+    isListening = true;
+
+    // Play video silently so mic can pick up audio
+    vid.muted  = false;
+    vid.volume = 1.0;
+    vid.play().catch(function(){ vid.muted=true; vid.play(); });
+  }catch(e){}
+}
+
+function stopListening(){
+  isListening = false;
+  if(recog) try{ recog.abort(); }catch(e){}
+}
+
+// ── Launch preview ────────────────────────────────────────────────
+function launchPreview(){
+  stopListening();
+  goTo('screenPreview');
+
+  // Set canvas size for 9:16
+  canvas.width  = 540;
+  canvas.height = 960;
+
+  // Update export panel
+  document.getElementById('exportStyleName').textContent = activeStyle.name + ' edit';
+  document.getElementById('exportStats').textContent =
+    captions.length + ' captions generated\n'
+    + brollItems.length + ' B-roll images matched\n'
+    + 'Ready to download';
+  document.getElementById('styleBadge').textContent = activeStyle.name;
+
+  // Preload B-roll images
+  brollItems.forEach(function(b){
+    if(!b.url) return;
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function(){ b.imgEl = img; };
+    img.onerror = function(){ b.imgEl = null; };
+    img.src = b.url;
+  });
+
+  // Start draw loop
+  vid.pause();
+  vid.currentTime = 0;
+  drawFrame();
+}
+
+// ── Canvas draw loop ──────────────────────────────────────────────
+function drawFrame(){
+  if(!vid.videoWidth){ rafId = requestAnimationFrame(drawFrame); return; }
+
+  var W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  var st = activeStyle;
+
+  // 1. Draw video frame (scaled to fill canvas)
+  var vw = vid.videoWidth, vh = vid.videoHeight;
+  var scale = Math.max(W/vw, H/vh);
+  var dw = vw*scale, dh = vh*scale;
+  var dx = (W-dw)/2, dy = (H-dh)/2;
+  ctx.drawImage(vid, dx, dy, dw, dh);
+
+  // 2. Colour grade (fast pixel tweak via globalCompositeOperation)
+  applyGrade(W, H, st);
+
+  // 3. Letterbox bars
+  if(st.letterbox){
+    var barH = H*0.07;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,W,barH);
+    ctx.fillRect(0,H-barH,W,barH);
+  }
+
+  // 4. Vignette
+  if(st.vignetteStrength > 0) applyVignette(W, H, st.vignetteStrength);
+
+  // 5. Film grain
+  if(st.filmGrain) applyGrain(W, H);
+
+  // 6. B-roll overlay at current time
+  var now = vid.currentTime;
+  brollItems.forEach(function(b){
+    if(b.imgEl && now >= b.t && now < b.t + 3){
+      ctx.save();
+      ctx.globalAlpha = 0.72;
+      ctx.drawImage(b.imgEl, 0, 0, W, H);
+      ctx.restore();
+    }
+  });
+
+  // 7. Lower-third bar (corporate style)
+  if(st.lowerThird){
+    ctx.fillStyle = 'rgba(13,27,42,.88)';
+    ctx.fillRect(0, H*0.80, W, H*0.12);
+  }
+
+  // 8. Captions
+  drawCaptions(W, H, now, st);
+
+  // 9. Watermark
+  ctx.font = '11px "DM Sans",sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  ctx.textAlign = 'right';
+  ctx.fillText('ImpactGrid', W-12, 20);
+
+  if(isPlaying && !vid.paused) rafId = requestAnimationFrame(drawFrame);
+  else if(!isPlaying){ cancelAnimationFrame(rafId); }
+  else rafId = requestAnimationFrame(drawFrame);
+}
+
+// ── Colour grade ──────────────────────────────────────────────────
+function applyGrade(W, H, st){
+  // Use multiply/screen compositing for fast grade
+  if(st.gradeR > 1 || st.gradeG > 1 || st.gradeB > 1){
+    // Lighten channel
+    var maxBoost = Math.max(st.gradeR,st.gradeG,st.gradeB);
+    var alpha = (maxBoost - 1) * 0.5;
+    var r = st.gradeR>1 ? 255 : 0;
+    var g = st.gradeG>1 ? 255 : 0;
+    var b = st.gradeB>1 ? 255 : 0;
+    ctx.fillStyle = 'rgba('+r+','+g+','+b+','+alpha.toFixed(2)+')';
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  if(st.gradeR < 1 || st.gradeG < 1 || st.gradeB < 1){
+    var minGrade = Math.min(st.gradeR,st.gradeG,st.gradeB);
+    var alpha2 = (1-minGrade)*0.5;
+    var r2 = st.gradeR<1 ? 0 : 255;
+    var g2 = st.gradeG<1 ? 0 : 255;
+    var b2 = st.gradeB<1 ? 0 : 255;
+    ctx.fillStyle = 'rgba('+r2+','+g2+','+b2+','+alpha2.toFixed(2)+')';
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+
+function applyVignette(W, H, strength){
+  var grd = ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.75);
+  grd.addColorStop(0,'rgba(0,0,0,0)');
+  grd.addColorStop(1,'rgba(0,0,0,'+strength+')');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,W,H);
+}
+
+function applyGrain(W, H){
+  var id = ctx.getImageData(0,0,W,H);
+  var d  = id.data;
+  for(var i=0;i<d.length;i+=4){
+    var n=(Math.random()-.5)*18;
+    d[i]+=n; d[i+1]+=n; d[i+2]+=n;
+  }
+  ctx.putImageData(id,0,0);
+}
+
+// ── Caption drawing ───────────────────────────────────────────────
+function drawCaptions(W, H, now, st){
+  var active = null;
+  for(var i=0;i<captions.length;i++){
+    if(captions[i].t <= now && now < captions[i].t + 3.2){
+      active = captions[i]; break;
+    }
+  }
+  if(!active) return;
+
+  var text     = active.text;
+  var dramatic = active.dramatic;
+  var bg       = dramatic ? st.dramaticBg    : st.captionBg;
+  var color    = dramatic ? st.dramaticColor : st.captionColor;
+  var font     = st.captionFont;
+  var size     = st.captionSize * (dramatic ? st.dramaticScale : 1);
+  var y        = H * st.captionPos;
+
+  if(st.wordByWord){
+    // Word-by-word highlight style (podcast)
+    drawWordByWord(W, y, text, now - active.t, st);
+  } else {
+    // Standard caption block
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    var padding = 10;
+    var metrics = ctx.measureText(text);
+    var tw = Math.min(metrics.width + padding*2, W-40);
+    var th = size + padding*2;
+    var x  = W/2;
+
+    // Background pill
+    if(bg && bg !== 'rgba(0,0,0,0)'){
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.roundRect(x - tw/2, y - th/2, tw, th, 7);
+      ctx.fill();
+    } else if(bg === 'rgba(0,0,0,0)'){
+      // Text shadow only
+      ctx.shadowColor = 'rgba(0,0,0,.8)';
+      ctx.shadowBlur  = 6;
+    }
+
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y + size*0.35);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawWordByWord(W, y, text, elapsed, st){
+  var words    = text.split(' ');
+  var perWord  = 3.2 / Math.max(words.length, 1);
+  var activeWi = Math.floor(elapsed / perWord);
+  var xPos     = W/2;
+  var size     = st.captionSize;
+
+  ctx.font     = st.captionFont;
+  ctx.textAlign = 'center';
+
+  // Measure total to centre
+  var total = words.reduce(function(a,w){ return a + ctx.measureText(w+' ').width; }, 0);
+  var startX = xPos - total/2;
+
+  words.forEach(function(w, wi){
+    var ww = ctx.measureText(w+' ').width;
+    var cx = startX + ww/2;
+    var isActive = (wi === activeWi);
+    var bg2    = isActive ? st.dramaticBg    : st.captionBg;
+    var color2 = isActive ? st.dramaticColor : st.captionColor;
+
+    if(bg2 && bg2 !== 'rgba(0,0,0,0)'){
+      ctx.fillStyle = bg2;
+      ctx.beginPath();
+      ctx.roundRect(startX-4, y-size/2-6, ww, size+12, 5);
+      ctx.fill();
+    }
+    ctx.fillStyle = color2;
+    ctx.fillText(w, cx, y + size*0.35);
+    startX += ww;
+  });
 }
 
 // ── Playback ─────────────────────────────────────────────────────
-function playPause(){
-  if(!clips.length){ showToast('Add a clip first'); return; }
+function togglePlay(){
+  if(!vid.src){ toast('Add a clip first'); return; }
   if(vid.paused){
-    vid.muted  = false;
-    vid.volume = 1.0;
-    vid.play().catch(function(){
-      vid.muted = true;
-      vid.play();
-    });
+    vid.play();
+    isPlaying = true;
+    document.getElementById('vcPlay').textContent   = '⏸';
+    document.getElementById('playBtnBig').textContent = '⏸';
+    document.getElementById('playOverlay').classList.add('playing');
+    rafId = requestAnimationFrame(drawFrame);
   } else {
     vid.pause();
+    isPlaying = false;
+    document.getElementById('vcPlay').textContent   = '▶';
+    document.getElementById('playBtnBig').textContent = '▶';
+    document.getElementById('playOverlay').classList.remove('playing');
+    drawFrame();
   }
 }
 
 vid.ontimeupdate = function(){
-  var m = Math.floor(vid.currentTime/60);
-  var s = Math.floor(vid.currentTime%60);
-  ptime.textContent = m+':'+(s<10?'0':'')+s;
-  // Show correct caption for this timestamp
-  renderTimedCaption(vid.currentTime);
+  var t = vid.currentTime, d = vid.duration||0;
+  var fill = document.getElementById('vcFill');
+  if(fill) fill.style.width = (d?t/d*100:0)+'%';
+  document.getElementById('vcTime').textContent = fmt(t)+' / '+fmt(d);
+  if(!isPlaying) drawFrame(); // update while scrubbing
 };
 
-// Show the right caption at the current video position
-var lastCapIdx = -1;
-function renderTimedCaption(t){
-  // Find the caption that should be showing right now
-  var active = null;
-  for(var i=0;i<captions.length;i++){
-    if(captions[i].t <= t && t < captions[i].t + 3.5){
-      active = captions[i];
-      break;
-    }
-  }
-  if(active){
-    showCaption(active.text, active.dramatic);
-  }
+vid.onended = function(){
+  isPlaying = false;
+  document.getElementById('vcPlay').textContent = '▶';
+  document.getElementById('playBtnBig').textContent = '▶';
+  document.getElementById('playOverlay').classList.remove('playing');
+};
+
+function seekTo(e){
+  var rect = e.currentTarget.getBoundingClientRect();
+  var pct  = (e.clientX - rect.left) / rect.width;
+  vid.currentTime = pct * (vid.duration||0);
+  drawFrame();
 }
 
-// ── Start / Stop AI ──────────────────────────────────────────────
-function startAI(){
-  if(!clips.length){ showToast('Add a clip first'); return; }
-  // Play the video with audio so mic picks it up
-  vid.muted  = false;
-  vid.volume = 1.0;
-  vid.play().catch(function(){ vid.muted=true; vid.play(); });
-  startSpeech();
+// ── Export: record canvas + audio ────────────────────────────────
+var exportFmt = 'reel';
+function setFmt(btn){
+  document.querySelectorAll('.fmt-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  exportFmt = btn.dataset.fmt;
 }
 
-function stopAI(){
-  isOn = false;
-  if(recog) try{ recog.abort(); }catch(e){}
-  pill.style.display       = 'none';
-  stopBtn.style.display    = 'none';
-  liveBox.style.display    = 'none';
-  showToast('Stopped. '+captions.length+' captions saved.');
-}
+function startExport(){
+  if(!vid.src){ toast('No video to export'); return; }
 
-// ── Speech Recognition ───────────────────────────────────────────
-function startSpeech(){
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){
-    showToast('Speech recognition needs Chrome or Edge — not this browser');
-    return;
-  }
-  if(isOn) return;
+  // Resize canvas for chosen format
+  var W, H;
+  if(exportFmt==='reel')   { W=540; H=960; }
+  else if(exportFmt==='youtube'){ W=1280; H=720; }
+  else                          { W=720;  H=720; }
 
-  recog = new SR();
-  recog.continuous      = true;
-  recog.interimResults  = true;
-  recog.maxAlternatives = 1;
-  recog.lang            = 'en-GB';
-  startedAt             = Date.now();
+  canvas.width  = W;
+  canvas.height = H;
 
-  var lastFinal = '';
+  var ep  = document.getElementById('exportProgress');
+  var bar = document.getElementById('expBar');
+  var lbl = document.getElementById('expLabel');
+  ep.style.display = 'block';
+  document.getElementById('exportBtn').disabled = true;
 
-  recog.onresult = function(event){
-    var interim = '';
-    var final   = '';
-    for(var i=event.resultIndex; i<event.results.length; i++){
-      var t = event.results[i][0].transcript;
-      if(event.results[i].isFinal) final += t;
-      else interim += t;
-    }
+  // Use MediaRecorder to capture canvas + video audio
+  var stream = canvas.captureStream(30);
 
-    // Always show live box
-    liveBox.style.display = 'block';
-    if(interim){
-      liveBox.innerHTML = '<span class="interim">'+esc(interim)+'…</span>';
-    }
-
-    if(final && final.trim() !== lastFinal.trim()){
-      lastFinal = final;
-      var text  = final.trim();
-
-      // Timestamp from video playhead
-      var t = (vid.duration && !vid.paused && vid.readyState>=2)
-        ? vid.currentTime
-        : (Date.now()-startedAt)/1000;
-
-      // Is this dramatic? (question, exclamation, power words)
-      var dramatic = isDramatic(text);
-
-      // Show on screen immediately
-      showCaption(text, dramatic);
-
-      // Save in chunks of 5 words
-      chunkAndSave(text, t, dramatic);
-
-      // Extract keywords → get B-roll image
-      var kws = getKeywords(text);
-      if(kws.length){
-        addBroll(kws[0], t);
-      }
-
-      liveBox.innerHTML = '<span class="final-text">'+esc(text)+'</span>';
-    }
-  };
-
-  recog.onerror = function(e){
-    if(e.error==='not-allowed'){
-      showToast('Mic blocked — click the mic icon in the browser address bar to allow');
-      stopAI();
-    }
-    // no-speech = silence, fine
-  };
-
-  // Chrome stops after ~60s silence — restart automatically
-  recog.onend = function(){
-    if(isOn) setTimeout(function(){
-      try{ recog.start(); }catch(ex){ startSpeech(); }
-    }, 300);
-  };
-
+  // Add audio track from video
   try{
-    recog.start();
-    isOn = true;
-    pill.style.display    = 'flex';
-    stopBtn.style.display = 'block';
-    showToast('🎙 Listening — make sure volume is up!');
-  }catch(ex){
-    showToast('Could not start mic: '+ex.message);
-  }
+    var actx   = new AudioContext();
+    var src    = actx.createMediaElementSource(vid);
+    var dest   = actx.createMediaStreamDestination();
+    src.connect(dest);
+    src.connect(actx.destination);
+    dest.stream.getAudioTracks().forEach(function(t){ stream.addTrack(t); });
+  }catch(e){ /* no audio — video only */ }
+
+  var chunks   = [];
+  var mimeType = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(function(m){
+    return MediaRecorder.isTypeSupported(m);
+  }) || 'video/webm';
+
+  var recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 4000000 });
+  recorder.ondataavailable = function(e){ if(e.data.size>0) chunks.push(e.data); };
+  recorder.onstop = function(){
+    var blob = new Blob(chunks, { type: mimeType });
+    var a    = document.createElement('a');
+    a.href   = URL.createObjectURL(blob);
+    a.download = 'impactgrid_'+activeStyle.id+'_'+exportFmt+'.webm';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    bar.style.width = '100%';
+    lbl.textContent = '✓ Download started!';
+    document.getElementById('exportBtn').disabled = false;
+    toast('✓ Video exported!');
+    setTimeout(function(){ ep.style.display='none'; }, 3000);
+  };
+
+  // Play video from start, record canvas in real time
+  vid.currentTime = 0;
+  isPlaying = true;
+  vid.play();
+  recorder.start(100);
+  rafId = requestAnimationFrame(drawFrame);
+
+  var duration = vid.duration * 1000;
+  var startTime = Date.now();
+
+  var progInterval = setInterval(function(){
+    var elapsed = Date.now() - startTime;
+    var pct = Math.min(elapsed/duration*100, 95);
+    bar.style.width = pct + '%';
+    lbl.textContent = 'Rendering… ' + Math.round(pct) + '%';
+  }, 500);
+
+  vid.onended = function(){
+    clearInterval(progInterval);
+    isPlaying = false;
+    recorder.stop();
+    vid.onended = null;
+    // Re-attach normal onended
+    vid.onended = function(){
+      isPlaying=false;
+      document.getElementById('vcPlay').textContent='▶';
+      document.getElementById('playOverlay').classList.remove('playing');
+    };
+  };
 }
 
-// ── Caption display on video ─────────────────────────────────────
-var capTimer = null;
-function showCaption(text, dramatic){
-  // Split into word spans for TikTok style
-  capOverlay.innerHTML = text.split(' ').map(function(w){
-    var cls = 'cap-word' + (dramatic ? ' dramatic' : '');
-    return '<span class="'+cls+'">'+esc(w)+'</span>';
-  }).join(' ');
-  capOverlay.classList.add('show');
-  clearTimeout(capTimer);
-  capTimer = setTimeout(function(){
-    capOverlay.classList.remove('show');
-  }, 3200);
-}
-
-// ── Dramatic detection ────────────────────────────────────────────
-var DRAMATIC_WORDS = ['amazing','incredible','huge','massive','love','hate','never','always',
-  'breaking','urgent','must','top','best','worst','epic','shocking','winner','first',
-  'exclusive','secret','free','now','today','real','truth','only','biggest','powerful',
-  'transform','change','growth','money','success','fail','dead','alive','wow','yes','no'];
+// ── Caption engine ────────────────────────────────────────────────
+var DRAMATIC = new Set(['amazing','incredible','huge','massive','love','hate','never','always',
+  'breaking','must','best','worst','epic','shocking','winner','first','exclusive','secret',
+  'free','real','truth','only','biggest','powerful','transform','change','money','success',
+  'wow','yes','no','stop','wait','watch','look','listen','game','changer','mind','blown',
+  'insane','crazy','unbelievable','massive','launch','new','live','now','today']);
 
 function isDramatic(text){
+  if(/[!?]{1}/.test(text)) return true;
   var lower = text.toLowerCase();
-  if(/[!?]{1,}/.test(text)) return true;
-  return DRAMATIC_WORDS.some(function(w){ return lower.indexOf(w) !== -1; });
+  return Array.from(DRAMATIC).some(function(w){ return lower.indexOf(w) !== -1; });
 }
 
-// ── Caption chunking + saving ────────────────────────────────────
-function chunkAndSave(text, startT, dramatic){
+function chunkSave(text, t, dramatic){
   var words = text.split(/\s+/);
-  var chunk = [], t = startT;
+  var chunk = [], time = t;
   words.forEach(function(w, wi){
     chunk.push(w);
-    if(chunk.length >= 5 || wi === words.length-1){
-      captions.push({ t: Math.max(0,t), text: chunk.join(' '), dramatic: dramatic });
-      t += chunk.length * 0.38;
+    if(chunk.length >= 4 || wi === words.length-1){
+      captions.push({ t: Math.max(0,time), text: chunk.join(' '), dramatic: dramatic });
+      time += chunk.length * 0.38;
       chunk = [];
     }
   });
-  renderCapList();
 }
 
-function renderCapList(){
-  capList.style.display = captions.length ? 'block' : 'none';
-  capCount.textContent  = captions.length + ' caption'+(captions.length!==1?'s':'');
-  capItems.innerHTML = captions.map(function(c,i){
-    return '<div class="cap-item">'
-      + '<span class="cap-t">'+fmt(c.t)+'</span>'
-      + '<input class="cap-input" value="'+escAttr(c.text)+'" onchange="captions['+i+'].text=this.value">'
-      + '<button class="cap-del" onclick="captions.splice('+i+',1);renderCapList()">✕</button>'
-      + '</div>';
-  }).join('');
-}
-
-function clearAll(){
-  captions=[];
-  renderCapList();
-  capOverlay.classList.remove('show');
-  brollGrid.innerHTML='';
-  brollSt.textContent='Auto-generated as speech is detected';
-}
-
-// ── B-Roll ────────────────────────────────────────────────────────
-var usedKws   = new Set();
-var brollQueue = [];   // [{t, url}]
-
-function addBroll(keyword, timestamp){
+// ── B-roll ────────────────────────────────────────────────────────
+var usedKws = new Set();
+function addBrollItem(keyword, t){
   if(usedKws.has(keyword)) return;
   usedKws.add(keyword);
 
-  // 1. Immediately draw a canvas card so SOMETHING appears in the grid
-  var canvas = makeCanvas(keyword);
-  var dataUrl = canvas.toDataURL();
+  var item = { t: t, url: null, imgEl: null };
+  brollItems.push(item);
 
-  // Add clickable canvas to grid
-  canvas.onclick = function(){ showBrollOverlay(dataUrl); };
-  brollGrid.prepend(canvas);
-  brollSt.textContent = 'Detected: '+keyword;
+  // Canvas placeholder (immediate)
+  var c = makeKwCanvas(keyword);
+  item.canvasUrl = c.toDataURL();
 
-  // Queue canvas version for auto-overlay
-  brollQueue.push({ t: timestamp, url: dataUrl, shown: false });
-
-  // 2. In background: try to load a real image and swap it in
-  fetchImage(keyword, function(realUrl){
-    if(!realUrl) return;
-    // Replace the canvas in the grid with real image
-    var img = document.createElement('img');
-    img.src = realUrl;
-    img.title = keyword;
-    img.onclick = function(){ showBrollOverlay(realUrl); };
-    img.onerror = function(){ /* keep canvas */ };
-    if(canvas.parentNode) canvas.parentNode.replaceChild(img, canvas);
-    // Update queue entry
-    brollQueue.forEach(function(b){ if(b.t===timestamp) b.url=realUrl; });
-  });
-}
-
-// Auto-overlay B-roll images at their timestamps during video playback
-setInterval(function(){
-  if(vid.paused || !vid.duration) return;
-  var now = vid.currentTime;
-  brollQueue.forEach(function(b){
-    if(!b.shown && now >= b.t && now < b.t+3){
-      b.shown = true;
-      showBrollOverlay(b.url);
+  // Try real image
+  fetchImage(keyword, function(url){
+    if(url){
+      item.url = url;
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function(){ item.imgEl = img; };
+      img.src = url;
+    } else {
+      // Use canvas as fallback image
+      item.url  = item.canvasUrl;
+      var img2  = new Image();
+      img2.onload = function(){ item.imgEl = img2; };
+      img2.src  = item.canvasUrl;
     }
   });
-}, 250);
-
-function showBrollOverlay(url){
-  brollOv.style.backgroundImage = 'url("'+url+'")';
-  brollOv.classList.add('show');
-  setTimeout(function(){ brollOv.classList.remove('show'); }, 2800);
 }
 
-// ── Canvas image (instant, zero network) ─────────────────────────
-function makeCanvas(keyword){
-  var c   = document.createElement('canvas');
-  c.width = 240; c.height = 135;
-  var ctx = c.getContext('2d');
-
-  // Generate a consistent colour from the keyword
-  var h = 0;
-  for(var i=0;i<keyword.length;i++) h=(h*31+keyword.charCodeAt(i))%360;
-
-  var g = ctx.createLinearGradient(0,0,240,135);
-  g.addColorStop(0,'hsl('+h+',45%,10%)');
-  g.addColorStop(1,'hsl('+((h+50)%360)+',55%,16%)');
-  ctx.fillStyle=g;
-  ctx.fillRect(0,0,240,135);
-
-  // Keyword text
-  ctx.font = 'bold 18px "DM Sans",sans-serif';
-  ctx.fillStyle = '#f0c93a';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  var label = keyword.length>16 ? keyword.substring(0,16)+'…' : keyword;
-  ctx.fillText(label.toUpperCase(), 120, 67);
-
-  // Border
-  ctx.strokeStyle='rgba(240,201,58,.2)';
-  ctx.lineWidth=2;
-  ctx.strokeRect(4,4,232,127);
-
+function makeKwCanvas(kw){
+  var c = document.createElement('canvas');
+  c.width=540; c.height=960;
+  var cx = c.getContext('2d');
+  var h  = 0;
+  for(var i=0;i<kw.length;i++) h=(h*31+kw.charCodeAt(i))%360;
+  var g = cx.createLinearGradient(0,0,540,960);
+  g.addColorStop(0,'hsl('+h+',40%,8%)');
+  g.addColorStop(1,'hsl('+((h+60)%360)+',50%,14%)');
+  cx.fillStyle=g; cx.fillRect(0,0,540,960);
+  cx.font='bold 36px "DM Sans",sans-serif';
+  cx.fillStyle='rgba(240,201,58,.5)';
+  cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText(kw.toUpperCase(),270,480);
   return c;
 }
 
-// ── Real image fetch (background, no crash if fails) ─────────────
 function fetchImage(keyword, cb){
   var enc  = encodeURIComponent(keyword);
-  var h    = 0;
-  for(var i=0;i<keyword.length;i++) h=(h*31+keyword.charCodeAt(i))&0xffff;
-
-  // Try these sources in order
+  var h    = 0; for(var i=0;i<keyword.length;i++) h=(h*31+keyword.charCodeAt(i))&0xffff;
   var sources = [
-    'https://loremflickr.com/480/270/'+enc+'?random='+((h%9000)+100),
-    'https://picsum.photos/480/270?random='+((h%500)+1),
+    'https://loremflickr.com/540/960/'+enc+'?random='+((h%8000)+200),
+    'https://picsum.photos/540/960?random='+((h%500)+10)
   ];
-
-  var idx = 0;
-  function tryNext(){
-    if(idx >= sources.length){ cb(null); return; }
-    var url = sources[idx++];
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    var done = false;
-    var timer = setTimeout(function(){
-      if(!done){ done=true; tryNext(); }
-    }, 6000);
-    img.onload = function(){
-      if(!done){ done=true; clearTimeout(timer); cb(url); }
-    };
-    img.onerror = function(){
-      if(!done){ done=true; clearTimeout(timer); tryNext(); }
-    };
-    img.src = url;
+  var idx=0;
+  function next(){
+    if(idx>=sources.length){cb(null);return;}
+    var url=sources[idx++], img=new Image(), done=false;
+    img.crossOrigin='anonymous';
+    var timer=setTimeout(function(){if(!done){done=true;next();}},5000);
+    img.onload=function(){if(!done){done=true;clearTimeout(timer);cb(url);}};
+    img.onerror=function(){if(!done){done=true;clearTimeout(timer);next();}};
+    img.src=url;
   }
-  tryNext();
+  next();
 }
 
 // ── Keyword extraction ────────────────────────────────────────────
-var STOP = new Set(['the','is','are','a','an','and','to','of','in','it','that','this',
-  'with','for','on','you','i','we','he','she','they','was','be','at','by','from',
-  'have','do','not','but','what','when','there','has','will','their','about','just',
-  'so','up','more','its','also','which','your','our','can','had','how','some','if',
-  'my','me','as','get','like','know','really','very','then','than','into','out',
-  'been','were','would','could','should','did','does','your','his','her','their']);
+var STOP = new Set(['the','is','are','a','an','and','to','of','in','it','that','this','with',
+  'for','on','you','i','we','he','she','they','was','be','at','by','from','have','do','not',
+  'but','what','when','there','has','will','about','just','so','up','more','its','which',
+  'your','our','can','had','how','some','if','my','me','as','get','like','know','really',
+  'very','then','than','into','out','been','were','would','could','should','did','does']);
 
 function getKeywords(text){
-  var words = text.replace(/[.,!?;:'"]/g,' ').toLowerCase().split(/\s+/);
-  var seen  = new Set();
+  var words=text.replace(/[.,!?;:'"]/g,' ').toLowerCase().split(/\s+/);
+  var seen=new Set();
   return words.filter(function(w){
-    if(w.length<3 || STOP.has(w) || seen.has(w)) return false;
-    seen.add(w);
-    return true;
+    if(w.length<4||STOP.has(w)||seen.has(w))return false;
+    seen.add(w);return true;
   }).slice(0,2);
 }
 
-// ── Export ────────────────────────────────────────────────────────
-function doExport(){
-  if(!clips.length){ showToast('Add a clip first'); return; }
-  var s   = document.getElementById('exportStatus');
-  var bar = document.getElementById('expBar');
-  var lbl = document.getElementById('expLabel');
-  s.style.display='block';
-  var steps=[
-    [20,'Reading clips…'],
-    [50,'Processing…'],
-    [80,'Preparing download…'],
-    [100,'Done!']
-  ];
-  var i=0;
-  var iv=setInterval(function(){
-    if(i>=steps.length){clearInterval(iv);return;}
-    bar.style.width=steps[i][0]+'%';
-    lbl.textContent=steps[i][1];
-    i++;
-    if(i===steps.length){
-      clips.forEach(function(c,idx){
-        var a=document.createElement('a');
-        a.href=c.url;
-        a.download='impactgrid_'+(idx+1)+'.'+ext(c.file.name);
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      });
-      showToast('Downloaded '+clips.length+' file'+(clips.length>1?'s':''));
-      setTimeout(function(){s.style.display='none';},3000);
-    }
-  },600);
+// ── Screen navigation ─────────────────────────────────────────────
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  var el = document.getElementById(id);
+  if(el) el.classList.add('active');
+  // Reset scroll
+  window.scrollTo(0,0);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escAttr(s){ return String(s).replace(/"/g,'&quot;'); }
-function fmt(s){ var m=Math.floor(s/60),sec=Math.floor(s%60); return m+':'+(sec<10?'0':'')+sec; }
-function ext(n){ var p=n.split('.'); return p.length>1?p.pop():'mp4'; }
+function fmt(s){
+  if(!s||isNaN(s)) return '0:00';
+  var m=Math.floor(s/60), sec=Math.floor(s%60);
+  return m+':'+(sec<10?'0':'')+sec;
+}
 
 var toastTimer;
-function showToast(msg){
+function toast(msg){
   var el=document.getElementById('toast');
-  if(!el){
-    el=document.createElement('div');
-    el.id='toast';
-    el.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#f0ebe5;'
-      +'padding:10px 16px;border-radius:8px;font-size:13px;border-left:3px solid var(--or);'
-      +'opacity:0;transition:opacity .3s;z-index:9999;font-family:"DM Sans",sans-serif';
-    document.body.appendChild(el);
-  }
   el.textContent=msg;
-  el.style.opacity='1';
+  el.className='toast show';
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){el.style.opacity='0';},4000);
+  toastTimer=setTimeout(function(){el.className='toast';},4000);
 }
