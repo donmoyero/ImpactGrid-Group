@@ -5,23 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ImpactGrid Creator Studio</title>
 <link rel="icon" href="favicon.ico">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700;800&family=Oswald:wght@500;600;700&family=Anton&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="upload.css">
 </head>
 <body>
+
 <div class="topbar">
-  <div class="brand"><span class="o">Impact</span>Grid <span class="tag">Creator Studio</span></div>
+  <div class="brand"><span class="o">Impact</span>Grid <span class="tag">Studio</span></div>
   <a href="dashboard.html" class="back">← Dashboard</a>
 </div>
 
 <div id="app">
 
-  <!-- SCREEN 1: DROP -->
+  <!-- S1: DROP -->
   <div class="screen active" id="sDrop">
     <div class="hero">
       <div class="hero-icon">🎬</div>
-      <h1>Drop your video.<br>Get a cinematic edit.</h1>
-      <p>Captions, B-roll, colour grade — all automatic.</p>
+      <h1>Drop your video.<br>Get viral captions.</h1>
+      <p>Word-perfect, animated, synced to your voice.</p>
       <label class="dropzone" id="dropZone">
         <input type="file" id="fileIn" accept="video/*">
         <div class="dz-inner">
@@ -33,37 +34,47 @@
     </div>
   </div>
 
-  <!-- SCREEN 2: PICK STYLE -->
+  <!-- S2: PICK STYLE -->
   <div class="screen" id="sStyle">
     <div class="style-page">
       <div class="style-hd">
         <div class="file-chip" id="fileChip">🎬</div>
-        <h2>Pick your edit style</h2>
-        <p>Each style has unique captions, colour grade and energy</p>
+        <h2>Pick your caption style</h2>
+        <p>Each style is a completely different visual experience</p>
       </div>
       <div class="style-grid" id="styleGrid"></div>
       <button class="ghost-btn" onclick="goTo('sDrop')">← Change video</button>
     </div>
   </div>
 
-  <!-- SCREEN 3: PROCESSING -->
-  <div class="screen" id="sProcess">
-    <div class="process-box">
-      <div class="proc-anim" id="procAnim">⚡</div>
-      <h2 id="procTitle">Analysing…</h2>
-      <p id="procDesc">Starting up…</p>
-      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
-      <div class="proc-log" id="procLog"></div>
-      <div class="proc-live" id="procLive"></div>
+  <!-- S3: LISTENING -->
+  <div class="screen" id="sListen">
+    <div class="listen-wrap">
+      <!-- Mini live preview while processing -->
+      <div class="live-preview-wrap">
+        <canvas id="liveCanvas"></canvas>
+        <div class="live-label">Live Preview</div>
+      </div>
+      <div class="listen-info">
+        <div class="proc-anim" id="procAnim">🎙</div>
+        <h2 id="procTitle">Listening…</h2>
+        <p id="procDesc">Playing your video — speak up!</p>
+        <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+        <div class="proc-live" id="procLive"></div>
+        <div class="cap-count" id="capCount">0 captions captured</div>
+        <div class="hint-box">
+          🔊 Turn your volume UP — the mic listens to the audio<br>
+          🌐 Chrome or Edge only for auto-captions
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- SCREEN 4: PREVIEW + EXPORT -->
+  <!-- S4: PREVIEW + EXPORT -->
   <div class="screen" id="sPreview">
     <div class="preview-layout">
-
       <div class="left-panel">
-        <div class="canvas-wrap" id="canvasWrap">
+        <div class="canvas-wrap">
           <canvas id="cv"></canvas>
           <div class="play-tap" id="playTap" onclick="togglePlay()">
             <div class="big-play" id="bigPlay">▶</div>
@@ -73,13 +84,11 @@
           <button class="vb-btn" id="vbPlay" onclick="togglePlay()">▶</button>
           <div class="vb-prog" id="vbProg" onclick="seekClick(event)">
             <div class="vb-fill" id="vbFill"></div>
-            <div class="vb-thumb" id="vbThumb"></div>
           </div>
           <span class="vb-time" id="vbTime">0:00</span>
         </div>
         <div class="style-badge" id="styleBadge"></div>
       </div>
-
       <div class="right-panel">
         <div class="exp-card">
           <div class="exp-head">
@@ -88,31 +97,29 @@
           </div>
           <div class="exp-stats" id="expStats"></div>
 
-          <div class="sec-label">Format</div>
-          <div class="fmt-row">
-            <button class="fmt active" data-f="reel"    onclick="setFmt(this)">📱 Reel / TikTok<br><small>9:16</small></button>
-            <button class="fmt"        data-f="youtube" onclick="setFmt(this)">▶ YouTube<br><small>16:9</small></button>
-            <button class="fmt"        data-f="square"  onclick="setFmt(this)">⬛ Square<br><small>1:1</small></button>
-          </div>
+          <div class="sec-label">Switch style instantly</div>
+          <div class="mini-styles" id="miniStyles"></div>
 
-          <button class="dl-btn" id="dlBtn" onclick="doExport()">⬇ Download Video</button>
+          <div class="divider"></div>
+          <div class="sec-label">Export format</div>
+          <div class="fmt-row">
+            <button class="fmt active" data-f="reel"    onclick="setFmt(this)">📱 Reel / TikTok <small>9:16</small></button>
+            <button class="fmt"        data-f="youtube" onclick="setFmt(this)">▶ YouTube <small>16:9</small></button>
+            <button class="fmt"        data-f="square"  onclick="setFmt(this)">⬛ Square <small>1:1</small></button>
+          </div>
+          <button class="dl-btn" id="dlBtn" onclick="doExport()">⬇ Download</button>
           <div id="expProg" style="display:none">
             <div class="ep-track"><div class="ep-fill" id="epFill"></div></div>
             <div class="ep-lbl" id="epLbl">Rendering…</div>
           </div>
-
           <div class="divider"></div>
-          <div class="sec-label">Switch style</div>
-          <div class="mini-styles" id="miniStyles"></div>
-
-          <button class="ghost-btn" style="width:100%;margin-top:12px" onclick="goTo('sDrop')">Upload new video</button>
+          <button class="ghost-btn full" onclick="goTo('sDrop')">Upload new video</button>
         </div>
       </div>
-
     </div>
   </div>
 
-</div><!-- /app -->
+</div>
 
 <div id="toast" class="toast"></div>
 <video id="masterVid" playsinline style="display:none"></video>
