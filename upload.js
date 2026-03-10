@@ -542,12 +542,9 @@ function submitTranscript(audioUrl){
       'content-type':   'application/json'
     },
     body: JSON.stringify({
-      audio_url:          audioUrl,
-      word_boost:         [],
-      punctuate:          true,
-      format_text:        true,
-      // Request word-level timestamps
-      speech_model:       'best'
+      audio_url:  audioUrl,
+      punctuate:  true,
+      format_text: true
     })
   })
   .then(function(r){
