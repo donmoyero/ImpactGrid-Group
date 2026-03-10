@@ -1,170 +1,128 @@
 // ================================================================
-// ImpactGrid Creator Studio — upload.js
-// One-click video editing: drop → style → preview → export
-// Canvas renders captions baked into the output
+// ImpactGrid Creator Studio
+// Drop video → pick style → listens to FULL video → preview + export
 // ================================================================
 
-// ── Edit Styles ──────────────────────────────────────────────────
+// ── Styles ───────────────────────────────────────────────────────
 var STYLES = [
   {
-    id: 'viral',
-    name: 'Viral TikTok',
-    desc: 'Punchy captions, fast cuts, high energy. Built to stop the scroll.',
-    tags: ['TikTok','Reels','Fast'],
-    gradient: 'linear-gradient(135deg,#1a0a00,#3d1200)',
-    accent: '#ff5c1a',
-    captionBg: '#ff5c1a',
-    captionColor: '#fff',
-    captionSize: 22,
-    captionFont: 'bold 22px "DM Sans",sans-serif',
-    captionPos: 0.82,
-    dramaticScale: 1.15,
-    dramaticBg: '#fff',
-    dramaticColor: '#ff5c1a',
-    gradeR: 1.12, gradeG: 0.92, gradeB: 0.88,
-    vignetteStrength: 0.6
+    id:'viral', name:'Viral TikTok',
+    desc:'Punchy orange pills, warm grade. Built to stop the scroll.',
+    tags:['TikTok','Reels','Fast'],
+    gradient:'linear-gradient(135deg,#2a0800,#1a0500)',
+    captionBg:'#ff5c1a', captionColor:'#fff', captionSize:22,
+    captionY:0.82, dramaticBg:'#fff', dramaticColor:'#ff5c1a',
+    gradeFilter:'brightness(1.08) saturate(1.2) contrast(1.05)',
+    vignette:0.55, letterbox:false, wordByWord:false, grain:false
   },
   {
-    id: 'cinematic',
-    name: 'Cinematic',
-    desc: 'Widescreen letterbox, moody grade, elegant white subtitles.',
-    tags: ['Film','YouTube','Story'],
-    gradient: 'linear-gradient(135deg,#000814,#001d3d)',
-    accent: '#90caf9',
-    captionBg: 'rgba(0,0,0,0)',
-    captionColor: '#ffffff',
-    captionSize: 18,
-    captionFont: '500 18px "DM Sans",sans-serif',
-    captionPos: 0.88,
-    dramaticScale: 1.0,
-    dramaticBg: 'rgba(0,0,0,0)',
-    dramaticColor: '#90caf9',
-    gradeR: 0.88, gradeG: 0.95, gradeB: 1.08,
-    vignetteStrength: 0.8,
-    letterbox: true
+    id:'cinematic', name:'Cinematic',
+    desc:'Letterbox bars, cool blue grade, elegant white subtitles.',
+    tags:['Film','YouTube','Story'],
+    gradient:'linear-gradient(135deg,#000814,#001233)',
+    captionBg:'transparent', captionColor:'#fff', captionSize:19,
+    captionY:0.87, dramaticBg:'transparent', dramaticColor:'#90caf9',
+    gradeFilter:'brightness(0.92) saturate(0.85) hue-rotate(5deg)',
+    vignette:0.75, letterbox:true, wordByWord:false, grain:false
   },
   {
-    id: 'corporate',
-    name: 'Corporate Pro',
-    desc: 'Clean lower-thirds, polished grade, LinkedIn-ready.',
-    tags: ['LinkedIn','B2B','Clean'],
-    gradient: 'linear-gradient(135deg,#0a0a14,#0d1b2a)',
-    accent: '#4fc3f7',
-    captionBg: 'rgba(13,27,42,.9)',
-    captionColor: '#4fc3f7',
-    captionSize: 17,
-    captionFont: '600 17px "DM Sans",sans-serif',
-    captionPos: 0.90,
-    dramaticScale: 1.0,
-    dramaticBg: '#4fc3f7',
-    dramaticColor: '#0d1b2a',
-    gradeR: 0.95, gradeG: 1.0, gradeB: 1.05,
-    vignetteStrength: 0.3,
-    lowerThird: true
+    id:'corporate', name:'Corporate Pro',
+    desc:'Lower-third bars, clean grade, LinkedIn-ready polish.',
+    tags:['LinkedIn','B2B','Clean'],
+    gradient:'linear-gradient(135deg,#040a14,#0d1b2a)',
+    captionBg:'rgba(10,20,40,0.88)', captionColor:'#4fc3f7', captionSize:17,
+    captionY:0.88, dramaticBg:'#4fc3f7', dramaticColor:'#040a14',
+    gradeFilter:'brightness(1.0) saturate(0.9) contrast(1.02)',
+    vignette:0.3, letterbox:false, wordByWord:false, grain:false, lowerThird:true
   },
   {
-    id: 'hype',
-    name: 'Hype Reel',
-    desc: 'Max energy. Flash cuts, yellow bold captions, built for sports and launches.',
-    tags: ['Sports','Launch','Hype'],
-    gradient: 'linear-gradient(135deg,#1a1200,#2d2000)',
-    accent: '#f0c93a',
-    captionBg: '#f0c93a',
-    captionColor: '#000',
-    captionSize: 24,
-    captionFont: 'bold 24px Syne,"DM Sans",sans-serif',
-    captionPos: 0.80,
-    dramaticScale: 1.2,
-    dramaticBg: '#fff',
-    dramaticColor: '#000',
-    gradeR: 1.08, gradeG: 1.05, gradeB: 0.82,
-    vignetteStrength: 0.5
+    id:'hype', name:'Hype Reel',
+    desc:'Yellow bold captions, gold grade. For sports and launches.',
+    tags:['Sports','Launch','Energy'],
+    gradient:'linear-gradient(135deg,#1a1200,#0a0800)',
+    captionBg:'#f0c93a', captionColor:'#000', captionSize:26,
+    captionY:0.80, dramaticBg:'#fff', dramaticColor:'#000',
+    gradeFilter:'brightness(1.1) saturate(1.3) contrast(1.08)',
+    vignette:0.45, letterbox:false, wordByWord:false, grain:false
   },
   {
-    id: 'podcast',
-    name: 'Podcast / Talk',
-    desc: 'Word-by-word highlight captions, clean grade, perfect for talking head videos.',
-    tags: ['Podcast','Interview','Talk'],
-    gradient: 'linear-gradient(135deg,#0f0f0f,#1a1a2e)',
-    accent: '#a78bfa',
-    captionBg: '#a78bfa',
-    captionColor: '#fff',
-    captionSize: 19,
-    captionFont: '600 19px "DM Sans",sans-serif',
-    captionPos: 0.85,
-    dramaticScale: 1.0,
-    dramaticBg: '#fff',
-    dramaticColor: '#a78bfa',
-    gradeR: 0.96, gradeG: 0.96, gradeB: 1.06,
-    vignetteStrength: 0.4,
-    wordByWord: true
+    id:'podcast', name:'Podcast / Talk',
+    desc:'Word-by-word highlight. Each word lights up as it\'s spoken.',
+    tags:['Podcast','Interview','Talk'],
+    gradient:'linear-gradient(135deg,#0d0d1a,#1a1a2e)',
+    captionBg:'rgba(167,139,250,0.2)', captionColor:'#ccc', captionSize:20,
+    captionY:0.84, dramaticBg:'#a78bfa', dramaticColor:'#fff',
+    gradeFilter:'brightness(0.98) saturate(0.92)',
+    vignette:0.4, letterbox:false, wordByWord:true, grain:false
   },
   {
-    id: 'documentary',
-    name: 'Documentary',
-    desc: 'Warm grade, chapter-title overlays, thoughtful pacing.',
-    tags: ['Doc','YouTube','Story'],
-    gradient: 'linear-gradient(135deg,#1a0e00,#2d1a00)',
-    accent: '#ffb74d',
-    captionBg: 'rgba(0,0,0,.75)',
-    captionColor: '#ffb74d',
-    captionSize: 17,
-    captionFont: '500 17px "DM Sans",sans-serif',
-    captionPos: 0.88,
-    dramaticScale: 1.0,
-    dramaticBg: '#ffb74d',
-    dramaticColor: '#1a0e00',
-    gradeR: 1.06, gradeG: 0.98, gradeB: 0.84,
-    vignetteStrength: 0.6,
-    filmGrain: true
+    id:'documentary', name:'Documentary',
+    desc:'Warm sepia grade, film grain, chapter-style captions.',
+    tags:['Doc','YouTube','Warm'],
+    gradient:'linear-gradient(135deg,#1a0e00,#120a00)',
+    captionBg:'rgba(0,0,0,0.78)', captionColor:'#ffb74d', captionSize:17,
+    captionY:0.88, dramaticBg:'#ffb74d', dramaticColor:'#1a0e00',
+    gradeFilter:'brightness(1.02) saturate(0.75) sepia(0.25)',
+    vignette:0.65, letterbox:false, wordByWord:false, grain:true
   }
 ];
 
 // ── State ────────────────────────────────────────────────────────
-var clip        = null;     // {file, url}
+var clip        = null;
 var activeStyle = null;
-var captions    = [];       // [{t, text, dramatic}]
-var brollItems  = [];       // [{t, url, canvas}]
-var isListening = false;
+var captions    = [];
+var brollItems  = [];
 var recog       = null;
-var recStart    = 0;
-var selectedFmt = 'reel';
+var isListening = false;
+var listenStart = 0;
 var isPlaying   = false;
 var rafId       = null;
-var grainCanvas = null;
+var exportFmt   = 'reel';
 
 // ── DOM ──────────────────────────────────────────────────────────
-var vid         = document.getElementById('masterVideo');
-var canvas      = document.getElementById('previewCanvas');
-var ctx         = canvas.getContext('2d');
-var progBar     = document.getElementById('progBar');
-var pill        = document.getElementById('statusPill');
+var vid    = document.getElementById('masterVideo');
+var canvas = document.getElementById('previewCanvas');
+var ctx    = canvas.getContext('2d');
+var progBar= document.getElementById('progBar');
 
-// ── Init: render style cards ─────────────────────────────────────
-(function initStyleCards(){
+// ── Style cards ──────────────────────────────────────────────────
+(function buildStyleCards(){
   var grid = document.getElementById('styleGrid');
+  var mini = document.getElementById('reeditMini');
   STYLES.forEach(function(s){
+    // Main card
     var card = document.createElement('div');
     card.className = 'style-card';
     card.innerHTML =
-      '<div class="sc-preview" style="background:'+s.gradient+'">'
-      +  '<div class="sc-caption-demo" style="background:'+s.captionBg+';color:'+s.captionColor+'">Caption goes here</div>'
+      '<div class="sc-preview" style="background:'+s.gradient+';position:relative">'
+        +'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
+          +'<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px;'
+          +'background:'+s.captionBg+';color:'+s.captionColor+'">Caption goes here</span>'
+        +'</div>'
       +'</div>'
       +'<div class="sc-name">'+s.name+'</div>'
       +'<div class="sc-desc">'+s.desc+'</div>'
       +'<div class="sc-tags">'+s.tags.map(function(t){return '<span class="sc-tag">'+t+'</span>';}).join('')+'</div>'
       +'<div class="sc-check">✓</div>';
-    card.onclick = function(){ selectStyle(s, card); };
+    card.onclick = function(){
+      document.querySelectorAll('.style-card').forEach(function(c){c.classList.remove('selected');});
+      card.classList.add('selected');
+      activeStyle = s;
+      setTimeout(startProcessing, 300);
+    };
     grid.appendChild(card);
-  });
 
-  // Also build re-edit mini buttons
-  var mini = document.getElementById('reeditMini');
-  STYLES.forEach(function(s){
+    // Mini re-edit button
     var b = document.createElement('button');
     b.className = 'reedit-btn';
     b.textContent = s.name;
-    b.onclick = function(){ selectStyle(s, null); };
+    b.onclick = function(){
+      activeStyle = s;
+      document.getElementById('exportStyleName').textContent = s.name+' edit';
+      document.getElementById('styleBadge').textContent = s.name;
+      applyStyleToCanvas();
+      toast('Style changed to '+s.name);
+    };
     mini.appendChild(b);
   });
 })();
@@ -174,578 +132,574 @@ document.getElementById('clipInput').onchange = function(e){
   var f = e.target.files[0];
   if(!f) return;
   if(clip) URL.revokeObjectURL(clip.url);
-  clip = { file: f, url: URL.createObjectURL(f) };
-  document.getElementById('clipInfo').textContent = '🎬 ' + f.name + ' · ' + fmt(0);
+  clip = {file:f, url:URL.createObjectURL(f)};
   vid.src = clip.url;
   vid.onloadedmetadata = function(){
     document.getElementById('clipInfo').textContent =
-      '🎬 ' + f.name + ' · ' + fmt(vid.duration);
+      '🎬 '+f.name+' · '+fmtTime(vid.duration);
   };
   goTo('screenStyle');
 };
 
-// Drag-drop on drop zone
 (function(){
   var dz = document.getElementById('dropZone');
-  dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.borderColor='#ff5c1a';});
+  ['dragover','dragenter'].forEach(function(ev){
+    dz.addEventListener(ev,function(e){e.preventDefault();dz.style.borderColor='#ff5c1a';});
+  });
   dz.addEventListener('dragleave',function(){dz.style.borderColor='';});
   dz.addEventListener('drop',function(e){
-    e.preventDefault();dz.style.borderColor='';
-    var f=Array.from(e.dataTransfer.files).find(function(x){return x.type.startsWith('video/');});
-    if(f) document.getElementById('clipInput').dispatchEvent(Object.assign(new Event('change'),{target:{files:[f]}}));
+    e.preventDefault(); dz.style.borderColor='';
+    var f = Array.from(e.dataTransfer.files).find(function(x){return x.type.startsWith('video/');});
+    if(!f) return;
+    if(clip) URL.revokeObjectURL(clip.url);
+    clip = {file:f, url:URL.createObjectURL(f)};
+    vid.src = clip.url;
+    vid.onloadedmetadata = function(){
+      document.getElementById('clipInfo').textContent = '🎬 '+f.name+' · '+fmtTime(vid.duration);
+    };
+    goTo('screenStyle');
   });
 })();
 
-// ── Style selection → processing ─────────────────────────────────
-function selectStyle(style, cardEl){
-  activeStyle = style;
-  // Mark selected card
-  document.querySelectorAll('.style-card').forEach(function(c){c.classList.remove('selected');});
-  if(cardEl) cardEl.classList.add('selected');
-  // Go process
-  setTimeout(function(){ runProcessing(); }, 200);
-}
-
-// ── Processing screen ─────────────────────────────────────────────
-function runProcessing(){
+// ── Processing: listen to FULL video then show preview ────────────
+function startProcessing(){
   captions   = [];
   brollItems = [];
+  var usedKws = new Set();
   goTo('screenProcess');
-  document.getElementById('processTitle').textContent = 'Editing in ' + activeStyle.name + ' style…';
 
-  var steps = [
-    {pct:10, title:'Analysing your video…',          desc:'Reading frames and audio…'},
-    {pct:28, title:'Detecting speech…',               desc:'Listening for words and energy…'},
-    {pct:50, title:'Building captions…',              desc:'Formatting in '+activeStyle.name+' style…'},
-    {pct:68, title:'Colour grading…',                 desc:'Applying '+activeStyle.name+' look…'},
-    {pct:82, title:'Finding B-roll images…',          desc:'Matching visuals to your words…'},
-    {pct:95, title:'Compositing final preview…',      desc:'Baking captions into video…'},
-    {pct:100,title:'Done!',                           desc:'Your '+activeStyle.name+' edit is ready'}
+  var st = activeStyle;
+  document.getElementById('processTitle').textContent = 'Applying '+st.name+' style…';
+  document.getElementById('processDesc').textContent  = 'Playing your video and detecting speech — this takes the full video length';
+
+  // Steps shown during listening
+  var displaySteps = [
+    'Reading video…',
+    'Detecting speech & writing captions…',
+    'Extracting keywords for B-roll…',
+    'Applying '+st.name+' colour grade…',
+    'Compositing captions…',
+    'Finalising your edit…'
   ];
-
+  var stepLog = document.getElementById('progSteps');
   var si = 0;
-  function nextStep(){
-    if(si >= steps.length){
-      setTimeout(function(){ launchPreview(); }, 400);
-      return;
+  var stepTimer = setInterval(function(){
+    if(si < displaySteps.length){
+      stepLog.innerHTML += '<div>⚡ '+displaySteps[si]+'</div>';
+      si++;
     }
-    var s = steps[si++];
-    progBar.style.width = s.pct + '%';
-    document.getElementById('processTitle').textContent = s.title;
-    document.getElementById('processDesc').textContent  = s.desc;
-    var log = document.getElementById('progSteps');
-    if(si > 1) log.innerHTML += '<div style="opacity:.5">✓ '+steps[si-2].title+'</div>';
+  }, 2000);
 
-    // At step 2: silently request mic and start listening
-    if(si === 2) silentlyListen();
-
-    setTimeout(nextStep, 900 + Math.random()*400);
-  }
-  nextStep();
-}
-
-// ── Speech listening (silent, in background during processing) ────
-function silentlyListen(){
+  // ── Start speech recognition ──────────────────────────────────
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR || isListening) return;
-  try{
+  if(SR){
     recog = new SR();
-    recog.continuous = true;
-    recog.interimResults = true;
+    recog.continuous      = true;
+    recog.interimResults  = true;
     recog.maxAlternatives = 1;
-    recog.lang = 'en-GB';
-    recStart = Date.now();
-    var lastFinal = '';
+    recog.lang            = 'en-GB';
+    listenStart           = Date.now();
+    var lastFinal         = '';
 
     recog.onresult = function(event){
-      var final = '';
+      var final = '', interim = '';
       for(var i=event.resultIndex;i<event.results.length;i++){
-        if(event.results[i].isFinal) final += event.results[i][0].transcript;
+        if(event.results[i].isFinal) final  += event.results[i][0].transcript;
+        else                          interim += event.results[i][0].transcript;
       }
-      if(final && final !== lastFinal){
-        lastFinal = final;
-        var t = (vid.duration && vid.readyState>=2) ? vid.currentTime : (Date.now()-recStart)/1000;
-        var dramatic = isDramatic(final);
-        chunkSave(final.trim(), t, dramatic);
-        getKeywords(final).forEach(function(kw){ addBrollItem(kw, t); });
+      // Show live in process screen
+      if(interim || final){
+        document.getElementById('processDesc').textContent =
+          '"'+(final||interim).trim()+'"';
+      }
+      if(final && final.trim() !== lastFinal.trim()){
+        lastFinal = final.trim();
+        var t   = vid.readyState>=2 ? vid.currentTime : (Date.now()-listenStart)/1000;
+        var drm = isDramatic(final);
+        chunkSave(final.trim(), t, drm);
+        getKeywords(final).forEach(function(kw){
+          if(!usedKws.has(kw)){
+            usedKws.add(kw);
+            var item = {t:t, url:null, imgEl:null, keyword:kw};
+            brollItems.push(item);
+            fetchImage(kw, function(url){
+              if(url){
+                item.url = url;
+                var img = new Image();
+                img.crossOrigin='anonymous';
+                img.onload = function(){ item.imgEl=img; };
+                img.src = url;
+              }
+            });
+          }
+        });
       }
     };
-    recog.onerror = function(){};
-    recog.onend   = function(){ if(isListening) try{recog.start();}catch(e){} };
-    recog.start();
-    isListening = true;
 
-    // Play video silently so mic can pick up audio
-    vid.muted  = false;
-    vid.volume = 1.0;
-    vid.play().catch(function(){ vid.muted=true; vid.play(); });
-  }catch(e){}
-}
+    recog.onerror = function(e){
+      if(e.error==='not-allowed'){
+        document.getElementById('processDesc').textContent =
+          '⚠ Mic blocked — captions need mic permission. Allow in browser address bar.';
+      }
+    };
 
-function stopListening(){
-  isListening = false;
-  if(recog) try{ recog.abort(); }catch(e){}
+    // Chrome stops after ~60s silence — keep restarting
+    recog.onend = function(){
+      if(isListening) try{recog.start();}catch(e){}
+    };
+
+    try{
+      recog.start();
+      isListening = true;
+    }catch(e){}
+  } else {
+    document.getElementById('processDesc').textContent =
+      '⚠ Auto-captions need Chrome or Edge. You can still preview and export.';
+  }
+
+  // ── Play video WITH AUDIO so mic picks it up ─────────────────
+  vid.muted  = false;
+  vid.volume = 1.0;
+  vid.currentTime = 0;
+  vid.play().catch(function(){
+    vid.muted = true;
+    vid.play();
+  });
+
+  // ── Update progress bar in real time as video plays ──────────
+  vid.ontimeupdate = function(){
+    if(!vid.duration) return;
+    var pct = (vid.currentTime/vid.duration)*100;
+    progBar.style.width = pct+'%';
+    document.getElementById('processTitle').textContent =
+      fmtTime(vid.currentTime)+' / '+fmtTime(vid.duration)+' — listening…';
+  };
+
+  // ── When video ends → stop listening → show preview ──────────
+  vid.onended = function(){
+    clearInterval(stepTimer);
+    isListening = false;
+    if(recog) try{recog.abort();}catch(e){}
+    vid.onended   = null;
+    vid.ontimeupdate = null;
+
+    progBar.style.width = '100%';
+    document.getElementById('processTitle').textContent = 'Edit complete!';
+    document.getElementById('processDesc').textContent  =
+      captions.length+' captions captured · '+brollItems.length+' B-roll images';
+
+    // Brief pause then show preview
+    setTimeout(launchPreview, 800);
+  };
 }
 
 // ── Launch preview ────────────────────────────────────────────────
 function launchPreview(){
-  stopListening();
   goTo('screenPreview');
-
-  // Set canvas size for 9:16
   canvas.width  = 540;
   canvas.height = 960;
 
-  // Update export panel
-  document.getElementById('exportStyleName').textContent = activeStyle.name + ' edit';
-  document.getElementById('exportStats').textContent =
-    captions.length + ' captions generated\n'
-    + brollItems.length + ' B-roll images matched\n'
-    + 'Ready to download';
-  document.getElementById('styleBadge').textContent = activeStyle.name;
+  var st = activeStyle;
+  document.getElementById('exportStyleName').textContent = st.name+' edit';
+  document.getElementById('styleBadge').textContent = st.name;
+  document.getElementById('exportStats').innerHTML =
+    captions.length+' captions &nbsp;·&nbsp; '+
+    brollItems.length+' B-roll images &nbsp;·&nbsp; '+
+    st.name+' grade applied';
 
-  // Preload B-roll images
-  brollItems.forEach(function(b){
-    if(!b.url) return;
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function(){ b.imgEl = img; };
-    img.onerror = function(){ b.imgEl = null; };
-    img.src = b.url;
-  });
-
-  // Start draw loop
   vid.pause();
   vid.currentTime = 0;
-  drawFrame();
+
+  // Reset video event handlers for preview mode
+  vid.ontimeupdate = function(){
+    var t=vid.currentTime, d=vid.duration||1;
+    var fill=document.getElementById('vcFill');
+    if(fill) fill.style.width=(t/d*100)+'%';
+    document.getElementById('vcTime').textContent=fmtTime(t)+' / '+fmtTime(d);
+  };
+  vid.onended = function(){
+    isPlaying=false;
+    document.getElementById('vcPlay').textContent='▶';
+    document.getElementById('playOverlay').classList.remove('playing');
+    cancelAnimationFrame(rafId);
+  };
+
+  // Draw first frame
+  vid.onseeked = function(){ drawFrame(); };
+  setTimeout(drawFrame, 100);
 }
 
-// ── Canvas draw loop ──────────────────────────────────────────────
+// ── Offscreen grade canvas (reused) ──────────────────────────────
+var gradeCanvas = document.createElement('canvas');
+var gradeCtx    = gradeCanvas.getContext('2d');
+
+// ── Canvas draw ───────────────────────────────────────────────────
 function drawFrame(){
-  if(!vid.videoWidth){ rafId = requestAnimationFrame(drawFrame); return; }
+  if(!vid.videoWidth){ rafId=requestAnimationFrame(drawFrame); return; }
 
-  var W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
+  var W=canvas.width, H=canvas.height;
+  var st=activeStyle;
 
-  var st = activeStyle;
-
-  // 1. Draw video frame (scaled to fill canvas)
-  var vw = vid.videoWidth, vh = vid.videoHeight;
-  var scale = Math.max(W/vw, H/vh);
-  var dw = vw*scale, dh = vh*scale;
-  var dx = (W-dw)/2, dy = (H-dh)/2;
-  ctx.drawImage(vid, dx, dy, dw, dh);
-
-  // 2. Colour grade (fast pixel tweak via globalCompositeOperation)
-  applyGrade(W, H, st);
-
-  // 3. Letterbox bars
-  if(st.letterbox){
-    var barH = H*0.07;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0,0,W,barH);
-    ctx.fillRect(0,H-barH,W,barH);
+  // Sync offscreen grade canvas size
+  if(gradeCanvas.width!==W||gradeCanvas.height!==H){
+    gradeCanvas.width=W; gradeCanvas.height=H;
   }
 
-  // 4. Vignette
-  if(st.vignetteStrength > 0) applyVignette(W, H, st.vignetteStrength);
+  ctx.clearRect(0,0,W,H);
 
-  // 5. Film grain
-  if(st.filmGrain) applyGrain(W, H);
+  // ── 1. Draw video through CSS filter on offscreen canvas ─────
+  var vw=vid.videoWidth, vh=vid.videoHeight;
+  var sc=Math.max(W/vw,H/vh);
+  var dw=vw*sc, dh=vh*sc;
+  var dx=(W-dw)/2, dy=(H-dh)/2;
 
-  // 6. B-roll overlay at current time
-  var now = vid.currentTime;
+  // Apply filter on offscreen, then blit to main canvas
+  gradeCtx.clearRect(0,0,W,H);
+  gradeCtx.filter = st.gradeFilter || 'none';
+  gradeCtx.drawImage(vid, dx, dy, dw, dh);
+  gradeCtx.filter = 'none';
+  ctx.drawImage(gradeCanvas, 0, 0);
+
+  // ── 2. Style-specific colour overlays ────────────────────────
+  applyColourOverlay(W, H, st);
+
+  // ── 3. Vignette ───────────────────────────────────────────────
+  if(st.vignette>0){
+    var g=ctx.createRadialGradient(W/2,H/2,H*0.18,W/2,H/2,H*0.82);
+    g.addColorStop(0,'rgba(0,0,0,0)');
+    g.addColorStop(1,'rgba(0,0,0,'+st.vignette+')');
+    ctx.fillStyle=g;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // ── 4. Letterbox ──────────────────────────────────────────────
+  if(st.letterbox){
+    var bh=Math.round(H*0.08);
+    ctx.fillStyle='#000';
+    ctx.fillRect(0,0,W,bh);
+    ctx.fillRect(0,H-bh,W,bh);
+  }
+
+  // ── 5. Film grain ─────────────────────────────────────────────
+  if(st.grain) applyGrain(W,H);
+
+  // ── 6. Corporate lower-third bar ─────────────────────────────
+  if(st.lowerThird){
+    var grad=ctx.createLinearGradient(0,H*0.80,0,H*0.93);
+    grad.addColorStop(0,'rgba(4,10,20,0.95)');
+    grad.addColorStop(1,'rgba(4,10,20,0.7)');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,H*0.80,W,H*0.13);
+    ctx.fillStyle='#4fc3f7';
+    ctx.fillRect(0,H*0.80,W,3);
+  }
+
+  // ── 7. B-roll image at current timestamp ─────────────────────
+  var now=vid.currentTime;
   brollItems.forEach(function(b){
-    if(b.imgEl && now >= b.t && now < b.t + 3){
+    if(b.imgEl && now>=b.t && now<b.t+2.8){
+      var fade=1;
+      var elapsed=now-b.t;
+      if(elapsed<0.4) fade=elapsed/0.4;           // fade in
+      if(elapsed>2.2) fade=(2.8-elapsed)/0.6;     // fade out
       ctx.save();
-      ctx.globalAlpha = 0.72;
-      ctx.drawImage(b.imgEl, 0, 0, W, H);
+      ctx.globalAlpha=Math.max(0,Math.min(1,fade))*0.72;
+      var iw=b.imgEl.naturalWidth||540;
+      var ih=b.imgEl.naturalHeight||960;
+      var isc=Math.max(W/iw,H/ih);
+      ctx.drawImage(b.imgEl,(W-iw*isc)/2,(H-ih*isc)/2,iw*isc,ih*isc);
+      ctx.restore();
+      // Keyword label on B-roll
+      ctx.save();
+      ctx.font='bold 13px "DM Sans",sans-serif';
+      ctx.fillStyle='rgba(0,0,0,0.7)';
+      ctx.fillRect(12,H-48,ctx.measureText(b.keyword||'').width+20,28);
+      ctx.fillStyle='#fff';
+      ctx.textAlign='left';
+      ctx.textBaseline='middle';
+      ctx.fillText(b.keyword||'', 22, H-34);
       ctx.restore();
     }
   });
 
-  // 7. Lower-third bar (corporate style)
-  if(st.lowerThird){
-    ctx.fillStyle = 'rgba(13,27,42,.88)';
-    ctx.fillRect(0, H*0.80, W, H*0.12);
-  }
+  // ── 8. Captions ───────────────────────────────────────────────
+  drawCaptions(W,H,now,st);
 
-  // 8. Captions
-  drawCaptions(W, H, now, st);
+  // ── 9. Watermark ──────────────────────────────────────────────
+  ctx.save();
+  ctx.font='10px "DM Sans",sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.22)';
+  ctx.textAlign='right';
+  ctx.textBaseline='top';
+  ctx.fillText('ImpactGrid',W-10,10);
+  ctx.restore();
 
-  // 9. Watermark
-  ctx.font = '11px "DM Sans",sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.28)';
-  ctx.textAlign = 'right';
-  ctx.fillText('ImpactGrid', W-12, 20);
-
-  if(isPlaying && !vid.paused) rafId = requestAnimationFrame(drawFrame);
-  else if(!isPlaying){ cancelAnimationFrame(rafId); }
-  else rafId = requestAnimationFrame(drawFrame);
+  if(isPlaying) rafId=requestAnimationFrame(drawFrame);
 }
 
-// ── Colour grade ──────────────────────────────────────────────────
-function applyGrade(W, H, st){
-  // Use multiply/screen compositing for fast grade
-  if(st.gradeR > 1 || st.gradeG > 1 || st.gradeB > 1){
-    // Lighten channel
-    var maxBoost = Math.max(st.gradeR,st.gradeG,st.gradeB);
-    var alpha = (maxBoost - 1) * 0.5;
-    var r = st.gradeR>1 ? 255 : 0;
-    var g = st.gradeG>1 ? 255 : 0;
-    var b = st.gradeB>1 ? 255 : 0;
-    ctx.fillStyle = 'rgba('+r+','+g+','+b+','+alpha.toFixed(2)+')';
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillRect(0,0,W,H);
-    ctx.globalCompositeOperation = 'source-over';
-  }
-  if(st.gradeR < 1 || st.gradeG < 1 || st.gradeB < 1){
-    var minGrade = Math.min(st.gradeR,st.gradeG,st.gradeB);
-    var alpha2 = (1-minGrade)*0.5;
-    var r2 = st.gradeR<1 ? 0 : 255;
-    var g2 = st.gradeG<1 ? 0 : 255;
-    var b2 = st.gradeB<1 ? 0 : 255;
-    ctx.fillStyle = 'rgba('+r2+','+g2+','+b2+','+alpha2.toFixed(2)+')';
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillRect(0,0,W,H);
-    ctx.globalCompositeOperation = 'source-over';
-  }
-}
-
-function applyVignette(W, H, strength){
-  var grd = ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.75);
-  grd.addColorStop(0,'rgba(0,0,0,0)');
-  grd.addColorStop(1,'rgba(0,0,0,'+strength+')');
-  ctx.fillStyle = grd;
+// ── Per-style colour overlay (makes styles visually distinct) ────
+function applyColourOverlay(W,H,st){
+  var overlays = {
+    viral:       {mode:'soft-light', color:'rgba(255,80,0,0.18)'},
+    cinematic:   {mode:'soft-light', color:'rgba(0,40,120,0.22)'},
+    corporate:   {mode:'soft-light', color:'rgba(0,80,160,0.14)'},
+    hype:        {mode:'soft-light', color:'rgba(255,200,0,0.20)'},
+    podcast:     {mode:'soft-light', color:'rgba(100,60,200,0.16)'},
+    documentary: {mode:'soft-light', color:'rgba(180,100,0,0.22)'}
+  };
+  var ov = overlays[st.id];
+  if(!ov) return;
+  ctx.globalCompositeOperation = ov.mode;
+  ctx.fillStyle = ov.color;
   ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation = 'source-over';
 }
 
-function applyGrain(W, H){
-  var id = ctx.getImageData(0,0,W,H);
-  var d  = id.data;
-  for(var i=0;i<d.length;i+=4){
-    var n=(Math.random()-.5)*18;
+function applyGrain(W,H){
+  // Sparse grain — only sample every 4th pixel for performance
+  var id=ctx.getImageData(0,0,W,H), d=id.data;
+  for(var i=0;i<d.length;i+=16){
+    var n=(Math.random()-.5)*26;
     d[i]+=n; d[i+1]+=n; d[i+2]+=n;
   }
   ctx.putImageData(id,0,0);
 }
 
 // ── Caption drawing ───────────────────────────────────────────────
-function drawCaptions(W, H, now, st){
-  var active = null;
+function drawCaptions(W,H,now,st){
+  // Find active caption
+  var cap=null;
   for(var i=0;i<captions.length;i++){
-    if(captions[i].t <= now && now < captions[i].t + 3.2){
-      active = captions[i]; break;
-    }
+    if(captions[i].t<=now && now<captions[i].t+3.5){ cap=captions[i]; break; }
   }
-  if(!active) return;
+  if(!cap) return;
 
-  var text     = active.text;
-  var dramatic = active.dramatic;
-  var bg       = dramatic ? st.dramaticBg    : st.captionBg;
-  var color    = dramatic ? st.dramaticColor : st.captionColor;
-  var font     = st.captionFont;
-  var size     = st.captionSize * (dramatic ? st.dramaticScale : 1);
-  var y        = H * st.captionPos;
+  var text=cap.text, drm=cap.dramatic;
+  var bg   = drm ? st.dramaticBg    : st.captionBg;
+  var col  = drm ? st.dramaticColor : st.captionColor;
+  var size = st.captionSize * (drm?1.12:1);
+  var y    = H*st.captionY;
+
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
 
   if(st.wordByWord){
-    // Word-by-word highlight style (podcast)
-    drawWordByWord(W, y, text, now - active.t, st);
+    drawWordHighlight(W,y,text,now-cap.t,st,drm);
   } else {
-    // Standard caption block
-    ctx.font = font;
-    ctx.textAlign = 'center';
-    var padding = 10;
-    var metrics = ctx.measureText(text);
-    var tw = Math.min(metrics.width + padding*2, W-40);
-    var th = size + padding*2;
-    var x  = W/2;
+    // Single caption block
+    ctx.font='bold '+size+'px "DM Sans",sans-serif';
+    var tw = ctx.measureText(text).width;
+    var padX=16, padY=10;
+    var bw=Math.min(tw+padX*2, W-32);
+    var bh=size+padY*2;
+    var bx=W/2-bw/2;
+    var by=y-bh/2;
 
-    // Background pill
-    if(bg && bg !== 'rgba(0,0,0,0)'){
-      ctx.fillStyle = bg;
+    // Background
+    if(bg && bg!=='transparent'){
+      ctx.fillStyle=bg;
       ctx.beginPath();
-      ctx.roundRect(x - tw/2, y - th/2, tw, th, 7);
+      if(ctx.roundRect) ctx.roundRect(bx,by,bw,bh,8);
+      else ctx.rect(bx,by,bw,bh);
       ctx.fill();
-    } else if(bg === 'rgba(0,0,0,0)'){
-      // Text shadow only
-      ctx.shadowColor = 'rgba(0,0,0,.8)';
-      ctx.shadowBlur  = 6;
+    } else {
+      // Shadow only for transparent background
+      ctx.shadowColor='rgba(0,0,0,0.9)';
+      ctx.shadowBlur=8;
     }
 
-    ctx.fillStyle = color;
-    ctx.fillText(text, x, y + size*0.35);
-    ctx.shadowBlur = 0;
+    // Text
+    ctx.fillStyle=col;
+    ctx.font='bold '+size+'px "DM Sans",sans-serif';
+    ctx.fillText(text, W/2, y);
+    ctx.shadowBlur=0;
   }
+  ctx.restore();
 }
 
-function drawWordByWord(W, y, text, elapsed, st){
-  var words    = text.split(' ');
-  var perWord  = 3.2 / Math.max(words.length, 1);
-  var activeWi = Math.floor(elapsed / perWord);
-  var xPos     = W/2;
-  var size     = st.captionSize;
+function drawWordHighlight(W,y,text,elapsed,st,drm){
+  var words   = text.split(' ');
+  var perWord = 3.2/Math.max(words.length,1);
+  var active  = Math.floor(elapsed/perWord);
+  var size    = st.captionSize;
 
-  ctx.font     = st.captionFont;
-  ctx.textAlign = 'center';
+  ctx.font='bold '+size+'px "DM Sans",sans-serif';
 
-  // Measure total to centre
-  var total = words.reduce(function(a,w){ return a + ctx.measureText(w+' ').width; }, 0);
-  var startX = xPos - total/2;
+  // Measure total width
+  var totalW = words.reduce(function(a,w){return a+ctx.measureText(w).width+8;},0);
+  var x = W/2 - totalW/2;
 
-  words.forEach(function(w, wi){
-    var ww = ctx.measureText(w+' ').width;
-    var cx = startX + ww/2;
-    var isActive = (wi === activeWi);
-    var bg2    = isActive ? st.dramaticBg    : st.captionBg;
-    var color2 = isActive ? st.dramaticColor : st.captionColor;
+  words.forEach(function(w,wi){
+    var ww  = ctx.measureText(w).width;
+    var cx  = x+ww/2;
+    var isA = (wi===active);
+    var bg2 = isA ? st.dramaticBg    : st.captionBg;
+    var c2  = isA ? st.dramaticColor : st.captionColor;
 
-    if(bg2 && bg2 !== 'rgba(0,0,0,0)'){
-      ctx.fillStyle = bg2;
-      ctx.beginPath();
-      ctx.roundRect(startX-4, y-size/2-6, ww, size+12, 5);
+    if(bg2&&bg2!=='transparent'){
+      ctx.fillStyle=bg2;
+      var ph=size+10;
+      if(ctx.roundRect) ctx.roundRect(x-3,y-ph/2,ww+6,ph,5);
+      else ctx.rect(x-3,y-ph/2,ww+6,ph);
       ctx.fill();
+      ctx.beginPath();
     }
-    ctx.fillStyle = color2;
-    ctx.fillText(w, cx, y + size*0.35);
-    startX += ww;
+    ctx.fillStyle=c2||'#fff';
+    ctx.textAlign='left';
+    ctx.fillText(w,x,y+size*0.35);
+    x+=ww+8;
   });
+  ctx.textAlign='center';
 }
 
 // ── Playback ─────────────────────────────────────────────────────
 function togglePlay(){
-  if(!vid.src){ toast('Add a clip first'); return; }
+  if(!vid.src){toast('Add a clip first');return;}
   if(vid.paused){
     vid.play();
-    isPlaying = true;
-    document.getElementById('vcPlay').textContent   = '⏸';
-    document.getElementById('playBtnBig').textContent = '⏸';
+    isPlaying=true;
+    document.getElementById('vcPlay').textContent='⏸';
+    document.getElementById('playBtnBig').textContent='⏸';
     document.getElementById('playOverlay').classList.add('playing');
-    rafId = requestAnimationFrame(drawFrame);
+    rafId=requestAnimationFrame(drawFrame);
   } else {
     vid.pause();
-    isPlaying = false;
-    document.getElementById('vcPlay').textContent   = '▶';
-    document.getElementById('playBtnBig').textContent = '▶';
+    isPlaying=false;
+    document.getElementById('vcPlay').textContent='▶';
+    document.getElementById('playBtnBig').textContent='▶';
     document.getElementById('playOverlay').classList.remove('playing');
+    cancelAnimationFrame(rafId);
     drawFrame();
   }
 }
 
-vid.ontimeupdate = function(){
-  var t = vid.currentTime, d = vid.duration||0;
-  var fill = document.getElementById('vcFill');
-  if(fill) fill.style.width = (d?t/d*100:0)+'%';
-  document.getElementById('vcTime').textContent = fmt(t)+' / '+fmt(d);
-  if(!isPlaying) drawFrame(); // update while scrubbing
-};
-
-vid.onended = function(){
-  isPlaying = false;
-  document.getElementById('vcPlay').textContent = '▶';
-  document.getElementById('playBtnBig').textContent = '▶';
-  document.getElementById('playOverlay').classList.remove('playing');
-};
-
 function seekTo(e){
-  var rect = e.currentTarget.getBoundingClientRect();
-  var pct  = (e.clientX - rect.left) / rect.width;
-  vid.currentTime = pct * (vid.duration||0);
-  drawFrame();
+  var rect=e.currentTarget.getBoundingClientRect();
+  var pct=(e.clientX-rect.left)/rect.width;
+  vid.currentTime=pct*(vid.duration||0);
+  if(!isPlaying) setTimeout(drawFrame,50);
 }
 
-// ── Export: record canvas + audio ────────────────────────────────
-var exportFmt = 'reel';
+// ── Apply style change without re-processing ──────────────────────
+function applyStyleToCanvas(){
+  if(!isPlaying) setTimeout(drawFrame,50);
+}
+
+// ── Export via MediaRecorder ─────────────────────────────────────
 function setFmt(btn){
   document.querySelectorAll('.fmt-btn').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
-  exportFmt = btn.dataset.fmt;
+  exportFmt=btn.dataset.fmt;
 }
 
 function startExport(){
-  if(!vid.src){ toast('No video to export'); return; }
+  if(!vid.src){toast('No video loaded');return;}
 
-  // Resize canvas for chosen format
-  var W, H;
-  if(exportFmt==='reel')   { W=540; H=960; }
-  else if(exportFmt==='youtube'){ W=1280; H=720; }
-  else                          { W=720;  H=720; }
+  // Set canvas size for format
+  if(exportFmt==='reel')         {canvas.width=540; canvas.height=960;}
+  else if(exportFmt==='youtube') {canvas.width=1280;canvas.height=720;}
+  else                           {canvas.width=720; canvas.height=720;}
 
-  canvas.width  = W;
-  canvas.height = H;
+  var ep=document.getElementById('exportProgress');
+  var bar=document.getElementById('expBar');
+  var lbl=document.getElementById('expLabel');
+  ep.style.display='block';
+  document.getElementById('exportBtn').disabled=true;
 
-  var ep  = document.getElementById('exportProgress');
-  var bar = document.getElementById('expBar');
-  var lbl = document.getElementById('expLabel');
-  ep.style.display = 'block';
-  document.getElementById('exportBtn').disabled = true;
+  // Capture canvas stream at 30fps
+  var stream=canvas.captureStream(30);
 
-  // Use MediaRecorder to capture canvas + video audio
-  var stream = canvas.captureStream(30);
-
-  // Add audio track from video
+  // Add audio from video element
   try{
-    var actx   = new AudioContext();
-    var src    = actx.createMediaElementSource(vid);
-    var dest   = actx.createMediaStreamDestination();
-    src.connect(dest);
-    src.connect(actx.destination);
-    dest.stream.getAudioTracks().forEach(function(t){ stream.addTrack(t); });
-  }catch(e){ /* no audio — video only */ }
+    var ac=new AudioContext();
+    var src2=ac.createMediaElementSource(vid);
+    var dest=ac.createMediaStreamDestination();
+    src2.connect(dest);
+    src2.connect(ac.destination);
+    dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});
+  }catch(e){}
 
-  var chunks   = [];
-  var mimeType = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(function(m){
-    return MediaRecorder.isTypeSupported(m);
-  }) || 'video/webm';
+  var mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']
+    .find(function(m){return MediaRecorder.isTypeSupported(m);})||'video/webm';
 
-  var recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 4000000 });
-  recorder.ondataavailable = function(e){ if(e.data.size>0) chunks.push(e.data); };
-  recorder.onstop = function(){
-    var blob = new Blob(chunks, { type: mimeType });
-    var a    = document.createElement('a');
-    a.href   = URL.createObjectURL(blob);
-    a.download = 'impactgrid_'+activeStyle.id+'_'+exportFmt+'.webm';
+  var chunks=[];
+  var rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:5000000});
+  rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
+  rec.onstop=function(){
+    var blob=new Blob(chunks,{type:mime});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='impactgrid_'+activeStyle.id+'_'+exportFmt+'.webm';
     document.body.appendChild(a);
     a.click();
     a.remove();
-    bar.style.width = '100%';
-    lbl.textContent = '✓ Download started!';
-    document.getElementById('exportBtn').disabled = false;
-    toast('✓ Video exported!');
-    setTimeout(function(){ ep.style.display='none'; }, 3000);
-  };
-
-  // Play video from start, record canvas in real time
-  vid.currentTime = 0;
-  isPlaying = true;
-  vid.play();
-  recorder.start(100);
-  rafId = requestAnimationFrame(drawFrame);
-
-  var duration = vid.duration * 1000;
-  var startTime = Date.now();
-
-  var progInterval = setInterval(function(){
-    var elapsed = Date.now() - startTime;
-    var pct = Math.min(elapsed/duration*100, 95);
-    bar.style.width = pct + '%';
-    lbl.textContent = 'Rendering… ' + Math.round(pct) + '%';
-  }, 500);
-
-  vid.onended = function(){
-    clearInterval(progInterval);
-    isPlaying = false;
-    recorder.stop();
-    vid.onended = null;
-    // Re-attach normal onended
-    vid.onended = function(){
+    bar.style.width='100%';
+    lbl.textContent='✓ Download started!';
+    document.getElementById('exportBtn').disabled=false;
+    toast('✓ Exported as '+activeStyle.name+' · '+exportFmt);
+    setTimeout(function(){ep.style.display='none';},4000);
+    // restore onended
+    vid.onended=function(){
       isPlaying=false;
       document.getElementById('vcPlay').textContent='▶';
       document.getElementById('playOverlay').classList.remove('playing');
+      cancelAnimationFrame(rafId);
     };
+  };
+
+  // Play from start and record
+  vid.currentTime=0;
+  isPlaying=true;
+  vid.play();
+  rec.start(100);
+  rafId=requestAnimationFrame(drawFrame);
+
+  var dur=vid.duration*1000;
+  var t0=Date.now();
+  var pi=setInterval(function(){
+    var pct=Math.min((Date.now()-t0)/dur*95,95);
+    bar.style.width=pct+'%';
+    lbl.textContent='Recording… '+Math.round(pct)+'%';
+  },400);
+
+  vid.onended=function(){
+    clearInterval(pi);
+    isPlaying=false;
+    rec.stop();
   };
 }
 
-// ── Caption engine ────────────────────────────────────────────────
-var DRAMATIC = new Set(['amazing','incredible','huge','massive','love','hate','never','always',
+// ── Speech helpers ────────────────────────────────────────────────
+var DRAMATIC=new Set(['amazing','incredible','huge','massive','love','hate','never','always',
   'breaking','must','best','worst','epic','shocking','winner','first','exclusive','secret',
   'free','real','truth','only','biggest','powerful','transform','change','money','success',
-  'wow','yes','no','stop','wait','watch','look','listen','game','changer','mind','blown',
-  'insane','crazy','unbelievable','massive','launch','new','live','now','today']);
+  'wow','stop','watch','look','game','changer','insane','crazy','unbelievable','launch',
+  'new','live','now','today','wait','omg','seriously','literally']);
 
 function isDramatic(text){
-  if(/[!?]{1}/.test(text)) return true;
-  var lower = text.toLowerCase();
-  return Array.from(DRAMATIC).some(function(w){ return lower.indexOf(w) !== -1; });
+  if(/[!?]/.test(text)) return true;
+  var l=text.toLowerCase();
+  return Array.from(DRAMATIC).some(function(w){return l.indexOf(w)!==-1;});
 }
 
-function chunkSave(text, t, dramatic){
-  var words = text.split(/\s+/);
-  var chunk = [], time = t;
-  words.forEach(function(w, wi){
+function chunkSave(text,t,drm){
+  var words=text.split(/\s+/), chunk=[], time=t;
+  words.forEach(function(w,wi){
     chunk.push(w);
-    if(chunk.length >= 4 || wi === words.length-1){
-      captions.push({ t: Math.max(0,time), text: chunk.join(' '), dramatic: dramatic });
-      time += chunk.length * 0.38;
-      chunk = [];
+    if(chunk.length>=4||wi===words.length-1){
+      captions.push({t:Math.max(0,time),text:chunk.join(' '),dramatic:drm});
+      time+=chunk.length*0.38;
+      chunk=[];
     }
   });
 }
 
-// ── B-roll ────────────────────────────────────────────────────────
-var usedKws = new Set();
-function addBrollItem(keyword, t){
-  if(usedKws.has(keyword)) return;
-  usedKws.add(keyword);
-
-  var item = { t: t, url: null, imgEl: null };
-  brollItems.push(item);
-
-  // Canvas placeholder (immediate)
-  var c = makeKwCanvas(keyword);
-  item.canvasUrl = c.toDataURL();
-
-  // Try real image
-  fetchImage(keyword, function(url){
-    if(url){
-      item.url = url;
-      var img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function(){ item.imgEl = img; };
-      img.src = url;
-    } else {
-      // Use canvas as fallback image
-      item.url  = item.canvasUrl;
-      var img2  = new Image();
-      img2.onload = function(){ item.imgEl = img2; };
-      img2.src  = item.canvasUrl;
-    }
-  });
-}
-
-function makeKwCanvas(kw){
-  var c = document.createElement('canvas');
-  c.width=540; c.height=960;
-  var cx = c.getContext('2d');
-  var h  = 0;
-  for(var i=0;i<kw.length;i++) h=(h*31+kw.charCodeAt(i))%360;
-  var g = cx.createLinearGradient(0,0,540,960);
-  g.addColorStop(0,'hsl('+h+',40%,8%)');
-  g.addColorStop(1,'hsl('+((h+60)%360)+',50%,14%)');
-  cx.fillStyle=g; cx.fillRect(0,0,540,960);
-  cx.font='bold 36px "DM Sans",sans-serif';
-  cx.fillStyle='rgba(240,201,58,.5)';
-  cx.textAlign='center'; cx.textBaseline='middle';
-  cx.fillText(kw.toUpperCase(),270,480);
-  return c;
-}
-
-function fetchImage(keyword, cb){
-  var enc  = encodeURIComponent(keyword);
-  var h    = 0; for(var i=0;i<keyword.length;i++) h=(h*31+keyword.charCodeAt(i))&0xffff;
-  var sources = [
-    'https://loremflickr.com/540/960/'+enc+'?random='+((h%8000)+200),
-    'https://picsum.photos/540/960?random='+((h%500)+10)
-  ];
-  var idx=0;
-  function next(){
-    if(idx>=sources.length){cb(null);return;}
-    var url=sources[idx++], img=new Image(), done=false;
-    img.crossOrigin='anonymous';
-    var timer=setTimeout(function(){if(!done){done=true;next();}},5000);
-    img.onload=function(){if(!done){done=true;clearTimeout(timer);cb(url);}};
-    img.onerror=function(){if(!done){done=true;clearTimeout(timer);next();}};
-    img.src=url;
-  }
-  next();
-}
-
-// ── Keyword extraction ────────────────────────────────────────────
-var STOP = new Set(['the','is','are','a','an','and','to','of','in','it','that','this','with',
+var STOP=new Set(['the','is','are','a','an','and','to','of','in','it','that','this','with',
   'for','on','you','i','we','he','she','they','was','be','at','by','from','have','do','not',
-  'but','what','when','there','has','will','about','just','so','up','more','its','which',
-  'your','our','can','had','how','some','if','my','me','as','get','like','know','really',
-  'very','then','than','into','out','been','were','would','could','should','did','does']);
+  'but','what','when','there','has','will','about','just','so','up','more','its','also',
+  'which','your','our','can','had','how','some','if','my','me','as','get','like','know',
+  'really','very','then','than','into','out','been','were','would','could','should']);
 
 function getKeywords(text){
   var words=text.replace(/[.,!?;:'"]/g,' ').toLowerCase().split(/\s+/);
@@ -756,27 +710,43 @@ function getKeywords(text){
   }).slice(0,2);
 }
 
-// ── Screen navigation ─────────────────────────────────────────────
+// ── Image fetch ───────────────────────────────────────────────────
+function fetchImage(kw,cb){
+  var enc=encodeURIComponent(kw);
+  var h=0; for(var i=0;i<kw.length;i++) h=(h*31+kw.charCodeAt(i))&0xffff;
+  var sources=[
+    'https://loremflickr.com/540/960/'+enc+'?random='+((h%8000)+100),
+    'https://picsum.photos/540/960?random='+((h%500)+1)
+  ];
+  var idx=0;
+  function next(){
+    if(idx>=sources.length){cb(null);return;}
+    var url=sources[idx++], img=new Image(), done=false;
+    img.crossOrigin='anonymous';
+    var timer=setTimeout(function(){if(!done){done=true;next();}},6000);
+    img.onload=function(){if(!done){done=true;clearTimeout(timer);cb(url);}};
+    img.onerror=function(){if(!done){done=true;clearTimeout(timer);next();}};
+    img.src=url;
+  }
+  next();
+}
+
+// ── Navigation ────────────────────────────────────────────────────
 function goTo(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
-  var el = document.getElementById(id);
-  if(el) el.classList.add('active');
-  // Reset scroll
-  window.scrollTo(0,0);
+  var el=document.getElementById(id);
+  if(el){el.classList.add('active');window.scrollTo(0,0);}
 }
 
-// ── Helpers ───────────────────────────────────────────────────────
-function fmt(s){
-  if(!s||isNaN(s)) return '0:00';
-  var m=Math.floor(s/60), sec=Math.floor(s%60);
+// ── Utilities ─────────────────────────────────────────────────────
+function fmtTime(s){
+  if(!s||isNaN(s))return'0:00';
+  var m=Math.floor(s/60),sec=Math.floor(s%60);
   return m+':'+(sec<10?'0':'')+sec;
 }
-
-var toastTimer;
+var _tt;
 function toast(msg){
   var el=document.getElementById('toast');
-  el.textContent=msg;
-  el.className='toast show';
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){el.className='toast';},4000);
+  el.textContent=msg; el.className='toast show';
+  clearTimeout(_tt); _tt=setTimeout(function(){el.className='toast';},4000);
 }
