@@ -524,7 +524,9 @@ function processWithAssemblyAI(){
     .then(function(data){
       log('✓ Uploaded successfully');
       setStatus('🔬','Transcribing…','AssemblyAI is analysing your audio…', 25);
-      submitTranscript(data.upload_url);
+      var uploadUrl = data.upload_url || data.uploadUrl;
+      if(!uploadUrl) throw new Error('No upload URL returned — check API key');
+      submitTranscript(uploadUrl);
     })
     .catch(function(err){
       setStatus('❌','Upload failed',err.message, 0);
@@ -542,16 +544,17 @@ function submitTranscript(audioUrl){
       'content-type':   'application/json'
     },
     body: JSON.stringify({
-      audio_url:  audioUrl,
-      punctuate:  true,
-      format_text: true
+      audio_url: audioUrl
     })
   })
   .then(function(r){
-    if(!r.ok) throw new Error('Transcript submit failed: '+r.status);
+    if(!r.ok) return r.json().then(function(e){
+      throw new Error('Transcript submit failed: '+r.status+' — '+(e.error||e.message||JSON.stringify(e)));
+    });
     return r.json();
   })
   .then(function(data){
+    if(!data.id) throw new Error('No transcript ID returned: '+JSON.stringify(data));
     transcriptId=data.id;
     log('✓ Transcription queued (ID: '+data.id+')');
     setStatus('🎙','Transcribing speech…','This takes 30–90 seconds — word-perfect accuracy…', 35);
