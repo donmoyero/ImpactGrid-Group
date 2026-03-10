@@ -4,205 +4,135 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ImpactGrid Creator Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0a0a0a;--card:#141414;--b:#222;--or:#ff5c1a;--gold:#f0c93a;--tx:#f0ebe5;--dim:#666}
-body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-height:100vh}
-
-.topbar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#0f0f0f;border-bottom:1px solid var(--b);position:sticky;top:0;z-index:100}
-.brand{font-family:Syne,sans-serif;font-weight:800;font-size:15px}
-.pill{display:none;align-items:center;gap:6px;background:rgba(255,92,26,.15);border:1px solid rgba(255,92,26,.4);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--or);font-weight:600}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--or);animation:blink 1s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-
-.layout{display:grid;grid-template-columns:1fr 300px;gap:16px;padding:16px;max-width:1200px;margin:0 auto}
-.card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px;margin-bottom:14px}
-.lbl{font-family:Syne,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:12px}
-
-/* Upload */
-.dropzone{border:2px dashed var(--b);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s}
-.dropzone:hover{border-color:var(--or);background:rgba(255,92,26,.04)}
-.dropzone input{display:none}
-#clipList{margin-top:10px}
-.clip-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#0f0f0f;border:1px solid var(--b);border-radius:7px;margin-bottom:5px;font-size:12px}
-.clip-row button{background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px}
-.clip-row button:hover{color:#e03030}
-
-/* Buttons */
-.btn{background:var(--or);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%;transition:.15s;font-family:'DM Sans',sans-serif}
-.btn:hover{background:#d44a10;transform:translateY(-1px)}
-.btn-stop{background:rgba(224,48,48,.1);color:#e03030;border:1px solid rgba(224,48,48,.3);padding:9px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;width:100%;margin-top:8px;display:none}
-.hint{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.7}
-
-/* Live caption box */
-.live-box{display:none;margin-top:10px;padding:10px 13px;background:#0f0f0f;border:1px solid var(--b);border-radius:8px;font-size:13px;min-height:38px;line-height:1.7}
-.interim{color:var(--dim);font-style:italic}
-.final-text{color:var(--tx);font-weight:600}
-
-/* Caption list */
-.cap-list{display:none;margin-top:12px}
-.cap-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:var(--dim)}
-.cap-hd button{background:none;border:none;color:var(--dim);cursor:pointer;font-size:11px}
-.cap-item{display:flex;gap:8px;align-items:center;padding:5px 8px;background:#0f0f0f;border:1px solid var(--b);border-radius:6px;margin-bottom:4px}
-.cap-t{font-family:Syne,sans-serif;font-size:10px;font-weight:700;color:var(--gold);min-width:35px;flex-shrink:0}
-.cap-input{flex:1;background:none;border:none;color:var(--tx);font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
-.cap-del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px}
-.cap-del:hover{color:#e03030}
-
-/* Preview */
-.preview-wrap{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:9/16}
-.preview-wrap video{width:100%;height:100%;object-fit:cover;display:block}
-.preview-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--dim);pointer-events:none}
-.preview-empty .icon{font-size:2.5rem}
-
-/* Caption overlay ON the video */
-#capOverlay{
-  position:absolute;
-  bottom:10%;left:50%;
-  transform:translateX(-50%);
-  max-width:90%;
-  text-align:center;
-  z-index:30;
-  pointer-events:none;
-  opacity:0;
-  transition:opacity .25s;
-}
-#capOverlay.show{opacity:1}
-.cap-word{
-  display:inline-block;
-  background:rgba(0,0,0,.88);
-  color:#fff;
-  font-family:'DM Sans',sans-serif;
-  font-weight:700;
-  font-size:clamp(14px,3vw,20px);
-  padding:4px 10px;
-  border-radius:5px;
-  margin:2px;
-  line-height:1.4;
-}
-.cap-word.dramatic{
-  background:var(--or);
-  color:#fff;
-  transform:scale(1.08);
-  letter-spacing:.03em;
-}
-
-/* B-roll overlay */
-#brollOverlay{
-  position:absolute;inset:0;
-  z-index:20;
-  opacity:0;
-  transition:opacity .4s;
-  background-size:cover;
-  background-position:center;
-  border-radius:12px;
-}
-#brollOverlay.show{opacity:.75}
-
-/* Preview controls */
-.pctrl{display:flex;gap:8px;margin-top:8px;align-items:center}
-.pbtn{background:#1a1a1a;border:1px solid var(--b);color:var(--tx);padding:7px 14px;border-radius:7px;cursor:pointer;font-size:13px;transition:.15s}
-.pbtn:hover{border-color:var(--or);color:var(--or)}
-.ptime{font-size:11px;color:var(--dim);margin-left:auto}
-
-/* B-roll grid */
-.broll-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
-.broll-grid img,.broll-grid canvas{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:.15s;display:block}
-.broll-grid img:hover,.broll-grid canvas:hover{border-color:var(--or);transform:scale(1.03)}
-.broll-status{font-size:11px;color:var(--dim)}
-
-@media(max-width:800px){.layout{grid-template-columns:1fr}.right-col{order:-1}}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="upload.css">
 </head>
 <body>
 
 <div class="topbar">
-  <div class="brand">⚡ ImpactGrid Creator Studio</div>
-  <div id="pill" class="pill"><span class="dot"></span><span>Listening…</span></div>
+  <div class="brand"><span class="brand-ig">Impact</span>Grid</div>
+  <div id="statusPill" class="status-pill" style="display:none"></div>
+  <a href="dashboard.html" class="back-btn">← Dashboard</a>
 </div>
 
-<div class="layout">
-  <div class="left-col">
+<div class="studio" id="studio">
 
-    <!-- Upload -->
-    <div class="card">
-      <div class="lbl">1 — Add Your Clip</div>
-      <label class="dropzone">
-        <input type="file" id="clipInput" accept="video/*" multiple>
-        <div style="font-size:2rem;margin-bottom:8px">🎬</div>
-        <div style="font-size:13px;font-weight:500">Drop video here or click to browse</div>
-        <div style="font-size:11px;color:var(--dim);margin-top:4px">MP4 · MOV · WebM — up to 5 clips</div>
+  <!-- ══ STEP 1: DROP ══ -->
+  <div class="screen active" id="screenDrop">
+    <div class="drop-hero">
+      <div class="drop-icon">🎬</div>
+      <h1>Drop your video. Get a banger.</h1>
+      <p>ImpactGrid edits it for you — captions, B-roll, colour grade, music cues. Pick a style and we do the rest.</p>
+      <label class="drop-zone" id="dropZone">
+        <input type="file" id="clipInput" accept="video/*">
+        <span>Click to choose video or drag here</span>
       </label>
-      <div id="clipList"></div>
+      <div class="supported">MP4 · MOV · WebM · up to 2GB</div>
     </div>
-
-    <!-- AI Editing -->
-    <div class="card">
-      <div class="lbl">2 — Auto Captions + B-Roll</div>
-      <button class="btn" onclick="startAI()">▶ Start Auto Edit</button>
-      <button class="btn-stop" id="stopBtn" onclick="stopAI()">⏹ Stop</button>
-      <div class="hint">
-        <b style="color:var(--tx)">How it works:</b> Press play on the preview, turn your volume up — the mic listens to the audio and writes captions in real time.<br><br>
-        <b style="color:var(--or)">Chrome or Edge only</b> — Firefox doesn't support speech detection.
-      </div>
-      <!-- Live listening box -->
-      <div class="live-box" id="liveBox"></div>
-      <!-- Saved captions -->
-      <div class="cap-list" id="capList">
-        <div class="cap-hd">
-          <span id="capCount"></span>
-          <button onclick="clearAll()">🗑 Clear all</button>
-        </div>
-        <div id="capItems"></div>
-      </div>
-    </div>
-
-    <!-- Export -->
-    <div class="card">
-      <div class="lbl">3 — Export</div>
-      <button class="btn" onclick="doExport()">⬇ Download Video</button>
-      <div id="exportStatus" style="display:none;margin-top:10px">
-        <div style="height:3px;background:#1a1a1a;border-radius:2px;overflow:hidden">
-          <div id="expBar" style="height:100%;background:var(--or);width:0%;transition:width .5s"></div>
-        </div>
-        <div id="expLabel" style="font-size:11px;color:var(--dim);margin-top:5px"></div>
-      </div>
-    </div>
-
   </div>
 
-  <div class="right-col">
+  <!-- ══ STEP 2: PICK STYLE ══ -->
+  <div class="screen" id="screenStyle">
+    <div class="style-page">
+      <div class="style-hd">
+        <div class="clip-info" id="clipInfo"></div>
+        <h2>Choose your edit style</h2>
+        <p>Each style changes captions, pacing, colour grade and energy</p>
+      </div>
+      <div class="style-grid" id="styleGrid"></div>
+      <button class="btn-back" onclick="goTo('screenDrop')">← Change video</button>
+    </div>
+  </div>
 
-    <!-- Video Preview -->
-    <div class="card">
-      <div class="lbl">Preview</div>
-      <div class="preview-wrap" id="previewWrap">
-        <video id="prevVideo" playsinline></video>
-        <div id="capOverlay"></div>
-        <div id="brollOverlay"></div>
-        <div class="preview-empty" id="previewEmpty">
-          <div class="icon">🎬</div>
-          <div>Add a clip to preview</div>
+  <!-- ══ STEP 3: PROCESSING ══ -->
+  <div class="screen" id="screenProcess">
+    <div class="process-wrap">
+      <div class="process-icon" id="processIcon">⚡</div>
+      <h2 id="processTitle">Analysing your video…</h2>
+      <p id="processDesc">Detecting speech and building your edit</p>
+      <div class="prog-wrap">
+        <div class="prog-bar" id="progBar"></div>
+      </div>
+      <div class="prog-steps" id="progSteps"></div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 4: PREVIEW + EXPORT ══ -->
+  <div class="screen" id="screenPreview">
+    <div class="preview-layout">
+
+      <!-- Left: video preview -->
+      <div class="preview-side">
+        <div class="video-frame" id="videoFrame">
+          <canvas id="previewCanvas"></canvas>
+          <video id="masterVideo" playsinline style="display:none"></video>
+          <div class="play-overlay" id="playOverlay" onclick="togglePlay()">
+            <div class="play-btn-big" id="playBtnBig">▶</div>
+          </div>
+        </div>
+        <div class="video-controls">
+          <button class="vc-btn" onclick="togglePlay()" id="vcPlay">▶</button>
+          <div class="vc-progress" onclick="seekTo(event)">
+            <div class="vc-fill" id="vcFill"></div>
+          </div>
+          <span class="vc-time" id="vcTime">0:00 / 0:00</span>
+        </div>
+        <!-- Style badge -->
+        <div class="style-badge" id="styleBadge"></div>
+      </div>
+
+      <!-- Right: export panel -->
+      <div class="export-side">
+        <div class="export-card">
+          <div class="export-title">Your edit is ready</div>
+          <div class="export-style" id="exportStyleName"></div>
+          <div class="export-stats" id="exportStats"></div>
+
+          <!-- Format buttons -->
+          <div class="fmt-label">Export as</div>
+          <div class="fmt-grid">
+            <button class="fmt-btn active" data-fmt="reel" onclick="setFmt(this)">
+              <span class="fmt-icon">📱</span>
+              <span class="fmt-name">Reel / TikTok</span>
+              <span class="fmt-dim">9:16</span>
+            </button>
+            <button class="fmt-btn" data-fmt="youtube" onclick="setFmt(this)">
+              <span class="fmt-icon">▶</span>
+              <span class="fmt-name">YouTube</span>
+              <span class="fmt-dim">16:9</span>
+            </button>
+            <button class="fmt-btn" data-fmt="square" onclick="setFmt(this)">
+              <span class="fmt-icon">⬛</span>
+              <span class="fmt-name">Square</span>
+              <span class="fmt-dim">1:1</span>
+            </button>
+          </div>
+
+          <button class="btn-export" id="exportBtn" onclick="startExport()">
+            ⬇ Download Video
+          </button>
+
+          <div id="exportProgress" style="display:none">
+            <div class="exp-bar-wrap"><div class="exp-bar" id="expBar"></div></div>
+            <div class="exp-label" id="expLabel">Rendering…</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Re-edit options -->
+          <div class="reedit-label">Try another style</div>
+          <div class="reedit-mini" id="reeditMini"></div>
+
+          <button class="btn-ghost" onclick="goTo('screenDrop')">Upload new video</button>
         </div>
       </div>
-      <div class="pctrl">
-        <button class="pbtn" onclick="playPause()">▶ / ⏸</button>
-        <button class="pbtn" onclick="prevVideo.currentTime=0">↩</button>
-        <span class="ptime" id="ptime">0:00</span>
-      </div>
-    </div>
 
-    <!-- B-Roll -->
-    <div class="card">
-      <div class="lbl">AI B-Roll</div>
-      <div class="broll-status" id="brollStatus">Auto-generated as speech is detected</div>
-      <div class="broll-grid" id="brollGrid"></div>
     </div>
-
   </div>
+
 </div>
 
+<div id="toast" class="toast"></div>
 <script src="upload.js"></script>
 </body>
 </html>
