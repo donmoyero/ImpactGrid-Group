@@ -1,375 +1,441 @@
 // ================================================================
-// ImpactGrid Creator Studio — upload.js
-// CAPTION STYLES: word-pop, full-screen keyword, bounce, typewriter,
-//                 neon glow, cinematic subtitle, split-colour
-// VIDEO STYLES: Viral, Cinematic, Corporate, Hype, Podcast, Documentary
+// ImpactGrid Creator Studio
+// 6 dramatic caption styles, no B-roll, word-perfect sync
 // ================================================================
 
 // ─────────────────────────────────────────────────────────────────
-// EDIT STYLES  (visual identity for each preset)
+// CAPTION STYLES
+// Each has: id, name, desc, tags, grade, vignette, letterbox, grain
+// and a render(ctx, W, H, wordData, style) function
+// wordData = {words:[{w,t,end}], curTime, text, dramatic}
 // ─────────────────────────────────────────────────────────────────
 var STYLES = [
+
+  // 1. VIRAL — orange pills, each word pops in with bounce
   {
     id:'viral', name:'Viral TikTok',
-    desc:'Big keyword pops, orange pills, warm saturated grade.',
-    tags:['TikTok','Reels','Trending'],
-    capStyle:'wordPop',          // caption animation style
-    gradient:'linear-gradient(160deg,#2a0800,#0d0400)',
-    previewCap:{bg:'#ff5c1a',color:'#fff',text:'STOP scrolling!'},
-    gradeFilter:'brightness(1.1) saturate(1.35) contrast(1.06)',
-    overlay:'rgba(255,60,0,0.10)', overlayMode:'soft-light',
-    vignette:0.55, letterbox:false, grain:false, lowerThird:false,
-    accentColor:'#ff5c1a'
+    desc:'Each word pops in with a bounce. Orange pills on black. Stops the scroll.',
+    tags:['TikTok','Reels','Viral'],
+    gradient:'linear-gradient(150deg,#2a0800,#0d0300)',
+    grade:'brightness(1.1) saturate(1.4) contrast(1.06)',
+    tint:'rgba(255,50,0,0.10)', tintMode:'soft-light',
+    vignette:0.55, letterbox:false, grain:false,
+    accent:'#ff5c1a',
+    render: function(ctx, W, H, d){
+      if(!d.words.length) return;
+      var now   = d.curTime;
+      var size  = d.dramatic ? 28 : 22;
+      var padX  = 12, padY = 7;
+      var lineH = size + padY*2 + 6;
+      // Group words into lines of max 3
+      var lines = groupLines(d.words, 3);
+      var totalH = lines.length * lineH;
+      var startY = H*0.82 - totalH/2;
+
+      lines.forEach(function(line, li){
+        // measure line total width
+        ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+        var lineW = line.reduce(function(a,w){ return a + ctx.measureText(w.w).width + padX*2 + 6; }, 0);
+        var x = W/2 - lineW/2;
+        var y = startY + li*lineH + lineH/2;
+
+        line.forEach(function(wObj){
+          var ww   = ctx.measureText(wObj.w).width;
+          var boxW = ww + padX*2;
+          var boxH = size + padY*2;
+          // Is this word currently being spoken?
+          var isNow  = (now >= wObj.t && now <= wObj.end + 0.15);
+          var isPast = (now > wObj.end + 0.15);
+          var isFut  = (!isNow && !isPast);
+
+          // Pop-in scale animation
+          var age   = now - wObj.t;
+          var scale = (isNow && age < 0.12) ? 1 + (0.12-age)/0.12 * 0.4 : 1;
+
+          ctx.save();
+          ctx.translate(x + boxW/2, y);
+          ctx.scale(scale, scale);
+          ctx.textAlign    = 'center';
+          ctx.textBaseline = 'middle';
+
+          if(isNow){
+            // Active: bright orange pill
+            ctx.fillStyle = '#ff5c1a';
+            rRect(ctx, -boxW/2, -boxH/2, boxW, boxH, 7);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+            ctx.fillText(wObj.w, 0, 1);
+          } else if(isPast){
+            // Past: white pill faded
+            ctx.globalAlpha = 0.55;
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            rRect(ctx, -boxW/2, -boxH/2, boxW, boxH, 7);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+            ctx.fillText(wObj.w, 0, 1);
+          } else {
+            // Future: ghost outline
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth   = 1;
+            rRect(ctx, -boxW/2, -boxH/2, boxW, boxH, 7);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+            ctx.fillText(wObj.w, 0, 1);
+          }
+          ctx.restore();
+          x += boxW + 6;
+        });
+      });
+    }
   },
+
+  // 2. CINEMATIC — white subtitle, letterbox, elegant fade
   {
     id:'cinematic', name:'Cinematic',
-    desc:'Letterbox bars, cool grade, elegant subtitle captions.',
+    desc:'Letterbox bars, cool grade. Each word fades in individually.',
     tags:['Film','YouTube','Story'],
-    capStyle:'subtitle',
-    gradient:'linear-gradient(160deg,#000814,#001233)',
-    previewCap:{bg:'transparent',color:'#fff',text:'A story unfolds…',shadow:true},
-    gradeFilter:'brightness(0.88) saturate(0.78) contrast(1.04)',
-    overlay:'rgba(0,30,100,0.18)', overlayMode:'soft-light',
-    vignette:0.80, letterbox:true, grain:false, lowerThird:false,
-    accentColor:'#90caf9'
-  },
-  {
-    id:'corporate', name:'Corporate Pro',
-    desc:'Lower-thirds, sharp grade, built for LinkedIn.',
-    tags:['LinkedIn','B2B','Pro'],
-    capStyle:'lowerThirdCap',
-    gradient:'linear-gradient(160deg,#040a14,#0a1628)',
-    previewCap:{bg:'rgba(4,10,20,0.9)',color:'#4fc3f7',text:'Key insight here'},
-    gradeFilter:'brightness(1.0) saturate(0.85) contrast(1.03)',
-    overlay:'rgba(0,60,140,0.12)', overlayMode:'soft-light',
-    vignette:0.28, letterbox:false, grain:false, lowerThird:true,
-    accentColor:'#4fc3f7'
-  },
-  {
-    id:'hype', name:'Hype Reel',
-    desc:'Full-screen keyword explosions, gold grade, max energy.',
-    tags:['Sports','Launch','Energy'],
-    capStyle:'fullscreenPop',
-    gradient:'linear-gradient(160deg,#1a1000,#0a0800)',
-    previewCap:{bg:'#f0c93a',color:'#000',text:'MASSIVE!'},
-    gradeFilter:'brightness(1.12) saturate(1.45) contrast(1.1)',
-    overlay:'rgba(240,180,0,0.15)', overlayMode:'soft-light',
-    vignette:0.40, letterbox:false, grain:false, lowerThird:false,
-    accentColor:'#f0c93a'
-  },
-  {
-    id:'podcast', name:'Podcast / Talk',
-    desc:'Typewriter word-by-word, each spoken word highlights live.',
-    tags:['Podcast','Interview','Talk'],
-    capStyle:'typewriter',
-    gradient:'linear-gradient(160deg,#0d0d1a,#16102a)',
-    previewCap:{bg:'#a78bfa',color:'#fff',text:'Word by word'},
-    gradeFilter:'brightness(0.97) saturate(0.90) contrast(1.01)',
-    overlay:'rgba(80,40,180,0.14)', overlayMode:'soft-light',
-    vignette:0.42, letterbox:false, grain:false, lowerThird:false,
-    accentColor:'#a78bfa'
-  },
-  {
-    id:'documentary', name:'Documentary',
-    desc:'Warm sepia, film grain, bold title-card captions.',
-    tags:['Doc','Warm','Story'],
-    capStyle:'titleCard',
-    gradient:'linear-gradient(160deg,#1a0e00,#120900)',
-    previewCap:{bg:'rgba(0,0,0,0.8)',color:'#ffb74d',text:'Chapter I'},
-    gradeFilter:'brightness(1.02) saturate(0.65) sepia(0.3)',
-    overlay:'rgba(160,80,0,0.18)', overlayMode:'soft-light',
-    vignette:0.65, letterbox:false, grain:true, lowerThird:false,
-    accentColor:'#ffb74d'
-  }
-];
+    gradient:'linear-gradient(150deg,#000814,#001233)',
+    grade:'brightness(0.86) saturate(0.72) contrast(1.05)',
+    tint:'rgba(0,30,120,0.20)', tintMode:'soft-light',
+    vignette:0.82, letterbox:true, grain:false,
+    accent:'#90caf9',
+    render: function(ctx, W, H, d){
+      if(!d.words.length) return;
+      var now  = d.curTime;
+      var size = d.dramatic ? 20 : 17;
+      var y    = H*0.87;
+      var lines = groupLines(d.words, 6);
+      var lineH = size + 10;
 
-// ─────────────────────────────────────────────────────────────────
-// CAPTION RENDERERS  (the creative part)
-// ─────────────────────────────────────────────────────────────────
-// Each gets: ctx, W, H, capObj {text,dramatic,t}, elapsed (seconds since cap started), style
+      lines.forEach(function(line, li){
+        ctx.font = (d.dramatic?'bold ':'500 ')+size+'px "DM Sans",sans-serif';
+        var lY  = y + (li - (lines.length-1)/2)*lineH;
+        var x   = W/2 - lineW(ctx, line)/2;
 
-var CAPTION_RENDERERS = {
+        line.forEach(function(wObj){
+          var ww   = ctx.measureText(wObj.w).width;
+          var isNow = now >= wObj.t && now <= wObj.end+0.2;
+          var age   = now - wObj.t;
+          var alpha = Math.min(age/0.18, 1);
 
-  // ── Word-pop: each word bounces in one at a time ──────────────
-  wordPop: function(ctx, W, H, cap, elapsed, st){
-    var words   = cap.text.split(' ');
-    var perWord = 0.32;
-    var visible = Math.min(Math.floor(elapsed / perWord) + 1, words.length);
-    var size    = cap.dramatic ? 30 : 24;
-    var y       = H * 0.80;
-    var lineMax = 3;
-
-    // Layout words in lines
-    ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
-    var lines  = [], cur = [];
-    words.slice(0, visible).forEach(function(w){
-      cur.push(w);
-      if(cur.length >= lineMax){ lines.push(cur.slice()); cur=[]; }
-    });
-    if(cur.length) lines.push(cur);
-
-    lines.forEach(function(line, li){
-      var lineY = y + li*(size+10) - (lines.length-1)*(size+10)/2;
-      var lineW = line.reduce(function(a,w){ return a+ctx.measureText(w).width+14; },0);
-      var startX = W/2 - lineW/2;
-
-      line.forEach(function(word, wi){
-        var ww    = ctx.measureText(word).width;
-        var globalWi = li*lineMax + wi;
-        var wordAge  = elapsed - globalWi*perWord;
-        var scale    = wordAge < 0.12 ? 1 + (1-wordAge/0.12)*0.35 : 1; // pop in
-        var alpha    = Math.min(wordAge/0.08, 1);
-
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, alpha);
-        ctx.translate(startX + ww/2 + 7, lineY);
-        ctx.scale(scale, scale);
-        ctx.textAlign   = 'center';
-        ctx.textBaseline= 'middle';
-
-        var bg    = cap.dramatic ? '#fff'          : st.accentColor;
-        var color = cap.dramatic ? st.accentColor  : '#fff';
-        var pad   = 9;
-        ctx.fillStyle = bg;
-        if(ctx.roundRect) ctx.roundRect(-ww/2-pad, -size/2-pad*0.6, ww+pad*2, size+pad*1.2, 6);
-        else ctx.rect(-ww/2-pad, -size/2-pad*0.6, ww+pad*2, size+pad*1.2);
-        ctx.fill();
-
-        ctx.fillStyle = color;
-        ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
-        ctx.fillText(word, 0, 1);
-        ctx.restore();
-        startX += ww + 14;
+          ctx.save();
+          ctx.globalAlpha    = Math.max(0, alpha);
+          ctx.shadowColor    = 'rgba(0,0,0,0.95)';
+          ctx.shadowBlur     = 8;
+          ctx.textAlign      = 'left';
+          ctx.textBaseline   = 'middle';
+          ctx.font = (d.dramatic?'bold ':'500 ')+size+'px "DM Sans",sans-serif';
+          ctx.fillStyle = isNow ? '#90caf9' : '#ffffff';
+          if(isNow){ ctx.shadowColor='#90caf9'; ctx.shadowBlur=12; }
+          ctx.fillText(wObj.w, x, lY);
+          ctx.restore();
+          x += ww + 8;
+        });
       });
-    });
+    }
   },
 
-  // ── Full-screen keyword pop (Hype style) ─────────────────────
-  fullscreenPop: function(ctx, W, H, cap, elapsed, st){
-    var words    = cap.text.split(' ');
-    // Show biggest/most dramatic word HUGE in centre
-    var keyword  = pickBigWord(words);
-    var rest     = cap.text;
+  // 3. HYPE — HUGE single word centre screen, explosive
+  {
+    id:'hype', name:'Hype / Sports',
+    desc:'One massive word at a time, dead centre. Flash on impact.',
+    tags:['Sports','Hype','Launch'],
+    gradient:'linear-gradient(150deg,#1a1000,#080600)',
+    grade:'brightness(1.14) saturate(1.5) contrast(1.12)',
+    tint:'rgba(240,180,0,0.12)', tintMode:'soft-light',
+    vignette:0.42, letterbox:false, grain:false,
+    accent:'#f0c93a',
+    render: function(ctx, W, H, d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      // Find current word
+      var cur = null;
+      for(var i=0;i<d.words.length;i++){
+        if(now >= d.words[i].t && now <= d.words[i].end+0.1){ cur=d.words[i]; break; }
+      }
+      if(!cur) return;
 
-    // Background flash on pop-in
-    var flashAge = elapsed;
-    if(flashAge < 0.15){
-      ctx.fillStyle = 'rgba(240,201,58,'+(0.25*(1-flashAge/0.15))+')';
-      ctx.fillRect(0,0,W,H);
-    }
+      var age   = now - cur.t;
+      var scale = age < 0.15 ? 1 + (0.15-age)/0.15*0.6 : 1;  // slam in
+      var alpha = Math.min(age/0.06, 1);
 
-    // Keyword ENORMOUS in centre
-    var scale = flashAge < 0.18 ? 1+(1-flashAge/0.18)*0.5 : 1;
-    var size  = cap.dramatic ? 72 : 54;
-    ctx.save();
-    ctx.translate(W/2, H*0.45);
-    ctx.scale(scale, scale);
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = '900 '+size+'px Oswald,"DM Sans",sans-serif';
+      // Flash effect on new word
+      if(age < 0.08){
+        ctx.fillStyle = 'rgba(240,201,58,'+(0.3*(1-age/0.08))+')';
+        ctx.fillRect(0,0,W,H);
+      }
 
-    // Outline / shadow
-    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-    ctx.lineWidth   = 8;
-    ctx.strokeText(keyword.toUpperCase(), 0, 0);
+      var text = cur.w.toUpperCase();
+      var size = Math.min(W*0.18, 82);
 
-    ctx.fillStyle = st.accentColor;
-    ctx.fillText(keyword.toUpperCase(), 0, 0);
-    ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(W/2, H*0.46);
+      ctx.scale(scale, scale);
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
 
-    // Rest of text smaller below
-    if(rest !== keyword && elapsed > 0.2){
-      var small = rest.replace(keyword,'').trim();
-      if(small){
-        ctx.font      = 'bold 19px "DM Sans",sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=6;
-        ctx.fillText(small, W/2, H*0.60);
-        ctx.shadowBlur=0;
+      // Thick black outline
+      ctx.font      = '900 '+size+'px Anton,"DM Sans",sans-serif';
+      ctx.lineWidth = 14;
+      ctx.strokeStyle='rgba(0,0,0,0.95)';
+      ctx.lineJoin  = 'round';
+      ctx.strokeText(text, 0, 0);
+
+      // Gold fill
+      ctx.fillStyle = '#f0c93a';
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+
+      // Small context line below (rest of sentence)
+      var rest = d.words.filter(function(w){ return w !== cur; }).map(function(w){ return w.w; }).join(' ');
+      if(rest && age>0.12){
+        ctx.save();
+        ctx.globalAlpha  = Math.min((age-0.12)/0.15, 0.7);
+        ctx.font         = '500 15px "DM Sans",sans-serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor  = 'rgba(0,0,0,0.9)';
+        ctx.shadowBlur   = 6;
+        ctx.fillStyle    = 'rgba(255,255,255,0.8)';
+        ctx.fillText(rest, W/2, H*0.58);
+        ctx.restore();
       }
     }
   },
 
-  // ── Subtitle: elegant bottom subtitle (cinematic) ────────────
-  subtitle: function(ctx, W, H, cap, elapsed, st){
-    var fadeIn  = Math.min(elapsed/0.25, 1);
-    var text    = cap.text;
-    var size    = cap.dramatic ? 21 : 18;
-    var y       = H * 0.89;
+  // 4. PODCAST — karaoke word highlight on a dark bar
+  {
+    id:'podcast', name:'Podcast / Talk',
+    desc:'Karaoke-style — each word lights up gold as it\'s spoken.',
+    tags:['Podcast','Talk','Interview'],
+    gradient:'linear-gradient(150deg,#0d0d1a,#16102a)',
+    grade:'brightness(0.96) saturate(0.88)',
+    tint:'rgba(80,40,200,0.13)', tintMode:'soft-light',
+    vignette:0.44, letterbox:false, grain:false,
+    accent:'#f0c93a',
+    render: function(ctx, W, H, d){
+      if(!d.words.length) return;
+      var now  = d.curTime;
+      var size = 19;
+      var barH = 58;
+      var barY = H*0.82;
 
-    ctx.save();
-    ctx.globalAlpha = fadeIn;
-    ctx.font        = (cap.dramatic?'bold ':'500 ')+size+'px "DM Sans",sans-serif';
-    ctx.textAlign   = 'center';
-    ctx.textBaseline= 'middle';
+      // Dark bar background
+      ctx.fillStyle = 'rgba(8,6,20,0.88)';
+      ctx.fillRect(0, barY, W, barH);
+      // Accent top line
+      ctx.fillStyle = '#f0c93a';
+      ctx.fillRect(0, barY, W, 2);
 
-    // Soft background bar
-    var tw = ctx.measureText(text).width;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(0, y-size-8, W, size*2+16);
+      var lines = groupLines(d.words, 5);
+      var lineH = barH / Math.max(lines.length, 1);
 
-    // Text
-    if(cap.dramatic){
-      ctx.fillStyle = st.accentColor;
-    } else {
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=5;
-    }
-    ctx.fillText(text, W/2, y);
-    ctx.shadowBlur=0;
+      lines.forEach(function(line, li){
+        ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+        var lW  = lineW(ctx, line);
+        var x   = W/2 - lW/2;
+        var lY  = barY + lineH*(li+0.5) + 4;
 
-    // Accent line under dramatic
-    if(cap.dramatic){
-      ctx.fillStyle = st.accentColor;
-      ctx.fillRect(W/2-tw/2, y+size*0.7, tw, 2);
-    }
-    ctx.restore();
-  },
+        line.forEach(function(wObj){
+          var ww    = ctx.measureText(wObj.w).width;
+          var isNow = now >= wObj.t && now <= wObj.end+0.15;
+          var isPast= now > wObj.end+0.15;
 
-  // ── Lower-third caption (corporate) ──────────────────────────
-  lowerThirdCap: function(ctx, W, H, cap, elapsed, st){
-    var slideIn = Math.min(elapsed/0.3, 1);
-    var barH    = H*0.11;
-    var barY    = H*0.80;
-    var tx      = 22 * slideIn;   // slide from left
+          ctx.save();
+          ctx.textAlign    = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
 
-    ctx.save();
-    ctx.globalAlpha = Math.min(elapsed/0.2, 1);
-
-    // Bar
-    ctx.fillStyle = 'rgba(4,10,20,0.92)';
-    ctx.fillRect(-W*(1-slideIn), barY, W, barH);
-
-    // Accent left stripe
-    ctx.fillStyle = st.accentColor;
-    ctx.fillRect(tx, barY+8, 4, barH-16);
-
-    // Text
-    ctx.font         = 'bold 16px "DM Sans",sans-serif';
-    ctx.textAlign    = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = cap.dramatic ? st.accentColor : '#fff';
-    ctx.fillText(cap.text, tx+16, barY + barH/2);
-
-    ctx.restore();
-  },
-
-  // ── Typewriter word-by-word highlight (podcast) ──────────────
-  typewriter: function(ctx, W, H, cap, elapsed, st){
-    var words    = cap.text.split(' ');
-    var perWord  = 3.0 / Math.max(words.length,1);
-    var activeWi = Math.min(Math.floor(elapsed/perWord), words.length-1);
-    var size     = 20;
-    var y        = H * 0.83;
-
-    ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
-
-    // Measure and centre
-    var totalW = words.reduce(function(a,w){return a+ctx.measureText(w).width+10;},0);
-    // Wrap into 2 lines if too wide
-    var maxW = W - 40;
-    var lines = [], cur=[], curW=0;
-    words.forEach(function(w){
-      var ww = ctx.measureText(w).width+10;
-      if(curW+ww > maxW && cur.length){ lines.push(cur.slice()); cur=[]; curW=0; }
-      cur.push(w); curW+=ww;
-    });
-    if(cur.length) lines.push(cur);
-
-    var wi = 0;
-    lines.forEach(function(line, li){
-      var lineW = line.reduce(function(a,w){return a+ctx.measureText(w).width+10;},0);
-      var x = W/2 - lineW/2;
-      var lineY = y + li*(size+14) - (lines.length-1)*(size+14)/2;
-
-      line.forEach(function(word){
-        var ww     = ctx.measureText(word).width;
-        var isAct  = (wi === activeWi);
-        var isPast = (wi < activeWi);
-        ctx.save();
-        // Background
-        ctx.fillStyle = isAct ? st.accentColor : (isPast ? 'rgba(255,255,255,0.08)' : 'transparent');
-        if(isAct || isPast){
-          if(ctx.roundRect) ctx.roundRect(x-4, lineY-size/2-5, ww+8, size+10, 5);
-          else ctx.rect(x-4, lineY-size/2-5, ww+8, size+10);
-          ctx.fill();
-        }
-        // Glow on active
-        if(isAct){
-          ctx.shadowColor = st.accentColor; ctx.shadowBlur=14;
-        }
-        ctx.font         = 'bold '+size+'px "DM Sans",sans-serif';
-        ctx.textAlign    = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle    = isAct ? '#fff' : (isPast ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)');
-        ctx.fillText(word, x, lineY);
-        ctx.shadowBlur=0;
-        ctx.restore();
-        x += ww+10; wi++;
+          if(isNow){
+            // Gold glow
+            ctx.shadowColor = '#f0c93a';
+            ctx.shadowBlur  = 16;
+            ctx.fillStyle   = '#f0c93a';
+          } else if(isPast){
+            ctx.globalAlpha = 0.45;
+            ctx.fillStyle   = '#fff';
+          } else {
+            ctx.globalAlpha = 0.22;
+            ctx.fillStyle   = '#fff';
+          }
+          ctx.fillText(wObj.w, x, lY);
+          ctx.restore();
+          x += ww + 10;
+        });
       });
-    });
+    }
   },
 
-  // ── Title card (documentary) ──────────────────────────────────
-  titleCard: function(ctx, W, H, cap, elapsed, st){
-    var fadeIn  = Math.min(elapsed/0.4, 1);
-    var size    = cap.dramatic ? 26 : 19;
-    var y       = H * 0.87;
+  // 5. NEON — glowing neon text on black, colour-coded by energy
+  {
+    id:'neon', name:'Neon Glow',
+    desc:'Neon-lit words glow purple/pink. Dramatic words explode in cyan.',
+    tags:['Night','Club','Energy'],
+    gradient:'linear-gradient(150deg,#050010,#100020)',
+    grade:'brightness(0.82) saturate(0.60) contrast(1.1)',
+    tint:'rgba(120,0,200,0.18)', tintMode:'soft-light',
+    vignette:0.72, letterbox:false, grain:false,
+    accent:'#e040fb',
+    render: function(ctx, W, H, d){
+      if(!d.words.length) return;
+      var now  = d.curTime;
+      var size = d.dramatic ? 26 : 21;
+      var lines= groupLines(d.words, 4);
+      var lineH= size + 14;
+      var startY = H*0.81 - (lines.length-1)*lineH/2;
 
-    ctx.save();
-    ctx.globalAlpha = fadeIn;
+      lines.forEach(function(line, li){
+        ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+        var lW  = lineW(ctx, line);
+        var x   = W/2 - lW/2;
+        var lY  = startY + li*lineH;
 
-    // Full-width dark bar for dramatic
-    if(cap.dramatic){
-      ctx.fillStyle='rgba(0,0,0,0.82)';
-      ctx.fillRect(0, y-size-14, W, size+28);
-      ctx.fillStyle = st.accentColor;
-      ctx.fillRect(0, y-size-14, 5, size+28);
+        line.forEach(function(wObj){
+          var ww    = ctx.measureText(wObj.w).width;
+          var isNow = now >= wObj.t && now <= wObj.end+0.15;
+          var isPast= now > wObj.end+0.15;
+          var age   = now - wObj.t;
+          var alpha = Math.min(age/0.1, 1);
+
+          ctx.save();
+          ctx.globalAlpha  = Math.max(0, alpha);
+          ctx.textAlign    = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+
+          if(isNow){
+            var col = d.dramatic ? '#00e5ff' : '#e040fb';
+            ctx.shadowColor = col;
+            ctx.shadowBlur  = 24;
+            ctx.fillStyle   = col;
+            // Double-draw for extra glow
+            ctx.fillText(wObj.w, x, lY);
+            ctx.shadowBlur = 8;
+            ctx.fillText(wObj.w, x, lY);
+          } else if(isPast){
+            ctx.globalAlpha *= 0.5;
+            ctx.fillStyle   = '#c084fc';
+            ctx.fillText(wObj.w, x, lY);
+          } else {
+            ctx.globalAlpha *= 0.2;
+            ctx.fillStyle   = '#c084fc';
+            ctx.fillText(wObj.w, x, lY);
+          }
+          ctx.restore();
+          x += ww + 10;
+        });
+      });
     }
+  },
 
-    ctx.font         = (cap.dramatic?'bold ':'500 ')+size+'px "DM Sans",sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor  = 'rgba(0,0,0,0.95)';
-    ctx.shadowBlur   = cap.dramatic ? 0 : 8;
-    ctx.fillStyle    = cap.dramatic ? st.accentColor : '#fff';
-    ctx.fillText(cap.text, W/2, y);
-    ctx.shadowBlur=0;
-    ctx.restore();
+  // 6. BOLD SPLIT — top half word big, bottom half context small
+  {
+    id:'split', name:'Bold Split',
+    desc:'Current word HUGE top-centre. Full sentence small below. Very dramatic.',
+    tags:['Drama','Story','Impact'],
+    gradient:'linear-gradient(150deg,#0a0a0a,#050505)',
+    grade:'brightness(0.92) saturate(1.1) contrast(1.08)',
+    tint:'rgba(255,255,255,0.04)', tintMode:'soft-light',
+    vignette:0.65, letterbox:false, grain:false,
+    accent:'#ffffff',
+    render: function(ctx, W, H, d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      var cur = null;
+      for(var i=0;i<d.words.length;i++){
+        if(now >= d.words[i].t && now <= d.words[i].end+0.1){ cur=d.words[i]; break; }
+      }
+      if(!cur) return;
+
+      var age   = now - cur.t;
+      var scale = age < 0.14 ? 1 + (0.14-age)/0.14*0.5 : 1;
+
+      // BIG current word
+      var bigSize = Math.min(W*0.16, 74);
+      ctx.save();
+      ctx.translate(W/2, H*0.44);
+      ctx.scale(scale, scale);
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font         = '900 '+bigSize+'px Syne,"DM Sans",sans-serif';
+
+      // Outline
+      ctx.lineWidth   = 10;
+      ctx.strokeStyle = '#000';
+      ctx.lineJoin    = 'round';
+      ctx.strokeText(cur.w.toUpperCase(), 0, 0);
+
+      // White fill with subtle gradient
+      var grad = ctx.createLinearGradient(0,-bigSize/2,0,bigSize/2);
+      grad.addColorStop(0,'#ffffff');
+      grad.addColorStop(1,'rgba(255,255,255,0.7)');
+      ctx.fillStyle = grad;
+      ctx.fillText(cur.w.toUpperCase(), 0, 0);
+      ctx.restore();
+
+      // Full sentence context below, each word styled by state
+      var sentenceSize = 14;
+      ctx.font = '600 '+sentenceSize+'px "DM Sans",sans-serif';
+      var sW   = lineW(ctx, d.words);
+      var maxW = W-48;
+      var sLines = groupLines(d.words, 6);
+      var sStartY = H*0.60;
+
+      sLines.forEach(function(line, li){
+        var x = W/2 - lineW(ctx, line)/2;
+        var lY= sStartY + li*(sentenceSize+8);
+        line.forEach(function(wObj){
+          var ww    = ctx.measureText(wObj.w).width;
+          var isNow = wObj === cur;
+          var isPast= now > wObj.end+0.1;
+          ctx.save();
+          ctx.textAlign    = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.font         = '600 '+sentenceSize+'px "DM Sans",sans-serif';
+          ctx.shadowColor  = 'rgba(0,0,0,0.9)';
+          ctx.shadowBlur   = 5;
+          ctx.globalAlpha  = isNow ? 1 : isPast ? 0.45 : 0.25;
+          ctx.fillStyle    = isNow ? '#fff' : '#aaa';
+          ctx.fillText(wObj.w, x, lY);
+          ctx.restore();
+          x += ww + 7;
+        });
+      });
+    }
   }
-};
 
-// Helper: pick the most impactful word from an array
-function pickBigWord(words){
-  var POWER = new Set(['amazing','incredible','huge','massive','love','hate','never',
-    'always','best','worst','epic','shocking','first','secret','free','truth','only',
-    'biggest','powerful','change','money','success','stop','watch','insane','crazy',
-    'launch','new','live','now','today','yes','no','wow','real','game','winner']);
-  var longest = words.reduce(function(a,b){return b.length>a.length?b:a;}, words[0]||'');
-  var power   = words.find(function(w){return POWER.has(w.toLowerCase());});
-  return power || longest || (words[0]||'');
-}
+];
 
 // ─────────────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────────────
 var clip        = null;
 var activeStyle = STYLES[0];
-var captions    = [];
-var brollItems  = [];
-var recog       = null;
+var words       = [];     // [{w, t, end, dramatic}] — per-word timing
+var sentences   = [];     // [{t, end, text, words, dramatic}]
 var isListening = false;
+var recog       = null;
 var listenStart = 0;
 var isPlaying   = false;
 var rafId       = null;
+var liveRafId   = null;
 var exportFmt   = 'reel';
 
-var vid    = document.getElementById('masterVid');
-var canvas = document.getElementById('cv');
-var ctx    = canvas.getContext('2d');
-var gradeC = document.createElement('canvas');
-var gradeX = gradeC.getContext('2d');
+var vid      = document.getElementById('masterVid');
+var cv       = document.getElementById('cv');
+var cvCtx    = cv.getContext('2d');
+var liveCV   = document.getElementById('liveCanvas');
+var liveCTX  = liveCV ? liveCV.getContext('2d') : null;
+var gradeC   = document.createElement('canvas');
+var gradeX   = gradeC.getContext('2d');
+
+// set up live canvas size
+if(liveCV){ liveCV.width=200; liveCV.height=355; }
 
 // ─────────────────────────────────────────────────────────────────
 // BUILD STYLE CARDS
@@ -378,45 +444,70 @@ var gradeX = gradeC.getContext('2d');
   var grid = document.getElementById('styleGrid');
   var mini = document.getElementById('miniStyles');
 
-  STYLES.forEach(function(s){
-    // Main card
+  STYLES.forEach(function(s, si){
     var card = document.createElement('div');
-    card.className = 'sc';
-    var pc = s.previewCap;
+    card.className = 'sc'+(si===0?' sel':'');
+
+    // Build a little caption demo in the card
+    var demoWords = ['YOUR','WORDS','HERE'];
+    var demoHtml  = '';
+    if(s.id==='viral'){
+      demoHtml = demoWords.map(function(w,i){
+        var bg = i===1?'#ff5c1a':'rgba(255,255,255,0.12)';
+        var col= i===1?'#fff':'rgba(255,255,255,0.5)';
+        return '<span style="background:'+bg+';color:'+col+';padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;margin:2px">'+w+'</span>';
+      }).join('');
+    } else if(s.id==='cinematic'){
+      demoHtml = demoWords.map(function(w,i){
+        var col=i===1?'#90caf9':'rgba(255,255,255,'+(i===0?'0.5':'0.25')+')';
+        return '<span style="color:'+col+';font-size:13px;font-weight:500;margin:0 4px;text-shadow:0 0 8px rgba(0,0,0,0.9)">'+w+'</span>';
+      }).join('');
+    } else if(s.id==='hype'){
+      demoHtml = '<span style="font-family:Anton,sans-serif;font-size:32px;color:#f0c93a;-webkit-text-stroke:2px #000;letter-spacing:2px">WORDS</span>';
+    } else if(s.id==='podcast'){
+      demoHtml = demoWords.map(function(w,i){
+        var col=i===1?'#f0c93a':'rgba(255,255,255,'+(i===0?'0.4':'0.18')+')';
+        var glow=i===1?'text-shadow:0 0 12px #f0c93a':'';
+        return '<span style="color:'+col+';font-size:13px;font-weight:700;margin:0 4px;'+glow+'">'+w+'</span>';
+      }).join('');
+    } else if(s.id==='neon'){
+      demoHtml = demoWords.map(function(w,i){
+        var col=i===1?'#e040fb':'rgba(192,132,252,'+(i===0?'0.5':'0.2')+')';
+        var glow=i===1?'text-shadow:0 0 14px #e040fb,0 0 6px #e040fb':'';
+        return '<span style="color:'+col+';font-size:13px;font-weight:700;margin:0 4px;'+glow+'">'+w+'</span>';
+      }).join('');
+    } else if(s.id==='split'){
+      demoHtml = '<div style="text-align:center"><div style="font-family:Syne,sans-serif;font-size:28px;font-weight:900;color:#fff;-webkit-text-stroke:1px #000">WORDS</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px">your here</div></div>';
+    }
+
     card.innerHTML =
-      '<div class="sc-demo" style="background:'+s.gradient+'">'
-        +'<span style="font-family:'+(s.id==='hype'?'Oswald,':'')
-          +'"DM Sans",sans-serif;font-weight:700;font-size:'
-          +(s.id==='hype'?'22':'14')+'px;padding:5px 12px;border-radius:6px;'
-          +'background:'+(pc.bg||'transparent')+';color:'+(pc.color||'#fff')+';'
-          +(pc.shadow?'text-shadow:0 1px 6px rgba(0,0,0,0.8)':'')
-          +'">'+pc.text+'</span>'
-        +'<div class="sc-tick">✓</div>'
-      +'</div>'
+      '<div class="sc-demo" style="background:'+s.gradient+'">'+demoHtml+'<div class="sc-tick">✓</div></div>'
       +'<div class="sc-body">'
         +'<div class="sc-name">'+s.name+'</div>'
         +'<div class="sc-desc">'+s.desc+'</div>'
-        +'<div class="sc-tags">'+s.tags.map(function(t){
-          return '<span class="sc-tag">'+t+'</span>';
-        }).join('')+'</div>'
+        +'<div class="sc-tags">'+s.tags.map(function(t){return '<span class="sc-tag">'+t+'</span>';}).join('')+'</div>'
       +'</div>';
+
     card.onclick = function(){
       document.querySelectorAll('.sc').forEach(function(c){c.classList.remove('sel');});
       card.classList.add('sel');
       activeStyle = s;
-      setTimeout(startProcessing, 250);
+      setTimeout(startListening, 250);
     };
     grid.appendChild(card);
 
-    // Mini re-style button
+    // Mini button
     var b = document.createElement('button');
-    b.className   = 'mini-btn';
+    b.className   = 'mini-btn'+(si===0?' active-style':'');
     b.textContent = s.name;
+    b.dataset.sid = s.id;
     b.onclick = function(){
       activeStyle = s;
+      document.querySelectorAll('.mini-btn').forEach(function(x){x.classList.remove('active-style');});
+      b.classList.add('active-style');
       document.getElementById('expStyle').textContent   = s.name;
       document.getElementById('styleBadge').textContent = s.name+' ✓';
-      if(!isPlaying) drawFrame();
+      if(!isPlaying) drawFrame(cv, cvCtx);
       toast('Style: '+s.name);
     };
     mini.appendChild(b);
@@ -427,169 +518,147 @@ var gradeX = gradeC.getContext('2d');
 // UPLOAD
 // ─────────────────────────────────────────────────────────────────
 document.getElementById('fileIn').onchange = function(e){
-  var f = e.target.files[0];
+  loadFile(e.target.files[0]);
+};
+(function(){
+  var dz = document.getElementById('dropZone');
+  var inner = dz.querySelector('.dz-inner');
+  ['dragover','dragenter'].forEach(function(ev){
+    dz.addEventListener(ev,function(e){ e.preventDefault(); inner.classList.add('drag'); });
+  });
+  ['dragleave','dragend'].forEach(function(ev){
+    dz.addEventListener(ev,function(){ inner.classList.remove('drag'); });
+  });
+  dz.addEventListener('drop',function(e){
+    e.preventDefault(); inner.classList.remove('drag');
+    var f=Array.from(e.dataTransfer.files).find(function(x){return x.type.startsWith('video/');});
+    if(f) loadFile(f);
+  });
+})();
+
+function loadFile(f){
   if(!f) return;
   if(clip) URL.revokeObjectURL(clip.url);
   clip = {file:f, url:URL.createObjectURL(f)};
   vid.src = clip.url;
   vid.onloadedmetadata = function(){
-    document.getElementById('fileChip').textContent =
-      '🎬 '+f.name+' · '+ft(vid.duration);
+    document.getElementById('fileChip').textContent = '🎬 '+f.name+' · '+ft(vid.duration);
   };
   goTo('sStyle');
-};
-
-(function(){
-  var dz = document.getElementById('dropZone');
-  ['dragover','dragenter'].forEach(function(ev){
-    dz.addEventListener(ev,function(e){
-      e.preventDefault();
-      dz.querySelector('.dz-inner').style.borderColor='#ff5c1a';
-    });
-  });
-  ['dragleave','dragend'].forEach(function(ev){
-    dz.addEventListener(ev,function(){
-      dz.querySelector('.dz-inner').style.borderColor='';
-    });
-  });
-  dz.addEventListener('drop',function(e){
-    e.preventDefault();
-    dz.querySelector('.dz-inner').style.borderColor='';
-    var f = Array.from(e.dataTransfer.files).find(function(x){
-      return x.type.startsWith('video/');
-    });
-    if(!f) return;
-    if(clip) URL.revokeObjectURL(clip.url);
-    clip = {file:f, url:URL.createObjectURL(f)};
-    vid.src = clip.url;
-    vid.onloadedmetadata = function(){
-      document.getElementById('fileChip').textContent =
-        '🎬 '+f.name+' · '+ft(vid.duration);
-    };
-    goTo('sStyle');
-  });
-})();
+}
 
 // ─────────────────────────────────────────────────────────────────
-// PROCESSING  (listens to FULL video length)
+// LISTENING PHASE — plays full video, captures word-by-word timing
 // ─────────────────────────────────────────────────────────────────
-function startProcessing(){
-  captions    = [];
-  brollItems  = [];
-  isListening = false;
+function startListening(){
+  words      = [];
+  sentences  = [];
+  isListening= false;
   if(recog) try{recog.abort();}catch(e){}
 
+  goTo('sListen');
   var st = activeStyle;
-  goTo('sProcess');
-  document.getElementById('procAnim').textContent  = '⚡';
-  document.getElementById('procTitle').textContent = 'Applying '+st.name+'…';
-  document.getElementById('procDesc').textContent  = 'Getting ready…';
-  document.getElementById('procLog').innerHTML     = '';
+  document.getElementById('procAnim').textContent  = '🎙';
+  document.getElementById('procTitle').textContent = st.name+' — Listening…';
+  document.getElementById('procDesc').textContent  = 'Turn volume UP · mic listens to your video audio';
+  document.getElementById('progFill').style.width  = '0%';
   document.getElementById('procLive').textContent  = '';
-  document.getElementById('progFill').style.width  = '2%';
+  document.getElementById('capCount').textContent  = '0 captions captured';
 
-  var log  = document.getElementById('procLog');
-  var live = document.getElementById('procLive');
-
-  function addLog(msg){ log.innerHTML += '<div>✓ '+msg+'</div>'; }
-  addLog('Video loaded');
-
-  // ── Start speech recognition ────────────────────────────────
+  // ── Speech recognition ─────────────────────────────────────
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){
-    addLog('⚠ Auto-captions need Chrome or Edge');
+    document.getElementById('procDesc').textContent = '⚠ Needs Chrome or Edge for auto-captions';
   } else {
     recog = new SR();
     recog.continuous     = true;
     recog.interimResults = true;
     recog.lang           = 'en-GB';
     listenStart          = Date.now();
-    var lastFinal        = '';
-    var usedKws          = new Set();
 
     recog.onresult = function(ev){
       var final='', interim='';
       for(var i=ev.resultIndex;i<ev.results.length;i++){
-        if(ev.results[i].isFinal) final   += ev.results[i][0].transcript;
-        else                       interim += ev.results[i][0].transcript;
+        var res = ev.results[i];
+        if(res.isFinal) final   += res[0].transcript;
+        else             interim += res[0].transcript;
       }
+
       var shown = (final||interim).trim();
-      if(shown) live.textContent = '"'+shown+'"';
+      if(shown) document.getElementById('procLive').textContent = '"'+shown+'"';
 
-      if(final.trim() && final.trim() !== lastFinal){
-        lastFinal = final.trim();
-        var t   = (vid.readyState>=2 && vid.duration) ? vid.currentTime : (Date.now()-listenStart)/1000;
-        var drm = isDramatic(final);
-        chunkSave(final.trim(), t, drm);
+      if(final.trim()){
+        var vidT   = (vid.readyState>=2&&vid.duration) ? vid.currentTime : (Date.now()-listenStart)/1000;
+        var text   = final.trim();
+        var drm    = isDramatic(text);
 
-        var kws = getKeywords(final);
-        kws.forEach(function(kw){
-          if(!usedKws.has(kw)){
-            usedKws.add(kw);
-            var item={t:t,url:null,imgEl:null,kw:kw};
-            brollItems.push(item);
-            fetchImg(kw, function(url){
-              if(url){
-                item.url=url;
-                var img=new Image(); img.crossOrigin='anonymous';
-                img.onload=function(){item.imgEl=img;};
-                img.src=url;
-              }
-            });
-          }
+        // Spread words evenly across estimated duration
+        // Each word gets ~0.35s, starting from vidT - text.length*0.18 (approximate)
+        var ws     = text.split(/\s+/).filter(Boolean);
+        var perW   = 0.38;
+        var startT = Math.max(0, vidT - ws.length*perW);
+
+        var sentWords = ws.map(function(w, wi){
+          var wt  = startT + wi*perW;
+          var we  = wt + perW - 0.04;
+          var obj = {w:w, t:wt, end:we, dramatic:drm};
+          words.push(obj);
+          return obj;
         });
+
+        sentences.push({t:startT, end:startT+ws.length*perW, text:text, words:sentWords, dramatic:drm});
+        document.getElementById('capCount').textContent = sentences.length+' captions captured';
       }
     };
 
     recog.onerror = function(e){
-      if(e.error==='not-allowed'){
-        live.textContent='⚠ Mic blocked — allow mic in browser address bar, then re-upload';
-      }
+      if(e.error==='not-allowed')
+        document.getElementById('procDesc').textContent='⚠ Allow mic in browser address bar, then try again';
     };
     recog.onend = function(){ if(isListening) try{recog.start();}catch(e){} };
 
-    try{ recog.start(); isListening=true; addLog('Listening…'); }
-    catch(e){ addLog('Could not start mic: '+e.message); }
+    try{ recog.start(); isListening=true; }
+    catch(e){ document.getElementById('procDesc').textContent='Could not start mic: '+e.message; }
   }
 
-  // ── Play video with audio so mic hears it ──────────────────
-  vid.currentTime = 0;
-  vid.muted       = false;
-  vid.volume      = 1.0;
+  // ── Play video ─────────────────────────────────────────────
+  vid.currentTime=0; vid.muted=false; vid.volume=1.0;
   vid.play().catch(function(){ vid.muted=true; vid.play(); });
 
-  addLog('Playing video for transcription');
-  document.getElementById('procTitle').textContent = 'Listening to your video…';
-  document.getElementById('procDesc').textContent  =
-    'Turn your volume up — the mic listens to the audio in real time';
-
-  // Progress bar tracks video playback
+  // Progress bar
   vid.ontimeupdate = function(){
     if(!vid.duration) return;
-    var pct = (vid.currentTime/vid.duration)*100;
-    document.getElementById('progFill').style.width = pct+'%';
-    document.getElementById('procTitle').textContent =
-      ft(vid.currentTime)+' / '+ft(vid.duration)+'  —  '+captions.length+' captions';
+    var pct=(vid.currentTime/vid.duration)*100;
+    document.getElementById('progFill').style.width=pct+'%';
+    document.getElementById('procTitle').textContent=
+      ft(vid.currentTime)+' / '+ft(vid.duration)+'  ·  '+sentences.length+' captions';
   };
 
-  // When video finishes → done
+  // Live preview canvas during listening
+  startLivePreview();
+
+  // When video ends → launch preview
   vid.onended = function(){
     isListening=false;
     if(recog) try{recog.abort();}catch(e){}
     vid.onended=null; vid.ontimeupdate=null;
-
+    cancelAnimationFrame(liveRafId);
     document.getElementById('progFill').style.width='100%';
     document.getElementById('procAnim').textContent='✅';
-    document.getElementById('procTitle').textContent='Edit complete!';
-    document.getElementById('procDesc').textContent=
-      captions.length+' captions · '+brollItems.length+' B-roll images';
-    addLog('Caption sync done');
-    addLog(st.name+' colour grade applied');
-    addLog('Ready for preview');
-    live.textContent='';
-
-    setTimeout(launchPreview, 900);
+    document.getElementById('procTitle').textContent='Done! '+sentences.length+' captions';
+    setTimeout(launchPreview, 700);
   };
+}
+
+// Live preview during processing (small canvas)
+function startLivePreview(){
+  if(!liveCV||!liveCTX) return;
+  liveCV.width=200; liveCV.height=355;
+  function drawLive(){
+    drawFrameOnCanvas(liveCV, liveCTX, 200, 355);
+    liveRafId = requestAnimationFrame(drawLive);
+  }
+  drawLive();
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -597,22 +666,18 @@ function startProcessing(){
 // ─────────────────────────────────────────────────────────────────
 function launchPreview(){
   goTo('sPreview');
-  canvas.width=540; canvas.height=960;
-  var st=activeStyle;
-  document.getElementById('expStyle').textContent   = st.name;
-  document.getElementById('styleBadge').textContent = st.name+' ✓';
+  cv.width=540; cv.height=960;
+  document.getElementById('expStyle').textContent   = activeStyle.name;
+  document.getElementById('styleBadge').textContent = activeStyle.name+' ✓';
   document.getElementById('expStats').innerHTML =
-    captions.length+' captions &nbsp;·&nbsp; '
-    +brollItems.length+' B-roll images &nbsp;·&nbsp; '
-    +st.name+' grade';
+    sentences.length+' captions &nbsp;·&nbsp; '
+    +words.length+' words timed &nbsp;·&nbsp; '+activeStyle.name;
 
   vid.pause(); vid.currentTime=0;
-  vid.ontimeupdate = function(){
-    var t=vid.currentTime, d=vid.duration||1;
-    var pct=(t/d*100).toFixed(1)+'%';
-    document.getElementById('vbFill').style.width    = pct;
-    document.getElementById('vbThumb').style.left    = pct;
-    document.getElementById('vbTime').textContent    = ft(t)+' / '+ft(d);
+  vid.ontimeupdate=function(){
+    var t=vid.currentTime,d=vid.duration||1;
+    document.getElementById('vbFill').style.width=(t/d*100)+'%';
+    document.getElementById('vbTime').textContent=ft(t)+'/'+ft(d);
   };
   vid.onended=function(){
     isPlaying=false;
@@ -621,40 +686,38 @@ function launchPreview(){
     document.getElementById('playTap').classList.remove('on');
     cancelAnimationFrame(rafId);
   };
-  setTimeout(drawFrame,80);
+  drawFrame(cv, cvCtx);
 }
 
 // ─────────────────────────────────────────────────────────────────
-// CANVAS DRAW LOOP
+// DRAW — shared between main canvas and live preview
 // ─────────────────────────────────────────────────────────────────
-function drawFrame(){
-  if(!vid.videoWidth){ rafId=requestAnimationFrame(drawFrame); return; }
-  var W=canvas.width, H=canvas.height, st=activeStyle;
+function drawFrameOnCanvas(canvas, ctx, W, H){
+  if(!vid.videoWidth) return;
+  var st = activeStyle;
 
-  // Sync offscreen
   if(gradeC.width!==W||gradeC.height!==H){ gradeC.width=W; gradeC.height=H; }
-
   ctx.clearRect(0,0,W,H);
 
-  // 1. Draw video WITH CSS filter applied via offscreen canvas
+  // 1. Video + grade
   var vw=vid.videoWidth, vh=vid.videoHeight;
   var sc=Math.max(W/vw,H/vh);
   var dw=vw*sc, dh=vh*sc;
   gradeX.clearRect(0,0,W,H);
-  gradeX.filter = st.gradeFilter||'none';
+  gradeX.filter = st.grade||'none';
   gradeX.drawImage(vid,(W-dw)/2,(H-dh)/2,dw,dh);
-  gradeX.filter = 'none';
+  gradeX.filter  = 'none';
   ctx.drawImage(gradeC,0,0);
 
-  // 2. Colour tint overlay
-  ctx.globalCompositeOperation = st.overlayMode||'source-over';
-  ctx.fillStyle = st.overlay||'transparent';
+  // 2. Tint overlay
+  ctx.globalCompositeOperation = st.tintMode||'source-over';
+  ctx.fillStyle = st.tint||'transparent';
   ctx.fillRect(0,0,W,H);
   ctx.globalCompositeOperation = 'source-over';
 
   // 3. Vignette
   if(st.vignette>0){
-    var vg=ctx.createRadialGradient(W/2,H/2,H*0.15,W/2,H/2,H*0.85);
+    var vg=ctx.createRadialGradient(W/2,H/2,H*0.12,W/2,H/2,H*0.88);
     vg.addColorStop(0,'rgba(0,0,0,0)');
     vg.addColorStop(1,'rgba(0,0,0,'+st.vignette+')');
     ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
@@ -668,68 +731,41 @@ function drawFrame(){
     ctx.fillRect(0,H-bh,W,bh);
   }
 
-  // 5. Lower-third bar background (corporate)
-  if(st.lowerThird){
-    var ltGrad=ctx.createLinearGradient(0,H*0.78,0,H*0.94);
-    ltGrad.addColorStop(0,'rgba(4,10,20,0.95)');
-    ltGrad.addColorStop(1,'rgba(4,10,20,0.6)');
-    ctx.fillStyle=ltGrad;
-    ctx.fillRect(0,H*0.78,W,H*0.16);
-    ctx.fillStyle=st.accentColor;
-    ctx.fillRect(0,H*0.78,W,3);
+  // 5. Grain
+  if(st.grain) doGrain(ctx,W,H);
+
+  // 6. Find current sentence
+  var now = vid.currentTime;
+  var curSentence = null;
+  for(var i=0;i<sentences.length;i++){
+    if(now >= sentences[i].t && now <= sentences[i].end+0.3){ curSentence=sentences[i]; break; }
   }
 
-  // 6. Film grain (documentary)
-  if(st.grain) doGrain(W,H);
-
-  // 7. B-roll image (fades in/out at timestamp)
-  var now=vid.currentTime;
-  brollItems.forEach(function(b){
-    if(!b.imgEl) return;
-    if(now < b.t || now >= b.t+2.8) return;
-    var age=now-b.t;
-    var alpha = age<0.35 ? age/0.35 : age>2.2 ? (2.8-age)/0.6 : 1;
-    ctx.save();
-    ctx.globalAlpha=Math.max(0,Math.min(1,alpha))*0.7;
-    var iw=b.imgEl.naturalWidth||540, ih=b.imgEl.naturalHeight||960;
-    var isc=Math.max(W/iw,H/ih);
-    ctx.drawImage(b.imgEl,(W-iw*isc)/2,(H-ih*isc)/2,iw*isc,ih*isc);
-    ctx.restore();
-    // Keyword label
-    ctx.save();
-    ctx.font='bold 12px "DM Sans",sans-serif';
-    var lw=ctx.measureText(b.kw||'').width+20;
-    ctx.fillStyle='rgba(0,0,0,0.65)';
-    ctx.fillRect(14,H*0.08-18,lw,26);
-    ctx.fillStyle=st.accentColor;
-    ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillText((b.kw||'').toUpperCase(),24,H*0.08);
-    ctx.restore();
-  });
-
-  // 8. Captions
-  var cap=null;
-  for(var i=0;i<captions.length;i++){
-    if(captions[i].t<=now && now<captions[i].t+3.4){ cap=captions[i]; break; }
-  }
-  if(cap){
-    var elapsed=now-cap.t;
-    var renderer=CAPTION_RENDERERS[st.capStyle]||CAPTION_RENDERERS.subtitle;
-    renderer(ctx,W,H,cap,elapsed,st);
+  // 7. Render captions
+  if(curSentence){
+    st.render(ctx, W, H, {
+      words:    curSentence.words,
+      curTime:  now,
+      text:     curSentence.text,
+      dramatic: curSentence.dramatic
+    });
   }
 
-  // 9. Tiny watermark
+  // 8. Watermark
   ctx.save();
   ctx.font='10px "DM Sans",sans-serif';
-  ctx.fillStyle='rgba(255,255,255,0.18)';
+  ctx.fillStyle='rgba(255,255,255,0.15)';
   ctx.textAlign='right'; ctx.textBaseline='top';
   ctx.fillText('ImpactGrid',W-10,10);
   ctx.restore();
+}
 
+function drawFrame(){
+  drawFrameOnCanvas(cv, cvCtx, cv.width, cv.height);
   if(isPlaying) rafId=requestAnimationFrame(drawFrame);
 }
 
-function doGrain(W,H){
+function doGrain(ctx,W,H){
   var id=ctx.getImageData(0,0,W,H),d=id.data;
   for(var i=0;i<d.length;i+=12){
     var n=(Math.random()-.5)*22;
@@ -768,7 +804,7 @@ function seekClick(e){
 }
 
 // ─────────────────────────────────────────────────────────────────
-// EXPORT (MediaRecorder — canvas + audio → webm)
+// EXPORT
 // ─────────────────────────────────────────────────────────────────
 function setFmt(btn){
   document.querySelectorAll('.fmt').forEach(function(b){b.classList.remove('active');});
@@ -778,10 +814,9 @@ function setFmt(btn){
 
 function doExport(){
   if(!vid.src){ toast('No video loaded'); return; }
-
-  if(exportFmt==='reel')         {canvas.width=540;  canvas.height=960;}
-  else if(exportFmt==='youtube') {canvas.width=1280; canvas.height=720;}
-  else                           {canvas.width=720;  canvas.height=720;}
+  if(exportFmt==='reel')         {cv.width=540;  cv.height=960;}
+  else if(exportFmt==='youtube') {cv.width=1280; cv.height=720;}
+  else                           {cv.width=720;  cv.height=720;}
 
   var ep=document.getElementById('expProg');
   var bar=document.getElementById('epFill');
@@ -789,7 +824,7 @@ function doExport(){
   ep.style.display='block';
   document.getElementById('dlBtn').disabled=true;
 
-  var stream=canvas.captureStream(30);
+  var stream=cv.captureStream(30);
   try{
     var ac=new (window.AudioContext||window.webkitAudioContext)();
     var src=ac.createMediaElementSource(vid);
@@ -811,7 +846,7 @@ function doExport(){
     document.body.appendChild(a); a.click(); a.remove();
     bar.style.width='100%'; lbl.textContent='✓ Downloading!';
     document.getElementById('dlBtn').disabled=false;
-    toast('✓ Exported: '+activeStyle.name+' · '+exportFmt);
+    toast('✓ Exported!');
     setTimeout(function(){ep.style.display='none';},4000);
     vid.onended=defaultEnded;
   };
@@ -824,11 +859,8 @@ function doExport(){
   var pi=setInterval(function(){
     var p=Math.min((Date.now()-t0)/dur*95,95);
     bar.style.width=p+'%'; lbl.textContent='Recording… '+Math.round(p)+'%';
-  },400);
-
-  vid.onended=function(){
-    clearInterval(pi); isPlaying=false; rec.stop();
-  };
+  },300);
+  vid.onended=function(){ clearInterval(pi); isPlaying=false; rec.stop(); };
 }
 
 function defaultEnded(){
@@ -839,12 +871,12 @@ function defaultEnded(){
 }
 
 // ─────────────────────────────────────────────────────────────────
-// SPEECH / CAPTION HELPERS
+// CAPTION HELPERS
 // ─────────────────────────────────────────────────────────────────
-var DRAMATIC_WORDS=new Set(['amazing','incredible','huge','massive','love','hate','never',
-  'always','breaking','best','worst','epic','shocking','first','secret','free','truth','only',
-  'biggest','powerful','change','money','success','stop','watch','insane','crazy','unbelievable',
-  'launch','new','live','now','today','wow','omg','seriously','literally','game','winner','real']);
+var DRAMATIC_WORDS=new Set(['amazing','incredible','huge','massive','love','hate','never','always',
+  'breaking','best','worst','epic','shocking','first','secret','free','truth','only','biggest',
+  'powerful','change','money','success','stop','watch','insane','crazy','unbelievable','launch',
+  'new','live','now','today','wow','omg','seriously','literally','game','winner','real','fire']);
 
 function isDramatic(text){
   if(/[!?]/.test(text)) return true;
@@ -852,55 +884,34 @@ function isDramatic(text){
   return Array.from(DRAMATIC_WORDS).some(function(w){return l.indexOf(w)!==-1;});
 }
 
-function chunkSave(text,t,drm){
-  // Split into 4-word chunks, each at a slightly later timestamp
-  var words=text.split(/\s+/), chunk=[], time=t;
-  words.forEach(function(w,wi){
-    chunk.push(w);
-    if(chunk.length>=4||wi===words.length-1){
-      captions.push({t:Math.max(0,time), text:chunk.join(' '), dramatic:drm});
-      time+=chunk.length*0.38;
-      chunk=[];
-    }
+// Group word objects into lines of max n words
+function groupLines(wordArr, n){
+  var lines=[], cur=[];
+  wordArr.forEach(function(w){
+    cur.push(w);
+    if(cur.length>=n){ lines.push(cur.slice()); cur=[]; }
   });
+  if(cur.length) lines.push(cur);
+  return lines;
 }
 
-var STOP=new Set(['the','is','are','a','an','and','to','of','in','it','that','this','with',
-  'for','on','you','i','we','he','she','they','was','be','at','by','from','have','do','not',
-  'but','what','when','there','has','will','about','just','so','up','more','its','also',
-  'which','your','our','can','had','how','some','if','my','me','as','get','like','know',
-  'really','very','then','than','into','out','been','were','would','could','should']);
-
-function getKeywords(text){
-  var words=text.replace(/[.,!?;:'"]/g,' ').toLowerCase().split(/\s+/);
-  var seen=new Set();
-  return words.filter(function(w){
-    if(w.length<4||STOP.has(w)||seen.has(w))return false;
-    seen.add(w); return true;
-  }).slice(0,2);
+// Measure total width of a word array with current font
+function lineW(ctx, wordArr){
+  return wordArr.reduce(function(a,w){ return a+ctx.measureText(w.w||w).width+10; },0);
 }
 
-// ─────────────────────────────────────────────────────────────────
-// IMAGE FETCH
-// ─────────────────────────────────────────────────────────────────
-function fetchImg(kw,cb){
-  var enc=encodeURIComponent(kw);
-  var h=0; for(var i=0;i<kw.length;i++) h=(h*31+kw.charCodeAt(i))&0xffff;
-  var sources=[
-    'https://loremflickr.com/540/960/'+enc+'?random='+((h%8000)+100),
-    'https://picsum.photos/540/960?random='+((h%400)+50)
-  ];
-  var idx=0;
-  function next(){
-    if(idx>=sources.length){cb(null);return;}
-    var url=sources[idx++],img=new Image(),done=false;
-    img.crossOrigin='anonymous';
-    var timer=setTimeout(function(){if(!done){done=true;next();}},6000);
-    img.onload=function(){if(!done){done=true;clearTimeout(timer);cb(url);}};
-    img.onerror=function(){if(!done){done=true;clearTimeout(timer);next();}};
-    img.src=url;
+// Rounded rect helper
+function rRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(x,y,w,h,r); }
+  else{
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
   }
-  next();
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -909,15 +920,13 @@ function fetchImg(kw,cb){
 function goTo(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   var el=document.getElementById(id);
-  if(el){el.classList.add('active'); window.scrollTo(0,0);}
+  if(el){ el.classList.add('active'); window.scrollTo(0,0); }
 }
-
 function ft(s){
   if(!s||isNaN(s))return'0:00';
   var m=Math.floor(s/60),sec=Math.floor(s%60);
   return m+':'+(sec<10?'0':'')+sec;
 }
-
 var _tt;
 function toast(msg){
   var el=document.getElementById('toast');
