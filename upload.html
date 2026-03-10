@@ -2,138 +2,120 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ImpactGrid Creator Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="upload.css">
 </head>
 <body>
-
 <div class="topbar">
-  <div class="brand"><span class="brand-ig">Impact</span>Grid</div>
-  <div id="statusPill" class="status-pill" style="display:none"></div>
-  <a href="dashboard.html" class="back-btn">← Dashboard</a>
+  <div class="brand"><span class="o">Impact</span>Grid <span class="tag">Creator Studio</span></div>
+  <a href="dashboard.html" class="back">← Dashboard</a>
 </div>
 
-<div class="studio" id="studio">
+<div id="app">
 
-  <!-- ══ STEP 1: DROP ══ -->
-  <div class="screen active" id="screenDrop">
-    <div class="drop-hero">
-      <div class="drop-icon">🎬</div>
-      <h1>Drop your video. Get a banger.</h1>
-      <p>ImpactGrid edits it for you — captions, B-roll, colour grade, music cues. Pick a style and we do the rest.</p>
-      <label class="drop-zone" id="dropZone">
-        <input type="file" id="clipInput" accept="video/*">
-        <span>Click to choose video or drag here</span>
+  <!-- SCREEN 1: DROP -->
+  <div class="screen active" id="sDrop">
+    <div class="hero">
+      <div class="hero-icon">🎬</div>
+      <h1>Drop your video.<br>Get a cinematic edit.</h1>
+      <p>Captions, B-roll, colour grade — all automatic.</p>
+      <label class="dropzone" id="dropZone">
+        <input type="file" id="fileIn" accept="video/*">
+        <div class="dz-inner">
+          <span class="dz-icon">⬆</span>
+          <span class="dz-txt">Click or drag video here</span>
+          <span class="dz-sub">MP4 · MOV · WebM</span>
+        </div>
       </label>
-      <div class="supported">MP4 · MOV · WebM · up to 2GB</div>
     </div>
   </div>
 
-  <!-- ══ STEP 2: PICK STYLE ══ -->
-  <div class="screen" id="screenStyle">
+  <!-- SCREEN 2: PICK STYLE -->
+  <div class="screen" id="sStyle">
     <div class="style-page">
       <div class="style-hd">
-        <div class="clip-info" id="clipInfo"></div>
-        <h2>Choose your edit style</h2>
-        <p>Each style changes captions, pacing, colour grade and energy</p>
+        <div class="file-chip" id="fileChip">🎬</div>
+        <h2>Pick your edit style</h2>
+        <p>Each style has unique captions, colour grade and energy</p>
       </div>
       <div class="style-grid" id="styleGrid"></div>
-      <button class="btn-back" onclick="goTo('screenDrop')">← Change video</button>
+      <button class="ghost-btn" onclick="goTo('sDrop')">← Change video</button>
     </div>
   </div>
 
-  <!-- ══ STEP 3: PROCESSING ══ -->
-  <div class="screen" id="screenProcess">
-    <div class="process-wrap">
-      <div class="process-icon" id="processIcon">⚡</div>
-      <h2 id="processTitle">Analysing your video…</h2>
-      <p id="processDesc">Detecting speech and building your edit</p>
-      <div class="prog-wrap">
-        <div class="prog-bar" id="progBar"></div>
-      </div>
-      <div class="prog-steps" id="progSteps"></div>
+  <!-- SCREEN 3: PROCESSING -->
+  <div class="screen" id="sProcess">
+    <div class="process-box">
+      <div class="proc-anim" id="procAnim">⚡</div>
+      <h2 id="procTitle">Analysing…</h2>
+      <p id="procDesc">Starting up…</p>
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      <div class="proc-log" id="procLog"></div>
+      <div class="proc-live" id="procLive"></div>
     </div>
   </div>
 
-  <!-- ══ STEP 4: PREVIEW + EXPORT ══ -->
-  <div class="screen" id="screenPreview">
+  <!-- SCREEN 4: PREVIEW + EXPORT -->
+  <div class="screen" id="sPreview">
     <div class="preview-layout">
 
-      <!-- Left: video preview -->
-      <div class="preview-side">
-        <div class="video-frame" id="videoFrame">
-          <canvas id="previewCanvas"></canvas>
-          <video id="masterVideo" playsinline style="display:none"></video>
-          <div class="play-overlay" id="playOverlay" onclick="togglePlay()">
-            <div class="play-btn-big" id="playBtnBig">▶</div>
+      <div class="left-panel">
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="cv"></canvas>
+          <div class="play-tap" id="playTap" onclick="togglePlay()">
+            <div class="big-play" id="bigPlay">▶</div>
           </div>
         </div>
-        <div class="video-controls">
-          <button class="vc-btn" onclick="togglePlay()" id="vcPlay">▶</button>
-          <div class="vc-progress" onclick="seekTo(event)">
-            <div class="vc-fill" id="vcFill"></div>
+        <div class="vid-bar">
+          <button class="vb-btn" id="vbPlay" onclick="togglePlay()">▶</button>
+          <div class="vb-prog" id="vbProg" onclick="seekClick(event)">
+            <div class="vb-fill" id="vbFill"></div>
+            <div class="vb-thumb" id="vbThumb"></div>
           </div>
-          <span class="vc-time" id="vcTime">0:00 / 0:00</span>
+          <span class="vb-time" id="vbTime">0:00</span>
         </div>
-        <!-- Style badge -->
         <div class="style-badge" id="styleBadge"></div>
       </div>
 
-      <!-- Right: export panel -->
-      <div class="export-side">
-        <div class="export-card">
-          <div class="export-title">Your edit is ready</div>
-          <div class="export-style" id="exportStyleName"></div>
-          <div class="export-stats" id="exportStats"></div>
+      <div class="right-panel">
+        <div class="exp-card">
+          <div class="exp-head">
+            <span class="exp-title">Edit ready</span>
+            <span class="exp-style" id="expStyle"></span>
+          </div>
+          <div class="exp-stats" id="expStats"></div>
 
-          <!-- Format buttons -->
-          <div class="fmt-label">Export as</div>
-          <div class="fmt-grid">
-            <button class="fmt-btn active" data-fmt="reel" onclick="setFmt(this)">
-              <span class="fmt-icon">📱</span>
-              <span class="fmt-name">Reel / TikTok</span>
-              <span class="fmt-dim">9:16</span>
-            </button>
-            <button class="fmt-btn" data-fmt="youtube" onclick="setFmt(this)">
-              <span class="fmt-icon">▶</span>
-              <span class="fmt-name">YouTube</span>
-              <span class="fmt-dim">16:9</span>
-            </button>
-            <button class="fmt-btn" data-fmt="square" onclick="setFmt(this)">
-              <span class="fmt-icon">⬛</span>
-              <span class="fmt-name">Square</span>
-              <span class="fmt-dim">1:1</span>
-            </button>
+          <div class="sec-label">Format</div>
+          <div class="fmt-row">
+            <button class="fmt active" data-f="reel"    onclick="setFmt(this)">📱 Reel / TikTok<br><small>9:16</small></button>
+            <button class="fmt"        data-f="youtube" onclick="setFmt(this)">▶ YouTube<br><small>16:9</small></button>
+            <button class="fmt"        data-f="square"  onclick="setFmt(this)">⬛ Square<br><small>1:1</small></button>
           </div>
 
-          <button class="btn-export" id="exportBtn" onclick="startExport()">
-            ⬇ Download Video
-          </button>
-
-          <div id="exportProgress" style="display:none">
-            <div class="exp-bar-wrap"><div class="exp-bar" id="expBar"></div></div>
-            <div class="exp-label" id="expLabel">Rendering…</div>
+          <button class="dl-btn" id="dlBtn" onclick="doExport()">⬇ Download Video</button>
+          <div id="expProg" style="display:none">
+            <div class="ep-track"><div class="ep-fill" id="epFill"></div></div>
+            <div class="ep-lbl" id="epLbl">Rendering…</div>
           </div>
 
           <div class="divider"></div>
+          <div class="sec-label">Switch style</div>
+          <div class="mini-styles" id="miniStyles"></div>
 
-          <!-- Re-edit options -->
-          <div class="reedit-label">Try another style</div>
-          <div class="reedit-mini" id="reeditMini"></div>
-
-          <button class="btn-ghost" onclick="goTo('screenDrop')">Upload new video</button>
+          <button class="ghost-btn" style="width:100%;margin-top:12px" onclick="goTo('sDrop')">Upload new video</button>
         </div>
       </div>
 
     </div>
   </div>
 
-</div>
+</div><!-- /app -->
 
 <div id="toast" class="toast"></div>
+<video id="masterVid" playsinline style="display:none"></video>
 <script src="upload.js"></script>
 </body>
 </html>
