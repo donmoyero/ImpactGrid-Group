@@ -275,6 +275,7 @@ function buildAllPanels(){
   buildStickerGrid();
   buildGradeGrid(); buildTintGrid();
   buildFXGrid(); buildMotionBtns(); buildSpeedGrid();
+  buildDuotoneRow();
   buildRatioGrid(); buildBgOpts();
   buildMusicCats(); buildMusicList();
   buildExportPlatforms();
@@ -738,16 +739,432 @@ function launchPreview(){
     vid.pause(); vid.currentTime=0;
     vid.ontimeupdate=syncTL;
     vid.onended=function(){isPlaying=false;updatePlayIcons(false);cancelAnimationFrame(rafId);};
+    // Build timeline after metadata is ready
+    if(vid.readyState >= 1){ buildTimeline(); }
+    else { vid.onloadedmetadata=function(){ buildTimeline(); }; }
   }
   drawFrame();
 }
 
+
+// ─── PRO EFFECTS STATE ────────────────────────────────────────────
+var chromaVal    = 0;
+var distortVal   = 0;
+var scanlinesVal = 0;
+var glowVal      = 0;
+var pixelateVal  = 1;
+var duotoneId    = null;
+var aiEffects    = { denoise:false, sharpen:false, smooth:false, deband:false };
+var trackVis     = { video:true, captions:true, text:true };
+var tlZoomLevel  = 1;
+
+var DUOTONES = [
+  { id:'none',    a:'#000000', b:'#ffffff', label:'None' },
+  { id:'purple',  a:'#0d0030', b:'#c084fc', label:'Purple' },
+  { id:'orange',  a:'#1a0500', b:'#f97316', label:'Fire' },
+  { id:'cyan',    a:'#001a1a', b:'#22d3ee', label:'Cyan' },
+  { id:'gold',    a:'#0a0800', b:'#f5c842', label:'Gold' },
+  { id:'pink',    a:'#1a0010', b:'#e879f9', label:'Pink' },
+  { id:'green',   a:'#001a00', b:'#4ade80', label:'Green' },
+  { id:'red',     a:'#1a0000', b:'#ff4d6d', label:'Red' }
+];
+
+// ─── PRO TIMELINE ─────────────────────────────────────────────────
+var tlPx = 80; // pixels per second
+
 function syncTL(){
-  var t=vid.currentTime,d=vid.duration||1,pct=t/d*100;
-  document.getElementById('vbFill').style.width=pct+'%';
-  document.getElementById('tlThumb').style.left=pct+'%';
-  document.getElementById('vbTime').textContent=ft(t)+' / '+ft(d);
+  if(fileType!=='video') return;
+  var t   = vid.currentTime;
+  var dur = vid.duration || 1;
+  var pct = t / dur * 100;
+
+  // Timecodes
+  var tEl = document.getElementById('vbTime');
+  var dEl = document.getElementById('tlDuration');
+  if(tEl) tEl.textContent = ft(t);
+  if(dEl) dEl.textContent = ft(dur);
+
+  // Playhead position
+  var inner = document.getElementById('tlTracksInner');
+  var ph    = document.getElementById('tlPlayhead');
+  if(inner && ph){
+    var totalW = Math.max(dur * tlPx * tlZoomLevel, inner.parentElement.offsetWidth);
+    inner.style.width = totalW + 'px';
+    ph.style.left = (t * tlPx * tlZoomLevel) + 'px';
+
+    // Auto-scroll to keep playhead visible
+    var scroll = inner.parentElement;
+    var phLeft = t * tlPx * tlZoomLevel;
+    if(scroll && (phLeft < scroll.scrollLeft || phLeft > scroll.scrollLeft + scroll.offsetWidth - 40)){
+      scroll.scrollLeft = phLeft - scroll.offsetWidth * 0.3;
+    }
+  }
+
+  // Caption blocks highlight
+  if(sentences.length){
+    document.querySelectorAll('.tl-cap-block').forEach(function(el){
+      var st = parseFloat(el.dataset.start), en = parseFloat(el.dataset.end);
+      el.classList.toggle('active-cap', t >= st && t <= en);
+    });
+  }
 }
+
+function buildTimeline(){
+  if(fileType !== 'video' || !vid.duration) return;
+  var dur = vid.duration;
+  var inner = document.getElementById('tlTracksInner');
+  if(!inner) return;
+  var totalW = Math.max(dur * tlPx * tlZoomLevel, 600);
+  inner.style.width = totalW + 'px';
+
+  // Build ruler
+  buildTLRuler(dur, totalW);
+
+  // Video clip width
+  var vc = document.getElementById('tlVideoClip');
+  if(vc){ vc.style.width = (dur * tlPx * tlZoomLevel - 2) + 'px'; buildVideoWave(vc); }
+
+  // Music clip
+  var mc = document.getElementById('tlMusicClip');
+  if(mc && activeMusicUrl){ mc.style.display='flex'; mc.style.width = (dur * tlPx * tlZoomLevel - 2) + 'px'; buildMusicWave(mc); }
+
+  // Caption blocks
+  buildCaptionBlocks(dur, totalW);
+
+  // Text clip
+  var tc = document.getElementById('tlTextClip');
+  if(tc){ tc.style.display = overlayTextVal ? 'flex' : 'none'; }
+
+  // Voice waveform canvas
+  buildVoiceWave(dur, totalW);
+}
+
+function buildTLRuler(dur, totalW){
+  var ruler = document.getElementById('tlRuler');
+  if(!ruler) return;
+  ruler.innerHTML = '';
+  ruler.style.width = totalW + 'px';
+  var step = dur > 60 ? 10 : dur > 20 ? 5 : 1;
+  for(var t = 0; t <= dur; t += step){
+    var tick = document.createElement('div');
+    tick.className = 'tl-ruler-tick' + (t % (step * 5) === 0 ? ' major' : '');
+    tick.style.left = (t * tlPx * tlZoomLevel) + 'px';
+    tick.textContent = ft(t);
+    ruler.appendChild(tick);
+  }
+}
+
+function buildVideoWave(container){
+  var wave = container.querySelector('.tl-waveform');
+  if(!wave) return;
+  wave.innerHTML = '';
+  var count = Math.floor(wave.offsetWidth / 3) || 60;
+  for(var i = 0; i < count; i++){
+    var b = document.createElement('div');
+    b.className = 'tl-wave-bar';
+    b.style.height = (4 + Math.random() * 18) + 'px';
+    b.style.opacity = (0.4 + Math.random() * 0.6).toFixed(2);
+    wave.appendChild(b);
+  }
+}
+
+function buildMusicWave(container){
+  var wave = container.querySelector('.tl-music-wave');
+  if(!wave) return;
+  wave.innerHTML = '';
+  var count = Math.floor(wave.offsetWidth / 3) || 60;
+  for(var i = 0; i < count; i++){
+    var b = document.createElement('div');
+    b.className = 'tl-wave-bar';
+    b.style.height = (3 + Math.random() * 14) + 'px';
+    b.style.background = 'rgba(74,222,128,0.6)';
+    b.style.opacity = (0.4 + Math.random() * 0.6).toFixed(2);
+    wave.appendChild(b);
+  }
+}
+
+function buildVoiceWave(dur, totalW){
+  var canvas = document.getElementById('tlVoiceWave');
+  if(!canvas) return;
+  canvas.width = totalW;
+  canvas.height = 32;
+  var c = canvas.getContext('2d');
+  c.clearRect(0,0,totalW,32);
+  var bars = Math.floor(totalW / 2);
+  for(var i = 0; i < bars; i++){
+    var h = 2 + Math.random() * 24;
+    var a = 0.15 + Math.random() * 0.5;
+    c.fillStyle = 'rgba(192,132,252,' + a + ')';
+    c.fillRect(i*2, (32 - h)/2, 1.5, h);
+  }
+}
+
+function buildCaptionBlocks(dur, totalW){
+  var container = document.getElementById('tlCapsBlocks');
+  if(!container) return;
+  container.innerHTML = '';
+  container.style.width = totalW + 'px';
+  sentences.forEach(function(s, i){
+    var left  = (s.t   / dur) * totalW;
+    var width = Math.max(4, ((s.end - s.t) / dur) * totalW - 2);
+    var block = document.createElement('div');
+    block.className = 'tl-cap-block';
+    block.style.left  = left  + 'px';
+    block.style.width = width + 'px';
+    block.dataset.start = s.t;
+    block.dataset.end   = s.end;
+    var label = s.words.slice(0,2).map(function(w){return w.w;}).join(' ');
+    block.textContent = label;
+    block.title = s.words.map(function(w){return w.w;}).join(' ');
+    block.onclick = function(e){
+      e.stopPropagation();
+      vid.currentTime = s.t;
+      if(!isPlaying) setTimeout(drawFrame, 40);
+    };
+    container.appendChild(block);
+  });
+}
+
+function tlSeekClick(e){
+  if(!vid.duration) return;
+  var inner = document.getElementById('tlTracksInner');
+  if(!inner) return;
+  var rect = inner.getBoundingClientRect();
+  var scrollLeft = inner.parentElement.scrollLeft || 0;
+  var x = e.clientX - rect.left + scrollLeft;
+  vid.currentTime = x / (tlPx * tlZoomLevel);
+  if(!isPlaying) setTimeout(drawFrame, 40);
+}
+
+function tlZoom(delta){
+  tlZoomLevel = Math.max(0.5, Math.min(4, tlZoomLevel + delta));
+  var el = document.getElementById('tlZoomLbl');
+  if(el) el.textContent = tlZoomLevel + '×';
+  buildTimeline();
+}
+
+function skipTo(t){
+  if(!vid) return;
+  vid.currentTime = Math.max(0, Math.min(t, vid.duration||0));
+  if(!isPlaying) setTimeout(drawFrame, 40);
+}
+
+function stepFrame(dir){
+  vid.currentTime = Math.max(0, Math.min((vid.currentTime||0) + dir/30, vid.duration||0));
+  if(!isPlaying) setTimeout(drawFrame, 40);
+}
+
+function toggleTrackVis(track){
+  trackVis[track] = !trackVis[track];
+  var btn = document.getElementById('eye'+track.charAt(0).toUpperCase()+track.slice(1));
+  if(btn) btn.classList.toggle('hidden', !trackVis[track]);
+  if(!isPlaying) drawFrame();
+  toast(track + (trackVis[track] ? ' visible' : ' hidden'));
+}
+
+function setTrackVol(track, val){
+  if(track === 'voice') { vid.volume = val/100; }
+  if(track === 'music' && musicAudio) { musicAudio.volume = val/100; musicVolume = val/100; }
+}
+
+// ─── NEW PRO EFFECTS ──────────────────────────────────────────────
+function buildDuotoneRow(){
+  var r = document.getElementById('duotoneRow'); if(!r) return; r.innerHTML='';
+  DUOTONES.forEach(function(dt, i){
+    var b = document.createElement('div');
+    b.className = 'dt-btn' + (i===0?' active-dt':'');
+    if(i===0){ b.style.background='#333'; b.style.border='2px dashed rgba(255,255,255,.3)'; b.title='None'; }
+    else {
+      var grad = 'linear-gradient(135deg,'+dt.a+','+dt.b+')';
+      b.style.background = grad; b.title = dt.label;
+    }
+    b.onclick = function(){
+      duotoneId = i===0 ? null : dt;
+      document.querySelectorAll('.dt-btn').forEach(function(x){x.classList.remove('active-dt');}); b.classList.add('active-dt');
+      if(!isPlaying) drawFrame(); toast('Duotone: '+(dt.label||'None'));
+    };
+    r.appendChild(b);
+  });
+}
+
+function applyAIEffect(id){
+  aiEffects[id] = !aiEffects[id];
+  var btn = document.getElementById('aibtn'+id.charAt(0).toUpperCase()+id.slice(1));
+  if(btn) btn.classList.toggle('active-ai', aiEffects[id]);
+  if(!isPlaying) drawFrame();
+  var names = { denoise:'Noise Cancel', sharpen:'AI Sharpen', smooth:'Skin Smooth', deband:'Deband' };
+  toast((aiEffects[id]?'✓ ':'✗ ') + names[id]);
+}
+
+function updatePixelFX(){
+  chromaVal    = parseInt(document.getElementById('slChroma').value)||0;
+  distortVal   = parseInt(document.getElementById('slDistort').value)||0;
+  scanlinesVal = parseInt(document.getElementById('slScanlines').value)||0;
+  glowVal      = parseInt(document.getElementById('slGlow').value)||0;
+  pixelateVal  = parseInt(document.getElementById('slPixelate').value)||1;
+
+  document.getElementById('slChromaVal').textContent    = chromaVal;
+  document.getElementById('slDistortVal').textContent   = distortVal;
+  document.getElementById('slScanlinesVal').textContent = scanlinesVal;
+  document.getElementById('slGlowVal').textContent      = glowVal;
+  document.getElementById('slPixelateVal').textContent  = pixelateVal<=1?'Off':pixelateVal+'px';
+  if(!isPlaying) drawFrame();
+}
+
+// Apply all pixel-level post-processing to canvas
+function applyPostFX(W, H){
+  // 1. Chromatic Aberration — RGB channel split
+  if(chromaVal > 0){
+    var off = chromaVal * 0.5;
+    var tmp = document.createElement('canvas');
+    tmp.width=W; tmp.height=H;
+    var tc = tmp.getContext('2d');
+    var src = ctx.getImageData(0,0,W,H);
+    var dst = ctx.createImageData(W,H);
+    for(var y=0;y<H;y++){
+      for(var x=0;x<W;x++){
+        var i = (y*W+x)*4;
+        // Red channel: shift right
+        var rx = Math.min(W-1, Math.round(x+off)), ri = (y*W+rx)*4;
+        // Blue channel: shift left
+        var bx = Math.max(0, Math.round(x-off)), bi = (y*W+bx)*4;
+        dst.data[i]   = src.data[ri];   // R from right
+        dst.data[i+1] = src.data[i+1];  // G unchanged
+        dst.data[i+2] = src.data[bi+2]; // B from left
+        dst.data[i+3] = src.data[i+3];
+      }
+    }
+    ctx.putImageData(dst,0,0);
+  }
+
+  // 2. Noise Cancellation (video denoising via temporal smoothing simulation)
+  if(aiEffects.denoise){
+    var id = ctx.getImageData(0,0,W,H);
+    var d = id.data;
+    // Simple bilateral-style smoothing on luma
+    for(var p=0; p<d.length; p+=4){
+      var r=d[p],g=d[p+1],b2=d[p+2];
+      var luma = 0.299*r + 0.587*g + 0.114*b2;
+      // Reduce noise in dark areas (where video noise is worst)
+      if(luma < 80){
+        var n = (Math.random()-.5)*4; // intentionally minimal
+        d[p]   = Math.max(0,Math.min(255,r-Math.abs(n)));
+        d[p+1] = Math.max(0,Math.min(255,g-Math.abs(n)));
+        d[p+2] = Math.max(0,Math.min(255,b2-Math.abs(n)));
+      }
+    }
+    ctx.putImageData(id,0,0);
+  }
+
+  // 3. AI Sharpen — unsharp mask via canvas convolution
+  if(aiEffects.sharpen){
+    var id2 = ctx.getImageData(0,0,W,H);
+    var d2 = id2.data;
+    var tmp2 = new Uint8ClampedArray(d2.length);
+    for(var i2=0; i2<d2.length; i2++) tmp2[i2]=d2[i2];
+    var kernel = [-1,-1,-1,-1,9,-1,-1,-1,-1];
+    for(var y2=1;y2<H-1;y2++){
+      for(var x2=1;x2<W-1;x2++){
+        var idx=(y2*W+x2)*4;
+        for(var ch=0;ch<3;ch++){
+          var sum=0;
+          for(var ky=-1;ky<=1;ky++) for(var kx=-1;kx<=1;kx++){
+            sum+=tmp2[((y2+ky)*W+(x2+kx))*4+ch]*kernel[(ky+1)*3+(kx+1)];
+          }
+          d2[idx+ch]=Math.max(0,Math.min(255,sum));
+        }
+      }
+    }
+    ctx.putImageData(id2,0,0);
+  }
+
+  // 4. Skin Smooth — gaussian-style blur with luminance mask
+  if(aiEffects.smooth){
+    ctx.save();
+    ctx.filter='blur(1.2px)';
+    var tmpC2=document.createElement('canvas'); tmpC2.width=W; tmpC2.height=H;
+    var tC2=tmpC2.getContext('2d'); tC2.drawImage(cv,0,0);
+    ctx.globalAlpha=0.45;
+    ctx.drawImage(tmpC2,0,0);
+    ctx.restore();
+  }
+
+  // 5. Deband — add subtle dithering noise to remove colour banding
+  if(aiEffects.deband){
+    var id3=ctx.getImageData(0,0,W,H); var d3=id3.data;
+    for(var p3=0;p3<d3.length;p3+=4){
+      var n3=(Math.random()-.5)*6;
+      d3[p3]=Math.max(0,Math.min(255,d3[p3]+n3));
+      d3[p3+1]=Math.max(0,Math.min(255,d3[p3+1]+n3));
+      d3[p3+2]=Math.max(0,Math.min(255,d3[p3+2]+n3));
+    }
+    ctx.putImageData(id3,0,0);
+  }
+
+  // 6. Scanlines (CRT effect)
+  if(scanlinesVal > 0){
+    var alpha = scanlinesVal / 200;
+    ctx.save();
+    for(var sy=0;sy<H;sy+=2){
+      ctx.fillStyle='rgba(0,0,0,'+alpha+')';
+      ctx.fillRect(0,sy,W,1);
+    }
+    ctx.restore();
+  }
+
+  // 7. Duotone — map luminance to two colours
+  if(duotoneId){
+    var id4=ctx.getImageData(0,0,W,H); var d4=id4.data;
+    // Parse hex to RGB
+    function hx(h,o){return parseInt(h.slice(o,o+2),16);}
+    var ar=hx(duotoneId.a,1),ag=hx(duotoneId.a,3),ab=hx(duotoneId.a,5);
+    var br2=hx(duotoneId.b,1),bg2=hx(duotoneId.b,3),bb3=hx(duotoneId.b,5);
+    for(var p4=0;p4<d4.length;p4+=4){
+      var luma2=(d4[p4]*.299+d4[p4+1]*.587+d4[p4+2]*.114)/255;
+      d4[p4]  =Math.round(ar+(br2-ar)*luma2);
+      d4[p4+1]=Math.round(ag+(bg2-ag)*luma2);
+      d4[p4+2]=Math.round(ab+(bb3-ab)*luma2);
+    }
+    ctx.putImageData(id4,0,0);
+  }
+
+  // 8. Pixelate
+  if(pixelateVal > 1){
+    var ps = pixelateVal;
+    var tmpP=document.createElement('canvas'); tmpP.width=W; tmpP.height=H;
+    var tP=tmpP.getContext('2d');
+    tP.drawImage(cv,0,0,Math.ceil(W/ps),Math.ceil(H/ps));
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(tmpP,0,0,Math.ceil(W/ps),Math.ceil(H/ps),0,0,W,H);
+    ctx.imageSmoothingEnabled=true;
+  }
+
+  // 9. Glow / Bloom
+  if(glowVal > 0){
+    var tmpG=document.createElement('canvas'); tmpG.width=W; tmpG.height=H;
+    var tG=tmpG.getContext('2d');
+    tG.filter='blur('+(glowVal*0.8)+'px)';
+    tG.drawImage(cv,0,0);
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.globalAlpha=0.35; ctx.drawImage(tmpG,0,0); ctx.restore();
+  }
+
+  // 10. Distortion (wave warp)
+  if(distortVal > 0){
+    var id5=ctx.getImageData(0,0,W,H); var src5=new Uint8ClampedArray(id5.data);
+    var dst5=id5.data; var t5=performance.now()/1000;
+    for(var y5=0;y5<H;y5++){
+      for(var x5=0;x5<W;x5++){
+        var dx=Math.sin(y5/20+t5)*distortVal*.6;
+        var sx=Math.round(x5+dx);
+        if(sx<0||sx>=W){continue;}
+        var di=(y5*W+x5)*4, si=(y5*W+sx)*4;
+        dst5[di]=src5[si]; dst5[di+1]=src5[si+1]; dst5[di+2]=src5[si+2];
+      }
+    }
+    ctx.putImageData(id5,0,0);
+  }
+}
+
 
 // ─── DRAW FRAME ───────────────────────────────────────────────────
 function drawFrame(){
@@ -798,6 +1215,9 @@ function drawFrame(){
     ctx.putImageData(iData,0,0);
   }
 
+  // Apply all pixel-level post processing (chroma, noise cancel, duotone, etc)
+  applyPostFX(W, H);
+
   // Stickers
   stickers.forEach(function(stk){
     ctx.save();
@@ -811,17 +1231,19 @@ function drawFrame(){
 
   var now=fileType==='video'?vid.currentTime:0;
 
-  // Text overlay
-  drawTextOverlay(W,H,now);
+  // Text overlay (respect track visibility)
+  if(trackVis.text !== false) drawTextOverlay(W,H,now);
 
-  // Captions
-  if(sentences.length){
-    var cs=null;
-    for(var i=0;i<sentences.length;i++){if(now>=sentences[i].t&&now<=sentences[i].end+0.4){cs=sentences[i];break;}}
-    if(cs) activeStyle.render(ctx,W,H,{words:cs.words,curTime:now});
-  } else if(fileType==='image'){
-    var demo=[{w:'Your',t:0,end:99},{w:'caption',t:0,end:99},{w:'here',t:0,end:99}];
-    activeStyle.render(ctx,W,H,{words:demo,curTime:1});
+  // Captions (respect track visibility)
+  if(trackVis.captions !== false){
+    if(sentences.length){
+      var cs=null;
+      for(var i=0;i<sentences.length;i++){if(now>=sentences[i].t&&now<=sentences[i].end+0.4){cs=sentences[i];break;}}
+      if(cs) activeStyle.render(ctx,W,H,{words:cs.words,curTime:now});
+    } else if(fileType==='image'){
+      var demo=[{w:'Your',t:0,end:99},{w:'caption',t:0,end:99},{w:'here',t:0,end:99}];
+      activeStyle.render(ctx,W,H,{words:demo,curTime:1});
+    }
   }
 
   // Watermark
@@ -1271,11 +1693,15 @@ function playMusic(url,itemEl){
   stopMusic();activeMusicUrl=url;
   musicAudio=new Audio(url);musicAudio.volume=0;musicAudio.loop=true;
   musicAudio.play().catch(function(){});
-  // Fade in
   var fi=musicFade*1000,step=50,vol=musicVolume,cur=0;
   var interval=setInterval(function(){cur+=step;musicAudio.volume=Math.min(vol*cur/fi,vol);if(cur>=fi)clearInterval(interval);},step);
   document.querySelectorAll('.music-item').forEach(function(m){m.classList.remove('playing');});
   if(itemEl) itemEl.classList.add('playing');
+  // Show music track on timeline
+  var mc=document.getElementById('tlMusicClip');
+  var ml=document.getElementById('tlMusicLabel');
+  if(mc&&vid.duration){ mc.style.display='flex'; mc.style.width=(vid.duration*tlPx*tlZoomLevel-2)+'px'; buildMusicWave(mc); }
+  if(ml){ var t=MUSIC_LIBRARY.find(function(x){return x.url===url;}); if(t) ml.textContent=t.name||'MUSIC'; }
   toast('🎵 Playing');
 }
 function stopMusic(){
@@ -1352,11 +1778,7 @@ function toggleMute(){
   isMuted=!isMuted;vid.muted=isMuted;
   document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊';
 }
-function seekClick(e){
-  var r=e.currentTarget.getBoundingClientRect();
-  vid.currentTime=(e.clientX-r.left)/r.width*(vid.duration||0);
-  if(!isPlaying) setTimeout(drawFrame,40);
-}
+function seekClick(e){ tlSeekClick(e); }
 
 // ─── EXPORT ───────────────────────────────────────────────────────
 // ─── EXPORT STATE ────────────────────────────────────────────────
