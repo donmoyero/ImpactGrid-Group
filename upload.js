@@ -62,11 +62,159 @@ var videoScale = 1;
 var offsetX = 0, offsetY = 0;
 
 // Audio
-var musicAudio   = null;
-var musicVolume  = 0.4;
+var musicAudio    = null;
+var musicVolume   = 0.4;
 var activeMusicUrl = null;
 var activeMusicCat = 'All';
-var musicFade    = 1;
+var musicFade     = 1;
+
+// ─── REAL AUDIO PROCESSING (Web Audio API) ────────────────────────
+var audioCtx      = null;
+var audioSource   = null;   // MediaElementSourceNode for vid
+var gainNode      = null;   // master gain
+var noiseGate     = null;   // DynamicsCompressorNode as gate
+var hiPassFilter  = null;   // BiquadFilter for rumble removal
+var loPassFilter  = null;   // BiquadFilter for hiss removal
+var eqBass        = null;   // bass shelf
+var eqMid         = null;   // mid peak
+var eqTreble      = null;   // treble shelf
+var reverbNode    = null;   // ConvolverNode for reverb
+var reverbGain    = null;
+var dryGain       = null;
+var audioReady    = false;
+
+var audioSettings = {
+  noiseCancelOn : false,
+  noiseCancelAmt: 30,      // threshold dB
+  bgNoiseGateOn : false,
+  reverbOn      : false,
+  reverbMix     : 0.3,
+  eqBass        : 0,       // -12 to +12 dB
+  eqMid         : 0,
+  eqTreble      : 0,
+  voiceBoostOn  : false,   // boost 1–4kHz (voice clarity)
+  bassBoostOn   : false
+};
+
+function initAudioGraph(){
+  if(audioReady) return;
+  try{
+    audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+    audioSource = audioCtx.createMediaElementSource(vid);
+
+    // Chain: source → hiPass → loPass → noiseGate → eqBass → eqMid → eqTreble → gain → destination
+    hiPassFilter = audioCtx.createBiquadFilter();
+    hiPassFilter.type = 'highpass';
+    hiPassFilter.frequency.value = 80;   // remove sub-rumble
+
+    loPassFilter = audioCtx.createBiquadFilter();
+    loPassFilter.type = 'lowpass';
+    loPassFilter.frequency.value = 18000; // remove ultrasonic hiss
+
+    noiseGate = audioCtx.createDynamicsCompressor();
+    noiseGate.threshold.value = -100; // off by default
+    noiseGate.knee.value      = 10;
+    noiseGate.ratio.value     = 20;   // hard gate ratio
+    noiseGate.attack.value    = 0.003;
+    noiseGate.release.value   = 0.15;
+
+    eqBass   = audioCtx.createBiquadFilter();
+    eqBass.type = 'lowshelf';
+    eqBass.frequency.value = 120;
+    eqBass.gain.value = 0;
+
+    eqMid    = audioCtx.createBiquadFilter();
+    eqMid.type = 'peaking';
+    eqMid.frequency.value = 2500;
+    eqMid.Q.value = 1.2;
+    eqMid.gain.value = 0;
+
+    eqTreble = audioCtx.createBiquadFilter();
+    eqTreble.type = 'highshelf';
+    eqTreble.frequency.value = 8000;
+    eqTreble.gain.value = 0;
+
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 1;
+
+    // Reverb (dry/wet)
+    dryGain   = audioCtx.createGain(); dryGain.gain.value = 1;
+    reverbGain= audioCtx.createGain(); reverbGain.gain.value = 0;
+    reverbNode= audioCtx.createConvolver();
+    generateReverb(audioCtx, reverbNode, 2.5);
+
+    // Wire up
+    audioSource.connect(hiPassFilter);
+    hiPassFilter.connect(loPassFilter);
+    loPassFilter.connect(noiseGate);
+    noiseGate.connect(eqBass);
+    eqBass.connect(eqMid);
+    eqMid.connect(eqTreble);
+    eqTreble.connect(dryGain);
+    eqTreble.connect(reverbNode);
+    reverbNode.connect(reverbGain);
+    dryGain.connect(gainNode);
+    reverbGain.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    audioReady = true;
+  } catch(e){ console.warn('Audio graph failed:', e); }
+}
+
+function generateReverb(ac, convolver, duration){
+  var sr   = ac.sampleRate;
+  var len  = Math.floor(sr * duration);
+  var buf  = ac.createBuffer(2, len, sr);
+  for(var ch=0; ch<2; ch++){
+    var d = buf.getChannelData(ch);
+    for(var i=0; i<len; i++){
+      d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 2.5);
+    }
+  }
+  convolver.buffer = buf;
+}
+
+function applyAudioSettings(){
+  if(!audioReady) return;
+
+  // Noise gate: set threshold based on cancel amount
+  if(audioSettings.noiseCancelOn){
+    noiseGate.threshold.value = -(audioSettings.noiseCancelAmt * 1.5 + 10); // e.g. -40 to -55dB
+    noiseGate.ratio.value = 20;
+    hiPassFilter.frequency.value = 100; // cut low rumble harder
+    loPassFilter.frequency.value = 16000; // cut high hiss harder
+    toast('🔇 Noise cancel ON — rebuilding audio graph');
+  } else {
+    noiseGate.threshold.value = -100; // effectively off
+    hiPassFilter.frequency.value = 80;
+    loPassFilter.frequency.value = 18000;
+  }
+
+  // Voice boost: boost 1–4kHz
+  if(audioSettings.voiceBoostOn){
+    eqMid.frequency.value = 2000;
+    eqMid.Q.value = 0.8;
+    eqMid.gain.value = 6;
+  } else {
+    eqMid.gain.value = audioSettings.eqMid;
+  }
+
+  // Bass boost
+  eqBass.gain.value = audioSettings.bassBoostOn ? 8 : audioSettings.eqBass;
+
+  // EQ
+  eqTreble.gain.value = audioSettings.eqTreble;
+
+  // Reverb mix
+  if(audioSettings.reverbOn){
+    dryGain.gain.value    = 1 - audioSettings.reverbMix;
+    reverbGain.gain.value = audioSettings.reverbMix;
+  } else {
+    dryGain.gain.value    = 1;
+    reverbGain.gain.value = 0;
+  }
+}
+
 
 var vid   = document.getElementById('masterVid');
 var cv    = document.getElementById('cv');
@@ -754,7 +902,7 @@ var scanlinesVal = 0;
 var glowVal      = 0;
 var pixelateVal  = 1;
 var duotoneId    = null;
-var aiEffects    = { denoise:false, sharpen:false, smooth:false, deband:false };
+var aiEffects    = { sharpen:false, smooth:false, deband:false, portraitBlur:false, faceEnhance:false };
 var trackVis     = { video:true, captions:true, text:true };
 var tlZoomLevel  = 1;
 
@@ -987,16 +1135,54 @@ function buildDuotoneRow(){
   });
 }
 
+// ─── PRO VISUAL EFFECTS (canvas post-processing) ──────────────────
+var bgBlurRadius  = 0;   // separate from old bgBlur
+var portraitBlur  = 0;   // portrait mode bg blur amount
+
 function applyAIEffect(id){
-  aiEffects[id] = !aiEffects[id];
-  var btn = document.getElementById('aibtn'+id.charAt(0).toUpperCase()+id.slice(1));
-  if(btn) btn.classList.toggle('active-ai', aiEffects[id]);
-  if(!isPlaying) drawFrame();
-  var names = { denoise:'Noise Cancel', sharpen:'AI Sharpen', smooth:'Skin Smooth', deband:'Deband' };
-  toast((aiEffects[id]?'✓ ':'✗ ') + names[id]);
+  // Toggle
+  if(id === 'denoise' || id === 'bgNoise' || id === 'voiceBoost' || id === 'bassBoost' || id === 'reverb'){
+    // Audio effects
+    if(id === 'denoise')   { audioSettings.noiseCancelOn  = !audioSettings.noiseCancelOn; }
+    if(id === 'bgNoise')   { audioSettings.bgNoiseGateOn  = !audioSettings.bgNoiseGateOn; audioSettings.noiseCancelOn = audioSettings.bgNoiseGateOn; }
+    if(id === 'voiceBoost'){ audioSettings.voiceBoostOn   = !audioSettings.voiceBoostOn; }
+    if(id === 'bassBoost') { audioSettings.bassBoostOn    = !audioSettings.bassBoostOn; }
+    if(id === 'reverb')    { audioSettings.reverbOn       = !audioSettings.reverbOn; }
+    // If audio is live, apply immediately
+    if(audioReady) applyAudioSettings();
+    else if(audioSettings.noiseCancelOn || audioSettings.voiceBoostOn) toast('▶ Press play to activate audio effects');
+  } else {
+    // Visual effects
+    aiEffects[id] = !aiEffects[id];
+    if(!isPlaying) drawFrame();
+  }
+
+  var btn = document.getElementById('aibtn' + id.charAt(0).toUpperCase() + id.slice(1));
+  if(btn) btn.classList.toggle('active-ai', aiEffects[id] || audioSettings[id+'On'] || audioSettings.noiseCancelOn && id==='denoise' || audioSettings.noiseCancelOn && id==='bgNoise' || audioSettings.voiceBoostOn && id==='voiceBoost' || audioSettings.bassBoostOn && id==='bassBoost' || audioSettings.reverbOn && id==='reverb');
+
+  var names = { denoise:'🔇 Noise Cancel', bgNoise:'🎙 BG Noise Gate', sharpen:'🔬 AI Sharpen', smooth:'✨ Skin Smooth', deband:'🌈 Deband', voiceBoost:'🎤 Voice Boost', bassBoost:'🔊 Bass Boost', reverb:'🏛 Reverb', portraitBlur:'🌅 Portrait Blur', faceEnhance:'👤 Face Enhance' };
+  var isOn = aiEffects[id] || (audioSettings[id+'On']) || (id==='denoise'&&audioSettings.noiseCancelOn) || (id==='bgNoise'&&audioSettings.noiseCancelOn) || (id==='voiceBoost'&&audioSettings.voiceBoostOn) || (id==='bassBoost'&&audioSettings.bassBoostOn) || (id==='reverb'&&audioSettings.reverbOn);
+  toast((isOn?'✓ ON: ':'✗ OFF: ') + (names[id]||id));
 }
 
-function updatePixelFX(){
+function updateEQ(){
+  var b = parseInt(document.getElementById('slEqBass').value);
+  var m = parseInt(document.getElementById('slEqMid').value);
+  var t = parseInt(document.getElementById('slEqTreble').value);
+  document.getElementById('slEqBassVal').textContent   = (b>=0?'+':'')+b+'dB';
+  document.getElementById('slEqMidVal').textContent    = (m>=0?'+':'')+m+'dB';
+  document.getElementById('slEqTrebleVal').textContent = (t>=0?'+':'')+t+'dB';
+  audioSettings.eqBass = b; audioSettings.eqMid = m; audioSettings.eqTreble = t;
+  if(audioReady) applyAudioSettings();
+}
+
+function updateNoiseCancelAmt(){
+  var v = parseInt(document.getElementById('slNoiseCancelAmt').value);
+  document.getElementById('slNoiseCancelAmtVal').textContent = v;
+  audioSettings.noiseCancelAmt = v;
+  if(audioReady && audioSettings.noiseCancelOn) applyAudioSettings();
+}
+
   chromaVal    = parseInt(document.getElementById('slChroma').value)||0;
   distortVal   = parseInt(document.getElementById('slDistort').value)||0;
   scanlinesVal = parseInt(document.getElementById('slScanlines').value)||0;
@@ -1037,23 +1223,29 @@ function applyPostFX(W, H){
     ctx.putImageData(dst,0,0);
   }
 
-  // 2. Noise Cancellation (video denoising via temporal smoothing simulation)
-  if(aiEffects.denoise){
-    var id = ctx.getImageData(0,0,W,H);
-    var d = id.data;
-    // Simple bilateral-style smoothing on luma
-    for(var p=0; p<d.length; p+=4){
-      var r=d[p],g=d[p+1],b2=d[p+2];
-      var luma = 0.299*r + 0.587*g + 0.114*b2;
-      // Reduce noise in dark areas (where video noise is worst)
-      if(luma < 80){
-        var n = (Math.random()-.5)*4; // intentionally minimal
-        d[p]   = Math.max(0,Math.min(255,r-Math.abs(n)));
-        d[p+1] = Math.max(0,Math.min(255,g-Math.abs(n)));
-        d[p+2] = Math.max(0,Math.min(255,b2-Math.abs(n)));
-      }
-    }
-    ctx.putImageData(id,0,0);
+  // 2. PORTRAIT BACKGROUND BLUR — blur entire frame then composite sharp centre oval
+  if(aiEffects.portraitBlur || bgBlur > 0){
+    var blurAmt = Math.max(bgBlur * 2, aiEffects.portraitBlur ? 14 : 0);
+    // Step 1: save sharp original
+    var sharpC = document.createElement('canvas'); sharpC.width=W; sharpC.height=H;
+    var sharpX = sharpC.getContext('2d'); sharpX.drawImage(cv,0,0);
+    // Step 2: blur the canvas
+    ctx.filter = 'blur('+blurAmt+'px)';
+    ctx.drawImage(sharpC,0,0);
+    ctx.filter = 'none';
+    // Step 3: composite sharp oval (subject) on top
+    var rx = W*0.32, ry = H*0.40, cx2 = W/2, cy2 = H*0.42;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx2, cy2, rx, ry, 0, 0, Math.PI*2);
+    ctx.clip();
+    ctx.drawImage(sharpC,0,0);
+    ctx.restore();
+    // Feather edge
+    var feather = ctx.createRadialGradient(cx2,cy2,Math.min(rx,ry)*0.7,cx2,cy2,Math.max(rx,ry)*1.05);
+    feather.addColorStop(0,'rgba(0,0,0,0)');
+    feather.addColorStop(1,'rgba(0,0,0,0.45)');
+    ctx.fillStyle=feather; ctx.fillRect(0,0,W,H);
   }
 
   // 3. AI Sharpen — unsharp mask via canvas convolution
@@ -1078,15 +1270,26 @@ function applyPostFX(W, H){
     ctx.putImageData(id2,0,0);
   }
 
-  // 4. Skin Smooth — gaussian-style blur with luminance mask
-  if(aiEffects.smooth){
+  // 4. Skin Smooth + Face Enhance
+  if(aiEffects.smooth || aiEffects.faceEnhance){
+    var tmpS=document.createElement('canvas'); tmpS.width=W; tmpS.height=H;
+    var tS=tmpS.getContext('2d');
+    tS.filter='blur('+(aiEffects.faceEnhance?'2px':'1.5px')+')';
+    tS.drawImage(cv,0,0);
     ctx.save();
-    ctx.filter='blur(1.2px)';
-    var tmpC2=document.createElement('canvas'); tmpC2.width=W; tmpC2.height=H;
-    var tC2=tmpC2.getContext('2d'); tC2.drawImage(cv,0,0);
-    ctx.globalAlpha=0.45;
-    ctx.drawImage(tmpC2,0,0);
+    ctx.globalCompositeOperation='source-over';
+    ctx.globalAlpha=aiEffects.faceEnhance?0.55:0.4;
+    ctx.drawImage(tmpS,0,0);
     ctx.restore();
+    // Face enhance: add subtle lift + clarity
+    if(aiEffects.faceEnhance){
+      ctx.save();
+      ctx.globalCompositeOperation='soft-light';
+      ctx.globalAlpha=0.12;
+      ctx.fillStyle='rgba(255,235,210,1)';
+      ctx.fillRect(0,0,W,H);
+      ctx.restore();
+    }
   }
 
   // 5. Deband — add subtle dithering noise to remove colour banding
@@ -1757,6 +1960,9 @@ function togglePlay(){
   if(fileType!=='video'){toast('Image mode — no playback');return;}
   if(!vid.src){toast('Load a video first');return;}
   if(vid.paused){
+    initAudioGraph();
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    applyAudioSettings();
     vid.play();isPlaying=true;updatePlayIcons(true);rafId=requestAnimationFrame(drawFrame);
   } else {
     vid.pause();isPlaying=false;updatePlayIcons(false);cancelAnimationFrame(rafId);drawFrame();
