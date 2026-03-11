@@ -70,29 +70,29 @@ var musicFade     = 1;
 
 // ─── REAL AUDIO PROCESSING (Web Audio API) ────────────────────────
 var audioCtx      = null;
-var audioSource   = null;   // MediaElementSourceNode for vid
-var gainNode      = null;   // master gain
-var noiseGate     = null;   // DynamicsCompressorNode as gate
-var hiPassFilter  = null;   // BiquadFilter for rumble removal
-var loPassFilter  = null;   // BiquadFilter for hiss removal
-var eqBass        = null;   // bass shelf
-var eqMid         = null;   // mid peak
-var eqTreble      = null;   // treble shelf
-var reverbNode    = null;   // ConvolverNode for reverb
+var audioSource   = null;
+var gainNode      = null;
+var noiseGate     = null;
+var hiPassFilter  = null;
+var loPassFilter  = null;
+var eqBass        = null;
+var eqMid         = null;
+var eqTreble      = null;
+var reverbNode    = null;
 var reverbGain    = null;
 var dryGain       = null;
 var audioReady    = false;
 
 var audioSettings = {
   noiseCancelOn : false,
-  noiseCancelAmt: 30,      // threshold dB
+  noiseCancelAmt: 30,
   bgNoiseGateOn : false,
   reverbOn      : false,
   reverbMix     : 0.3,
-  eqBass        : 0,       // -12 to +12 dB
+  eqBass        : 0,
   eqMid         : 0,
   eqTreble      : 0,
-  voiceBoostOn  : false,   // boost 1–4kHz (voice clarity)
+  voiceBoostOn  : false,
   bassBoostOn   : false
 };
 
@@ -102,19 +102,18 @@ function initAudioGraph(){
     audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
     audioSource = audioCtx.createMediaElementSource(vid);
 
-    // Chain: source → hiPass → loPass → noiseGate → eqBass → eqMid → eqTreble → gain → destination
     hiPassFilter = audioCtx.createBiquadFilter();
     hiPassFilter.type = 'highpass';
-    hiPassFilter.frequency.value = 80;   // remove sub-rumble
+    hiPassFilter.frequency.value = 80;
 
     loPassFilter = audioCtx.createBiquadFilter();
     loPassFilter.type = 'lowpass';
-    loPassFilter.frequency.value = 18000; // remove ultrasonic hiss
+    loPassFilter.frequency.value = 18000;
 
     noiseGate = audioCtx.createDynamicsCompressor();
-    noiseGate.threshold.value = -100; // off by default
+    noiseGate.threshold.value = -100;
     noiseGate.knee.value      = 10;
-    noiseGate.ratio.value     = 20;   // hard gate ratio
+    noiseGate.ratio.value     = 20;
     noiseGate.attack.value    = 0.003;
     noiseGate.release.value   = 0.15;
 
@@ -137,13 +136,11 @@ function initAudioGraph(){
     gainNode = audioCtx.createGain();
     gainNode.gain.value = 1;
 
-    // Reverb (dry/wet)
     dryGain   = audioCtx.createGain(); dryGain.gain.value = 1;
     reverbGain= audioCtx.createGain(); reverbGain.gain.value = 0;
     reverbNode= audioCtx.createConvolver();
     generateReverb(audioCtx, reverbNode, 2.5);
 
-    // Wire up
     audioSource.connect(hiPassFilter);
     hiPassFilter.connect(loPassFilter);
     loPassFilter.connect(noiseGate);
@@ -177,20 +174,18 @@ function generateReverb(ac, convolver, duration){
 function applyAudioSettings(){
   if(!audioReady) return;
 
-  // Noise gate: set threshold based on cancel amount
   if(audioSettings.noiseCancelOn){
-    noiseGate.threshold.value = -(audioSettings.noiseCancelAmt * 1.5 + 10); // e.g. -40 to -55dB
+    noiseGate.threshold.value = -(audioSettings.noiseCancelAmt * 1.5 + 10);
     noiseGate.ratio.value = 20;
-    hiPassFilter.frequency.value = 100; // cut low rumble harder
-    loPassFilter.frequency.value = 16000; // cut high hiss harder
+    hiPassFilter.frequency.value = 100;
+    loPassFilter.frequency.value = 16000;
     toast('🔇 Noise cancel ON — rebuilding audio graph');
   } else {
-    noiseGate.threshold.value = -100; // effectively off
+    noiseGate.threshold.value = -100;
     hiPassFilter.frequency.value = 80;
     loPassFilter.frequency.value = 18000;
   }
 
-  // Voice boost: boost 1–4kHz
   if(audioSettings.voiceBoostOn){
     eqMid.frequency.value = 2000;
     eqMid.Q.value = 0.8;
@@ -199,13 +194,9 @@ function applyAudioSettings(){
     eqMid.gain.value = audioSettings.eqMid;
   }
 
-  // Bass boost
   eqBass.gain.value = audioSettings.bassBoostOn ? 8 : audioSettings.eqBass;
-
-  // EQ
   eqTreble.gain.value = audioSettings.eqTreble;
 
-  // Reverb mix
   if(audioSettings.reverbOn){
     dryGain.gain.value    = 1 - audioSettings.reverbMix;
     reverbGain.gain.value = audioSettings.reverbMix;
@@ -348,27 +339,22 @@ var TINTS = [
 var BG_OPTS = ['blur','black','white','gradient','custom'];
 
 var MUSIC_LIBRARY = [
-  // CHILL
   { name:'Lo-Fi Chill',         vibe:'Calm · 88 BPM',      icon:'🎧', cat:'Chill',    url:'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3' },
   { name:'Acoustic Vibe',       vibe:'Warm · 85 BPM',      icon:'🎸', cat:'Chill',    url:'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c21.mp3' },
   { name:'Coffee Shop Jazz',    vibe:'Relax · 75 BPM',     icon:'☕', cat:'Chill',    url:'https://cdn.pixabay.com/audio/2022/10/18/audio_ec97b8f1e1.mp3' },
   { name:'Soft Piano',          vibe:'Gentle · 68 BPM',    icon:'🎹', cat:'Chill',    url:'https://cdn.pixabay.com/audio/2022/01/18/audio_d1718ab2c0.mp3' },
-  // CINEMATIC
   { name:'Epic Cinematic',      vibe:'Intense · 120 BPM',  icon:'🎬', cat:'Cinematic',url:'https://cdn.pixabay.com/audio/2022/03/15/audio_d75ef65dbc.mp3' },
   { name:'Inspiring Ambient',   vibe:'Calm · 70 BPM',      icon:'🌊', cat:'Cinematic',url:'https://cdn.pixabay.com/audio/2023/03/09/audio_5b576b7e2b.mp3' },
   { name:'Dramatic Orchestra',  vibe:'Epic · 130 BPM',     icon:'🎻', cat:'Cinematic',url:'https://cdn.pixabay.com/audio/2022/03/10/audio_270f49c6d5.mp3' },
   { name:'Dark Suspense',       vibe:'Tense · 90 BPM',     icon:'🌑', cat:'Cinematic',url:'https://cdn.pixabay.com/audio/2022/11/22/audio_2c04d0b9f3.mp3' },
-  // UPBEAT
   { name:'Upbeat Corporate',    vibe:'Positive · 115 BPM', icon:'💼', cat:'Upbeat',   url:'https://cdn.pixabay.com/audio/2022/10/25/audio_946c1c7a09.mp3' },
   { name:'Energetic Pop',       vibe:'Fun · 128 BPM',      icon:'🎉', cat:'Upbeat',   url:'https://cdn.pixabay.com/audio/2022/11/17/audio_febc508520.mp3' },
   { name:'Summer Vibes',        vibe:'Happy · 118 BPM',    icon:'☀️', cat:'Upbeat',   url:'https://cdn.pixabay.com/audio/2022/08/23/audio_d16737dc28.mp3' },
   { name:'Feel Good',           vibe:'Bright · 110 BPM',   icon:'😊', cat:'Upbeat',   url:'https://cdn.pixabay.com/audio/2022/10/11/audio_6c8eff8a38.mp3' },
-  // HIP-HOP
   { name:'Hip Hop Beat',        vibe:'Cool · 95 BPM',      icon:'🔥', cat:'Hip-Hop',  url:'https://cdn.pixabay.com/audio/2022/10/16/audio_31e3b04264.mp3' },
   { name:'Deep Bass',           vibe:'Dark · 100 BPM',     icon:'🎵', cat:'Hip-Hop',  url:'https://cdn.pixabay.com/audio/2022/09/13/audio_d1718ab2c0.mp3' },
   { name:'Trap Anthem',         vibe:'Hard · 140 BPM',     icon:'👑', cat:'Hip-Hop',  url:'https://cdn.pixabay.com/audio/2022/09/02/audio_2dde668d05.mp3' },
   { name:'Street Flow',         vibe:'Smooth · 92 BPM',    icon:'🏙', cat:'Hip-Hop',  url:'https://cdn.pixabay.com/audio/2022/11/09/audio_914e1c1a03.mp3' },
-  // ELECTRONIC
   { name:'Synthwave Drive',     vibe:'Retro · 105 BPM',    icon:'🌆', cat:'Electronic',url:'https://cdn.pixabay.com/audio/2022/06/08/audio_6c8eff8a38.mp3' },
   { name:'EDM Drop',            vibe:'Hype · 135 BPM',     icon:'⚡', cat:'Electronic',url:'https://cdn.pixabay.com/audio/2022/10/30/audio_1808fbf07a.mp3' },
   { name:'Chill Beats',         vibe:'Flow · 98 BPM',      icon:'🎛', cat:'Electronic',url:'https://cdn.pixabay.com/audio/2023/01/25/audio_5b576b7e2b.mp3' },
@@ -574,7 +560,6 @@ function buildStickerGrid(filter){
   } else {
     filter = filter.toLowerCase();
     Object.values(STICKER_CATS).forEach(function(arr){ all = all.concat(arr); });
-    // simple filter — just show all for now (emoji search is complex without a lib)
     all = all.filter(function(_,i){ return i < 60; });
   }
   all.forEach(function(em){
@@ -770,7 +755,6 @@ function buildExportPlatforms(){
     b.innerHTML='<div class="exp-plat-icon">'+p.icon+'</div><div class="exp-plat-info"><div class="exp-plat-name">'+p.name+'</div><div class="exp-plat-desc">'+p.desc+'</div></div>';
     b.onclick=function(){
       exportFmt=p.ratio;
-      // Set ratio too
       var r=RATIOS.find(function(x){return x.id===p.ratio;})||RATIOS[0];
       cv.width=r.w; cv.height=r.h;
       document.getElementById('resBadge').textContent=p.ratio;
@@ -887,7 +871,6 @@ function launchPreview(){
     vid.pause(); vid.currentTime=0;
     vid.ontimeupdate=syncTL;
     vid.onended=function(){isPlaying=false;updatePlayIcons(false);cancelAnimationFrame(rafId);};
-    // Build timeline after metadata is ready
     if(vid.readyState >= 1){ buildTimeline(); }
     else { vid.onloadedmetadata=function(){ buildTimeline(); }; }
   }
@@ -918,21 +901,18 @@ var DUOTONES = [
 ];
 
 // ─── PRO TIMELINE ─────────────────────────────────────────────────
-var tlPx = 80; // pixels per second
+var tlPx = 80;
 
 function syncTL(){
   if(fileType!=='video') return;
   var t   = vid.currentTime;
   var dur = vid.duration || 1;
-  var pct = t / dur * 100;
 
-  // Timecodes
   var tEl = document.getElementById('vbTime');
   var dEl = document.getElementById('tlDuration');
   if(tEl) tEl.textContent = ft(t);
   if(dEl) dEl.textContent = ft(dur);
 
-  // Playhead position
   var inner = document.getElementById('tlTracksInner');
   var ph    = document.getElementById('tlPlayhead');
   if(inner && ph){
@@ -940,7 +920,6 @@ function syncTL(){
     inner.style.width = totalW + 'px';
     ph.style.left = (t * tlPx * tlZoomLevel) + 'px';
 
-    // Auto-scroll to keep playhead visible
     var scroll = inner.parentElement;
     var phLeft = t * tlPx * tlZoomLevel;
     if(scroll && (phLeft < scroll.scrollLeft || phLeft > scroll.scrollLeft + scroll.offsetWidth - 40)){
@@ -948,7 +927,6 @@ function syncTL(){
     }
   }
 
-  // Caption blocks highlight
   if(sentences.length){
     document.querySelectorAll('.tl-cap-block').forEach(function(el){
       var st = parseFloat(el.dataset.start), en = parseFloat(el.dataset.end);
@@ -965,25 +943,19 @@ function buildTimeline(){
   var totalW = Math.max(dur * tlPx * tlZoomLevel, 600);
   inner.style.width = totalW + 'px';
 
-  // Build ruler
   buildTLRuler(dur, totalW);
 
-  // Video clip width
   var vc = document.getElementById('tlVideoClip');
   if(vc){ vc.style.width = (dur * tlPx * tlZoomLevel - 2) + 'px'; buildVideoWave(vc); }
 
-  // Music clip
   var mc = document.getElementById('tlMusicClip');
   if(mc && activeMusicUrl){ mc.style.display='flex'; mc.style.width = (dur * tlPx * tlZoomLevel - 2) + 'px'; buildMusicWave(mc); }
 
-  // Caption blocks
   buildCaptionBlocks(dur, totalW);
 
-  // Text clip
   var tc = document.getElementById('tlTextClip');
   if(tc){ tc.style.display = overlayTextVal ? 'flex' : 'none'; }
 
-  // Voice waveform canvas
   buildVoiceWave(dur, totalW);
 }
 
@@ -1136,32 +1108,25 @@ function buildDuotoneRow(){
 }
 
 // ─── PRO VISUAL EFFECTS (canvas post-processing) ──────────────────
-var bgBlurRadius  = 0;   // separate from old bgBlur
-var portraitBlur  = 0;   // portrait mode bg blur amount
-
 function applyAIEffect(id){
-  // Toggle
   if(id === 'denoise' || id === 'bgNoise' || id === 'voiceBoost' || id === 'bassBoost' || id === 'reverb'){
-    // Audio effects
     if(id === 'denoise')   { audioSettings.noiseCancelOn  = !audioSettings.noiseCancelOn; }
     if(id === 'bgNoise')   { audioSettings.bgNoiseGateOn  = !audioSettings.bgNoiseGateOn; audioSettings.noiseCancelOn = audioSettings.bgNoiseGateOn; }
     if(id === 'voiceBoost'){ audioSettings.voiceBoostOn   = !audioSettings.voiceBoostOn; }
     if(id === 'bassBoost') { audioSettings.bassBoostOn    = !audioSettings.bassBoostOn; }
     if(id === 'reverb')    { audioSettings.reverbOn       = !audioSettings.reverbOn; }
-    // If audio is live, apply immediately
     if(audioReady) applyAudioSettings();
     else if(audioSettings.noiseCancelOn || audioSettings.voiceBoostOn) toast('▶ Press play to activate audio effects');
   } else {
-    // Visual effects
     aiEffects[id] = !aiEffects[id];
     if(!isPlaying) drawFrame();
   }
 
   var btn = document.getElementById('aibtn' + id.charAt(0).toUpperCase() + id.slice(1));
-  if(btn) btn.classList.toggle('active-ai', aiEffects[id] || audioSettings[id+'On'] || audioSettings.noiseCancelOn && id==='denoise' || audioSettings.noiseCancelOn && id==='bgNoise' || audioSettings.voiceBoostOn && id==='voiceBoost' || audioSettings.bassBoostOn && id==='bassBoost' || audioSettings.reverbOn && id==='reverb');
+  var isOn = aiEffects[id] || (id==='denoise'&&audioSettings.noiseCancelOn) || (id==='bgNoise'&&audioSettings.noiseCancelOn) || (id==='voiceBoost'&&audioSettings.voiceBoostOn) || (id==='bassBoost'&&audioSettings.bassBoostOn) || (id==='reverb'&&audioSettings.reverbOn);
+  if(btn) btn.classList.toggle('active-ai', isOn);
 
   var names = { denoise:'🔇 Noise Cancel', bgNoise:'🎙 BG Noise Gate', sharpen:'🔬 AI Sharpen', smooth:'✨ Skin Smooth', deband:'🌈 Deband', voiceBoost:'🎤 Voice Boost', bassBoost:'🔊 Bass Boost', reverb:'🏛 Reverb', portraitBlur:'🌅 Portrait Blur', faceEnhance:'👤 Face Enhance' };
-  var isOn = aiEffects[id] || (audioSettings[id+'On']) || (id==='denoise'&&audioSettings.noiseCancelOn) || (id==='bgNoise'&&audioSettings.noiseCancelOn) || (id==='voiceBoost'&&audioSettings.voiceBoostOn) || (id==='bassBoost'&&audioSettings.bassBoostOn) || (id==='reverb'&&audioSettings.reverbOn);
   toast((isOn?'✓ ON: ':'✗ OFF: ') + (names[id]||id));
 }
 
@@ -1183,6 +1148,8 @@ function updateNoiseCancelAmt(){
   if(audioReady && audioSettings.noiseCancelOn) applyAudioSettings();
 }
 
+// ── THIS WAS THE BROKEN FUNCTION — restored with proper declaration ──
+function updatePixelFX(){
   chromaVal    = parseInt(document.getElementById('slChroma').value)||0;
   distortVal   = parseInt(document.getElementById('slDistort').value)||0;
   scanlinesVal = parseInt(document.getElementById('slScanlines').value)||0;
@@ -1199,41 +1166,33 @@ function updateNoiseCancelAmt(){
 
 // Apply all pixel-level post-processing to canvas
 function applyPostFX(W, H){
-  // 1. Chromatic Aberration — RGB channel split
+  // 1. Chromatic Aberration
   if(chromaVal > 0){
     var off = chromaVal * 0.5;
-    var tmp = document.createElement('canvas');
-    tmp.width=W; tmp.height=H;
-    var tc = tmp.getContext('2d');
     var src = ctx.getImageData(0,0,W,H);
     var dst = ctx.createImageData(W,H);
     for(var y=0;y<H;y++){
       for(var x=0;x<W;x++){
         var i = (y*W+x)*4;
-        // Red channel: shift right
         var rx = Math.min(W-1, Math.round(x+off)), ri = (y*W+rx)*4;
-        // Blue channel: shift left
         var bx = Math.max(0, Math.round(x-off)), bi = (y*W+bx)*4;
-        dst.data[i]   = src.data[ri];   // R from right
-        dst.data[i+1] = src.data[i+1];  // G unchanged
-        dst.data[i+2] = src.data[bi+2]; // B from left
+        dst.data[i]   = src.data[ri];
+        dst.data[i+1] = src.data[i+1];
+        dst.data[i+2] = src.data[bi+2];
         dst.data[i+3] = src.data[i+3];
       }
     }
     ctx.putImageData(dst,0,0);
   }
 
-  // 2. PORTRAIT BACKGROUND BLUR — blur entire frame then composite sharp centre oval
+  // 2. Portrait Background Blur
   if(aiEffects.portraitBlur || bgBlur > 0){
     var blurAmt = Math.max(bgBlur * 2, aiEffects.portraitBlur ? 14 : 0);
-    // Step 1: save sharp original
     var sharpC = document.createElement('canvas'); sharpC.width=W; sharpC.height=H;
     var sharpX = sharpC.getContext('2d'); sharpX.drawImage(cv,0,0);
-    // Step 2: blur the canvas
     ctx.filter = 'blur('+blurAmt+'px)';
     ctx.drawImage(sharpC,0,0);
     ctx.filter = 'none';
-    // Step 3: composite sharp oval (subject) on top
     var rx = W*0.32, ry = H*0.40, cx2 = W/2, cy2 = H*0.42;
     ctx.save();
     ctx.beginPath();
@@ -1241,14 +1200,13 @@ function applyPostFX(W, H){
     ctx.clip();
     ctx.drawImage(sharpC,0,0);
     ctx.restore();
-    // Feather edge
     var feather = ctx.createRadialGradient(cx2,cy2,Math.min(rx,ry)*0.7,cx2,cy2,Math.max(rx,ry)*1.05);
     feather.addColorStop(0,'rgba(0,0,0,0)');
     feather.addColorStop(1,'rgba(0,0,0,0.45)');
     ctx.fillStyle=feather; ctx.fillRect(0,0,W,H);
   }
 
-  // 3. AI Sharpen — unsharp mask via canvas convolution
+  // 3. AI Sharpen
   if(aiEffects.sharpen){
     var id2 = ctx.getImageData(0,0,W,H);
     var d2 = id2.data;
@@ -1281,7 +1239,6 @@ function applyPostFX(W, H){
     ctx.globalAlpha=aiEffects.faceEnhance?0.55:0.4;
     ctx.drawImage(tmpS,0,0);
     ctx.restore();
-    // Face enhance: add subtle lift + clarity
     if(aiEffects.faceEnhance){
       ctx.save();
       ctx.globalCompositeOperation='soft-light';
@@ -1292,7 +1249,7 @@ function applyPostFX(W, H){
     }
   }
 
-  // 5. Deband — add subtle dithering noise to remove colour banding
+  // 5. Deband
   if(aiEffects.deband){
     var id3=ctx.getImageData(0,0,W,H); var d3=id3.data;
     for(var p3=0;p3<d3.length;p3+=4){
@@ -1304,7 +1261,7 @@ function applyPostFX(W, H){
     ctx.putImageData(id3,0,0);
   }
 
-  // 6. Scanlines (CRT effect)
+  // 6. Scanlines (CRT)
   if(scanlinesVal > 0){
     var alpha = scanlinesVal / 200;
     ctx.save();
@@ -1315,10 +1272,9 @@ function applyPostFX(W, H){
     ctx.restore();
   }
 
-  // 7. Duotone — map luminance to two colours
+  // 7. Duotone
   if(duotoneId){
     var id4=ctx.getImageData(0,0,W,H); var d4=id4.data;
-    // Parse hex to RGB
     function hx(h,o){return parseInt(h.slice(o,o+2),16);}
     var ar=hx(duotoneId.a,1),ag=hx(duotoneId.a,3),ab=hx(duotoneId.a,5);
     var br2=hx(duotoneId.b,1),bg2=hx(duotoneId.b,3),bb3=hx(duotoneId.b,5);
@@ -1351,7 +1307,7 @@ function applyPostFX(W, H){
     ctx.save(); ctx.globalCompositeOperation='screen'; ctx.globalAlpha=0.35; ctx.drawImage(tmpG,0,0); ctx.restore();
   }
 
-  // 10. Distortion (wave warp)
+  // 10. Wave Distortion
   if(distortVal > 0){
     var id5=ctx.getImageData(0,0,W,H); var src5=new Uint8ClampedArray(id5.data);
     var dst5=id5.data; var t5=performance.now()/1000;
@@ -1376,39 +1332,33 @@ function drawFrame(){
   ctx.clearRect(0,0,W,H);
   motionPhase+=0.003;
 
-  // BG
   if(fileType==='video'&&vid.videoWidth){
     drawVideoToCanvas(W,H);
   } else {
     ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
     if(fileType==='image'&&clip){
-      // draw image
-      var img=new Image();
-      // Use cached if possible
       if(window._cachedImg&&window._cachedImg.src===clip.url){
         drawImageFit(window._cachedImg,W,H);
       } else {
+        var img=new Image();
         img.onload=function(){window._cachedImg=img;if(!isPlaying)drawFrame();};
         img.src=clip.url;
       }
     }
   }
 
-  // Tint
   if(activeTint&&activeTint.color!=='transparent'){
     ctx.globalCompositeOperation='soft-light';
     ctx.fillStyle=activeTint.color; ctx.fillRect(0,0,W,H);
     ctx.globalCompositeOperation='source-over';
   }
 
-  // Vignette
   if(vignetteVal>0){
     var vg=ctx.createRadialGradient(W/2,H*0.42,H*.04,W/2,H/2,H*.88);
     vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,'+(vignetteVal/100*.85)+')');
     ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
   }
 
-  // Film grain
   if(noiseVal>0){
     var iData=ctx.getImageData(0,0,W,H);
     for(var p=0;p<iData.data.length;p+=4){
@@ -1418,10 +1368,8 @@ function drawFrame(){
     ctx.putImageData(iData,0,0);
   }
 
-  // Apply all pixel-level post processing (chroma, noise cancel, duotone, etc)
   applyPostFX(W, H);
 
-  // Stickers
   stickers.forEach(function(stk){
     ctx.save();
     ctx.translate(stk.x,stk.y);
@@ -1434,10 +1382,8 @@ function drawFrame(){
 
   var now=fileType==='video'?vid.currentTime:0;
 
-  // Text overlay (respect track visibility)
   if(trackVis.text !== false) drawTextOverlay(W,H,now);
 
-  // Captions (respect track visibility)
   if(trackVis.captions !== false){
     if(sentences.length){
       var cs=null;
@@ -1449,7 +1395,6 @@ function drawFrame(){
     }
   }
 
-  // Watermark
   ctx.save(); ctx.font='10px "DM Sans",sans-serif'; ctx.fillStyle='rgba(255,255,255,.1)';
   ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText('ImpactGrid',W-8,H-6); ctx.restore();
 
@@ -1458,8 +1403,6 @@ function drawFrame(){
 
 function drawVideoToCanvas(W,H){
   var vw=vid.videoWidth,vh=vid.videoHeight;
-
-  // Motion
   var scM=videoScale,dx=offsetX,dy=offsetY;
   if(activeMotion==='slowzoom')  {scM*=1+0.04*Math.sin(motionPhase*.5);}
   if(activeMotion==='shake')      {dx+=Math.sin(motionPhase*7)*3;dy+=Math.cos(motionPhase*5)*2;}
@@ -1481,7 +1424,6 @@ function drawVideoToCanvas(W,H){
 
 function drawImageFit(img,W,H){
   var iw=img.naturalWidth,ih=img.naturalHeight;
-  // BG
   if(bgMode==='blur'){
     ctx.save(); ctx.filter='blur(20px)';
     var sc2=Math.max(W/iw,H/ih);
@@ -1499,7 +1441,6 @@ function drawImageFit(img,W,H){
     ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
   }
 
-  // Fit image on top
   grX.clearRect(0,0,W,H);
   grX.filter=getCurrentFilter();
   var sc=Math.min(W/iw,H/ih)*videoScale;
@@ -1610,7 +1551,6 @@ function drawCapBg(ctx,x,y,w,h,type,col){
   ctx.restore();
 }
 
-// Apply word anim if set
 function tryWordAnim(ctx,W,H,word,age,bx,by,sz,isNow){
   if(!activeWordAnim||!isNow) return false;
   switch(activeWordAnim.id){
@@ -1900,7 +1840,6 @@ function playMusic(url,itemEl){
   var interval=setInterval(function(){cur+=step;musicAudio.volume=Math.min(vol*cur/fi,vol);if(cur>=fi)clearInterval(interval);},step);
   document.querySelectorAll('.music-item').forEach(function(m){m.classList.remove('playing');});
   if(itemEl) itemEl.classList.add('playing');
-  // Show music track on timeline
   var mc=document.getElementById('tlMusicClip');
   var ml=document.getElementById('tlMusicLabel');
   if(mc&&vid.duration){ mc.style.display='flex'; mc.style.width=(vid.duration*tlPx*tlZoomLevel-2)+'px'; buildMusicWave(mc); }
@@ -1984,10 +1923,8 @@ function toggleMute(){
   isMuted=!isMuted;vid.muted=isMuted;
   document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊';
 }
-function seekClick(e){ tlSeekClick(e); }
 
 // ─── EXPORT ───────────────────────────────────────────────────────
-// ─── EXPORT STATE ────────────────────────────────────────────────
 var exportFormat = 'mp4';
 var exportFPS    = 30;
 
@@ -2044,7 +1981,6 @@ function doExport(){
   var ep=document.getElementById('expProg'),bar=document.getElementById('epFill'),lbl=document.getElementById('epLbl');
   ep.style.display='block';document.getElementById('dlBtn').disabled=true;
 
-  // IMAGE export
   if(fileType==='image'){
     drawFrame();
     setTimeout(function(){
@@ -2062,7 +1998,6 @@ function doExport(){
     return;
   }
 
-  // VIDEO: record to WebM first
   var stream=cv.captureStream(exportFPS);
   try{
     var ac=new(window.AudioContext||window.webkitAudioContext)();
@@ -2082,16 +2017,13 @@ function doExport(){
 
   rec.onstop=function(){
     var webmBlob=new Blob(chunks,{type:'video/webm'});
-
     if(exportFormat==='webm'){
-      // Direct WebM download
       triggerDownload(webmBlob,'impactgrid_'+activeStyle.id+'.webm');
       bar.style.width='100%';lbl.textContent='✓ Downloaded as WebM!';
       document.getElementById('dlBtn').disabled=false;
       toast('✓ WebM exported!');
       setTimeout(function(){ep.style.display='none';},4000);
     } else {
-      // Convert WebM → MP4 via FFmpeg.wasm
       lbl.textContent='Converting to MP4…';
       bar.style.width='95%';
       convertToMP4(webmBlob, function(mp4Blob){
@@ -2101,7 +2033,6 @@ function doExport(){
         toast('✓ MP4 exported! Perfect for TikTok & Instagram 🎉');
         setTimeout(function(){ep.style.display='none';},5000);
       }, function(err){
-        // Fallback: download as WebM with mp4 extension note
         console.warn('FFmpeg failed, falling back to WebM',err);
         triggerDownload(webmBlob,'impactgrid_'+activeStyle.id+'_NOTE-rename-to-mp4.webm');
         bar.style.width='100%';
