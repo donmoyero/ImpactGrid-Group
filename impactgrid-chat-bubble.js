@@ -8,9 +8,9 @@
 ================================================================ */
 
 (function() {
-  /* ── Config — set your ngrok URL here ── */
-  var AI_URL  = (typeof IMPACTGRID_AI_URL !== 'undefined' ? IMPACTGRID_AI_URL : '').replace(/\/+$/, '');
-  var MODE    = 'group';
+  /* ── Config — hardcoded, never exposed to users ── */
+  var AI_URL  = 'https://workless-nelly-mirella.ngrok-free.dev';
+  var MODE    = (typeof IMPACTGRID_AI_MODE !== 'undefined' ? IMPACTGRID_AI_MODE : 'group');
   var HISTORY = [];
   var TYPING  = false;
 
@@ -327,12 +327,7 @@
       </div>
 
       <!-- Suggestion chips -->
-      <div class="ig-suggestions" id="ig-suggestions">
-        <button class="ig-chip" onclick="igAsk('What does ImpactGrid do?')">What is ImpactGrid?</button>
-        <button class="ig-chip" onclick="igAsk('What are the pricing plans?')">Pricing</button>
-        <button class="ig-chip" onclick="igAsk('How do I get started?')">Get started</button>
-        <button class="ig-chip" onclick="igAsk('Is my data private?')">Data privacy</button>
-      </div>
+      <div class="ig-suggestions" id="ig-suggestions"></div>
 
       <!-- Input -->
       <div class="ig-input-row">
@@ -350,12 +345,45 @@
   `;
   document.body.appendChild(wrap);
 
-  /* ── Show welcome message ── */
+  /* ── Show welcome message — varies by mode ── */
   setTimeout(function() {
-    igAppendMsg('ai',
-      'Hi there! 👋 I\'m the <strong>ImpactGrid AI</strong> — happy to answer any questions about what we do, our plans, or how to get started. What\'s on your mind?'
-    );
+    var welcomes = {
+      group:     'Hi there! &#128075; I\'m the <strong>ImpactGrid AI</strong> — happy to answer any questions about what we do, our plans, or how to get started. What\'s on your mind?',
+      dashboard: 'Hi! &#128075; I\'m your <strong>ImpactGrid Assistant</strong>. I can help you navigate the platform, understand your dashboard, or answer any questions about your account. What do you need?',
+      adviser:   'Hi! &#128075; I\'m your <strong>ImpactGrid AI Buddy</strong> — your personal financial adviser. Ask me anything about your business.'
+    };
+    igAppendMsg('ai', welcomes[MODE] || welcomes.group);
   }, 600);
+
+  /* ── Populate suggestion chips by mode ── */
+  (function() {
+    var chipSets = {
+      group: [
+        ['What is ImpactGrid?',       "What does ImpactGrid do?"],
+        ['Pricing',                   "What are the pricing plans?"],
+        ['Get started',               "How do I get started?"],
+        ['Data privacy',              "Is my data private?"]
+      ],
+      dashboard: [
+        ['How do I add data?',        "How do I add my monthly financial data?"],
+        ['View my records',           "How do I view and edit my records?"],
+        ['Upgrade my plan',           "How do I upgrade my plan?"],
+        ['What does risk score mean?',"What does my risk score mean?"]
+      ],
+      adviser: [
+        ['Health check',              "Give me a full financial health assessment"],
+        ['Top risks',                 "What are my top 3 risks right now?"],
+        ['Improve margins',           "How can I improve my profit margins?"],
+        ['Break-even',                "What is my break-even point?"]
+      ]
+    };
+    var chips  = (chipSets[MODE] || chipSets.group);
+    var el     = document.getElementById('ig-suggestions');
+    if (!el) return;
+    el.innerHTML = chips.map(function(c) {
+      return '<button class="ig-chip" onclick="igAsk(' + JSON.stringify(c[1]) + ')">' + c[0] + '</button>';
+    }).join('');
+  })();
 
   /* ── Toggle panel ── */
   window.igToggleChat = function() {
