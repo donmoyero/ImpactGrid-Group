@@ -370,7 +370,7 @@ var STYLES = [
     id:'typewriter', name:'⌨ Typewriter',
     desc:'Words type in left to right with a blinking cursor. Clean and satisfying.',
     tags:['Clean','Satisfying','Talk'],
-    gradient:'linear-gradient(150deg,#0a0a0a,#111'),
+    gradient:'linear-gradient(150deg,#0a0a0a,#111111)',
     grade:'brightness(0.94) contrast(1.04)',
     tint:'rgba(0,0,0,0)', tintMode:'source-over',
     vignette:0.45, letterbox:false, accent:'#00e5ff',
