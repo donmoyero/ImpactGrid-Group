@@ -605,7 +605,7 @@ function submitTranscript(audioUrl){
   fetch(ASSEMBLY_SUBMIT, {
     method: 'POST',
     headers: { 'authorization': ASSEMBLY_KEY, 'content-type': 'application/json' },
-    body: JSON.stringify({ audio_url: audioUrl })
+    body: JSON.stringify({ audio_url: audioUrl, speech_model: 'universal-2' })
   })
   .then(function(r){ if(!r.ok) return r.json().then(function(e){ throw new Error('Transcript failed: '+(e.error||r.status)); }); return r.json(); })
   .then(function(data){
