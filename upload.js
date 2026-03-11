@@ -1359,38 +1359,168 @@ function seekClick(e){
 }
 
 // ─── EXPORT ───────────────────────────────────────────────────────
+// ─── EXPORT STATE ────────────────────────────────────────────────
+var exportFormat = 'mp4';
+var exportFPS    = 30;
+
+function setExportFormat(btn){
+  exportFormat = btn.dataset.fmt;
+  document.querySelectorAll('.fmt-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var note = document.getElementById('mp4Note');
+  if(note) note.style.display = exportFormat==='mp4' ? 'block' : 'none';
+}
+function setFPS(btn){
+  exportFPS = parseInt(btn.dataset.fps);
+  document.querySelectorAll('.fps-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+}
+
+function getExportDims(){
+  var q = document.querySelector('input[name="quality"]:checked');
+  var qual = q ? q.value : 'high';
+  if(exportFmt==='reel'){
+    return qual==='ultra'?{w:1080,h:1920}:qual==='high'?{w:540,h:960}:{w:405,h:720};
+  } else if(exportFmt==='youtube'){
+    return qual==='ultra'?{w:3840,h:2160}:qual==='high'?{w:1920,h:1080}:{w:1280,h:720};
+  } else {
+    return qual==='ultra'?{w:2160,h:2160}:qual==='high'?{w:1080,h:1080}:{w:720,h:720};
+  }
+}
+
+function exportThumbnail(){
+  if(!clip){toast('Load a file first');return;}
+  drawFrame();
+  setTimeout(function(){
+    cv.toBlob(function(blob){
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='impactgrid_thumbnail.png';
+      document.body.appendChild(a);a.click();a.remove();
+      toast('✓ Thumbnail saved!');
+    },'image/png');
+  },200);
+}
+
+function exportGIF(){
+  toast('GIF: export as WebM first, then convert at ezgif.com 🎞');
+}
+
 function doExport(){
   if(!clip){toast('No file loaded');return;}
+  if(exportFormat==='gif'){exportGIF();return;}
+
+  var dims = getExportDims();
+  cv.width = dims.w; cv.height = dims.h;
+
   var ep=document.getElementById('expProg'),bar=document.getElementById('epFill'),lbl=document.getElementById('epLbl');
   ep.style.display='block';document.getElementById('dlBtn').disabled=true;
+
+  // IMAGE export
   if(fileType==='image'){
     drawFrame();
     setTimeout(function(){
       cv.toBlob(function(blob){
-        var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='impactgrid_'+activeStyle.id+'.png';
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='impactgrid_'+activeStyle.id+'.png';
         document.body.appendChild(a);a.click();a.remove();
-        bar.style.width='100%';lbl.textContent='✓ Image saved!';document.getElementById('dlBtn').disabled=false;
-        toast('✓ Image exported!');setTimeout(function(){ep.style.display='none';},3000);
+        bar.style.width='100%';lbl.textContent='✓ Image saved!';
+        document.getElementById('dlBtn').disabled=false;
+        toast('✓ Image exported!');
+        setTimeout(function(){ep.style.display='none';},3000);
       },'image/png');
     },250);
     return;
   }
-  var stream=cv.captureStream(30);
-  try{var ac=new(window.AudioContext||window.webkitAudioContext)(),src=ac.createMediaElementSource(vid),dest=ac.createMediaStreamDestination();src.connect(dest);src.connect(ac.destination);dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});}catch(e){}
-  var mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(function(m){return MediaRecorder.isTypeSupported(m);})||'video/webm';
-  var chunks=[],rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6000000});
+
+  // VIDEO: record to WebM first
+  var stream=cv.captureStream(exportFPS);
+  try{
+    var ac=new(window.AudioContext||window.webkitAudioContext)();
+    var src=ac.createMediaElementSource(vid),dest=ac.createMediaStreamDestination();
+    src.connect(dest);src.connect(ac.destination);
+    dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});
+  }catch(e){}
+
+  var mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']
+    .find(function(m){return MediaRecorder.isTypeSupported(m);})||'video/webm';
+
+  var q = document.querySelector('input[name="quality"]:checked');
+  var bitrate = q&&q.value==='ultra'?12000000:q&&q.value==='web'?2500000:6000000;
+
+  var chunks=[],rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:bitrate});
   rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
+
   rec.onstop=function(){
-    var blob=new Blob(chunks,{type:mime}),a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download='impactgrid_'+activeStyle.id+'_'+exportFmt.replace(':','x')+'.webm';
-    document.body.appendChild(a);a.click();a.remove();
-    bar.style.width='100%';lbl.textContent='✓ Download started!';document.getElementById('dlBtn').disabled=false;
-    toast('✓ Exported!');setTimeout(function(){ep.style.display='none';},4000);
+    var webmBlob=new Blob(chunks,{type:'video/webm'});
+
+    if(exportFormat==='webm'){
+      // Direct WebM download
+      triggerDownload(webmBlob,'impactgrid_'+activeStyle.id+'.webm');
+      bar.style.width='100%';lbl.textContent='✓ Downloaded as WebM!';
+      document.getElementById('dlBtn').disabled=false;
+      toast('✓ WebM exported!');
+      setTimeout(function(){ep.style.display='none';},4000);
+    } else {
+      // Convert WebM → MP4 via FFmpeg.wasm
+      lbl.textContent='Converting to MP4…';
+      bar.style.width='95%';
+      convertToMP4(webmBlob, function(mp4Blob){
+        triggerDownload(mp4Blob,'impactgrid_'+activeStyle.id+'.mp4');
+        bar.style.width='100%';lbl.textContent='✓ MP4 Downloaded!';
+        document.getElementById('dlBtn').disabled=false;
+        toast('✓ MP4 exported! Perfect for TikTok & Instagram 🎉');
+        setTimeout(function(){ep.style.display='none';},5000);
+      }, function(err){
+        // Fallback: download as WebM with mp4 extension note
+        console.warn('FFmpeg failed, falling back to WebM',err);
+        triggerDownload(webmBlob,'impactgrid_'+activeStyle.id+'_NOTE-rename-to-mp4.webm');
+        bar.style.width='100%';
+        lbl.textContent='⚠ Saved as WebM — rename to .mp4 on Windows';
+        document.getElementById('dlBtn').disabled=false;
+        toast('Saved! Rename file to .mp4 if needed');
+        setTimeout(function(){ep.style.display='none';},6000);
+      });
+    }
   };
-  vid.currentTime=0;isPlaying=true;vid.play();rec.start(100);rafId=requestAnimationFrame(drawFrame);
+
+  vid.currentTime=0;isPlaying=true;vid.play();rec.start(100);
+  rafId=requestAnimationFrame(drawFrame);
   var dur=vid.duration*1000,t0=Date.now();
-  var pi=setInterval(function(){var p=Math.min((Date.now()-t0)/dur*93,93);bar.style.width=p+'%';lbl.textContent='Recording… '+Math.round(p)+'%';},300);
+  var pi=setInterval(function(){
+    var p=Math.min((Date.now()-t0)/dur*90,90);
+    bar.style.width=p+'%';lbl.textContent='Recording… '+Math.round(p)+'%';
+  },300);
   vid.onended=function(){clearInterval(pi);isPlaying=false;rec.stop();};
+}
+
+function triggerDownload(blob, filename){
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);a.click();a.remove();
+}
+
+async function convertToMP4(webmBlob, onSuccess, onError){
+  try{
+    var ffmpeg = FFmpeg.createFFmpeg({
+      log: false,
+      corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+    });
+    var lbl=document.getElementById('epLbl');
+    if(lbl) lbl.textContent='Loading converter…';
+    await ffmpeg.load();
+    if(lbl) lbl.textContent='Converting to MP4…';
+    var data = new Uint8Array(await webmBlob.arrayBuffer());
+    ffmpeg.FS('writeFile','input.webm',data);
+    await ffmpeg.run('-i','input.webm','-c:v','libx264','-preset','fast','-crf','22','-c:a','aac','-movflags','+faststart','output.mp4');
+    var out = ffmpeg.FS('readFile','output.mp4');
+    var mp4Blob = new Blob([out.buffer],{type:'video/mp4'});
+    onSuccess(mp4Blob);
+  }catch(e){
+    onError(e);
+  }
 }
 
 // ─── TABS ─────────────────────────────────────────────────────────
