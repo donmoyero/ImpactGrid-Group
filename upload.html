@@ -171,16 +171,108 @@
             </div>
           </div>
         </div>
-        <div class="tl-bar">
-          <button class="tl-playbtn" onclick="togglePlay()">
-            <svg id="tlIcon" width="11" height="13" viewBox="0 0 11 13" fill="none"><path d="M1 1L10 6.5L1 12V1Z" fill="currentColor"/></svg>
-          </button>
-          <div class="tl-track" id="vbProg" onclick="seekClick(event)">
-            <div class="tl-played" id="vbFill"></div>
-            <div class="tl-thumb" id="tlThumb"></div>
+        <!-- PRO TIMELINE -->
+        <div class="pro-timeline" id="proTimeline">
+
+          <!-- Transport controls -->
+          <div class="tl-transport">
+            <button class="tl-tb" onclick="skipTo(0)" title="Go to start">⏮</button>
+            <button class="tl-tb" onclick="stepFrame(-1)" title="Step back">◀</button>
+            <button class="tl-tb tl-play" onclick="togglePlay()" id="tlPlayBtn">
+              <svg id="tlIcon" width="11" height="13" viewBox="0 0 11 13" fill="none"><path d="M1 1L10 6.5L1 12V1Z" fill="currentColor"/></svg>
+            </button>
+            <button class="tl-tb" onclick="stepFrame(1)" title="Step forward">▶</button>
+            <button class="tl-tb" onclick="skipTo(vid.duration||0)" title="Go to end">⏭</button>
+            <div class="tl-timecode">
+              <span id="vbTime">0:00</span>
+              <span class="tl-sep">/</span>
+              <span id="tlDuration">0:00</span>
+            </div>
+            <button class="tl-tb tl-mute-btn" onclick="toggleMute()" id="muteBtn" title="Mute">🔊</button>
+            <div class="tl-zoom-ctrl">
+              <button class="tl-tb" onclick="tlZoom(-0.5)" title="Zoom out">−</button>
+              <span class="tl-zoom-lbl" id="tlZoomLbl">1×</span>
+              <button class="tl-tb" onclick="tlZoom(0.5)" title="Zoom in">+</button>
+            </div>
           </div>
-          <span class="tl-time" id="vbTime">0:00</span>
-          <button class="tl-mute" onclick="toggleMute()" id="muteBtn">🔊</button>
+
+          <!-- Track area -->
+          <div class="tl-tracks-outer">
+            <!-- Track labels -->
+            <div class="tl-labels">
+              <div class="tl-lbl" id="tlLblVideo">
+                <span class="tl-lbl-icon">🎬</span>
+                <span>Video</span>
+                <button class="tl-eye" onclick="toggleTrackVis('video')" id="eyeVideo" title="Hide/Show">👁</button>
+              </div>
+              <div class="tl-lbl" id="tlLblCaptions">
+                <span class="tl-lbl-icon">💬</span>
+                <span>Captions</span>
+                <button class="tl-eye" onclick="toggleTrackVis('captions')" id="eyeCaptions" title="Hide/Show">👁</button>
+              </div>
+              <div class="tl-lbl" id="tlLblText">
+                <span class="tl-lbl-icon">✏</span>
+                <span>Text</span>
+                <button class="tl-eye" onclick="toggleTrackVis('text')" id="eyeText" title="Hide/Show">👁</button>
+              </div>
+              <div class="tl-lbl" id="tlLblVoice">
+                <span class="tl-lbl-icon">🎙</span>
+                <span>Voice</span>
+                <input type="range" class="tl-vol-mini" min="0" max="100" value="100" oninput="setTrackVol('voice',this.value)" title="Voice volume">
+              </div>
+              <div class="tl-lbl" id="tlLblMusic">
+                <span class="tl-lbl-icon">🎵</span>
+                <span>Music</span>
+                <input type="range" class="tl-vol-mini" min="0" max="100" value="40" oninput="setTrackVol('music',this.value)" title="Music volume">
+              </div>
+            </div>
+
+            <!-- Track waveforms / bars -->
+            <div class="tl-tracks-scroll" id="tlTracksScroll">
+              <div class="tl-tracks-inner" id="tlTracksInner">
+
+                <!-- Playhead -->
+                <div class="tl-playhead" id="tlPlayhead"></div>
+                <!-- Ruler -->
+                <div class="tl-ruler" id="tlRuler"></div>
+
+                <!-- VIDEO TRACK -->
+                <div class="tl-track-row" id="trackVideo" onclick="tlSeekClick(event)">
+                  <div class="tl-clip tl-clip-video" id="tlVideoClip">
+                    <div class="tl-clip-label">VIDEO</div>
+                    <div class="tl-waveform" id="tlVideoWave"></div>
+                  </div>
+                </div>
+
+                <!-- CAPTIONS TRACK -->
+                <div class="tl-track-row" id="trackCaptions">
+                  <div class="tl-caps-blocks" id="tlCapsBlocks"></div>
+                </div>
+
+                <!-- TEXT TRACK -->
+                <div class="tl-track-row" id="trackText">
+                  <div class="tl-text-clip" id="tlTextClip" style="display:none">
+                    <span>TEXT OVERLAY</span>
+                  </div>
+                </div>
+
+                <!-- VOICE TRACK -->
+                <div class="tl-track-row" id="trackVoice" onclick="tlSeekClick(event)">
+                  <canvas class="tl-wave-canvas" id="tlVoiceWave"></canvas>
+                </div>
+
+                <!-- MUSIC TRACK -->
+                <div class="tl-track-row" id="trackMusic" onclick="tlSeekClick(event)">
+                  <div class="tl-clip tl-clip-music" id="tlMusicClip" style="display:none">
+                    <div class="tl-clip-label" id="tlMusicLabel">MUSIC</div>
+                    <div class="tl-music-wave" id="tlMusicWave"></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -283,22 +375,100 @@
           </div>
         </div>
 
-        <!-- EFFECTS TAB -->
+        <!-- EFFECTS TAB — TRULY UNIQUE PRO TOOLS -->
         <div class="tab-panel" id="tabEffects">
           <div class="ps-scroll">
-            <div class="sec-label">VIDEO FILTERS</div>
+
+            <!-- UNIQUE: AI-STYLE ENHANCEMENT -->
+            <div class="sec-label">🧠 AI ENHANCE</div>
+            <div class="ai-enhance-grid">
+              <button class="ai-btn" onclick="applyAIEffect('denoise')" id="aibtnDenoise">
+                <span class="ai-icon">🔇</span>
+                <span class="ai-name">Noise Cancel</span>
+                <span class="ai-desc">Remove background noise</span>
+              </button>
+              <button class="ai-btn" onclick="applyAIEffect('sharpen')" id="aibtnSharpen">
+                <span class="ai-icon">🔬</span>
+                <span class="ai-name">AI Sharpen</span>
+                <span class="ai-desc">Edge-detect sharpening</span>
+              </button>
+              <button class="ai-btn" onclick="applyAIEffect('smooth')" id="aibtnSmooth">
+                <span class="ai-icon">✨</span>
+                <span class="ai-name">Skin Smooth</span>
+                <span class="ai-desc">Soften & enhance skin</span>
+              </button>
+              <button class="ai-btn" onclick="applyAIEffect('deband')" id="aibtnDeband">
+                <span class="ai-icon">🌈</span>
+                <span class="ai-name">Deband</span>
+                <span class="ai-desc">Remove colour banding</span>
+              </button>
+            </div>
+
+            <!-- UNIQUE: PIXEL-LEVEL EFFECTS -->
+            <div class="sec-label mt">⚗️ PIXEL LAB</div>
             <div class="fx-grid" id="fxGrid"></div>
-            <div class="sec-label mt">MOTION</div>
+
+            <!-- UNIQUE: CHROMATIC ABERRATION -->
+            <div class="sec-label mt">🌀 CHROMATIC ABERRATION</div>
+            <div class="sl-row">
+              <input type="range" min="0" max="20" value="0" id="slChroma" oninput="updatePixelFX()">
+              <span class="sl-v" id="slChromaVal">0</span>
+            </div>
+
+            <!-- UNIQUE: PIXEL DISTORTION -->
+            <div class="sec-label mt">📡 PIXEL DISTORTION</div>
+            <div class="sl-row">
+              <input type="range" min="0" max="30" value="0" id="slDistort" oninput="updatePixelFX()">
+              <span class="sl-v" id="slDistortVal">0</span>
+            </div>
+
+            <!-- UNIQUE: SCANLINES / CRT -->
+            <div class="sec-label mt">📺 CRT SCANLINES</div>
+            <div class="sl-row">
+              <input type="range" min="0" max="100" value="0" id="slScanlines" oninput="updatePixelFX()">
+              <span class="sl-v" id="slScanlinesVal">0</span>
+            </div>
+
+            <!-- UNIQUE: DUOTONE -->
+            <div class="sec-label mt">🎨 DUOTONE</div>
+            <div class="duotone-row" id="duotoneRow"></div>
+
+            <!-- MOTION EFFECTS -->
+            <div class="sec-label mt">🎬 MOTION</div>
             <div class="motion-row" id="motionBtns"></div>
-            <div class="sec-label mt">SPEED</div>
+
+            <!-- SPEED -->
+            <div class="sec-label mt">⚡ SPEED</div>
             <div class="speed-grid" id="speedGrid"></div>
-            <div class="sec-label mt">FLIP</div>
+
+            <!-- FLIP -->
+            <div class="sec-label mt">🔄 FLIP</div>
             <div class="flip-row">
               <button class="flip-btn" id="flipHBtn" onclick="toggleFlip('h')">⟷ Flip H</button>
               <button class="flip-btn" id="flipVBtn" onclick="toggleFlip('v')">↕ Flip V</button>
             </div>
-            <div class="sec-label mt">BLUR BACKGROUND</div>
-            <div class="sl-row"><input type="range" min="0" max="20" value="0" id="slBgBlur" oninput="updateFX()"><span class="sl-v" id="slBgBlurVal">0</span></div>
+
+            <!-- UNIQUE: BG BLUR (portrait mode) -->
+            <div class="sec-label mt">🌅 PORTRAIT BG BLUR</div>
+            <div class="sl-row">
+              <input type="range" min="0" max="20" value="0" id="slBgBlur" oninput="updateFX()">
+              <span class="sl-v" id="slBgBlurVal">0</span>
+            </div>
+
+            <!-- UNIQUE: GLOW / BLOOM -->
+            <div class="sec-label mt">💫 GLOW / BLOOM</div>
+            <div class="sl-row">
+              <input type="range" min="0" max="40" value="0" id="slGlow" oninput="updatePixelFX()">
+              <span class="sl-v" id="slGlowVal">0</span>
+            </div>
+
+            <!-- UNIQUE: PIXELATE -->
+            <div class="sec-label mt">🧱 PIXELATE</div>
+            <div class="sl-row">
+              <input type="range" min="1" max="30" value="1" id="slPixelate" oninput="updatePixelFX()">
+              <span class="sl-v" id="slPixelateVal">Off</span>
+            </div>
+
           </div>
         </div>
 
