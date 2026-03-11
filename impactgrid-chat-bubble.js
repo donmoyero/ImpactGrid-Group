@@ -9,7 +9,7 @@
 
 (function() {
   /* ── Config — hardcoded, never exposed to users ── */
-  var AI_URL  = (typeof IMPACTGRID_AI_URL !== 'undefined' ? IMPACTGRID_AI_URL : 'https://ambient-salem-pine-talented.trycloudflare.com');
+  var AI_URL  = (typeof IMPACTGRID_AI_URL !== 'undefined' ? IMPACTGRID_AI_URL : 'https://differently-trust-november-debug.trycloudflare.com');
   var MODE    = (typeof IMPACTGRID_AI_MODE !== 'undefined' ? IMPACTGRID_AI_MODE : 'group');
   var HISTORY = [];
   var TYPING  = false;
@@ -452,7 +452,7 @@
 
       var res = await fetch(AI_URL + '/chat', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1', 'User-Agent': 'ImpactGridBubble' },
         body:    JSON.stringify({ message: prompt, mode: MODE })
       });
 
