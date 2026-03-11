@@ -1,15 +1,15 @@
 /* ================================================================
    ImpactGrid Group Chat Bubble
-   Drop this script into impactgridgroup.com — one <script> tag.
-   Set IMPACTGRID_AI_URL to your ngrok URL before deploying.
+   Works on both impactgridgroup.com AND impactgridanalytics.com.
+   Set IMPACTGRID_AI_URL and optionally IMPACTGRID_AI_MODE before the script tag.
 
-   Usage: <script src="impactgrid-chat-bubble.js"></script>
-          <script>IMPACTGRID_AI_URL = "https://xxxx.ngrok.io";</script>
+   group.com:     <script>IMPACTGRID_AI_URL = "https://xxxx.trycloudflare.com";</script>
+   analytics.com: <script>IMPACTGRID_AI_URL = "https://xxxx.trycloudflare.com"; IMPACTGRID_AI_MODE = "dashboard";</script>
 ================================================================ */
 
 (function() {
   /* ── Config — hardcoded, never exposed to users ── */
-  var AI_URL  = 'https://workless-nelly-mirella.ngrok-free.dev';
+  var AI_URL  = (typeof IMPACTGRID_AI_URL !== 'undefined' ? IMPACTGRID_AI_URL : 'https://ambient-salem-pine-talented.trycloudflare.com');
   var MODE    = (typeof IMPACTGRID_AI_MODE !== 'undefined' ? IMPACTGRID_AI_MODE : 'group');
   var HISTORY = [];
   var TYPING  = false;
@@ -307,8 +307,8 @@
           </svg>
         </div>
         <div class="ig-header-text">
-          <div class="ig-header-name">ImpactGrid AI</div>
-          <div class="ig-header-sub">Your business adviser · Online now</div>
+          <div class="ig-header-name">Dijo by ImpactGrid</div>
+          <div class="ig-header-sub">Your AI adviser · Online now</div>
         </div>
         <button class="ig-header-close" onclick="igToggleChat()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -348,9 +348,9 @@
   /* ── Show welcome message — varies by mode ── */
   setTimeout(function() {
     var welcomes = {
-      group:     'Hi there! &#128075; I\'m the <strong>ImpactGrid AI</strong> — happy to answer any questions about what we do, our plans, or how to get started. What\'s on your mind?',
-      dashboard: 'Hi! &#128075; I\'m your <strong>ImpactGrid Assistant</strong>. I can help you navigate the platform, understand your dashboard, or answer any questions about your account. What do you need?',
-      adviser:   'Hi! &#128075; I\'m your <strong>ImpactGrid AI Buddy</strong> — your personal financial adviser. Ask me anything about your business.'
+      group:     'Hi there! &#128075; I\'m <strong>Dijo</strong> from ImpactGrid — happy to answer any questions about what we do, our plans, or how to get started. What\'s on your mind?',
+      dashboard: 'Hi! &#128075; I\'m <strong>Dijo</strong>, your ImpactGrid assistant. I can help you navigate the platform, understand your dashboard, or answer questions about your account. What do you need?',
+      adviser:   'Hi! &#128075; I\'m <strong>Dijo</strong> — your personal financial adviser from ImpactGrid. Ask me anything about your business.'
     };
     igAppendMsg('ai', welcomes[MODE] || welcomes.group);
   }, 600);
