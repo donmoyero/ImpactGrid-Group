@@ -22,13 +22,13 @@
     <div class="hero">
       <div class="hero-icon">🎬</div>
       <h1>Drop your video.<br>Get viral captions.</h1>
-      <p>Word-perfect, animated, synced to your voice.</p>
+      <p>Word-perfect captions synced to every word you speak.</p>
       <label class="dropzone" id="dropZone">
         <input type="file" id="fileIn" accept="video/*">
         <div class="dz-inner">
           <span class="dz-icon">⬆</span>
           <span class="dz-txt">Click or drag video here</span>
-          <span class="dz-sub">MP4 · MOV · WebM</span>
+          <span class="dz-sub">MP4 · MOV · WebM · up to 500MB</span>
         </div>
       </label>
     </div>
@@ -47,10 +47,10 @@
     </div>
   </div>
 
-  <!-- S3: PROCESSING (AssemblyAI) -->
+  <!-- S3: PROCESSING -->
   <div class="screen" id="sProcess">
     <div class="process-box">
-      <div class="proc-anim" id="procAnim">⬆</div>
+      <div class="proc-ring"><div class="proc-anim" id="procAnim">⬆</div></div>
       <h2 id="procTitle">Uploading…</h2>
       <p id="procDesc">Sending your video to AssemblyAI…</p>
       <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
@@ -58,52 +58,101 @@
     </div>
   </div>
 
-  <!-- S4: PREVIEW + EXPORT -->
+  <!-- S4: PREVIEW + EDIT -->
   <div class="screen" id="sPreview">
     <div class="preview-layout">
+
+      <!-- LEFT: Video canvas -->
       <div class="left-panel">
         <div class="canvas-wrap">
           <canvas id="cv"></canvas>
           <div class="play-tap" id="playTap" onclick="togglePlay()">
             <div class="big-play" id="bigPlay">▶</div>
           </div>
+          <!-- Keyword flash overlay -->
+          <div class="kw-flash" id="kwFlash"></div>
         </div>
         <div class="vid-bar">
           <button class="vb-btn" id="vbPlay" onclick="togglePlay()">▶</button>
           <div class="vb-prog" id="vbProg" onclick="seekClick(event)">
             <div class="vb-fill" id="vbFill"></div>
+            <!-- Keyword markers on timeline -->
+            <div id="kwMarkers"></div>
           </div>
           <span class="vb-time" id="vbTime">0:00</span>
         </div>
-        <div class="style-badge" id="styleBadge"></div>
+        <div class="vid-meta">
+          <span class="style-badge" id="styleBadge">—</span>
+          <span class="kw-badge" id="kwBadge">0 keywords</span>
+        </div>
       </div>
+
+      <!-- RIGHT: Edit panel -->
       <div class="right-panel">
-        <div class="exp-card">
-          <div class="exp-head">
-            <span class="exp-title">Edit ready</span>
-            <span class="exp-style" id="expStyle"></span>
+        <div class="panel-header">
+          <div class="panel-status">
+            <div class="status-dot"></div>
+            <span>Edit Ready</span>
           </div>
+          <span class="panel-style" id="expStyle"></span>
+        </div>
 
-          <!-- TABS -->
-          <div class="tabs">
-            <button class="tab active" onclick="switchTab(this,'tabCaptions')">💬 Captions</button>
-            <button class="tab" onclick="switchTab(this,'tabGrade')">🎨 Grade</button>
-            <button class="tab" onclick="switchTab(this,'tabText')">✏ Text</button>
-            <button class="tab" onclick="switchTab(this,'tabMusic')">🎵 Music</button>
-            <button class="tab" onclick="switchTab(this,'tabExport')">⬇ Export</button>
+        <!-- Tab nav -->
+        <div class="tabs">
+          <button class="tab active" data-tab="tabCaptions" onclick="switchTab(this)">
+            <span class="tab-icon">💬</span><span class="tab-lbl">Captions</span>
+          </button>
+          <button class="tab" data-tab="tabKeywords" onclick="switchTab(this)">
+            <span class="tab-icon">⚡</span><span class="tab-lbl">Keywords</span>
+          </button>
+          <button class="tab" data-tab="tabGrade" onclick="switchTab(this)">
+            <span class="tab-icon">🎨</span><span class="tab-lbl">Grade</span>
+          </button>
+          <button class="tab" data-tab="tabText" onclick="switchTab(this)">
+            <span class="tab-icon">✏</span><span class="tab-lbl">Text</span>
+          </button>
+          <button class="tab" data-tab="tabMusic" onclick="switchTab(this)">
+            <span class="tab-icon">🎵</span><span class="tab-lbl">Music</span>
+          </button>
+          <button class="tab" data-tab="tabExport" onclick="switchTab(this)">
+            <span class="tab-icon">⬇</span><span class="tab-lbl">Export</span>
+          </button>
+        </div>
+
+        <!-- CAPTIONS -->
+        <div class="tab-panel active" id="tabCaptions">
+          <div class="panel-scroll">
+            <div class="panel-section-title">Caption Style</div>
+            <div class="cap-hint">Keywords get a dramatic treatment automatically</div>
+            <div class="caption-list" id="miniStyles"></div>
           </div>
+        </div>
 
-          <!-- CAPTIONS TAB -->
-          <div class="tab-panel active" id="tabCaptions">
-            <div class="sec-label">Caption style</div>
-            <div class="caption-grid" id="miniStyles"></div>
+        <!-- KEYWORDS -->
+        <div class="tab-panel" id="tabKeywords">
+          <div class="panel-scroll">
+            <div class="panel-section-title">Detected Keywords</div>
+            <div class="cap-hint">These words get a dramatic visual explosion</div>
+            <div id="kwList" class="kw-list"></div>
+            <div class="divider"></div>
+            <div class="panel-section-title">Keyword Style</div>
+            <div class="kw-style-grid" id="kwStyleGrid"></div>
+            <div class="divider"></div>
+            <div class="panel-section-title">Add Custom Keyword</div>
+            <div class="kw-add-row">
+              <input class="txt-input" id="kwCustomInput" placeholder="e.g. money, fire, insane…" maxlength="30">
+              <button class="add-kw-btn" onclick="addCustomKeyword()">Add</button>
+            </div>
           </div>
+        </div>
 
-          <!-- GRADE TAB -->
-          <div class="tab-panel" id="tabGrade">
-            <div class="sec-label">Colour grade</div>
-            <div class="grade-grid" id="gradeGrid"></div>
-            <div class="sec-label" style="margin-top:14px">Fine tune</div>
+        <!-- GRADE -->
+        <div class="tab-panel" id="tabGrade">
+          <div class="panel-scroll">
+            <div class="panel-section-title">Colour Grade</div>
+            <div class="grade-presets" id="gradeGrid"></div>
+            <div class="divider"></div>
+            <div class="panel-section-title">Fine Tune</div>
             <div class="slider-row">
               <label>Brightness</label>
               <input type="range" min="70" max="140" value="100" id="slBright" oninput="updateGrade()">
@@ -125,67 +174,73 @@
               <span id="slWarmVal">0</span>
             </div>
           </div>
+        </div>
 
-          <!-- TEXT OVERLAY TAB -->
-          <div class="tab-panel" id="tabText">
-            <div class="sec-label">Add text to video</div>
-            <p class="tab-hint">For silent videos, b-roll, or intros</p>
-            <input class="txt-input" id="overlayText" placeholder="Type your text…" maxlength="80">
-            <div class="sec-label" style="margin-top:12px">Position</div>
+        <!-- TEXT -->
+        <div class="tab-panel" id="tabText">
+          <div class="panel-scroll">
+            <div class="panel-section-title">Text Overlay</div>
+            <div class="cap-hint">Perfect for silent clips, intros or b-roll</div>
+            <input class="txt-input" id="overlayText" placeholder="Type your text here…" maxlength="80">
+            <div class="panel-section-title" style="margin-top:14px">Position</div>
             <div class="pos-grid">
-              <button class="pos-btn" data-pos="top"    onclick="setTextPos(this)">Top</button>
-              <button class="pos-btn active" data-pos="mid" onclick="setTextPos(this)">Middle</button>
-              <button class="pos-btn" data-pos="bot"    onclick="setTextPos(this)">Bottom</button>
+              <button class="pos-btn" data-pos="top" onclick="setTextPos(this)">Top</button>
+              <button class="pos-btn active" data-pos="mid" onclick="setTextPos(this)">Centre</button>
+              <button class="pos-btn" data-pos="bot" onclick="setTextPos(this)">Bottom</button>
             </div>
-            <div class="sec-label" style="margin-top:12px">Style</div>
+            <div class="panel-section-title" style="margin-top:14px">Text Style</div>
             <div class="txtstyle-row" id="txtStyleRow"></div>
-            <div class="slider-row">
+            <div class="slider-row" style="margin-top:10px">
               <label>Size</label>
-              <input type="range" min="16" max="72" value="32" id="slTxtSize" oninput="updateOverlayText()">
-              <span id="slTxtSizeVal">32</span>
+              <input type="range" min="16" max="80" value="36" id="slTxtSize" oninput="updateOverlayText()">
+              <span id="slTxtSizeVal">36</span>
             </div>
-            <button class="ghost-btn full" style="margin-top:10px" onclick="clearOverlayText()">Clear text</button>
+            <button class="ghost-btn full" style="margin-top:12px" onclick="clearOverlayText()">✕ Clear text</button>
           </div>
+        </div>
 
-          <!-- MUSIC TAB -->
-          <div class="tab-panel" id="tabMusic">
-            <div class="sec-label">Free tracks</div>
-            <p class="tab-hint">Royalty-free. Fades out at video end.</p>
+        <!-- MUSIC -->
+        <div class="tab-panel" id="tabMusic">
+          <div class="panel-scroll">
+            <div class="panel-section-title">Free Tracks</div>
+            <div class="cap-hint">Royalty-free · loops with your video</div>
             <div class="music-list" id="musicList"></div>
             <div class="divider"></div>
-            <div class="sec-label">Upload your music</div>
+            <div class="panel-section-title">Your Music</div>
             <label class="music-upload-btn">
               <input type="file" id="musicFileIn" accept="audio/*" onchange="loadUserMusic(this)">
-              🎵 Choose audio file
+              ＋ Upload audio file
             </label>
             <div id="userMusicName" class="user-music-name"></div>
-            <div class="slider-row" style="margin-top:12px">
-              <label>Music vol</label>
+            <div class="slider-row" style="margin-top:14px">
+              <label>Volume</label>
               <input type="range" min="0" max="100" value="40" id="slMusicVol" oninput="updateMusicVol()">
               <span id="slMusicVolVal">40%</span>
             </div>
           </div>
+        </div>
 
-          <!-- EXPORT TAB -->
-          <div class="tab-panel" id="tabExport">
-            <div class="sec-label">Format</div>
+        <!-- EXPORT -->
+        <div class="tab-panel" id="tabExport">
+          <div class="panel-scroll">
+            <div class="panel-section-title">Export Format</div>
             <div class="fmt-row">
-              <button class="fmt active" data-f="reel"    onclick="setFmt(this)">📱 Reel / TikTok <small>9:16</small></button>
-              <button class="fmt"        data-f="youtube" onclick="setFmt(this)">▶ YouTube <small>16:9</small></button>
-              <button class="fmt"        data-f="square"  onclick="setFmt(this)">⬛ Square <small>1:1</small></button>
+              <button class="fmt active" data-f="reel"    onclick="setFmt(this)">📱 Reel / TikTok<small>9:16</small></button>
+              <button class="fmt"        data-f="youtube" onclick="setFmt(this)">▶ YouTube<small>16:9</small></button>
+              <button class="fmt"        data-f="square"  onclick="setFmt(this)">⬛ Square<small>1:1</small></button>
             </div>
-            <button class="dl-btn" id="dlBtn" onclick="doExport()">⬇ Download Video</button>
+            <button class="dl-btn" id="dlBtn" onclick="doExport()">⬇ Download</button>
             <div id="expProg" style="display:none">
               <div class="ep-track"><div class="ep-fill" id="epFill"></div></div>
               <div class="ep-lbl" id="epLbl">Rendering…</div>
             </div>
             <div class="divider"></div>
             <div class="exp-stats" id="expStats"></div>
-            <button class="ghost-btn full" style="margin-top:8px" onclick="goTo('sDrop')">Upload new video</button>
+            <button class="ghost-btn full" style="margin-top:10px" onclick="goTo('sDrop')">← New video</button>
           </div>
+        </div>
 
-        </div><!-- /exp-card -->
-      </div>
+      </div><!-- /right-panel -->
     </div>
   </div>
 
