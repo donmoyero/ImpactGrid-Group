@@ -14,67 +14,475 @@ var ASSEMBLY_SUBMIT = 'https://api.assemblyai.com/v2/transcript';
 // CAPTION STYLES (same 6 as before — word-level render)
 // ─────────────────────────────────────────────────────────────────
 var STYLES = [
+
+  // 1. FIRE WORD — each word SLAMS in huge then shrinks to pill. MrBeast energy.
   {
-    id:'viral', name:'Viral TikTok',
-    desc:'Each word pops in with a bounce. Orange pills. Stops the scroll.',
-    tags:['TikTok','Reels','Viral'],
+    id:'fire', name:'🔥 Fire Word',
+    desc:'Each word explodes huge then snaps into a pill. Maximum energy.',
+    tags:['TikTok','Viral','MrBeast'],
     gradient:'linear-gradient(150deg,#2a0800,#0d0300)',
-    grade:'brightness(1.1) saturate(1.4) contrast(1.06)',
-    tint:'rgba(255,50,0,0.10)', tintMode:'soft-light',
-    vignette:0.55, letterbox:false, grain:false, accent:'#ff5c1a',
-    render: function(ctx,W,H,d){ renderWordPop(ctx,W,H,d,'#ff5c1a','#fff'); }
+    grade:'brightness(1.12) saturate(1.5) contrast(1.08)',
+    tint:'rgba(255,40,0,0.08)', tintMode:'soft-light',
+    vignette:0.5, letterbox:false, accent:'#ff5c1a',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      var size = 22, padX = 13, padY = 8;
+      var lines = groupLines(d.words, 3);
+      var lineH = size + padY*2 + 8;
+      var startY = H*0.80 - (lines.length*lineH)/2;
+
+      lines.forEach(function(line, li){
+        ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+        var totalW = line.reduce(function(a,w){ return a + ctx.measureText(w.w).width + padX*2 + 8; }, 0);
+        var x = W/2 - totalW/2;
+        var y = startY + li*lineH + lineH/2;
+
+        line.forEach(function(wObj){
+          var ww = ctx.measureText(wObj.w).width;
+          var bW = ww + padX*2, bH = size + padY*2;
+          var isNow  = now >= wObj.t && now <= wObj.end + 0.2;
+          var isPast = now > wObj.end + 0.2;
+          var age    = now - wObj.t;
+
+          // SLAM: word starts huge (2x) and snaps down to normal in 0.15s
+          var slamScale = 1;
+          if(isNow && age < 0.15) slamScale = 2.0 - (age/0.15)*1.0;
+
+          ctx.save();
+          ctx.translate(x + bW/2, y);
+          ctx.scale(slamScale, slamScale);
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+          if(isNow){
+            // Bright orange pill
+            ctx.shadowColor = '#ff5c1a'; ctx.shadowBlur = 20;
+            ctx.fillStyle = '#ff5c1a';
+            rRect(ctx,-bW/2,-bH/2,bW,bH,8); ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+            ctx.fillText(wObj.w, 0, 1);
+          } else if(isPast){
+            ctx.globalAlpha = 0.55;
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            rRect(ctx,-bW/2,-bH/2,bW,bH,8); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.55;
+            ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+            ctx.fillText(wObj.w, 0, 1);
+          } else {
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+            ctx.fillText(wObj.w, 0, 1);
+          }
+          ctx.restore();
+          x += bW + 8;
+        });
+      });
+    }
   },
+
+  // 2. COLOUR FLIP — alternating word colours, uppercase bold
   {
-    id:'cinematic', name:'Cinematic',
-    desc:'Words fade in one by one. Cool grade, letterbox bars.',
-    tags:['Film','YouTube','Story'],
+    id:'colourflip', name:'🎨 Colour Flip',
+    desc:'Words alternate between white and gold. All caps, bold, no background.',
+    tags:['Clean','Modern','Bold'],
+    gradient:'linear-gradient(150deg,#0a0a0a,#141414)',
+    grade:'brightness(0.95) contrast(1.06)',
+    tint:'rgba(0,0,0,0.05)', tintMode:'multiply',
+    vignette:0.6, letterbox:false, accent:'#f0c93a',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      var size = d.dramatic ? 26 : 21;
+      var lines = groupLines(d.words, 4);
+      var lineH = size + 14;
+      var startY = H*0.82 - (lines.length-1)*lineH/2;
+
+      lines.forEach(function(line, li){
+        ctx.font = '800 '+size+'px "DM Sans",sans-serif';
+        var lW = measLineW(ctx, line);
+        var x = W/2 - lW/2;
+        var lY = startY + li*lineH;
+
+        line.forEach(function(wObj, wi){
+          var ww = ctx.measureText(wObj.w).width;
+          var isNow  = now >= wObj.t && now <= wObj.end + 0.2;
+          var isPast = now > wObj.end + 0.2;
+          var age    = now - wObj.t;
+          var fadeIn = age < 0 ? 0 : Math.min(age/0.12, 1);
+          // Alternating colours: even=white, odd=gold
+          var baseColor = (wi % 2 === 0) ? '#ffffff' : '#f0c93a';
+
+          ctx.save();
+          ctx.globalAlpha = fadeIn * (isPast ? 0.9 : isNow ? 1 : 0.25);
+          ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          ctx.font = '800 '+size+'px "DM Sans",sans-serif';
+
+          // Shadow for depth
+          ctx.shadowColor = 'rgba(0,0,0,0.95)'; ctx.shadowBlur = 10;
+
+          if(isNow){
+            // Scale up slightly when active
+            ctx.translate(x + ww/2, lY);
+            ctx.scale(1.08, 1.08);
+            ctx.fillStyle = baseColor;
+            ctx.shadowColor = baseColor; ctx.shadowBlur = 18;
+            ctx.fillText(wObj.w.toUpperCase(), -ww/2, 0);
+          } else {
+            ctx.fillStyle = baseColor;
+            ctx.fillText(wObj.w.toUpperCase(), x, lY);
+          }
+          ctx.restore();
+          x += ww + 10;
+        });
+      });
+    }
+  },
+
+  // 3. CINEMATIC SUBTITLE — fade in word by word, cool blue grade, letterbox
+  {
+    id:'cinematic', name:'🎬 Cinematic',
+    desc:'Words drift in softly. Cool blue grade with letterbox bars.',
+    tags:['Film','YouTube','Premium'],
     gradient:'linear-gradient(150deg,#000814,#001233)',
     grade:'brightness(0.86) saturate(0.72) contrast(1.05)',
     tint:'rgba(0,30,120,0.20)', tintMode:'soft-light',
-    vignette:0.82, letterbox:true, grain:false, accent:'#90caf9',
-    render: function(ctx,W,H,d){ renderFadeWords(ctx,W,H,d,'#90caf9'); }
+    vignette:0.82, letterbox:true, accent:'#90caf9',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      var size = d.dramatic ? 20 : 17;
+      var lines = groupLines(d.words, 6);
+      var lineH = size + 10;
+      var startY = H*0.87 - (lines.length-1)*lineH/2;
+
+      lines.forEach(function(line, li){
+        ctx.font = (d.dramatic?'bold ':'500 ')+size+'px "DM Sans",sans-serif';
+        var lW = measLineW(ctx, line);
+        var x = W/2 - lW/2;
+        var lY = startY + li*lineH;
+
+        line.forEach(function(wObj){
+          var ww = ctx.measureText(wObj.w).width;
+          var isNow = now >= wObj.t && now <= wObj.end + 0.2;
+          var age   = now - wObj.t;
+          var alpha = age < 0 ? 0 : Math.min(age/0.2, 1);
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          if(isNow){
+            ctx.shadowColor = '#90caf9'; ctx.shadowBlur = 14;
+            ctx.fillStyle = '#90caf9';
+          } else {
+            ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 7;
+            ctx.fillStyle = '#fff';
+          }
+          ctx.font = (d.dramatic?'bold ':'500 ')+size+'px "DM Sans",sans-serif';
+          ctx.fillText(wObj.w, x, lY);
+          ctx.restore();
+          x += ww + 8;
+        });
+      });
+    }
   },
+
+  // 4. HYPE CENTRE — one massive word dead centre, gold, slams in
   {
-    id:'hype', name:'Hype / Sports',
-    desc:'One massive word dead centre. Slams in with a flash.',
-    tags:['Sports','Hype','Launch'],
+    id:'hype', name:'⚡ Hype Centre',
+    desc:'One massive word dead centre. Gold. Slams in with a flash.',
+    tags:['Sports','Launch','Hype'],
     gradient:'linear-gradient(150deg,#1a1000,#080600)',
     grade:'brightness(1.14) saturate(1.5) contrast(1.12)',
     tint:'rgba(240,180,0,0.12)', tintMode:'soft-light',
-    vignette:0.42, letterbox:false, grain:false, accent:'#f0c93a',
-    render: function(ctx,W,H,d){ renderHuge(ctx,W,H,d,'#f0c93a'); }
+    vignette:0.42, letterbox:false, accent:'#f0c93a',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      var cur = d.words.find(function(w){ return now >= w.t && now <= w.end+0.15; });
+      if(!cur) return;
+
+      var age   = now - cur.t;
+      var scale = age < 0.12 ? 1 + (0.12-age)/0.12*0.7 : 1;
+
+      // Flash
+      if(age < 0.07){
+        ctx.fillStyle = 'rgba(240,201,58,'+(0.4*(1-age/0.07))+')';
+        ctx.fillRect(0,0,W,H);
+      }
+
+      var size = Math.min(W*0.18, 84);
+      ctx.save();
+      ctx.globalAlpha = Math.min(age/0.05,1);
+      ctx.translate(W/2, H*0.46);
+      ctx.scale(scale, scale);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '900 '+size+'px Anton,"DM Sans",sans-serif';
+      ctx.lineWidth = 16; ctx.strokeStyle='rgba(0,0,0,0.95)'; ctx.lineJoin='round';
+      ctx.strokeText(cur.w.toUpperCase(), 0, 0);
+      ctx.fillStyle = '#f0c93a';
+      ctx.fillText(cur.w.toUpperCase(), 0, 0);
+      ctx.restore();
+
+      // Sentence context below
+      var rest = d.words.filter(function(w){ return w!==cur; }).map(function(w){ return w.w; }).join(' ');
+      if(rest && age > 0.1){
+        ctx.save();
+        ctx.globalAlpha = Math.min((age-0.1)/0.15, 0.7);
+        ctx.font = '500 15px "DM Sans",sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 6;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillText(rest, W/2, H*0.58);
+        ctx.restore();
+      }
+    }
   },
+
+  // 5. NEON KARAOKE — glowing bar, word-by-word lights up
   {
-    id:'podcast', name:'Podcast / Talk',
-    desc:'Karaoke bar — each word lights up gold as it\'s spoken.',
-    tags:['Podcast','Talk','Interview'],
-    gradient:'linear-gradient(150deg,#0d0d1a,#16102a)',
-    grade:'brightness(0.96) saturate(0.88)',
-    tint:'rgba(80,40,200,0.13)', tintMode:'soft-light',
-    vignette:0.44, letterbox:false, grain:false, accent:'#f0c93a',
-    render: function(ctx,W,H,d){ renderKaraoke(ctx,W,H,d,'#f0c93a'); }
+    id:'neonkaraoke', name:'💜 Neon Karaoke',
+    desc:'Dark bar bottom. Each word glows purple then gold when spoken.',
+    tags:['Podcast','Night','Glow'],
+    gradient:'linear-gradient(150deg,#05000f,#0f0020)',
+    grade:'brightness(0.85) saturate(0.7) contrast(1.1)',
+    tint:'rgba(120,0,200,0.15)', tintMode:'soft-light',
+    vignette:0.7, letterbox:false, accent:'#e040fb',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      var size = 20, barH = 64, barY = H*0.81;
+
+      // Dark bar
+      var barGrad = ctx.createLinearGradient(0,barY,0,barY+barH);
+      barGrad.addColorStop(0,'rgba(5,0,15,0.96)');
+      barGrad.addColorStop(1,'rgba(5,0,15,0.75)');
+      ctx.fillStyle = barGrad;
+      ctx.fillRect(0, barY, W, barH);
+
+      // Top accent line — animated colour pulse
+      var pulse = 0.5 + 0.5*Math.sin(now*4);
+      var lineCol = 'hsl('+(280+pulse*40)+',100%,65%)';
+      ctx.fillStyle = lineCol;
+      ctx.fillRect(0, barY, W, 2);
+
+      var lines = groupLines(d.words, 5);
+      var lineH = barH / Math.max(lines.length, 1);
+
+      lines.forEach(function(line, li){
+        ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+        var lW = measLineW(ctx, line);
+        var x  = W/2 - lW/2;
+        var lY = barY + lineH*(li+0.5) + 4;
+
+        line.forEach(function(wObj){
+          var ww    = ctx.measureText(wObj.w).width;
+          var isNow = now >= wObj.t && now <= wObj.end+0.15;
+          var isPast= now > wObj.end+0.15;
+
+          ctx.save();
+          ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+
+          if(isNow){
+            // Bright gold glow
+            ctx.shadowColor = '#f0c93a'; ctx.shadowBlur = 22;
+            ctx.fillStyle = '#f0c93a';
+            ctx.fillText(wObj.w, x, lY);
+            ctx.shadowBlur = 8;
+            ctx.fillText(wObj.w, x, lY);
+          } else if(isPast){
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#c084fc';
+            ctx.fillText(wObj.w, x, lY);
+          } else {
+            ctx.globalAlpha = 0.18;
+            ctx.fillStyle = '#c084fc';
+            ctx.fillText(wObj.w, x, lY);
+          }
+          ctx.restore();
+          x += ww + 10;
+        });
+      });
+    }
   },
+
+  // 6. SPLIT SCREEN — current word huge top, full line small bottom
   {
-    id:'neon', name:'Neon Glow',
-    desc:'Words glow purple/pink. Dramatic words explode in cyan.',
-    tags:['Night','Club','Energy'],
-    gradient:'linear-gradient(150deg,#050010,#100020)',
-    grade:'brightness(0.82) saturate(0.60) contrast(1.1)',
-    tint:'rgba(120,0,200,0.18)', tintMode:'soft-light',
-    vignette:0.72, letterbox:false, grain:false, accent:'#e040fb',
-    render: function(ctx,W,H,d){ renderNeon(ctx,W,H,d); }
+    id:'split', name:'✂ Bold Split',
+    desc:'Active word HUGE upper screen. Sentence preview small below.',
+    tags:['Drama','Impact','Bold'],
+    gradient:'linear-gradient(150deg,#080808,#040404)',
+    grade:'brightness(0.9) saturate(1.1) contrast(1.1)',
+    tint:'rgba(255,255,255,0.03)', tintMode:'soft-light',
+    vignette:0.68, letterbox:false, accent:'#ffffff',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now = d.curTime;
+      var cur = d.words.find(function(w){ return now >= w.t && now <= w.end+0.12; });
+      if(!cur) return;
+
+      var age = now - cur.t;
+      var scale = age < 0.14 ? 1+(0.14-age)/0.14*0.5 : 1;
+      var bigSize = Math.min(W*0.16, 74);
+
+      ctx.save();
+      ctx.translate(W/2, H*0.43);
+      ctx.scale(scale, scale);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '900 '+bigSize+'px Syne,"DM Sans",sans-serif';
+      ctx.lineWidth = 10; ctx.strokeStyle='#000'; ctx.lineJoin='round';
+      ctx.strokeText(cur.w.toUpperCase(), 0, 0);
+      var g = ctx.createLinearGradient(0,-bigSize/2,0,bigSize/2);
+      g.addColorStop(0,'#fff'); g.addColorStop(1,'rgba(255,255,255,0.72)');
+      ctx.fillStyle = g;
+      ctx.fillText(cur.w.toUpperCase(), 0, 0);
+      ctx.restore();
+
+      // Small sentence context
+      var sentSize = 13;
+      ctx.font = '600 '+sentSize+'px "DM Sans",sans-serif';
+      var sLines = groupLines(d.words, 6);
+      sLines.forEach(function(line, li){
+        var x = W/2 - measLineW(ctx,line)/2;
+        var lY= H*0.59 + li*(sentSize+7);
+        line.forEach(function(wObj){
+          var ww = ctx.measureText(wObj.w).width;
+          var isCur = wObj===cur, isPast = now > wObj.end+0.1;
+          ctx.save();
+          ctx.textAlign='left'; ctx.textBaseline='middle';
+          ctx.font='600 '+sentSize+'px "DM Sans",sans-serif';
+          ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=5;
+          ctx.globalAlpha = isCur?1:isPast?0.42:0.22;
+          ctx.fillStyle   = isCur?'#fff':'#aaa';
+          ctx.fillText(wObj.w, x, lY);
+          ctx.restore();
+          x += ww+7;
+        });
+      });
+    }
   },
+
+  // 7. TYPEWRITER — words appear one by one left-to-right, cursor blink
   {
-    id:'split', name:'Bold Split',
-    desc:'Current word HUGE centre. Full sentence small below.',
-    tags:['Drama','Impact','Story'],
-    gradient:'linear-gradient(150deg,#0a0a0a,#050505)',
-    grade:'brightness(0.92) saturate(1.1) contrast(1.08)',
-    tint:'rgba(255,255,255,0.04)', tintMode:'soft-light',
-    vignette:0.65, letterbox:false, grain:false, accent:'#ffffff',
-    render: function(ctx,W,H,d){ renderSplit(ctx,W,H,d); }
+    id:'typewriter', name:'⌨ Typewriter',
+    desc:'Words type in left to right with a blinking cursor. Clean and satisfying.',
+    tags:['Clean','Satisfying','Talk'],
+    gradient:'linear-gradient(150deg,#0a0a0a,#111'),
+    grade:'brightness(0.94) contrast(1.04)',
+    tint:'rgba(0,0,0,0)', tintMode:'source-over',
+    vignette:0.45, letterbox:false, accent:'#00e5ff',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now   = d.curTime;
+      var size  = 20;
+      var lines = groupLines(d.words, 5);
+      var lineH = size + 16;
+      var startY= H*0.81 - (lines.length-1)*lineH/2;
+      var lastShown = null;
+
+      lines.forEach(function(line, li){
+        ctx.font = 'bold '+size+'px "DM Sans",sans-serif';
+        // Only show words that have started
+        var visWords = line.filter(function(w){ return now >= w.t; });
+        if(!visWords.length) return;
+
+        var lW = measLineW(ctx, visWords);
+        var x  = W/2 - lW/2;
+        var lY = startY + li*lineH;
+
+        visWords.forEach(function(wObj, wi){
+          var ww    = ctx.measureText(wObj.w).width;
+          var isNow = now >= wObj.t && now <= wObj.end+0.15;
+
+          ctx.save();
+          ctx.textAlign    = 'left'; ctx.textBaseline='middle';
+          ctx.font         = 'bold '+size+'px "DM Sans",sans-serif';
+          ctx.shadowColor  = 'rgba(0,0,0,0.9)'; ctx.shadowBlur=6;
+          ctx.fillStyle    = isNow ? '#00e5ff' : '#fff';
+          if(isNow){ ctx.shadowColor='#00e5ff'; ctx.shadowBlur=12; }
+          ctx.fillText(wObj.w, x, lY);
+          ctx.restore();
+
+          if(wi===visWords.length-1) lastShown={x:x+ww+4, y:lY};
+          x += ww + 10;
+        });
+      });
+
+      // Blinking cursor after last visible word
+      if(lastShown){
+        var blink = Math.sin(now*8) > 0;
+        if(blink){
+          ctx.fillStyle='#00e5ff';
+          ctx.fillRect(lastShown.x, lastShown.y-size/2, 2, size);
+        }
+      }
+    }
+  },
+
+  // 8. SHAKE & BOUNCE — words shake/bounce based on energy level
+  {
+    id:'bounce', name:'🎵 Shake & Bounce',
+    desc:'Words physically bounce and shake with energy. Like music lyrics on screen.',
+    tags:['Music','Energy','Fun'],
+    gradient:'linear-gradient(150deg,#0d0020,#1a0030)',
+    grade:'brightness(1.05) saturate(1.3) contrast(1.05)',
+    tint:'rgba(160,0,255,0.1)', tintMode:'soft-light',
+    vignette:0.5, letterbox:false, accent:'#d946ef',
+    render: function(ctx,W,H,d){
+      if(!d.words.length) return;
+      var now   = d.curTime;
+      var size  = d.dramatic ? 26 : 21;
+      var lines = groupLines(d.words, 3);
+      var lineH = size + 14;
+      var startY= H*0.80 - (lines.length*lineH)/2;
+
+      lines.forEach(function(line, li){
+        ctx.font = '800 '+size+'px "DM Sans",sans-serif';
+        var totalW = measLineW(ctx, line);
+        var x = W/2 - totalW/2;
+        var y = startY + li*lineH + lineH/2;
+
+        line.forEach(function(wObj, wi){
+          var ww    = ctx.measureText(wObj.w).width;
+          var isNow = now >= wObj.t && now <= wObj.end+0.18;
+          var isPast= now > wObj.end+0.18;
+          var age   = now - wObj.t;
+
+          // Bounce: sine wave offset when active
+          var bounce = isNow ? Math.sin(age*22)*5 : 0;
+          // Shake: random horizontal jitter for dramatic
+          var shake  = (isNow && d.dramatic) ? (Math.random()-0.5)*4 : 0;
+
+          ctx.save();
+          ctx.translate(x + ww/2 + shake, y + bounce);
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.font='800 '+size+'px "DM Sans",sans-serif';
+
+          if(isNow){
+            // Colourful cycling hue
+            var hue = (now*120 + wi*40) % 360;
+            var col = 'hsl('+hue+',100%,65%)';
+            ctx.shadowColor=col; ctx.shadowBlur=20;
+            ctx.fillStyle=col;
+            ctx.scale(1.12,1.12);
+          } else {
+            ctx.globalAlpha=isPast?0.55:0.22;
+            ctx.fillStyle='#fff';
+            ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=6;
+          }
+          ctx.fillText(wObj.w.toUpperCase(), 0, 0);
+          ctx.restore();
+          x += ww + 10;
+        });
+      });
+    }
   }
+
 ];
+
 
 // ─────────────────────────────────────────────────────────────────
 // 6 CAPTION RENDERERS
@@ -382,14 +790,15 @@ var gradeX = gradeC.getContext('2d');
 
     // Demo preview per style
     var demos={
-      viral:'<span style="background:#ff5c1a;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;margin:2px">YOUR</span><span style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;margin:2px">WORDS</span><span style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;margin:2px">HERE</span>',
-      cinematic:'<span style="color:#90caf9;font-size:13px;text-shadow:0 0 10px rgba(144,202,249,0.8)">YOUR</span> <span style="color:#fff;font-size:13px">WORDS</span> <span style="color:rgba(255,255,255,0.3);font-size:13px">HERE</span>',
-      hype:'<span style="font-family:Anton,sans-serif;font-size:36px;color:#f0c93a;-webkit-text-stroke:2px #000;letter-spacing:3px">WORDS</span>',
-      podcast:'<div style="background:rgba(8,6,20,0.9);padding:8px 16px;border-radius:6px;border-top:2px solid #f0c93a"><span style="color:rgba(255,255,255,0.3);font-size:12px;font-weight:700">YOUR </span><span style="color:#f0c93a;font-size:12px;font-weight:700;text-shadow:0 0 10px #f0c93a">WORDS </span><span style="color:rgba(255,255,255,0.18);font-size:12px;font-weight:700">HERE</span></div>',
-      neon:'<span style="color:rgba(192,132,252,0.4);font-size:13px;font-weight:700">YOUR </span><span style="color:#e040fb;font-size:13px;font-weight:700;text-shadow:0 0 14px #e040fb,0 0 6px #e040fb">WORDS </span><span style="color:rgba(192,132,252,0.18);font-size:13px;font-weight:700">HERE</span>',
-      split:'<div style="text-align:center"><div style="font-family:Syne,sans-serif;font-size:30px;font-weight:900;color:#fff;-webkit-text-stroke:1px #000">WORDS</div><div style="color:rgba(255,255,255,0.35);font-size:11px;margin-top:3px">your complete sentence here</div></div>'
-    };
-
+      fire:'<span style="background:#ff5c1a;color:#fff;padding:5px 12px;border-radius:7px;font-size:13px;font-weight:800;box-shadow:0 0 16px #ff5c1a">YOUR</span> <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.35);padding:5px 10px;border-radius:7px;font-size:12px;font-weight:700">WORDS</span> <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.2);padding:5px 10px;border-radius:7px;font-size:12px;font-weight:700">HERE</span>',
+      colourflip:'<span style="color:#fff;font-size:15px;font-weight:800;letter-spacing:1px">YOUR </span><span style="color:#f0c93a;font-size:15px;font-weight:800;letter-spacing:1px">WORDS </span><span style="color:rgba(255,255,255,0.3);font-size:14px;font-weight:800;letter-spacing:1px">HERE</span>',
+      cinematic:'<span style="color:#90caf9;font-size:13px;font-weight:500;text-shadow:0 0 12px rgba(144,202,249,0.9)">YOUR</span> <span style="color:#fff;font-size:13px;font-weight:500">WORDS</span> <span style="color:rgba(255,255,255,0.25);font-size:13px;font-weight:500">HERE</span>',
+      hype:'<span style="font-family:Anton,sans-serif;font-size:38px;color:#f0c93a;-webkit-text-stroke:2px #000;letter-spacing:3px;text-shadow:0 0 20px rgba(240,201,58,0.5)">WORDS</span>',
+      neonkaraoke:'<div style="background:rgba(5,0,15,0.95);padding:8px 16px;border-radius:6px;border-top:2px solid #e040fb"><span style="color:rgba(192,132,252,0.4);font-size:12px;font-weight:700">YOUR </span><span style="color:#f0c93a;font-size:12px;font-weight:700;text-shadow:0 0 12px #f0c93a">WORDS </span><span style="color:rgba(192,132,252,0.18);font-size:12px;font-weight:700">HERE</span></div>',
+      split:'<div style="text-align:center"><div style="font-family:Syne,sans-serif;font-size:30px;font-weight:900;color:#fff;-webkit-text-stroke:1px #000">WORDS</div><div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px">your sentence here</div></div>',
+      typewriter:'<span style="color:#00e5ff;font-size:13px;font-weight:700;text-shadow:0 0 10px #00e5ff">YOUR </span><span style="color:#fff;font-size:13px;font-weight:700">WORDS </span><span style="color:#00e5ff;font-size:13px;font-weight:700">|</span>',
+      bounce:'<span style="color:hsl(280,100%,65%);font-size:14px;font-weight:800;text-shadow:0 0 12px hsl(280,100%,65%)">YOUR </span><span style="color:hsl(320,100%,65%);font-size:16px;font-weight:800;text-shadow:0 0 14px hsl(320,100%,65%)">WORDS </span><span style="color:rgba(255,255,255,0.25);font-size:12px;font-weight:800">HERE</span>'
+    }
     card.innerHTML=
       '<div class="sc-demo" style="background:'+s.gradient+'">'+demos[s.id]+'<div class="sc-tick">✓</div></div>'
       +'<div class="sc-body"><div class="sc-name">'+s.name+'</div>'
