@@ -605,7 +605,7 @@ function submitTranscript(audioUrl){
   fetch(ASSEMBLY_SUBMIT, {
     method: 'POST',
     headers: { 'authorization': ASSEMBLY_KEY, 'content-type': 'application/json' },
-    body: JSON.stringify({ audio_url: audioUrl, speech_model: 'universal-2' })
+    body: JSON.stringify({ audio_url: audioUrl, speech_models: ['universal-2'] })
   })
   .then(function(r){ if(!r.ok) return r.json().then(function(e){ throw new Error('Transcript failed: '+(e.error||r.status)); }); return r.json(); })
   .then(function(data){
@@ -769,7 +769,7 @@ function drawFrame(){
   cvCtx.font = '11px "DM Sans",sans-serif';
   cvCtx.fillStyle = 'rgba(255,255,255,0.1)';
   cvCtx.textAlign = 'right'; cvCtx.textBaseline = 'bottom';
-  cvCtx.fillText('VELO STUDIO', W-10, H-8);
+  cvCtx.fillText('ImpactGrid', W-10, H-8);
   cvCtx.restore();
 
   if(isPlaying) rafId = requestAnimationFrame(drawFrame);
@@ -1380,7 +1380,7 @@ function doExport(){
     setTimeout(function(){
       cv.toBlob(function(blob){
         var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-        a.download='velo_'+activeStyle.id+'_'+exportFmt+'.png';
+        a.download='impactgrid_'+activeStyle.id+'_'+exportFmt+'.png';
         document.body.appendChild(a); a.click(); a.remove();
         bar.style.width='100%'; lbl.textContent='✓ Image saved!';
         document.getElementById('dlBtn').disabled=false; toast('✓ Image exported!');
@@ -1402,7 +1402,7 @@ function doExport(){
   rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
   rec.onstop=function(){
     var blob=new Blob(chunks,{type:mime}), a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download='velo_'+activeStyle.id+'_'+exportFmt+'.webm';
+    a.href=URL.createObjectURL(blob); a.download='impactgrid_'+activeStyle.id+'_'+exportFmt+'.webm';
     document.body.appendChild(a); a.click(); a.remove();
     bar.style.width='100%'; lbl.textContent='✓ Download started!';
     document.getElementById('dlBtn').disabled=false; toast('✓ Video exported!');
