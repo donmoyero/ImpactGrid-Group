@@ -83,26 +83,108 @@
             <span class="exp-title">Edit ready</span>
             <span class="exp-style" id="expStyle"></span>
           </div>
-          <div class="exp-stats" id="expStats"></div>
 
-          <div class="sec-label">Switch style instantly</div>
-          <div class="mini-styles" id="miniStyles"></div>
+          <!-- TABS -->
+          <div class="tabs">
+            <button class="tab active" onclick="switchTab(this,'tabCaptions')">💬 Captions</button>
+            <button class="tab" onclick="switchTab(this,'tabGrade')">🎨 Grade</button>
+            <button class="tab" onclick="switchTab(this,'tabText')">✏ Text</button>
+            <button class="tab" onclick="switchTab(this,'tabMusic')">🎵 Music</button>
+            <button class="tab" onclick="switchTab(this,'tabExport')">⬇ Export</button>
+          </div>
 
-          <div class="divider"></div>
-          <div class="sec-label">Export format</div>
-          <div class="fmt-row">
-            <button class="fmt active" data-f="reel"    onclick="setFmt(this)">📱 Reel / TikTok <small>9:16</small></button>
-            <button class="fmt"        data-f="youtube" onclick="setFmt(this)">▶ YouTube <small>16:9</small></button>
-            <button class="fmt"        data-f="square"  onclick="setFmt(this)">⬛ Square <small>1:1</small></button>
+          <!-- CAPTIONS TAB -->
+          <div class="tab-panel active" id="tabCaptions">
+            <div class="sec-label">Caption style</div>
+            <div class="caption-grid" id="miniStyles"></div>
           </div>
-          <button class="dl-btn" id="dlBtn" onclick="doExport()">⬇ Download</button>
-          <div id="expProg" style="display:none">
-            <div class="ep-track"><div class="ep-fill" id="epFill"></div></div>
-            <div class="ep-lbl" id="epLbl">Rendering…</div>
+
+          <!-- GRADE TAB -->
+          <div class="tab-panel" id="tabGrade">
+            <div class="sec-label">Colour grade</div>
+            <div class="grade-grid" id="gradeGrid"></div>
+            <div class="sec-label" style="margin-top:14px">Fine tune</div>
+            <div class="slider-row">
+              <label>Brightness</label>
+              <input type="range" min="70" max="140" value="100" id="slBright" oninput="updateGrade()">
+              <span id="slBrightVal">100</span>
+            </div>
+            <div class="slider-row">
+              <label>Contrast</label>
+              <input type="range" min="70" max="140" value="100" id="slContrast" oninput="updateGrade()">
+              <span id="slContrastVal">100</span>
+            </div>
+            <div class="slider-row">
+              <label>Saturation</label>
+              <input type="range" min="0" max="200" value="100" id="slSat" oninput="updateGrade()">
+              <span id="slSatVal">100</span>
+            </div>
+            <div class="slider-row">
+              <label>Warmth</label>
+              <input type="range" min="-30" max="30" value="0" id="slWarm" oninput="updateGrade()">
+              <span id="slWarmVal">0</span>
+            </div>
           </div>
-          <div class="divider"></div>
-          <button class="ghost-btn full" onclick="goTo('sDrop')">Upload new video</button>
-        </div>
+
+          <!-- TEXT OVERLAY TAB -->
+          <div class="tab-panel" id="tabText">
+            <div class="sec-label">Add text to video</div>
+            <p class="tab-hint">For silent videos, b-roll, or intros</p>
+            <input class="txt-input" id="overlayText" placeholder="Type your text…" maxlength="80">
+            <div class="sec-label" style="margin-top:12px">Position</div>
+            <div class="pos-grid">
+              <button class="pos-btn" data-pos="top"    onclick="setTextPos(this)">Top</button>
+              <button class="pos-btn active" data-pos="mid" onclick="setTextPos(this)">Middle</button>
+              <button class="pos-btn" data-pos="bot"    onclick="setTextPos(this)">Bottom</button>
+            </div>
+            <div class="sec-label" style="margin-top:12px">Style</div>
+            <div class="txtstyle-row" id="txtStyleRow"></div>
+            <div class="slider-row">
+              <label>Size</label>
+              <input type="range" min="16" max="72" value="32" id="slTxtSize" oninput="updateOverlayText()">
+              <span id="slTxtSizeVal">32</span>
+            </div>
+            <button class="ghost-btn full" style="margin-top:10px" onclick="clearOverlayText()">Clear text</button>
+          </div>
+
+          <!-- MUSIC TAB -->
+          <div class="tab-panel" id="tabMusic">
+            <div class="sec-label">Free tracks</div>
+            <p class="tab-hint">Royalty-free. Fades out at video end.</p>
+            <div class="music-list" id="musicList"></div>
+            <div class="divider"></div>
+            <div class="sec-label">Upload your music</div>
+            <label class="music-upload-btn">
+              <input type="file" id="musicFileIn" accept="audio/*" onchange="loadUserMusic(this)">
+              🎵 Choose audio file
+            </label>
+            <div id="userMusicName" class="user-music-name"></div>
+            <div class="slider-row" style="margin-top:12px">
+              <label>Music vol</label>
+              <input type="range" min="0" max="100" value="40" id="slMusicVol" oninput="updateMusicVol()">
+              <span id="slMusicVolVal">40%</span>
+            </div>
+          </div>
+
+          <!-- EXPORT TAB -->
+          <div class="tab-panel" id="tabExport">
+            <div class="sec-label">Format</div>
+            <div class="fmt-row">
+              <button class="fmt active" data-f="reel"    onclick="setFmt(this)">📱 Reel / TikTok <small>9:16</small></button>
+              <button class="fmt"        data-f="youtube" onclick="setFmt(this)">▶ YouTube <small>16:9</small></button>
+              <button class="fmt"        data-f="square"  onclick="setFmt(this)">⬛ Square <small>1:1</small></button>
+            </div>
+            <button class="dl-btn" id="dlBtn" onclick="doExport()">⬇ Download Video</button>
+            <div id="expProg" style="display:none">
+              <div class="ep-track"><div class="ep-fill" id="epFill"></div></div>
+              <div class="ep-lbl" id="epLbl">Rendering…</div>
+            </div>
+            <div class="divider"></div>
+            <div class="exp-stats" id="expStats"></div>
+            <button class="ghost-btn full" style="margin-top:8px" onclick="goTo('sDrop')">Upload new video</button>
+          </div>
+
+        </div><!-- /exp-card -->
       </div>
     </div>
   </div>
