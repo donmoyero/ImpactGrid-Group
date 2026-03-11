@@ -1309,3 +1309,369 @@ function toast(msg){
   el.textContent=msg; el.className='toast show';
   clearTimeout(_tt); _tt=setTimeout(function(){el.className='toast';},5000);
 }
+
+// ================================================================
+// TABS
+// ================================================================
+function switchTab(btn, panelId){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  btn.classList.add('active');
+  var el = document.getElementById(panelId);
+  if(el) el.classList.add('active');
+}
+
+// ================================================================
+// CAPTION STYLE BUTTONS (replaces mini-styles)
+// ================================================================
+(function buildCaptionStyleBtns(){
+  // Wait for DOM
+  setTimeout(function(){
+    var grid = document.getElementById('miniStyles');
+    if(!grid) return;
+    grid.innerHTML = '';
+    STYLES.forEach(function(s, si){
+      var btn = document.createElement('button');
+      btn.className = 'cap-style-btn' + (si===0?' active-style':'');
+      btn.dataset.sid = s.id;
+      // Inline preview using the demo HTML
+      var demos = {
+        fire:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:3px"><span style="background:#ff5c1a;color:#fff;padding:2px 6px;border-radius:4px;font-size:8px;font-weight:800">FIRE</span><span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);padding:2px 5px;border-radius:4px;font-size:8px;font-weight:700">WORD</span></div>',
+        colourflip:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:9px;font-weight:800">YOUR </span><span style="color:#f0c93a;font-size:9px;font-weight:800"> WORDS</span></div>',
+        cinematic:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;align-items:center;justify-content:center"><span style="color:#90caf9;font-size:9px;text-shadow:0 0 8px #90caf9">YOUR WORDS</span></div>',
+        hype:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;align-items:center;justify-content:center"><span style="font-family:Anton,sans-serif;font-size:18px;color:#f0c93a;-webkit-text-stroke:1px #000">HYPE</span></div>',
+        neonkaraoke:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px"><div style="background:rgba(5,0,15,0.95);padding:2px 8px;border-top:1px solid #e040fb;font-size:8px"><span style="color:#f0c93a;text-shadow:0 0 8px #f0c93a;font-weight:700">NEO</span><span style="color:rgba(192,132,252,0.4);font-weight:700">N</span></div></div>',
+        split:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px;font-weight:900;color:#fff;-webkit-text-stroke:0.5px #000">BIG</span><span style="font-size:7px;color:rgba(255,255,255,0.3)">small below</span></div>',
+        typewriter:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;align-items:center;justify-content:center"><span style="color:#00e5ff;font-size:9px;font-weight:700;text-shadow:0 0 8px #00e5ff">TYPE|</span></div>',
+        bounce:'<div style="background:'+s.gradient+';width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:2px"><span style="color:hsl(280,100%,65%);font-size:9px;font-weight:800">SH</span><span style="color:hsl(320,100%,65%);font-size:11px;font-weight:800">AK</span><span style="color:hsl(0,100%,65%);font-size:9px;font-weight:800">E</span></div>'
+      };
+      btn.innerHTML =
+        '<div class="csb-preview">'+(demos[s.id]||'')+'</div>'
+        +'<div class="csb-info">'
+          +'<div class="csb-name">'+s.name+'</div>'
+          +'<div class="csb-tag">'+s.tags[0]+'</div>'
+        +'</div>';
+      btn.onclick = function(){
+        activeStyle = s;
+        document.querySelectorAll('.cap-style-btn').forEach(function(x){x.classList.remove('active-style');});
+        btn.classList.add('active-style');
+        document.getElementById('styleBadge').textContent = s.name+' ✓';
+        if(!isPlaying) drawFrame();
+        toast('Caption style: '+s.name);
+      };
+      grid.appendChild(btn);
+    });
+  }, 500);
+})();
+
+// ================================================================
+// COLOUR GRADES
+// ================================================================
+var GRADES = [
+  {id:'none',   name:'Original', filter:'none',                                             bg:'linear-gradient(135deg,#333,#555)'},
+  {id:'warm',   name:'Warm',     filter:'brightness(1.05) saturate(1.3) sepia(0.15)',       bg:'linear-gradient(135deg,#3d1a00,#8b4500)'},
+  {id:'cold',   name:'Cold',     filter:'brightness(0.95) saturate(0.8) hue-rotate(180deg)',bg:'linear-gradient(135deg,#001233,#0a3d6e)'},
+  {id:'vivid',  name:'Vivid',    filter:'brightness(1.08) saturate(1.8) contrast(1.1)',     bg:'linear-gradient(135deg,#1a0030,#003d00)'},
+  {id:'noir',   name:'Noir',     filter:'grayscale(1) contrast(1.3) brightness(0.9)',       bg:'linear-gradient(135deg,#000,#333)'},
+  {id:'golden', name:'Golden',   filter:'brightness(1.1) saturate(1.2) sepia(0.35)',        bg:'linear-gradient(135deg,#2a1a00,#6b4a00)'},
+  {id:'moody',  name:'Moody',    filter:'brightness(0.82) saturate(0.75) contrast(1.15)',   bg:'linear-gradient(135deg,#0a0014,#140028)'},
+  {id:'sunset', name:'Sunset',   filter:'brightness(1.05) saturate(1.4) hue-rotate(-15deg)',bg:'linear-gradient(135deg,#3d0a00,#8b2000)'},
+  {id:'fresh',  name:'Fresh',    filter:'brightness(1.06) saturate(1.1) hue-rotate(10deg)', bg:'linear-gradient(135deg,#002200,#004400)'}
+];
+
+var activeGrade   = GRADES[0];
+var customFilter  = '';   // built from sliders
+
+(function buildGradeGrid(){
+  setTimeout(function(){
+    var grid = document.getElementById('gradeGrid');
+    if(!grid) return;
+    GRADES.forEach(function(g, gi){
+      var btn = document.createElement('div');
+      btn.className = 'grade-btn'+(gi===0?' active-grade':'');
+      btn.style.background = g.bg;
+      btn.textContent = g.name;
+      btn.onclick = function(){
+        activeGrade = g;
+        customFilter = '';
+        // Reset sliders
+        ['slBright','slContrast','slSat','slWarm'].forEach(function(id){
+          var el=document.getElementById(id); if(el) el.value=id==='slWarm'?0:100;
+        });
+        document.getElementById('slBrightVal').textContent='100';
+        document.getElementById('slContrastVal').textContent='100';
+        document.getElementById('slSatVal').textContent='100';
+        document.getElementById('slWarmVal').textContent='0';
+        document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active-grade');});
+        btn.classList.add('active-grade');
+        if(!isPlaying) drawFrame();
+        toast('Grade: '+g.name);
+      };
+      grid.appendChild(btn);
+    });
+  }, 500);
+})();
+
+function updateGrade(){
+  var br  = document.getElementById('slBright').value;
+  var co  = document.getElementById('slContrast').value;
+  var sa  = document.getElementById('slSat').value;
+  var wa  = parseInt(document.getElementById('slWarm').value);
+  document.getElementById('slBrightVal').textContent   = br;
+  document.getElementById('slContrastVal').textContent = co;
+  document.getElementById('slSatVal').textContent      = sa;
+  document.getElementById('slWarmVal').textContent     = wa;
+  // Combine into filter string
+  customFilter = 'brightness('+br/100+') contrast('+co/100+') saturate('+sa/100+')'
+    + (wa!==0 ? ' hue-rotate('+wa+'deg)' : '');
+  // Deselect grade preset
+  document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active-grade');});
+  if(!isPlaying) drawFrame();
+}
+
+function getCurrentFilter(){
+  if(customFilter) return customFilter;
+  if(activeGrade && activeGrade.filter !== 'none') return activeGrade.filter;
+  // Fall back to active style grade
+  return activeStyle.grade || 'none';
+}
+
+// ================================================================
+// TEXT OVERLAY
+// ================================================================
+var overlayTextVal  = '';
+var overlayPos      = 'mid';   // top / mid / bot
+var overlayTxtStyle = 'white'; // white / orange / gold / outline
+
+var TXT_STYLES = [
+  {id:'white',   label:'White',   color:'#ffffff', stroke:null,       font:'bold'},
+  {id:'orange',  label:'Orange',  color:'#ff5c1a', stroke:null,       font:'bold'},
+  {id:'gold',    label:'Gold',    color:'#f0c93a', stroke:null,       font:'bold'},
+  {id:'outline', label:'Outline', color:'#ffffff', stroke:'#000000',  font:'900'},
+  {id:'neon',    label:'Neon',    color:'#00e5ff', stroke:null,       font:'bold', glow:true}
+];
+
+(function buildTxtStyles(){
+  setTimeout(function(){
+    var row = document.getElementById('txtStyleRow');
+    if(!row) return;
+    TXT_STYLES.forEach(function(ts, i){
+      var b = document.createElement('button');
+      b.className = 'txts-btn'+(i===0?' active':'');
+      b.textContent = ts.label;
+      b.style.color = ts.color;
+      b.onclick = function(){
+        overlayTxtStyle = ts.id;
+        document.querySelectorAll('.txts-btn').forEach(function(x){x.classList.remove('active');});
+        b.classList.add('active');
+        if(!isPlaying) drawFrame();
+      };
+      row.appendChild(b);
+    });
+  }, 500);
+})();
+
+document.addEventListener('DOMContentLoaded', function(){
+  var inp = document.getElementById('overlayText');
+  if(inp) inp.oninput = function(){ overlayTextVal = this.value.trim(); if(!isPlaying) drawFrame(); };
+});
+setTimeout(function(){
+  var inp = document.getElementById('overlayText');
+  if(inp) inp.oninput = function(){ overlayTextVal = this.value.trim(); if(!isPlaying) drawFrame(); };
+},600);
+
+function setTextPos(btn){
+  overlayPos = btn.dataset.pos;
+  document.querySelectorAll('.pos-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  if(!isPlaying) drawFrame();
+}
+
+function updateOverlayText(){
+  document.getElementById('slTxtSizeVal').textContent = document.getElementById('slTxtSize').value;
+  if(!isPlaying) drawFrame();
+}
+
+function clearOverlayText(){
+  overlayTextVal = '';
+  var inp = document.getElementById('overlayText');
+  if(inp) inp.value = '';
+  if(!isPlaying) drawFrame();
+}
+
+function drawTextOverlay(ctx, W, H){
+  if(!overlayTextVal) return;
+  var size = parseInt(document.getElementById('slTxtSize').value) || 32;
+  var ts   = TXT_STYLES.find(function(t){return t.id===overlayTxtStyle;}) || TXT_STYLES[0];
+  var y    = overlayPos==='top' ? H*0.12 : overlayPos==='bot' ? H*0.88 : H*0.50;
+
+  ctx.save();
+  ctx.font = ts.font+' '+size+'px "DM Sans",sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+
+  if(ts.glow){
+    ctx.shadowColor = ts.color; ctx.shadowBlur = 20;
+  } else {
+    ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 8;
+  }
+
+  if(ts.stroke){
+    ctx.strokeStyle = ts.stroke; ctx.lineWidth = size*0.12; ctx.lineJoin='round';
+    ctx.strokeText(overlayTextVal, W/2, y);
+  }
+  ctx.fillStyle = ts.color;
+  ctx.fillText(overlayTextVal, W/2, y);
+  ctx.restore();
+}
+
+// ================================================================
+// MUSIC
+// ================================================================
+var FREE_TRACKS = [
+  {name:'Lo-Fi Chill',      vibe:'Calm · 90 BPM',    url:'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3'},
+  {name:'Epic Cinematic',   vibe:'Intense · 120 BPM', url:'https://cdn.pixabay.com/audio/2022/03/15/audio_d75ef65dbc.mp3'},
+  {name:'Upbeat Corporate', vibe:'Positive · 115 BPM',url:'https://cdn.pixabay.com/audio/2022/10/25/audio_946c1c7a09.mp3'},
+  {name:'Hip Hop Beat',     vibe:'Energy · 95 BPM',   url:'https://cdn.pixabay.com/audio/2023/02/28/audio_e5e5e5e5e5.mp3'},
+  {name:'Acoustic Vibe',    vibe:'Warm · 85 BPM',     url:'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c21.mp3'}
+];
+
+var musicAudio    = null;
+var musicVolume   = 0.40;
+var activeMusicUrl= null;
+
+(function buildMusicList(){
+  setTimeout(function(){
+    var list = document.getElementById('musicList');
+    if(!list) return;
+    FREE_TRACKS.forEach(function(t){
+      var item = document.createElement('div');
+      item.className = 'music-item';
+      item.innerHTML =
+        '<div class="mi-icon">🎵</div>'
+        +'<div class="mi-info"><div class="mi-name">'+t.name+'</div><div class="mi-meta">'+t.vibe+'</div></div>'
+        +'<div class="mi-play">▶</div>';
+      item.onclick = function(){
+        if(activeMusicUrl === t.url){
+          stopMusic();
+          item.classList.remove('playing');
+          item.querySelector('.mi-play').textContent='▶';
+          activeMusicUrl = null;
+        } else {
+          playMusic(t.url, item);
+        }
+      };
+      list.appendChild(item);
+    });
+  }, 500);
+})();
+
+function playMusic(url, itemEl){
+  stopMusic();
+  activeMusicUrl = url;
+  musicAudio = new Audio(url);
+  musicAudio.volume = musicVolume;
+  musicAudio.loop   = true;
+  musicAudio.play().catch(function(){});
+  // Update UI
+  document.querySelectorAll('.music-item').forEach(function(m){
+    m.classList.remove('playing');
+    m.querySelector('.mi-play').textContent='▶';
+  });
+  if(itemEl){
+    itemEl.classList.add('playing');
+    itemEl.querySelector('.mi-play').textContent='⏸';
+  }
+  toast('🎵 Playing: '+(itemEl?itemEl.querySelector('.mi-name').textContent:'track'));
+}
+
+function stopMusic(){
+  if(musicAudio){ musicAudio.pause(); musicAudio.src=''; musicAudio=null; }
+  activeMusicUrl = null;
+}
+
+function loadUserMusic(input){
+  var f = input.files[0];
+  if(!f) return;
+  var url = URL.createObjectURL(f);
+  var nameEl = document.getElementById('userMusicName');
+  if(nameEl) nameEl.textContent = '🎵 '+f.name;
+  playMusic(url, null);
+  toast('🎵 Loaded: '+f.name);
+}
+
+function updateMusicVol(){
+  var v = parseInt(document.getElementById('slMusicVol').value)/100;
+  musicVolume = v;
+  document.getElementById('slMusicVolVal').textContent = Math.round(v*100)+'%';
+  if(musicAudio) musicAudio.volume = v;
+}
+
+// ================================================================
+// PATCH drawFrame TO USE NEW GRADE + TEXT OVERLAY
+// ================================================================
+var _origDrawFrame = drawFrame;
+drawFrame = function(){
+  if(!vid.videoWidth){ rafId=requestAnimationFrame(drawFrame); return; }
+  var W=cv.width, H=cv.height, st=activeStyle;
+  if(gradeC.width!==W||gradeC.height!==H){gradeC.width=W;gradeC.height=H;}
+
+  cvCtx.clearRect(0,0,W,H);
+
+  // 1. Video + GRADE (now uses getCurrentFilter instead of st.grade)
+  var vw=vid.videoWidth,vh=vid.videoHeight;
+  var sc=Math.max(W/vw,H/vh);
+  var dw=vw*sc,dh=vh*sc;
+  gradeX.clearRect(0,0,W,H);
+  gradeX.filter = getCurrentFilter();
+  gradeX.drawImage(vid,(W-dw)/2,(H-dh)/2,dw,dh);
+  gradeX.filter = 'none';
+  cvCtx.drawImage(gradeC,0,0);
+
+  // 2. Style tint overlay
+  cvCtx.globalCompositeOperation = st.tintMode||'source-over';
+  cvCtx.fillStyle = st.tint||'transparent';
+  cvCtx.fillRect(0,0,W,H);
+  cvCtx.globalCompositeOperation = 'source-over';
+
+  // 3. Vignette
+  if(st.vignette>0){
+    var vg=cvCtx.createRadialGradient(W/2,H/2,H*0.12,W/2,H/2,H*0.88);
+    vg.addColorStop(0,'rgba(0,0,0,0)');
+    vg.addColorStop(1,'rgba(0,0,0,'+st.vignette+')');
+    cvCtx.fillStyle=vg; cvCtx.fillRect(0,0,W,H);
+  }
+
+  // 4. Letterbox
+  if(st.letterbox){
+    var bh=Math.round(H*0.082);
+    cvCtx.fillStyle='#000';
+    cvCtx.fillRect(0,0,W,bh);
+    cvCtx.fillRect(0,H-bh,W,bh);
+  }
+
+  // 5. Text overlay (user-added text)
+  drawTextOverlay(cvCtx, W, H);
+
+  // 6. Captions
+  var now=vid.currentTime;
+  var curSent=null;
+  for(var i=0;i<sentences.length;i++){
+    if(now>=sentences[i].t&&now<=sentences[i].end+0.4){curSent=sentences[i];break;}
+  }
+  if(curSent){
+    st.render(cvCtx,W,H,{
+      words:curSent.words, curTime:now, dramatic:curSent.dramatic
+    });
+  }
+
+  // 7. Watermark
+  cvCtx.save();
+  cvCtx.font='10px "DM Sans",sans-serif';
+  cvCtx.fillStyle='rgba(255,255,255,0.15)';
+  cvCtx.textAlign='right'; cvCtx.textBaseline='top';
+  cvCtx.fillText('ImpactGrid',W-10,10);
+  cvCtx.restore();
+
+  if(isPlaying) rafId=requestAnimationFrame(drawFrame);
+};
