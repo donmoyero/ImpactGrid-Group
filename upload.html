@@ -348,27 +348,64 @@
           <div class="ps-scroll">
             <div class="sec-label">PLATFORM</div>
             <div class="export-plats" id="exportPlatforms"></div>
+
+            <div class="sec-label mt">FORMAT</div>
+            <div class="fmt-toggle" id="fmtToggle">
+              <button class="fmt-btn active" data-fmt="mp4" onclick="setExportFormat(this)">
+                <span class="fmt-badge">🏆 BEST</span>MP4
+                <small>Works everywhere</small>
+              </button>
+              <button class="fmt-btn" data-fmt="webm" onclick="setExportFormat(this)">
+                WebM
+                <small>Faster export</small>
+              </button>
+              <button class="fmt-btn" data-fmt="gif" onclick="setExportFormat(this)">
+                GIF
+                <small>For previews</small>
+              </button>
+            </div>
+            <div class="mp4-note" id="mp4Note">
+              ✦ MP4 uses FFmpeg — converts in browser. Takes ~30s extra after recording.
+            </div>
+
             <div class="sec-label mt">QUALITY</div>
             <div class="quality-opts">
-              <label class="q-opt"><input type="radio" name="quality" value="web"><span>Web Fast (720p)</span></label>
-              <label class="q-opt"><input type="radio" name="quality" value="high" checked><span>HD (1080p)</span></label>
-              <label class="q-opt"><input type="radio" name="quality" value="ultra"><span>4K Ultra</span></label>
+              <label class="q-opt"><input type="radio" name="quality" value="web"><span>Web Fast · 720p · ~15MB/min</span></label>
+              <label class="q-opt"><input type="radio" name="quality" value="high" checked><span>HD · 1080p · ~40MB/min</span></label>
+              <label class="q-opt"><input type="radio" name="quality" value="ultra"><span>4K Ultra · ~120MB/min</span></label>
             </div>
+
+            <div class="sec-label mt">FPS</div>
+            <div class="fps-row" id="fpsRow">
+              <button class="fps-btn" data-fps="24" onclick="setFPS(this)">24fps<small>Film</small></button>
+              <button class="fps-btn active" data-fps="30" onclick="setFPS(this)">30fps<small>Standard</small></button>
+              <button class="fps-btn" data-fps="60" onclick="setFPS(this)">60fps<small>Smooth</small></button>
+            </div>
+
             <button class="export-btn" id="dlBtn" onclick="doExport()">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4 7l4 4 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 14h14" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-              Download
+              Export Video
             </button>
+
             <div id="expProg" style="display:none">
               <div class="ep-track"><div class="ep-fill" id="epFill"></div></div>
               <div class="ep-lbl" id="epLbl">Rendering…</div>
             </div>
             <div class="exp-info" id="expStats"></div>
+
             <div class="sec-label mt">QUICK SHARE</div>
-            <div class="share-hint">Export your video first, then upload directly:</div>
+            <div class="share-hint">Export first, then upload to:</div>
             <div class="share-row">
               <a class="share-lnk" href="https://www.tiktok.com/upload" target="_blank">📱 TikTok</a>
               <a class="share-lnk" href="https://www.instagram.com" target="_blank">📸 Instagram</a>
               <a class="share-lnk" href="https://studio.youtube.com" target="_blank">▶ YouTube</a>
+              <a class="share-lnk" href="https://www.linkedin.com/feed/" target="_blank">💼 LinkedIn</a>
+            </div>
+
+            <div class="sec-label mt">ALSO SAVE AS</div>
+            <div class="also-save-row">
+              <button class="also-btn" onclick="exportThumbnail()">🖼 Thumbnail PNG</button>
+              <button class="also-btn" onclick="exportGIF()">🎞 Preview GIF</button>
             </div>
           </div>
         </div>
@@ -381,6 +418,8 @@
 
 <div id="toast" class="toast"></div>
 <video id="masterVid" playsinline style="display:none"></video>
+<!-- FFmpeg.wasm for MP4 conversion -->
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <script src="upload.js"></script>
 </body>
 </html>
