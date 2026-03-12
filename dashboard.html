@@ -227,6 +227,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   var { data } = await c.auth.getSession();
   if (!data.session) { window.location.href = 'login.html'; return; }
   currentUser = data.session.user;
+
+  /* Redirect admin away from professional dashboard */
+  if (currentUser.email === 'Ogunmoyerodara@gmail.com') { window.location.href = 'admin.html'; return; }
+  var { data: profileCheck } = await c.from('profiles').select('role').eq('id', currentUser.id).single();
+  if (profileCheck && profileCheck.role === 'admin') { window.location.href = 'admin.html'; return; }
+  if (profileCheck && profileCheck.role === 'employer') { window.location.href = 'employer-dashboard.html'; return; }
   var meta = currentUser.user_metadata || {};
 
   /* Name / avatar */
