@@ -276,9 +276,25 @@
     }
     .ig-powered a { color: #2563eb; text-decoration: none; font-weight: 600; }
 
-    @media (max-width: 420px) {
-      #ig-chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 90px; }
-      #ig-bubble-btn { right: 16px; bottom: 20px; }
+    @media (max-width: 900px) {
+      /* Sit above the 62px bottom nav bar */
+      #ig-bubble-btn { right: 16px; bottom: 74px; }
+      #ig-chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 136px; max-height: 60vh; }
+    }
+    /* Hide button — mobile only */
+    #ig-hide-btn {
+      display: none;
+    }
+    @media (max-width: 900px) {
+      #ig-hide-btn {
+        display: flex; align-items: center; justify-content: center;
+        position: absolute; top: 10px; left: 10px;
+        width: 28px; height: 28px; border-radius: 50%;
+        background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.5); font-size: 14px; cursor: pointer;
+        transition: background 0.2s;
+      }
+      #ig-hide-btn:hover { background: rgba(255,77,109,0.2); color: #ff4d6d; }
     }
   `;
   document.head.appendChild(style);
@@ -299,6 +315,7 @@
 
     <!-- Chat panel -->
     <div id="ig-chat-panel" style="display:none;">
+      <button id="ig-hide-btn" onclick="igHideChat()" title="Hide chat">✕</button>
       <!-- Header -->
       <div class="ig-panel-header">
         <div class="ig-header-avatar">
@@ -427,6 +444,18 @@
   }, 2000);
 
   /* ── Send ── */
+  /* ── Hide chat + bubble on mobile ── */
+  window.igHideChat = function() {
+    var panel = document.getElementById('ig-chat-panel');
+    var btn   = document.getElementById('ig-bubble-btn');
+    if (panel) { panel.style.display = 'none'; panel.classList.remove('open'); }
+    if (btn)   { btn.classList.remove('open'); btn.style.display = 'none'; }
+    /* Show again after 60 seconds in case they want it back */
+    setTimeout(function() {
+      if (btn) btn.style.display = 'flex';
+    }, 60000);
+  };
+
   window.igSend = function() {
     var input = document.getElementById('ig-input');
     var msg   = (input ? input.value : '').trim();
