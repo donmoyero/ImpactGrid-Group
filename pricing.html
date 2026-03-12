@@ -1,103 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Pricing — ImpactGrid</title>
-<link rel="icon" href="favicon.ico"/><link rel="stylesheet" href="shared.css"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Available Jobs — ImpactGrid</title>
+<link rel="icon" href="favicon.ico"/>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-.page-hero{padding:100px 32px 60px;text-align:center;position:relative;overflow:hidden;}
-.page-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 30%,rgba(201,168,76,0.06),transparent);pointer-events:none;}
-.page-hero h1{font-size:clamp(36px,5vw,60px);font-weight:900;letter-spacing:-0.03em;margin-bottom:14px;position:relative;}
-.page-hero p{font-size:17px;color:var(--text2);max-width:480px;margin:0 auto;line-height:1.7;position:relative;}
-.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:0 auto;}
-.price-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:36px;position:relative;transition:all 0.3s;}
-.price-card.featured{border-color:var(--gold);background:linear-gradient(180deg,rgba(201,168,76,0.05),var(--card));}
-.price-card.featured::before{content:'Most Popular';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--ink);font-size:11px;font-weight:800;padding:4px 14px;border-radius:100px;white-space:nowrap;}
-.price-name{font-size:14px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;}
-.price-amount{font-size:40px;font-weight:900;letter-spacing:-0.03em;margin-bottom:4px;}
-.price-period{font-size:13px;color:var(--text3);}
-.price-divider{height:1px;background:var(--border);margin:24px 0;}
-.price-features{list-style:none;margin-bottom:28px;}
-.price-features li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--text2);padding:8px 0;border-bottom:1px solid var(--border);}
-.price-features li:last-child{border-bottom:none;}
-.price-features li::before{content:'✓';color:var(--gold);font-weight:800;flex-shrink:0;margin-top:1px;}
-.price-features li.na::before{content:'—';color:var(--text3);}
-.price-features li.na{color:var(--text3);}
-.price-btn{display:block;width:100%;padding:14px;text-align:center;border-radius:var(--r);font-weight:700;font-size:15px;transition:all 0.2s;cursor:pointer;border:none;}
-.price-btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--ink);}
-.price-btn-gold:hover{transform:translateY(-1px);box-shadow:var(--sh-gold);}
-.price-btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text);}
-.price-btn-outline:hover{border-color:var(--gold);color:var(--gold);}
-@media(max-width:900px){.pricing-grid{grid-template-columns:1fr;max-width:400px;}}
+.page-hero { padding:100px 32px 60px; text-align:center; position:relative; overflow:hidden; }
+.page-hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse 60% 50% at 50% 30%,rgba(201,168,76,0.06),transparent); pointer-events:none; }
+.page-hero h1 { font-size:clamp(36px,5vw,60px); font-weight:900; letter-spacing:-0.03em; margin-bottom:14px; position:relative; }
+.page-hero p { font-size:17px; color:var(--text2); max-width:520px; margin:0 auto; line-height:1.7; position:relative; }
+/* Filter bar */
+.filter-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:32px; }
+.filter-input { flex:1; min-width:200px; padding:11px 16px; background:var(--card); border:1px solid var(--border); border-radius:var(--r); font-size:14px; color:var(--text); font-family:inherit; }
+.filter-input:focus { outline:none; border-color:var(--gold-glow); }
+.filter-select { padding:11px 14px; background:var(--card); border:1px solid var(--border); border-radius:var(--r); font-size:14px; color:var(--text); font-family:inherit; cursor:pointer; }
+.filter-select:focus { outline:none; border-color:var(--gold-glow); }
+/* Job cards */
+.jobs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:20px; }
+.job-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:26px; transition:all 0.25s; display:flex; flex-direction:column; }
+.job-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+.job-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
+.job-title { font-size:17px; font-weight:800; letter-spacing:-0.01em; }
+.job-budget { font-size:14px; font-weight:700; color:var(--gold); white-space:nowrap; font-family:var(--fm,monospace); }
+.job-company { font-size:13px; color:var(--text2); margin-bottom:12px; }
+.job-desc { font-size:13.5px; color:var(--text2); line-height:1.65; flex:1; margin-bottom:16px; }
+.job-tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+.job-tag { font-size:11.5px; color:var(--text2); background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:6px; padding:4px 10px; }
+[data-theme="light"] .job-tag { background:rgba(0,0,0,0.04); }
+.job-apply-btn { display:block; width:100%; padding:12px; text-align:center; background:linear-gradient(135deg,var(--gold),var(--gold2)); color:var(--ink); font-weight:800; font-size:14px; border-radius:var(--r); text-decoration:none; transition:all 0.2s; border:none; cursor:pointer; font-family:inherit; margin-top:auto; }
+.job-apply-btn:hover { transform:translateY(-1px); box-shadow:var(--sh-gold,0 4px 20px rgba(201,168,76,0.35)); }
+/* Stats bar */
+.stats-band { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; padding:24px; background:var(--card); border:1px solid var(--border); border-radius:var(--r2); margin-bottom:36px; }
+.stats-band-item { text-align:center; }
+.stats-band-value { font-size:28px; font-weight:900; color:var(--gold); letter-spacing:-0.02em; }
+.stats-band-label { font-size:12px; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.06em; }
+/* Empty / loading */
+.empty-state { text-align:center; padding:72px 24px; color:var(--text3); }
+.empty-icon { font-size:48px; margin-bottom:16px; }
+.empty-title { font-size:18px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.empty-sub { font-size:14px; line-height:1.6; }
+/* CTA band */
+.jobs-cta { background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03)); border:1px solid rgba(201,168,76,0.18); border-radius:var(--r2); padding:40px; text-align:center; margin-top:48px; }
+.jobs-cta h3 { font-size:22px; font-weight:900; margin-bottom:10px; }
+.jobs-cta p  { font-size:14px; color:var(--text2); margin-bottom:24px; }
+.jobs-cta-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+@media(max-width:640px) { .jobs-grid { grid-template-columns:1fr; } .filter-bar { flex-direction:column; } .filter-input,.filter-select { width:100%; } }
 </style>
 </head>
 <body>
 <div id="nav-container"></div>
 <div class="page">
-<div class="page-hero">
-  <div class="page-hero-bg"></div>
-  <div class="label" style="justify-content:center;">Pricing</div>
-  <h1>Simple, Transparent Pricing</h1>
-  <p>Start free. Scale as you grow. No hidden fees, no surprise charges.</p>
-</div>
-<section class="section" style="padding-top:40px;">
-  <div class="pricing-grid">
-    <div class="price-card">
-      <div class="price-name">Starter</div>
-      <div class="price-amount">Free</div>
-      <div class="price-period">Forever</div>
-      <div class="price-divider"></div>
-      <ul class="price-features">
-        <li>Analytics dashboard access</li>
-        <li>Up to 3 months data</li>
-        <li>Dija AI (local mode)</li>
-        <li>Basic charts and reports</li>
-        <li>Network profile</li>
-        <li class="na">PDF report export</li>
-        <li class="na">Extended data history</li>
-        <li class="na">Creator Studio</li>
-      </ul>
-      <a href="join.html" class="price-btn price-btn-outline">Get Started Free</a>
-    </div>
-    <div class="price-card featured">
-      <div class="price-name">Professional</div>
-      <div class="price-amount">£8.99<span style="font-size:18px;font-weight:400;">/mo</span></div>
-      <div class="price-period">Billed monthly</div>
-      <div class="price-divider"></div>
-      <ul class="price-features">
-        <li>Everything in Starter</li>
-        <li>30 days data retention</li>
-        <li>Dija AI full access</li>
-        <li>PDF report export</li>
-        <li>Risk assessment</li>
-        <li>Revenue forecasting</li>
-        <li>Creator Studio access</li>
-        <li class="na">Consulting sessions</li>
-      </ul>
-      <a href="join.html" class="price-btn price-btn-gold">Start Professional →</a>
-    </div>
-    <div class="price-card">
-      <div class="price-name">Business</div>
-      <div class="price-amount">£24.99<span style="font-size:18px;font-weight:400;">/mo</span></div>
-      <div class="price-period">Billed monthly</div>
-      <div class="price-divider"></div>
-      <ul class="price-features">
-        <li>Everything in Professional</li>
-        <li>6 months data history</li>
-        <li>Priority Dija AI responses</li>
-        <li>Consulting session (monthly)</li>
-        <li>Custom reports</li>
-        <li>Team access (3 seats)</li>
-        <li>Full Network access</li>
-        <li>Priority support</li>
-      </ul>
-      <a href="mailto:hello@impactgridgroup.com" class="price-btn price-btn-outline">Contact Us</a>
-    </div>
+
+  <div class="page-hero">
+    <div class="page-hero-bg"></div>
+    <div class="label" style="justify-content:center;">ImpactGrid Network</div>
+    <h1>Available Jobs</h1>
+    <p>Live opportunities posted by employers on the ImpactGrid Network. Join as a professional to apply.</p>
   </div>
-</section>
+
+  <section class="section" style="padding-top:32px;">
+
+    <!-- Stats -->
+    <div class="stats-band" id="statsBand">
+      <div class="stats-band-item"><div class="stats-band-value" id="sTotal">—</div><div class="stats-band-label">Live Jobs</div></div>
+      <div class="stats-band-item"><div class="stats-band-value" id="sCompanies">—</div><div class="stats-band-label">Companies</div></div>
+      <div class="stats-band-item"><div class="stats-band-value" id="sNew">—</div><div class="stats-band-label">Added This Week</div></div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <input class="filter-input" id="searchInput" type="text" placeholder="🔍  Search by title, skill, or company…" oninput="filterJobs()"/>
+      <select class="filter-select" id="locationFilter" onchange="filterJobs()">
+        <option value="">All Locations</option>
+        <option value="remote">Remote</option>
+        <option value="london">London</option>
+        <option value="hybrid">Hybrid</option>
+      </select>
+    </div>
+
+    <!-- Jobs grid -->
+    <div id="jobsGrid">
+      <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading opportunities…</div></div>
+    </div>
+
+    <!-- CTA -->
+    <div class="jobs-cta">
+      <h3>Ready to Join the Network?</h3>
+      <p>Create your professional profile, get approved by ImpactGrid, and start applying to live opportunities.</p>
+      <div class="jobs-cta-btns">
+        <a href="join.html?type=professional" class="btn btn-gold" style="padding:12px 28px;font-size:14px;">Join as Professional →</a>
+        <a href="join.html?type=employer" class="btn btn-outline" style="padding:12px 28px;font-size:14px;">Post a Job as Employer</a>
+      </div>
+    </div>
+
+  </section>
+
+  <div id="footer-container"></div>
 </div>
-<div id="footer-container"></div>
+
 <script src="nav.js"></script>
-<script>renderNav('pricing.html');renderFooter();</script>
+<script src="supabase-config.js"></script>
+<script src="impactgrid-chat-bubble.js"></script>
+<script>
+renderNav('pricing.html');
+renderFooter();
+
+var allJobs = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    var c = getSupabase();
+    var { data: jobs } = await c.from('jobs').select('*').eq('status','active').order('created_at',{ascending:false});
+    allJobs = jobs || [];
+    renderStats();
+    renderJobs(allJobs);
+  } catch(e) {
+    document.getElementById('jobsGrid').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-title">Could not load jobs</div><div class="empty-sub">' + e.message + '</div></div>';
+  }
+});
+
+function renderStats() {
+  document.getElementById('sTotal').textContent = allJobs.length;
+  var companies = new Set(allJobs.map(function(j){ return j.company_name; }).filter(Boolean));
+  document.getElementById('sCompanies').textContent = companies.size;
+  var week = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  var recent = allJobs.filter(function(j){ return new Date(j.created_at).getTime() > week; });
+  document.getElementById('sNew').textContent = recent.length;
+}
+
+function filterJobs() {
+  var q = document.getElementById('searchInput').value.toLowerCase().trim();
+  var loc = document.getElementById('locationFilter').value.toLowerCase();
+  var filtered = allJobs.filter(function(j) {
+    var matchQ = !q ||
+      (j.title||'').toLowerCase().includes(q) ||
+      (j.company_name||'').toLowerCase().includes(q) ||
+      (j.skills||'').toLowerCase().includes(q) ||
+      (j.description||'').toLowerCase().includes(q);
+    var matchL = !loc || (j.location||'').toLowerCase().includes(loc);
+    return matchQ && matchL;
+  });
+  renderJobs(filtered);
+}
+
+function renderJobs(jobs) {
+  var el = document.getElementById('jobsGrid');
+  if (!jobs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No jobs found</div><div class="empty-sub">Try adjusting your search or check back soon — new jobs are posted regularly.</div></div>';
+    return;
+  }
+  el.innerHTML = '<div class="jobs-grid">' + jobs.map(function(j) {
+    var skills = (j.skills||'').split(',').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,4);
+    return '<div class="job-card">' +
+      '<div class="job-card-top">' +
+        '<div class="job-title">' + esc(j.title||'Opportunity') + '</div>' +
+        (j.budget ? '<div class="job-budget">' + esc(j.budget) + '</div>' : '') +
+      '</div>' +
+      '<div class="job-company">🏢 ' + esc(j.company_name||'ImpactGrid Employer') + (j.location ? ' &nbsp;·&nbsp; 📍 ' + esc(j.location) : '') + '</div>' +
+      (j.description ? '<div class="job-desc">' + esc(j.description.substring(0,160)) + (j.description.length > 160 ? '…' : '') + '</div>' : '') +
+      (skills.length ? '<div class="job-tags">' + skills.map(function(s){ return '<span class="job-tag">🏷 ' + esc(s) + '</span>'; }).join('') + (j.deadline ? '<span class="job-tag">📅 ' + esc(j.deadline) + '</span>' : '') + '</div>' : '') +
+      '<a href="join.html?type=professional" class="job-apply-btn">Apply Now →</a>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
 </body>
 </html>
