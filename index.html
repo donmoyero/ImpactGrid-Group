@@ -197,12 +197,11 @@ body::after {
    HERO — HALF EARTH + SLIDES ON TOP
 ══════════════════════════════════════════════ */
 .hero {
-  position: relative;
+  position: sticky;       /* sticks while content scrolls over it */
+  top: 0;
   height: 100vh;
   min-height: 600px;
   overflow: hidden;
-  /* Push content below nav + ticker */
-  padding-top: calc(var(--nav-h) + var(--tick-h));
 }
 
 /* Sky / space background that fills the top half */
@@ -236,88 +235,54 @@ body::after {
 
 /* Glowing atmosphere ring */
 .earth-aura {
-  position: absolute; inset: -20px;
+  position: absolute; inset: -24px;
   border-radius: 50%;
   background: radial-gradient(circle,
-    transparent 42%,
-    rgba(79,142,247,0.08) 52%,
-    rgba(79,142,247,0.18) 62%,
-    rgba(30,80,180,0.12) 72%,
-    transparent 85%);
+    transparent 44%,
+    rgba(79,142,247,0.07) 54%,
+    rgba(79,142,247,0.16) 64%,
+    rgba(30,80,180,0.10) 74%,
+    transparent 86%);
   pointer-events: none;
+  z-index: 2;
 }
 
-/* Earth globe itself */
+/* Earth globe — real image */
 .earth-globe {
   position: absolute; inset: 0;
   border-radius: 50%;
   overflow: hidden;
   box-shadow:
-    0 0 80px rgba(79,142,247,0.25),
-    0 0 200px rgba(79,142,247,0.10),
-    inset -50px -20px 100px rgba(0,0,30,0.7);
+    0 0 60px rgba(79,142,247,0.30),
+    0 0 140px rgba(79,142,247,0.12),
+    inset 0 0 40px rgba(0,0,30,0.4);
+  z-index: 1;
 }
 
-.earth-surface {
+/* Real Earth.png fills the globe */
+.earth-img {
   width: 100%; height: 100%;
+  object-fit: cover;
   border-radius: 50%;
-  /* CSS painted earth */
-  background:
-    /* clouds */
-    radial-gradient(ellipse 14% 5% at 38% 28%, rgba(255,255,255,0.18), transparent 70%),
-    radial-gradient(ellipse 10% 3% at 66% 18%, rgba(255,255,255,0.12), transparent 70%),
-    radial-gradient(ellipse 7%  3% at 20% 55%, rgba(255,255,255,0.09), transparent 70%),
-    radial-gradient(ellipse 8%  3% at 80% 40%, rgba(255,255,255,0.07), transparent 70%),
-    /* continents */
-    radial-gradient(ellipse 11% 14% at 28% 44%, #2d5a1b, #1a3d10 42%, transparent 68%),
-    radial-gradient(ellipse 15%  9% at 58% 54%, #1e4d15, #163d0e 42%, transparent 62%),
-    radial-gradient(ellipse  8% 11% at 72% 34%, #2a5218, transparent 62%),
-    radial-gradient(ellipse  9%  7% at 14% 34%, #3a6b20, transparent 60%),
-    radial-gradient(ellipse  6%  9% at 84% 64%, #1f4812, transparent 55%),
-    radial-gradient(ellipse  8%  6% at 48% 74%, #254e16, transparent 55%),
-    radial-gradient(ellipse 10%  7% at 40% 62%, #1d4510, transparent 58%),
-    radial-gradient(ellipse  7%  5% at 62% 70%, #2a5818, transparent 55%),
-    /* ice caps */
-    radial-gradient(ellipse 22%  5% at 50%  3%, rgba(200,220,255,0.45), transparent 70%),
-    radial-gradient(ellipse 18%  4% at 50% 97%, rgba(200,220,255,0.35), transparent 70%),
-    /* ocean */
-    linear-gradient(180deg, #0a2545, #0d3260 32%, #0f3d78 62%, #0a2545);
+  display: block;
+  /* very slow rotation */
+  animation: earthRotate 180s linear infinite;
 }
 
-/* Terminator shadow (dark side) */
-.earth-shadow {
+/* Overlay shading to make it look 3D / lit from upper-left */
+.earth-overlay {
   position: absolute; inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 72% 45%,
-    transparent 40%,
-    rgba(0,0,15,0.3) 55%,
-    rgba(0,0,15,0.7) 70%,
-    rgba(0,0,20,0.90) 100%);
+  background: radial-gradient(circle at 35% 35%,
+    rgba(255,255,255,0.06) 0%,
+    transparent 50%,
+    rgba(0,0,20,0.55) 100%);
   pointer-events: none;
 }
 
-/* City lights on dark side */
-.earth-lights {
-  position: absolute; inset: 0;
-  border-radius: 50%;
-  background:
-    radial-gradient(2px 2px at 72% 38%, rgba(255,220,100,0.6), transparent),
-    radial-gradient(2px 2px at 76% 42%, rgba(255,200,80,0.5),  transparent),
-    radial-gradient(1px 1px at 74% 46%, rgba(255,220,100,0.4), transparent),
-    radial-gradient(2px 2px at 80% 36%, rgba(255,180,60,0.5),  transparent),
-    radial-gradient(1px 1px at 82% 44%, rgba(255,200,80,0.3),  transparent),
-    radial-gradient(2px 2px at 68% 52%, rgba(255,220,100,0.4), transparent),
-    radial-gradient(1px 1px at 86% 50%, rgba(200,180,255,0.35),transparent);
-  mix-blend-mode: screen;
-  pointer-events: none;
-}
-
-/* Slow drift animation (subtle, not full spin) */
-.earth-surface { animation: earthDrift 120s linear infinite; }
-@keyframes earthDrift {
-  0%   { transform: translateX(0); }
-  50%  { transform: translateX(-3%); }
-  100% { transform: translateX(0); }
+@keyframes earthRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* ── SLIDES OVERLAY ── */
@@ -472,13 +437,20 @@ body::after {
   position: relative;
   z-index: 20;
   background: var(--bg);
-  margin-top: 20vh;   /* tight — content starts soon after slides */
+  margin-top: -30vh;      /* pulls content UP over the earth */
   border-radius: 28px 28px 0 0;
-  box-shadow: 0 -20px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 -20px 60px rgba(0,0,0,0.6);
   overflow: hidden;
 }
 [data-theme="light"] .page-content {
   box-shadow: 0 -20px 60px rgba(0,0,0,0.15);
+}
+/* Gradient that fades page-bg over the earth top edge — seamless overlap */
+.page-content::before {
+  content: '';
+  position: absolute; top: -60px; left: 0; right: 0; height: 80px;
+  background: linear-gradient(to bottom, transparent, var(--bg) 80%);
+  pointer-events: none; z-index: 1;
 }
 
 /* ══ BELOW-FOLD SECTIONS ══ */
@@ -662,18 +634,23 @@ body::after {
   <a href="login.html">Login</a><a href="join.html" class="mob-cta">Join ImpactGrid</a>
 </div>
 
+<!-- ══ HERO WRAPPER — sticky so page content scrolls over it ══ -->
+<div style="position:relative;z-index:1;">
+
 <!-- ══ HERO — EARTH + SLIDES ══ -->
 <section class="hero">
   <div class="hero-sky"></div>
   <div class="stars" id="stars"></div>
 
-  <!-- THE EARTH — half showing, bottom half cut off by page-content -->
+  <!-- THE EARTH — real Earth.png, half showing, page content scrolls over it -->
   <div class="earth-container">
     <div class="earth-aura"></div>
     <div class="earth-globe">
-      <div class="earth-surface"></div>
-      <div class="earth-shadow"></div>
-      <div class="earth-lights"></div>
+      <img class="earth-img" src="Earth.png" alt="Earth"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+      <!-- CSS fallback if Earth.png missing -->
+      <div style="display:none;width:100%;height:100%;border-radius:50%;background:linear-gradient(180deg,#0a2545,#0d3260 32%,#0f3d78 62%,#0a2545);"></div>
+      <div class="earth-overlay"></div>
     </div>
   </div>
 
@@ -766,6 +743,7 @@ body::after {
   </div>
 
 </section>
+</div><!-- /hero-wrapper -->
 
 <!-- ══ PAGE CONTENT — scrolls over the earth ══ -->
 <div class="page-content">
@@ -844,7 +822,7 @@ body::after {
           <p>Turning data into strategic advantage. Analytics, consulting, creator tools, and a professional network in one ecosystem.</p>
         </div>
         <div class="fc"><h4>Platform</h4><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="network.html">Network</a><a href="ai.html">Dijo AI</a></div>
-        <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="pricing.html">Pricing</a><a href="/cdn-cgi/l/email-protection#d1b9b4bdbdbe91b8bca1b0b2a5b6a3b8b5b6a3bea4a1ffb2bebc">Contact</a></div>
+        <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="pricing.html">Pricing</a><a href="mailto:hello@impactgridgroup.com">Contact</a></div>
         <div class="fc"><h4>Account</h4><a href="join.html">Join ImpactGrid</a><a href="login.html">Login</a><a href="dashboard.html">Dashboard</a></div>
       </div>
       <div class="footer-bot">
@@ -857,7 +835,7 @@ body::after {
 </div><!-- /page-content -->
 
 <!-- ══ CHAT BUBBLE — uses existing impactgrid-chat-bubble.js ══ -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="impactgrid-chat-bubble.js"></script>
+<script src="impactgrid-chat-bubble.js"></script>
 
 <!-- ══ SCRIPTS ══ -->
 <script>
@@ -943,4 +921,11 @@ var obs = new IntersectionObserver(function(entries) {
 }, { threshold: 0.12 });
 document.querySelectorAll('.anim').forEach(function(el) { obs.observe(el); });
 
-/* ── Keep-warm ping to Dijo server every
+/* ── Keep-warm ping to Dijo server every 10 min ── */
+setInterval(function() {
+  fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
+}, 600000);
+</script>
+
+</body>
+</html>
