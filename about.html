@@ -1,511 +1,72 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>About Us — ImpactGrid Platform</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>About — ImpactGrid Group</title>
 <link rel="icon" href="favicon.ico"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
 <style>
-:root{
-  --bg:#ffffff;--surf:#f7f5f0;--card:#ffffff;--b:#e8e4dc;--b2:#d4cfc5;
-  --tx:#0d0d0d;--dim:#666258;--dim2:#aaa49a;
-  --bl:#2a6dd9;--bl2:#1a52b0;--gr:#1a9e5a;
-  --gold:#b8860b;--gold2:#8a6208;--gold-bg:rgba(184,134,11,.08);--gold-bd:rgba(184,134,11,.28);
-  --sh:0 2px 14px rgba(0,0,0,.06);--sw:276px;--r:12px;
-}
-[data-theme="dark"]{
-  --bg:#0a0a0a;--surf:#111111;--card:#1a1a1a;--b:#2a2a2a;--b2:#333333;
-  --tx:#ffffff;--dim:#999999;--dim2:#555555;
-  --bl:#4a8ff5;--bl2:#2460d9;--gr:#1fd97a;
-  --gold:#d4a017;--gold2:#b8860b;--gold-bg:rgba(212,160,23,.1);--gold-bd:rgba(212,160,23,.3);
-  --sh:0 2px 14px rgba(0,0,0,.4);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
-a{color:inherit;text-decoration:none}
-
-/* SIDEBAR */
-#sb{position:fixed;left:0;top:0;width:var(--sw);height:100vh;background:var(--surf);border-right:1px solid var(--b);display:flex;flex-direction:column;z-index:200;transition:transform .35s cubic-bezier(.77,0,.18,1);overflow:hidden}
-.sb-head{padding:16px 18px 14px;border-bottom:1px solid var(--b);flex-shrink:0;display:flex;align-items:center;gap:11px}
-.sb-logo-img{height:32px;width:auto;display:block;flex-shrink:0}
-.sb-logo-fallback{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:900;font-size:.76rem;color:#fff;flex-shrink:0;display:none}
-.sb-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:.83rem;line-height:1.15;background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.sb-sub{font-size:.5rem;color:var(--dim);text-transform:uppercase;letter-spacing:2.5px;margin-top:2px;font-weight:500}
-.sb-scroll{flex:1;overflow-y:auto;padding:6px 0 4px;scrollbar-width:none}
-.sb-scroll::-webkit-scrollbar{display:none}
-.sb-nav-link{display:flex;align-items:center;gap:9px;padding:9px 16px;color:var(--dim);font-size:.78rem;font-weight:500;border-left:2px solid transparent;transition:all .15s}
-.sb-nav-link:hover,.sb-nav-link.on{color:var(--gold);border-left-color:var(--gold);background:var(--gold-bg)}
-.sb-nav-link.on{font-weight:600}
-.sb-nav-link svg{width:13px;height:13px;flex-shrink:0;opacity:.5}
-.sb-nav-link:hover svg,.sb-nav-link.on svg{opacity:1}
-.sb-grp{padding:14px 16px 5px;font-size:.52rem;text-transform:uppercase;letter-spacing:3px;color:var(--dim2);font-weight:700}
-.sb-sec-hd{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;color:var(--tx);font-size:.78rem;font-weight:600;font-family:'Syne',sans-serif;border-left:2px solid transparent;transition:all .15s;user-select:none}
-.sb-sec-hd:hover{color:var(--gold);background:var(--gold-bg)}
-.sb-sec-hd svg{width:13px;height:13px;flex-shrink:0;opacity:.55}
-.chev{margin-left:auto;width:11px;height:11px;opacity:.38;transition:transform .22s;flex-shrink:0}
-.sb-sec.open .chev{transform:rotate(90deg)}
-.sb-sec.open .sb-sec-hd{color:var(--gold);border-left-color:var(--gold)}
-.sb-sub-items{overflow:hidden;max-height:0;transition:max-height .3s cubic-bezier(.23,1,.32,1)}
-.sb-sec.open .sb-sub-items{max-height:700px}
-.si{display:flex;align-items:center;gap:8px;padding:5px 16px 5px 32px;color:var(--dim);font-size:.74rem;border-left:2px solid rgba(184,134,11,.15);margin-left:14px;transition:all .14s}
-.si:hover{color:var(--tx);border-left-color:var(--gold);background:var(--gold-bg)}
-.si.on{color:var(--gold);border-left-color:var(--gold);font-weight:500}
-.si svg{width:10px;height:10px;flex-shrink:0;opacity:.35}
-.si:hover svg,.si.on svg{opacity:.85}
-.si-badge{margin-left:auto;font-size:.44rem;font-weight:700;padding:2px 5px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
-.badge-new{background:rgba(26,158,90,.12);color:var(--gr);border:1px solid rgba(26,158,90,.2)}
-.badge-soon{background:var(--b);color:var(--dim2);border:1px solid var(--b2);opacity:.7}
-.badge-hot{background:rgba(184,134,11,.1);color:var(--gold);border:1px solid var(--gold-bd)}
-.badge-admin{background:rgba(232,82,15,.1);color:#e8520f;border:1px solid rgba(232,82,15,.2)}
-.si-disabled{display:flex;align-items:center;gap:8px;padding:5px 16px 5px 32px;color:var(--dim2);font-size:.74rem;border-left:2px solid rgba(184,134,11,.1);margin-left:14px;cursor:not-allowed;opacity:.5}
-.si-disabled svg{width:10px;height:10px;opacity:.25}
-.sb-foot{flex-shrink:0;border-top:1px solid var(--b);padding:10px 13px 12px}
-.sb-analysis-row{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;background:rgba(42,109,217,.05);border:1px solid rgba(42,109,217,.12);margin-bottom:8px;transition:border-color .2s;cursor:pointer}
-.sb-analysis-row:hover{border-color:rgba(42,109,217,.4)}
-.sb-an-icon{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--bl),var(--bl2));display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
-.sb-an-name{font-size:.72rem;font-weight:600;color:var(--tx)}
-.sb-an-arr{margin-left:auto;font-size:.7rem;color:var(--bl)}
-.sb-auth{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;border:1px solid var(--b2);cursor:pointer;font-size:.75rem;color:var(--dim);background:transparent;width:100%;font-family:'DM Sans',sans-serif;transition:all .2s}
-.sb-auth:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-bg)}
-.sb-auth svg{width:13px;height:13px;flex-shrink:0;opacity:.5}
-.sb-auth:hover svg{opacity:1}
-.sb-user-info{flex:1;text-align:left}
-.sb-user-name{font-size:.72rem;font-weight:600;color:var(--tx);display:block}
-.sb-user-role{font-size:.58rem;color:var(--dim)}
-
-/* TOPBAR */
-.topbar{position:sticky;top:0;height:52px;background:rgba(255,255,255,.93);backdrop-filter:blur(18px);border-bottom:1px solid var(--b);padding:0 28px;display:flex;align-items:center;justify-content:space-between;z-index:100;gap:10px;transition:background .3s}
-[data-theme="dark"] .topbar{background:rgba(10,10,10,.93)}
-.tb-l{display:flex;align-items:center;gap:10px}
-.tb-r{display:flex;align-items:center;gap:7px}
-.hbg{display:none;background:var(--surf);border:1px solid var(--b2);color:var(--tx);width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:1rem;align-items:center;justify-content:center}
-.tb-title{font-family:'Syne',sans-serif;font-weight:800;font-size:.88rem;color:var(--gold2)}
-.tbtn{width:32px;height:32px;border-radius:50%;background:var(--surf);border:1px solid var(--b2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .2s;flex-shrink:0}
-.tbtn:hover{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg)}
-.main{margin-left:var(--sw);min-height:100vh;transition:margin .35s}
-
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .18s;white-space:nowrap}
-.bp{color:#fff;background:linear-gradient(135deg,var(--gold),var(--gold2))}
-.bp:hover{background:linear-gradient(135deg,var(--gold2),#5a3a04);transform:translateY(-1px);box-shadow:0 4px 16px rgba(184,134,11,.3)}
-.bs{background:var(--card);border:1px solid var(--b2);color:var(--tx)}
-.bs:hover{border-color:var(--gold);color:var(--gold)}
-.sm{padding:5px 11px;font-size:.7rem}
-
-/* HERO */
-.hero{padding:52px 38px 44px;border-bottom:1px solid var(--b);position:relative;overflow:hidden}
-[data-theme="light"] .hero{background:linear-gradient(135deg,rgba(184,134,11,.06) 0%,transparent 55%),repeating-linear-gradient(-45deg,transparent,transparent 26px,rgba(184,134,11,.022) 26px,rgba(184,134,11,.022) 27px)}
-[data-theme="dark"] .hero{background:radial-gradient(ellipse at 80% 50%,rgba(212,160,23,.09) 0%,transparent 55%),repeating-linear-gradient(-45deg,transparent,transparent 26px,rgba(212,160,23,.015) 26px,rgba(212,160,23,.015) 27px)}
-.h-badge{display:inline-flex;align-items:center;gap:7px;background:var(--gold-bg);border:1px solid var(--gold-bd);color:var(--gold);font-size:.56rem;text-transform:uppercase;letter-spacing:2.5px;padding:4px 11px;border-radius:20px;margin-bottom:14px;font-weight:700}
-.h-badge::before{content:'●';font-size:.32rem;animation:bk 2s infinite}
-@keyframes bk{0%,100%{opacity:1}50%{opacity:.25}}
-.h-title{font-family:'Syne',sans-serif;font-size:clamp(1.9rem,3.5vw,3rem);font-weight:900;line-height:1.06;max-width:620px;margin-bottom:12px;letter-spacing:-.03em;background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.h-desc{font-size:.88rem;color:var(--dim);max-width:480px;margin-bottom:24px;line-height:1.78;font-weight:300}
-.h-acts{display:flex;gap:8px;flex-wrap:wrap}
-.h-stats{display:flex;gap:34px;margin-top:36px;padding-top:20px;border-top:1px solid var(--b);flex-wrap:wrap}
-.hst strong{display:block;font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:900;color:var(--gold);line-height:1}
-.hst span{font-size:.62rem;color:var(--dim);margin-top:2px;display:block;text-transform:uppercase;letter-spacing:1px}
-
-/* SECTIONS */
-.sec{padding:36px 38px}
-.sec+.sec{border-top:1px solid var(--b)}
-.sec-alt{background:var(--surf)}
-.slb{font-size:.52rem;text-transform:uppercase;letter-spacing:3px;color:var(--gold);font-weight:700;margin-bottom:5px}
-.stl{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:6px;letter-spacing:-.025em;color:var(--gold2)}
-.sdc{color:var(--dim);font-size:.84rem;max-width:490px;margin-bottom:20px;line-height:1.72;font-weight:300}
-.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
-
-/* VALUE CARDS */
-.val-card{padding:22px 20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r);box-shadow:var(--sh);transition:all .22s}
-.val-card:hover{border-color:var(--gold-bd);transform:translateY(-3px);box-shadow:0 10px 32px rgba(184,134,11,.1)}
-.val-icon{font-size:1.7rem;margin-bottom:10px}
-.val-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;color:var(--tx);margin-bottom:6px}
-.val-desc{font-size:.74rem;color:var(--dim);line-height:1.6}
-/* Sister platform card special */
-.val-card.sister{border-color:rgba(42,109,217,.2)}
-.val-card.sister:hover{border-color:rgba(42,109,217,.45)}
-.val-card.sister .val-title{color:var(--bl)}
-
-/* TEAM / STORY section */
-.story-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}
-.story-text p{font-size:.86rem;color:var(--dim);line-height:1.82;font-weight:300;margin-bottom:14px}
-.story-text p:last-child{margin-bottom:0}
-.story-visual{background:var(--surf);border:1px solid var(--b);border-radius:var(--r);padding:28px 24px;box-shadow:var(--sh)}
-.sv-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b)}
-.sv-row:last-child{border-bottom:none;padding-bottom:0}
-.sv-icon{width:36px;height:36px;border-radius:8px;background:var(--gold-bg);border:1px solid var(--gold-bd);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
-.sv-label{font-size:.78rem;font-weight:600;color:var(--tx);margin-bottom:2px}
-.sv-sub{font-size:.65rem;color:var(--dim)}
-.sv-val{margin-left:auto;font-family:'Syne',sans-serif;font-weight:900;font-size:1.1rem;color:var(--gold)}
-
-/* TIMELINE */
-.timeline{position:relative;padding-left:28px}
-.timeline::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:linear-gradient(to bottom,var(--gold-bd),transparent)}
-.tl-item{position:relative;margin-bottom:26px}
-.tl-item:last-child{margin-bottom:0}
-.tl-dot{position:absolute;left:-24px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--gold-bg);border:2px solid var(--gold-bd);transition:all .2s}
-.tl-item:hover .tl-dot{background:var(--gold);border-color:var(--gold)}
-.tl-year{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:3px}
-.tl-title{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:800;color:var(--tx);margin-bottom:4px}
-.tl-desc{font-size:.73rem;color:var(--dim);line-height:1.6}
-
-/* FOOTER */
-.ft{border-top:1px solid var(--b);padding:20px 38px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:var(--surf)}
-.ft-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:.82rem;background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.ft-links{display:flex;gap:12px;flex-wrap:wrap}
-.ft-links a{font-size:.69rem;color:var(--dim);transition:color .15s}
-.ft-links a:hover{color:var(--gold)}
-.ft-links .ext{color:var(--bl)}
-.ft-copy{font-size:.61rem;color:var(--dim2)}
-
-/* TOAST */
-.toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid var(--b2);border-radius:10px;padding:11px 15px;font-size:.77rem;z-index:9999;transform:translateY(70px);opacity:0;transition:all .3s;max-width:300px;pointer-events:none;box-shadow:var(--sh)}
-.toast.show{transform:translateY(0);opacity:1}
-.toast.ok{border-color:rgba(26,158,90,.4);color:var(--gr)}
-.toast.err{border-color:rgba(184,134,11,.4);color:var(--gold)}
-#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:199;backdrop-filter:blur(3px)}
-.rv{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
-.rv.in{opacity:1;transform:translateY(0)}
-
-@media(max-width:880px){
-  #sb{transform:translateX(-100%)}#sb.open{transform:translateX(0)}
-  .main{margin-left:0}.hbg{display:inline-flex}
-  .hero,.sec{padding-left:20px;padding-right:20px}
-  .topbar{padding:0 16px}.ft{padding:18px 20px}
-  .g2,.g3{grid-template-columns:1fr}
-  .story-grid{grid-template-columns:1fr}
-}
+.page-hero { padding:120px 32px 80px; text-align:center; position:relative; overflow:hidden; }
+.page-hero-bg { position:absolute;inset:0; background:radial-gradient(ellipse 60% 50% at 50% 30%, rgba(201,168,76,0.07),transparent); pointer-events:none; }
+.page-hero h1 { font-size:clamp(36px,5vw,64px); font-weight:900; letter-spacing:-0.03em; margin-bottom:16px; position:relative; }
+.page-hero p  { font-size:18px; color:var(--text2); max-width:560px; margin:0 auto; line-height:1.7; position:relative; }
+.vision-grid { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+.vision-text h2 { font-size:38px; font-weight:900; letter-spacing:-0.025em; margin-bottom:20px; }
+.vision-text p  { font-size:16px; color:var(--text2); line-height:1.75; }
+.mission-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:36px; }
+.mission-card h3 { font-size:22px; font-weight:800; margin-bottom:14px; }
+.mission-card p { font-size:15px; color:var(--text2); line-height:1.75; }
+.ecosystem-diagram { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+.eco-node { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:28px; text-align:center; transition:all 0.3s; }
+.eco-node:hover { border-color:var(--gold-glow); transform:translateY(-3px); }
+.eco-node-icon { font-size:32px; margin-bottom:12px; }
+.eco-node h4 { font-size:15px; font-weight:800; }
+@media (max-width:768px) { .vision-grid { grid-template-columns:1fr; } .ecosystem-diagram { grid-template-columns:1fr 1fr; } }
 </style>
 </head>
 <body>
-<div id="ov"></div>
+<div id="nav-container"></div>
+<div class="page">
 
-<aside id="sb">
-  <div class="sb-head">
-    <img src="logo.png" alt="ImpactGrid" class="sb-logo-img" id="sbLogoImg" onerror="this.style.display='none';document.getElementById('sbLogoFb').style.display='flex'"/>
-    <div class="sb-logo-fallback" id="sbLogoFb">IG</div>
-    <div>
-      <div class="sb-brand">ImpactGrid <span style="-webkit-text-fill-color:inherit;color:inherit;background:none">Platform</span></div>
-      <div class="sb-sub">Creator · Jobs · Workspace</div>
-    </div>
-  </div>
-  <div class="sb-scroll" id="sbNav"></div>
-  <div class="sb-foot">
-    <a href="https://impactgridanalytics.com/" target="_blank" rel="noopener" class="sb-analysis-row">
-      <div class="sb-an-icon">📊</div>
-      <div class="sb-an-name">ImpactGrid Analytics</div>
-      <span class="sb-an-arr">↗</span>
-    </a>
-    <button class="sb-auth" onclick="handleAuth()" id="authBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <div class="sb-user-info"><span class="sb-user-name" id="authName">Sign In</span><span class="sb-user-role" id="authRole">Access your account</span></div>
-      <svg id="authArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:.4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </button>
-  </div>
-</aside>
-
-<div class="main">
-  <div class="topbar">
-    <div class="tb-l">
-      <button class="hbg" onclick="openNav()">☰</button>
-      <span class="tb-title">About Us</span>
-    </div>
-    <div class="tb-r">
-      <a href="contact.html" class="btn bs sm">Get in Touch</a>
-      <a href="dashboard.html" class="btn bp sm">Dashboard →</a>
-      <button class="tbtn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-    </div>
-  </div>
-
-  <!-- HERO -->
-  <div class="hero rv">
-    <div class="h-badge">Our Story</div>
-    <h1 class="h-title">Built for businesses<br>that want to grow</h1>
-    <p class="h-desc">ImpactGrid was built with one mission: make world-class content creation, AI scheduling, and creator hiring accessible to every business — not just the ones with big marketing budgets.</p>
-    <div class="h-acts">
-      <a href="services.html" class="btn bp">View Services</a>
-      <a href="contact.html" class="btn bs">Get in Touch</a>
-    </div>
-    <div class="h-stats">
-      <div class="hst"><strong id="aVids">—</strong><span>Videos Processed</span></div>
-      <div class="hst"><strong id="aPieces">—</strong><span>Content Pieces</span></div>
-      <div class="hst"><strong>7+</strong><span>Platforms</span></div>
-      <div class="hst"><strong>MCR</strong><span>Manchester Based</span></div>
-    </div>
-  </div>
-
-  <!-- MISSION -->
-  <section class="sec rv">
-    <p class="slb">Our Mission</p>
-    <h2 class="stl">Every business deserves to be seen</h2>
-    <p class="sdc">Most businesses know they need to be on social media. They just don't have the time, budget, or skills to do it consistently. That's the gap we fill.</p>
-    <div class="g3">
-      <div class="val-card">
-        <div class="val-icon">🎯</div>
-        <div class="val-title">Results first</div>
-        <div class="val-desc">We measure success by what your content achieves — reach, engagement, leads. Vanity metrics don't feed businesses.</div>
-      </div>
-      <div class="val-card">
-        <div class="val-icon">🤝</div>
-        <div class="val-title">Honest partnership</div>
-        <div class="val-desc">We tell you what's working and what isn't. No fluff, no jargon — straight communication from real people.</div>
-      </div>
-      <div class="val-card">
-        <div class="val-icon">⚡</div>
-        <div class="val-title">Speed matters</div>
-        <div class="val-desc">Social media moves fast. So do we. Your content is ready within hours, not days. Our AI works around the clock.</div>
-      </div>
-      <div class="val-card">
-        <div class="val-icon">🌍</div>
-        <div class="val-title">Built for everyone</div>
-        <div class="val-desc">Whether you're a sole trader or a growing company — every module of this platform was built for you.</div>
-      </div>
-      <div class="val-card">
-        <div class="val-icon">🔬</div>
-        <div class="val-title">Always improving</div>
-        <div class="val-desc">Our AI learns, our creators evolve, and our platform updates constantly to keep your content ahead of the curve.</div>
-      </div>
-      <div class="val-card sister">
-        <div class="val-icon">📊</div>
-        <div class="val-title">Sister Platform</div>
-        <div class="val-desc">ImpactGrid Analytics tracks your reach, engagement and ROI across every platform. <a href="https://impactgridanalytics.com/" target="_blank" style="color:var(--bl);font-weight:500">Visit ↗</a></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- OUR STORY -->
-  <section class="sec sec-alt rv">
-    <p class="slb">Background</p>
-    <h2 class="stl">How ImpactGrid was built</h2>
-    <div class="story-grid" style="margin-top:6px">
-      <div class="story-text">
-        <p>ImpactGrid started with a simple observation: small and medium businesses in Manchester were being left behind when it came to social media content. The tools available were either too expensive, too complicated, or required teams of people to run them.</p>
-        <p>We set out to build a platform that combined everything — a professional video editor, an AI that plans your content schedule, a calendar to track it all, and a marketplace to hire creators — into one seamless system.</p>
-        <p>Today, ImpactGrid serves creators, agencies, and businesses across Greater Manchester and beyond. Our platform handles the entire creator workflow: from signing up and getting admin-approved, to editing videos, scheduling posts, and getting hired through the jobs marketplace.</p>
-        <p>We're a lean, passionate team based in Manchester. Everything we build, we test ourselves first.</p>
-      </div>
-      <div class="story-visual">
-        <div class="sv-row">
-          <div class="sv-icon">🏙️</div>
-          <div><div class="sv-label">Based in Manchester</div><div class="sv-sub">Greater Manchester, UK</div></div>
-          <div class="sv-val">MCR</div>
-        </div>
-        <div class="sv-row">
-          <div class="sv-icon">🎬</div>
-          <div><div class="sv-label">Videos Processed</div><div class="sv-sub">All time total</div></div>
-          <div class="sv-val" id="svVids">—</div>
-        </div>
-        <div class="sv-row">
-          <div class="sv-icon">🤖</div>
-          <div><div class="sv-label">AI Content Pieces</div><div class="sv-sub">Generated automatically</div></div>
-          <div class="sv-val" id="svPieces">—</div>
-        </div>
-        <div class="sv-row">
-          <div class="sv-icon">📱</div>
-          <div><div class="sv-label">Platforms Supported</div><div class="sv-sub">TikTok, Reels, YouTube & more</div></div>
-          <div class="sv-val">7+</div>
-        </div>
-        <div class="sv-row">
-          <div class="sv-icon">⚡</div>
-          <div><div class="sv-label">Avg. Turnaround</div><div class="sv-sub">From upload to schedule</div></div>
-          <div class="sv-val">48h</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- JOURNEY TIMELINE -->
-  <section class="sec rv">
-    <p class="slb">Our Journey</p>
-    <h2 class="stl">How we got here</h2>
-    <p class="sdc">From a simple idea to a full creator platform.</p>
-    <div class="timeline" style="margin-top:8px;max-width:540px">
-      <div class="tl-item">
-        <div class="tl-dot"></div>
-        <div class="tl-year">Founded</div>
-        <div class="tl-title">ImpactGrid Group launches</div>
-        <div class="tl-desc">Started with a clear vision: give every business the tools to compete on social media, regardless of budget or team size.</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot"></div>
-        <div class="tl-year">Creator Studio</div>
-        <div class="tl-title">Browser-based video editor</div>
-        <div class="tl-desc">Built the ImpactGrid Editor — a full video editing suite running entirely in the browser, with AI captions, music, effects and exports.</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot"></div>
-        <div class="tl-year">AI Planner</div>
-        <div class="tl-title">Automated content scheduling</div>
-        <div class="tl-desc">Launched the AI Content Planner — upload a video and get a full 30-day posting schedule across all platforms, automatically.</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot"></div>
-        <div class="tl-year">Platform</div>
-        <div class="tl-title">Full ImpactGrid Platform</div>
-        <div class="tl-desc">Combined the editor, planner, calendar, jobs marketplace and workspace into one unified creator platform — the most complete tool of its kind.</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot"></div>
-        <div class="tl-year">Next</div>
-        <div class="tl-title">Workspace, Profiles & More</div>
-        <div class="tl-desc">Building ImpactGrid Workspace, Creator Profiles, Analytics Dashboard, AI Script Generator and Brand Collaboration Hub — coming soon.</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- WHAT WE BUILD -->
-  <section class="sec sec-alt rv">
-    <p class="slb">The Platform</p>
-    <h2 class="stl">What ImpactGrid includes</h2>
-    <p class="sdc">Five core modules. One unified platform.</p>
-    <div class="g2" style="margin-top:4px">
-      <a href="upload.html" style="display:flex;align-items:flex-start;gap:14px;padding:20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r);box-shadow:var(--sh);transition:all .2s" onmouseover="this.style.borderColor='var(--gold-bd)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--b)';this.style.transform=''">
-        <div style="width:40px;height:40px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-bd);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">🎬</div>
-        <div><div style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:800;color:var(--tx);margin-bottom:3px">ImpactGrid Editor</div><div style="font-size:.72rem;color:var(--dim);line-height:1.55">Browser-based video editor with AI captions, effects, music, silence remover and multi-platform export.</div></div>
-      </a>
-      <a href="calendar.html" style="display:flex;align-items:flex-start;gap:14px;padding:20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r);box-shadow:var(--sh);transition:all .2s" onmouseover="this.style.borderColor='var(--gold-bd)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--b)';this.style.transform=''">
-        <div style="width:40px;height:40px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-bd);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">🤖</div>
-        <div><div style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:800;color:var(--tx);margin-bottom:3px">AI Content Planner</div><div style="font-size:.72rem;color:var(--dim);line-height:1.55">Upload a video and get a full posting schedule, captions, hashtags and platform recommendations — automatically.</div></div>
-      </a>
-      <a href="calendar.html" style="display:flex;align-items:flex-start;gap:14px;padding:20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r);box-shadow:var(--sh);transition:all .2s" onmouseover="this.style.borderColor='var(--gold-bd)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--b)';this.style.transform=''">
-        <div style="width:40px;height:40px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-bd);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">📅</div>
-        <div><div style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:800;color:var(--tx);margin-bottom:3px">Content Calendar</div><div style="font-size:.72rem;color:var(--dim);line-height:1.55">Drag-and-drop visual calendar for all scheduled posts with platform icons, reminders and campaign planning.</div></div>
-      </a>
-      <a href="creators.html" style="display:flex;align-items:flex-start;gap:14px;padding:20px;background:var(--card);border:1px solid var(--b);border-radius:var(--r);box-shadow:var(--sh);transition:all .2s" onmouseover="this.style.borderColor='var(--gold-bd)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--b)';this.style.transform=''">
-        <div style="width:40px;height:40px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-bd);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">💼</div>
-        <div><div style="font-family:'Syne',sans-serif;font-size:.84rem;font-weight:800;color:var(--tx);margin-bottom:3px">Jobs Marketplace</div><div style="font-size:.72rem;color:var(--dim);line-height:1.55">Companies post jobs. Creators apply. AI matches the best fit based on niche, style and engagement rate.</div></div>
-      </a>
-    </div>
-  </section>
-
-  <footer class="ft">
-    <div class="ft-brand">ImpactGrid Platform</div>
-    <div class="ft-links">
-      <a href="index.html">Home</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="upload.html">Editor</a>
-      <a href="services.html">Services</a>
-      <a href="creators.html">Creators</a>
-      <a href="contact.html">Contact</a>
-      <a href="https://impactgridanalytics.com/" target="_blank" class="ext">Analytics ↗</a>
-    </div>
-    <div class="ft-copy">© 2025 ImpactGrid Group · Manchester</div>
-  </footer>
+<div class="page-hero">
+  <div class="page-hero-bg"></div>
+  <div class="label" style="justify-content:center;">Our Story</div>
+  <h1>Building the Intelligence<br><span style="color:var(--gold);">Platform of the Future</span></h1>
+  <p>ImpactGrid was built with one belief: that data-driven intelligence should be accessible to every business, creator, and professional.</p>
 </div>
-<div id="toast" class="toast"></div>
+<div class="divider"></div>
 
-<script>
-var SUPA_URL='https://zoenpjjhzdzcodoqsxap.supabase.co';
-var SUPA_KEY='sb_publishable_DWdVt8DhlzgritPEsDCEow_N-Wy-V_I';
-var _PAGE='about.html';
+<section class="section">
+  <div class="vision-grid">
+    <div class="vision-text anim-fade-up">
+      <div class="label">Vision</div>
+      <h2>To build an intelligence platform that helps businesses and creators make smarter decisions through data and collaboration.</h2>
+    </div>
+    <div class="mission-card anim-fade-up delay-2">
+      <h3>Our Mission</h3>
+      <p>ImpactGrid combines consulting expertise, advanced analytics, creator tools, and a professional network to transform how organisations grow in the digital economy. We believe every business deserves the same intelligence infrastructure that enterprise companies take for granted.</p>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
 
-/* Theme */
-function applyTheme(t){document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=t==='dark'?'☀️':'🌙';try{localStorage.setItem('ig-theme',t);}catch(e){}}
-function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');}
-(function(){try{applyTheme(localStorage.getItem('ig-theme')||'light');}catch(e){applyTheme('light');}})();
+<section class="section">
+  <div style="text-align:center;margin-bottom:48px;">
+    <div class="label">The Ecosystem</div>
+    <h2 class="heading">Four Platforms. One Vision.</h2>
+  </div>
+  <div class="ecosystem-diagram" style="max-width:700px;margin:0 auto;">
+    <div class="eco-node"><div class="eco-node-icon">📊</div><h4>Consulting</h4><p style="font-size:13px;color:var(--text2);margin-top:6px;">Strategy and advisory</p></div>
+    <div class="eco-node"><div class="eco-node-icon">⚡</div><h4>Analytics</h4><p style="font-size:13px;color:var(--text2);margin-top:6px;">Data intelligence</p></div>
+    <div class="eco-node"><div class="eco-node-icon">🎬</div><h4>Creator Studio</h4><p style="font-size:13px;color:var(--text2);margin-top:6px;">Content tools</p></div>
+    <div class="eco-node"><div class="eco-node-icon">🌐</div><h4>Network</h4><p style="font-size:13px;color:var(--text2);margin-top:6px;">Talent ecosystem</p></div>
+  </div>
+</section>
 
-/* Sidebar */
-(function(){
-  var pg=_PAGE;
-  function ic(d){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0">'+d+'</svg>';}
-  var ch='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev" style="width:11px;height:11px"><polyline points="9 18 15 12 9 6"/></svg>';
-  var I={
-    db:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
-    home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
-    up:'<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
-    cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
-    clk:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
-    tnd:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
-    lib:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>',
-    robot:'<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/>',
-    chart:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
-    work:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>',
-    usr:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',
-    usrs:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-    bag:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>',
-    map:'<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>',
-    star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
-    cam:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
-    inf:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>',
-    mail:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
-    shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
-    set:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
-    help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
-  };
-  function navLink(href,icon,label,badge){
-    var on=pg===href?' on':'';
-    var bd=badge?'<span class="si-badge '+(badge==='new'?'badge-new':badge==='hot'?'badge-hot':badge==='admin'?'badge-admin':'badge-soon')+'">'+badge+'</span>':'';
-    return '<a href="'+href+'" class="sb-nav-link'+on+'">'+ic(icon)+label+bd+'</a>';
-  }
-  function grp(l){return '<div class="sb-grp">'+l+'</div>';}
-  function sec(id,icon,label,items,force){
-    var active=items.some(function(it){return it.href&&it.href===pg;});
-    var o=(active||force)?' open':'';
-    var html='<div class="sb-sec'+o+'" id="sec_'+id+'"><div class="sb-sec-hd" onclick="toggleSec(this)">'+ic(icon)+label+ch+'</div><div class="sb-sub-items">';
-    items.forEach(function(it){
-      if(it.disabled){html+='<div class="si-disabled">'+ic(it.ic)+it.label+'<span class="si-badge badge-soon">soon</span></div>';}
-      else{var on=it.href&&it.href===pg?' on':'';var bd=it.badge?'<span class="si-badge '+(it.badge==='new'?'badge-new':it.badge==='hot'?'badge-hot':it.badge==='admin'?'badge-admin':'badge-soon')+'">'+it.badge+'</span>':'';html+='<a href="'+(it.href||'#')+'" class="si'+on+'">'+ic(it.ic)+it.label+bd+'</a>';}
-    });
-    html+='</div></div>';return html;
-  }
-  var html='';
-  html+=navLink('index.html',I.home,'Group Home');
-  html+=navLink('dashboard.html',I.db,'Dashboard');
-  html+=grp('Creator Tools');
-  html+=sec('editor',I.up,'ImpactGrid Editor',[{href:'upload.html',ic:I.up,label:'Upload & Edit',badge:'new'},{href:'calendar.html',ic:I.cal,label:'Content Calendar'},{href:'schedule.html',ic:I.clk,label:'Posting Schedule'},{href:'trending.html',ic:I.tnd,label:'Trending Topics',badge:'hot'},{disabled:true,ic:I.lib,label:'Content Library'}]);
-  html+=sec('ai',I.robot,'AI Content Planner',[{href:'calendar.html',ic:I.robot,label:'AI Planner'},{href:'schedule.html',ic:I.clk,label:'Best Post Times'},{disabled:true,ic:I.chart,label:'Viral Score Predictor'},{disabled:true,ic:I.chart,label:'Analytics Dashboard'}]);
-  html+=grp('Workspace & Jobs');
-  html+=sec('workspace',I.work,'ImpactGrid Workspace',[{disabled:true,ic:I.work,label:'Employer Dashboard'},{disabled:true,ic:I.usrs,label:'Employee Profiles'},{disabled:true,ic:I.bag,label:'Projects & Tasks'}]);
-  html+=sec('jobs',I.bag,'Jobs Marketplace',[{href:'creators.html',ic:I.bag,label:'Browse Jobs'},{href:'creators.html',ic:I.usr,label:'Book a Creator'},{disabled:true,ic:I.usrs,label:'Creator Profiles'},{disabled:true,ic:I.bag,label:'My Applications'}]);
-  html+=grp('Services');
-  html+=sec('svc',I.star,'Services & Media',[{href:'photography.html',ic:I.cam,label:'Photography'},{href:'tracker.html',ic:I.map,label:'Live Tracker'},{href:'services.html',ic:I.star,label:'All Services'}]);
-  html+=grp('Company');
-  html+=sec('co',I.inf,'Company',[{href:'about.html',ic:I.inf,label:'About Us'},{href:'contact.html',ic:I.mail,label:'Contact & Support'}],true);
-  html+=grp('Admin');
-  html+=sec('admin',I.shield,'Admin Panel',[{disabled:true,ic:I.shield,label:'Account Approvals',badge:'admin'},{disabled:true,ic:I.usrs,label:'User Management',badge:'admin'},{disabled:true,ic:I.chart,label:'Platform Insights',badge:'admin'}]);
-  html+=navLink('contact.html',I.set,'Settings');
-  html+=navLink('contact.html',I.help,'Help & Support');
-  document.getElementById('sbNav').innerHTML=html;
-})();
-
-function toggleSec(el){el.closest('.sb-sec').classList.toggle('open');}
-function openNav(){document.getElementById('sb').classList.add('open');document.getElementById('ov').style.display='block';}
-function closeNav(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').style.display='none';}
-document.getElementById('ov').onclick=closeNav;
-
-/* Scroll reveal */
-var ro=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('in');});},{threshold:0.05});
-document.querySelectorAll('.rv').forEach(function(el){ro.observe(el);});
-
-/* Auth */
-var _user=null;
-try{var _us=localStorage.getItem('ig-user');if(_us)_user=JSON.parse(_us);}catch(e){}
-function updateAuthUI(){
-  var nm=document.getElementById('authName'),rl=document.getElementById('authRole'),arr=document.getElementById('authArrow');
-  if(_user){nm.textContent=_user.name||_user.email;rl.textContent='Click to sign out';if(arr)arr.style.display='none';}
-  else{nm.textContent='Sign In';rl.textContent='Access your account';if(arr)arr.style.display='';}
-}
-function handleAuth(){
-  if(_user){_user=null;try{localStorage.removeItem('ig-user');}catch(e){}updateAuthUI();}
-  else{window.location='dashboard.html';}
-}
-updateAuthUI();
-
-/* Supabase */
-async function sbSelect(t,q){
-  try{var r=await fetch(SUPA_URL+'/rest/v1/'+t+'?'+(q||'order=created_at.desc&limit=20'),{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});return r.ok?await r.json():[];}
-  catch(e){return[];}
-}
-sbSelect('videos','select=id&limit=1000').then(function(v){
-  var n=v?v.length:0;
-  ['aVids','svVids'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=n;});
-});
-sbSelect('content_pieces','select=id&limit=1000').then(function(p){
-  var n=p?p.length:0;
-  ['aPieces','svPieces'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=n;});
-});
-</script>
+</div>
+<div id="footer-container"></div>
+<script src="nav.js"></script>
+<script>renderNav('about.html'); renderFooter();</script>
 </body>
 </html>
