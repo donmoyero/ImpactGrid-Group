@@ -57,6 +57,7 @@ tr:hover td { background:rgba(255,255,255,0.015); }
 .pill-booked   { background:rgba(34,197,94,0.1); color:var(--green); }
 .empty-state { text-align:center; padding:48px 24px; color:var(--text3); font-size:14px; }
 .empty-icon  { font-size:36px; margin-bottom:12px; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .quick-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:24px; }
 .quick-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:20px; cursor:pointer; transition:all 0.25s; }
 .quick-card:hover { border-color:var(--gold-glow); transform:translateY(-2px); }
@@ -233,6 +234,7 @@ function showSection(id, el) {
   if (id === 'professionals') loadProfessionals();
   if (id === 'employers')     loadEmployers();
   if (id === 'jobs')          loadJobs();
+  if (id === 'postjob')       loadEditJobs();
   return false;
 }
 
@@ -424,6 +426,74 @@ async function igLogout() {
   await getSupabase().auth.signOut();
   window.location.href = 'index.html';
 }
+async function postJob() {
+  var title   = document.getElementById('j-title').value.trim();
+  var company = document.getElementById('j-company').value.trim();
+  var desc    = document.getElementById('j-desc').value.trim();
+  var alert   = document.getElementById('alertPostJob');
+  if (!title || !company || !desc) {
+    alert.textContent = 'Please fill in Title, Company and Description.';
+    alert.className = 'alert alert-error show'; return;
+  }
+  try {
+    var c = getSupabase();
+    var { data: sess } = await c.auth.getSession();
+    var { error } = await c.from('jobs').insert({
+      employer_id:  sess.session.user.id,
+      company_name: company,
+      title:        title,
+      description:  desc,
+      budget:       document.getElementById('j-budget').value.trim(),
+      location:     document.getElementById('j-location').value.trim(),
+      skills:       document.getElementById('j-skills').value.trim(),
+      deadline:     document.getElementById('j-deadline').value.trim(),
+      status:       'active',
+      created_at:   new Date().toISOString()
+    });
+    if (error) throw error;
+    alert.textContent = '✅ Job posted! Professionals can see it now.';
+    alert.className = 'alert alert-success show';
+    /* Clear form */
+    ['j-title','j-company','j-desc','j-budget','j-location','j-skills','j-deadline'].forEach(function(id){ document.getElementById(id).value=''; });
+    loadStats();
+    loadEditJobs();
+    setTimeout(function(){ alert.classList.remove('show'); }, 4000);
+  } catch(e) {
+    alert.textContent = 'Error: ' + e.message;
+    alert.className = 'alert alert-error show';
+  }
+}
+
+async function loadEditJobs() {
+  var el = document.getElementById('editJobsList');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    var c = getSupabase();
+    var { data } = await c.from('jobs').select('*').order('created_at',{ascending:false});
+    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No jobs yet — post one above.</div>'; return; }
+    el.innerHTML = data.map(function(j) {
+      var pc = {active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
+      return '<div style="background:var(--ink3,rgba(255,255,255,0.02));border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px;">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">' +
+          '<div>' +
+            '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">' + esc(j.title||'—') + '</div>' +
+            '<div style="font-size:13px;color:var(--text2);">🏢 ' + esc(j.company_name||'—') + (j.location?' · 📍 '+esc(j.location):'') + (j.budget?' · <span style="color:var(--gold);font-weight:700;">'+esc(j.budget)+'</span>':'') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+            '<span class="pill ' + pc + '">' + (j.status||'active') + '</span>' +
+            (j.status === 'active'
+              ? '<button class="act-btn pause-btn" onclick="toggleJob(\'' + j.id + '\',\'paused\')">⏸ Pause</button>'
+              : '<button class="act-btn approve-btn" onclick="toggleJob(\'' + j.id + '\',\'active\')">▶ Activate</button>') +
+            '<button class="act-btn del-btn" onclick="removeJob(\'' + j.id + '\')">✕</button>' +
+          '</div>' +
+        '</div>' +
+        (j.description ? '<div style="font-size:13px;color:var(--text2);margin-top:10px;line-height:1.5;">' + esc(j.description.substring(0,150)) + (j.description.length>150?'…':'') + '</div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e){ el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
