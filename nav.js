@@ -13,8 +13,8 @@
       { href: 'analytics.html',      label: 'Analytics' },
       { href: 'creator-studio.html', label: 'Creator Studio' },
       { href: 'network.html',        label: 'Network' },
-      { href: 'ai.html',             label: 'Dija AI' },
-      { href: 'pricing.html',        label: 'Pricing' },
+      { href: 'ai.html',             label: 'Dijo AI' },
+      { href: 'dashboard.html',      label: 'Available Jobs' },
     ];
 
     var linksHTML = links.map(function(l) {
@@ -56,6 +56,8 @@
           mob.classList.toggle('open');
         });
       }
+      /* Auto-detect logged-in state */
+      updateNavAuth();
     }, 0);
   }
 
@@ -116,18 +118,38 @@
     } catch(e) {}
 
     if (session) {
-      /* Swap join/login for dashboard link */
+      /* Desktop: swap Login + Join for Dashboard + Logout */
       var actions = document.querySelector('.nav-actions');
       if (actions) {
         actions.innerHTML =
-          '<a href="dashboard.html" class="btn btn-ghost" style="font-size:13.5px;">Dashboard</a>' +
-          '<button onclick="igLogout()" class="nav-login" style="border:1px solid var(--border2);">Logout</button>';
+          '<a href="dashboard.html" class="btn btn-ghost" style="font-size:13.5px;">My Dashboard</a>' +
+          '<button onclick="igLogout()" class="nav-login" style="border:1px solid var(--border2);cursor:pointer;">Logout</button>';
+      }
+      /* Mobile: hide login/join, add dashboard */
+      var mob = document.getElementById('mobileNav');
+      if (mob) {
+        mob.querySelectorAll('a').forEach(function(a) {
+          if (a.href && (a.href.indexOf('login.html') !== -1 || a.href.indexOf('join.html') !== -1)) {
+            a.style.display = 'none';
+          }
+        });
+        if (!mob.querySelector('[data-dash]')) {
+          var d = document.createElement('a');
+          d.href = 'dashboard.html';
+          d.setAttribute('data-dash','1');
+          d.textContent = 'My Dashboard';
+          d.style.cssText = 'color:var(--gold);font-weight:700;';
+          mob.insertBefore(d, mob.firstChild);
+        }
       }
     }
   }
 
   window.igLogout = async function() {
-    if (window.supabaseClient) await window.supabaseClient.auth.signOut();
+    try {
+      if (window.getSupabase) await getSupabase().auth.signOut();
+      else if (window.supabaseClient) await window.supabaseClient.auth.signOut();
+    } catch(e) {}
     window.location.href = 'index.html';
   };
 
