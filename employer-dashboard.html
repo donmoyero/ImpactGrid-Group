@@ -1,1 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Employer Dashboard — ImpactGrid</title>
+<link rel="icon" href="favicon.ico"/>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.dash-layout { display:grid; grid-template-columns:260px 1fr; min-height:100vh; padding-top:var(--nav-h); }
+.dash-sidebar { background:var(--ink2); border-right:1px solid var(--border); padding:32px 20px; position:sticky; top:var(--nav-h); height:calc(100vh - var(--nav-h)); overflow-y:auto; display:flex; flex-direction:column; }
+.dash-profile-mini { display:flex; align-items:center; gap:12px; padding:16px; background:var(--card); border:1px solid var(--border); border-radius:var(--r); margin-bottom:28px; }
+.dash-avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--blue2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:#fff; flex-shrink:0; }
+.dash-profile-name { font-size:14px; font-weight:700; }
+.dash-profile-role { font-size:12px; color:var(--text3); margin-top:2px; }
+.sidebar-nav-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; padding:0 8px; margin-bottom:8px; }
+.sidebar-nav a { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--r); font-size:14px; font-weight:500; color:var(--text2); transition:all 0.2s; margin-bottom:2px; }
+.sidebar-nav a:hover { background:var(--card); color:var(--text); }
+.sidebar-nav a.active { background:var(--blue-dim); color:var(--blue2); border:1px solid rgba(59,130,246,0.2); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.sidebar-spacer { flex:1; }
+.sidebar-logout { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--r); font-size:14px; font-weight:500; color:var(--text3); cursor:pointer; transition:all 0.2s; border:none; background:none; width:100%; }
+.sidebar-logout:hover { background:var(--red-dim); color:var(--red); }
+.dash-main { padding:40px; overflow-y:auto; }
+.dash-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:36px; }
+.dash-topbar h1 { font-size:26px; font-weight:900; letter-spacing:-0.02em; }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:36px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:24px; }
+.stat-label { font-size:12px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+.stat-value { font-size:32px; font-weight:900; letter-spacing:-0.03em; color:var(--blue2); }
+.stat-sub   { font-size:12px; color:var(--text2); margin-top:4px; }
+.dash-section { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:28px; margin-bottom:24px; display:none; }
+.dash-section.active { display:block; }
+.section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.section-head h2 { font-size:18px; font-weight:800; letter-spacing:-0.02em; }
 
+/* Job form */
+.job-post-form { max-width: 640px; }
+.post-btn { width:100%; padding:15px; background:linear-gradient(135deg,var(--blue),var(--blue2)); color:#fff; font-weight:800; font-size:16px; border-radius:var(--r); border:none; cursor:pointer; transition:all 0.2s; margin-top:8px; }
+.post-btn:hover { transform:translateY(-1px); box-shadow:0 0 30px rgba(59,130,246,0.3); }
+.post-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+/* Jobs table */
+.jobs-table { width:100%; border-collapse:collapse; }
+.jobs-table th { text-align:left; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; padding:10px 12px; border-bottom:1px solid var(--border); }
+.jobs-table td { padding:14px 12px; border-bottom:1px solid var(--border); font-size:14px; }
+.jobs-table tr:last-child td { border-bottom:none; }
+.jobs-table tr:hover td { background:rgba(255,255,255,0.02); }
+
+/* Professional cards */
+.pro-card { background:var(--ink3); border:1px solid var(--border); border-radius:var(--r); padding:20px; margin-bottom:14px; display:flex; gap:16px; align-items:flex-start; }
+.pro-avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--gold2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:var(--ink); flex-shrink:0; }
+.pro-name { font-size:15px; font-weight:700; }
+.pro-skills { font-size:12px; color:var(--text2); margin-top:4px; }
+.pro-location { font-size:12px; color:var(--text3); margin-top:2px; }
+.pro-status { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 8px; border-radius:100px; font-weight:600; }
+.contact-btn { margin-top:12px; padding:7px 16px; background:var(--blue-dim); border:1px solid rgba(59,130,246,0.2); border-radius:8px; color:var(--blue2); font-size:13px; font-weight:600; cursor:pointer; }
+.contact-btn:hover { background:var(--blue); color:#fff; }
+
+/* Search */
+.search-bar { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.search-bar .form-input { flex:1; min-width:200px; }
+.search-bar .form-select { width:160px; }
+
+.empty-state { text-align:center; padding:48px 24px; color:var(--text3); }
+.empty-icon { font-size:40px; margin-bottom:12px; }
+
+@media (max-width:900px) {
+  .dash-layout { grid-template-columns:1fr; }
+  .dash-sidebar { display:none; }
+  .dash-main { padding:24px 20px; }
+  .stats-row { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="nav-container"></div>
+<div class="dash-layout">
+
+  <aside class="dash-sidebar">
+    <div class="dash-profile-mini">
+      <div class="dash-avatar" id="avatarMini">E</div>
+      <div>
+        <div class="dash-profile-name" id="nameMini">Employer</div>
+        <div class="dash-profile-role" id="companyMini">Company</div>
+      </div>
+    </div>
+    <div class="sidebar-nav-label">Menu</div>
+    <nav class="sidebar-nav">
+      <a href="#" class="active" onclick="showSection('overview',this)"><span class="nav-icon">◈</span> Dashboard</a>
+      <a href="#" onclick="showSection('post-job',this)"><span class="nav-icon">➕</span> Post a Job</a>
+      <a href="#" onclick="showSection('talent',this)"><span class="nav-icon">🔍</span> Talent Search</a>
+      <a href="#" onclick="showSection('my-jobs',this)"><span class="nav-icon">📋</span> My Jobs</a>
+      <a href="#" onclick="showSection('messages',this)"><span class="nav-icon">💬</span> Messages</a>
+      <a href="https://impactgridanalytics.com" target="_blank"><span class="nav-icon">⚡</span> Analytics ↗</a>
+    </nav>
+    <div class="sidebar-spacer"></div>
+    <a href="index.html" style="display:flex;align-items:center;gap:10px;padding:11px 12px;font-size:13px;color:var(--text3);border-radius:var(--r);margin-bottom:4px;">← Back to Site</a>
+    <button class="sidebar-logout" onclick="igLogout()"><span>⎋</span> Sign Out</button>
+  </aside>
+
+  <main class="dash-main">
+
+    <!-- Overview -->
+    <div class="dash-section active" id="section-overview">
+      <div class="dash-topbar">
+        <div>
+          <h1>Employer Dashboard</h1>
+          <div style="font-size:14px;color:var(--text2);margin-top:4px;" id="welcomeDate"></div>
+        </div>
+        <button class="btn btn-gold" style="font-size:14px;padding:10px 20px;" onclick="showSection('post-job',null)">+ Post a Job</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Active Jobs</div>
+          <div class="stat-value" id="statJobs">0</div>
+          <div class="stat-sub">Currently posted</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Applications</div>
+          <div class="stat-value" id="statApps">0</div>
+          <div class="stat-sub">Total received</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Professionals</div>
+          <div class="stat-value" id="statPros">—</div>
+          <div class="stat-sub">In the network</div>
+        </div>
+      </div>
+      <div class="section-head"><h2>Recent Applications</h2></div>
+      <div id="recentApps">
+        <div class="empty-state">
+          <div class="empty-icon">📨</div>
+          <p>No applications yet. Post a job to start receiving applications from professionals.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Post Job -->
+    <div class="dash-section" id="section-post-job">
+      <div class="section-head"><h2>Post a Job</h2></div>
+      <div id="alertJobPost" class="alert"></div>
+      <div class="job-post-form">
+        <div class="form-group">
+          <label class="form-label">Job Title</label>
+          <input class="form-input" id="j-title" type="text" placeholder="e.g. Data Analyst, Marketing Manager"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="j-desc" style="min-height:140px;" placeholder="Describe the role, responsibilities, and what you are looking for…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Skills Required</label>
+          <input class="form-input" id="j-skills" type="text" placeholder="e.g. Python, Data Analysis, Google Analytics"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Budget</label>
+            <input class="form-input" id="j-budget" type="text" placeholder="e.g. £500–£1,000"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deadline</label>
+            <input class="form-input" id="j-deadline" type="date"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <select class="form-select" id="j-location">
+            <option value="remote">Remote</option>
+            <option value="london">London</option>
+            <option value="manchester">Manchester</option>
+            <option value="birmingham">Birmingham</option>
+            <option value="uk">Anywhere in UK</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <button class="post-btn" id="postJobBtn" onclick="postJob()">Post Job →</button>
+      </div>
+    </div>
+
+    <!-- Talent Search -->
+    <div class="dash-section" id="section-talent">
+      <div class="section-head"><h2>Talent Search</h2></div>
+      <div class="search-bar">
+        <input class="form-input" id="search-skill" type="text" placeholder="Search by skill or name…" oninput="searchTalent()"/>
+        <select class="form-select" id="search-location" onchange="searchTalent()">
+          <option value="">All locations</option>
+          <option value="london">London</option>
+          <option value="manchester">Manchester</option>
+          <option value="remote">Remote</option>
+        </select>
+        <select class="form-select" id="search-exp" onchange="searchTalent()">
+          <option value="">All experience</option>
+          <option value="entry">Entry Level</option>
+          <option value="mid">Mid Level</option>
+          <option value="senior">Senior</option>
+        </select>
+      </div>
+      <div id="talentList">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <p>Loading professionals…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Jobs -->
+    <div class="dash-section" id="section-my-jobs">
+      <div class="section-head"><h2>My Posted Jobs</h2></div>
+      <div id="myJobsList">
+        <div class="empty-state"><div class="empty-icon">📋</div><p>No jobs posted yet.</p></div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="dash-section" id="section-messages">
+      <div class="section-head"><h2>Messages</h2></div>
+      <div class="empty-state"><div class="empty-icon">💬</div><p>No messages yet.</p></div>
+    </div>
+
+  </main>
+</div>
+
+<script src="nav.js"></script>
+<script src="supabase-config.js"></script>
+<script>
+renderNav('');
+var currentUser = null;
+
+document.addEventListener('DOMContentLoaded', async function() {
+  var client = getSupabase();
+  var { data } = await client.auth.getSession();
+  if (!data.session) { window.location.href = 'login.html'; return; }
+  currentUser = data.session.user;
+  var meta = currentUser.user_metadata || {};
+  document.getElementById('avatarMini').textContent = (meta.full_name || 'E')[0].toUpperCase();
+  document.getElementById('nameMini').textContent = meta.full_name || 'Employer';
+  document.getElementById('companyMini').textContent = meta.company_name || 'Company';
+  document.getElementById('welcomeDate').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  loadStats();
+  loadTalent();
+  loadMyJobs();
+});
+
+function showSection(id, el) {
+  document.querySelectorAll('.dash-section').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.sidebar-nav a').forEach(function(a) { a.classList.remove('active'); });
+  var sec = document.getElementById('section-' + id);
+  if (sec) sec.classList.add('active');
+  if (el) el.classList.add('active');
+  return false;
+}
+
+async function loadStats() {
+  try {
+    var client = getSupabase();
+    var { data: jobs } = await client.from('jobs').select('id').eq('employer_id', currentUser.id).eq('status', 'active');
+    document.getElementById('statJobs').textContent = (jobs || []).length;
+    var { data: pros } = await client.from('profiles').select('id').eq('role', 'professional').eq('status', 'active');
+    document.getElementById('statPros').textContent = (pros || []).length;
+  } catch(e) {}
+}
+
+async function loadTalent(filters) {
+  try {
+    var client = getSupabase();
+    var query = client.from('profiles').select('*').eq('role', 'professional').eq('status', 'active');
+    var { data } = await query;
+    if (!data || !data.length) {
+      document.getElementById('talentList').innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div><p>No approved professionals yet. Check back soon.</p></div>';
+      return;
+    }
+    var html = data.map(function(p) {
+      return '<div class="pro-card">' +
+        '<div class="pro-avatar">' + (p.full_name || 'P')[0].toUpperCase() + '</div>' +
+        '<div style="flex:1;">' +
+          '<div class="pro-name">' + (p.full_name || 'Professional') + '</div>' +
+          '<div class="pro-skills">' + (p.skills || 'Skills not listed') + '</div>' +
+          '<div class="pro-location">📍 ' + (p.location || 'Location not set') + '</div>' +
+          (p.experience ? '<div class="pro-skills" style="margin-top:4px;">Experience: ' + p.experience + '</div>' : '') +
+          (p.portfolio_url ? '<a href="' + p.portfolio_url + '" target="_blank" style="font-size:12px;color:var(--blue2);margin-top:4px;display:block;">View Portfolio →</a>' : '') +
+          '<button class="contact-btn" onclick="alert(\'Messaging feature coming soon.\')">Contact</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('talentList').innerHTML = html;
+  } catch(e) {}
+}
+
+function searchTalent() {
+  loadTalent();
+}
+
+async function postJob() {
+  var btn = document.getElementById('postJobBtn');
+  var title = document.getElementById('j-title').value.trim();
+  var desc = document.getElementById('j-desc').value.trim();
+  var skills = document.getElementById('j-skills').value.trim();
+  var budget = document.getElementById('j-budget').value.trim();
+  var deadline = document.getElementById('j-deadline').value;
+  var location = document.getElementById('j-location').value;
+
+  if (!title || !desc) {
+    var el = document.getElementById('alertJobPost');
+    el.textContent = 'Please fill in the job title and description.';
+    el.className = 'alert alert-error show'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Posting…';
+
+  try {
+    var client = getSupabase();
+    var meta = currentUser.user_metadata || {};
+    await client.from('jobs').insert({
+      employer_id: currentUser.id,
+      company_name: meta.company_name || 'Employer',
+      title: title, description: desc, skills: skills,
+      budget: budget, deadline: deadline, location: location,
+      status: 'active',
+      created_at: new Date().toISOString(),
+    });
+    var el = document.getElementById('alertJobPost');
+    el.textContent = 'Job posted successfully!';
+    el.className = 'alert alert-success show';
+    btn.textContent = 'Job Posted ✓';
+    loadStats(); loadMyJobs();
+  } catch(e) {
+    var el = document.getElementById('alertJobPost');
+    el.textContent = 'Failed to post job: ' + e.message;
+    el.className = 'alert alert-error show';
+    btn.disabled = false; btn.textContent = 'Post Job →';
+  }
+}
+
+async function loadMyJobs() {
+  try {
+    var client = getSupabase();
+    var { data } = await client.from('jobs').select('*').eq('employer_id', currentUser.id).order('created_at', { ascending: false });
+    if (!data || !data.length) return;
+    var html = '<table class="jobs-table"><thead><tr><th>Title</th><th>Budget</th><th>Location</th><th>Status</th><th>Posted</th></tr></thead><tbody>' +
+      data.map(function(j) {
+        return '<tr><td style="font-weight:600;">' + j.title + '</td><td>' + (j.budget || '—') + '</td><td>' + (j.location || '—') + '</td>' +
+          '<td><span class="chip" style="font-size:11px;">' + (j.status || 'active') + '</span></td>' +
+          '<td style="color:var(--text3);">' + new Date(j.created_at).toLocaleDateString('en-GB') + '</td></tr>';
+      }).join('') +
+    '</tbody></table>';
+    document.getElementById('myJobsList').innerHTML = html;
+    document.getElementById('statJobs').textContent = data.filter(function(j) { return j.status === 'active'; }).length;
+  } catch(e) {}
+}
+</script>
+</body>
+</html>
