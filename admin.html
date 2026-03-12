@@ -3,49 +3,72 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Admin — ImpactGrid</title>
+<title>Admin Panel — ImpactGrid</title>
 <link rel="icon" href="favicon.ico"/>
 <link rel="stylesheet" href="shared.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-.dash-layout { display:grid; grid-template-columns:240px 1fr; min-height:100vh; padding-top:var(--nav-h); }
-.dash-sidebar { background:var(--ink2); border-right:1px solid var(--border); padding:28px 16px; position:sticky; top:var(--nav-h); height:calc(100vh - var(--nav-h)); overflow-y:auto; display:flex; flex-direction:column; }
-.sidebar-nav-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; padding:0 8px; margin-bottom:8px; margin-top:16px; }
-.sidebar-nav a { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--r); font-size:14px; font-weight:500; color:var(--text2); transition:all 0.2s; margin-bottom:2px; }
+.dash-layout { display:grid; grid-template-columns:250px 1fr; min-height:100vh; padding-top:var(--nav-h); }
+.dash-sidebar { background:var(--ink2); border-right:1px solid var(--border); padding:24px 16px; position:sticky; top:var(--nav-h); height:calc(100vh - var(--nav-h)); overflow-y:auto; display:flex; flex-direction:column; }
+.admin-brand { display:flex; align-items:center; gap:10px; padding:14px 12px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.18); border-radius:var(--r); margin-bottom:24px; }
+.admin-brand-icon { width:34px; height:34px; border-radius:8px; background:rgba(239,68,68,0.15); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.admin-brand-name { font-size:13px; font-weight:800; color:#fca5a5; }
+.admin-brand-sub  { font-size:11px; color:rgba(252,165,165,0.6); margin-top:1px; }
+.sidebar-section-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; padding:0 8px; margin-bottom:6px; margin-top:18px; }
+.sidebar-nav a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); font-size:13.5px; font-weight:500; color:var(--text2); transition:all 0.2s; margin-bottom:2px; text-decoration:none; }
 .sidebar-nav a:hover { background:var(--card); color:var(--text); }
-.sidebar-nav a.active { background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); }
-.nav-icon { font-size:16px; width:20px; text-align:center; }
+.sidebar-nav a.active { background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.18); }
+.nav-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
+.nav-badge { margin-left:auto; background:rgba(239,68,68,0.2); color:#fca5a5; font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; }
 .sidebar-spacer { flex:1; }
-.sidebar-logout { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--r); font-size:14px; font-weight:500; color:var(--text3); cursor:pointer; transition:all 0.2s; border:none; background:none; width:100%; }
+.sidebar-logout { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); font-size:13.5px; font-weight:500; color:var(--text3); cursor:pointer; transition:all 0.2s; border:none; background:none; width:100%; font-family:inherit; }
 .sidebar-logout:hover { background:var(--red-dim); color:var(--red); }
-.dash-main { padding:40px; }
-.admin-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:100px; font-size:11px; font-weight:700; color:#fca5a5; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:24px; }
-.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+.dash-main { padding:40px; overflow-y:auto; }
+.dash-section { display:none; }
+.dash-section.active { display:block; }
+.stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:32px; }
 .stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:20px; }
 .stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-.stat-value { font-size:28px; font-weight:900; letter-spacing:-0.03em; color:var(--text); }
-.dash-section { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:28px; margin-bottom:24px; display:none; }
-.dash-section.active { display:block; }
-.section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-.section-head h2 { font-size:18px; font-weight:800; }
+.stat-value { font-size:26px; font-weight:900; letter-spacing:-0.03em; color:var(--text); }
+.stat-sub { font-size:11px; color:var(--text3); margin-top:4px; }
+.content-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:28px; margin-bottom:20px; }
+.section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+.section-head h2 { font-size:18px; font-weight:800; letter-spacing:-0.02em; }
 table { width:100%; border-collapse:collapse; }
-th { text-align:left; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; padding:10px 12px; border-bottom:1px solid var(--border); }
-td { padding:14px 12px; border-bottom:1px solid var(--border); font-size:14px; }
+th { text-align:left; font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; padding:10px 14px; border-bottom:1px solid var(--border); font-weight:700; }
+td { padding:13px 14px; border-bottom:1px solid var(--border); font-size:13.5px; vertical-align:middle; }
 tr:last-child td { border-bottom:none; }
-tr:hover td { background:rgba(255,255,255,0.02); }
-.act-btn { padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; }
-.approve-btn { background:var(--green-dim); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+tr:hover td { background:rgba(255,255,255,0.015); }
+.act-btn { padding:5px 12px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; font-family:inherit; }
+.approve-btn { background:rgba(34,197,94,0.1); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
 .approve-btn:hover { background:var(--green); color:#000; }
-.reject-btn { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.2); margin-left:6px; }
+.reject-btn  { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.2); margin-left:5px; }
 .reject-btn:hover { background:var(--red); color:#fff; }
-.del-btn { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.2); }
+.pause-btn   { background:rgba(234,179,8,0.1); color:#eab308; border:1px solid rgba(234,179,8,0.2); }
+.pause-btn:hover { background:#eab308; color:#000; }
+.del-btn     { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.2); margin-left:5px; }
 .del-btn:hover { background:var(--red); color:#fff; }
-.empty-state { text-align:center; padding:40px; color:var(--text3); font-size:14px; }
-@media (max-width:900px) {
+.pill { display:inline-flex; align-items:center; font-size:11px; font-weight:600; padding:3px 9px; border-radius:100px; }
+.pill-active   { background:rgba(34,197,94,0.1); color:var(--green); }
+.pill-pending  { background:rgba(234,179,8,0.1); color:#eab308; }
+.pill-rejected { background:var(--red-dim); color:var(--red); }
+.pill-paused   { background:rgba(255,255,255,0.06); color:var(--text3); }
+.pill-applied  { background:rgba(79,142,247,0.1); color:var(--blue2); }
+.pill-booked   { background:rgba(34,197,94,0.1); color:var(--green); }
+.empty-state { text-align:center; padding:48px 24px; color:var(--text3); font-size:14px; }
+.empty-icon  { font-size:36px; margin-bottom:12px; }
+.quick-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:24px; }
+.quick-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:20px; cursor:pointer; transition:all 0.25s; }
+.quick-card:hover { border-color:var(--gold-glow); transform:translateY(-2px); }
+.quick-card-icon { font-size:24px; margin-bottom:10px; }
+.quick-card-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+.quick-card-desc  { font-size:12px; color:var(--text3); }
+@media(max-width:900px){
   .dash-layout { grid-template-columns:1fr; }
   .dash-sidebar { display:none; }
-  .dash-main { padding:24px 20px; }
+  .dash-main { padding:24px 16px; }
   .stats-row { grid-template-columns:1fr 1fr; }
+  .quick-actions { grid-template-columns:1fr 1fr; }
 }
 </style>
 </head>
@@ -53,67 +76,97 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 <div id="nav-container"></div>
 <div class="dash-layout">
   <aside class="dash-sidebar">
-    <div style="padding:12px;font-size:13px;font-weight:800;color:#fca5a5;text-align:center;margin-bottom:8px;">⚙ ADMIN PANEL</div>
+    <div class="admin-brand">
+      <div class="admin-brand-icon">🔒</div>
+      <div>
+        <div class="admin-brand-name">Admin Panel</div>
+        <div class="admin-brand-sub">ImpactGrid Group</div>
+      </div>
+    </div>
+    <div class="sidebar-section-label">Management</div>
     <nav class="sidebar-nav">
-      <a href="#" class="active" onclick="showSection('overview',this)"><span class="nav-icon">◈</span> Overview</a>
-      <a href="#" onclick="showSection('pending',this)"><span class="nav-icon">⏳</span> Pending Approval</a>
-      <a href="#" onclick="showSection('professionals',this)"><span class="nav-icon">👤</span> Professionals</a>
-      <a href="#" onclick="showSection('employers',this)"><span class="nav-icon">🏢</span> Employers</a>
-      <a href="#" onclick="showSection('jobs',this)"><span class="nav-icon">📋</span> Jobs</a>
+      <a href="#" class="active" onclick="return showSection('overview',this)"><span class="nav-icon">◈</span> Overview</a>
+      <a href="#" onclick="return showSection('pending',this)"><span class="nav-icon">⏳</span> Pending Approval <span class="nav-badge" id="pendingBadge" style="display:none;">0</span></a>
+      <a href="#" onclick="return showSection('applications',this)"><span class="nav-icon">📥</span> Applications</a>
+      <a href="#" onclick="return showSection('professionals',this)"><span class="nav-icon">👤</span> Professionals</a>
+      <a href="#" onclick="return showSection('employers',this)"><span class="nav-icon">🏢</span> Employers</a>
+      <a href="#" onclick="return showSection('jobs',this)"><span class="nav-icon">📋</span> Jobs</a>
     </nav>
     <div class="sidebar-spacer"></div>
-    <a href="index.html" style="display:flex;align-items:center;gap:10px;padding:11px 12px;font-size:13px;color:var(--text3);border-radius:var(--r);margin-bottom:4px;">← Back to Site</a>
+    <a href="index.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:13px;color:var(--text3);border-radius:var(--r);margin-bottom:4px;text-decoration:none;">← Back to Site</a>
     <button class="sidebar-logout" onclick="igLogout()"><span>⎋</span> Sign Out</button>
   </aside>
 
   <main class="dash-main">
-    <div class="admin-badge">🔒 Admin Access</div>
 
-    <!-- Overview -->
+    <!-- OVERVIEW -->
     <div class="dash-section active" id="section-overview">
-      <h1 style="font-size:26px;margin-bottom:24px;">Admin Overview</h1>
+      <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.025em;margin-bottom:6px;">Admin Overview</h1>
+      <p style="font-size:14px;color:var(--text2);margin-bottom:28px;">Full control of the ImpactGrid Network.</p>
       <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-label">Pending</div>
-          <div class="stat-value" id="stat-pending">—</div>
+        <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" id="stat-pending" style="color:#eab308;">—</div><div class="stat-sub">Awaiting review</div></div>
+        <div class="stat-card"><div class="stat-label">Professionals</div><div class="stat-value" id="stat-pros">—</div><div class="stat-sub">Active members</div></div>
+        <div class="stat-card"><div class="stat-label">Employers</div><div class="stat-value" id="stat-emps">—</div><div class="stat-sub">On network</div></div>
+        <div class="stat-card"><div class="stat-label">Active Jobs</div><div class="stat-value" id="stat-jobs" style="color:var(--gold);">—</div><div class="stat-sub">Live listings</div></div>
+        <div class="stat-card"><div class="stat-label">Applications</div><div class="stat-value" id="stat-apps" style="color:var(--blue2);">—</div><div class="stat-sub">Total submitted</div></div>
+      </div>
+      <div class="quick-actions">
+        <div class="quick-card" onclick="showSection('pending',document.querySelectorAll('.sidebar-nav a')[1])">
+          <div class="quick-card-icon">⏳</div>
+          <div class="quick-card-title">Review Pending</div>
+          <div class="quick-card-desc">Approve or reject professionals waiting for access</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Professionals</div>
-          <div class="stat-value" id="stat-pros">—</div>
+        <div class="quick-card" onclick="showSection('jobs',document.querySelectorAll('.sidebar-nav a')[5])">
+          <div class="quick-card-icon">📋</div>
+          <div class="quick-card-title">Manage Jobs</div>
+          <div class="quick-card-desc">View, pause, or remove job listings from the network</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Employers</div>
-          <div class="stat-value" id="stat-emps">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Active Jobs</div>
-          <div class="stat-value" id="stat-jobs">—</div>
+        <div class="quick-card" onclick="showSection('applications',document.querySelectorAll('.sidebar-nav a')[2])">
+          <div class="quick-card-icon">📥</div>
+          <div class="quick-card-title">Applications</div>
+          <div class="quick-card-desc">See who applied and approve bookings</div>
         </div>
       </div>
     </div>
 
-    <!-- Pending -->
+    <!-- PENDING -->
     <div class="dash-section" id="section-pending">
-      <div class="section-head"><h2>Pending Approval</h2><button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="loadPending()">↻ Refresh</button></div>
-      <div id="pendingList"><div class="empty-state">Loading…</div></div>
+      <div class="content-card">
+        <div class="section-head"><h2>⏳ Pending Approval</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadPending()">↻ Refresh</button></div>
+        <div id="pendingList"><div class="empty-state"><div class="empty-icon">⏳</div>Loading…</div></div>
+      </div>
     </div>
 
-    <!-- Professionals -->
+    <!-- APPLICATIONS -->
+    <div class="dash-section" id="section-applications">
+      <div class="content-card">
+        <div class="section-head"><h2>📥 All Applications</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadApplications()">↻ Refresh</button></div>
+        <div id="applicationsList"><div class="empty-state"><div class="empty-icon">📥</div>Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- PROFESSIONALS -->
     <div class="dash-section" id="section-professionals">
-      <div class="section-head"><h2>All Professionals</h2><button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="loadProfessionals()">↻ Refresh</button></div>
-      <div id="prosList"><div class="empty-state">Loading…</div></div>
+      <div class="content-card">
+        <div class="section-head"><h2>👤 All Professionals</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadProfessionals()">↻ Refresh</button></div>
+        <div id="prosList"><div class="empty-state">Loading…</div></div>
+      </div>
     </div>
 
-    <!-- Employers -->
+    <!-- EMPLOYERS -->
     <div class="dash-section" id="section-employers">
-      <div class="section-head"><h2>All Employers</h2><button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="loadEmployers()">↻ Refresh</button></div>
-      <div id="empsList"><div class="empty-state">Loading…</div></div>
+      <div class="content-card">
+        <div class="section-head"><h2>🏢 All Employers</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadEmployers()">↻ Refresh</button></div>
+        <div id="empsList"><div class="empty-state">Loading…</div></div>
+      </div>
     </div>
 
-    <!-- Jobs -->
+    <!-- JOBS -->
     <div class="dash-section" id="section-jobs">
-      <div class="section-head"><h2>All Jobs</h2><button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="loadJobs()">↻ Refresh</button></div>
-      <div id="jobsList"><div class="empty-state">Loading…</div></div>
+      <div class="content-card">
+        <div class="section-head"><h2>📋 All Jobs</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadJobs()">↻ Refresh</button></div>
+        <div id="jobsList"><div class="empty-state">Loading…</div></div>
+      </div>
     </div>
 
   </main>
@@ -124,155 +177,219 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 <script>
 renderNav('');
 
-/* Admin email — change to yours */
-var ADMIN_EMAIL = 'admin@impactgridgroup.com';
+/* ── YOUR ADMIN EMAIL ── */
+var ADMIN_EMAIL = 'Ogunmoyerodara@gmail.com';
 
 document.addEventListener('DOMContentLoaded', async function() {
-  var client = getSupabase();
-  var { data } = await client.auth.getSession();
+  var c = getSupabase();
+  var { data } = await c.auth.getSession();
   if (!data.session) { window.location.href = 'login.html'; return; }
-  if (data.session.user.email !== ADMIN_EMAIL && data.session.user.user_metadata?.role !== 'admin') {
-    window.location.href = 'dashboard.html'; return;
-  }
+  if (data.session.user.email !== ADMIN_EMAIL) { window.location.href = 'dashboard.html'; return; }
   loadStats();
-  loadPending();
 });
 
 function showSection(id, el) {
-  document.querySelectorAll('.dash-section').forEach(function(s) { s.classList.remove('active'); });
-  document.querySelectorAll('.sidebar-nav a').forEach(function(a) { a.classList.remove('active'); });
+  document.querySelectorAll('.dash-section').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.sidebar-nav a').forEach(function(a){ a.classList.remove('active'); });
   document.getElementById('section-' + id).classList.add('active');
   if (el) el.classList.add('active');
+  if (id === 'pending')       loadPending();
+  if (id === 'applications')  loadApplications();
   if (id === 'professionals') loadProfessionals();
-  if (id === 'employers') loadEmployers();
-  if (id === 'jobs') loadJobs();
+  if (id === 'employers')     loadEmployers();
+  if (id === 'jobs')          loadJobs();
   return false;
 }
 
 async function loadStats() {
   try {
-    var client = getSupabase();
-    var { data: pending } = await client.from('profiles').select('id').eq('status','pending');
-    var { data: pros }    = await client.from('profiles').select('id').eq('role','professional').eq('status','active');
-    var { data: emps }    = await client.from('profiles').select('id').eq('role','employer');
-    var { data: jobs }    = await client.from('jobs').select('id').eq('status','active');
-    document.getElementById('stat-pending').textContent = (pending||[]).length;
-    document.getElementById('stat-pros').textContent    = (pros||[]).length;
-    document.getElementById('stat-emps').textContent    = (emps||[]).length;
-    document.getElementById('stat-jobs').textContent    = (jobs||[]).length;
+    var c = getSupabase();
+    var [pend, pros, emps, jobs, apps] = await Promise.all([
+      c.from('profiles').select('id').eq('status','pending'),
+      c.from('profiles').select('id').eq('role','professional').eq('status','active'),
+      c.from('profiles').select('id').eq('role','employer'),
+      c.from('jobs').select('id').eq('status','active'),
+      c.from('applications').select('id')
+    ]);
+    var pc = (pend.data||[]).length;
+    document.getElementById('stat-pending').textContent = pc;
+    document.getElementById('stat-pros').textContent    = (pros.data||[]).length;
+    document.getElementById('stat-emps').textContent    = (emps.data||[]).length;
+    document.getElementById('stat-jobs').textContent    = (jobs.data||[]).length;
+    document.getElementById('stat-apps').textContent    = (apps.data||[]).length;
+    var badge = document.getElementById('pendingBadge');
+    if (pc > 0) { badge.textContent = pc; badge.style.display = 'inline-flex'; }
   } catch(e) {}
 }
 
 async function loadPending() {
+  var el = document.getElementById('pendingList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div>Loading…</div>';
   try {
-    var client = getSupabase();
-    var { data } = await client.from('profiles').select('*').eq('status','pending').eq('role','professional').order('created_at', {ascending:false});
-    if (!data || !data.length) {
-      document.getElementById('pendingList').innerHTML = '<div class="empty-state">No pending applications. ✅</div>'; return;
-    }
-    var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' +
+    var c = getSupabase();
+    var { data } = await c.from('profiles').select('*').eq('status','pending').eq('role','professional').order('created_at',{ascending:false});
+    if (!data || !data.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div>No pending applications — all clear!</div>'; return; }
+    el.innerHTML = '<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Applied</th><th>Actions</th></tr></thead><tbody>' +
       data.map(function(p) {
         return '<tr>' +
-          '<td style="font-weight:600;">' + (p.full_name||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + (p.email||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + (p.skills||'—') + '</td>' +
+          '<td style="font-weight:700;">' + esc(p.full_name||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc(p.email||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc((p.skills||'—').substring(0,35)) + '</td>' +
+          '<td style="color:var(--text2);">' + esc(p.location||'—') + '</td>' +
           '<td style="color:var(--text3);">' + new Date(p.created_at).toLocaleDateString('en-GB') + '</td>' +
           '<td>' +
-            '<button class="act-btn approve-btn" onclick="approveUser(\'' + p.id + '\')">Approve</button>' +
-            '<button class="act-btn reject-btn" onclick="rejectUser(\'' + p.id + '\')">Reject</button>' +
+            '<button class="act-btn approve-btn" onclick="approveUser(\'' + p.id + '\',\'' + esc(p.full_name||'') + '\')">✓ Approve</button>' +
+            '<button class="act-btn reject-btn"  onclick="rejectUser(\'' + p.id + '\')">✕ Reject</button>' +
           '</td></tr>';
-      }).join('') +
-    '</tbody></table>';
-    document.getElementById('pendingList').innerHTML = html;
-  } catch(e) { document.getElementById('pendingList').innerHTML = '<div class="empty-state">Error loading data: ' + e.message + '</div>'; }
+      }).join('') + '</tbody></table>';
+  } catch(e) { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
 }
 
-async function approveUser(id) {
-  if (!confirm('Approve this professional?')) return;
-  var client = getSupabase();
-  await client.from('profiles').update({ status:'active' }).eq('id', id);
+async function approveUser(id, name) {
+  if (!confirm('Approve ' + (name||'this professional') + '? They will be able to access the network.')) return;
+  await getSupabase().from('profiles').update({ status:'active' }).eq('id', id);
   loadPending(); loadStats();
 }
 
 async function rejectUser(id) {
-  if (!confirm('Reject and delete this application?')) return;
-  var client = getSupabase();
-  await client.from('profiles').update({ status:'rejected' }).eq('id', id);
+  if (!confirm('Reject this application?')) return;
+  await getSupabase().from('profiles').update({ status:'rejected' }).eq('id', id);
   loadPending(); loadStats();
 }
 
-async function loadProfessionals() {
+async function loadApplications() {
+  var el = document.getElementById('applicationsList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">📥</div>Loading…</div>';
   try {
-    var client = getSupabase();
-    var { data } = await client.from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
-    if (!data || !data.length) { document.getElementById('prosList').innerHTML = '<div class="empty-state">No professionals yet.</div>'; return; }
-    var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
-      data.map(function(p) {
-        var statusColors = { active:'color:var(--green)', pending:'color:#eab308', rejected:'color:var(--red)' };
+    var c = getSupabase();
+    var { data: apps } = await c.from('applications').select('*').order('applied_at',{ascending:false});
+    if (!apps || !apps.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📥</div>No applications yet.</div>'; return; }
+    var jobIds = [...new Set(apps.map(function(a){ return a.job_id; }).filter(Boolean))];
+    var proIds = [...new Set(apps.map(function(a){ return a.professional_id; }).filter(Boolean))];
+    var { data: jobs } = await c.from('jobs').select('id,title,company_name').in('id', jobIds);
+    var { data: pros } = await c.from('profiles').select('id,full_name,email').in('id', proIds);
+    var jm = {}; (jobs||[]).forEach(function(j){ jm[j.id]=j; });
+    var pm = {}; (pros||[]).forEach(function(p){ pm[p.id]=p; });
+    el.innerHTML = '<table><thead><tr><th>Professional</th><th>Job</th><th>Company</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>' +
+      apps.map(function(a) {
+        var job = jm[a.job_id]||{}; var pro = pm[a.professional_id]||{};
+        var pc = {applied:'pill-applied',booked:'pill-booked',rejected:'pill-rejected'}[a.status]||'pill-applied';
         return '<tr>' +
-          '<td style="font-weight:600;">' + (p.full_name||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + (p.email||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + ((p.skills||'').substring(0,40)||'—') + '</td>' +
-          '<td style="' + (statusColors[p.status]||'') + ';font-weight:600;">' + (p.status||'—') + '</td>' +
-          '<td><button class="act-btn del-btn" onclick="deleteProfile(\'' + p.id + '\')">Remove</button></td>' +
-        '</tr>';
+          '<td style="font-weight:700;">' + esc(pro.full_name||'Unknown') + '<br><span style="font-size:11px;color:var(--text3);">' + esc(pro.email||'') + '</span></td>' +
+          '<td style="font-weight:600;">' + esc(job.title||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc(job.company_name||'—') + '</td>' +
+          '<td><span class="pill ' + pc + '">' + (a.status||'applied') + '</span></td>' +
+          '<td style="color:var(--text3);">' + new Date(a.applied_at).toLocaleDateString('en-GB') + '</td>' +
+          '<td>' +
+            (a.status !== 'booked'    ? '<button class="act-btn approve-btn" onclick="bookApp(\'' + a.id + '\')">✓ Book</button>' : '<span style="font-size:12px;color:var(--green);">✅ Booked</span>') +
+            (a.status !== 'rejected'  ? '<button class="act-btn reject-btn" onclick="rejectApp(\'' + a.id + '\')">✕</button>' : '') +
+          '</td></tr>';
       }).join('') + '</tbody></table>';
-    document.getElementById('prosList').innerHTML = html;
-  } catch(e) {}
+  } catch(e) { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
+async function bookApp(id) {
+  if (!confirm('Book this professional for the job? They will see it in their My Bookings tab.')) return;
+  await getSupabase().from('applications').update({ status:'booked' }).eq('id', id);
+  loadApplications(); loadStats();
+}
+async function rejectApp(id) {
+  if (!confirm('Reject this application?')) return;
+  await getSupabase().from('applications').update({ status:'rejected' }).eq('id', id);
+  loadApplications();
+}
+
+async function loadProfessionals() {
+  var el = document.getElementById('prosList');
+  el.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    var c = getSupabase();
+    var { data } = await c.from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
+    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">👤</div>No professionals yet.</div>'; return; }
+    el.innerHTML = '<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+      data.map(function(p) {
+        var pc = {active:'pill-active',pending:'pill-pending',rejected:'pill-rejected'}[p.status]||'pill-pending';
+        return '<tr>' +
+          '<td style="font-weight:700;">' + esc(p.full_name||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc(p.email||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc((p.skills||'—').substring(0,35)) + '</td>' +
+          '<td style="color:var(--text2);">' + esc(p.location||'—') + '</td>' +
+          '<td><span class="pill ' + pc + '">' + (p.status||'—') + '</span></td>' +
+          '<td>' +
+            (p.status !== 'active' ? '<button class="act-btn approve-btn" onclick="approveUser(\'' + p.id + '\',\'' + esc(p.full_name||'') + '\')">✓ Approve</button>' : '') +
+            '<button class="act-btn del-btn" onclick="removeProfile(\'' + p.id + '\')">Remove</button>' +
+          '</td></tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e){}
 }
 
 async function loadEmployers() {
+  var el = document.getElementById('empsList');
+  el.innerHTML = '<div class="empty-state">Loading…</div>';
   try {
-    var client = getSupabase();
-    var { data } = await client.from('profiles').select('*').eq('role','employer').order('created_at',{ascending:false});
-    if (!data || !data.length) { document.getElementById('empsList').innerHTML = '<div class="empty-state">No employers yet.</div>'; return; }
-    var html = '<table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Industry</th><th>Joined</th></tr></thead><tbody>' +
+    var c = getSupabase();
+    var { data } = await c.from('profiles').select('*').eq('role','employer').order('created_at',{ascending:false});
+    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div>No employers yet.</div>'; return; }
+    el.innerHTML = '<table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Industry</th><th>Size</th><th>Joined</th></tr></thead><tbody>' +
       data.map(function(p) {
         return '<tr>' +
-          '<td style="font-weight:600;">' + (p.full_name||'—') + '</td>' +
-          '<td>' + (p.company_name||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + (p.email||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + (p.industry||'—') + '</td>' +
+          '<td style="font-weight:700;">' + esc(p.full_name||'—') + '</td>' +
+          '<td style="font-weight:600;">' + esc(p.company_name||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc(p.email||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc(p.industry||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc(p.company_size||'—') + '</td>' +
           '<td style="color:var(--text3);">' + new Date(p.created_at).toLocaleDateString('en-GB') + '</td>' +
         '</tr>';
       }).join('') + '</tbody></table>';
-    document.getElementById('empsList').innerHTML = html;
-  } catch(e) {}
+  } catch(e){}
 }
 
 async function loadJobs() {
+  var el = document.getElementById('jobsList');
+  el.innerHTML = '<div class="empty-state">Loading…</div>';
   try {
-    var client = getSupabase();
-    var { data } = await client.from('jobs').select('*').order('created_at',{ascending:false});
-    if (!data || !data.length) { document.getElementById('jobsList').innerHTML = '<div class="empty-state">No jobs posted yet.</div>'; return; }
-    var html = '<table><thead><tr><th>Title</th><th>Company</th><th>Budget</th><th>Status</th><th>Posted</th><th>Actions</th></tr></thead><tbody>' +
+    var c = getSupabase();
+    var { data } = await c.from('jobs').select('*').order('created_at',{ascending:false});
+    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No jobs posted yet.</div>'; return; }
+    el.innerHTML = '<table><thead><tr><th>Title</th><th>Company</th><th>Budget</th><th>Location</th><th>Status</th><th>Posted</th><th>Actions</th></tr></thead><tbody>' +
       data.map(function(j) {
+        var pc = {active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
         return '<tr>' +
-          '<td style="font-weight:600;">' + (j.title||'—') + '</td>' +
-          '<td>' + (j.company_name||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + (j.budget||'—') + '</td>' +
-          '<td><span class="chip" style="font-size:11px;">' + (j.status||'active') + '</span></td>' +
+          '<td style="font-weight:700;">' + esc(j.title||'—') + '</td>' +
+          '<td>' + esc(j.company_name||'—') + '</td>' +
+          '<td style="color:var(--gold);">' + esc(j.budget||'—') + '</td>' +
+          '<td style="color:var(--text2);">' + esc(j.location||'—') + '</td>' +
+          '<td><span class="pill ' + pc + '">' + (j.status||'active') + '</span></td>' +
           '<td style="color:var(--text3);">' + new Date(j.created_at).toLocaleDateString('en-GB') + '</td>' +
-          '<td><button class="act-btn del-btn" onclick="removeJob(\'' + j.id + '\')">Remove</button></td>' +
-        '</tr>';
+          '<td>' +
+            (j.status === 'active'
+              ? '<button class="act-btn pause-btn" onclick="toggleJob(\'' + j.id + '\',\'paused\')">⏸ Pause</button>'
+              : '<button class="act-btn approve-btn" onclick="toggleJob(\'' + j.id + '\',\'active\')">▶ Activate</button>') +
+            '<button class="act-btn del-btn" onclick="removeJob(\'' + j.id + '\')">✕ Remove</button>' +
+          '</td></tr>';
       }).join('') + '</tbody></table>';
-    document.getElementById('jobsList').innerHTML = html;
-  } catch(e) {}
+  } catch(e){}
 }
 
-async function deleteProfile(id) {
-  if (!confirm('Remove this profile from the network?')) return;
-  var client = getSupabase();
-  await client.from('profiles').delete().eq('id', id);
-  loadProfessionals(); loadStats();
-}
-
-async function removeJob(id) {
-  if (!confirm('Remove this job post?')) return;
-  var client = getSupabase();
-  await client.from('jobs').update({ status:'removed' }).eq('id', id);
+async function toggleJob(id, status) {
+  await getSupabase().from('jobs').update({ status: status }).eq('id', id);
   loadJobs(); loadStats();
 }
+async function removeJob(id) {
+  if (!confirm('Remove this job from the network?')) return;
+  await getSupabase().from('jobs').update({ status:'removed' }).eq('id', id);
+  loadJobs(); loadStats();
+}
+async function removeProfile(id) {
+  if (!confirm('Remove this profile?')) return;
+  await getSupabase().from('profiles').delete().eq('id', id);
+  loadProfessionals(); loadStats();
+}
+async function igLogout() {
+  await getSupabase().auth.signOut();
+  window.location.href = 'index.html';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>
