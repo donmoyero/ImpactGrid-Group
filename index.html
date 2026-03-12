@@ -616,7 +616,7 @@ body::after {
       <li><a href="creator-studio.html">Creator Studio</a></li>
       <li><a href="network.html">Network</a></li>
       <li><a href="ai.html">Dijo AI</a></li>
-      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="dashboard.html">Available Jobs</a></li>
     </ul>
     <div class="nav-right">
       <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
@@ -630,7 +630,7 @@ body::after {
 <div class="mob-nav" id="mobNav">
   <a href="index.html">Home</a><a href="about.html">About</a><a href="consulting.html">Consulting</a>
   <a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a>
-  <a href="network.html">Network</a><a href="ai.html">Dija AI</a><a href="pricing.html">Pricing</a>
+  <a href="network.html">Network</a><a href="ai.html">Dijo AI</a><a href="dashboard.html">Available Jobs</a>
   <a href="login.html">Login</a><a href="join.html" class="mob-cta">Join ImpactGrid</a>
 </div>
 
@@ -796,6 +796,24 @@ body::after {
 
   <div class="divider"></div>
 
+  <!-- Available Jobs -->
+  <section class="section anim" id="jobs-section">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div class="label-tag">Live Opportunities</div>
+      <h2 class="sec-title">Available Jobs</h2>
+      <p style="font-size:15px;color:var(--text2);max-width:480px;margin:12px auto 0;">Real projects posted by employers on the ImpactGrid Network. Join to apply.</p>
+    </div>
+    <div id="homepageJobs" style="max-width:860px;margin:0 auto;">
+      <div style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">Loading opportunities…</div>
+    </div>
+    <div style="text-align:center;margin-top:32px;">
+      <a href="join.html?type=professional" class="btn-pri" style="margin-right:12px;">Join to Apply</a>
+      <a href="login.html" class="btn-sec">Login →</a>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
   <!-- CTA -->
   <section style="padding:60px 0 80px;">
     <div class="cta-band">
@@ -822,7 +840,7 @@ body::after {
           <p>Turning data into strategic advantage. Analytics, consulting, creator tools, and a professional network in one ecosystem.</p>
         </div>
         <div class="fc"><h4>Platform</h4><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="network.html">Network</a><a href="ai.html">Dijo AI</a></div>
-        <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="pricing.html">Pricing</a><a href="mailto:hello@impactgridgroup.com">Contact</a></div>
+        <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="dashboard.html">Available Jobs</a><a href="/cdn-cgi/l/email-protection#2f474a4343406f46425f4e4c5b485d464b485d405a5f014c4042">Contact</a></div>
         <div class="fc"><h4>Account</h4><a href="join.html">Join ImpactGrid</a><a href="login.html">Login</a><a href="dashboard.html">Dashboard</a></div>
       </div>
       <div class="footer-bot">
@@ -835,7 +853,9 @@ body::after {
 </div><!-- /page-content -->
 
 <!-- ══ CHAT BUBBLE — uses existing impactgrid-chat-bubble.js ══ -->
-<script src="impactgrid-chat-bubble.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="impactgrid-chat-bubble.js"></script>
 
 <!-- ══ SCRIPTS ══ -->
 <script>
@@ -921,11 +941,51 @@ var obs = new IntersectionObserver(function(entries) {
 }, { threshold: 0.12 });
 document.querySelectorAll('.anim').forEach(function(el) { obs.observe(el); });
 
-/* ── Keep-warm ping to Dijo server every 10 min ── */
-setInterval(function() {
-  fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
-}, 600000);
-</script>
+/* ── Keep-warm ping to Dijo server every 10 minutes ── */
+setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); }, 600000);
 
+/* ── Load live jobs on homepage ── */
+(function() {
+  var el = document.getElementById('homepageJobs');
+  if (!el) return;
+  /* Wait for supabase-config to be available */
+  var attempts = 0;
+  var interval = setInterval(function() {
+    attempts++;
+    if (attempts > 20) { clearInterval(interval); el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);">Sign in to view live opportunities.</div>'; return; }
+    if (!window.getSupabase) return;
+    clearInterval(interval);
+    loadHomeJobs();
+  }, 300);
+
+  async function loadHomeJobs() {
+    try {
+      var c = getSupabase();
+      var { data: jobs } = await c.from('jobs').select('*').eq('status','active').order('created_at',{ascending:false}).limit(6);
+      if (!jobs || !jobs.length) {
+        el.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3);font-size:14px;">No jobs posted yet — check back soon as employers join the network.</div>';
+        return;
+      }
+      el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;">' +
+        jobs.map(function(j) {
+          return '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--border2)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'\'">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;">' +
+              '<div style="font-size:16px;font-weight:800;">' + esc(j.title||'Opportunity') + '</div>' +
+              (j.budget ? '<div style="font-size:13px;font-weight:700;color:var(--gold);white-space:nowrap;">' + esc(j.budget) + '</div>' : '') +
+            '</div>' +
+            '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">🏢 ' + esc(j.company_name||'ImpactGrid Employer') + (j.location?' · 📍 '+esc(j.location):'') + '</div>' +
+            (j.description ? '<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px;">' + esc(j.description.substring(0,120)) + (j.description.length>120?'…':'') + '</div>' : '') +
+            '<a href="join.html?type=professional" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--gold);text-decoration:none;">Apply Now →</a>' +
+          '</div>';
+        }).join('') + '</div>';
+    } catch(e) {
+      el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);">Could not load jobs right now.</div>';
+    }
+  }
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+})();
+
+</script>
 </body>
 </html>
