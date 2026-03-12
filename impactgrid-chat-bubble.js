@@ -3,13 +3,13 @@
    Works on both impactgridgroup.com AND impactgridanalytics.com.
    Set IMPACTGRID_AI_URL and optionally IMPACTGRID_AI_MODE before the script tag.
 
-   group.com:     <script>IMPACTGRID_AI_URL = "https://xxxx.trycloudflare.com";</script>
-   analytics.com: <script>IMPACTGRID_AI_URL = "https://xxxx.trycloudflare.com"; IMPACTGRID_AI_MODE = "dashboard";</script>
+   Dijo is permanently hosted at https://impactgrid-dijo.onrender.com
+   No tunnel needed — URL never changes.
 ================================================================ */
 
 (function() {
   /* ── Config — hardcoded, never exposed to users ── */
-  var AI_URL  = (typeof IMPACTGRID_AI_URL !== 'undefined' ? IMPACTGRID_AI_URL : 'https://differently-trust-november-debug.trycloudflare.com');
+  var AI_URL  = (typeof IMPACTGRID_AI_URL !== 'undefined' ? IMPACTGRID_AI_URL : 'https://impactgrid-dijo.onrender.com');
   var MODE    = (typeof IMPACTGRID_AI_MODE !== 'undefined' ? IMPACTGRID_AI_MODE : 'group');
   var HISTORY = [];
   var TYPING  = false;
