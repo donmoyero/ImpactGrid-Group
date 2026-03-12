@@ -25,8 +25,7 @@
     var html = '<nav class="nav" id="mainNav">' +
       '<div class="nav-inner">' +
         '<a href="index.html" class="nav-logo">' +
-          '<div class="nav-logo-mark">IG</div>' +
-          'ImpactGrid' +
+          '<img src="logo.png" alt="ImpactGrid" style="height:32px;width:auto;display:block;" />' +
         '</a>' +
         '<ul class="nav-links">' + linksHTML + '</ul>' +
         '<div class="nav-actions">' +
@@ -68,8 +67,7 @@
         '<div class="footer-grid">' +
           '<div class="footer-brand">' +
             '<div class="nav-logo" style="margin-bottom:0;">' +
-              '<div class="nav-logo-mark">IG</div>' +
-              '<span style="font-family:var(--font-display);font-weight:900;font-size:18px;">ImpactGrid</span>' +
+              '<img src="logo.png" alt="ImpactGrid" style="height:28px;width:auto;display:block;" />' +
             '</div>' +
             '<p>Combining analytics, consulting, creator tools, and a professional network to help businesses and creators grow with intelligence.</p>' +
           '</div>' +
