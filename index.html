@@ -1,487 +1,705 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>ImpactGrid Group — Turning Data Into Strategic Advantage</title>
 <meta name="description" content="ImpactGrid combines analytics, consulting, creator tools, and a professional network to help businesses and creators grow with intelligence."/>
 <link rel="icon" href="favicon.ico"/>
-<link rel="stylesheet" href="shared.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-/* ── Hero ── */
-.hero {
-  min-height: 100vh;
-  display: flex; align-items: center;
-  position: relative;
-  overflow: hidden;
-  padding: 120px 32px 80px;
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — MISSION CONTROL AESTHETIC
+   Dark: deep space + gold signal
+   Light: arctic white + deep navy + gold
+═══════════════════════════════════════════════ */
+:root {
+  --bg:       #07090f;
+  --bg2:      #0d1017;
+  --bg3:      #111520;
+  --card:     #151a28;
+  --card2:    #1c2235;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --text:     #eef0f6;
+  --text2:    #8a91a8;
+  --text3:    #4a5068;
+  --gold:     #f0b429;
+  --gold2:    #ffd166;
+  --gold-dim: rgba(240,180,41,0.1);
+  --gold-glo: rgba(240,180,41,0.22);
+  --blue:     #4f8ef7;
+  --blue2:    #7eb3ff;
+  --blue-dim: rgba(79,142,247,0.1);
+  --green:    #2dd4a0;
+  --purple:   #a855f7;
+  --nav-h:    64px;
+  --max-w:    1240px;
+  --r:        12px;
+  --r2:       20px;
+  --fd:       'Syne', sans-serif;
+  --fb:       'DM Sans', sans-serif;
+  --fm:       'DM Mono', monospace;
+  --sh:       0 20px 60px rgba(0,0,0,0.5);
 }
-
-.hero-bg {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 60% 40%, rgba(201,168,76,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
+[data-theme="light"] {
+  --bg:       #f0f3fa;
+  --bg2:      #e4e8f4;
+  --bg3:      #d8ddef;
+  --card:     #ffffff;
+  --card2:    #f5f7fc;
+  --border:   rgba(0,0,0,0.08);
+  --border2:  rgba(0,0,0,0.13);
+  --text:     #0d1017;
+  --text2:    #4a5068;
+  --text3:    #9099b8;
+  --gold:     #c97e08;
+  --gold2:    #b06a05;
+  --gold-dim: rgba(201,126,8,0.09);
+  --gold-glo: rgba(201,126,8,0.2);
+  --blue:     #2d6edb;
+  --blue2:    #1a52b0;
+  --blue-dim: rgba(45,110,219,0.08);
+  --green:    #0fa876;
+  --sh:       0 20px 60px rgba(0,0,0,0.1);
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background 0.35s,color 0.35s;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
+h1,h2,h3,h4{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
 
-.hero-grid-lines {
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size: 80px 80px;
-  mask-image: radial-gradient(ellipse 70% 70% at 60% 40%, black, transparent);
+/* noise grain */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.45;}
+
+/* ══ NAV ══ */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;transition:background 0.35s;}
+[data-theme="light"] .nav{background:rgba(240,243,250,0.88);}
+.nav-inner{max-width:var(--max-w);margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;gap:28px;}
+.nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:17px;letter-spacing:-0.03em;flex-shrink:0;}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;flex:1;}
+.nav-links a{padding:6px 11px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);transition:all 0.2s;white-space:nowrap;}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(255,255,255,0.06);}
+[data-theme="light"] .nav-links a:hover,[data-theme="light"] .nav-links a.active{background:rgba(0,0,0,0.05);}
+.nav-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex-shrink:0;}
+.theme-btn{width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;}
+.theme-btn:hover{border-color:var(--gold);}
+.btn-ghost-nav{padding:7px 14px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all 0.2s;}
+.btn-ghost-nav:hover{color:var(--text);border-color:var(--border2);}
+.btn-gold-nav{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
+.btn-gold-nav:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo);}
+.hamburger{display:none;flex-direction:column;gap:5px;padding:8px;margin-left:6px;}
+.hamburger span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s;}
+.mob-nav{display:none;position:fixed;top:var(--nav-h);left:0;right:0;bottom:0;background:var(--bg2);z-index:999;padding:20px;flex-direction:column;gap:5px;overflow-y:auto;}
+.mob-nav.open{display:flex;}
+.mob-nav a{padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);transition:all 0.2s;}
+.mob-nav a:hover{background:var(--card);color:var(--text);}
+.mob-cta{margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f!important;font-weight:700;text-align:center;border-radius:var(--r);}
+
+/* ══ TICKER ══ */
+.ticker{position:fixed;top:var(--nav-h);left:0;right:0;height:34px;z-index:990;background:linear-gradient(90deg,rgba(240,180,41,0.1),rgba(240,180,41,0.05),rgba(240,180,41,0.1));border-bottom:1px solid var(--gold-glo);display:flex;align-items:center;overflow:hidden;}
+.ticker-badge{flex-shrink:0;padding:0 14px;font-family:var(--fm);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);border-right:1px solid var(--gold-glo);height:100%;display:flex;align-items:center;gap:6px;background:var(--gold-dim);white-space:nowrap;}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite;}
+.ticker-scroll{display:flex;align-items:center;animation:tickScroll 38s linear infinite;white-space:nowrap;padding-left:40px;}
+.t-item{display:inline-flex;align-items:center;gap:8px;padding:0 36px;font-size:12px;font-weight:500;color:var(--text2);border-right:1px solid var(--border);}
+.t-tag{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:4px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;}
+.tag-new{background:rgba(240,180,41,0.14);color:var(--gold);border:1px solid var(--gold-glo);}
+.tag-live{background:rgba(45,212,160,0.12);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
+.tag-soon{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,0.2);}
+@keyframes tickScroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* ══ PAGE OFFSET ══ */
+.page{padding-top:calc(var(--nav-h) + 34px);}
+
+/* ══ HERO ══ */
+.hero{min-height:calc(100vh - var(--nav-h) - 34px);display:flex;align-items:center;position:relative;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;}
+/* Stars */
+.stars{position:absolute;inset:0;}
+[data-theme="light"] .stars{opacity:0;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur,3s) ease-in-out infinite var(--del,0s);}
+@keyframes twinkle{0%,100%{opacity:var(--op,0.6);}50%{opacity:0.1;}}
+/* Radial bg */
+.hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 65% 50%,rgba(15,22,60,0.7),transparent 70%);}
+[data-theme="light"] .hero-glow{background:radial-gradient(ellipse 80% 60% at 65% 50%,rgba(200,212,240,0.5),transparent 70%);}
+
+.hero-inner{max-width:var(--max-w);margin:0 auto;padding:60px 28px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:1;}
+
+/* hero text */
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.eyebrow-line{width:24px;height:1px;background:var(--gold);}
+.hero h1{font-size:clamp(40px,5.5vw,70px);font-weight:900;letter-spacing:-0.035em;line-height:1.0;margin-bottom:22px;}
+.hero h1 .acc{color:var(--gold);}
+.hero h1 em{font-style:italic;font-weight:500;font-family:var(--fb);opacity:0.75;}
+.hero-sub{font-size:17px;color:var(--text2);line-height:1.7;margin-bottom:36px;max-width:430px;}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:44px;}
+.btn-pri{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
+.btn-sec{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r);font-size:15px;font-weight:600;border:1px solid var(--border2);color:var(--text);transition:all 0.2s;}
+.btn-sec:hover{border-color:var(--gold);color:var(--gold);}
+.pills{display:flex;flex-wrap:wrap;gap:8px;}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:100px;font-size:12.5px;font-weight:600;background:var(--card);border:1px solid var(--border2);color:var(--text2);transition:all 0.25s;}
+.pill:hover{border-color:var(--gold-glo);color:var(--gold);transform:translateY(-1px);}
+.pill-dot{width:7px;height:7px;border-radius:50%;}
+
+/* ══ EARTH ══ */
+.earth-wrap{position:relative;display:flex;align-items:center;justify-content:center;height:520px;}
+
+/* orbital rings */
+.o-ring{position:absolute;border-radius:50%;border:1px solid rgba(240,180,41,0.12);animation:oSpin linear infinite;}
+.o-ring-1{width:380px;height:380px;animation-duration:22s;border-color:rgba(240,180,41,0.12);}
+.o-ring-2{width:462px;height:462px;animation-duration:32s;animation-direction:reverse;border-color:rgba(79,142,247,0.1);border-style:dashed;}
+.o-ring-3{width:536px;height:536px;animation-duration:48s;border-color:rgba(45,212,160,0.07);}
+@keyframes oSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.o-dot{position:absolute;border-radius:50%;top:-4px;left:50%;margin-left:-4px;}
+.od-1{width:8px;height:8px;background:var(--gold);box-shadow:0 0 8px var(--gold);}
+.od-2{width:6px;height:6px;top:-3px;margin-left:-3px;background:var(--blue);box-shadow:0 0 6px var(--blue);}
+.od-3{width:5px;height:5px;top:-2.5px;margin-left:-2.5px;background:var(--green);box-shadow:0 0 5px var(--green);}
+
+/* earth sphere */
+.earth{width:260px;height:260px;border-radius:50%;position:relative;z-index:2;overflow:hidden;box-shadow:0 0 60px rgba(79,142,247,0.2),0 0 120px rgba(79,142,247,0.07),inset -30px -10px 60px rgba(0,0,40,0.6);cursor:grab;}
+.earth:active{cursor:grabbing;}
+.earth-surf{width:100%;height:100%;border-radius:50%;
+background:
+  radial-gradient(ellipse 80px 28px at 40% 30%,rgba(255,255,255,0.14),transparent 70%),
+  radial-gradient(ellipse 55px 18px at 70% 22%,rgba(255,255,255,0.1),transparent 70%),
+  radial-gradient(ellipse 38px 14px at 22% 60%,rgba(255,255,255,0.07),transparent 70%),
+  radial-gradient(ellipse 58px 80px at 30% 46%,#2d5a1b,#1a3d10 42%,transparent 70%),
+  radial-gradient(ellipse 80px 50px at 60% 56%,#1e4d15,#163d0e 42%,transparent 62%),
+  radial-gradient(ellipse 40px 58px at 74% 36%,#2a5218,transparent 62%),
+  radial-gradient(ellipse 48px 40px at 16% 36%,#3a6b20,transparent 60%),
+  radial-gradient(ellipse 28px 48px at 84% 66%,#1f4812,transparent 55%),
+  radial-gradient(ellipse 44px 34px at 50% 76%,#254e16,transparent 55%),
+  radial-gradient(ellipse 120px 28px at 50% 4%,rgba(200,220,255,0.38),transparent 70%),
+  radial-gradient(ellipse 100px 22px at 50% 96%,rgba(200,220,255,0.28),transparent 70%),
+  linear-gradient(180deg,#0a2545,#0d3260 32%,#0f3d78 62%,#0a2545);
 }
+.earth-atm{position:absolute;inset:-8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,transparent 45%,rgba(79,142,247,0.06) 55%,rgba(79,142,247,0.14) 70%,rgba(79,142,247,0.07) 86%,transparent);z-index:3;pointer-events:none;}
+.earth-glow-ring{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(79,142,247,0.14),transparent 70%);z-index:1;}
 
-.hero-inner {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  width: 100%;
-  position: relative; z-index: 1;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
-}
+/* HUD items */
+.hud{position:absolute;left:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:5;}
+.hud-item{background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);}
+.hud-ico{font-size:15px;}
+.hud-val{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--text);}
+.hud-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;}
+.hud-status{width:6px;height:6px;border-radius:50%;margin-left:auto;flex-shrink:0;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
 
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 24px;
-}
+/* Dijo */
+.dijo-wrap{position:absolute;bottom:18px;right:14px;z-index:10;cursor:pointer;}
+.dijo-bubble{position:absolute;bottom:118px;right:0;background:var(--card);border:1px solid var(--border2);border-radius:14px 14px 0 14px;padding:11px 14px;font-size:13px;color:var(--text2);line-height:1.5;box-shadow:var(--sh);opacity:0;transform:translateY(8px);transition:all 0.3s;pointer-events:none;max-width:190px;}
+.dijo-wrap:hover .dijo-bubble,.dijo-bubble.show{opacity:1;transform:translateY(0);}
+.dijo-img{width:108px;height:108px;border-radius:50%;overflow:hidden;background:var(--bg3);border:2px solid var(--gold-glo);box-shadow:0 0 28px var(--gold-glo),0 8px 28px rgba(0,0,0,0.5);animation:dijoFloat 4s ease-in-out infinite;}
+.dijo-img img{width:100%;height:100%;object-fit:cover;mix-blend-mode:lighten;filter:brightness(1.1);}
+.dijo-tag{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-family:var(--fm);font-size:9px;padding:2px 8px;border-radius:4px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);white-space:nowrap;letter-spacing:0.1em;}
+@keyframes dijoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
 
-.hero-eyebrow-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--gold);
-  animation: pulse 2s ease infinite;
-}
+/* ══ ANNOUNCEMENTS ══ */
+.ann-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:52px 28px;position:relative;overflow:hidden;}
+.ann-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 100% at 50% 50%,var(--gold-dim),transparent);pointer-events:none;}
+.ann-inner{max-width:var(--max-w);margin:0 auto;position:relative;z-index:1;}
+.ann-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;}
+.ann-label{display:flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);}
+.al-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite;}
+.ann-ctrl{display:flex;gap:8px;}
+.ctrl-btn{width:34px;height:34px;border-radius:10px;background:var(--card);border:1px solid var(--border2);color:var(--text2);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;}
+.ctrl-btn:hover{border-color:var(--gold);color:var(--gold);}
 
-.hero h1 {
-  font-size: clamp(44px, 5.5vw, 76px);
-  font-weight: 900;
-  letter-spacing: -0.035em;
-  line-height: 1.0;
-  margin-bottom: 24px;
-}
+/* slide track */
+.slide-viewport{overflow:hidden;border-radius:var(--r2);}
+.slide-track{display:flex;transition:transform 0.52s cubic-bezier(0.4,0,0.2,1);}
+.slide{min-width:100%;display:grid;grid-template-columns:80px 1fr 100px;gap:32px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:36px 40px;}
+.slide-icon{width:72px;height:72px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:34px;flex-shrink:0;position:relative;}
+.slide-icon::after{content:'';position:absolute;inset:0;border-radius:18px;background:inherit;filter:blur(20px);opacity:0.4;z-index:-1;transform:scale(1.4);}
+.s-tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:6px;margin-bottom:10px;font-weight:500;}
+.s-title{font-family:var(--fd);font-size:clamp(17px,2.4vw,25px);font-weight:900;letter-spacing:-0.02em;margin-bottom:8px;}
+.s-desc{font-size:14px;color:var(--text2);line-height:1.65;max-width:580px;}
+.s-cta{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:13px;font-weight:700;color:var(--gold);transition:gap 0.2s;}
+.s-cta:hover{gap:10px;}
+.s-meta{text-align:right;flex-shrink:0;}
+.s-num{font-family:var(--fm);font-size:40px;font-weight:500;line-height:1;letter-spacing:-0.04em;color:var(--text3);margin-bottom:6px;}
+.s-ver{font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:0.1em;}
 
-.hero h1 .gold { color: var(--gold); }
-.hero h1 .serif { font-style: italic; font-weight: 400; }
+/* dots */
+.ann-dots{display:flex;justify-content:center;gap:8px;margin-top:20px;}
+.a-dot{width:24px;height:3px;border-radius:2px;background:var(--border2);cursor:pointer;transition:all 0.3s;}
+.a-dot.on{background:var(--gold);width:38px;}
 
-.hero-sub {
-  font-size: 18px;
-  color: var(--text2);
-  line-height: 1.65;
-  margin-bottom: 40px;
-  max-width: 460px;
-}
+/* progress */
+.ann-prog{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--border);}
+.ann-prog-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));transform-origin:left;animation:progFill 5.5s linear infinite;}
+@keyframes progFill{from{transform:scaleX(0);}to{transform:scaleX(1);}}
 
-.hero-actions {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-}
+/* ══ ECO ══ */
+.section{padding:96px 28px;max-width:var(--max-w);margin:0 auto;}
+.label-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.label-tag::before{content:'';width:20px;height:1px;background:var(--gold);}
+.sec-title{font-size:clamp(28px,4vw,46px);font-weight:900;letter-spacing:-0.025em;}
+.eco-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:48px;}
+.eco-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:30px 26px;transition:all 0.3s;display:block;position:relative;overflow:hidden;}
+.eco-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ea,var(--gold));transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
+.eco-card:hover{transform:translateY(-5px);border-color:var(--border2);box-shadow:var(--sh);}
+.eco-card:hover::before{transform:scaleX(1);}
+.eco-ico{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px;}
+.eco-card h3{font-size:17px;font-weight:800;margin-bottom:10px;letter-spacing:-0.02em;}
+.eco-card p{font-size:13.5px;color:var(--text2);line-height:1.6;}
+.eco-arr{margin-top:18px;color:var(--text3);font-size:18px;transition:all 0.2s;}
+.eco-card:hover .eco-arr{color:var(--ea,var(--gold));transform:translateX(4px);}
 
-.hero-stats {
-  display: flex; gap: 32px; margin-top: 56px;
-  padding-top: 32px;
-  border-top: 1px solid var(--border);
-}
+/* ══ AUDIENCE ══ */
+.aud-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:48px;}
+.aud-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:32px 24px;text-align:center;transition:all 0.3s;}
+.aud-card:hover{border-color:var(--gold-glo);box-shadow:0 0 40px var(--gold-glo);}
+.aud-ico{font-size:38px;margin-bottom:14px;}
+.aud-card h3{font-size:16px;font-weight:800;margin-bottom:9px;}
+.aud-card p{font-size:13.5px;color:var(--text2);line-height:1.6;}
 
-.hero-stat-num {
-  font-family: var(--font-display);
-  font-size: 28px; font-weight: 900;
-  color: var(--gold);
-  letter-spacing: -0.03em;
-}
+/* ══ CTA BAND ══ */
+.cta-band{margin:0 28px 80px;background:linear-gradient(135deg,var(--gold-dim),rgba(240,180,41,0.03));border:1px solid var(--gold-glo);border-radius:var(--r2);padding:72px 60px;text-align:center;position:relative;overflow:hidden;}
+.cta-band::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(240,180,41,0.06),transparent);pointer-events:none;}
+.cta-band h2{font-size:clamp(26px,4vw,46px);margin-bottom:14px;position:relative;}
+.cta-band p{font-size:17px;color:var(--text2);margin-bottom:32px;position:relative;}
+.cta-acts{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative;}
 
-.hero-stat-label {
-  font-size: 12px; color: var(--text3);
-  margin-top: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
+/* ══ FOOTER ══ */
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:60px 28px 36px;}
+.footer-inner{max-width:var(--max-w);margin:0 auto;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
+.footer-brand p{color:var(--text2);font-size:14px;line-height:1.7;margin-top:14px;max-width:260px;}
+.fc h4{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+.fc a{display:block;font-size:14px;color:var(--text2);margin-bottom:9px;transition:color 0.2s;}
+.fc a:hover{color:var(--gold);}
+.footer-bot{display:flex;justify-content:space-between;align-items:center;padding-top:28px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text3);}
 
-/* Hero visual */
-.hero-visual {
-  position: relative;
-}
+/* ══ DIVIDER ══ */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:0 28px;}
 
-.hero-card-stack {
-  position: relative;
-  height: 420px;
-}
+/* ══ ANIMATIONS ══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.anim{opacity:0;transform:translateY(22px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.anim.visible{opacity:1;transform:none;}
 
-.hero-card {
-  position: absolute;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: var(--sh2);
-}
-
-.hero-card-main {
-  width: 320px; top: 0; left: 50%; transform: translateX(-50%);
-  z-index: 3;
-  animation: fadeUp 0.8s ease 0.2s both;
-}
-
-.hero-card-2 {
-  width: 260px; bottom: 20px; left: 0;
-  z-index: 2;
-  animation: fadeUp 0.8s ease 0.4s both;
-}
-
-.hero-card-3 {
-  width: 220px; bottom: 0; right: 0;
-  z-index: 2;
-  animation: fadeUp 0.8s ease 0.5s both;
-}
-
-.card-metric {
-  font-family: var(--font-mono);
-  font-size: 11px; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.1em;
-  margin-bottom: 8px;
-}
-
-.card-value {
-  font-family: var(--font-display);
-  font-size: 32px; font-weight: 900;
-  color: var(--text); letter-spacing: -0.02em;
-}
-
-.card-change {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 600;
-  color: var(--green);
-  margin-top: 4px;
-}
-
-.mini-bars {
-  display: flex; align-items: flex-end; gap: 4px;
-  height: 40px; margin-top: 16px;
-}
-
-.mini-bar {
-  flex: 1; background: var(--gold-dim);
-  border-radius: 3px 3px 0 0;
-  border: 1px solid var(--gold-glow);
-  transition: all 0.3s;
-}
-
-.mini-bar.active { background: linear-gradient(180deg, var(--gold), var(--gold2)); }
-
-/* ── Ecosystem section ── */
-.ecosystem {
-  padding: 100px 32px;
-  background: var(--ink2);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-.ecosystem-inner { max-width: var(--max-w); margin: 0 auto; }
-
-.ecosystem-head {
-  text-align: center;
-  margin-bottom: 64px;
-}
-
-.eco-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
-.eco-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 32px 28px;
-  transition: all 0.3s;
-  cursor: pointer;
-  text-decoration: none;
-  display: block;
-  position: relative;
-  overflow: hidden;
-}
-
-.eco-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--eco-color, var(--gold));
-  transform: scaleX(0);
-  transition: transform 0.3s;
-}
-
-.eco-card:hover { transform: translateY(-4px); box-shadow: var(--sh2); border-color: var(--border2); }
-.eco-card:hover::before { transform: scaleX(1); }
-
-.eco-icon {
-  width: 48px; height: 48px;
-  border-radius: 12px;
-  background: var(--eco-dim, var(--gold-dim));
-  border: 1px solid var(--eco-border, var(--gold-glow));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px;
-  margin-bottom: 20px;
-}
-
-.eco-card h3 {
-  font-size: 18px; font-weight: 800;
-  margin-bottom: 10px;
-  letter-spacing: -0.02em;
-}
-
-.eco-card p {
-  font-size: 14px; color: var(--text2);
-  line-height: 1.6;
-}
-
-.eco-arrow {
-  margin-top: 20px;
-  font-size: 20px;
-  color: var(--text3);
-  transition: all 0.2s;
-}
-.eco-card:hover .eco-arrow { color: var(--gold); transform: translateX(4px); }
-
-/* ── Who it's for ── */
-.audience-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
-}
-
-.audience-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 36px 28px;
-  text-align: center;
-  transition: all 0.3s;
-}
-
-.audience-card:hover { border-color: var(--gold-glow); box-shadow: var(--sh-gold); }
-
-.audience-icon {
-  font-size: 36px; margin-bottom: 16px;
-  display: block;
-}
-
-.audience-card h3 { font-size: 17px; font-weight: 800; margin-bottom: 10px; }
-.audience-card p { font-size: 13.5px; color: var(--text2); line-height: 1.6; }
-
-/* ── CTA Band ── */
-.cta-band {
-  background: linear-gradient(135deg, var(--gold-dim), rgba(201,168,76,0.05));
-  border: 1px solid var(--gold-glow);
-  border-radius: var(--r2);
-  padding: 72px 64px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  margin: 0 32px;
-}
-
-.cta-band-bg {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(201,168,76,0.08), transparent);
-}
-
-.cta-band h2 {
-  font-size: clamp(28px, 4vw, 48px);
-  margin-bottom: 16px;
-  position: relative;
-}
-
-.cta-band p {
-  font-size: 18px; color: var(--text2);
-  margin-bottom: 36px; position: relative;
-}
-
-.cta-band-actions {
-  display: flex; gap: 14px; justify-content: center;
-  flex-wrap: wrap; position: relative;
-}
-
-@media (max-width: 900px) {
-  .eco-grid { grid-template-columns: repeat(2, 1fr); }
-  .audience-grid { grid-template-columns: repeat(2, 1fr); }
-  .hero-inner { grid-template-columns: 1fr; }
-  .hero-visual { display: none; }
-  .hero-stats { gap: 20px; }
-}
-
-@media (max-width: 480px) {
-  .eco-grid { grid-template-columns: 1fr; }
-  .audience-grid { grid-template-columns: 1fr 1fr; }
-  .cta-band { padding: 40px 24px; margin: 0 20px; }
-}
+/* ══ RESPONSIVE ══ */
+@media(max-width:1000px){.eco-grid{grid-template-columns:repeat(2,1fr);}.aud-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:860px){.hero-inner{grid-template-columns:1fr;}.earth-wrap{display:none;}.nav-links,.btn-ghost-nav{display:none;}.hamburger{display:flex;}.footer-grid{grid-template-columns:1fr 1fr;gap:28px;}.slide{grid-template-columns:auto 1fr;}.s-meta{display:none;}}
+@media(max-width:560px){.eco-grid{grid-template-columns:1fr;}.aud-grid{grid-template-columns:1fr 1fr;}.footer-grid{grid-template-columns:1fr;}.slide{grid-template-columns:1fr;padding:24px;}.slide-icon{display:none;}.hud{display:none;}.cta-band{padding:44px 24px;margin:0 16px 60px;}}
 </style>
 </head>
 <body>
-<div id="nav-container"></div>
+
+<!-- ══ LIVE TICKER ══ -->
+<div class="ticker">
+  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="ticker-scroll">
+      <!-- ADD NEW ANNOUNCEMENTS HERE — just copy a .t-item line -->
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dija AI Assistant — Your personal financial co-pilot is always on</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Creator Studio V2 — Enhanced content tools coming this month</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Free Forever plan available on ImpactGrid Analytics</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>Mobile dashboard — Manage your business on any device</span>
+      <!-- Duplicate for seamless loop -->
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dija AI Assistant — Your personal financial co-pilot is always on</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Creator Studio V2 — Enhanced content tools coming this month</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Free Forever plan available on ImpactGrid Analytics</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>Mobile dashboard — Manage your business on any device</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NAV ══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><div class="logo-mark">IG</div>ImpactGrid</a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="consulting.html">Consulting</a></li>
+      <li><a href="analytics.html">Analytics</a></li>
+      <li><a href="creator-studio.html">Creator Studio</a></li>
+      <li><a href="network.html">Network</a></li>
+      <li><a href="ai.html">Dija AI</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+      <a href="login.html" class="btn-ghost-nav">Login</a>
+      <a href="join.html" class="btn-gold-nav">Join ImpactGrid</a>
+    </div>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<div class="mob-nav" id="mobNav">
+  <a href="index.html">Home</a><a href="about.html">About</a><a href="consulting.html">Consulting</a>
+  <a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a>
+  <a href="network.html">Network</a><a href="ai.html">Dija AI</a><a href="pricing.html">Pricing</a>
+  <a href="login.html">Login</a><a href="join.html" class="mob-cta">Join ImpactGrid</a>
+</div>
+
 <div class="page">
 
-<!-- ── Hero ── -->
+<!-- ══ HERO ══ -->
 <section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-grid-lines"></div>
+  <div class="hero-bg">
+    <div class="stars" id="stars"></div>
+    <div class="hero-glow"></div>
+  </div>
   <div class="hero-inner">
-    <div class="anim-fade-up">
-      <div class="hero-eyebrow">
-        <span class="hero-eyebrow-dot"></span>
-        Intelligence Platform
+
+    <!-- Text -->
+    <div style="animation:fadeUp 0.7s ease 0.1s both;">
+      <div class="eyebrow"><span class="eyebrow-line"></span>Intelligence Platform · Est. 2024</div>
+      <h1>Turning Data<br>Into <span class="acc">Strategic</span><br><em>Advantage</em></h1>
+      <p class="hero-sub">ImpactGrid combines analytics, consulting, creator tools, and a professional network — all powered by Dija AI.</p>
+      <div class="hero-btns">
+        <a href="analytics.html" class="btn-pri">Explore Platform →</a>
+        <a href="join.html" class="btn-sec">Join ImpactGrid</a>
       </div>
-      <h1>
-        Turning Data<br>
-        Into <span class="gold">Strategic</span><br>
-        <span class="serif">Advantage</span>
-      </h1>
-      <p class="hero-sub">ImpactGrid combines analytics, consulting, creator tools, and a professional network to help businesses and creators grow with intelligence.</p>
-      <div class="hero-actions">
-        <a href="analytics.html" class="btn btn-gold">Explore Platform →</a>
-        <a href="join.html" class="btn btn-outline">Join ImpactGrid</a>
-      </div>
-      <div class="hero-stats">
-        <div>
-          <div class="hero-stat-num">4</div>
-          <div class="hero-stat-label">Integrated Platforms</div>
-        </div>
-        <div>
-          <div class="hero-stat-num">AI</div>
-          <div class="hero-stat-label">Powered Insights</div>
-        </div>
-        <div>
-          <div class="hero-stat-num">360°</div>
-          <div class="hero-stat-label">Business Intelligence</div>
-        </div>
+      <div class="pills">
+        <a href="consulting.html" class="pill"><span class="pill-dot" style="background:#f0b429;"></span>Consulting</a>
+        <a href="analytics.html" class="pill"><span class="pill-dot" style="background:#4f8ef7;"></span>Analytics</a>
+        <a href="creator-studio.html" class="pill"><span class="pill-dot" style="background:#a855f7;"></span>Creator Studio</a>
+        <a href="network.html" class="pill"><span class="pill-dot" style="background:#2dd4a0;"></span>Network</a>
+        <a href="ai.html" class="pill"><span class="pill-dot" style="background:var(--gold);box-shadow:0 0 6px var(--gold);"></span>Dija AI</a>
       </div>
     </div>
 
-    <div class="hero-visual anim-fade-in delay-3">
-      <div class="hero-card-stack">
-        <div class="hero-card hero-card-main">
-          <div class="card-metric">Revenue Performance</div>
-          <div class="card-value">£142,800</div>
-          <div class="card-change">↑ +23.4% this quarter</div>
-          <div class="mini-bars">
-            <div class="mini-bar" style="height:30%"></div>
-            <div class="mini-bar" style="height:45%"></div>
-            <div class="mini-bar" style="height:35%"></div>
-            <div class="mini-bar" style="height:60%"></div>
-            <div class="mini-bar" style="height:50%"></div>
-            <div class="mini-bar" style="height:75%"></div>
-            <div class="mini-bar active" style="height:90%"></div>
+    <!-- Earth visual -->
+    <div class="earth-wrap" style="animation:fadeUp 0.7s ease 0.3s both;">
+
+      <!-- HUD -->
+      <div class="hud">
+        <div class="hud-item" style="animation:fadeUp 0.6s ease 0.5s both;">
+          <span class="hud-ico">⚡</span>
+          <div><div class="hud-val">Analytics</div><div class="hud-lbl">Platform</div></div>
+          <div class="hud-status"></div>
+        </div>
+        <div class="hud-item" style="animation:fadeUp 0.6s ease 0.7s both;">
+          <span class="hud-ico">🤖</span>
+          <div><div class="hud-val">Dija AI</div><div class="hud-lbl">Active</div></div>
+          <div class="hud-status"></div>
+        </div>
+        <div class="hud-item" style="animation:fadeUp 0.6s ease 0.9s both;">
+          <span class="hud-ico">🌐</span>
+          <div><div class="hud-val">Network</div><div class="hud-lbl">Live</div></div>
+          <div class="hud-status"></div>
+        </div>
+      </div>
+
+      <!-- Orbit rings -->
+      <div class="o-ring o-ring-1"><div class="o-dot od-1"></div></div>
+      <div class="o-ring o-ring-2"><div class="o-dot od-2"></div></div>
+      <div class="o-ring o-ring-3"><div class="o-dot od-3"></div></div>
+
+      <div class="earth-glow-ring"></div>
+      <div class="earth" id="earth" title="Drag to spin"><div class="earth-surf"></div></div>
+      <div class="earth-atm"></div>
+
+      <!-- Dijo -->
+      <div class="dijo-wrap" onclick="dijoTalk()">
+        <div class="dijo-bubble" id="dijoBubble">Hey! I am Dija — ask me anything about your business. 👋</div>
+        <div class="dijo-img">
+          <img src="dijo.png" alt="Dija AI"
+            onerror="this.parentElement.style.cssText='display:flex;align-items:center;justify-content:center;font-size:44px;';this.outerHTML='🤖'"/>
+        </div>
+        <div class="dijo-tag">DIJA AI</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ANNOUNCEMENT SLIDESHOW ══ -->
+<!-- ╔══════════════════════════════════════════════════════════╗
+     ║  TO ADD A NEW SLIDE:                                     ║
+     ║  1. Copy one of the .slide divs below                   ║
+     ║  2. Paste it before the closing </div> of #slideTrack   ║
+     ║  3. Update the icon, tag, title, desc, and link         ║
+     ║  4. Add a new <div class="a-dot"> in #slideDots         ║
+     ║  5. Update totalSlides in the script below (line ~420)  ║
+     ╚══════════════════════════════════════════════════════════╝ -->
+<section class="ann-section">
+  <div class="ann-inner">
+    <div class="ann-head">
+      <div class="ann-label"><span class="al-dot"></span>ImpactGrid Updates — Latest News</div>
+      <div class="ann-ctrl">
+        <button class="ctrl-btn" onclick="sPrev()" title="Previous">←</button>
+        <button class="ctrl-btn" onclick="sNext()" title="Next">→</button>
+      </div>
+    </div>
+
+    <div class="slide-viewport">
+      <div class="slide-track" id="slideTrack">
+
+        <!-- SLIDE 1 ─ ImpactGrid V3.0 -->
+        <div class="slide">
+          <div class="slide-icon" style="background:rgba(240,180,41,0.12);">🚀</div>
+          <div>
+            <div class="s-tag tag-new">New Release</div>
+            <div class="s-title">ImpactGrid V3.0 Is Here</div>
+            <div class="s-desc">The most powerful version yet. AI-powered risk scoring, multi-dimensional performance matrix, enhanced forecasting, and Dija AI built directly into your dashboard.</div>
+            <a href="analytics.html" class="s-cta">Explore V3.0 →</a>
           </div>
+          <div class="s-meta"><div class="s-num">01</div><div class="s-ver">V3.0 · 2026</div></div>
         </div>
-        <div class="hero-card hero-card-2">
-          <div class="card-metric">Risk Score</div>
-          <div class="card-value" style="color:var(--green);">Low</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:6px;">Stability: 87 / 100</div>
+
+        <!-- SLIDE 2 ─ Dija AI -->
+        <div class="slide">
+          <div class="slide-icon" style="background:rgba(240,180,41,0.14);overflow:hidden;">
+            <img src="dijo.png" alt="Dija" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:lighten;border-radius:14px;" onerror="this.outerHTML='🤖'"/>
+          </div>
+          <div>
+            <div class="s-tag tag-live">Live Now</div>
+            <div class="s-title">Meet Dija — Your AI Business Adviser</div>
+            <div class="s-desc">Dija is permanently hosted, always on, and ready to give straight answers about your business health, risks, and growth strategy. No waffle, just intelligence.</div>
+            <a href="ai.html" class="s-cta">Talk to Dija →</a>
+          </div>
+          <div class="s-meta"><div class="s-num">02</div><div class="s-ver">AI · 2026</div></div>
         </div>
-        <div class="hero-card hero-card-3">
-          <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">AI Insight</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Margin up 4pts.<br>Consider expanding.</div>
+
+        <!-- SLIDE 3 ─ Network -->
+        <div class="slide">
+          <div class="slide-icon" style="background:rgba(45,212,160,0.12);">🌐</div>
+          <div>
+            <div class="s-tag" style="background:rgba(45,212,160,0.1);color:var(--green);border:1px solid rgba(45,212,160,0.25);">New Feature</div>
+            <div class="s-title">ImpactGrid Network Is Open</div>
+            <div class="s-desc">Professionals, analysts, creators, and employers can now connect through the ImpactGrid Network. Create your profile, post opportunities, and build strategic relationships.</div>
+            <a href="network.html" class="s-cta">Join the Network →</a>
+          </div>
+          <div class="s-meta"><div class="s-num">03</div><div class="s-ver">Network · 2026</div></div>
         </div>
-      </div>
+
+        <!-- SLIDE 4 ─ Creator Studio V2 -->
+        <div class="slide">
+          <div class="slide-icon" style="background:rgba(168,85,247,0.12);">🎬</div>
+          <div>
+            <div class="s-tag" style="background:rgba(168,85,247,0.1);color:#c084fc;border:1px solid rgba(168,85,247,0.25);">Coming Soon</div>
+            <div class="s-title">Creator Studio V2 — Launching Soon</div>
+            <div class="s-desc">An upgraded Creator Studio with smarter AI content assistance, an improved scheduling calendar, deeper analytics, and a new media optimisation engine. Built for serious creators.</div>
+            <a href="creator-studio.html" class="s-cta">Learn More →</a>
+          </div>
+          <div class="s-meta"><div class="s-num">04</div><div class="s-ver">Studio · 2026</div></div>
+        </div>
+
+        <!-- ← PASTE NEW SLIDES ABOVE THIS LINE -->
+
+      </div><!-- /slideTrack -->
+    </div><!-- /slide-viewport -->
+
+    <div class="ann-dots" id="slideDots">
+      <div class="a-dot on" onclick="goSlide(0)"></div>
+      <div class="a-dot" onclick="goSlide(1)"></div>
+      <div class="a-dot" onclick="goSlide(2)"></div>
+      <div class="a-dot" onclick="goSlide(3)"></div>
+      <!-- Add a new dot when you add a new slide -->
     </div>
+  </div>
+  <div class="ann-prog"><div class="ann-prog-bar" id="progBar"></div></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ ECOSYSTEM ══ -->
+<section class="section anim">
+  <div style="text-align:center;">
+    <div class="label-tag">The ImpactGrid Ecosystem</div>
+    <h2 class="sec-title">Everything Connected.<br>Everything Intelligent.</h2>
+  </div>
+  <div class="eco-grid">
+    <a href="consulting.html" class="eco-card" style="--ea:#f0b429;">
+      <div class="eco-ico" style="background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.2);">📊</div>
+      <h3>Consulting</h3>
+      <p>Data-driven business advisory. Strategy, intelligence, and implementation support.</p>
+      <div class="eco-arr">→</div>
+    </a>
+    <a href="analytics.html" class="eco-card" style="--ea:#4f8ef7;">
+      <div class="eco-ico" style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.2);">⚡</div>
+      <h3>Analytics</h3>
+      <p>AI-powered decision intelligence. Track performance, forecast growth, reduce risk.</p>
+      <div class="eco-arr">→</div>
+    </a>
+    <a href="creator-studio.html" class="eco-card" style="--ea:#a855f7;">
+      <div class="eco-ico" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);">🎬</div>
+      <h3>Creator Studio</h3>
+      <p>Create, schedule, and optimise content with professional tools and AI assistance.</p>
+      <div class="eco-arr">→</div>
+    </a>
+    <a href="network.html" class="eco-card" style="--ea:#2dd4a0;">
+      <div class="eco-ico" style="background:rgba(45,212,160,0.1);border:1px solid rgba(45,212,160,0.2);">🌐</div>
+      <h3>Network</h3>
+      <p>A professional talent ecosystem connecting experts, businesses, and opportunities.</p>
+      <div class="eco-arr">→</div>
+    </a>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- ── Ecosystem ── -->
-<section class="ecosystem">
-  <div class="ecosystem-inner">
-    <div class="ecosystem-head">
-      <div class="label">The ImpactGrid Ecosystem</div>
-      <h2 class="heading">Everything Your Business Needs<br>In One Connected Platform</h2>
-    </div>
-    <div class="eco-grid">
-      <a href="consulting.html" class="eco-card" style="--eco-color:#c9a84c;--eco-dim:rgba(201,168,76,0.1);--eco-border:rgba(201,168,76,0.2);">
-        <div class="eco-icon">📊</div>
-        <h3>Consulting</h3>
-        <p>Data-driven business advisory. Strategy, intelligence, and implementation support.</p>
-        <div class="eco-arrow">→</div>
-      </a>
-      <a href="analytics.html" class="eco-card" style="--eco-color:#3b82f6;--eco-dim:rgba(59,130,246,0.1);--eco-border:rgba(59,130,246,0.2);">
-        <div class="eco-icon">⚡</div>
-        <h3>Analytics</h3>
-        <p>AI-powered decision intelligence. Track performance, forecast growth, reduce risk.</p>
-        <div class="eco-arrow">→</div>
-      </a>
-      <a href="creator-studio.html" class="eco-card" style="--eco-color:#a855f7;--eco-dim:rgba(168,85,247,0.1);--eco-border:rgba(168,85,247,0.2);">
-        <div class="eco-icon">🎬</div>
-        <h3>Creator Studio</h3>
-        <p>Tools for creators and marketing teams. Create, schedule, and optimise content.</p>
-        <div class="eco-arrow">→</div>
-      </a>
-      <a href="network.html" class="eco-card" style="--eco-color:#22c55e;--eco-dim:rgba(34,197,94,0.1);--eco-border:rgba(34,197,94,0.2);">
-        <div class="eco-icon">🌐</div>
-        <h3>Network</h3>
-        <p>A professional talent ecosystem. Connect experts, businesses, and opportunities.</p>
-        <div class="eco-arrow">→</div>
-      </a>
-    </div>
+<!-- ══ AUDIENCE ══ -->
+<section class="section anim">
+  <div style="text-align:center;">
+    <div class="label-tag">Who ImpactGrid Is For</div>
+    <h2 class="sec-title">Built for Strategic Thinkers</h2>
+  </div>
+  <div class="aud-grid">
+    <div class="aud-card"><div class="aud-ico">🚀</div><h3>Startups</h3><p>Enterprise-level intelligence from day one. Make data-driven decisions faster than competition.</p></div>
+    <div class="aud-card"><div class="aud-ico">🏢</div><h3>Businesses</h3><p>Consolidate analytics, streamline operations, and grow with a clear strategic picture.</p></div>
+    <div class="aud-card"><div class="aud-ico">🎨</div><h3>Creators</h3><p>Professional tools to create, analyse, and scale your content and brand presence.</p></div>
+    <div class="aud-card"><div class="aud-ico">📈</div><h3>Professionals</h3><p>Deploy your expertise, find opportunities, and grow through the ImpactGrid Network.</p></div>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- ── Who it's for ── -->
-<section class="section">
-  <div style="text-align:center;margin-bottom:56px;">
-    <div class="label">Who ImpactGrid Is For</div>
-    <h2 class="heading">Built for Those Who Think Strategically</h2>
-  </div>
-  <div class="audience-grid">
-    <div class="audience-card">
-      <span class="audience-icon">🚀</span>
-      <h3>Startups</h3>
-      <p>Get the intelligence infrastructure of a large business from day one. Make data-driven decisions faster.</p>
-    </div>
-    <div class="audience-card">
-      <span class="audience-icon">🏢</span>
-      <h3>Businesses</h3>
-      <p>Consolidate your analytics, streamline operations, and grow with a clear strategic picture.</p>
-    </div>
-    <div class="audience-card">
-      <span class="audience-icon">🎨</span>
-      <h3>Content Creators</h3>
-      <p>Professional tools to create, analyse, and scale your content and brand presence.</p>
-    </div>
-    <div class="audience-card">
-      <span class="audience-icon">📈</span>
-      <h3>Data Professionals</h3>
-      <p>A platform and network to deploy your expertise, find opportunities, and grow your career.</p>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- ── Join CTA ── -->
-<section style="padding:80px 0;">
+<!-- ══ CTA ══ -->
+<section style="padding:60px 0 80px;">
   <div class="cta-band">
-    <div class="cta-band-bg"></div>
-    <div class="label" style="justify-content:center;">Get Started Today</div>
+    <div class="label-tag" style="justify-content:center;">Get Started Today</div>
     <h2>Ready to Build With Intelligence?</h2>
-    <p>Join the ImpactGrid ecosystem. Choose your path below.</p>
-    <div class="cta-band-actions">
-      <a href="join.html?type=professional" class="btn btn-gold">Join as Professional</a>
-      <a href="join.html?type=employer" class="btn btn-outline">Join as Employer</a>
+    <p>Join the ImpactGrid ecosystem and take your business to the next level.</p>
+    <div class="cta-acts">
+      <a href="join.html?type=professional" class="btn-pri">Join as Professional</a>
+      <a href="join.html?type=employer" class="btn-sec">Join as Employer</a>
     </div>
   </div>
 </section>
 
 </div><!-- /page -->
-<div id="footer-container"></div>
-<script src="nav.js"></script>
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo"><div class="logo-mark">IG</div><span>ImpactGrid</span></div>
+        <p>Turning data into strategic advantage. Analytics, consulting, creator tools, and a professional network in one ecosystem.</p>
+      </div>
+      <div class="fc"><h4>Platform</h4><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="network.html">Network</a><a href="ai.html">Dija AI</a></div>
+      <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="pricing.html">Pricing</a><a href="mailto:hello@impactgridgroup.com">Contact</a></div>
+      <div class="fc"><h4>Account</h4><a href="join.html">Join ImpactGrid</a><a href="login.html">Login</a><a href="dashboard.html">Dashboard</a></div>
+    </div>
+    <div class="footer-bot">
+      <span>© 2026 ImpactGrid Group Ltd. All rights reserved.</span>
+      <button onclick="toggleTheme()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;" id="footerThemeBtn">🌙 Dark Mode</button>
+    </div>
+  </div>
+</footer>
+
+<!-- ══ SCRIPTS ══ -->
 <script>
-  renderNav('index.html');
-  renderFooter();
-  updateNavAuth();
+/* ── THEME ── */
+var dark = true;
+function toggleTheme() {
+  dark = !dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
+  var ftb = document.getElementById('footerThemeBtn');
+  if (ftb) ftb.textContent = dark ? '🌙 Dark Mode' : '☀️ Light Mode';
+  try { localStorage.setItem('igt', dark ? 'd' : 'l'); } catch(e) {}
+}
+try { if (localStorage.getItem('igt') === 'l') { dark = false; document.documentElement.setAttribute('data-theme','light'); document.getElementById('themeBtn').textContent = '☀️'; var fb = document.getElementById('footerThemeBtn'); if(fb) fb.textContent='☀️ Light Mode'; } } catch(e) {}
+
+/* ── STARS ── */
+(function() {
+  var c = document.getElementById('stars');
+  if (!c) return;
+  var html = '';
+  for (var i = 0; i < 80; i++) {
+    var x = Math.random()*100, y = Math.random()*100;
+    var s = (Math.random()*1.5+0.5).toFixed(1);
+    var op = (Math.random()*0.5+0.2).toFixed(2);
+    var dur = (Math.random()*3+2).toFixed(1);
+    var del = (Math.random()*4).toFixed(1);
+    html += '<div class="star" style="left:'+x+'%;top:'+y+'%;width:'+s+'px;height:'+s+'px;--op:'+op+';--dur:'+dur+'s;--del:'+del+'s;"></div>';
+  }
+  c.innerHTML = html;
+})();
+
+/* ── MOBILE NAV ── */
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('mobNav').classList.toggle('open');
+});
+
+/* ── EARTH DRAG-SPIN ── */
+(function() {
+  var el = document.getElementById('earth');
+  if (!el) return;
+  var drag = false, lx = 0, rot = 0, vel = 0, hue = 0, raf;
+  function frame() {
+    if (!drag) { vel *= 0.97; rot += vel + 0.25; hue = (hue + 0.04) % 360; el.style.filter = 'hue-rotate('+hue+'deg)'; el.style.transform = 'rotateY('+rot+'deg)'; }
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+  el.addEventListener('mousedown', function(e) { drag=true; lx=e.clientX; el.style.cursor='grabbing'; e.preventDefault(); });
+  document.addEventListener('mousemove', function(e) { if(!drag)return; var dx=e.clientX-lx; vel=dx*0.5; rot+=dx*0.5; lx=e.clientX; el.style.transform='rotateY('+rot+'deg)'; });
+  document.addEventListener('mouseup', function() { drag=false; el.style.cursor='grab'; });
+  el.addEventListener('touchstart', function(e) { drag=true; lx=e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchmove', function(e) { if(!drag)return; var dx=e.touches[0].clientX-lx; vel=dx*0.4; rot+=dx*0.4; lx=e.touches[0].clientX; el.style.transform='rotateY('+rot+'deg)'; }, {passive:true});
+  document.addEventListener('touchend', function() { drag=false; });
+})();
+
+/* ── SLIDESHOW ── */
+(function() {
+  var track = document.getElementById('slideTrack');
+  var dots  = document.querySelectorAll('.a-dot');
+  var bar   = document.getElementById('progBar');
+  var cur   = 0;
+  var total = 4; /* ← UPDATE THIS when adding new slides */
+  var timer;
+
+  function go(n) {
+    cur = ((n % total) + total) % total;
+    track.style.transform = 'translateX(-'+(cur*100)+'%)';
+    dots.forEach(function(d,i){ d.classList.toggle('on', i===cur); });
+    if (bar) { bar.style.animation='none'; bar.offsetHeight; bar.style.animation='progFill 5.5s linear infinite'; }
+  }
+
+  function next() { go(cur+1); }
+  function prev() { go(cur-1); }
+  function start() { clearInterval(timer); timer = setInterval(next, 5500); }
+  function stop()  { clearInterval(timer); }
+
+  var ann = document.querySelector('.ann-section');
+  if (ann) { ann.addEventListener('mouseenter', stop); ann.addEventListener('mouseleave', start); }
+
+  window.sNext   = next;
+  window.sPrev   = prev;
+  window.goSlide = go;
+
+  start();
+})();
+
+/* ── DIJA SPEAK ── */
+var msgs = [
+  'Hey! Need help with your business numbers? I am here. 👋',
+  'Ask me about your revenue trends, risk score, or growth strategy.',
+  'ImpactGrid V3.0 just launched — want to see what is new?',
+  'I can analyse your data and tell you exactly what to focus on next.',
+  'Join the ImpactGrid Network to connect with top professionals.',
+  'Try the Analytics Platform free — no credit card needed.',
+];
+var mi = 0;
+function dijoTalk() {
+  var b = document.getElementById('dijoBubble');
+  if (!b) return;
+  b.textContent = msgs[mi % msgs.length]; mi++;
+  b.classList.add('show');
+  setTimeout(function() { b.classList.remove('show'); }, 3800);
+}
+setTimeout(dijoTalk, 2800);
+
+/* ── SCROLL ANIMATIONS ── */
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.anim').forEach(function(el) { observer.observe(el); });
 </script>
+
 </body>
 </html>
