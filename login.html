@@ -1,1 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Login — ImpactGrid Group</title>
+<link rel="icon" href="favicon.ico"/>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.login-wrap {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 120px 24px 60px;
+  position: relative;
+}
 
+.login-bg {
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 60% at 30% 40%, rgba(201,168,76,0.06), transparent),
+    radial-gradient(ellipse 40% 40% at 70% 70%, rgba(59,130,246,0.04), transparent);
+  pointer-events: none;
+}
+
+.login-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 48px;
+  width: 100%;
+  max-width: 440px;
+  position: relative;
+  box-shadow: var(--sh2);
+  animation: fadeUp 0.5s ease;
+}
+
+.login-logo {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-bottom: 32px;
+}
+
+.login-box h1 { font-size: 26px; text-align: center; margin-bottom: 8px; }
+.login-box .sub { font-size: 15px; color: var(--text2); text-align: center; margin-bottom: 32px; }
+
+.divider-or {
+  display: flex; align-items: center; gap: 12px;
+  margin: 24px 0;
+  font-size: 12px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.divider-or::before, .divider-or::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.login-btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: var(--ink); font-weight: 800; font-size: 16px;
+  border-radius: var(--r); border: none; cursor: pointer;
+  transition: all 0.2s; margin-top: 8px;
+}
+.login-btn:hover { transform: translateY(-2px); box-shadow: var(--sh-gold); }
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.forgot {
+  text-align: right; margin-top: -8px; margin-bottom: 20px;
+  font-size: 13px;
+}
+.forgot a { color: var(--gold); }
+
+.no-account {
+  text-align: center; margin-top: 24px;
+  font-size: 14px; color: var(--text2);
+}
+.no-account a { color: var(--gold); font-weight: 600; }
+
+@media (max-width: 480px) {
+  .login-box { padding: 32px 24px; }
+}
+</style>
+</head>
+<body>
+<div id="nav-container"></div>
+<div class="login-bg"></div>
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="nav-logo-mark">IG</div>
+      <span style="font-family:var(--font-display);font-weight:900;font-size:20px;">ImpactGrid</span>
+    </div>
+    <h1>Welcome Back</h1>
+    <p class="sub">Sign in to your ImpactGrid account.</p>
+
+    <div id="alertBox" class="alert"></div>
+
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" id="email" type="email" placeholder="you@example.com"
+        onkeydown="if(event.key==='Enter') login()"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="password" type="password" placeholder="Your password"
+        onkeydown="if(event.key==='Enter') login()"/>
+    </div>
+    <div class="forgot"><a href="reset-password.html">Forgot password?</a></div>
+    <button class="login-btn" id="loginBtn" onclick="login()">Sign In →</button>
+
+    <div class="no-account">
+      Do not have an account? <a href="join.html">Join ImpactGrid</a>
+    </div>
+  </div>
+</div>
+
+<script src="nav.js"></script>
+<script src="supabase-config.js"></script>
+<script>
+renderNav('');
+
+function showAlert(msg, type) {
+  var el = document.getElementById('alertBox');
+  el.textContent = msg;
+  el.className = 'alert alert-' + type + ' show';
+}
+
+async function login() {
+  var btn = document.getElementById('loginBtn');
+  var email = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+
+  if (!email || !password) {
+    showAlert('Please enter your email and password.', 'error'); return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Signing in…';
+
+  try {
+    var client = getSupabase();
+    var { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+
+    /* Determine role and redirect */
+    var role = data.user.user_metadata?.role || 'professional';
+    var status = data.user.user_metadata?.status || 'active';
+
+    if (role === 'admin') {
+      window.location.href = 'admin.html';
+    } else if (role === 'employer') {
+      window.location.href = 'employer-dashboard.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+
+  } catch(e) {
+    var msg = e.message || 'Login failed. Please check your details.';
+    if (msg.includes('Invalid login')) msg = 'Incorrect email or password.';
+    showAlert(msg, 'error');
+    btn.disabled = false; btn.textContent = 'Sign In →';
+  }
+}
+
+/* Auto-redirect if already logged in */
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    var client = getSupabase();
+    var { data } = await client.auth.getSession();
+    if (data.session) {
+      var role = data.session.user.user_metadata?.role || 'professional';
+      if (role === 'admin') window.location.href = 'admin.html';
+      else if (role === 'employer') window.location.href = 'employer-dashboard.html';
+      else window.location.href = 'dashboard.html';
+    }
+  } catch(e) {}
+});
+</script>
+</body>
+</html>
