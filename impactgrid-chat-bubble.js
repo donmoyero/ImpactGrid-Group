@@ -348,9 +348,9 @@
   /* ── Show welcome message — varies by mode ── */
   setTimeout(function() {
     var welcomes = {
-      group:     'Hi there! &#128075; I\'m <strong>Dijo</strong> from ImpactGrid — happy to answer any questions about what we do, our plans, or how to get started. What\'s on your mind?',
-      dashboard: 'Hi! &#128075; I\'m <strong>Dijo</strong>, your ImpactGrid assistant. I can help you navigate the platform, understand your dashboard, or answer questions about your account. What do you need?',
-      adviser:   'Hi! &#128075; I\'m <strong>Dijo</strong> — your personal financial adviser from ImpactGrid. Ask me anything about your business.'
+      group:     'Hey! 👋 I\'m Dijo — happy to help. Whether you want to know what ImpactGrid does, how pricing works, or just have a nosy around — fire away.',
+      dashboard: 'Hey! 👋 I\'m Dijo, your ImpactGrid assistant. Need help adding data, reading your numbers, or understanding what anything means? Just ask.',
+      adviser:   'Hey! 👋 I\'m Dijo — think of me as your financial co-pilot. Tell me about your business and I\'ll help you make sense of the numbers.'
     };
     igAppendMsg('ai', welcomes[MODE] || welcomes.group);
   }, 600);
@@ -365,10 +365,10 @@
         ['Data privacy',              "Is my data private?"]
       ],
       dashboard: [
-        ['How do I add data?',        "How do I add my monthly financial data?"],
-        ['View my records',           "How do I view and edit my records?"],
-        ['Upgrade my plan',           "How do I upgrade my plan?"],
-        ['What does risk score mean?',"What does my risk score mean?"]
+        ['➕ Add my data',            "How do I add my monthly revenue and expenses?"],
+        ['📋 View my records',        "How do I view and edit my financial records?"],
+        ['⬆️ Upgrade plan',           "What do I get if I upgrade my plan?"],
+        ['🔴 Risk score explained',   "What does my risk score mean and how is it calculated?"]
       ],
       adviser: [
         ['Health check',              "Give me a full financial health assessment"],
@@ -408,6 +408,23 @@
       igScrollBottom();
     }
   };
+
+  /* ── Auto-open after 2 seconds with a nudge ── */
+  setTimeout(function() {
+    var panel  = document.getElementById('ig-chat-panel');
+    var btn    = document.getElementById('ig-bubble-btn');
+    var unread = document.getElementById('ig-unread');
+    /* Only auto-open once per session */
+    try { if (sessionStorage.getItem('ig_chat_opened')) return; } catch(e){}
+    if (panel && panel.style.display === 'none') {
+      panel.style.display = 'flex';
+      panel.style.flexDirection = 'column';
+      if (btn) btn.classList.add('open');
+      if (unread) unread.remove();
+      igScrollBottom();
+      try { sessionStorage.setItem('ig_chat_opened', '1'); } catch(e){}
+    }
+  }, 2000);
 
   /* ── Send ── */
   window.igSend = function() {
