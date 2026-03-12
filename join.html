@@ -1,1 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Join ImpactGrid — Start Your Journey</title>
+<link rel="icon" href="favicon.ico"/>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.join-wrap {
+  min-height: 100vh;
+  display: grid; grid-template-columns: 1fr 1fr;
+}
 
+.join-left {
+  background: var(--ink2);
+  border-right: 1px solid var(--border);
+  padding: 80px 64px;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative; overflow: hidden;
+}
+
+.join-left-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 70% at 20% 60%, rgba(201,168,76,0.07), transparent);
+}
+
+.join-left-content { position: relative; z-index: 1; }
+
+.join-left h1 {
+  font-size: 42px; font-weight: 900;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+
+.join-left p {
+  font-size: 16px; color: var(--text2);
+  line-height: 1.7; margin-bottom: 40px;
+}
+
+.join-perks {
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.join-perk {
+  display: flex; align-items: flex-start; gap: 14px;
+}
+
+.perk-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: var(--gold-dim);
+  border: 1px solid var(--gold-glow);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+
+.perk-text h4 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.perk-text p  { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+.join-right {
+  padding: 80px 64px;
+  display: flex; flex-direction: column; justify-content: center;
+  overflow-y: auto;
+}
+
+/* Type selector */
+.type-selector {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 36px;
+}
+
+.type-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--r2);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.type-card:hover { border-color: var(--border2); }
+.type-card.selected { border-color: var(--gold); background: var(--gold-dim); }
+
+.type-icon { font-size: 28px; margin-bottom: 8px; }
+.type-label { font-size: 14px; font-weight: 700; }
+.type-desc { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+.form-section { display: none; }
+.form-section.active { display: block; animation: fadeUp 0.3s ease; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 16px;
+  border-radius: var(--r);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.submit-btn:hover { transform: translateY(-2px); box-shadow: var(--sh-gold); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.already-have {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--text2);
+}
+.already-have a { color: var(--gold); font-weight: 600; }
+
+.password-hint {
+  font-size: 12px; color: var(--text3);
+  margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .join-wrap { grid-template-columns: 1fr; }
+  .join-left { display: none; }
+  .join-right { padding: 40px 24px; }
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="nav-container"></div>
+<div class="page">
+<div class="join-wrap">
+
+  <!-- Left panel -->
+  <div class="join-left">
+    <div class="join-left-bg"></div>
+    <div class="join-left-content anim-fade-up">
+      <div class="label">Join ImpactGrid</div>
+      <h1>Your Intelligence<br>Journey Starts Here</h1>
+      <p>Access analytics, creator tools, a professional network, and AI insights — all in one platform.</p>
+      <div class="join-perks">
+        <div class="join-perk">
+          <div class="perk-icon">⚡</div>
+          <div class="perk-text">
+            <h4>Instant Analytics Access</h4>
+            <p>Upload your data and get AI-powered insights immediately.</p>
+          </div>
+        </div>
+        <div class="join-perk">
+          <div class="perk-icon">🌐</div>
+          <div class="perk-text">
+            <h4>Professional Network</h4>
+            <p>Connect with experts, creators, and businesses across the ecosystem.</p>
+          </div>
+        </div>
+        <div class="join-perk">
+          <div class="perk-icon">🎬</div>
+          <div class="perk-text">
+            <h4>Creator Studio</h4>
+            <p>Professional content tools to build and scale your presence.</p>
+          </div>
+        </div>
+        <div class="join-perk">
+          <div class="perk-icon">🤖</div>
+          <div class="perk-text">
+            <h4>Dija AI Adviser</h4>
+            <p>Your personal AI business and strategy adviser, always on.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="join-right">
+    <div style="max-width:460px;width:100%;margin:0 auto;">
+      <div class="anim-fade-up">
+        <h2 style="font-size:28px;margin-bottom:8px;">Create Your Account</h2>
+        <p style="color:var(--text2);font-size:15px;margin-bottom:32px;">Choose how you want to join ImpactGrid.</p>
+      </div>
+
+      <div id="alertBox" class="alert"></div>
+
+      <!-- Type selector -->
+      <div class="type-selector">
+        <div class="type-card selected" id="card-professional" onclick="selectType('professional')">
+          <div class="type-icon">👤</div>
+          <div class="type-label">Professional</div>
+          <div class="type-desc">Join as talent, analyst, or creator</div>
+        </div>
+        <div class="type-card" id="card-employer" onclick="selectType('employer')">
+          <div class="type-icon">🏢</div>
+          <div class="type-label">Employer</div>
+          <div class="type-desc">Hire experts and post projects</div>
+        </div>
+      </div>
+
+      <!-- Professional form -->
+      <div class="form-section active" id="form-professional">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" id="pro-fname" type="text" placeholder="Jane"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" id="pro-lname" type="text" placeholder="Smith"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" id="pro-email" type="email" placeholder="jane@example.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="pro-password" type="password" placeholder="Minimum 8 characters"/>
+          <div class="password-hint">At least 8 characters with a number or symbol.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Primary Skills</label>
+          <input class="form-input" id="pro-skills" type="text" placeholder="e.g. Data Analysis, Marketing, Design"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input class="form-input" id="pro-location" type="text" placeholder="London, UK"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Experience Level</label>
+            <select class="form-select" id="pro-experience">
+              <option value="">Select level</option>
+              <option value="entry">Entry Level</option>
+              <option value="mid">Mid Level</option>
+              <option value="senior">Senior</option>
+              <option value="director">Director+</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Portfolio URL <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" id="pro-portfolio" type="url" placeholder="https://yourportfolio.com"/>
+        </div>
+        <button class="submit-btn" id="pro-submit" onclick="joinProfessional()">
+          Create Professional Account →
+        </button>
+        <p style="font-size:12px;color:var(--text3);text-align:center;margin-top:12px;">
+          Professional accounts require admin approval. You'll hear from us within 24 hours.
+        </p>
+      </div>
+
+      <!-- Employer form -->
+      <div class="form-section" id="form-employer">
+        <div class="form-group">
+          <label class="form-label">Company Name</label>
+          <input class="form-input" id="emp-company" type="text" placeholder="Acme Corp Ltd"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input class="form-input" id="emp-name" type="text" placeholder="John Davies"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Email</label>
+          <input class="form-input" id="emp-email" type="email" placeholder="john@acme.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="emp-password" type="password" placeholder="Minimum 8 characters"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Industry</label>
+            <select class="form-select" id="emp-industry">
+              <option value="">Select industry</option>
+              <option>Technology</option>
+              <option>Finance</option>
+              <option>Marketing</option>
+              <option>Retail</option>
+              <option>Healthcare</option>
+              <option>Media</option>
+              <option>Consulting</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company Size</label>
+            <select class="form-select" id="emp-size">
+              <option value="">Select size</option>
+              <option>1–10</option>
+              <option>11–50</option>
+              <option>51–200</option>
+              <option>201–1000</option>
+              <option>1000+</option>
+            </select>
+          </div>
+        </div>
+        <button class="submit-btn" id="emp-submit" onclick="joinEmployer()">
+          Create Employer Account →
+        </button>
+        <p style="font-size:12px;color:var(--text3);text-align:center;margin-top:12px;">
+          Employer accounts are activated immediately.
+        </p>
+      </div>
+
+      <div class="already-have">
+        Already have an account? <a href="login.html">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="nav.js"></script>
+<script src="supabase-config.js"></script>
+<script>
+renderNav('');
+
+/* ── Type switcher ── */
+var currentType = 'professional';
+
+/* Pre-select from URL param */
+var urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('type') === 'employer') selectType('employer');
+
+function selectType(type) {
+  currentType = type;
+  document.querySelectorAll('.type-card').forEach(function(c) { c.classList.remove('selected'); });
+  document.querySelectorAll('.form-section').forEach(function(f) { f.classList.remove('active'); });
+  document.getElementById('card-' + type).classList.add('selected');
+  document.getElementById('form-' + type).classList.add('active');
+}
+
+/* ── Alert helper ── */
+function showAlert(msg, type) {
+  var el = document.getElementById('alertBox');
+  el.textContent = msg;
+  el.className = 'alert alert-' + type + ' show';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ── Join Professional ── */
+async function joinProfessional() {
+  var btn = document.getElementById('pro-submit');
+  var email = document.getElementById('pro-email').value.trim();
+  var password = document.getElementById('pro-password').value;
+  var fname = document.getElementById('pro-fname').value.trim();
+  var lname = document.getElementById('pro-lname').value.trim();
+  var skills = document.getElementById('pro-skills').value.trim();
+  var location = document.getElementById('pro-location').value.trim();
+  var experience = document.getElementById('pro-experience').value;
+  var portfolio = document.getElementById('pro-portfolio').value.trim();
+
+  if (!email || !password || !fname || !lname) {
+    showAlert('Please fill in all required fields.', 'error'); return;
+  }
+  if (password.length < 8) {
+    showAlert('Password must be at least 8 characters.', 'error'); return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Creating account…';
+
+  try {
+    var client = getSupabase();
+    var { data, error } = await client.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          full_name: fname + ' ' + lname,
+          first_name: fname,
+          last_name: lname,
+          role: 'professional',
+          status: 'pending',
+          skills: skills,
+          location: location,
+          experience: experience,
+          portfolio: portfolio,
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    /* Insert profile row */
+    if (data.user) {
+      await client.from('profiles').upsert({
+        id: data.user.id,
+        email: email,
+        full_name: fname + ' ' + lname,
+        role: 'professional',
+        status: 'pending',
+        skills: skills,
+        location: location,
+        experience: experience,
+        portfolio_url: portfolio,
+        created_at: new Date().toISOString(),
+      });
+    }
+
+    showAlert('Account created! We will review your profile and get back to you within 24 hours.', 'success');
+    btn.textContent = 'Application submitted ✓';
+
+  } catch(e) {
+    showAlert(e.message || 'Something went wrong. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Create Professional Account →';
+  }
+}
+
+/* ── Join Employer ── */
+async function joinEmployer() {
+  var btn = document.getElementById('emp-submit');
+  var email = document.getElementById('emp-email').value.trim();
+  var password = document.getElementById('emp-password').value;
+  var name = document.getElementById('emp-name').value.trim();
+  var company = document.getElementById('emp-company').value.trim();
+  var industry = document.getElementById('emp-industry').value;
+  var size = document.getElementById('emp-size').value;
+
+  if (!email || !password || !name || !company) {
+    showAlert('Please fill in all required fields.', 'error'); return;
+  }
+  if (password.length < 8) {
+    showAlert('Password must be at least 8 characters.', 'error'); return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Creating account…';
+
+  try {
+    var client = getSupabase();
+    var { data, error } = await client.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          full_name: name,
+          role: 'employer',
+          status: 'active',
+          company_name: company,
+          industry: industry,
+          company_size: size,
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    if (data.user) {
+      await client.from('profiles').upsert({
+        id: data.user.id,
+        email: email,
+        full_name: name,
+        role: 'employer',
+        status: 'active',
+        company_name: company,
+        industry: industry,
+        company_size: size,
+        created_at: new Date().toISOString(),
+      });
+    }
+
+    showAlert('Account created! Redirecting to your dashboard…', 'success');
+    setTimeout(function() { window.location.href = 'employer-dashboard.html'; }, 1500);
+
+  } catch(e) {
+    showAlert(e.message || 'Something went wrong. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Create Employer Account →';
+  }
+}
+</script>
+</body>
+</html>
