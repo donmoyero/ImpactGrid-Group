@@ -241,7 +241,10 @@ var STYLES = [
   { id:'minimal',    name:'◽ Minimal',       desc:'Thin clean text, luxury feel.',      tags:['Luxury','Brand'],   bg:'linear-gradient(150deg,#0a0a0a,#111)',     render:renderMinimal },
   { id:'glitch',     name:'⚡ Glitch RGB',   desc:'RGB split with digital noise.',      tags:['Edgy','Tech'],      bg:'linear-gradient(150deg,#000a00,#050505)',  render:renderGlitch },
   { id:'outline',    name:'◻ Outline',       desc:'Word outline fills on active.',      tags:['Bold','Urban'],     bg:'linear-gradient(150deg,#080808,#0f0f0f)',  render:renderOutline },
-  { id:'stack',      name:'📚 Word Stack',   desc:'Words stack vertically coloured.',   tags:['Unique','Vertical'],bg:'linear-gradient(150deg,#0a0018,#100028)',  render:renderStack }
+  { id:'stack',      name:'📚 Word Stack',   desc:'Words stack vertically coloured.',   tags:['Unique','Vertical'],bg:'linear-gradient(150deg,#0a0018,#100028)',  render:renderStack },
+  { id:'chromarpt',  name:'💥 Chroma Repeat', desc:'Word repeats with RGB split behind.',  tags:['Viral','TikTok'],   bg:'linear-gradient(150deg,#000814,#0a0000)',  render:renderChromaRepeat },
+  { id:'scanline',   name:'⚡ Giant Scanline',  desc:'Huge bold word with scan-line stripes.',tags:['Impact','Drama'],   bg:'linear-gradient(150deg,#080808,#141414)',  render:renderScanline },
+  { id:'hud',        name:'📱 HUD Terminal',  desc:'B-roll HUD box with glitch border.',   tags:['Tech','Unique'],    bg:'linear-gradient(150deg,#000a14,#001428)',  render:renderHUD }
 ];
 activeStyle = STYLES[0];
 
@@ -400,7 +403,10 @@ var STICKER_CATS = {
     minimal:    '<span style="color:rgba(255,255,255,.8);font-size:11px;font-weight:300;letter-spacing:5px">MINIMAL</span>',
     glitch:     '<div style="position:relative;display:inline-block"><span style="color:#ff0044;font-size:13px;font-weight:800;position:absolute;transform:translate(-2px,1px);opacity:.7">GLTCH</span><span style="color:#00ffcc;font-size:13px;font-weight:800;position:absolute;transform:translate(2px,-1px);opacity:.7">GLTCH</span><span style="color:#fff;font-size:13px;font-weight:800;position:relative">GLTCH</span></div>',
     outline:    '<span style="color:transparent;font-size:15px;font-weight:900;-webkit-text-stroke:1.5px #fff;letter-spacing:3px">OUTLINE</span>',
-    stack:      '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="color:#7c5cfc;font-size:9px;font-weight:800;letter-spacing:2px">WORD</span><span style="color:#f5c842;font-size:13px;font-weight:800;letter-spacing:2px">STACK</span><span style="color:#e879f9;font-size:9px;font-weight:800;letter-spacing:2px">STYLE</span></div>'
+    stack:      '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="color:#7c5cfc;font-size:9px;font-weight:800;letter-spacing:2px">WORD</span><span style="color:#f5c842;font-size:13px;font-weight:800;letter-spacing:2px">STACK</span><span style="color:#e879f9;font-size:9px;font-weight:800;letter-spacing:2px">STYLE</span></div>',
+    chromarpt:  '<div style="position:relative;text-align:center;line-height:1.1"><div style="color:rgba(255,50,50,.55);font-size:9px;font-weight:800;letter-spacing:2px;transform:translate(-2px,0)">BOOKKEEPING</div><div style="color:rgba(50,255,255,.55);font-size:9px;font-weight:800;letter-spacing:2px;transform:translate(2px,0)">BOOKKEEPING</div><div style="color:#fff;font-size:9px;font-weight:800;letter-spacing:2px">BOOKKEEPING</div></div>',
+    scanline:   '<div style="position:relative;display:inline-block"><span style="font-size:34px;font-weight:900;color:#fff;font-family:sans-serif;letter-spacing:-1px;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.35) 3px,rgba(0,0,0,.35) 4px);-webkit-background-clip:text;background-clip:text">DEADLY</span></div>',
+    hud:        '<div style="border:1px solid rgba(255,255,255,.4);border-radius:4px;padding:3px 6px;font-size:8px;font-family:monospace;color:rgba(255,255,255,.8)"><div style="color:rgba(100,200,255,.9);margin-bottom:2px;font-size:7px">► BURNOUT</div><div style="background:rgba(255,255,255,.06);height:20px;border-radius:2px"></div></div>'
   };
   STYLES.forEach(function(s, si){
     var card = document.createElement('div');
@@ -1000,8 +1006,8 @@ function launchPreview(){
     vid.pause(); vid.currentTime=0;
     vid.ontimeupdate=syncTL;
     vid.onended=function(){isPlaying=false;updatePlayIcons(false);cancelAnimationFrame(rafId);};
-    if(vid.readyState >= 1){ buildTimeline(); }
-    else { vid.onloadedmetadata=function(){ buildTimeline(); }; }
+    if(vid.readyState >= 1){ buildTimeline(); initTimelineDrag(); }
+    else { vid.onloadedmetadata=function(){ buildTimeline(); initTimelineDrag(); }; }
   }
   drawFrame();
 }
@@ -1174,14 +1180,50 @@ function buildCaptionBlocks(dur, totalW){
 }
 
 function tlSeekClick(e){
+  tlSeekFromEvent(e);
+}
+
+// Timeline drag state
+var _tlDragging = false;
+
+function tlSeekFromEvent(e){
   if(!vid||!vid.duration) return;
   var inner = document.getElementById('tlTracksInner');
   if(!inner) return;
   var rect = inner.getBoundingClientRect();
-  var scrollLeft = inner.parentElement.scrollLeft || 0;
+  var scrollLeft = inner.parentElement ? inner.parentElement.scrollLeft : 0;
   var x = e.clientX - rect.left + scrollLeft;
-  vid.currentTime = x / (tlPx * tlZoomLevel);
+  var t = Math.max(0, Math.min(x / (tlPx * tlZoomLevel), vid.duration));
+  vid.currentTime = t;
   if(!isPlaying) setTimeout(drawFrame, 40);
+}
+
+function initTimelineDrag(){
+  var scroll = document.getElementById('tlTracksScroll');
+  if(!scroll) return;
+  scroll.addEventListener('mousedown', function(e){
+    _tlDragging = true;
+    tlSeekFromEvent(e);
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e){
+    if(_tlDragging) tlSeekFromEvent(e);
+  });
+  document.addEventListener('mouseup', function(){
+    _tlDragging = false;
+  });
+  // Touch support
+  scroll.addEventListener('touchstart', function(e){
+    _tlDragging = true;
+    tlSeekFromEvent(e.touches[0]);
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchmove', function(e){
+    if(_tlDragging) tlSeekFromEvent(e.touches[0]);
+  }, { passive: true });
+  document.addEventListener('touchend', function(){
+    _tlDragging = false;
+  });
 }
 
 function tlZoom(delta){
@@ -1296,21 +1338,20 @@ function applyPostFX(W, H){
   if(!cv) return;
 
   if(chromaVal > 0){
-    var off = chromaVal * 0.5;
-    var src = ctx.getImageData(0,0,W,H);
-    var dst = ctx.createImageData(W,H);
-    for(var y=0;y<H;y++){
-      for(var x=0;x<W;x++){
-        var i = (y*W+x)*4;
-        var rx = Math.min(W-1, Math.round(x+off)), ri = (y*W+rx)*4;
-        var bx = Math.max(0, Math.round(x-off)), bi = (y*W+bx)*4;
-        dst.data[i]   = src.data[ri];
-        dst.data[i+1] = src.data[i+1];
-        dst.data[i+2] = src.data[bi+2];
-        dst.data[i+3] = src.data[i+3];
-      }
-    }
-    ctx.putImageData(dst,0,0);
+    // Fast chroma aberration — draw 3 offset copies with blend modes
+    var off = chromaVal * 0.8;
+    var tmpCh = document.createElement('canvas'); tmpCh.width = W; tmpCh.height = H;
+    var tCh = tmpCh.getContext('2d'); tCh.drawImage(cv, 0, 0);
+    // Red channel shifted right
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.6;
+    ctx.filter = 'saturate(3) hue-rotate(0deg) brightness(0.9)';
+    ctx.drawImage(tmpCh, off, 0);
+    // Cyan channel shifted left
+    ctx.filter = 'saturate(3) hue-rotate(180deg) brightness(0.9)';
+    ctx.drawImage(tmpCh, -off, 0);
+    ctx.restore();
   }
 
   if(aiEffects.portraitBlur || bgBlur > 0){
@@ -1428,18 +1469,16 @@ function applyPostFX(W, H){
   }
 
   if(distortVal > 0){
-    var id5=ctx.getImageData(0,0,W,H); var src5=new Uint8ClampedArray(id5.data);
-    var dst5=id5.data; var t5=performance.now()/1000;
-    for(var y5=0;y5<H;y5++){
-      for(var x5=0;x5<W;x5++){
-        var dx=Math.sin(y5/20+t5)*distortVal*.6;
-        var sx=Math.round(x5+dx);
-        if(sx<0||sx>=W){continue;}
-        var di=(y5*W+x5)*4, si=(y5*W+sx)*4;
-        dst5[di]=src5[si]; dst5[di+1]=src5[si+1]; dst5[di+2]=src5[si+2];
-      }
+    // Fast CSS-filter wave distort (no pixel loop)
+    var tmpD = document.createElement('canvas'); tmpD.width = W; tmpD.height = H;
+    var tD = tmpD.getContext('2d');
+    tD.drawImage(cv, 0, 0);
+    var phase = performance.now() / 1000;
+    var sliceH = Math.max(4, Math.floor(H / 40));
+    for(var sy2 = 0; sy2 < H; sy2 += sliceH){
+      var shift = Math.sin(sy2 / 20 + phase) * distortVal * 0.6;
+      ctx.drawImage(tmpD, 0, sy2, W, sliceH, shift, sy2, W, sliceH);
     }
-    ctx.putImageData(id5,0,0);
   }
 }
 
@@ -1948,6 +1987,261 @@ function renderStack(ctx,W,H,d){
     ctx.shadowColor=col;ctx.shadowBlur=isNow?20:0;ctx.fillStyle=col;
     ctx.fillText(wObj.w.toUpperCase(),W/2,startY+i*lH);ctx.restore();
   });
+}
+
+// ─── NEW CAPTION RENDERERS ───────────────────────────────────────
+
+// CHROMA REPEAT: word repeats vertically with RGB chromatic split (Image 1 style)
+function renderChromaRepeat(ctx, W, H, d) {
+  if (!d.words.length) return;
+  var now = d.curTime;
+  var cur = d.words.find(function(w){ return now >= w.t && now <= w.end + 0.2; });
+  if (!cur) return;
+  var word = cur.w.toUpperCase();
+  var age = now - cur.t;
+  var sz = Math.min(W * 0.13, capSize * 2.8);
+  var repeat = 6;
+  var rowH = sz * 1.18;
+  var startY = H * 0.12;
+
+  ctx.save();
+  ctx.font = '900 ' + sz + 'px "Bebas Neue","Oswald","DM Sans",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (var r = 0; r < repeat; r++) {
+    var ry = startY + r * rowH;
+    var fade = 1 - r / repeat;
+    var offset = (r + 1) * 3;
+
+    // Red channel shifted left
+    ctx.save();
+    ctx.globalAlpha = fade * 0.6;
+    ctx.fillStyle = '#ff3030';
+    ctx.fillText(word, W / 2 - offset, ry);
+    ctx.restore();
+
+    // Cyan channel shifted right
+    ctx.save();
+    ctx.globalAlpha = fade * 0.6;
+    ctx.fillStyle = '#00e5ff';
+    ctx.fillText(word, W / 2 + offset, ry);
+    ctx.restore();
+
+    // White on top
+    ctx.save();
+    ctx.globalAlpha = fade * (r === 0 ? 1 : 0.55);
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = sz * 0.08;
+    ctx.lineJoin = 'round';
+    if (r === 0) ctx.strokeText(word, W / 2, ry);
+    ctx.fillText(word, W / 2, ry);
+    ctx.restore();
+  }
+
+  // Active caption at bottom — italic bold white (Image 1 lower caption)
+  var sz2 = capSize;
+  var lines = groupLines(d.words, 4);
+  var lineH = sz2 + 14;
+  var capY = H * 0.76;
+  lines.forEach(function(line, li) {
+    ctx.font = 'italic 800 ' + sz2 + 'px "DM Sans",sans-serif';
+    var lW = measLineW(ctx, line), x = W / 2 - lW / 2, lY = capY + li * lineH;
+    line.forEach(function(wObj) {
+      var ww = ctx.measureText(wObj.w).width;
+      var isNow = now >= wObj.t && now <= wObj.end + 0.2;
+      ctx.save();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.font = 'italic 800 ' + sz2 + 'px "DM Sans",sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,0.95)'; ctx.shadowBlur = 8;
+      ctx.globalAlpha = isNow ? 1 : 0.45;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(wObj.w, x, lY);
+      ctx.restore();
+      x += ww + 10;
+    });
+  });
+  ctx.restore();
+}
+
+// GIANT SCANLINE: huge word with horizontal scanline stripes (Image 2 style)
+function renderScanline(ctx, W, H, d) {
+  if (!d.words.length) return;
+  var now = d.curTime;
+  var cur = d.words.find(function(w){ return now >= w.t && now <= w.end + 0.15; });
+  if (!cur) return;
+  var word = cur.w.toUpperCase();
+  var age = now - cur.t;
+  var sc = age < 0.1 ? 1 + (0.1 - age) / 0.1 * 0.35 : 1;
+
+  // Small caption above (like "make these" in Image 2)
+  var smallLines = groupLines(d.words, 5);
+  var sz2 = Math.max(14, capSize - 4);
+  ctx.save();
+  ctx.font = '600 ' + sz2 + 'px "DM Sans",sans-serif';
+  var capY = H * 0.55;
+  smallLines.forEach(function(line, li) {
+    var lW = measLineW(ctx, line), x = W / 2 - lW / 2, lY = capY + li * (sz2 + 10);
+    line.forEach(function(wObj) {
+      var ww = ctx.measureText(wObj.w).width;
+      var isNow = now >= wObj.t && now <= wObj.end + 0.2;
+      ctx.save();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.95)'; ctx.shadowBlur = 6;
+      ctx.globalAlpha = isNow ? 1 : 0.35;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(wObj.w, x, lY);
+      ctx.restore();
+      x += ww + 9;
+    });
+  });
+  ctx.restore();
+
+  // Giant word at bottom with scanlines
+  var sz = Math.min(W * 0.28, capSize * 5.5);
+  var lineCount = 2;
+  var wordLines = word.length > 7 ? [word.slice(0, Math.ceil(word.length/2)), word.slice(Math.ceil(word.length/2))] : [word];
+  var lineH = sz * 1.05;
+  var baseY = H * 0.72;
+
+  ctx.save();
+  ctx.translate(W / 2, baseY);
+  ctx.scale(sc, sc);
+  ctx.translate(-W / 2, -baseY);
+  ctx.font = '900 ' + sz + 'px "Bebas Neue","Oswald","DM Sans",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  wordLines.forEach(function(wl, wi) {
+    var wy = baseY + wi * lineH;
+    var tw = ctx.measureText(wl).width;
+
+    // Black background rect
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(W / 2 - tw / 2 - 10, wy - sz / 2 - 8, tw + 20, sz + 16);
+    ctx.restore();
+
+    // Draw white text
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    ctx.lineWidth = sz * 0.06;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(wl, W / 2, wy);
+    ctx.fillText(wl, W / 2, wy);
+    ctx.restore();
+
+    // Scanlines clipped to text bounding box
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 0.38;
+    var x0 = W / 2 - tw / 2 - 10;
+    var y0 = wy - sz / 2 - 8;
+    var bw = tw + 20;
+    var bh = sz + 16;
+    for (var sy = 0; sy < bh; sy += 4) {
+      ctx.fillStyle = 'rgba(0,0,0,1)';
+      ctx.fillRect(x0, y0 + sy, bw, 2);
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+// HUD TERMINAL: b-roll style HUD box with dotted border + small label (Image 3 style)
+function renderHUD(ctx, W, H, d) {
+  if (!d.words.length) return;
+  var now = d.curTime;
+
+  // Small caption above HUD (like "Four" in Image 3)
+  var sz2 = capSize;
+  var capY = H * 0.58;
+  var lines = groupLines(d.words, 5);
+  ctx.save();
+  lines.forEach(function(line, li) {
+    ctx.font = '700 ' + sz2 + 'px "DM Sans",sans-serif';
+    var lW = measLineW(ctx, line), x = W / 2 - lW / 2, lY = capY + li * (sz2 + 14);
+    line.forEach(function(wObj) {
+      var ww = ctx.measureText(wObj.w).width;
+      var isNow = now >= wObj.t && now <= wObj.end + 0.2;
+      ctx.save();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.95)'; ctx.shadowBlur = 8;
+      ctx.globalAlpha = isNow ? 1 : 0.4;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(wObj.w, x, lY);
+      ctx.restore();
+      x += ww + 9;
+    });
+  });
+  ctx.restore();
+
+  // HUD box
+  var boxX = W * 0.06;
+  var boxY = H * 0.68;
+  var boxW = W * 0.88;
+  var boxH = H * 0.24;
+  var t = performance.now() / 1000;
+  var glitch = Math.sin(t * 3) > 0.85 ? (Math.random() - 0.5) * 4 : 0;
+
+  ctx.save();
+  ctx.translate(glitch, 0);
+
+  // Dotted border
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 4]);
+  ctx.strokeRect(boxX, boxY, boxW, boxH);
+  ctx.setLineDash([]);
+
+  // Corner accents
+  var cs = 14;
+  ctx.strokeStyle = 'rgba(100,200,255,0.9)';
+  ctx.lineWidth = 2;
+  [[boxX, boxY], [boxX + boxW, boxY], [boxX, boxY + boxH], [boxX + boxW, boxY + boxH]].forEach(function(c, ci) {
+    ctx.beginPath();
+    var sx = ci % 2 === 0 ? 1 : -1;
+    var sy = ci < 2 ? 1 : -1;
+    ctx.moveTo(c[0], c[1] + sy * cs);
+    ctx.lineTo(c[0], c[1]);
+    ctx.lineTo(c[0] + sx * cs, c[1]);
+    ctx.stroke();
+  });
+
+  // Label top-left
+  ctx.font = '700 11px "DM Sans",monospace';
+  ctx.fillStyle = 'rgba(100,200,255,0.9)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  var cur = d.words.find(function(w){ return now >= w.t && now <= w.end + 0.15; });
+  var label = cur ? '► ' + cur.w.toUpperCase() : '► LIVE';
+  ctx.fillText(label, boxX + 8, boxY + 14);
+
+  // Inner "video" area with scanlines
+  var innerY = boxY + 26;
+  var innerH = boxH - 30;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(boxX + 4, innerY, boxW - 8, innerH);
+
+  // Scanline overlay
+  ctx.globalAlpha = 0.22;
+  for (var sy = 0; sy < innerH; sy += 3) {
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(boxX + 4, innerY + sy, boxW - 8, 1.5);
+  }
+  ctx.globalAlpha = 1;
+
+  // Blinking record dot
+  if (Math.sin(t * 4) > 0) {
+    ctx.beginPath();
+    ctx.arc(boxX + boxW - 14, boxY + 14, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff3030';
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 // ─── AUDIO ────────────────────────────────────────────────────────
