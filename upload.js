@@ -3,12 +3,7 @@
 // Fixed version: every fake replaced with real
 // ================================================================
 //
-// ⚠️  SECURITY WARNING
-//     ASSEMBLY_KEY below is exposed to anyone who views your page source.
-//     For production: move to a Cloudflare Worker proxy.
-//     Rotate the old key immediately at assemblyai.com
-//
-var ASSEMBLY_KEY = 'YOUR_KEY_HERE'; // ← replace, use a proxy in production
+var ASSEMBLY_KEY = 'YOUR_KEY_HERE';
 
 // ── SESSION / PERSISTENCE ─────────────────────────────────────────
 // TRUTH: IndexedDB stores the actual file blob.
@@ -216,7 +211,7 @@ var STYLES = [
   { id:'split',      name:'✂ Bold Split',     desc:'Keyword huge, rest minimal',   tags:['Drama','Impact'],    bg:'linear-gradient(150deg,#080808,#040404)',  render:renderSplit },
   { id:'typewriter', name:'⌨ Typewriter',    desc:'Words type in with cursor',    tags:['Clean','Satisfy'],   bg:'linear-gradient(150deg,#081a10,#040f06)',  render:renderTypewriter },
   { id:'bounce',     name:'🎵 Bounce',         desc:'Words bounce with hue-shift',  tags:['Music','Fun'],       bg:'linear-gradient(150deg,#0d0020,#1a0030)',  render:renderBounce },
-  { id:'minimal',    name:'◽ Minimal',        desc:'Thin clean luxury text',       tags:['Luxury','Brand'],    bg:'linear-gradient(150deg,#0a0a0a,#111'],     render:renderMinimal },
+  { id:'minimal',    name:'◽ Minimal',        desc:'Thin clean luxury text',       tags:['Luxury','Brand'],    bg:'linear-gradient(150deg,#0a0a0a,#111)',     render:renderMinimal },
   { id:'glitch',     name:'⚡ Glitch RGB',    desc:'RGB split on keywords',        tags:['Edgy','Tech'],       bg:'linear-gradient(150deg,#000a00,#050505)',  render:renderGlitch },
   { id:'chromarpt',  name:'💥 Chroma Repeat', desc:'Keyword tiles screen w/ RGB',  tags:['Viral','TikTok'],    bg:'linear-gradient(150deg,#000814,#0a0000)',  render:renderChromaRepeat },
   { id:'scanline',   name:'📺 Giant Scanline', desc:'Keyword huge with scanlines',  tags:['Impact','Drama'],    bg:'linear-gradient(150deg,#080808,#141414)',  render:renderScanline }
