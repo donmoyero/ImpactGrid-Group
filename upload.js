@@ -118,6 +118,10 @@ function initDOMRefs(){
 }
 
 // ─── AUDIO GRAPH ─────────────────────────────────────────────────
+// FIX: one AudioContext owns vid for its entire lifetime.
+// Export taps gainNode → exportStreamDest instead of creating a new AudioContext.
+var exportStreamDest = null;   // MediaStreamAudioDestinationNode, created once on first export
+
 function initAudioGraph(){
   if(audioReady || !vid) return;
   try{
@@ -176,8 +180,20 @@ function initAudioGraph(){
     reverbGain.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
+    // FIX: pre-wire a stream destination from the same graph so export can tap it
+    exportStreamDest = audioCtx.createMediaStreamDestination();
+    gainNode.connect(exportStreamDest);
+
     audioReady = true;
   } catch(e){ console.warn('Audio graph failed:', e); }
+}
+
+// FIX: ensure audio graph exists and return the export stream destination.
+// Called by doExport() — safe to call multiple times.
+function getExportAudioStream(){
+  if(!audioReady){ initAudioGraph(); }
+  if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  return exportStreamDest ? exportStreamDest.stream : null;
 }
 
 function generateReverb(ac, convolver, duration){
@@ -201,7 +217,7 @@ function applyAudioSettings(){
     noiseGate.ratio.value = 20;
     hiPassFilter.frequency.value = 100;
     loPassFilter.frequency.value = 16000;
-    toast('🔇 Noise cancel ON — rebuilding audio graph');
+    // FIX: toast removed — applyAudioSettings fires on every play press, toast was spamming
   } else {
     noiseGate.threshold.value = -100;
     hiPassFilter.frequency.value = 80;
@@ -2351,13 +2367,23 @@ function doExport(){
     return;
   }
 
+  // FIX: reuse the existing audio graph — never create a second AudioContext on vid.
+  // createMediaElementSource() can only be called once per element. A second call throws
+  // InvalidStateError which was silently swallowed, producing a silent export every time.
+  // Instead we tap gainNode → exportStreamDest (wired once in initAudioGraph).
   var stream = cv.captureStream(exportFPS);
-  try{
-    var ac=new(window.AudioContext||window.webkitAudioContext)();
-    var src=ac.createMediaElementSource(vid),dest=ac.createMediaStreamDestination();
-    src.connect(dest); src.connect(ac.destination);
-    dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});
-  }catch(e){}
+  var audioStream = getExportAudioStream();
+  if(audioStream){
+    audioStream.getAudioTracks().forEach(function(t){ stream.addTrack(t); });
+  } else {
+    // Audio graph not ready yet (user never pressed play) — initialise it now
+    initAudioGraph();
+    applyAudioSettings();
+    var audioStream2 = getExportAudioStream();
+    if(audioStream2){
+      audioStream2.getAudioTracks().forEach(function(t){ stream.addTrack(t); });
+    }
+  }
 
   var mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']
     .find(function(m){return MediaRecorder.isTypeSupported(m);})||'video/webm';
@@ -2376,7 +2402,7 @@ function doExport(){
       if(lbl) lbl.textContent='✓ Downloaded as WebM!';
       if(dlBtn) dlBtn.disabled=false;
       toast('✓ WebM exported!');
-      restorePreviewCanvas();   // FIX
+      restorePreviewCanvas();
       setTimeout(function(){if(ep)ep.style.display='none';},4000);
     } else {
       if(lbl) lbl.textContent='Converting to MP4…';
@@ -2387,7 +2413,7 @@ function doExport(){
         if(lbl) lbl.textContent='✓ MP4 Downloaded!';
         if(dlBtn) dlBtn.disabled=false;
         toast('✓ MP4 exported! Perfect for TikTok & Instagram 🎉');
-        restorePreviewCanvas();   // FIX
+        restorePreviewCanvas();
         setTimeout(function(){if(ep)ep.style.display='none';},5000);
       }, function(err){
         console.warn('FFmpeg failed, falling back to WebM', err);
@@ -2396,7 +2422,7 @@ function doExport(){
         if(lbl) lbl.textContent='⚠ Saved as WebM — rename to .mp4 on Windows';
         if(dlBtn) dlBtn.disabled=false;
         toast('Saved! Rename file to .mp4 if needed');
-        restorePreviewCanvas();   // FIX
+        restorePreviewCanvas();
         setTimeout(function(){if(ep)ep.style.display='none';},6000);
       });
     }
@@ -2413,7 +2439,14 @@ function doExport(){
     if(bar) bar.style.width=p+'%';
     if(lbl) lbl.textContent='Recording… '+Math.round(p)+'%';
   },300);
-  if(vid) vid.onended=function(){clearInterval(pi);isPlaying=false;rec.stop();};
+  // FIX: cancel the RAF loop on ended, not just stop the recorder.
+  // Previously rafId kept running forever after export finished.
+  if(vid) vid.onended=function(){
+    clearInterval(pi);
+    isPlaying=false;
+    cancelAnimationFrame(rafId);
+    rec.stop();
+  };
 }
 
 function triggerDownload(blob, filename){
