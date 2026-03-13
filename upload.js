@@ -19,7 +19,7 @@ var rafId        = null;
 var transcriptId = null;
 var pollTimer    = null;
 var pollRetries  = 0;          // FIX: track poll attempts
-var MAX_POLL_RETRIES = 48;     // FIX: ~120 seconds max (48 × 2.5s)
+var MAX_POLL_RETRIES = 240;    // ~600 seconds max (240 × 2.5s) — universal-2 can be slow
 var isCancelled  = false;      // FIX: cancellation flag
 var isMuted      = false;
 
