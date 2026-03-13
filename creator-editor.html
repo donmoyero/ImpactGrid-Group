@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ImpactGrid Creator Editor — AI captions, cinematic grades, viral effects and music for TikTok, Reels and YouTube.">
+<meta property="og:title" content="ImpactGrid Creator Editor">
+<meta property="og:description" content="AI word-perfect captions · Pro grade · Viral effects · Music. Everything professionals use — zero skill needed.">
+<meta property="og:type" content="website">
 <title>ImpactGrid Creator Editor</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;700;900&family=Oswald:wght@500;600;700&family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -30,12 +34,12 @@
 
   <div class="topbar-right">
 
-    <!-- OPEN CREATOR STUDIO IN NEW TAB -->
     <a href="creator-studio.html" target="_blank" class="back-btn">
       ← Creator Studio
     </a>
 
-    <button class="back-btn" id="backBtn" onclick="goBack()" style="display:none">
+    <!-- FIX: use class toggle instead of inline style -->
+    <button class="back-btn hidden-el" id="backBtn" onclick="goBack()">
       ← Back
     </button>
 
@@ -47,7 +51,9 @@
 
 <div id="app">
 
-  <!-- S1: DROP -->
+  <!-- ═══════════════════════════════════════════════════════════
+       S1: DROP
+  ════════════════════════════════════════════════════════════ -->
   <div class="screen active" id="sDrop">
     <div class="drop-layout">
 
@@ -71,8 +77,8 @@
           <div class="feat"><span>🎨</span> 12 cinematic caption styles</div>
           <div class="feat"><span>🎬</span> Colour grade + LUT presets</div>
           <div class="feat"><span>🎵</span> Royalty-free music library</div>
-          <div class="feat"><span>✂</span> Smart crop & aspect ratio</div>
-          <div class="feat"><span>😎</span> Emoji & sticker overlays</div>
+          <div class="feat"><span>✂</span> Smart crop &amp; aspect ratio</div>
+          <div class="feat"><span>😎</span> Emoji &amp; sticker overlays</div>
           <div class="feat"><span>📲</span> Export TikTok · Reels · YouTube</div>
         </div>
 
@@ -104,7 +110,7 @@
               <div class="dz-title">Drop video or image</div>
 
               <div class="dz-hint">
-                MP4 · MOV · WebM · JPG · PNG · up to 500MB
+                MP4 · MOV · WebM · JPG · PNG · up to 500&nbsp;MB
               </div>
 
               <div class="dz-cta">Browse files</div>
@@ -129,13 +135,836 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════
+       S2: STYLE PICK
+  ════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="sStyle">
+    <div class="style-page">
+
+      <div class="style-hd">
+        <div class="file-chip">
+          <span id="fcIcon">🎬</span>
+          <span id="fcName">No file loaded</span>
+        </div>
+        <h2>Pick your caption style</h2>
+        <p>Choose a look — AI will sync every word perfectly.</p>
+      </div>
+
+      <div class="style-grid" id="styleGrid"></div>
+
+      <!-- Fallback CTA if no style clicked yet -->
+      <div style="text-align:center;margin-top:8px">
+        <button class="ghost-btn" onclick="processWithAssemblyAI()" style="padding:12px 32px;font-size:13px">
+          Continue with selected style →
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       S3: PROCESSING
+  ════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="sProcess">
+    <div class="proc-box">
+
+      <div class="proc-anim-wrap">
+        <div class="proc-bars">
+          <div class="pb"></div><div class="pb"></div><div class="pb"></div>
+          <div class="pb"></div><div class="pb"></div><div class="pb"></div>
+          <div class="pb"></div><div class="pb"></div><div class="pb"></div>
+        </div>
+        <div class="proc-emoji" id="procAnim">🎙</div>
+      </div>
+
+      <h2 id="procTitle">Uploading…</h2>
+      <p id="procDesc">Sending your video to AI…</p>
+
+      <div class="prog-wrap">
+        <div class="prog-bar" id="progFill"></div>
+      </div>
+
+      <div class="proc-steps">
+        <div class="ps" id="ps1"><div class="ps-dot"></div> File received</div>
+        <div class="ps" id="ps2"><div class="ps-dot"></div> Uploading to AI</div>
+        <div class="ps" id="ps3"><div class="ps-dot"></div> Submitting transcript job</div>
+        <div class="ps" id="ps4"><div class="ps-dot"></div> Word-level sync</div>
+        <div class="ps" id="ps5"><div class="ps-dot"></div> Building captions</div>
+      </div>
+
+      <!-- FIX: cancel button — hidden until processing starts -->
+      <button
+        id="processCancelBtn"
+        class="ghost-btn"
+        onclick="cancelProcessing()"
+        style="display:none;margin-top:22px;width:100%;text-align:center">
+        ✕ Cancel
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       S4: EDITOR / PREVIEW
+  ════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="sPreview">
+    <div class="editor-layout">
+
+      <!-- ── ICON SIDEBAR ── -->
+      <div class="icon-sidebar">
+
+        <button class="isb active" data-tab="tabCaptions" onclick="switchTab(this)" title="Captions">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect x="1" y="4" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M4 8h10M4 11h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Captions</span>
+        </button>
+
+        <button class="isb" data-tab="tabText" onclick="switchTab(this)" title="Text">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M3 4h12M9 4v10M6 14h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Text</span>
+        </button>
+
+        <button class="isb" data-tab="tabStickers" onclick="switchTab(this)" title="Stickers">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 11c.8 1.2 2 2 3 2s2.2-.8 3-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="6.5" cy="7.5" r="1" fill="currentColor"/>
+            <circle cx="11.5" cy="7.5" r="1" fill="currentColor"/>
+          </svg>
+          <span>Stickers</span>
+        </button>
+
+        <button class="isb" data-tab="tabGrade" onclick="switchTab(this)" title="Grade">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M9 2v14M2 9h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+          </svg>
+          <span>Grade</span>
+        </button>
+
+        <button class="isb" data-tab="tabEffects" onclick="switchTab(this)" title="Effects">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 1l2 5.5H17l-4.9 3.6 1.9 5.9L9 12.5 4.9 16l1.9-5.9L2 6.5h6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Effects</span>
+        </button>
+
+        <button class="isb" data-tab="tabCrop" onclick="switchTab(this)" title="Crop">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4 2v12h12M2 4h12v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Crop</span>
+        </button>
+
+        <button class="isb" data-tab="tabAudio" onclick="switchTab(this)" title="Audio">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M3 6.5v5M6 4v10M9 7v4M12 4v10M15 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Audio</span>
+        </button>
+
+        <button class="isb" data-tab="tabExport" onclick="switchTab(this)" title="Export">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 2v11M5 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 14h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Export</span>
+        </button>
+
+      </div>
+
+      <!-- ── CENTRE PANEL ── -->
+      <div class="centre-panel">
+
+        <div class="centre-topbar">
+          <button class="cback-btn" onclick="goTo('sStyle')">← Styles</button>
+          <div class="centre-badges">
+            <span class="style-badge" id="styleBadge">Fire Pill</span>
+            <span class="res-badge" id="resBadge">9:16</span>
+          </div>
+          <div class="centre-tools">
+            <button class="ctool-btn" onclick="resetAll()">↺ Reset</button>
+            <button class="ctool-btn" onclick="exportThumbnail()">📸 Thumb</button>
+          </div>
+        </div>
+
+        <div class="canvas-outer">
+          <div class="canvas-wrap">
+            <canvas id="cv"></canvas>
+            <div class="play-tap" id="playTap" onclick="togglePlay()">
+              <div class="big-play" id="bigPlay">
+                <svg width="20" height="22" viewBox="0 0 20 22" fill="none">
+                  <path d="M2 1.5L18 11L2 20.5V1.5Z" fill="white"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PRO MULTI-TRACK TIMELINE ── -->
+        <div class="pro-timeline">
+
+          <!-- Transport bar -->
+          <div class="tl-transport">
+
+            <button class="tl-tb" onclick="skipTo(0)" title="Go to start">⏮</button>
+            <button class="tl-tb" onclick="stepFrame(-1)" title="Step back">◁</button>
+
+            <button class="tl-tb tl-play" id="tlPlayBtn" onclick="togglePlay()" title="Play / Pause">
+              <svg id="tlIcon" width="11" height="13" viewBox="0 0 11 13" fill="none">
+                <path d="M1 1L10 6.5L1 12V1Z" fill="currentColor"/>
+              </svg>
+            </button>
+
+            <button class="tl-tb" onclick="stepFrame(1)" title="Step forward">▷</button>
+            <button class="tl-tb" onclick="skipTo(vid&&vid.duration||0)" title="Go to end">⏭</button>
+
+            <span class="tl-timecode">
+              <span id="vbTime">0:00</span>
+              <span class="tl-sep">/</span>
+              <span id="tlDuration">0:00</span>
+            </span>
+
+            <button class="tl-tb tl-mute-btn" id="muteBtn" onclick="toggleMute()" title="Mute">🔊</button>
+
+            <div class="tl-zoom-ctrl">
+              <button class="tl-tb" onclick="tlZoom(-0.5)" title="Zoom out">−</button>
+              <span class="tl-zoom-lbl" id="tlZoomLbl">1×</span>
+              <button class="tl-tb" onclick="tlZoom(0.5)" title="Zoom in">+</button>
+            </div>
+
+          </div>
+
+          <!-- Tracks -->
+          <div class="tl-tracks-outer">
+
+            <!-- Track labels -->
+            <div class="tl-labels">
+
+              <div class="tl-lbl">
+                <span class="tl-lbl-icon">🎬</span>
+                <span>Video</span>
+                <button class="tl-eye" id="eyeVideo" onclick="toggleTrackVis('video')" title="Toggle video">👁</button>
+              </div>
+
+              <div class="tl-lbl">
+                <span class="tl-lbl-icon">🎙</span>
+                <span>Voice</span>
+                <input type="range" class="tl-vol-mini" min="0" max="100" value="100"
+                  oninput="setTrackVol('voice',this.value)" title="Voice volume">
+              </div>
+
+              <div class="tl-lbl">
+                <span class="tl-lbl-icon">💬</span>
+                <span>Captions</span>
+                <button class="tl-eye" id="eyeCaptions" onclick="toggleTrackVis('captions')" title="Toggle captions">👁</button>
+              </div>
+
+              <div class="tl-lbl">
+                <span class="tl-lbl-icon">✏️</span>
+                <span>Text</span>
+                <button class="tl-eye" id="eyeText" onclick="toggleTrackVis('text')" title="Toggle text">👁</button>
+              </div>
+
+              <div class="tl-lbl">
+                <span class="tl-lbl-icon">🎵</span>
+                <span>Music</span>
+                <input type="range" class="tl-vol-mini" min="0" max="100" value="40"
+                  oninput="setTrackVol('music',this.value)" title="Music volume">
+              </div>
+
+            </div>
+
+            <!-- Scrollable track area -->
+            <div class="tl-tracks-scroll" id="tlTracksScroll">
+              <div class="tl-tracks-inner" id="tlTracksInner" onclick="tlSeekClick(event)">
+
+                <!-- Ruler -->
+                <div class="tl-ruler" id="tlRuler"></div>
+
+                <!-- Playhead -->
+                <div class="tl-playhead" id="tlPlayhead"></div>
+
+                <!-- Video track row -->
+                <div class="tl-track-row">
+                  <div class="tl-clip tl-clip-video" id="tlVideoClip" style="width:0">
+                    <div class="tl-waveform"></div>
+                    <canvas class="tl-wave-canvas" id="tlVoiceWave"></canvas>
+                  </div>
+                </div>
+
+                <!-- Voice waveform row (separate visual layer) -->
+                <div class="tl-track-row"></div>
+
+                <!-- Caption blocks row -->
+                <div class="tl-track-row">
+                  <div class="tl-caps-blocks" id="tlCapsBlocks"></div>
+                </div>
+
+                <!-- Text overlay indicator row -->
+                <div class="tl-track-row">
+                  <div class="tl-text-clip" id="tlTextClip" style="display:none">TEXT</div>
+                </div>
+
+                <!-- Music track row -->
+                <div class="tl-track-row">
+                  <div class="tl-clip tl-clip-music" id="tlMusicClip" style="width:0;display:none">
+                    <div class="tl-music-wave"></div>
+                    <span class="tl-clip-label" id="tlMusicLabel">MUSIC</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        <!-- /pro-timeline -->
+
+      </div>
+      <!-- /centre-panel -->
+
+      <!-- ── RIGHT PANEL ── -->
+      <div class="right-panel">
+
+        <div class="rp-head">
+          <div class="rp-live">
+            <div class="rp-dot"></div>
+            <span id="rpLabel">CAPTIONS</span>
+          </div>
+          <div class="rp-stylename" id="expStyle">Fire Pill</div>
+        </div>
+
+        <!-- ════ TAB: CAPTIONS ════ -->
+        <div class="tab-panel active" id="tabCaptions">
+          <div class="ps-scroll">
+
+            <div class="sec-label">CAPTION STYLE</div>
+            <div class="cap-list" id="miniStyles"></div>
+
+            <div class="sec-label mt">WORD ANIMATION</div>
+            <div class="wa-grid" id="wordAnimGrid"></div>
+
+            <div class="sec-label mt">POSITION</div>
+            <div class="pos-row">
+              <button class="pos-btn" data-pos="top" onclick="setCaptionPos(this)">Top</button>
+              <button class="pos-btn active" data-pos="bot" onclick="setCaptionPos(this)">Bottom</button>
+              <button class="pos-btn" data-pos="mid" onclick="setCaptionPos(this)">Middle</button>
+            </div>
+
+            <div class="sec-label mt">FONT SIZE</div>
+            <div class="sl-labeled">
+              <label>Size</label>
+              <input type="range" id="slCapSize" min="12" max="60" value="22" oninput="updateCapSize()">
+              <span class="sl-v" id="slCapSizeVal">22</span>
+            </div>
+
+            <div class="sec-label mt">LETTER SPACING</div>
+            <div class="sl-labeled">
+              <label>Spacing</label>
+              <input type="range" id="slLetterSpacing" min="0" max="20" value="0" oninput="updateCapStyle()">
+              <span class="sl-v" id="slLetterSpacingVal">0px</span>
+            </div>
+
+            <div class="sec-label mt">CAPTION COLOUR</div>
+            <div class="cap-colors" id="capColors"></div>
+
+            <div class="sec-label mt">CAPTION BACKGROUND</div>
+            <div class="cap-bg-row" id="capBgRow"></div>
+
+            <div class="sec-label mt">STATS</div>
+            <div class="pro-note" id="expStats">0 words · 0 captions</div>
+
+          </div>
+        </div>
+
+        <!-- ════ TAB: TEXT ════ -->
+        <div class="tab-panel" id="tabText">
+          <div class="ps-scroll">
+
+            <div class="sec-label">OVERLAY TEXT</div>
+            <textarea class="txt-area" id="overlayText" rows="3"
+              placeholder="Add text overlay…"
+              oninput="updateOverlayText()"></textarea>
+            <button class="ghost-btn full" onclick="clearOverlayText()" style="margin-top:5px">Clear</button>
+
+            <div class="sec-label mt">FONT</div>
+            <div class="font-grid" id="fontGrid"></div>
+
+            <div class="sec-label mt">SIZE</div>
+            <div class="sl-labeled">
+              <label>Size</label>
+              <input type="range" id="slTxtSize" min="16" max="120" value="42" oninput="updateOverlayText()">
+              <span class="sl-v" id="slTxtSizeVal">42</span>
+            </div>
+
+            <div class="sec-label mt">COLOUR</div>
+            <div class="color-row" id="colorStrip"></div>
+
+            <div class="sec-label mt">STYLE</div>
+            <div class="txtstyle-row" id="txtStyleRow"></div>
+
+            <div class="sec-label mt">ANIMATION</div>
+            <div class="anim-row" id="txtAnimRow"></div>
+
+            <div class="sec-label mt">POSITION</div>
+            <div class="pos-row">
+              <button class="pos-btn" data-pos="top" onclick="setTextPos(this)">Top</button>
+              <button class="pos-btn active" data-pos="mid" onclick="setTextPos(this)">Middle</button>
+              <button class="pos-btn" data-pos="bot" onclick="setTextPos(this)">Bottom</button>
+            </div>
+
+            <div class="sec-label mt">OPACITY</div>
+            <div class="sl-labeled">
+              <label>Opacity</label>
+              <input type="range" id="slTxtOpacity" min="10" max="100" value="100" oninput="updateOverlayText()">
+              <span class="sl-v" id="slTxtOpacityVal">100%</span>
+            </div>
+
+            <div class="sec-label mt">OUTLINE</div>
+            <div class="sl-labeled">
+              <label>Outline</label>
+              <input type="range" id="slTxtOutline" min="0" max="10" value="0" oninput="updateOverlayText()">
+              <span class="sl-v" id="slTxtOutlineVal">0</span>
+            </div>
+
+            <div class="sec-label mt">SHADOW</div>
+            <div class="sl-labeled">
+              <label>Shadow</label>
+              <input type="range" id="slTxtShadow" min="0" max="30" value="8" oninput="updateOverlayText()">
+              <span class="sl-v" id="slTxtShadowVal">8</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ════ TAB: STICKERS ════ -->
+        <div class="tab-panel" id="tabStickers">
+          <div class="ps-scroll">
+
+            <div class="sec-label">SEARCH</div>
+            <input class="sticker-inp" type="text" placeholder="🔍  Search emoji…"
+              oninput="filterStickers(this.value)">
+
+            <div class="sec-label mt">EMOJI LIBRARY</div>
+            <div class="sticker-grid" id="stickerGrid"></div>
+
+            <div class="sec-label mt">PLACED STICKERS</div>
+            <div class="placed-list" id="placedList">
+              <div class="empty-msg">None placed yet — tap an emoji above</div>
+            </div>
+
+            <div class="sec-label mt">SIZE &amp; ROTATION</div>
+            <div class="sliders-block">
+              <div class="sl-labeled">
+                <label>Size</label>
+                <input type="range" id="slStickerSize" min="20" max="200" value="64" oninput="updateActiveStickerSize()">
+                <span class="sl-v" id="slStickerSizeVal">64</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Rotate</label>
+                <input type="range" id="slStickerRot" min="-180" max="180" value="0" oninput="updateActiveStickerRot()">
+                <span class="sl-v" id="slStickerRotVal">0°</span>
+              </div>
+            </div>
+
+            <button class="ghost-btn full" onclick="clearAllStickers()" style="margin-top:8px">
+              ✕ Clear all stickers
+            </button>
+
+          </div>
+        </div>
+
+        <!-- ════ TAB: GRADE ════ -->
+        <div class="tab-panel" id="tabGrade">
+          <div class="ps-scroll">
+
+            <div class="sec-label">COLOUR GRADE</div>
+            <div class="grade-grid" id="gradeGrid"></div>
+
+            <div class="sec-label mt">TINT OVERLAY</div>
+            <div class="tint-grid" id="tintGrid"></div>
+
+            <div class="sec-label mt">DUOTONE</div>
+            <div class="duotone-row" id="duotoneRow"></div>
+
+            <div class="sec-label mt">MANUAL ADJUST</div>
+            <div class="sliders-block">
+              <div class="sl-labeled">
+                <label>Brightness</label>
+                <input type="range" id="slBright" min="50" max="160" value="100" oninput="updateGrade()">
+                <span class="sl-v" id="slBrightVal">100</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Contrast</label>
+                <input type="range" id="slContrast" min="50" max="200" value="100" oninput="updateGrade()">
+                <span class="sl-v" id="slContrastVal">100</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Saturation</label>
+                <input type="range" id="slSat" min="0" max="300" value="100" oninput="updateGrade()">
+                <span class="sl-v" id="slSatVal">100</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Warmth</label>
+                <input type="range" id="slWarm" min="-60" max="60" value="0" oninput="updateGrade()">
+                <span class="sl-v" id="slWarmVal">0</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Vignette</label>
+                <input type="range" id="slVig" min="0" max="100" value="30" oninput="updateGrade()">
+                <span class="sl-v" id="slVigVal">30</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Film Grain</label>
+                <input type="range" id="slNoise" min="0" max="60" value="0" oninput="updateGrade()">
+                <span class="sl-v" id="slNoiseVal">0</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ════ TAB: EFFECTS ════ -->
+        <div class="tab-panel" id="tabEffects">
+          <div class="ps-scroll">
+
+            <div class="sec-label">FILTER PRESETS</div>
+            <div class="fx-grid" id="fxGrid"></div>
+
+            <div class="sec-label mt">AI ENHANCE</div>
+            <div class="pro-note">These effects process your video in real time using AI.</div>
+            <div class="ai-enhance-grid">
+              <button class="ai-btn" id="aibtnSharpen" onclick="applyAIEffect('sharpen')">
+                <span class="ai-icon">🔬</span>
+                <span class="ai-name">AI Sharpen</span>
+                <span class="ai-desc">Crisp detail boost</span>
+              </button>
+              <button class="ai-btn" id="aibtnSmooth" onclick="applyAIEffect('smooth')">
+                <span class="ai-icon">✨</span>
+                <span class="ai-name">Skin Smooth</span>
+                <span class="ai-desc">Soft skin tone</span>
+              </button>
+              <button class="ai-btn" id="aibtnDeband" onclick="applyAIEffect('deband')">
+                <span class="ai-icon">🌈</span>
+                <span class="ai-name">Deband</span>
+                <span class="ai-desc">Remove banding</span>
+              </button>
+              <button class="ai-btn" id="aibtnPortraitBlur" onclick="applyAIEffect('portraitBlur')">
+                <span class="ai-icon">🌅</span>
+                <span class="ai-name">Portrait Blur</span>
+                <span class="ai-desc">BG depth blur</span>
+              </button>
+              <button class="ai-btn" id="aibtnFaceEnhance" onclick="applyAIEffect('faceEnhance')">
+                <span class="ai-icon">👤</span>
+                <span class="ai-name">Face Enhance</span>
+                <span class="ai-desc">Glow + soften</span>
+              </button>
+              <button class="ai-btn" id="aibtnDenoise" onclick="applyAIEffect('denoise')">
+                <span class="ai-icon">🔇</span>
+                <span class="ai-name">Noise Cancel</span>
+                <span class="ai-desc">Clean audio</span>
+              </button>
+              <button class="ai-btn" id="aibtnVoiceBoost" onclick="applyAIEffect('voiceBoost')">
+                <span class="ai-icon">🎤</span>
+                <span class="ai-name">Voice Boost</span>
+                <span class="ai-desc">Presence boost</span>
+              </button>
+              <button class="ai-btn" id="aibtnBassBoost" onclick="applyAIEffect('bassBoost')">
+                <span class="ai-icon">🔊</span>
+                <span class="ai-name">Bass Boost</span>
+                <span class="ai-desc">Low-end punch</span>
+              </button>
+              <button class="ai-btn" id="aibtnReverb" onclick="applyAIEffect('reverb')">
+                <span class="ai-icon">🏛</span>
+                <span class="ai-name">Reverb</span>
+                <span class="ai-desc">Room ambience</span>
+              </button>
+              <button class="ai-btn" id="aibtnBgNoise" onclick="applyAIEffect('bgNoise')">
+                <span class="ai-icon">🎙</span>
+                <span class="ai-name">BG Noise Gate</span>
+                <span class="ai-desc">Kill background</span>
+              </button>
+            </div>
+
+            <div class="sec-label mt">AUDIO EQ</div>
+            <div class="sliders-block">
+              <div class="sl-labeled">
+                <label>Bass</label>
+                <input type="range" id="slEqBass" min="-12" max="12" value="0" oninput="updateEQ()">
+                <span class="sl-v" id="slEqBassVal">+0dB</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Mid</label>
+                <input type="range" id="slEqMid" min="-12" max="12" value="0" oninput="updateEQ()">
+                <span class="sl-v" id="slEqMidVal">+0dB</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Treble</label>
+                <input type="range" id="slEqTreble" min="-12" max="12" value="0" oninput="updateEQ()">
+                <span class="sl-v" id="slEqTrebleVal">+0dB</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Noise Amt</label>
+                <input type="range" id="slNoiseCancelAmt" min="10" max="80" value="30" oninput="updateNoiseCancelAmt()">
+                <span class="sl-v" id="slNoiseCancelAmtVal">30</span>
+              </div>
+            </div>
+
+            <div class="sec-label mt">PIXEL FX</div>
+            <div class="sliders-block">
+              <div class="sl-labeled">
+                <label>Chroma</label>
+                <input type="range" id="slChroma" min="0" max="20" value="0" oninput="updatePixelFX()">
+                <span class="sl-v" id="slChromaVal">0</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Distort</label>
+                <input type="range" id="slDistort" min="0" max="30" value="0" oninput="updatePixelFX()">
+                <span class="sl-v" id="slDistortVal">0</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Scanlines</label>
+                <input type="range" id="slScanlines" min="0" max="100" value="0" oninput="updatePixelFX()">
+                <span class="sl-v" id="slScanlinesVal">0</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Glow</label>
+                <input type="range" id="slGlow" min="0" max="30" value="0" oninput="updatePixelFX()">
+                <span class="sl-v" id="slGlowVal">0</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Pixelate</label>
+                <input type="range" id="slPixelate" min="1" max="24" value="1" oninput="updatePixelFX()">
+                <span class="sl-v" id="slPixelateVal">Off</span>
+              </div>
+              <div class="sl-labeled">
+                <label>BG Blur</label>
+                <input type="range" id="slBgBlur" min="0" max="20" value="0" oninput="updateFX()">
+                <span class="sl-v" id="slBgBlurVal">0</span>
+              </div>
+            </div>
+
+            <div class="sec-label mt">MOTION</div>
+            <div class="motion-row" id="motionBtns"></div>
+
+            <div class="sec-label mt">SPEED</div>
+            <div class="speed-grid" id="speedGrid"></div>
+
+            <div class="sec-label mt">FLIP</div>
+            <div class="flip-row">
+              <button class="flip-btn" id="flipHBtn" onclick="toggleFlip('h')">↔ Horizontal</button>
+              <button class="flip-btn" id="flipVBtn" onclick="toggleFlip('v')">↕ Vertical</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ════ TAB: CROP ════ -->
+        <div class="tab-panel" id="tabCrop">
+          <div class="ps-scroll">
+
+            <div class="sec-label">ASPECT RATIO</div>
+            <div class="ratio-grid" id="ratioGrid"></div>
+
+            <div class="sec-label mt">SCALE &amp; POSITION</div>
+            <div class="sliders-block">
+              <div class="sl-labeled">
+                <label>Scale</label>
+                <input type="range" id="slVideoScale" min="50" max="200" value="100" oninput="updateVideoScale()">
+                <span class="sl-v" id="slVideoScaleVal">100%</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Offset X</label>
+                <input type="range" id="slOffsetX" min="-300" max="300" value="0" oninput="updateVideoScale()">
+                <span class="sl-v" id="slOffsetXVal">0</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Offset Y</label>
+                <input type="range" id="slOffsetY" min="-300" max="300" value="0" oninput="updateVideoScale()">
+                <span class="sl-v" id="slOffsetYVal">0</span>
+              </div>
+            </div>
+
+            <div class="sec-label mt">BACKGROUND</div>
+            <div class="bg-opts" id="bgOpts"></div>
+
+            <div class="sec-label mt">CUSTOM BG COLOUR</div>
+            <div class="sliders-block">
+              <div class="sl-labeled">
+                <label>Hue</label>
+                <input type="range" id="slBgH" min="0" max="360" value="240" oninput="updateBgColor()">
+                <span class="sl-v" id="slBgHVal">240</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Sat</label>
+                <input type="range" id="slBgS" min="0" max="100" value="20" oninput="updateBgColor()">
+                <span class="sl-v" id="slBgSVal">20</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Light</label>
+                <input type="range" id="slBgL" min="0" max="100" value="5" oninput="updateBgColor()">
+                <span class="sl-v" id="slBgLVal">5</span>
+              </div>
+            </div>
+            <div class="bg-preview-swatch" id="bgPreview"
+              style="background:hsl(240,20%,5%)"></div>
+
+          </div>
+        </div>
+
+        <!-- ════ TAB: AUDIO ════ -->
+        <div class="tab-panel" id="tabAudio">
+          <div class="ps-scroll">
+
+            <div class="sec-label">MUSIC LIBRARY</div>
+            <p class="music-hint">Royalty-free — safe for all platforms.</p>
+            <div class="music-cats" id="musicCats"></div>
+            <div class="music-list" id="musicList"></div>
+            <p class="free-music-credit">Tracks via Pixabay · Free for commercial use</p>
+
+            <div class="sec-label mt">YOUR OWN MUSIC</div>
+            <label class="upload-audio-btn">
+              <input type="file" accept="audio/*" onchange="loadUserMusic(this)">
+              ＋ Upload audio file
+            </label>
+            <div class="user-music-lbl" id="userMusicName"></div>
+
+            <div class="sec-label mt">VOLUME</div>
+            <div class="sliders-block">
+              <div class="sl-labeled">
+                <label>Music</label>
+                <input type="range" id="slMusicVol" min="0" max="100" value="40" oninput="updateMusicVol()">
+                <span class="sl-v" id="slMusicVolVal">40%</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Voice</label>
+                <input type="range" id="slVoiceVol" min="0" max="100" value="100" oninput="updateVoiceVol()">
+                <span class="sl-v" id="slVoiceVolVal">100%</span>
+              </div>
+              <div class="sl-labeled">
+                <label>Fade In</label>
+                <input type="range" id="slMusicFade" min="0" max="5" step="0.5" value="1" oninput="updateMusicFade()">
+                <span class="sl-v" id="slMusicFadeVal">1s</span>
+              </div>
+            </div>
+
+            <button class="ghost-btn full" onclick="stopMusic()" style="margin-top:8px">⏹ Stop music</button>
+
+          </div>
+        </div>
+
+        <!-- ════ TAB: EXPORT ════ -->
+        <div class="tab-panel" id="tabExport">
+          <div class="ps-scroll">
+
+            <div class="sec-label">EXPORT FOR PLATFORM</div>
+            <div class="export-plats" id="exportPlatforms"></div>
+
+            <div class="sec-label mt">FORMAT</div>
+            <div class="fmt-toggle">
+              <button class="fmt-btn active" data-fmt="mp4" onclick="setExportFormat(this)">
+                <span>MP4</span>
+                <small>Universal</small>
+                <span class="fmt-badge">BEST</span>
+              </button>
+              <button class="fmt-btn" data-fmt="webm" onclick="setExportFormat(this)">
+                <span>WebM</span>
+                <small>Web optimised</small>
+              </button>
+              <button class="fmt-btn" data-fmt="gif" onclick="setExportFormat(this)">
+                <span>GIF</span>
+                <small>Via ezgif</small>
+              </button>
+            </div>
+
+            <div class="mp4-note" id="mp4Note" style="display:block">
+              <div class="pro-note">
+                MP4 uses in-browser FFmpeg conversion. First export may take a moment to load the converter.
+              </div>
+            </div>
+
+            <div class="sec-label mt">FRAME RATE</div>
+            <div class="fps-row">
+              <button class="fps-btn" data-fps="24" onclick="setFPS(this)">
+                24<small>fps</small>
+              </button>
+              <button class="fps-btn active" data-fps="30" onclick="setFPS(this)">
+                30<small>fps</small>
+              </button>
+              <button class="fps-btn" data-fps="60" onclick="setFPS(this)">
+                60<small>fps</small>
+              </button>
+            </div>
+
+            <div class="sec-label mt">QUALITY</div>
+            <div class="quality-opts">
+              <label class="q-opt">
+                <input type="radio" name="quality" value="web"> Web (smaller file)
+              </label>
+              <label class="q-opt">
+                <input type="radio" name="quality" value="high" checked> High (recommended)
+              </label>
+              <label class="q-opt">
+                <input type="radio" name="quality" value="ultra"> Ultra (large file)
+              </label>
+            </div>
+
+            <div class="sec-label mt">ALSO SAVE AS</div>
+            <div class="also-save-row">
+              <button class="also-btn" onclick="exportThumbnail()">📸 Thumbnail PNG</button>
+              <button class="also-btn" onclick="exportGIF()">🎞 GIF guide</button>
+            </div>
+
+            <button class="export-btn" id="dlBtn" onclick="doExport()">
+              ⬇ Export Video
+            </button>
+
+            <div class="ep-track" id="expProg" style="display:none">
+              <div class="ep-fill" id="epFill"></div>
+            </div>
+            <div class="ep-lbl" id="epLbl"></div>
+
+            <div class="exp-info">
+              Style &nbsp;·&nbsp; <span id="expStyle">Fire Pill</span><br>
+              <span id="expStats">0 words · 0 captions</span>
+            </div>
+
+            <div class="sec-label mt">SHARE</div>
+            <p class="share-hint">Upload your export directly to:</p>
+            <div class="share-row">
+              <a class="share-lnk" href="https://www.tiktok.com/upload" target="_blank" rel="noopener">TikTok</a>
+              <a class="share-lnk" href="https://www.instagram.com" target="_blank" rel="noopener">Instagram</a>
+              <a class="share-lnk" href="https://studio.youtube.com" target="_blank" rel="noopener">YouTube</a>
+              <a class="share-lnk" href="https://www.linkedin.com/feed/" target="_blank" rel="noopener">LinkedIn</a>
+            </div>
+
+          </div>
+        </div>
+        <!-- /tab-panel export -->
+
+      </div>
+      <!-- /right-panel -->
+
+    </div>
+    <!-- /editor-layout -->
+  </div>
+  <!-- /sPreview -->
+
 </div>
+<!-- /app -->
 
 <div id="toast" class="toast"></div>
 
-<video id="masterVid" playsinline style="display:none"></video>
+<!-- Hidden master video element -->
+<video id="masterVid" playsinline style="display:none" crossorigin="anonymous"></video>
 
-<!-- FFmpeg for export -->
+<!-- FFmpeg for MP4 export -->
 <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
 <script src="upload.js"></script>
