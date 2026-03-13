@@ -3,7 +3,7 @@
 // Fixed version: every fake replaced with real
 // ================================================================
 //
-var ASSEMBLY_KEY = 'YOUR_KEY_HERE';
+var ASSEMBLY_KEY = 'b4c1cf73689d49fbbc7b4b0e6fce9f06';
 
 // ── SESSION / PERSISTENCE ─────────────────────────────────────────
 // TRUTH: IndexedDB stores the actual file blob.
