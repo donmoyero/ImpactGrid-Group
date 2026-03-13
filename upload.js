@@ -3,7 +3,7 @@
 // Fixed version: every fake replaced with real
 // ================================================================
 //
-var ASSEMBLY_KEY = 'b4c1cf73689d49fbbc7b4b0e6fce9f06';
+var ASSEMBLY_KEY = 'YOUR_KEY_HERE';
 
 // ── SESSION / PERSISTENCE ─────────────────────────────────────────
 // TRUTH: IndexedDB stores the actual file blob.
@@ -911,7 +911,7 @@ function submitTranscript(audioUrl) {
   fetch('https://api.assemblyai.com/v2/transcript', {
     method:  'POST',
     headers: { 'authorization': ASSEMBLY_KEY, 'content-type': 'application/json' },
-    body:    JSON.stringify({ audio_url: audioUrl, speech_model: 'universal', language_detection: true })
+    body:    JSON.stringify({ audio_url: audioUrl, speech_models: ['universal'], language_detection: true })
   })
   .then(function(r) {
     if (!r.ok) return r.json().then(function(e) { throw new Error('Transcript failed: ' + (e.error || r.status)); });
