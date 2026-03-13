@@ -8,7 +8,7 @@
 //     For production: move to a Cloudflare Worker proxy.
 //     Rotate the old key immediately at assemblyai.com
 //
-var ASSEMBLY_KEY = 'b4c1cf73689d49fbbc7b4b0e6fce9f06'; // ← replace, use a proxy in production
+var ASSEMBLY_KEY = 'YOUR_KEY_HERE'; // ← replace, use a proxy in production
 
 // ── SESSION / PERSISTENCE ─────────────────────────────────────────
 // TRUTH: IndexedDB stores the actual file blob.
@@ -370,23 +370,27 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   var fileIn = document.getElementById('fileIn');
-  if (fileIn) fileIn.onchange = function(e) { loadFile(e.target.files[0]); };
+  if (fileIn) fileIn.onchange = function(e) {
+    if (e.target.files && e.target.files[0]) loadFile(e.target.files[0]);
+    // Reset so same file can be re-selected
+    e.target.value = '';
+  };
 
-  var dz    = document.getElementById('dropZone');
+  // Drag and drop on the dz-inner div
   var inner = document.getElementById('dzInner');
-  if (dz && inner) {
-    ['dragover','dragenter'].forEach(function(ev) {
-      dz.addEventListener(ev, function(e) { e.preventDefault(); inner.classList.add('drag'); });
-    });
-    ['dragleave','dragend'].forEach(function(ev) {
-      dz.addEventListener(ev, function() { inner.classList.remove('drag'); });
-    });
-    dz.addEventListener('drop', function(e) {
-      e.preventDefault(); inner.classList.remove('drag');
-      var f = Array.from(e.dataTransfer.files).find(function(x) {
+  if (inner) {
+    inner.addEventListener('dragover',  function(e) { e.preventDefault(); e.stopPropagation(); inner.classList.add('drag'); });
+    inner.addEventListener('dragenter', function(e) { e.preventDefault(); e.stopPropagation(); inner.classList.add('drag'); });
+    inner.addEventListener('dragleave', function()  { inner.classList.remove('drag'); });
+    inner.addEventListener('dragend',   function()  { inner.classList.remove('drag'); });
+    inner.addEventListener('drop', function(e) {
+      e.preventDefault(); e.stopPropagation(); inner.classList.remove('drag');
+      var files = e.dataTransfer.files;
+      var f = Array.from(files).find(function(x) {
         return x.type.startsWith('video/') || x.type.startsWith('image/');
       });
       if (f) loadFile(f);
+      else toast('⚠ No supported video or image found');
     });
   }
 
