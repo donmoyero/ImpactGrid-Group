@@ -198,6 +198,17 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;heigh
 .panel-scroll::-webkit-scrollbar{width:3px}
 .panel-scroll::-webkit-scrollbar-thumb{background:var(--card);border-radius:3px}
 
+/* Animated text style grid */
+.anim-style-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:4px}
+.anim-style-btn{padding:10px 6px;background:var(--card);border:1px solid var(--b1);border-radius:var(--rs);cursor:pointer;font-size:10px;font-weight:700;text-align:center;color:var(--tx2);font-family:'DM Sans',sans-serif;transition:.15s;display:flex;flex-direction:column;gap:3px;align-items:center}
+.anim-style-btn:hover{border-color:rgba(124,92,252,.4)}
+.anim-style-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(245,200,66,.07)}
+.anim-style-btn .asb-icon{font-size:18px}
+.anim-style-btn .asb-name{font-size:9px;letter-spacing:.5px}
+
+/* Crop drag mode */
+.canvas-wrap.crop-drag canvas{cursor:move}
+
 /* Scroll indicator arrow */
 .tab-panel{position:relative}
 .tab-panel.active::after{content:'▾';position:absolute;bottom:0;left:0;right:0;height:28px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;background:linear-gradient(transparent,var(--bg2));color:var(--tx3);font-size:14px;pointer-events:none;opacity:1;transition:opacity .3s;line-height:1}
@@ -683,32 +694,47 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;heigh
           </div>
         </div>
 
-        <!-- TEXT TAB -->
+        <!-- TEXT / ANIMATED TAB -->
         <div class="tab-panel" id="tabText">
           <div class="panel-scroll">
-            <div class="sec">OVERLAY TEXT</div>
-            <textarea class="txt-area" id="overlayText" rows="3" placeholder="Add text overlay…" oninput="updateOverlayText()"></textarea>
-            <button class="ghost-btn" onclick="clearOverlayText()" style="margin-top:4px">Clear</button>
-            <div class="sec mt">FONT</div>
+            <div class="note" style="border-color:rgba(245,200,66,.3);color:var(--gold)">✨ Animated text renders on export. Preview shows position &amp; style.</div>
+
+            <div class="sec mt">ANIMATION STYLE</div>
+            <div id="animTextStyleGrid"></div>
+
+            <div class="sec mt">YOUR TEXT</div>
+            <textarea class="txt-area" id="animTextContent" rows="3" placeholder="Your animated text…" oninput="updateAnimText()"></textarea>
+
+            <div class="sec mt">TIMING</div>
+            <div class="sl-block">
+              <div class="sl-row"><label>Start</label><input type="range" id="slAnimStart" min="0" max="100" value="0" oninput="updateAnimText()"><span class="sl-v" id="slAnimStartVal">0s</span></div>
+              <div class="sl-row"><label>Duration</label><input type="range" id="slAnimDur" min="1" max="60" value="5" oninput="updateAnimText()"><span class="sl-v" id="slAnimDurVal">5s</span></div>
+            </div>
+
+            <div class="sec mt">FONT &amp; SIZE</div>
             <div class="font-grid" id="fontGrid"></div>
-            <div class="sec mt">SIZE</div>
-            <div class="sl-row"><label>Size</label><input type="range" id="slTxtSize" min="16" max="120" value="42" oninput="updateOverlayText()"><span class="sl-v" id="slTxtSizeVal">42</span></div>
+            <div class="sl-row" style="margin-top:6px"><label>Size</label><input type="range" id="slTxtSize" min="16" max="120" value="42" oninput="updateAnimText()"><span class="sl-v" id="slTxtSizeVal">42</span></div>
+
             <div class="sec mt">COLOUR</div>
             <div class="color-row" id="colorStrip"></div>
-            <div class="sec mt">STYLE</div>
-            <div class="txts-row" id="txtStyleRow"></div>
+
             <div class="sec mt">POSITION</div>
             <div class="pos-row">
-              <button class="pos-btn" data-pos="top" onclick="setTextPos(this)">Top</button>
-              <button class="pos-btn active" data-pos="mid" onclick="setTextPos(this)">Middle</button>
-              <button class="pos-btn" data-pos="bot" onclick="setTextPos(this)">Bottom</button>
+              <button class="pos-btn" data-pos="top" onclick="setAnimTextPos(this)">Top</button>
+              <button class="pos-btn active" data-pos="mid" onclick="setAnimTextPos(this)">Middle</button>
+              <button class="pos-btn" data-pos="bot" onclick="setAnimTextPos(this)">Bottom</button>
             </div>
-            <div class="sec mt">OPACITY</div>
-            <div class="sl-row"><label>Opacity</label><input type="range" id="slTxtOpacity" min="10" max="100" value="100" oninput="updateOverlayText()"><span class="sl-v" id="slTxtOpacityVal">100%</span></div>
-            <div class="sec mt">OUTLINE</div>
-            <div class="sl-row"><label>Outline</label><input type="range" id="slTxtOutline" min="0" max="10" value="0" oninput="updateOverlayText()"><span class="sl-v" id="slTxtOutlineVal">0</span></div>
-            <div class="sec mt">SHADOW</div>
-            <div class="sl-row"><label>Shadow</label><input type="range" id="slTxtShadow" min="0" max="30" value="8" oninput="updateOverlayText()"><span class="sl-v" id="slTxtShadowVal">8</span></div>
+
+            <div class="sec mt">STYLE</div>
+            <div class="txts-row" id="txtStyleRow"></div>
+
+            <div class="sec mt">OUTLINE &amp; SHADOW</div>
+            <div class="sl-block">
+              <div class="sl-row"><label>Outline</label><input type="range" id="slTxtOutline" min="0" max="10" value="0" oninput="updateAnimText()"><span class="sl-v" id="slTxtOutlineVal">0</span></div>
+              <div class="sl-row"><label>Shadow</label><input type="range" id="slTxtShadow" min="0" max="30" value="8" oninput="updateAnimText()"><span class="sl-v" id="slTxtShadowVal">8</span></div>
+            </div>
+
+            <button class="ghost-btn" onclick="clearAnimText()" style="margin-top:6px">✕ Clear text</button>
           </div>
         </div>
 
@@ -793,12 +819,20 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;heigh
           <div class="panel-scroll">
             <div class="sec">ASPECT RATIO</div>
             <div class="ratio-grid" id="ratioGrid"></div>
-            <div class="sec mt">SCALE &amp; POSITION</div>
-            <div class="sl-block">
-              <div class="sl-row"><label>Scale</label><input type="range" id="slVideoScale" min="50" max="200" value="100" oninput="updateVideoScale()"><span class="sl-v" id="slVideoScaleVal">100%</span></div>
-              <div class="sl-row"><label>Offset X</label><input type="range" id="slOffsetX" min="-300" max="300" value="0" oninput="updateVideoScale()"><span class="sl-v" id="slOffsetXVal">0</span></div>
-              <div class="sl-row"><label>Offset Y</label><input type="range" id="slOffsetY" min="-300" max="300" value="0" oninput="updateVideoScale()"><span class="sl-v" id="slOffsetYVal">0</span></div>
+
+            <div class="sec mt">REFRAME</div>
+            <div class="note" style="border-color:rgba(74,222,128,.25);color:var(--green)">
+              🖐 <strong>Drag the canvas</strong> to reposition · <strong>Scroll</strong> to zoom in/out
             </div>
+            <button class="ghost-btn" onclick="resetCrop()" style="margin-top:6px">↺ Reset position</button>
+
+            <div class="sec mt">FINE TUNE</div>
+            <div class="sl-block">
+              <div class="sl-row"><label>Scale</label><input type="range" id="slVideoScale" min="50" max="300" value="100" oninput="updateVideoScale()"><span class="sl-v" id="slVideoScaleVal">100%</span></div>
+              <div class="sl-row"><label>X</label><input type="range" id="slOffsetX" min="-600" max="600" value="0" oninput="updateVideoScale()"><span class="sl-v" id="slOffsetXVal">0</span></div>
+              <div class="sl-row"><label>Y</label><input type="range" id="slOffsetY" min="-600" max="600" value="0" oninput="updateVideoScale()"><span class="sl-v" id="slOffsetYVal">0</span></div>
+            </div>
+
             <div class="sec mt">BACKGROUND</div>
             <div class="bg-opts" id="bgOpts"></div>
             <div class="sec mt">CUSTOM BG COLOUR</div>
