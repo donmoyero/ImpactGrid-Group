@@ -3,7 +3,7 @@
 // Fixed version: every fake replaced with real
 // ================================================================
 //
-var ASSEMBLY_KEY = 'b4c1cf73689d49fbbc7b4b0e6fce9f06';
+var ASSEMBLY_KEY = 'YOUR_KEY_HERE';
 
 // ── SESSION / PERSISTENCE ─────────────────────────────────────────
 // TRUTH: IndexedDB stores the actual file blob.
@@ -494,11 +494,12 @@ function buildStyleGrid() {
 // ── BUILD PANELS ──────────────────────────────────────────────────
 function buildAllPanels() {
   buildCaptionList(); buildWordAnimGrid(); buildCapColors(); buildCapBg();
-  buildFontGrid(); buildColorStrip(); buildTxtStyleRow(); buildStickerGrid();
+  buildFontGrid(); buildColorStrip(); buildTxtStyleRow();
   buildGradeGrid(); buildTintGrid(); buildDuotoneRow(); buildFXGrid();
   buildMotionBtns(); buildSpeedGrid(); buildRatioGrid(); buildBgOpts();
   buildMusicCats(); buildMusicList(); buildExportPlatforms(); buildAIGrid();
   rebuildKeywordEditor();
+  refreshOverlayLayerList();
 }
 
 function buildCaptionList() {
@@ -1019,6 +1020,8 @@ function launchPreview() {
 
   var msg = document.getElementById('noFileMsg'); if (msg) msg.style.display = 'none';
   fitCanvas(); drawFrame();
+  initCanvasDrag();
+  initScrollIndicators();
 }
 
 // ── REAL WAVEFORM ─────────────────────────────────────────────────
@@ -1118,6 +1121,10 @@ function buildCaptionBlocks(dur, totalW) {
       e.stopPropagation();
       if (vid) vid.currentTime = s.t;
       if (!isPlaying) setTimeout(drawFrame, 40);
+    };
+    block.ondblclick = function(e) {
+      e.stopPropagation();
+      openCaptionEdit(s, block);
     };
     container.appendChild(block);
   });
@@ -1263,11 +1270,7 @@ function drawFrame() {
 
   applyLayerEffects(W, H);
 
-  stickers.forEach(function(stk) {
-    ctx.save(); ctx.translate(stk.x, stk.y); ctx.rotate(stk.rot * Math.PI / 180);
-    ctx.font = stk.size + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(stk.emoji, 0, 0); ctx.restore();
-  });
+  drawOverlayLayers(W, H);
 
   var now = fileType === 'video' && vid ? vid.currentTime : 0;
 
@@ -1719,18 +1722,305 @@ function drawTextOverlay(W,H,now){
 function setCaptionPos(btn){captionPos=btn.dataset.pos;btn.closest('.pos-row').querySelectorAll('.pos-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');if(!isPlaying)drawFrame();}
 function updateCapSize(){capSize=parseInt(document.getElementById('slCapSize').value);document.getElementById('slCapSizeVal').textContent=capSize;if(!isPlaying)drawFrame();}
 
-// ── STICKERS ──────────────────────────────────────────────────────
-function addSticker(em){if(!cv)return;stickers.push({emoji:em,x:cv.width/2,y:cv.height/3,size:64,rot:0});activeSticker=stickers.length-1;refreshPlacedList();if(!isPlaying)drawFrame();toast('Added '+em);}
-function refreshPlacedList(){
-  var list=document.getElementById('placedList');if(!list)return;
-  if(!stickers.length){list.innerHTML='<div class="empty-note">None placed yet</div>';return;}
-  list.innerHTML='';
-  stickers.forEach(function(stk,i){var item=document.createElement('div');item.className='placed-item'+(i===activeSticker?' selected':'');item.innerHTML='<span class="placed-emoji">'+stk.emoji+'</span><span class="placed-info">x:'+Math.round(stk.x)+' y:'+Math.round(stk.y)+'</span><button class="placed-del" onclick="removeSticker('+i+')">✕</button>';item.onclick=function(){activeSticker=i;refreshPlacedList();if(!isPlaying)drawFrame();};list.appendChild(item);});
+// ── OVERLAY LAYERS (replaces stickers) ───────────────────────────
+// Each layer: { id, text, x, y, size, color, fontId, opacity, outline, rot }
+var overlayLayers  = [];
+var activeLayerId  = null;
+var _olDrag        = null; // { layerId, startX, startY, origX, origY }
+
+function addOverlayLayer() {
+  var id = 'ol_' + Date.now();
+  var layer = {
+    id: id, text: 'NEW TEXT',
+    x: cv ? cv.width / 2 : 270,
+    y: cv ? cv.height / 2 : 480,
+    size: 48, color: '#ffffff',
+    fontId: 'bold', opacity: 1, outline: 0, rot: 0
+  };
+  overlayLayers.push(layer);
+  activeLayerId = id;
+  refreshOverlayLayerList();
+  populateOverlayEditPanel(layer);
+  if (!isPlaying) drawFrame();
+  toast('Layer added — drag it on the canvas');
 }
-function removeSticker(i){stickers.splice(i,1);activeSticker=Math.min(activeSticker,stickers.length-1);refreshPlacedList();if(!isPlaying)drawFrame();}
-function clearAllStickers(){stickers=[];activeSticker=-1;refreshPlacedList();if(!isPlaying)drawFrame();toast('All stickers cleared');}
-function updateActiveStickerSize(){var v=parseInt(document.getElementById('slStickerSize').value);document.getElementById('slStickerSizeVal').textContent=v;if(activeSticker>=0&&stickers[activeSticker]){stickers[activeSticker].size=v;if(!isPlaying)drawFrame();}}
-function updateActiveStickerRot(){var v=parseInt(document.getElementById('slStickerRot').value);document.getElementById('slStickerRotVal').textContent=v+'°';if(activeSticker>=0&&stickers[activeSticker]){stickers[activeSticker].rot=v;if(!isPlaying)drawFrame();}}
+
+function getActiveLayer() {
+  return overlayLayers.find(function(l) { return l.id === activeLayerId; }) || null;
+}
+
+function refreshOverlayLayerList() {
+  var list = document.getElementById('overlayLayerList');
+  if (!list) return;
+  if (!overlayLayers.length) {
+    list.innerHTML = '<div class="empty-note">No layers yet</div>';
+    var ep = document.getElementById('overlayEditPanel'); if (ep) ep.style.display = 'none';
+    return;
+  }
+  list.innerHTML = '';
+  overlayLayers.forEach(function(layer) {
+    var item = document.createElement('div');
+    item.className = 'ol-layer-item' + (layer.id === activeLayerId ? ' active-layer' : '');
+    item.innerHTML =
+      '<span class="ol-drag-handle">⠿</span>' +
+      '<span class="ol-layer-preview">' + (layer.text || '—') + '</span>' +
+      '<button class="ol-layer-del" onclick="deleteLayer(\'' + layer.id + '\');event.stopPropagation()">✕</button>';
+    item.onclick = function() {
+      activeLayerId = layer.id;
+      refreshOverlayLayerList();
+      populateOverlayEditPanel(layer);
+    };
+    list.appendChild(item);
+  });
+  var ep = document.getElementById('overlayEditPanel');
+  if (ep) ep.style.display = activeLayerId ? 'block' : 'none';
+}
+
+function populateOverlayEditPanel(layer) {
+  var ep = document.getElementById('overlayEditPanel'); if (!ep) return;
+  ep.style.display = 'block';
+  var t = document.getElementById('olText'); if (t) t.value = layer.text;
+  var s = document.getElementById('slOlSize'); if (s) { s.value = layer.size; document.getElementById('slOlSizeVal').textContent = layer.size; }
+  var o = document.getElementById('slOlOpacity'); if (o) { o.value = Math.round(layer.opacity * 100); document.getElementById('slOlOpacityVal').textContent = Math.round(layer.opacity * 100) + '%'; }
+  var ol = document.getElementById('slOlOutline'); if (ol) { ol.value = layer.outline; document.getElementById('slOlOutlineVal').textContent = layer.outline; }
+  var r = document.getElementById('slOlRot'); if (r) { r.value = layer.rot; document.getElementById('slOlRotVal').textContent = layer.rot + '°'; }
+  buildOlFontGrid(layer); buildOlColorRow(layer);
+}
+
+function buildOlFontGrid(layer) {
+  var g = document.getElementById('olFontGrid'); if (!g) return; g.innerHTML = '';
+  FONTS.forEach(function(f) {
+    var b = document.createElement('div');
+    b.className = 'font-btn' + (f.id === (layer ? layer.fontId : 'bold') ? ' active' : '');
+    b.style.fontFamily = f.family; b.style.fontWeight = f.weight; b.textContent = f.label;
+    b.onclick = function() {
+      var l = getActiveLayer(); if (!l) return;
+      l.fontId = f.id;
+      document.querySelectorAll('#olFontGrid .font-btn').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); if (!isPlaying) drawFrame();
+    };
+    g.appendChild(b);
+  });
+}
+
+function buildOlColorRow(layer) {
+  var c = document.getElementById('olColorRow'); if (!c) return; c.innerHTML = '';
+  COLORS.forEach(function(col) {
+    var d = document.createElement('div');
+    d.className = 'col-dot' + (col === (layer ? layer.color : '#ffffff') ? ' active' : '');
+    d.style.background = col;
+    if (col === '#000000') d.style.border = '2px solid rgba(255,255,255,.2)';
+    d.onclick = function() {
+      var l = getActiveLayer(); if (!l) return;
+      l.color = col;
+      document.querySelectorAll('#olColorRow .col-dot').forEach(function(x) { x.classList.remove('active'); });
+      d.classList.add('active'); if (!isPlaying) drawFrame();
+    };
+    c.appendChild(d);
+  });
+}
+
+function updateActiveLayer() {
+  var l = getActiveLayer(); if (!l) return;
+  var t = document.getElementById('olText'); if (t) l.text = t.value;
+  var s = document.getElementById('slOlSize'); if (s) { l.size = parseInt(s.value); document.getElementById('slOlSizeVal').textContent = s.value; }
+  var o = document.getElementById('slOlOpacity'); if (o) { l.opacity = parseInt(o.value) / 100; document.getElementById('slOlOpacityVal').textContent = o.value + '%'; }
+  var ol = document.getElementById('slOlOutline'); if (ol) { l.outline = parseInt(ol.value); document.getElementById('slOlOutlineVal').textContent = ol.value; }
+  var r = document.getElementById('slOlRot'); if (r) { l.rot = parseInt(r.value); document.getElementById('slOlRotVal').textContent = r.value + '°'; }
+  refreshOverlayLayerList();
+  if (!isPlaying) drawFrame();
+}
+
+function deleteLayer(id) {
+  overlayLayers = overlayLayers.filter(function(l) { return l.id !== id; });
+  if (activeLayerId === id) activeLayerId = overlayLayers.length ? overlayLayers[overlayLayers.length - 1].id : null;
+  refreshOverlayLayerList();
+  var l = getActiveLayer();
+  if (l) populateOverlayEditPanel(l);
+  else { var ep = document.getElementById('overlayEditPanel'); if (ep) ep.style.display = 'none'; }
+  if (!isPlaying) drawFrame();
+}
+
+function deleteActiveLayer() {
+  if (activeLayerId) deleteLayer(activeLayerId);
+}
+
+// Canvas drag for overlay layers
+function initCanvasDrag() {
+  var wrap = document.getElementById('canvasWrap'); if (!wrap || !cv) return;
+
+  function canvasCoords(e) {
+    var rect = cv.getBoundingClientRect();
+    var scaleX = cv.width  / rect.width;
+    var scaleY = cv.height / rect.height;
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  }
+
+  function hitTestLayers(x, y) {
+    // Check layers in reverse (top-drawn = last)
+    for (var i = overlayLayers.length - 1; i >= 0; i--) {
+      var l = overlayLayers[i];
+      var fontDef = FONTS.find(function(f) { return f.id === l.fontId; }) || FONTS[0];
+      ctx.font = fontDef.weight + ' ' + l.size + 'px ' + fontDef.family;
+      var tw = ctx.measureText(l.text || '').width;
+      var th = l.size * 1.2;
+      // Simple AABB hit (ignores rotation for simplicity)
+      if (x >= l.x - tw / 2 - 10 && x <= l.x + tw / 2 + 10 &&
+          y >= l.y - th / 2 - 10 && y <= l.y + th / 2 + 10) {
+        return l;
+      }
+    }
+    return null;
+  }
+
+  function onDown(e) {
+    if (!overlayLayers.length) return;
+    var pos = canvasCoords(e);
+    var hit = hitTestLayers(pos.x, pos.y);
+    if (hit) {
+      _olDrag = { layerId: hit.id, startX: pos.x, startY: pos.y, origX: hit.x, origY: hit.y };
+      activeLayerId = hit.id;
+      refreshOverlayLayerList();
+      populateOverlayEditPanel(hit);
+      wrap.classList.add('dragging');
+      e.preventDefault();
+    }
+  }
+  function onMove(e) {
+    if (!_olDrag) return;
+    var pos = canvasCoords(e);
+    var l = overlayLayers.find(function(x) { return x.id === _olDrag.layerId; });
+    if (l) {
+      l.x = _olDrag.origX + (pos.x - _olDrag.startX);
+      l.y = _olDrag.origY + (pos.y - _olDrag.startY);
+      if (!isPlaying) drawFrame();
+    }
+    e.preventDefault();
+  }
+  function onUp() {
+    if (_olDrag) { _olDrag = null; wrap.classList.remove('dragging'); }
+  }
+
+  cv.addEventListener('mousedown',  onDown, { passive: false });
+  cv.addEventListener('touchstart', onDown, { passive: false });
+  document.addEventListener('mousemove',  onMove, { passive: false });
+  document.addEventListener('touchmove',  onMove, { passive: false });
+  document.addEventListener('mouseup',  onUp);
+  document.addEventListener('touchend', onUp);
+
+  // Show grab cursor when hovering a layer
+  cv.addEventListener('mousemove', function(e) {
+    if (_olDrag) return;
+    var pos = canvasCoords(e);
+    var hit = hitTestLayers(pos.x, pos.y);
+    cv.style.cursor = hit ? 'grab' : '';
+  });
+}
+
+// Draw overlay layers on canvas
+function drawOverlayLayers(W, H) {
+  overlayLayers.forEach(function(l) {
+    if (!l.text) return;
+    var fontDef = FONTS.find(function(f) { return f.id === l.fontId; }) || FONTS[0];
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(l.opacity, 1));
+    ctx.translate(l.x, l.y);
+    if (l.rot) ctx.rotate(l.rot * Math.PI / 180);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = fontDef.weight + ' ' + l.size + 'px ' + fontDef.family;
+    if (l.outline > 0) {
+      ctx.strokeStyle = 'rgba(0,0,0,.9)';
+      ctx.lineWidth   = l.outline * 2;
+      ctx.lineJoin    = 'round';
+      ctx.strokeText(l.text, 0, 0);
+    }
+    ctx.shadowColor = 'rgba(0,0,0,.7)';
+    ctx.shadowBlur  = 8;
+    ctx.fillStyle   = l.color;
+    ctx.fillText(l.text, 0, 0);
+    // Draw selection ring on active layer
+    if (l.id === activeLayerId) {
+      var tw = ctx.measureText(l.text).width;
+      ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(124,92,252,.8)'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(-tw / 2 - 8, -l.size / 2 - 6, tw + 16, l.size + 12);
+    }
+    ctx.restore();
+  });
+}
+
+// ── CAPTION INLINE EDITING ────────────────────────────────────────
+var _capEditPopup = null;
+
+function openCaptionEdit(sentence, blockEl) {
+  closeCaptionEdit();
+  blockEl.classList.add('editing');
+  var popup = document.createElement('div');
+  popup.className = 'cap-edit-popup';
+  var rect = blockEl.getBoundingClientRect();
+  popup.style.left = rect.left + 'px';
+  popup.style.top  = (rect.top - 52) + 'px';
+  var inp = document.createElement('input');
+  inp.type  = 'text';
+  inp.value = sentence.words.map(function(w) { return w.w; }).join(' ');
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = '✓';
+  saveBtn.onclick = function() {
+    var newText = inp.value.trim();
+    if (newText) {
+      var newWords = newText.split(/\s+/);
+      var dur = sentence.end - sentence.t;
+      sentence.words = newWords.map(function(w, i) {
+        return { w: w, t: sentence.t + (i / newWords.length) * dur, end: sentence.t + ((i + 1) / newWords.length) * dur };
+      });
+      // Rebuild allWords for keyword indexing
+      allWords = [];
+      sentences.forEach(function(s) { s.words.forEach(function(w) { allWords.push(w); }); });
+      keywords = {};
+      rebuildKeywordEditor();
+      buildCaptionBlocks(vid ? vid.duration : 1, parseInt(document.getElementById('tlInner').style.width) || 600);
+    }
+    closeCaptionEdit();
+    if (!isPlaying) drawFrame();
+  };
+  inp.onkeydown = function(e) { if (e.key === 'Enter') saveBtn.click(); if (e.key === 'Escape') closeCaptionEdit(); };
+  popup.appendChild(inp); popup.appendChild(saveBtn);
+  document.body.appendChild(popup);
+  _capEditPopup = { popup: popup, blockEl: blockEl };
+  setTimeout(function() { inp.focus(); inp.select(); }, 30);
+  // Close on outside click
+  setTimeout(function() {
+    document.addEventListener('mousedown', function handler(e) {
+      if (!popup.contains(e.target) && e.target !== blockEl) { closeCaptionEdit(); document.removeEventListener('mousedown', handler); }
+    });
+  }, 100);
+}
+
+function closeCaptionEdit() {
+  if (_capEditPopup) {
+    _capEditPopup.blockEl.classList.remove('editing');
+    if (_capEditPopup.popup.parentNode) _capEditPopup.popup.parentNode.removeChild(_capEditPopup.popup);
+    _capEditPopup = null;
+  }
+}
+
+// ── SCROLL INDICATORS ─────────────────────────────────────────────
+function initScrollIndicators() {
+  document.querySelectorAll('.panel-scroll').forEach(function(el) {
+    function check() {
+      var panel = el.closest('.tab-panel');
+      if (!panel) return;
+      var atBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 10;
+      panel.classList.toggle('scrolled-to-bottom', atBottom);
+    }
+    el.addEventListener('scroll', check);
+    // Re-check when tab becomes active
+    setTimeout(check, 100);
+  });
+}
+
 
 // ── AI EFFECTS ────────────────────────────────────────────────────
 function applyAIEffect(id){
@@ -1820,6 +2110,10 @@ function switchTab(btn){
   document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
   var panel=document.getElementById(tabId);if(panel)panel.classList.add('active');
   var lbl=document.getElementById('rpLabel');if(lbl)lbl.textContent=btn.querySelector('span:last-child').textContent.toUpperCase();
+  // Re-check scroll indicator for newly active panel
+  setTimeout(function(){
+    if(panel){var ps=panel.querySelector('.panel-scroll');if(ps){var atBottom=ps.scrollHeight-ps.scrollTop<=ps.clientHeight+10;panel.classList.toggle('scrolled-to-bottom',atBottom);}}
+  },50);
 }
 
 // ── EXPORT ────────────────────────────────────────────────────────
