@@ -6,7 +6,8 @@
 // Set this to your deployed Cloudflare Worker URL.
 // Never put the AssemblyAI key here — it lives in the Worker secret.
 // Example: 'https://impactgrid-proxy.YOUR-SUBDOMAIN.workers.dev'
-var PROXY_BASE_URL = 'https://jolly-waterfall-49b7.ogtinzplayandearn.workers.dev';
+var ASSEMBLY_KEY   = '80e3b7c067bf4d68a16ad9e32efc9887'; // direct key
+var PROXY_BASE_URL = 'https://jolly-waterfall-49b7.ogtinzplayandearn.workers.dev'; // unused
 
 // ─── STATE ───────────────────────────────────────────────────────
 var clip         = null;
@@ -857,118 +858,50 @@ function processWithAssemblyAI(){
   isCancelled = false;
   pollRetries = 0;
 
-  goTo('sProcess'); stepProg(1);
-  setStatus('🎙️','Preparing…','Extracting audio track…', 5);
+  goTo('sProcess'); stepProg(2);
+  setStatus('🎙️','Uploading…','Sending your video to AI…', 10);
 
   var cancelBtn = document.getElementById('processCancelBtn');
   if(cancelBtn) cancelBtn.style.display = 'inline-flex';
 
-  extractAudioBlob(clip.file)
-    .then(function(audioBlob){
-      if(isCancelled) return Promise.reject({cancelled:true});
-      stepProg(2);
-      setStatus('📡','Uploading audio…','Audio only — much faster…', 20);
-      return uploadAudioBlob(audioBlob);
-    })
-    .then(function(uploadUrl){
-      if(isCancelled) return;
-      if(!uploadUrl) throw new Error('No upload URL from proxy');
-      stepProg(3); setStatus('🔬','Transcribing…','AI is reading every word…', 40);
-      submitTranscript(uploadUrl);
-    })
-    .catch(function(err){
-      if(isCancelled || (err && err.cancelled)) return;
-      setStatus('❌','Upload failed', err.message || String(err), 0);
-      toast('Error: ' + (err.message || err));
-      hideCancelBtn();
-    });
-}
-
-// Extract audio-only WAV from video — uploads 10-20x faster than raw video
-function extractAudioBlob(file){
-  return new Promise(function(resolve){
-    var url = URL.createObjectURL(file);
-    fetch(url)
-      .then(function(r){ return r.arrayBuffer(); })
-      .then(function(buf){
-        URL.revokeObjectURL(url);
-        var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        return audioCtx.decodeAudioData(buf);
-      })
-      .then(function(decoded){
-        var sampleRate  = 16000;
-        var frameCount  = Math.ceil(decoded.duration * sampleRate);
-        var offCtx      = new OfflineAudioContext(1, frameCount, sampleRate);
-        var monoBuffer  = offCtx.createBuffer(1, frameCount, sampleRate);
-        var monoData    = monoBuffer.getChannelData(0);
-        var ch0 = decoded.getChannelData(0);
-        var ch1 = decoded.numberOfChannels > 1 ? decoded.getChannelData(1) : ch0;
-        for(var i = 0; i < frameCount; i++){
-          monoData[i] = ((ch0[i]||0) + (ch1[i]||0)) * 0.5;
-        }
-        var src = offCtx.createBufferSource();
-        src.buffer = monoBuffer;
-        src.connect(offCtx.destination);
-        src.start(0);
-        return offCtx.startRendering();
-      })
-      .then(function(rendered){
-        resolve(new Blob([audioBufferToWav(rendered)], { type: 'audio/wav' }));
-      })
-      .catch(function(err){
-        console.warn('Audio extraction failed, uploading raw video instead:', err);
-        try{ URL.revokeObjectURL(url); }catch(e){}
-        resolve(file); // fallback to raw file
-      });
-  });
-}
-
-// AudioBuffer -> WAV ArrayBuffer
-function audioBufferToWav(buffer){
-  var samples = buffer.getChannelData(0);
-  var len     = samples.length;
-  var sRate   = buffer.sampleRate;
-  var buf     = new ArrayBuffer(44 + len * 2);
-  var v       = new DataView(buf);
-  function ws(o,s){ for(var i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); }
-  ws(0,'RIFF'); v.setUint32(4,36+len*2,true);
-  ws(8,'WAVE'); ws(12,'fmt ');
-  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
-  v.setUint32(24,sRate,true); v.setUint32(28,sRate*2,true);
-  v.setUint16(32,2,true); v.setUint16(34,16,true);
-  ws(36,'data'); v.setUint32(40,len*2,true);
-  for(var i=0,o=44; i<len; i++,o+=2){
-    var s=Math.max(-1,Math.min(1,samples[i]));
-    v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true);
-  }
-  return buf;
-}
-
-// Upload Blob to AssemblyAI via proxy
-function uploadAudioBlob(blob){
-  return blob.arrayBuffer()
-    .then(function(buf){
-      return fetch(PROXY_BASE_URL + '/upload', {
-        method:  'POST',
-        headers: { 'content-type': blob.type || 'audio/wav' },
-        body:    buf
-      });
+  var reader = new FileReader();
+  reader.onload = function(e){
+    fetch('https://api.assemblyai.com/v2/upload', {
+      method:  'POST',
+      headers: {
+        'authorization': ASSEMBLY_KEY,
+        'content-type':  'application/octet-stream'
+      },
+      body: e.target.result
     })
     .then(function(r){
       if(!r.ok) return r.json().then(function(d){ throw new Error(d.error||'Upload failed: '+r.status); });
       return r.json();
     })
-    .then(function(data){ return data.upload_url || data.uploadUrl; });
+    .then(function(data){
+      if(isCancelled) return;
+      var url = data.upload_url;
+      if(!url) throw new Error('No upload URL');
+      stepProg(3); setStatus('🔬','Transcribing…','AI is reading every word…', 32);
+      submitTranscript(url);
+    })
+    .catch(function(err){
+      if(isCancelled) return;
+      setStatus('❌','Upload failed', err.message, 0);
+      toast('Error: ' + err.message);
+      hideCancelBtn();
+    });
+  };
+  reader.readAsArrayBuffer(clip.file);
 }
 
 
 function submitTranscript(audioUrl){
   // FIX: speech_model (singular) not speech_models (array)
-  fetch(PROXY_BASE_URL + '/transcript', {
+  fetch('https://api.assemblyai.com/v2/transcript', {
     method:  'POST',
-    headers: { 'content-type': 'application/json' },
-    body:    JSON.stringify({ audio_url: audioUrl })
-    // Worker handles speech_model: 'universal-2' server-side
+    headers: { 'authorization': ASSEMBLY_KEY, 'content-type': 'application/json' },
+    body:    JSON.stringify({ audio_url: audioUrl, speech_models: ['universal-2'], language_detection: true })
   })
   .then(function(r){
     if(!r.ok) return r.json().then(function(e){ throw new Error('Transcript failed: '+(e.error||r.status)); });
@@ -1001,7 +934,9 @@ function pollTranscript(){
     return;
   }
 
-  fetch(PROXY_BASE_URL + '/transcript/' + transcriptId)
+  fetch('https://api.assemblyai.com/v2/transcript/' + transcriptId, {
+    headers: { 'authorization': ASSEMBLY_KEY }
+  })
   .then(function(r){ return r.json(); })
   .then(function(data){
     if(isCancelled) return;
