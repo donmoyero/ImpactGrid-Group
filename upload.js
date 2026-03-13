@@ -6,7 +6,7 @@
 // Set this to your deployed Cloudflare Worker URL.
 // Never put the AssemblyAI key here — it lives in the Worker secret.
 // Example: 'https://impactgrid-proxy.YOUR-SUBDOMAIN.workers.dev'
-var PROXY_BASE_URL = 'https://impactgrid-proxy.YOUR-SUBDOMAIN.workers.dev';
+var PROXY_BASE_URL = 'https://jolly-waterfall-49b7.ogtinzplayandearn.workers.dev';
 
 // ─── STATE ───────────────────────────────────────────────────────
 var clip         = null;
