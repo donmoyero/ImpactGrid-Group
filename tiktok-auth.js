@@ -19,7 +19,7 @@
 var TikTokAuth = (function() {
 
   /* ── CONFIG — replace with your real values ── */
-  var CLIENT_KEY   = 'YOUR_TIKTOK_CLIENT_KEY'; // e.g. 'awxxxxxxxxxxxxxx'
+  var CLIENT_KEY   = 'awi4w15huo5zrxd5'; // e.g. 'awxxxxxxxxxxxxxx'
   var REDIRECT_URI = 'https://impactgridgroup.com/tiktok-callback.html';
   var DIJO_URL     = 'https://impactgrid-dijo.onrender.com';
 
