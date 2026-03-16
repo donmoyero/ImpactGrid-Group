@@ -941,22 +941,27 @@ function useOpportunity(topic) {
   showToast('💡','Topic loaded: '+topic);
 }
 
-/* ── AI Content Generation (Claude API) ── */
+/* ── AI Content Generation — routed through Dijo server ── */
+var DIJO_URL = 'https://impactgrid-dijo.onrender.com';
+
 async function callClaude(prompt) {
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
+    var res = await fetch(DIJO_URL + '/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': '1',
+        'User-Agent': 'ImpactGridCreator'
+      },
+      body: JSON.stringify({ message: prompt, mode: 'creator' })
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-    if(data.content && data.content[0]) return data.content[0].text;
+    return data.reply || null;
+  } catch(e) {
+    console.warn('[Creator AI] Dijo unreachable, using fallback.', e);
     return null;
-  } catch(e) { return null; }
+  }
 }
 
 function setGenerating(btnId, loading) {
