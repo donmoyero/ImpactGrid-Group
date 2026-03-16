@@ -759,78 +759,107 @@ body::after {
     <!-- ── TIKTOK PANEL ── -->
     <div class="panel" id="panel-tiktok">
       <div class="tiktok-connect">
-        <div class="tt-icon">🎵</div>
-        <h2 class="tt-title">Connect Your TikTok Account</h2>
-        <p class="tt-sub">Link your TikTok account to unlock real-time hashtag velocity tracking, engagement analytics, and personalised content recommendations powered by TikTok for Developers.</p>
 
-        <div style="margin-bottom:20px;">
-          <button class="tt-btn" onclick="initTikTokConnect()">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.73a4.85 4.85 0 01-1.01-.04z"/></svg>
-            Connect with TikTok
-          </button>
+        <!-- NOT CONNECTED STATE -->
+        <div id="tt-disconnected">
+          <div class="tt-icon">🎵</div>
+          <h2 class="tt-title">Connect Your TikTok Account</h2>
+          <p class="tt-sub">Link your TikTok account to unlock real-time hashtag velocity tracking, engagement analytics, and AI-powered content recommendations via TikTok for Developers.</p>
+          <div id="tt-error-msg" style="display:none;background:rgba(247,95,79,0.1);border:1px solid rgba(247,95,79,0.25);border-radius:10px;padding:12px 16px;font-size:13px;color:#f75f4f;margin-bottom:16px;"></div>
+          <div style="margin-bottom:16px;">
+            <button class="tt-btn" id="ttConnectBtn" onclick="TikTokAuth.connect(this)">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.73a4.85 4.85 0 01-1.01-.04z"/></svg>
+              Connect with TikTok
+            </button>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:28px;">
+            Powered by TikTok Login Kit &nbsp;·&nbsp; Display API &nbsp;·&nbsp; Content Posting API &nbsp;·&nbsp; Share Kit<br>
+            Your credentials are never stored client-side. Disconnect anytime.
+          </div>
+          <div class="tt-features">
+            <div class="tt-feat"><div class="tt-feat-icon">🔑</div><h4>Login Kit</h4><p>Secure OAuth 2.0 authentication with PKCE. Your TikTok password never touches our servers.</p></div>
+            <div class="tt-feat"><div class="tt-feat-icon">📊</div><h4>Display API</h4><p>Read your real follower count, video performance, and top hashtag data directly from TikTok.</p></div>
+            <div class="tt-feat"><div class="tt-feat-icon">🚀</div><h4>Content Posting</h4><p>Publish videos to TikTok directly from the dashboard — no need to leave ImpactGrid.</p></div>
+            <div class="tt-feat"><div class="tt-feat-icon">🔗</div><h4>Share Kit</h4><p>Share content to your TikTok with one click, with your AI-generated caption pre-filled.</p></div>
+          </div>
         </div>
 
-        <div style="font-size:12px;color:var(--text3);margin-bottom:32px;">
-          Powered by TikTok Login Kit · Your data stays private · Disconnect anytime
-        </div>
+        <!-- CONNECTED STATE — shown after OAuth callback -->
+        <div id="tt-connected-view" style="display:none;text-align:left;width:100%;">
 
-        <!-- TikTok data preview (shown after connect simulation) -->
-        <div id="ttConnected" style="display:none;text-align:left;">
           <div class="card" style="margin-bottom:16px;">
             <div class="card-header">
               <span class="card-title">✅ TikTok Connected</span>
-              <span class="card-tag" style="background:rgba(255,45,85,0.12);color:var(--tt);border:1px solid rgba(255,45,85,0.2);">ACTIVE</span>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span class="card-tag" style="background:rgba(255,45,85,0.12);color:var(--tt);border:1px solid rgba(255,45,85,0.2);">ACTIVE</span>
+                <button onclick="disconnectTikTok()" style="font-size:11px;color:var(--text3);cursor:pointer;background:none;border:none;padding:0;">Disconnect</button>
+              </div>
             </div>
             <div class="card-body">
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+              <!-- Profile -->
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+                <div id="tt-avatar" style="width:48px;height:48px;border-radius:50%;background:rgba(255,45,85,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0;">🎵</div>
+                <div>
+                  <div id="tt-display-name" style="font-weight:700;font-size:15px;margin-bottom:2px;">—</div>
+                  <div id="tt-username" style="font-size:12px;color:var(--text3);">—</div>
+                </div>
+              </div>
+              <!-- Stats grid -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
                 <div style="text-align:center;">
-                  <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Followers</div>
-                  <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--tt);">12.4k</div>
+                  <div style="font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Followers</div>
+                  <div id="tt-followers" style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--tt);">—</div>
                 </div>
                 <div style="text-align:center;">
-                  <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Avg Views</div>
-                  <div style="font-family:var(--fd);font-size:28px;font-weight:900;">8.2k</div>
+                  <div style="font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Following</div>
+                  <div id="tt-following" style="font-family:var(--fd);font-size:22px;font-weight:900;">—</div>
                 </div>
                 <div style="text-align:center;">
-                  <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Eng. Rate</div>
-                  <div style="font-family:var(--fd);font-size:28px;font-weight:900;color:var(--green);">4.8%</div>
+                  <div style="font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Videos</div>
+                  <div id="tt-videos" style="font-family:var(--fd);font-size:22px;font-weight:900;">—</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Likes</div>
+                  <div id="tt-likes" style="font-family:var(--fd);font-size:22px;font-weight:900;color:var(--green);">—</div>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Recent videos -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+              <span class="card-title">🎬 Recent Videos</span>
+              <span class="card-tag tag-live-green">Live Data</span>
+            </div>
+            <div class="card-body" id="tt-videos-list">
+              <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">Loading videos…</div>
+            </div>
+          </div>
+
+          <!-- Publish to TikTok -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">📈 Top Performing Hashtags</span>
+              <span class="card-title">🚀 Publish to TikTok</span>
+              <span class="card-tag tag-blue">Content Posting API</span>
             </div>
             <div class="card-body">
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <span class="ob-tag">#aitools</span>
-                <span class="ob-tag">#entrepreneur</span>
-                <span class="ob-tag">#businesstips</span>
-                <span class="ob-tag">#sidehustle</span>
-                <span class="ob-tag">#productivity</span>
-                <span class="ob-tag">#automation</span>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <input type="url" id="tt-publish-url" placeholder="Video URL (publicly accessible HTTPS link)…"/>
+                <input type="text" id="tt-publish-caption" placeholder="Caption (from AI Generator or type your own)…"/>
+                <select id="tt-publish-privacy">
+                  <option value="PUBLIC_TO_EVERYONE">Public</option>
+                  <option value="MUTUAL_FOLLOW_FRIENDS">Friends only</option>
+                  <option value="SELF_ONLY">Private (draft)</option>
+                </select>
+                <button onclick="publishToTikTok()" style="padding:11px;border-radius:10px;background:linear-gradient(135deg,#ff2d55,#ff6b8a);color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+                  Publish to TikTok →
+                </button>
+                <div id="tt-publish-result" style="display:none;font-size:13px;color:var(--green);padding:10px;background:var(--green-dim);border:1px solid rgba(45,212,160,0.2);border-radius:8px;"></div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="tt-features" id="ttFeatures">
-          <div class="tt-feat">
-            <div class="tt-feat-icon">📊</div>
-            <h4>Hashtag Analytics</h4>
-            <p>Track real-time velocity and engagement for your top hashtags.</p>
-          </div>
-          <div class="tt-feat">
-            <div class="tt-feat-icon">🎯</div>
-            <h4>Content Insights</h4>
-            <p>Understand which content formats drive your highest reach.</p>
-          </div>
-          <div class="tt-feat">
-            <div class="tt-feat-icon">🔔</div>
-            <h4>Trend Alerts</h4>
-            <p>Get notified when a trending topic matches your niche.</p>
-          </div>
         </div>
       </div>
     </div>
@@ -1050,14 +1079,106 @@ function copyText(id) {
   });
 }
 
-/* ── TikTok Connect Simulation ── */
-function initTikTokConnect() {
-  showToast('🎵','Connecting to TikTok…');
-  setTimeout(function(){
-    document.getElementById('ttConnected').style.display = 'block';
-    document.getElementById('ttFeatures').style.display = 'none';
-    showToast('✅','TikTok account connected successfully!');
-  }, 2000);
+/* ── TikTok — check session on load ── */
+function initTikTokPanel() {
+  var session = TikTokAuth.getSession();
+  if (session) {
+    showTikTokConnected(session);
+  }
+  /* Also check if redirected back from callback */
+  if (new URLSearchParams(window.location.search).get('tt_connected') === '1') {
+    var s = TikTokAuth.getSession();
+    if (s) showTikTokConnected(s);
+    /* Clean URL */
+    window.history.replaceState({}, '', 'creator-editor.html');
+  }
+}
+
+function showTikTokConnected(session) {
+  document.getElementById('tt-disconnected').style.display    = 'none';
+  document.getElementById('tt-connected-view').style.display  = 'block';
+
+  var p = session.profile;
+  if (p) {
+    var nameEl = document.getElementById('tt-display-name');
+    var userEl = document.getElementById('tt-username');
+    var avatarEl = document.getElementById('tt-avatar');
+    if (nameEl)  nameEl.textContent  = p.display_name || 'TikTok User';
+    if (userEl)  userEl.textContent  = p.username ? '@' + p.username : '';
+    if (avatarEl && p.avatar_url) avatarEl.innerHTML = '<img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar"/>';
+
+    var fmt = function(n){ return n != null ? Number(n).toLocaleString() : '—'; };
+    document.getElementById('tt-followers').textContent = fmt(p.follower_count);
+    document.getElementById('tt-following').textContent = fmt(p.following_count);
+    document.getElementById('tt-videos').textContent    = fmt(p.video_count);
+    document.getElementById('tt-likes').textContent     = fmt(p.likes_count);
+  }
+
+  /* Load real videos */
+  loadTikTokVideos(session.accessToken);
+}
+
+async function loadTikTokVideos(accessToken) {
+  var el = document.getElementById('tt-videos-list');
+  if (!el) return;
+  try {
+    var res = await TikTokAuth.fetchVideos(accessToken, 6);
+    var videos = res.data && res.data.videos ? res.data.videos : [];
+    if (!videos.length) {
+      el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">No videos found on this account.</div>';
+      return;
+    }
+    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">' +
+      videos.map(function(v){
+        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;">' +
+          (v.cover_image_url ? '<img src="'+v.cover_image_url+'" style="width:100%;height:110px;object-fit:cover;" alt="cover"/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;">🎵</div>') +
+          '<div style="padding:10px;">' +
+            '<div style="font-size:12px;font-weight:600;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(v.title||v.video_description||'Untitled')+'</div>' +
+            '<div style="font-family:var(--fm);font-size:10px;color:var(--text3);">' +
+              '👁 '+(v.view_count||0).toLocaleString() +
+              ' · ❤️ '+(v.like_count||0).toLocaleString() +
+              ' · 💬 '+(v.comment_count||0).toLocaleString() +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Could not load videos. Token may have expired.</div>';
+  }
+}
+
+async function publishToTikTok() {
+  var url     = document.getElementById('tt-publish-url').value.trim();
+  var caption = document.getElementById('tt-publish-caption').value.trim();
+  var privacy = document.getElementById('tt-publish-privacy').value;
+  var resultEl= document.getElementById('tt-publish-result');
+
+  if (!url) { showToast('⚠️','Please enter a video URL'); return; }
+  var session = TikTokAuth.getSession();
+  if (!session) { showToast('⚠️','Please connect your TikTok account first'); return; }
+
+  resultEl.style.display = 'none';
+  showToast('🚀','Publishing to TikTok…');
+
+  try {
+    var res = await TikTokAuth.publishVideo(session.accessToken, url, caption, privacy);
+    resultEl.style.display = 'block';
+    resultEl.textContent = '✅ Video submitted to TikTok for publishing. Publish ID: ' + (res.publish_id || 'processing');
+    showToast('✅','Published successfully!');
+  } catch(e) {
+    resultEl.style.display = 'block';
+    resultEl.style.color = 'var(--red)';
+    resultEl.textContent = '⚠ Publish failed: ' + e.message;
+    showToast('⚠️','Publish failed — check the URL and try again');
+  }
+}
+
+function disconnectTikTok() {
+  TikTokAuth.clearSession();
+  document.getElementById('tt-disconnected').style.display   = 'block';
+  document.getElementById('tt-connected-view').style.display = 'none';
+  showToast('👋','TikTok disconnected');
 }
 
 /* ── Toast ── */
@@ -1084,6 +1205,7 @@ function showToast(icon, msg) {
 renderTrendList('liveTrendList', 5);
 renderTrendList('fullTrendList');
 renderOpportunities();
+initTikTokPanel();
 
 /* ── CreatorAI ask helper — used by suggestion chips ── */
 function creatorAIAsk(question) {
@@ -1097,6 +1219,7 @@ setInterval(function() {
   fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
 }, 600000);
 </script>
+<script src="tiktok-auth.js"></script>
 <script src="creator-ai.js"></script>
 </body>
 </html>
