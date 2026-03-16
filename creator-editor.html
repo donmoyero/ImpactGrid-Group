@@ -941,28 +941,8 @@ function useOpportunity(topic) {
   showToast('💡','Topic loaded: '+topic);
 }
 
-/* ── AI Content Generation — routed through Dijo server ── */
-var DIJO_URL = 'https://impactgrid-dijo.onrender.com';
-
-async function callClaude(prompt) {
-  try {
-    var res = await fetch(DIJO_URL + '/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': '1',
-        'User-Agent': 'ImpactGridCreator'
-      },
-      body: JSON.stringify({ message: prompt, mode: 'creator' })
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
-    return data.reply || null;
-  } catch(e) {
-    console.warn('[Creator AI] Dijo unreachable, using fallback.', e);
-    return null;
-  }
-}
+/* ── CreatorAI — fully client-side, no server needed ── */
+/* Loaded via <script src="creator-ai.js"> below */
 
 function setGenerating(btnId, loading) {
   var btn = document.getElementById(btnId);
@@ -979,32 +959,20 @@ async function quickGenerate() {
   setGenerating('quickGenBtn', true);
   document.getElementById('quickOutput').style.display = 'none';
 
-  var prompt = 'You are ImpactGrid\'s Creator Intelligence Engine. Generate content for the trending topic: "'+topic+'".\n\nRespond ONLY in this exact JSON format with no other text:\n{"hook":"<compelling video hook under 15 words>","caption":"<engaging caption 2-3 sentences>","hashtags":["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6"]}';
+  var result = await CreatorAI.analyze('generate content for ' + topic, { topic: topic });
 
-  var result = await callClaude(prompt);
-  var hook, caption, tags;
-
-  if(result) {
-    try {
-      var clean = result.replace(/```json|```/g,'').trim();
-      var parsed = JSON.parse(clean);
-      hook = parsed.hook;
-      caption = parsed.caption;
-      tags = parsed.hashtags;
-    } catch(e) { result = null; }
-  }
-
-  if(!result) {
-    hook = '"Most people don\'t know this about '+topic+'…"';
-    caption = 'The data is clear — '+topic+' is changing the game right now. Here\'s what the top creators are doing.';
-    tags = ['#'+topic.replace(/\s+/g,'').toLowerCase(), '#trending', '#creator', '#business', '#growth', '#viral'];
-  }
+  // Extract hook, caption, hashtags from CreatorAI fullPackage output
+  var niche = CreatorAI.getNiche(topic);
+  var nd    = CreatorAI.nicheData[niche];
+  var hook    = CreatorAI.pickHook(topic, niche, 'educational');
+  var caption = CreatorAI.buildCaption(topic, niche, 'educational', 'TikTok');
+  var tags    = CreatorAI.buildHashtags(topic, niche);
 
   document.getElementById('quickHook').textContent = hook;
-  document.getElementById('quickCaption').textContent = caption;
+  document.getElementById('quickCaption').innerHTML = caption;
   var tagsEl = document.getElementById('quickTags');
   tagsEl.innerHTML = '';
-  (Array.isArray(tags)?tags:['#'+topic,'#trending','#creator']).forEach(function(t){
+  tags.forEach(function(t){
     var span = document.createElement('span'); span.className='ob-tag'; span.textContent=t; tagsEl.appendChild(span);
   });
   document.getElementById('quickOutput').style.display = 'block';
@@ -1013,66 +981,55 @@ async function quickGenerate() {
 }
 
 async function fullGenerate() {
-  var topic   = document.getElementById('genTopic').value.trim();
-  var platform= document.getElementById('genPlatform').value;
-  var style   = document.getElementById('genStyle').value;
-  var niche   = document.getElementById('genNiche').value.trim() || 'entrepreneurs';
+  var topic    = document.getElementById('genTopic').value.trim();
+  var platform = document.getElementById('genPlatform').value;
+  var style    = document.getElementById('genStyle').value;
+  var niche_in = document.getElementById('genNiche').value.trim();
   if(!topic) { showToast('⚠️','Please enter a trend topic'); return; }
 
   setGenerating('fullGenBtn', true);
-  var scoreEl = document.getElementById('previewScore');
+  var scoreEl   = document.getElementById('previewScore');
   var verdictEl = document.getElementById('previewVerdict');
-  scoreEl.textContent = '…';
+  scoreEl.textContent  = '…';
   verdictEl.textContent = 'Calculating…';
 
   ['outHook','outCaption','outOutline','outTiming'].forEach(function(id){
     var el = document.getElementById(id);
-    if(el) { el.classList.add('loading'); el.textContent = 'Generating…'; }
+    if(el){ el.classList.add('loading'); el.textContent = 'Generating…'; }
   });
   document.getElementById('outHashtags').innerHTML = '<span style="color:var(--text3);font-style:italic;">Generating hashtags…</span>';
 
-  var prompt = 'You are the ImpactGrid Creator Intelligence Engine. A creator is working on trending topic: "'+topic+'" for '+platform+' in a '+style+' style targeting '+niche+'.\n\nGenerate a complete content package. Respond ONLY in this exact JSON:\n{"score":"8.6","verdict":"High viral potential","hook":"<compelling hook under 15 words>","caption":"<caption 2-3 sentences>","outline":"<3-4 bullet content outline>","hashtags":["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6","#tag7","#tag8"],"timing":"Best posting window: <day> between <time range> for peak audience activity"}';
+  // Use CreatorAI client-side engine
+  var context = { topic: topic, platform: platform, style: style };
+  var niche   = CreatorAI.getNiche(topic);
+  var nd      = CreatorAI.nicheData[niche];
+  var score   = CreatorAI.calcTrendScore(topic);
 
-  var result = await callClaude(prompt);
-  var out = {};
+  // Small delay for UX realism
+  await new Promise(function(r){ setTimeout(r, 420); });
 
-  if(result) {
-    try {
-      var clean = result.replace(/```json|```/g,'').trim();
-      out = JSON.parse(clean);
-    } catch(e) { result = null; }
-  }
+  var hook    = CreatorAI.pickHook(topic, niche, style);
+  var caption = CreatorAI.buildCaption(topic, niche, style, platform);
+  var outline = CreatorAI.buildOutline(topic, niche, style);
+  var tags    = CreatorAI.buildHashtags(topic, niche);
+  var timing  = 'Best posting window: ' + nd.peakDay + ' between ' + nd.peakTime + ' for peak audience activity';
 
-  if(!result) {
-    out = {
-      score: (7.5+Math.random()*2).toFixed(1),
-      verdict: 'Strong content opportunity',
-      hook: '"This is why '+topic+' is dominating right now…"',
-      caption: 'The numbers don\'t lie. '+topic+' is one of the fastest-growing topics across all platforms right now. Here\'s your data-backed strategy to capitalise on it.',
-      outline: '• Open with the hook and a surprising stat\n• Explain why this trend matters in 2026\n• Show your 3 actionable steps\n• Close with a strong CTA and question',
-      hashtags: ['#'+topic.replace(/\s+/g,'').toLowerCase(),'#'+niche.replace(/\s+/g,'').toLowerCase(),'#trending','#creator','#growthhack','#viralcontent','#'+platform,'#impactgrid'],
-      timing: 'Best posting window: Thursday–Friday between 19:30 and 21:00 for peak engagement'
-    };
-  }
-
-  scoreEl.textContent = out.score||'8.4';
-  var sc = parseFloat(out.score||8.4);
-  verdictEl.textContent = sc >= 9 ? '🔥 Exceptional viral potential' : sc >= 8 ? '⚡ Strong opportunity' : sc >= 7 ? '📈 Good momentum' : '💡 Emerging trend';
+  scoreEl.textContent = score.total;
+  var sc = score.total;
+  verdictEl.textContent = sc>=9?'🔥 Exceptional viral potential':sc>=8?'⚡ Strong opportunity':sc>=7?'📈 Good momentum':'💡 Emerging trend';
   verdictEl.style.color = sc>=9?'var(--green)':sc>=8?'var(--gold)':'var(--text2)';
 
   ['outHook','outCaption','outOutline','outTiming'].forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.classList.remove('loading');
+    var el = document.getElementById(id); if(el) el.classList.remove('loading');
   });
 
-  document.getElementById('outHook').textContent = out.hook||'';
-  document.getElementById('outCaption').textContent = out.caption||'';
-  document.getElementById('outOutline').textContent = out.outline||'';
-  document.getElementById('outTiming').textContent = out.timing||'';
+  document.getElementById('outHook').textContent    = hook;
+  document.getElementById('outCaption').innerHTML   = caption;
+  document.getElementById('outOutline').innerHTML   = outline;
+  document.getElementById('outTiming').textContent  = timing;
 
   var hashEl = document.getElementById('outHashtags');
   hashEl.innerHTML = '';
-  var tags = Array.isArray(out.hashtags)?out.hashtags:['#trending','#creator','#viral'];
   tags.forEach(function(t){
     var span=document.createElement('span'); span.className='ob-tag'; span.textContent=t; hashEl.appendChild(span);
   });
@@ -1127,6 +1084,19 @@ function showToast(icon, msg) {
 renderTrendList('liveTrendList', 5);
 renderTrendList('fullTrendList');
 renderOpportunities();
+
+/* ── CreatorAI ask helper — used by suggestion chips ── */
+function creatorAIAsk(question) {
+  document.getElementById('genTopic').value = question;
+  switchTab('generator');
+  showToast('💡', 'Topic loaded — hit Generate!');
+}
+
+/* ── Keep-warm ping ── */
+setInterval(function() {
+  fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
+}, 600000);
 </script>
+<script src="creator-ai.js"></script>
 </body>
 </html>
