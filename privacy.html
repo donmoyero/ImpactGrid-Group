@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -9,118 +9,472 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-/* KEEPING CLEAN SIMPLE STYLE */
-:root {
-  --bg:#07090f;
-  --text:#eef0f6;
+:root{
+  --bg:#07090f;--bg2:#0d1017;--bg3:#111520;
+  --card:#151a28;--card2:#1c2235;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
+  --gold:#f0b429;--gold2:#ffd166;
+  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
+  --blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);
+  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
+  --purple:#a855f7;
+  --nav-h:64px;--tick-h:34px;--max-w:1240px;--r:12px;--r2:20px;
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
 }
-body {
-  background:var(--bg);
-  color:var(--text);
-  font-family:'DM Sans',sans-serif;
+[data-theme="light"]{
+  --bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;
+  --card:#ffffff;--card2:#f5f7fc;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
+  --gold:#c97e08;--gold2:#a86505;
+  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);
+  --blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);
+  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
 }
-h1,h2 {
-  font-family:'Syne',sans-serif;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background 0.35s,color 0.35s;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
+h1,h2,h3,h4{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.45;}
+
+/* TICKER */
+.ticker{position:fixed;top:var(--nav-h);left:0;right:0;height:var(--tick-h);z-index:990;background:linear-gradient(90deg,rgba(240,180,41,0.10),rgba(240,180,41,0.05),rgba(240,180,41,0.10));border-bottom:1px solid var(--gold-glo);display:flex;align-items:center;overflow:hidden;}
+.ticker-badge{flex-shrink:0;padding:0 14px;font-family:var(--fm);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);border-right:1px solid var(--gold-glo);height:100%;display:flex;align-items:center;gap:6px;background:var(--gold-dim);white-space:nowrap;}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite;}
+.ticker-scroll{display:flex;align-items:center;animation:tickScroll 42s linear infinite;white-space:nowrap;padding-left:40px;}
+.ticker-scroll:hover{animation-play-state:paused;}
+.t-item{display:inline-flex;align-items:center;gap:8px;padding:0 36px;font-size:12px;font-weight:500;color:var(--text2);border-right:1px solid var(--border);}
+.t-tag{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:4px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;}
+.tag-new{background:rgba(240,180,41,0.14);color:var(--gold);border:1px solid var(--gold-glo);}
+.tag-live{background:rgba(45,212,160,0.12);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
+.tag-soon{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,0.2);}
+@keyframes tickScroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;transition:background 0.35s;}
+[data-theme="light"] .nav{background:rgba(240,243,250,0.90);}
+.nav-inner{max-width:var(--max-w);margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;gap:24px;}
+.nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:17px;letter-spacing:-0.03em;flex-shrink:0;}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;}
+.logo-img{width:32px;height:32px;object-fit:contain;border-radius:6px;}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;flex:1;}
+.nav-links a{padding:6px 11px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);transition:all 0.2s;white-space:nowrap;}
+.nav-links a:hover{color:var(--text);background:rgba(255,255,255,0.06);}
+[data-theme="light"] .nav-links a:hover{background:rgba(0,0,0,0.05);}
+.nav-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex-shrink:0;}
+.theme-btn{width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;cursor:pointer;}
+.theme-btn:hover{border-color:var(--gold);}
+.btn-ghost-nav{padding:7px 14px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all 0.2s;}
+.btn-ghost-nav:hover{color:var(--text);}
+.btn-gold-nav{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
+.btn-gold-nav:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo);}
+.hamburger{display:none;flex-direction:column;gap:5px;padding:8px;margin-left:6px;border-radius:9px;border:1px solid var(--border2);background:var(--card);}
+.hamburger span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s;}
+.hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.active span:nth-child(2){opacity:0;}
+.hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+.mob-nav{display:none;position:fixed;top:var(--nav-h);left:0;right:0;bottom:0;background:var(--bg2);z-index:999;padding:20px;flex-direction:column;gap:5px;overflow-y:auto;}
+.mob-nav.open{display:flex;}
+.mob-nav a{padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);transition:all 0.2s;border:1px solid transparent;}
+.mob-nav a:hover{background:var(--card);color:var(--text);border-color:var(--border);}
+.mob-cta{margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f!important;font-weight:700;text-align:center;border-radius:var(--r);}
+.mob-nav-divider{height:1px;background:var(--border);margin:8px 0;}
+
+/* PAGE LAYOUT */
+.page-wrap{padding-top:calc(var(--nav-h) + var(--tick-h));}
+
+/* LEGAL PAGE HERO */
+.legal-hero{padding:64px 28px 48px;text-align:center;position:relative;overflow:hidden;max-width:var(--max-w);margin:0 auto;}
+.legal-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 20%,rgba(240,180,41,0.05),transparent);pointer-events:none;}
+.legal-eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.legal-eyebrow::before{content:'';width:20px;height:1px;background:var(--gold);}
+.legal-hero h1{font-size:clamp(28px,4vw,48px);font-weight:900;letter-spacing:-0.025em;margin-bottom:14px;}
+.legal-hero p{font-size:15px;color:var(--text2);line-height:1.7;}
+
+/* LEGAL CONTENT */
+.legal-layout{max-width:900px;margin:0 auto;padding:0 28px 80px;display:grid;grid-template-columns:200px 1fr;gap:48px;align-items:start;}
+.legal-toc{position:sticky;top:calc(var(--nav-h) + var(--tick-h) + 24px);}
+.legal-toc-label{font-family:var(--fm);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+.legal-toc a{display:block;font-size:13px;color:var(--text2);padding:5px 0;border-left:2px solid var(--border);padding-left:12px;transition:all 0.2s;line-height:1.4;}
+.legal-toc a:hover{color:var(--gold);border-color:var(--gold);}
+.legal-toc a.active{color:var(--gold);border-color:var(--gold);font-weight:600;}
+.legal-body{}
+.legal-section{margin-bottom:40px;padding-bottom:40px;border-bottom:1px solid var(--border);}
+.legal-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.legal-section h2{font-family:var(--fd);font-size:clamp(18px,2.2vw,22px);font-weight:800;letter-spacing:-0.02em;margin-bottom:16px;color:var(--text);}
+.legal-section p{font-size:14.5px;color:var(--text2);line-height:1.8;margin-bottom:12px;}
+.legal-section p:last-child{margin-bottom:0;}
+.legal-section ul{font-size:14.5px;color:var(--text2);line-height:1.8;margin-bottom:12px;padding-left:0;list-style:none;}
+.legal-section ul li{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);}
+.legal-section ul li:last-child{border-bottom:none;}
+.legal-section ul li::before{content:'—';color:var(--gold);font-family:var(--fm);flex-shrink:0;margin-top:1px;}
+.legal-section a{color:var(--gold);font-weight:600;}
+.legal-section a:hover{text-decoration:underline;}
+.legal-updated{display:inline-flex;align-items:center;gap:7px;font-family:var(--fm);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;margin-bottom:28px;}
+
+/* CONTACT CARD */
+.contact-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:24px 28px;margin-top:16px;}
+.contact-card h3{font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:12px;letter-spacing:-0.01em;}
+.contact-row{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text2);margin-bottom:8px;}
+.contact-row:last-child{margin-bottom:0;}
+.contact-row strong{color:var(--text);}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:0 28px;}
+
+/* FOOTER */
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:60px 28px 36px;}
+.footer-inner{max-width:var(--max-w);margin:0 auto;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
+.footer-brand p{color:var(--text2);font-size:14px;line-height:1.7;margin-top:14px;max-width:260px;}
+.fc h4{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+.fc a{display:block;font-size:14px;color:var(--text2);margin-bottom:9px;transition:color 0.2s;}
+.fc a:hover{color:var(--gold);}
+.footer-bot{display:flex;justify-content:space-between;align-items:center;padding-top:28px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text3);flex-wrap:wrap;gap:12px;}
+.footer-legal-links{display:flex;gap:18px;}
+.footer-legal-links a{font-size:12.5px;color:var(--text3);transition:color 0.2s;}
+.footer-legal-links a:hover{color:var(--gold);}
+
+/* RESPONSIVE */
+@media(max-width:860px){
+  .nav-links,.btn-ghost-nav{display:none;}
+  .hamburger{display:flex;}
+  .legal-layout{grid-template-columns:1fr;}
+  .legal-toc{display:none;}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:28px;}
+}
+@media(max-width:640px){
+  .footer-grid{grid-template-columns:1fr;}
+  .footer-bot{flex-direction:column;align-items:flex-start;}
 }
 </style>
 </head>
 <body>
 
-<div style="max-width:900px;margin:120px auto;padding:20px">
-
-<h1>Privacy Policy</h1>
-<p><strong>Last updated: 2026</strong></p>
-
-<br/>
-
-<h2>1. Overview</h2>
-<p>
-ImpactGrid Creator Intelligence ("ImpactGrid", "we", "us", or "our"), operated by ImpactGrid Group Ltd, is committed to protecting your privacy.
-</p>
-<p>
-ImpactGrid Creator Intelligence is a web-based platform providing analytics, AI insights, and creator tools, including integrations with TikTok.
-</p>
-
-<br/>
-
-<h2>2. Information We Collect</h2>
-<ul>
-<li>Name and email address</li>
-<li>Account and profile information</li>
-<li>Usage and activity data</li>
-<li>TikTok account data (profile, videos, engagement metrics)</li>
-<li>Device and browser information</li>
-</ul>
-
-<br/>
-
-<h2>3. How We Use Information</h2>
-<ul>
-<li>Provide and improve our platform</li>
-<li>Authenticate users via TikTok Login Kit</li>
-<li>Retrieve analytics data from TikTok</li>
-<li>Enable content publishing via TikTok APIs</li>
-<li>Generate AI-powered insights</li>
-<li>Ensure security and prevent fraud</li>
-</ul>
-
-<br/>
-
-<h2>4. Third-Party Services</h2>
-<ul>
-<li>TikTok — authentication, analytics, and content publishing</li>
-<li>YouTube — analytics insights</li>
-<li>Supabase — database and authentication</li>
-<li>Cloudflare — security and performance</li>
-</ul>
-<p>Each service operates under its own policies.</p>
-
-<br/>
-
-<h2>5. Data Sharing</h2>
-<p>
-We do not sell your data. We may share data with service providers or when required by law.
-</p>
-
-<br/>
-
-<h2>6. Security</h2>
-<p>
-We use industry-standard security measures but cannot guarantee absolute security.
-</p>
-
-<br/>
-
-<h2>7. Your Rights</h2>
-<ul>
-<li>Access your data</li>
-<li>Request correction</li>
-<li>Request deletion</li>
-<li>Withdraw consent</li>
-</ul>
-
-<br/>
-
-<h2>8. Data Retention</h2>
-<p>
-We retain data only as long as necessary. You may request deletion at any time.
-</p>
-
-<br/>
-
-<h2>9. Cookies</h2>
-<p>
-We use cookies to improve user experience.
-</p>
-
-<br/>
-
-<h2>10. Contact</h2>
-<p>
-Email: support@impactgridgroup.com
-</p>
-
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="ticker-scroll">
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI Assistant — Your personal financial co-pilot is always on</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>Creator Intelligence Engine — AI content adviser powered by real trend data</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>YouTube integration — Connect your channel now</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>TikTok &amp; Instagram — Pending API review</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI Assistant — Your personal financial co-pilot is always on</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>Creator Intelligence Engine — AI content adviser powered by real trend data</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>YouTube integration — Connect your channel now</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>TikTok &amp; Instagram — Pending API review</span>
+    </div>
+  </div>
 </div>
 
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="logo.png" class="logo-img" alt="ImpactGrid Creator Intelligence" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div class="logo-mark" style="display:none;">IG</div>
+      ImpactGrid Creator Intelligence
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="consulting.html">Consulting</a></li>
+      <li><a href="analytics.html">Analytics</a></li>
+      <li><a href="creator-studio.html">Creator Studio</a></li>
+      <li><a href="network.html">Network</a></li>
+      <li><a href="ai.html">Dijo AI</a></li>
+      <li><a href="dashboard.html">Available Jobs</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+      <a href="login.html" class="btn-ghost-nav">Login</a>
+      <a href="join.html" class="btn-gold-nav">Join ImpactGrid</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mob-nav" id="mobNav">
+  <div style="font-weight:800;font-size:10px;margin-bottom:10px;color:var(--text3);font-family:var(--fm);letter-spacing:0.08em;text-transform:uppercase;">ImpactGrid Creator Intelligence</div>
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="consulting.html">Consulting</a>
+  <a href="analytics.html">Analytics</a>
+  <a href="creator-studio.html">Creator Studio</a>
+  <a href="network.html">Network</a>
+  <a href="ai.html">Dijo AI</a>
+  <a href="dashboard.html">Available Jobs</a>
+  <div class="mob-nav-divider"></div>
+  <a href="login.html" style="display:block;padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);">Login</a>
+  <a href="join.html" class="mob-cta" style="display:block;padding:13px 16px;text-align:center;">Join ImpactGrid</a>
+</div>
+
+<!-- PAGE -->
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <div style="max-width:var(--max-w);margin:0 auto;">
+    <div class="legal-hero">
+      <div class="legal-hero-bg"></div>
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Privacy Policy</h1>
+      <p>How ImpactGrid Creator Intelligence collects, uses, and protects your data.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- CONTENT -->
+  <div class="legal-layout">
+
+    <!-- TOC -->
+    <nav class="legal-toc">
+      <div class="legal-toc-label">Contents</div>
+      <a href="#overview">1. Overview</a>
+      <a href="#information">2. Information We Collect</a>
+      <a href="#use">3. How We Use It</a>
+      <a href="#third-party">4. Third-Party Services</a>
+      <a href="#sharing">5. Data Sharing</a>
+      <a href="#security">6. Security</a>
+      <a href="#rights">7. Your Rights</a>
+      <a href="#retention">8. Data Retention</a>
+      <a href="#cookies">9. Cookies</a>
+      <a href="#children">10. Children</a>
+      <a href="#changes">11. Policy Changes</a>
+      <a href="#contact">12. Contact</a>
+    </nav>
+
+    <!-- BODY -->
+    <div class="legal-body">
+
+      <div class="legal-updated">Last updated: March 2026</div>
+
+      <div class="legal-section" id="overview">
+        <h2>1. Overview</h2>
+        <p>ImpactGrid Creator Intelligence ("ImpactGrid", "we", "us", or "our"), operated by ImpactGrid Group Ltd, is committed to protecting your privacy. This policy explains what data we collect, why we collect it, and how we use and protect it.</p>
+        <p>ImpactGrid Creator Intelligence is a web-based platform providing analytics, AI business insights, a professional network, and creator tools — including integrations with YouTube, TikTok, and Instagram.</p>
+        <p>By using our platform, you agree to the practices described in this policy. If you do not agree, please do not use our services.</p>
+      </div>
+
+      <div class="legal-section" id="information">
+        <h2>2. Information We Collect</h2>
+        <p>We collect the following categories of information:</p>
+        <ul>
+          <li>Name and email address provided at registration</li>
+          <li>Account and profile information including skills, location, and availability</li>
+          <li>Usage and activity data such as pages visited and features used</li>
+          <li>Business data you upload to the Analytics platform</li>
+          <li>TikTok account data — profile, videos, and engagement metrics (where authorised)</li>
+          <li>YouTube account data — channel stats and video performance (where authorised)</li>
+          <li>Instagram account data — profile and media data (where authorised)</li>
+          <li>Device and browser information for security and performance</li>
+          <li>Communication data from any support requests you send us</li>
+        </ul>
+        <p>We only collect data necessary to provide the services you use. We do not collect data in the background without your knowledge.</p>
+      </div>
+
+      <div class="legal-section" id="use">
+        <h2>3. How We Use Your Information</h2>
+        <p>We use the information we collect to:</p>
+        <ul>
+          <li>Provide, maintain, and improve our platform and services</li>
+          <li>Authenticate users and manage account access</li>
+          <li>Retrieve analytics data from connected social platforms</li>
+          <li>Enable content publishing via connected platform APIs</li>
+          <li>Generate AI-powered business and content insights</li>
+          <li>Match professionals with employers on the ImpactGrid Network</li>
+          <li>Send transactional communications such as account approvals</li>
+          <li>Ensure security, detect fraud, and prevent abuse</li>
+          <li>Comply with legal obligations</li>
+        </ul>
+        <p>We do not use your data for advertising profiling or sell it to third parties for marketing purposes.</p>
+      </div>
+
+      <div class="legal-section" id="third-party">
+        <h2>4. Third-Party Services</h2>
+        <p>ImpactGrid integrates with the following third-party services. Each operates under its own privacy policy, which we encourage you to review:</p>
+        <ul>
+          <li><strong>TikTok</strong> — Authentication, analytics, and content publishing via TikTok Login Kit and Content Posting API</li>
+          <li><strong>YouTube</strong> — Channel analytics and video performance data via YouTube Data API v3</li>
+          <li><strong>Instagram</strong> — Profile, media, and insights data via Instagram Basic Display API</li>
+          <li><strong>Supabase</strong> — Secure database hosting and user authentication infrastructure</li>
+          <li><strong>Cloudflare</strong> — Security, performance, and DDoS protection</li>
+          <li><strong>Google Fonts</strong> — Typography delivery via Google's CDN</li>
+        </ul>
+        <p>Where we access third-party platform data on your behalf, we only request the minimum permissions necessary and only retain that data for as long as required to provide the service.</p>
+      </div>
+
+      <div class="legal-section" id="sharing">
+        <h2>5. Data Sharing</h2>
+        <p>We do not sell your personal data. We may share data in the following limited circumstances:</p>
+        <ul>
+          <li>With service providers who help us operate the platform, under strict data processing agreements</li>
+          <li>With employers on the ImpactGrid Network when you apply for a role (limited to your profile information)</li>
+          <li>When required by law, court order, or regulatory authority</li>
+          <li>In the event of a merger, acquisition, or sale of assets, with appropriate notice to you</li>
+        </ul>
+        <p>Any third party who receives data is contractually required to protect it in accordance with applicable data protection law.</p>
+      </div>
+
+      <div class="legal-section" id="security">
+        <h2>6. Security</h2>
+        <p>We take the security of your data seriously and apply industry-standard measures including:</p>
+        <ul>
+          <li>Encrypted data transmission via HTTPS/TLS</li>
+          <li>Secure password hashing via Supabase Auth</li>
+          <li>Access controls limiting data to authorised personnel only</li>
+          <li>Regular security reviews of platform integrations</li>
+        </ul>
+        <p>While we apply rigorous security practices, no system is completely impenetrable. We cannot guarantee absolute security and encourage you to use a strong, unique password for your account.</p>
+        <p>If you believe your account has been compromised, please contact us immediately at <a href="mailto:support@impactgridgroup.com">support@impactgridgroup.com</a>.</p>
+      </div>
+
+      <div class="legal-section" id="rights">
+        <h2>7. Your Rights</h2>
+        <p>Under applicable data protection law (including the UK GDPR), you have the following rights:</p>
+        <ul>
+          <li><strong>Right of access</strong> — request a copy of the personal data we hold about you</li>
+          <li><strong>Right to rectification</strong> — request correction of inaccurate or incomplete data</li>
+          <li><strong>Right to erasure</strong> — request deletion of your personal data</li>
+          <li><strong>Right to restrict processing</strong> — request that we limit how we use your data</li>
+          <li><strong>Right to data portability</strong> — request your data in a structured, machine-readable format</li>
+          <li><strong>Right to withdraw consent</strong> — withdraw consent at any time where processing is based on consent</li>
+          <li><strong>Right to object</strong> — object to processing based on legitimate interests</li>
+        </ul>
+        <p>To exercise any of these rights, contact us at <a href="mailto:support@impactgridgroup.com">support@impactgridgroup.com</a>. We will respond within 30 days. You also have the right to lodge a complaint with the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank">ico.org.uk</a>.</p>
+      </div>
+
+      <div class="legal-section" id="retention">
+        <h2>8. Data Retention</h2>
+        <p>We retain your data only for as long as necessary to provide the services you use, or as required by law. Specifically:</p>
+        <ul>
+          <li>Account data is retained while your account is active</li>
+          <li>Third-party platform tokens are stored securely and can be revoked at any time from your dashboard</li>
+          <li>Business analytics data you upload is retained until you delete it or close your account</li>
+          <li>Application and job data on the Network is retained for up to 12 months after a role is closed</li>
+        </ul>
+        <p>You may request deletion of your account and all associated data at any time by contacting <a href="mailto:support@impactgridgroup.com">support@impactgridgroup.com</a>.</p>
+      </div>
+
+      <div class="legal-section" id="cookies">
+        <h2>9. Cookies</h2>
+        <p>We use cookies and similar technologies to improve your experience on the platform. Specifically, we use:</p>
+        <ul>
+          <li><strong>Essential cookies</strong> — required for authentication and session management</li>
+          <li><strong>Preference cookies</strong> — to remember settings such as your chosen theme (light or dark mode)</li>
+          <li><strong>Analytics cookies</strong> — to understand how the platform is used and improve it</li>
+        </ul>
+        <p>You can manage or disable cookies in your browser settings. Disabling essential cookies may affect the functionality of the platform.</p>
+      </div>
+
+      <div class="legal-section" id="children">
+        <h2>10. Children's Privacy</h2>
+        <p>ImpactGrid is not directed at children under the age of 16. We do not knowingly collect personal data from children. If you believe a child has provided us with personal data, please contact us immediately and we will take steps to delete it.</p>
+      </div>
+
+      <div class="legal-section" id="changes">
+        <h2>11. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy from time to time. When we do, we will update the "Last updated" date at the top of this page. For material changes, we will notify registered users by email.</p>
+        <p>Continued use of the platform after changes constitutes acceptance of the updated policy.</p>
+      </div>
+
+      <div class="legal-section" id="contact">
+        <h2>12. Contact Us</h2>
+        <p>If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:</p>
+        <div class="contact-card">
+          <h3>ImpactGrid Group Ltd</h3>
+          <div class="contact-row"><strong>Email:</strong>&nbsp;<a href="mailto:support@impactgridgroup.com">support@impactgridgroup.com</a></div>
+          <div class="contact-row"><strong>Website:</strong>&nbsp;<a href="https://impactgridgroup.com">impactgridgroup.com</a></div>
+          <div class="contact-row"><strong>Registered:</strong>&nbsp;England &amp; Wales</div>
+          <div class="contact-row" style="margin-top:8px;font-size:13px;color:var(--text3);">We aim to respond to all privacy requests within 30 days.</div>
+        </div>
+      </div>
+
+    </div><!-- end legal-body -->
+  </div><!-- end legal-layout -->
+
+  <div class="divider"></div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo">
+            <img src="logo.png" class="logo-img" alt="ImpactGrid Creator Intelligence" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+            <div class="logo-mark" style="display:none;">IG</div>
+            <span>ImpactGrid Creator Intelligence</span>
+          </div>
+          <p>ImpactGrid Creator Intelligence — Turning data into strategic advantage with analytics, AI, and creator tools.</p>
+        </div>
+        <div class="fc"><h4>Platform</h4><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="network.html">Network</a><a href="ai.html">Dijo AI</a></div>
+        <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="dashboard.html">Available Jobs</a><a href="mailto:support@impactgridgroup.com">Contact</a></div>
+        <div class="fc"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>
+      </div>
+      <div class="footer-bot">
+        <span>&copy; 2026 ImpactGrid Group Ltd. All rights reserved.</span>
+        <div class="footer-legal-links">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+        </div>
+        <button onclick="toggleTheme()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;" id="footerThemeBtn">☀️ Light Mode</button>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- end page-wrap -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="impactgrid-chat-bubble.js"></script>
+<script>
+/* ── Theme ── */
+var dark=false;
+function toggleTheme(){
+  dark=!dark;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('themeBtn').textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';
+  var ftb=document.getElementById('footerThemeBtn');if(ftb)ftb.textContent=dark?'\uD83C\uDF19 Dark Mode':'\u2600\uFE0F Light Mode';
+  try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}
+}
+try{
+  var saved=localStorage.getItem('igt');
+  if(saved==='d'){dark=true;document.documentElement.setAttribute('data-theme','dark');document.getElementById('themeBtn').textContent='\uD83C\uDF19';var fb=document.getElementById('footerThemeBtn');if(fb)fb.textContent='\uD83C\uDF19 Dark Mode';}
+  else{dark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('themeBtn').textContent='\u2600\uFE0F';var fb2=document.getElementById('footerThemeBtn');if(fb2)fb2.textContent='\u2600\uFE0F Light Mode';}
+}catch(e){}
+
+/* ── Hamburger ── */
+var hamburger=document.getElementById('hamburger'),mobNav=document.getElementById('mobNav');
+hamburger.addEventListener('click',function(){var open=mobNav.classList.toggle('open');hamburger.classList.toggle('active',open);hamburger.setAttribute('aria-label',open?'Close menu':'Open menu');});
+mobNav.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){mobNav.classList.remove('open');hamburger.classList.remove('active');});});
+
+/* ── TOC active highlight on scroll ── */
+(function(){
+  var sections=document.querySelectorAll('.legal-section[id]');
+  var tocLinks=document.querySelectorAll('.legal-toc a');
+  if(!sections.length||!tocLinks.length)return;
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        tocLinks.forEach(function(l){l.classList.remove('active');});
+        var link=document.querySelector('.legal-toc a[href="#'+e.target.id+'"]');
+        if(link)link.classList.add('active');
+      }
+    });
+  },{rootMargin:'-20% 0px -60% 0px'});
+  sections.forEach(function(s){obs.observe(s);});
+})();
+
+setInterval(function(){fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});},600000);
+</script>
 </body>
 </html>
