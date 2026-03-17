@@ -1,906 +1,970 @@
-/* =====================================================================
-   IMPACTGRID CREATOR INTELLIGENCE ENGINE — v1.0
-   Fully client-side. No API key. No server.
-   Mirrors ImpactGridAI architecture.
-
-   Capabilities:
-   ✅ Trend scoring algorithm (4-signal weighted model)
-   ✅ Viral opportunity detection per platform
-   ✅ AI content generation (hooks, captions, hashtags, outlines)
-   ✅ Audience behaviour analysis
-   ✅ Posting time intelligence
-   ✅ Platform recommendations
-   ✅ Content style routing (educational, entertaining, motivational)
-   ✅ Niche-specific keyword and hashtag sets
-   ✅ Conversation memory — understands follow-up questions
-   ✅ Confident adviser tone — no hedging
-===================================================================== */
-
-var CreatorAI = {
-
-  /* ===================================================================
-     MAIN ENTRY — async wrapper for UI compatibility
-  =================================================================== */
-
-  analyze: async function(question, context, history) {
-    history = history || {};
-    await new Promise(function(r) { setTimeout(r, 380); });
-    return CreatorAI.adviser(question, context, history);
-  },
-
-
-  /* ===================================================================
-     CORE ADVISER — routes every question to the right module
-  =================================================================== */
-
-  adviser: function(question, context, history) {
-    var q = question.toLowerCase().trim();
-    context = context || {};
-
-    // Intent routing — most specific first
-    if (CreatorAI.is(q, ["hook","opening","intro","start","beginning","grab"]))
-      return CreatorAI.generateHook(question, context);
-
-    if (CreatorAI.is(q, ["caption","description","bio","copy","write","text"]))
-      return CreatorAI.generateCaption(question, context);
-
-    if (CreatorAI.is(q, ["hashtag","tag","#","tags"]))
-      return CreatorAI.generateHashtags(question, context);
-
-    if (CreatorAI.is(q, ["outline","structure","script","plan","storyboard","format"]))
-      return CreatorAI.generateOutline(question, context);
-
-    if (CreatorAI.is(q, ["post","time","when","schedule","best time","posting time","clock"]))
-      return CreatorAI.postingTime(question, context);
-
-    if (CreatorAI.is(q, ["platform","where","tiktok","youtube","instagram","which platform","best platform"]))
-      return CreatorAI.platformAdvice(question, context);
-
-    if (CreatorAI.is(q, ["audience","who","demographic","follower","viewer","subscriber"]))
-      return CreatorAI.audienceInsight(question, context);
-
-    if (CreatorAI.is(q, ["score","trend score","viral score","rate","rating","how strong","how good"]))
-      return CreatorAI.trendScore(question, context);
-
-    if (CreatorAI.is(q, ["trend","trending","viral","hot","popular","rising","breakout"]))
-      return CreatorAI.trendAnalysis(question, context);
-
-    if (CreatorAI.is(q, ["generate","create","make","build","give me","write me","full","package","content"]))
-      return CreatorAI.fullPackage(question, context);
-
-    if (CreatorAI.is(q, ["improve","better","optimise","optimize","fix","update","rewrite","enhance"]))
-      return CreatorAI.improveContent(question, context);
-
-    if (CreatorAI.is(q, ["competitor","competition","other creator","niche","market","space"]))
-      return CreatorAI.competitorInsight(question, context);
-
-    if (CreatorAI.is(q, ["strategy","plan","advice","help","recommend","should i","what should","next"]))
-      return CreatorAI.contentStrategy(question, context);
-
-    // Catch-all — full package
-    return CreatorAI.fullPackage(question, context);
-  },
-
-
-  /* ===================================================================
-     TREND SCORE ENGINE
-     Weighted 4-signal algorithm
-  =================================================================== */
-
-  calcTrendScore: function(topic) {
-    var t = topic.toLowerCase();
-
-    // Signal 1: Search growth weight (0.35)
-    var searchGrowth = CreatorAI.scoreSearchGrowth(t);
-
-    // Signal 2: Video engagement weight (0.30)
-    var videoEng = CreatorAI.scoreVideoEngagement(t);
-
-    // Signal 3: Hashtag velocity weight (0.20)
-    var hashVel = CreatorAI.scoreHashtagVelocity(t);
-
-    // Signal 4: Creator adoption weight (0.15)
-    var creatorAdopt = CreatorAI.scoreCreatorAdoption(t);
-
-    var raw = (searchGrowth * 0.35) + (videoEng * 0.30) + (hashVel * 0.20) + (creatorAdopt * 0.15);
-
-    return {
-      total:         Math.min(10, Math.max(1, parseFloat(raw.toFixed(1)))),
-      searchGrowth:  searchGrowth,
-      videoEng:      videoEng,
-      hashVel:       hashVel,
-      creatorAdopt:  creatorAdopt
-    };
-  },
-
-  scoreSearchGrowth: function(t) {
-    var highGrowth = ["ai","artificial intelligence","automation","chatgpt","side hustle","passive income","make money","drop","crypto","invest","finance","productivity","tool","software","saas","creator","content","tiktok","youtube","short","video","reel"];
-    var medGrowth  = ["business","startup","entrepreneur","freelance","remote","work from home","marketing","brand","strategy","growth","scale","customer","client","social media","influencer","digital","online","ecommerce","shop"];
-    var matched = 0;
-    highGrowth.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 9.5); });
-    medGrowth.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 7.5); });
-    return matched || (5 + Math.random() * 2);
-  },
-
-  scoreVideoEngagement: function(t) {
-    var viral = ["how to","secrets","truth about","nobody tells you","stop doing","biggest mistake","i tried","results","days","week","month","challenge","transformation","revealed","exposed","warning"];
-    var good  = ["tips","guide","explained","breakdown","review","honest","real","actually","why","what","best","worst","free","fast","easy"];
-    var matched = 0;
-    viral.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 9.2); });
-    good.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 7.8); });
-    return matched || (5.5 + Math.random() * 2.5);
-  },
-
-  scoreHashtagVelocity: function(t) {
-    var fastHash = ["ai","business","entrepreneur","money","finance","investing","productivity","creator","content","viral","trending","2026","growth","startup","success","mindset","motivation","hustle"];
-    var medHash  = ["marketing","brand","digital","online","freelance","remote","career","work","tips","advice","lifestyle","travel","health","fitness","food"];
-    var matched = 0;
-    fastHash.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 9.0); });
-    medHash.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 7.2); });
-    return matched || (4.5 + Math.random() * 3);
-  },
-
-  scoreCreatorAdoption: function(t) {
-    var saturated = ["recipe","cooking","dance","gaming","makeup","fashion","fitness","workout"];
-    var rising    = ["ai","automation","finance","investing","side hustle","passive income","business","creator economy","saas","productivity","no code","low code"];
-    var emerging  = ["digital nomad","solopreneur","creator fund","brand deal","ugc","faceless"];
-    var matched = 0;
-    rising.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 8.8); });
-    emerging.forEach(function(k){ if(t.includes(k)) matched = Math.max(matched, 9.2); });
-    saturated.forEach(function(k){ if(t.includes(k)) matched = Math.min(matched || 6, 6.5); });
-    return matched || (6 + Math.random() * 2);
-  },
-
-
-  /* ===================================================================
-     CONTENT KNOWLEDGE BASE
-     Niche → keywords, hashtags, hooks, platforms
-  =================================================================== */
-
-  getNiche: function(topic) {
-    var t = topic.toLowerCase();
-    if (CreatorAI.is(t, ["ai","artificial","automation","chatgpt","tool","software","tech","saas"]))
-      return "ai_tech";
-    if (CreatorAI.is(t, ["money","income","earn","finance","invest","wealth","rich","profit","revenue","passive","hustle","side hustle"]))
-      return "finance";
-    if (CreatorAI.is(t, ["business","startup","entrepreneur","founder","scale","growth","strategy","marketing","brand","client","customer"]))
-      return "business";
-    if (CreatorAI.is(t, ["content","creator","youtube","tiktok","instagram","reel","video","social","influencer","subscriber","follower"]))
-      return "creator";
-    if (CreatorAI.is(t, ["productivity","habit","routine","focus","mindset","goal","success","morning","system","organised"]))
-      return "productivity";
-    if (CreatorAI.is(t, ["health","fitness","workout","diet","weight","nutrition","mental","wellness","exercise","gym"]))
-      return "health";
-    return "general";
-  },
-
-  nicheData: {
-    ai_tech: {
-      hooks: [
-        "This AI tool does in 30 seconds what used to take me 3 hours…",
-        "I replaced my entire workflow with AI. Here's what happened.",
-        "Most people are still doing this manually in 2026.",
-        "This free AI tool is about to change everything for small businesses.",
-        "Stop wasting time. These 3 AI tools automate 80% of your work."
-      ],
-      captions: [
-        "The gap between those who use AI and those who don't is widening every week. Here are the tools actually worth your time — not the hype.",
-        "I tested 47 AI tools so you don't have to. These are the only ones still open in my browser.",
-        "Small businesses that aren't automating in 2026 are going to fall behind. Not a prediction — it's already happening."
-      ],
-      hashtags: ["#aitools","#artificialintelligence","#automation","#productivityhacks","#chatgpt","#businessautomation","#techtools","#worksmarter","#aiforbusiness","#futureofwork","#entrepreneur","#smallbusiness"],
-      bestPlatform: "TikTok",
-      bestFormat: "Short-form video (45–90s)",
-      peakTime: "19:30–21:00",
-      peakDay: "Tuesday or Thursday"
-    },
-    finance: {
-      hooks: [
-        "Nobody told me this about building passive income until it was almost too late.",
-        "I made £0 in month one. Here's what changed in month six.",
-        "The side hustle nobody's talking about right now generates £3k/month.",
-        "Stop saving money. Start doing this instead.",
-        "This one financial habit changed my life more than any advice I've been given."
-      ],
-      captions: [
-        "Financial freedom isn't about earning more — it's about understanding what you already have. Most people skip this step entirely.",
-        "I broke down exactly how I built a second income stream in 90 days. No fluff, no course to sell — just the actual process.",
-        "The honest truth about passive income: it's not passive at the start. But once it runs, it genuinely changes everything."
-      ],
-      hashtags: ["#sidehustle","#passiveincome","#financialfreedom","#makemoneyonline","#investing","#moneytips","#wealthbuilding","#personalfinance","#incomeideas","#entrepreneurlife","#moneygoals","#financialliteracy"],
-      bestPlatform: "TikTok",
-      bestFormat: "Talking head or text overlay",
-      peakTime: "20:00–22:00",
-      peakDay: "Thursday or Friday"
-    },
-    business: {
-      hooks: [
-        "I scaled from £0 to £10k/month without an office, a team, or investors.",
-        "The business strategy nobody teaches in school that actually works.",
-        "Most small businesses fail because of this one mistake. Not what you think.",
-        "I analysed 100 successful businesses. They all have this in common.",
-        "Stop looking for customers. Do this instead."
-      ],
-      captions: [
-        "Running a business in 2026 means moving faster and spending smarter. Here's the framework I use every week.",
-        "The difference between businesses that scale and businesses that plateau is almost never the product. It's the system.",
-        "I've worked with hundreds of SME owners. The ones who grow all share this one behaviour."
-      ],
-      hashtags: ["#businesstips","#entrepreneur","#smallbusiness","#businessgrowth","#startup","#businessstrategy","#marketing","#smb","#businessowner","#growthhacking","#b2b","#businessadvice"],
-      bestPlatform: "LinkedIn / TikTok",
-      bestFormat: "Educational short-form or carousel",
-      peakTime: "12:00–13:30 or 19:00–20:30",
-      peakDay: "Tuesday or Wednesday"
-    },
-    creator: {
-      hooks: [
-        "I went from 0 to 10,000 followers in 60 days. Here's the exact strategy.",
-        "The YouTube algorithm changed again. Here's what's actually working now.",
-        "Most creators quit at 100 subscribers. I almost did too. Here's what stopped me.",
-        "Stop making content for everyone. Do this instead.",
-        "The TikTok mistake killing your reach right now."
-      ],
-      captions: [
-        "Growing a creator business in 2026 isn't about going viral — it's about being consistent with the right strategy. Here's mine.",
-        "I spent 6 months testing every content strategy I could find. The results surprised me.",
-        "The creator economy is real, but it rewards specific behaviours. Let me show you what's actually working."
-      ],
-      hashtags: ["#contentcreator","#creatoreconomy","#growthhacks","#youtubeadvice","#tiktoktips","#contentmarketing","#socialmediatips","#buildanaudience","#creatortips","#digitalmarketing","#personalbranding","#onlinebusiness"],
-      bestPlatform: "YouTube / TikTok",
-      bestFormat: "Tutorial or behind-the-scenes",
-      peakTime: "18:00–21:00",
-      peakDay: "Wednesday or Saturday"
-    },
-    productivity: {
-      hooks: [
-        "I got back 3 hours every day with this one system.",
-        "The morning routine that changed my output — not what you expect.",
-        "Stop being busy. Start being productive. There's a difference.",
-        "I tracked my time for 30 days. The results were embarrassing.",
-        "This one habit is responsible for 80% of my results."
-      ],
-      captions: [
-        "Productivity isn't about doing more. It's about doing the right things in the right order. Most people have this backwards.",
-        "I've tested every productivity system out there. Here's the one that actually stuck and why.",
-        "The highest-performing people I know all share one behaviour. It takes 10 minutes a day."
-      ],
-      hashtags: ["#productivity","#timemanagement","#morningroutine","#habits","#deepwork","#focustips","#worksmarter","#selfimprovement","#goalsetting","#mindset","#dailyhabits","#highperformance"],
-      bestPlatform: "YouTube / Instagram",
-      bestFormat: "Educational talking head",
-      peakTime: "07:00–09:00 or 20:00–21:30",
-      peakDay: "Monday or Sunday"
-    },
-    health: {
-      hooks: [
-        "I changed this one thing and lost 8kg without changing my diet.",
-        "The workout nobody recommends but that actually works.",
-        "Stop counting calories. Do this instead.",
-        "I trained for 30 days straight. Here's what happened to my body.",
-        "The mental health habit backed by science that nobody talks about."
-      ],
-      captions: [
-        "Health in 2026 is about working with your body, not against it. Here's what the research actually says.",
-        "I broke down the most common fitness myths so you don't waste another year of effort.",
-        "The truth about sustainable health: it's boring, consistent, and it works."
-      ],
-      hashtags: ["#fitness","#health","#workout","#wellness","#nutrition","#healthylifestyle","#mentalhealth","#gymtips","#weightloss","#fitnessmotivation","#bodygoals","#healthtips"],
-      bestPlatform: "Instagram / TikTok",
-      bestFormat: "Transformation or tutorial",
-      peakTime: "06:30–08:30 or 19:00–21:00",
-      peakDay: "Monday or Thursday"
-    },
-    general: {
-      hooks: [
-        "Nobody is talking about this right now — but they will be.",
-        "I tried this for 30 days. Here's what happened.",
-        "The thing most people get wrong about this.",
-        "Stop doing it the hard way. This works better.",
-        "This changed everything for me. It might for you too."
-      ],
-      captions: [
-        "The best content doesn't go viral by accident. It earns attention by being genuinely useful or genuinely honest. This is both.",
-        "I'm sharing this because I wish someone had shared it with me earlier.",
-        "Not everyone will agree with this. But the data doesn't lie."
-      ],
-      hashtags: ["#trending","#viral","#tips","#advice","#content","#growth","#creator","#2026","#fyp","#foryou","#trending","#explore"],
-      bestPlatform: "TikTok",
-      bestFormat: "Short-form video",
-      peakTime: "19:30–21:00",
-      peakDay: "Thursday"
-    }
-  },
-
-
-  /* ===================================================================
-     1. FULL CONTENT PACKAGE
-  =================================================================== */
-
-  fullPackage: function(question, context) {
-    var topic   = CreatorAI.extractTopic(question, context);
-    var niche   = CreatorAI.getNiche(topic);
-    var nd      = CreatorAI.nicheData[niche];
-    var score   = CreatorAI.calcTrendScore(topic);
-    var platform= context.platform || nd.bestPlatform;
-    var style   = context.style    || "educational";
-
-    var hook    = CreatorAI.pickHook(topic, niche, style);
-    var caption = CreatorAI.buildCaption(topic, niche, style, platform);
-    var tags    = CreatorAI.buildHashtags(topic, niche);
-    var outline = CreatorAI.buildOutline(topic, niche, style);
-
-    var verdictColor = score.total >= 9 ? "#2dd4a0" : score.total >= 7.5 ? "#f0b429" : "#8a91a8";
-    var verdictText  = score.total >= 9 ? "🔥 Exceptional viral potential"
-      : score.total >= 8 ? "⚡ Strong opportunity"
-      : score.total >= 7 ? "📈 Good momentum"
-      : "💡 Emerging trend";
-
-    return CreatorAI.card("Content Package — " + CreatorAI.titleCase(topic),
-
-      "<div style='display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;background:#0a0d18;border:1px solid #1a2035;border-radius:10px;'>" +
-        "<div style='font-family:monospace;font-size:36px;font-weight:900;color:" + verdictColor + ";line-height:1;letter-spacing:-0.04em;'>" + score.total + "</div>" +
-        "<div><div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;'>Trend Score™</div>" +
-        "<div style='font-size:13px;font-weight:700;color:" + verdictColor + ";'>" + verdictText + "</div></div>" +
-        "<div style='margin-left:auto;text-align:right;font-size:11px;color:#4a5068;line-height:1.8;'>" +
-          "Platform: <strong style='color:#eef0f6;'>" + nd.bestPlatform + "</strong><br>" +
-          "Format: <strong style='color:#eef0f6;'>" + nd.bestFormat + "</strong><br>" +
-          "Post: <strong style='color:#f0b429;'>" + nd.peakDay + " " + nd.peakTime + "</strong>" +
-        "</div>" +
-      "</div>" +
-
-      "<div style='margin-bottom:12px;'><div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;'>VIDEO HOOK</div>" +
-      "<div style='padding:12px 14px;background:#0d1118;border-left:3px solid " + verdictColor + ";border-radius:0 8px 8px 0;font-size:14px;color:#eef0f6;font-style:italic;'>" + hook + "</div></div>" +
-
-      "<div style='margin-bottom:12px;'><div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;'>CAPTION</div>" +
-      "<div style='padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-radius:8px;font-size:13.5px;color:#8a91a8;line-height:1.7;'>" + caption + "</div></div>" +
-
-      "<div style='margin-bottom:12px;'><div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;'>CONTENT OUTLINE</div>" +
-      "<div style='padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-radius:8px;font-size:13px;color:#8a91a8;line-height:1.8;'>" + outline + "</div></div>" +
-
-      "<div><div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;'>HASHTAGS</div>" +
-      "<div style='display:flex;flex-wrap:wrap;gap:6px;'>" +
-        tags.map(function(t){ return "<span style='padding:3px 10px;background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.18);border-radius:5px;font-family:monospace;font-size:11px;color:#f0b429;'>" + t + "</span>"; }).join("") +
-      "</div></div>",
-
-      ["Generate another hook", "Improve this caption", "Best posting time for " + nd.bestPlatform, "What's my trend score?"]
-    );
-  },
-
-
-  /* ===================================================================
-     2. HOOK GENERATOR
-  =================================================================== */
-
-  generateHook: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-    var nd    = CreatorAI.nicheData[niche];
-    var style = context.style || "educational";
-
-    var hooks = [
-      CreatorAI.pickHook(topic, niche, style),
-      CreatorAI.pickHook(topic, niche, "controversial"),
-      CreatorAI.pickHook(topic, niche, "entertaining"),
-      CreatorAI.pickHook(topic, niche, "motivational"),
-      CreatorAI.pickHook(topic, niche, "data"),
-    ];
-
-    // Deduplicate
-    hooks = hooks.filter(function(h, i){ return hooks.indexOf(h) === i; });
-
-    var html = "<p>Here are <strong>" + hooks.length + " hook variations</strong> for <strong>" + CreatorAI.titleCase(topic) + "</strong>. The best hook stops the scroll in the first 2 seconds:</p>";
-    hooks.forEach(function(h, i){
-      var styles = ["Educational","Controversial","Entertaining","Motivational","Data-driven"];
-      html += "<div style='margin:8px 0;padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-left:3px solid #f0b429;border-radius:0 8px 8px 0;'>" +
-        "<div style='font-family:monospace;font-size:9px;color:#4a5068;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.1em;'>" + (styles[i]||"Variation " + (i+1)) + "</div>" +
-        "<div style='font-size:14px;color:#eef0f6;font-style:italic;'>" + h + "</div>" +
-      "</div>";
-    });
-
-    html += "<p style='font-size:12px;color:#4a5068;margin-top:12px;'>→ Test multiple hooks by filming the same content with different openings. The hook with the highest 3-second retention rate wins.</p>";
-
-    return CreatorAI.card("Hook Variations — " + CreatorAI.titleCase(topic), html,
-      ["Write the caption", "Give me hashtags", "Full content package"]
-    );
-  },
-
-  pickHook: function(topic, niche, style) {
-    var nd = CreatorAI.nicheData[niche];
-    var t  = CreatorAI.titleCase(topic);
-
-    var styleHooks = {
-      educational:   nd.hooks[0] || ("The truth about " + t + " most people don't know."),
-      controversial: nd.hooks[1] || ("Stop wasting time on " + t + ". Do this instead."),
-      entertaining:  nd.hooks[2] || ("I tried " + t + " for 30 days. Here's what happened."),
-      motivational:  nd.hooks[3] || ("One year ago I knew nothing about " + t + ". Now it changed my life."),
-      data:          ("The data on " + t + " will surprise you — most people have this completely wrong.")
-    };
-
-    return styleHooks[style] || styleHooks.educational;
-  },
-
-
-  /* ===================================================================
-     3. CAPTION GENERATOR
-  =================================================================== */
-
-  generateCaption: function(question, context) {
-    var topic    = CreatorAI.extractTopic(question, context);
-    var niche    = CreatorAI.getNiche(topic);
-    var platform = context.platform || "TikTok";
-    var style    = context.style || "educational";
-    var caption  = CreatorAI.buildCaption(topic, niche, style, platform);
-
-    var lengthNote = platform.toLowerCase().includes("youtube")
-      ? "YouTube descriptions should be 150–300 words with keywords in the first 2 lines."
-      : platform.toLowerCase().includes("instagram")
-        ? "Instagram captions perform best at 150–220 words with the CTA above the fold."
-        : "TikTok captions are best kept under 150 characters — short, punchy, with 3–5 hashtags inline.";
-
-    return CreatorAI.card("Caption — " + CreatorAI.titleCase(topic),
-      "<div style='padding:14px;background:#0a0d18;border:1px solid #1a2035;border-radius:8px;font-size:14px;color:#8a91a8;line-height:1.75;margin-bottom:12px;'>" + caption + "</div>" +
-      "<p style='font-size:12px;color:#4a5068;'>→ <strong>" + lengthNote + "</strong></p>",
-      ["Give me 3 variations", "Add hashtags", "Generate a hook", "Full content package"]
-    );
-  },
-
-  buildCaption: function(topic, niche, style, platform) {
-    var nd  = CreatorAI.nicheData[niche];
-    var t   = CreatorAI.titleCase(topic);
-    var idx = Math.floor(Math.random() * nd.captions.length);
-    var base = nd.captions[idx];
-
-    // Platform-specific CTA
-    var cta = platform && platform.toLowerCase().includes("youtube")
-      ? "Subscribe if you want more like this — I post every week."
-      : platform && platform.toLowerCase().includes("instagram")
-        ? "Save this for later and tag someone who needs to see it 👇"
-        : "Follow for more. New content every week 🔥";
-
-    return base + "<br><br>" + cta;
-  },
-
-
-  /* ===================================================================
-     4. HASHTAG GENERATOR
-  =================================================================== */
-
-  generateHashtags: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-    var tags  = CreatorAI.buildHashtags(topic, niche);
-
-    // Split into tiers
-    var bigTags  = tags.slice(0, 4);
-    var midTags  = tags.slice(4, 8);
-    var smallTags= tags.slice(8);
-
-    return CreatorAI.card("Hashtag Strategy — " + CreatorAI.titleCase(topic),
-      "<p>A balanced hashtag set uses <strong>large, medium, and niche tags</strong> — this maximises both reach and discoverability.</p>" +
-
-      "<div style='margin-bottom:12px;'>" +
-        "<div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:7px;'>High Volume (broad reach)</div>" +
-        "<div style='display:flex;flex-wrap:wrap;gap:6px;'>" + bigTags.map(function(t){ return "<span style='padding:4px 11px;background:rgba(240,180,41,0.10);border:1px solid rgba(240,180,41,0.22);border-radius:5px;font-family:monospace;font-size:11px;color:#f0b429;'>" + t + "</span>"; }).join("") + "</div>" +
-      "</div>" +
-
-      "<div style='margin-bottom:12px;'>" +
-        "<div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:7px;'>Mid Volume (targeted)</div>" +
-        "<div style='display:flex;flex-wrap:wrap;gap:6px;'>" + midTags.map(function(t){ return "<span style='padding:4px 11px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.18);border-radius:5px;font-family:monospace;font-size:11px;color:#7eb3ff;'>" + t + "</span>"; }).join("") + "</div>" +
-      "</div>" +
-
-      "<div>" +
-        "<div style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:7px;'>Niche (high conversion)</div>" +
-        "<div style='display:flex;flex-wrap:wrap;gap:6px;'>" + smallTags.map(function(t){ return "<span style='padding:4px 11px;background:rgba(45,212,160,0.08);border:1px solid rgba(45,212,160,0.18);border-radius:5px;font-family:monospace;font-size:11px;color:#2dd4a0;'>" + t + "</span>"; }).join("") + "</div>" +
-      "</div>",
-
-      ["Generate a hook", "Write the caption", "Full content package"]
-    );
-  },
-
-  buildHashtags: function(topic, niche) {
-    var nd   = CreatorAI.nicheData[niche];
-    var base = nd.hashtags.slice();
-
-    // Add topic-specific tags
-    var words = topic.toLowerCase().split(" ");
-    words.forEach(function(w){
-      if (w.length > 3) base.push("#" + w.replace(/[^a-z0-9]/g,""));
-    });
-    base.push("#impactgrid", "#creatorintelligence");
-
-    // Deduplicate and limit
-    return base.filter(function(t,i){ return base.indexOf(t) === i; }).slice(0, 14);
-  },
-
-
-  /* ===================================================================
-     5. CONTENT OUTLINE
-  =================================================================== */
-
-  generateOutline: function(question, context) {
-    var topic   = CreatorAI.extractTopic(question, context);
-    var niche   = CreatorAI.getNiche(topic);
-    var style   = context.style || "educational";
-    var outline = CreatorAI.buildOutline(topic, niche, style);
-
-    return CreatorAI.card("Content Outline — " + CreatorAI.titleCase(topic),
-      "<div style='padding:14px;background:#0a0d18;border:1px solid #1a2035;border-radius:8px;font-size:13.5px;color:#8a91a8;line-height:1.85;'>" + outline + "</div>" +
-      "<p style='font-size:12px;color:#4a5068;margin-top:10px;'>→ Keep the structure tight. For short-form: hook (0–3s), problem (3–15s), solution (15–40s), CTA (40–60s).</p>",
-      ["Generate the hook", "Write the caption", "Full content package"]
-    );
-  },
-
-  buildOutline: function(topic, niche, style) {
-    var t = CreatorAI.titleCase(topic);
-    var outlines = {
-      educational: [
-        "• <strong>Hook (0–3s)</strong>: Open with a surprising stat or bold claim about " + t,
-        "• <strong>Problem (3–15s)</strong>: Establish why most people get " + t + " wrong",
-        "• <strong>Solution (15–40s)</strong>: Walk through your 3 key insights or steps",
-        "• <strong>Proof (40–50s)</strong>: Briefly show a result, stat, or example",
-        "• <strong>CTA (50–60s)</strong>: Tell viewers exactly what to do next"
-      ],
-      controversial: [
-        "• <strong>Hook (0–3s)</strong>: Make a bold, counter-intuitive statement about " + t,
-        "• <strong>Stakes (3–10s)</strong>: Explain why this matters and who disagrees",
-        "• <strong>Argument (10–40s)</strong>: Build your case with specific examples",
-        "• <strong>Flip (40–52s)</strong>: Acknowledge the other view, then rebut it",
-        "• <strong>CTA (52–60s)</strong>: Ask viewers to comment their opinion"
-      ],
-      entertaining: [
-        "• <strong>Hook (0–3s)</strong>: Start mid-story or mid-action on " + t,
-        "• <strong>Setup (3–15s)</strong>: Build the situation and tension",
-        "• <strong>Payoff (15–45s)</strong>: Deliver the surprising result or moment",
-        "• <strong>Lesson (45–55s)</strong>: Extract one clear takeaway",
-        "• <strong>CTA (55–60s)</strong>: Invite viewers to share or follow"
-      ],
-      motivational: [
-        "• <strong>Hook (0–3s)</strong>: Start with where you were before " + t,
-        "• <strong>Journey (3–20s)</strong>: The struggle and turning point",
-        "• <strong>Breakthrough (20–45s)</strong>: What changed and the result",
-        "• <strong>Framework (45–55s)</strong>: The 1–2 things they can apply today",
-        "• <strong>CTA (55–60s)</strong>: Encourage and direct to next step"
-      ]
-    };
-    var lines = outlines[style] || outlines.educational;
-    return lines.join("<br>");
-  },
-
-
-  /* ===================================================================
-     6. TREND SCORE DISPLAY
-  =================================================================== */
-
-  trendScore: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var score = CreatorAI.calcTrendScore(topic);
-
-    var verdictColor = score.total >= 9 ? "#2dd4a0" : score.total >= 7.5 ? "#f0b429" : "#8a91a8";
-    var verdictText  = score.total >= 9 ? "Exceptional — Act Now"
-      : score.total >= 8 ? "Strong — High Opportunity"
-      : score.total >= 7 ? "Good — Worth Creating"
-      : score.total >= 6 ? "Moderate — Proceed with Strategy"
-      : "Low — Consider Another Angle";
-
-    function signalBar(label, val, color) {
-      return "<div style='margin-bottom:10px;'>" +
-        "<div style='display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;'>" +
-          "<span style='color:#8a91a8;'>" + label + "</span>" +
-          "<span style='font-family:monospace;color:" + color + ";font-weight:600;'>" + val.toFixed(1) + "/10</span>" +
-        "</div>" +
-        "<div style='background:#0a0d18;border-radius:4px;height:5px;overflow:hidden;'>" +
-          "<div style='height:100%;width:" + (val/10*100) + "%;background:" + color + ";border-radius:4px;'></div>" +
-        "</div>" +
-      "</div>";
-    }
-
-    return CreatorAI.card("Trend Score™ — " + CreatorAI.titleCase(topic),
-      "<div style='text-align:center;padding:20px;background:#0a0d18;border:1px solid #1a2035;border-radius:10px;margin-bottom:16px;'>" +
-        "<div style='font-family:monospace;font-size:64px;font-weight:900;color:" + verdictColor + ";letter-spacing:-0.04em;line-height:1;'>" + score.total + "</div>" +
-        "<div style='font-family:monospace;font-size:10px;color:#4a5068;text-transform:uppercase;letter-spacing:0.12em;margin:6px 0 4px;'>Trend Score™ / 10</div>" +
-        "<div style='font-size:13px;font-weight:700;color:" + verdictColor + ";'>" + verdictText + "</div>" +
-      "</div>" +
-
-      "<p style='font-family:monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px;'>Signal Breakdown</p>" +
-      signalBar("Search Growth (×0.35)",    score.searchGrowth, "#4285f4") +
-      signalBar("Video Engagement (×0.30)", score.videoEng,     "#ff2d55") +
-      signalBar("Hashtag Velocity (×0.20)", score.hashVel,      "#e1306c") +
-      signalBar("Creator Adoption (×0.15)", score.creatorAdopt, "#f0b429") +
-
-      "<p style='font-size:12px;color:#4a5068;margin-top:12px;'>→ Scores above 8.0 represent a strong viral window. Act within <strong>48–72 hours</strong> of detection for maximum reach.</p>",
-
-      ["Generate full content package", "What platform should I use?", "Best posting time"]
-    );
-  },
-
-
-  /* ===================================================================
-     7. TREND ANALYSIS
-  =================================================================== */
-
-  trendAnalysis: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-    var nd    = CreatorAI.nicheData[niche];
-    var score = CreatorAI.calcTrendScore(topic);
-
-    var momentum = score.total >= 8.5 ? "accelerating — this is a breakout window"
-      : score.total >= 7 ? "building — early adoption phase"
-      : "emerging — still forming";
-
-    return CreatorAI.card("Trend Analysis — " + CreatorAI.titleCase(topic),
-      "<p>Trend Score™: <strong style='color:#f0b429;'>" + score.total + "/10</strong> — momentum is <strong>" + momentum + "</strong>.</p>" +
-
-      "<p><strong>Why this trend is moving:</strong> " + CreatorAI.trendReason(topic, niche) + "</p>" +
-
-      "<p><strong>Best platform to ride it:</strong> <strong>" + nd.bestPlatform + "</strong> — " + CreatorAI.platformReason(niche) + "</p>" +
-
-      "<p><strong>Content opportunity window:</strong> " + (score.total >= 8 ? "The next <strong>48–72 hours</strong> represent peak opportunity. After that, the space will become crowded." : "The trend is still building. You have <strong>1–2 weeks</strong> before early adopters saturate the format.") + "</p>" +
-
-      "<p><strong>What competitors are doing:</strong> Most creators in this space are posting surface-level takes. The opportunity is to go <strong>deeper, more specific, and more honest</strong> than what's already out there.</p>",
-
-      ["Generate content for this trend", "What's my Trend Score?", "Show me the posting window"]
-    );
-  },
-
-  trendReason: function(topic, niche) {
-    var reasons = {
-      ai_tech:     "AI adoption is accelerating across every industry — search volume for AI tools has grown 300%+ YoY and shows no sign of plateauing.",
-      finance:     "Economic uncertainty is driving unprecedented interest in personal finance, side income, and wealth-building content.",
-      business:    "Post-pandemic entrepreneurship is at its highest level in a decade — SME content outperforms average by 2–3× right now.",
-      creator:     "The creator economy has passed $250B in value — creators researching how to grow are a rapidly expanding audience.",
-      productivity:"Remote and hybrid work has permanently changed how people think about time — productivity content is evergreen with strong seasonal peaks.",
-      health:      "Mental and physical health content has seen consistent growth since 2020 with no signs of declining interest.",
-      general:     "Cross-platform signal analysis suggests rising search volume and creator adoption across multiple channels."
-    };
-    return reasons[niche] || reasons.general;
-  },
-
-  platformReason: function(niche) {
-    var reasons = {
-      ai_tech:     "TikTok's algorithm strongly favours tech content right now. Educational AI videos are getting 5–10× the organic reach of other categories.",
-      finance:     "Finance content on TikTok (FinTok) is one of the fastest-growing content verticals in 2026.",
-      business:    "LinkedIn reaches decision-makers; TikTok reaches aspiring entrepreneurs. Both are currently underserved for honest SME content.",
-      creator:     "YouTube rewards depth; TikTok rewards pace. Creator advice content performs well on both.",
-      productivity:"YouTube's long-form format suits productivity deep-dives. Instagram Reels work well for quick daily habits.",
-      health:      "Instagram's visual format suits transformation content. TikTok drives the highest raw reach for health trends.",
-      general:     "TikTok currently offers the highest organic reach for new content — ideal for trend-riding."
-    };
-    return reasons[niche] || reasons.general;
-  },
-
-
-  /* ===================================================================
-     8. POSTING TIME INTELLIGENCE
-  =================================================================== */
-
-  postingTime: function(question, context) {
-    var topic    = CreatorAI.extractTopic(question, context);
-    var niche    = CreatorAI.getNiche(topic);
-    var nd       = CreatorAI.nicheData[niche];
-    var platform = context.platform || nd.bestPlatform;
-
-    var platformTimes = {
-      tiktok:    { peak: ["19:30–21:00","12:00–13:30"], days: ["Thursday","Tuesday","Friday"], note: "TikTok's algorithm pushes content most aggressively in the first 30 minutes. Post when your audience is actively scrolling — not when you're free." },
-      youtube:   { peak: ["15:00–17:00","20:00–22:00"], days: ["Saturday","Sunday","Thursday"], note: "YouTube favours consistency over timing. Post on the same day each week. Friday evening and Saturday morning see highest browse traffic." },
-      instagram: { peak: ["11:00–13:00","19:00–21:00"], days: ["Wednesday","Friday","Monday"], note: "Instagram's Reels push is strongest mid-week. Stories perform best in the morning commute window (07:30–09:00)." },
-      linkedin:  { peak: ["07:30–09:00","12:00–13:00"], days: ["Tuesday","Wednesday","Thursday"], note: "LinkedIn is a professional platform — post during working hours. Tuesday–Thursday 08:00–09:00 is peak B2B engagement." }
-    };
-
-    var pt = platformTimes[platform.toLowerCase().split("/")[0].trim()] || platformTimes.tiktok;
-
-    return CreatorAI.card("Posting Intelligence — " + platform,
-      "<p><strong>Peak posting windows:</strong></p>" +
-      pt.peak.map(function(p){ return "<div style='padding:10px 14px;background:#0a0d18;border:1px solid #1a2035;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;'><span style='font-size:13px;color:#eef0f6;font-weight:600;'>🕐 " + p + "</span><span style='font-family:monospace;font-size:10px;color:#f0b429;'>Peak Window</span></div>"; }).join("") +
-
-      "<p style='margin-top:14px;'><strong>Best days:</strong> " + pt.days.map(function(d){ return "<strong>" + d + "</strong>"; }).join(", ") + "</p>" +
-      "<p>" + pt.note + "</p>" +
-      "<p>For <strong>" + CreatorAI.titleCase(topic) + "</strong> specifically, the highest-engagement audience (25–34, entrepreneur / creator segment) peaks on <strong>" + nd.peakDay + " at " + nd.peakTime + "</strong>.</p>",
-
-      ["Generate content for this time slot", "What platform should I use?", "Full content package"]
-    );
-  },
-
-
-  /* ===================================================================
-     9. PLATFORM ADVICE
-  =================================================================== */
-
-  platformAdvice: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-    var nd    = CreatorAI.nicheData[niche];
-
-    var platforms = [
-      { name:"TikTok",    score:CreatorAI.platformScore(niche,"tiktok"),    reason:"Highest organic reach. Algorithm rewards educational and entertaining content. Best for audience building from zero." },
-      { name:"YouTube",   score:CreatorAI.platformScore(niche,"youtube"),   reason:"Best for long-term search traffic and high-CPM monetisation. Slower to grow but compounding returns." },
-      { name:"Instagram", score:CreatorAI.platformScore(niche,"instagram"), reason:"Strong for visual niches and brand partnerships. Reels currently receive boosted distribution." },
-      { name:"LinkedIn",  score:CreatorAI.platformScore(niche,"linkedin"),  reason:"Underserved for most niches. High-value B2B audience. Text posts still outperform video on reach." }
-    ].sort(function(a,b){ return b.score - a.score; });
-
-    var html = "<p>Platform recommendation for <strong>" + CreatorAI.titleCase(topic) + "</strong>:</p>";
-    platforms.forEach(function(p, i){
-      var color = i === 0 ? "#f0b429" : i === 1 ? "#4f8ef7" : "#4a5068";
-      html += "<div style='margin-bottom:10px;padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-radius:8px;" + (i===0?"border-left:3px solid #f0b429;":"") + "'>" +
-        "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;'>" +
-          "<strong style='color:" + color + ";'>" + (i===0?"★ ":"") + p.name + "</strong>" +
-          "<span style='font-family:monospace;font-size:11px;color:" + color + ";'>" + p.score + "/10</span>" +
-        "</div>" +
-        "<div style='font-size:12.5px;color:#8a91a8;'>" + p.reason + "</div>" +
-      "</div>";
-    });
-
-    html += "<p style='font-size:12px;color:#4a5068;'>→ Start with <strong>" + platforms[0].name + "</strong>. Once you have consistent content and a small audience, cross-post to the second platform.</p>";
-
-    return CreatorAI.card("Platform Recommendation", html,
-      ["Best posting time for " + platforms[0].name, "Generate content for " + platforms[0].name, "Full content package"]
-    );
-  },
-
-  platformScore: function(niche, platform) {
-    var scores = {
-      ai_tech:     { tiktok:9.2, youtube:8.1, instagram:6.8, linkedin:7.9 },
-      finance:     { tiktok:9.0, youtube:8.3, instagram:7.2, linkedin:8.1 },
-      business:    { tiktok:8.1, youtube:8.0, instagram:7.0, linkedin:9.1 },
-      creator:     { tiktok:8.8, youtube:9.2, instagram:8.0, linkedin:6.2 },
-      productivity:{ tiktok:7.9, youtube:8.8, instagram:8.1, linkedin:7.8 },
-      health:      { tiktok:8.9, youtube:7.8, instagram:9.0, linkedin:5.5 },
-      general:     { tiktok:8.5, youtube:7.5, instagram:7.5, linkedin:6.5 }
-    };
-    return (scores[niche] || scores.general)[platform] || 7.0;
-  },
-
-
-  /* ===================================================================
-     10. AUDIENCE INSIGHT
-  =================================================================== */
-
-  audienceInsight: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-
-    var audiences = {
-      ai_tech:     { primary:"25–34, tech-curious professionals", secondary:"18–24, students and graduates", motivation:"Competitive advantage and time-saving", peak:"Evenings + lunch on weekdays", engagementTrigger:"Practical tools they can use today" },
-      finance:     { primary:"22–35, aspiring to financial independence", secondary:"35–45, established but plateau-feeling", motivation:"Security, freedom, and not missing out", peak:"Evenings and weekend mornings", engagementTrigger:"Honest stories and specific numbers" },
-      business:    { primary:"28–42, founders and side-hustlers", secondary:"Corporate professionals considering the leap", motivation:"Autonomy, income growth, and recognition", peak:"Early mornings and lunch breaks", engagementTrigger:"Frameworks and real-world case studies" },
-      creator:     { primary:"18–28, aspiring content creators", secondary:"25–35, established creators wanting to scale", motivation:"Audience growth and monetisation", peak:"Late evenings", engagementTrigger:"Tactics that worked for someone just like them" },
-      productivity:{ primary:"22–38, ambitious knowledge workers", secondary:"Students and self-improvers", motivation:"Performing better without burning out", peak:"Mornings and Sunday evenings", engagementTrigger:"Systems they can implement immediately" },
-      health:      { primary:"20–40, lifestyle-focused adults", secondary:"35–50, health-conscious parents", motivation:"Sustainable results and looking/feeling better", peak:"Early mornings and evenings", engagementTrigger:"Transformations and evidence-backed approaches" },
-      general:     { primary:"18–34 cross-demographic", secondary:"35–50 secondary audience", motivation:"Entertainment, information, and self-improvement", peak:"Evenings and weekends", engagementTrigger:"Authenticity and direct value" }
-    };
-
-    var a = audiences[niche] || audiences.general;
-
-    return CreatorAI.card("Audience Intelligence — " + CreatorAI.titleCase(topic),
-      "<p><strong>Primary audience:</strong> " + a.primary + "</p>" +
-      "<p><strong>Secondary audience:</strong> " + a.secondary + "</p>" +
-      "<p><strong>Core motivation:</strong> " + a.motivation + "</p>" +
-      "<p><strong>Peak activity:</strong> " + a.peak + "</p>" +
-      "<p><strong>What triggers engagement:</strong> " + a.engagementTrigger + "</p>" +
-      "<p><strong>How to talk to them:</strong> Be direct, specific, and honest. This audience has high content literacy — they can tell when someone is padding or performing. The highest-performing creators in this space share <em>real results with real numbers</em>.</p>",
-      ["Generate content for this audience", "Best posting time", "Full content package"]
-    );
-  },
-
-
-  /* ===================================================================
-     11. IMPROVE CONTENT
-  =================================================================== */
-
-  improveContent: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-    var nd    = CreatorAI.nicheData[niche];
-
-    return CreatorAI.card("Content Optimisation",
-      "<p>To improve content performance on <strong>" + CreatorAI.titleCase(topic) + "</strong>, apply these high-impact changes:</p>" +
-      "<p>→ <strong>First 2 seconds:</strong> If your hook doesn't create immediate curiosity or tension, the algorithm will not distribute your content. Rewrite your opening line before anything else.</p>" +
-      "<p>→ <strong>Specificity wins:</strong> Replace every vague claim with a specific one. Not 'this saves a lot of time' but 'this saves 2 hours every day'. Specificity is credibility.</p>" +
-      "<p>→ <strong>CTA placement:</strong> Most creators put the CTA at the end. Test putting a soft CTA at 40% through ('comment below if you want part 2') — this spikes engagement signals mid-video.</p>" +
-      "<p>→ <strong>Thumbnail/cover frame:</strong> For TikTok and Reels, the cover frame matters as much as the hook. Choose a frame that shows contrast, emotion, or curiosity.</p>" +
-      "<p>→ <strong>Caption keywords:</strong> Include your primary keyword in the first 15 characters of your caption. Algorithms use early caption text for indexing.</p>",
-      ["Rewrite my hook", "Generate a new caption", "Full content package"]
-    );
-  },
-
-
-  /* ===================================================================
-     12. CONTENT STRATEGY
-  =================================================================== */
-
-  contentStrategy: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-    var nd    = CreatorAI.nicheData[niche];
-    var score = CreatorAI.calcTrendScore(topic);
-
-    return CreatorAI.card("Content Strategy — " + CreatorAI.titleCase(topic),
-      "<p>Trend Score™: <strong style='color:#f0b429;'>" + score.total + "/10</strong>. Here is your 4-week content strategy:</p>" +
-
-      "<div style='margin:10px 0;padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-left:3px solid #f0b429;border-radius:0 8px 8px 0;'>" +
-        "<div style='font-family:monospace;font-size:9px;color:#f0b429;margin-bottom:5px;'>WEEK 1 — ESTABLISH</div>" +
-        "<div style='font-size:13px;color:#8a91a8;'>Post your strongest educational piece on " + nd.bestPlatform + " at " + nd.peakTime + ". This is your authority anchor — the piece new followers will find first.</div>" +
-      "</div>" +
-
-      "<div style='margin:10px 0;padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-left:3px solid #4f8ef7;border-radius:0 8px 8px 0;'>" +
-        "<div style='font-family:monospace;font-size:9px;color:#4f8ef7;margin-bottom:5px;'>WEEK 2 — ENGAGE</div>" +
-        "<div style='font-size:13px;color:#8a91a8;'>Post a controversial or opinion-led piece. Ask a direct question in the caption. Engagement in week 2 signals the algorithm to push your week 1 content further.</div>" +
-      "</div>" +
-
-      "<div style='margin:10px 0;padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-left:3px solid #2dd4a0;border-radius:0 8px 8px 0;'>" +
-        "<div style='font-family:monospace;font-size:9px;color:#2dd4a0;margin-bottom:5px;'>WEEK 3 — CONVERT</div>" +
-        "<div style='font-size:13px;color:#8a91a8;'>Post a story-led piece (your journey, a result, a before/after). This is your highest-converting format — warm audiences follow after hearing a real story.</div>" +
-      "</div>" +
-
-      "<div style='margin:10px 0;padding:12px 14px;background:#0a0d18;border:1px solid #1a2035;border-left:3px solid #a855f7;border-radius:0 8px 8px 0;'>" +
-        "<div style='font-family:monospace;font-size:9px;color:#a855f7;margin-bottom:5px;'>WEEK 4 — SCALE</div>" +
-        "<div style='font-size:13px;color:#8a91a8;'>Repurpose your best-performing piece across platforms. Take your TikTok, recut for Reels, transcript for LinkedIn. One idea, four formats.</div>" +
-      "</div>",
-
-      ["Generate Week 1 content", "What platform should I use?", "Show me the trend score"]
-    );
-  },
-
-
-  /* ===================================================================
-     13. COMPETITOR INSIGHT
-  =================================================================== */
-
-  competitorInsight: function(question, context) {
-    var topic = CreatorAI.extractTopic(question, context);
-    var niche = CreatorAI.getNiche(topic);
-
-    var gaps = {
-      ai_tech:     ["Over-reliance on tool lists — opportunity to go deeper on workflows", "Most content is positive/hype — honest critique performs 3× better", "Nobody is showing actual before/after time savings with data"],
-      finance:     ["Most creators avoid talking about failures — vulnerability outperforms here", "Overly generic advice — specificity to one audience segment (e.g. freelancers, parents) drives higher conversion", "The 'how I actually did it' format is underused versus 'how to do it'"],
-      business:    ["B2B content is sterile — personality-led business content has almost no competition", "Real P&L breakdowns are rare and extremely high-engagement", "Nobody talks about the dark side of scaling — contrarian content stands out"],
-      creator:     ["Everyone shares growth wins — share growth mistakes instead", "Platform strategy content is oversimplified — detailed tactical breakdowns are scarce", "Most creator advice is generic — niche-specific creator advice (e.g. finance creators, educator creators) is wide open"],
-      productivity:["Too much theory, not enough systems — practical toolkits outperform philosophy", "Nobody quantifies the result of their habits — add numbers to everything", "Evening and wind-down routines are underrepresented vs morning content"],
-      health:      ["Before/after transformation is saturated — the 'sustainable slow progress' angle is wide open", "Mental health integrated with physical is underserved", "Male mental health content is significantly underrepresented"],
-      general:     ["Most content in this space is surface-level — depth and specificity are the biggest gaps", "Authentic failure stories significantly outperform generic success content", "Long-form explainer formats are underused on short-form platforms"]
-    };
-
-    var nicheGaps = gaps[niche] || gaps.general;
-
-    return CreatorAI.card("Competitive Landscape — " + CreatorAI.titleCase(topic),
-      "<p>Here are the <strong>content gaps</strong> your competitors are leaving open — these are your highest-opportunity angles:</p>" +
-      nicheGaps.map(function(g){ return "<div style='padding:10px 14px;background:#0a0d18;border:1px solid #1a2035;border-left:3px solid #2dd4a0;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:13px;color:#8a91a8;'>→ " + g + "</div>"; }).join("") +
-      "<p style='font-size:12px;color:#4a5068;margin-top:10px;'>The creator who wins in a crowded niche is almost never the most polished — it's the most <em>honest, specific, and consistent</em>.</p>",
-      ["Generate content using these gaps", "Content strategy", "Full content package"]
-    );
-  },
-
-
-  /* ===================================================================
-     UTILITIES
-  =================================================================== */
-
-  extractTopic: function(question, context) {
-    if (context && context.topic && context.topic.length > 2) return context.topic;
-
-    // Strip common question words to extract the topic
-    var cleaned = question
-      .replace(/generate|create|make|write|give me|show me|what|how|why|when|where|tell me|explain|analyse|analyze|score|trend|viral|hook|caption|hashtag|outline|strategy|advice|platform|audience|for|about|on|a|an|the|me|my|some|content|package/gi, " ")
-      .replace(/\s+/g, " ").trim();
-
-    return cleaned.length > 2 ? cleaned : question.substring(0, 40);
-  },
-
-  titleCase: function(str) {
-    return str.replace(/\w\S*/g, function(txt){ return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
-  },
-
-  is: function(q, keywords) {
-    return keywords.some(function(k){ return q.indexOf(k) !== -1; });
-  },
-
-  card: function(title, body, suggestions) {
-    var chips = suggestions ? "<div class='ai-suggestions' style='display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;'>" +
-      suggestions.map(function(s){
-        return "<button class='ai-suggestion-chip' onclick=\"creatorAIAsk('" + s.replace(/'/g,"\\'") + "')\" style='padding:5px 12px;background:#0d1118;border:1px solid #1a2035;border-radius:20px;font-size:12px;color:#8a91a8;cursor:pointer;transition:all 0.2s;' onmouseover=\"this.style.borderColor='#f0b429';this.style.color='#f0b429'\" onmouseout=\"this.style.borderColor='#1a2035';this.style.color='#8a91a8'\">" + s + "</button>";
-      }).join("") +
-    "</div>" : "";
-
-    return "<p><strong>" + title + "</strong></p>" + body + chips;
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dijo AI Assistant — ImpactGrid Creator Intelligence</title>
+<meta name="description" content="Dijo AI Assistant — your personal business and creator adviser. Generate professional pitch decks, content plans, brand proposals, and media kits."/>
+<link rel="icon" href="favicon.ico"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07090f;--bg2:#0d1017;--bg3:#111520;
+  --card:#151a28;--card2:#1c2235;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
+  --gold:#f0b429;--gold2:#ffd166;
+  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
+  --blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);
+  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
+  --purple:#a855f7;
+  --nav-h:64px;--tick-h:34px;--max-w:1240px;--r:12px;--r2:20px;
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+}
+[data-theme="light"]{
+  --bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;
+  --card:#ffffff;--card2:#f5f7fc;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
+  --gold:#c97e08;--gold2:#a86505;
+  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);
+  --blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);
+  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background 0.35s,color 0.35s;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
+h1,h2,h3,h4{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.45;}
+
+/* TICKER */
+.ticker{position:fixed;top:var(--nav-h);left:0;right:0;height:var(--tick-h);z-index:990;background:linear-gradient(90deg,rgba(240,180,41,0.10),rgba(240,180,41,0.05),rgba(240,180,41,0.10));border-bottom:1px solid var(--gold-glo);display:flex;align-items:center;overflow:hidden;}
+.ticker-badge{flex-shrink:0;padding:0 14px;font-family:var(--fm);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);border-right:1px solid var(--gold-glo);height:100%;display:flex;align-items:center;gap:6px;background:var(--gold-dim);white-space:nowrap;}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite;}
+.ticker-scroll{display:flex;align-items:center;animation:tickScroll 42s linear infinite;white-space:nowrap;padding-left:40px;}
+.ticker-scroll:hover{animation-play-state:paused;}
+.t-item{display:inline-flex;align-items:center;gap:8px;padding:0 36px;font-size:12px;font-weight:500;color:var(--text2);border-right:1px solid var(--border);}
+.t-tag{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:4px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;}
+.tag-new{background:rgba(240,180,41,0.14);color:var(--gold);border:1px solid var(--gold-glo);}
+.tag-live{background:rgba(45,212,160,0.12);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
+.tag-soon{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,0.2);}
+@keyframes tickScroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;transition:background 0.35s;}
+[data-theme="light"] .nav{background:rgba(240,243,250,0.90);}
+.nav-inner{max-width:var(--max-w);margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;gap:24px;}
+.nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:17px;letter-spacing:-0.03em;flex-shrink:0;}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;}
+.logo-img{width:32px;height:32px;object-fit:contain;border-radius:6px;}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;flex:1;}
+.nav-links a{padding:6px 11px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);transition:all 0.2s;white-space:nowrap;}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(255,255,255,0.06);}
+[data-theme="light"] .nav-links a:hover,[data-theme="light"] .nav-links a.active{background:rgba(0,0,0,0.05);}
+.nav-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex-shrink:0;}
+.theme-btn{width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;}
+.theme-btn:hover{border-color:var(--gold);}
+.btn-ghost-nav{padding:7px 14px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all 0.2s;}
+.btn-ghost-nav:hover{color:var(--text);}
+.btn-gold-nav{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
+.btn-gold-nav:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo);}
+.hamburger{display:none;flex-direction:column;gap:5px;padding:8px;margin-left:6px;border-radius:9px;border:1px solid var(--border2);background:var(--card);}
+.hamburger span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s;}
+.hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.active span:nth-child(2){opacity:0;}
+.hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+.mob-nav{display:none;position:fixed;top:var(--nav-h);left:0;right:0;bottom:0;background:var(--bg2);z-index:999;padding:20px;flex-direction:column;gap:5px;overflow-y:auto;}
+.mob-nav.open{display:flex;}
+.mob-nav a{padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);transition:all 0.2s;border:1px solid transparent;}
+.mob-nav a:hover{background:var(--card);color:var(--text);border-color:var(--border);}
+.mob-nav a.active{color:var(--text);background:var(--card);border-color:var(--border);}
+.mob-cta{margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f!important;font-weight:700;text-align:center;border-radius:var(--r);}
+.mob-nav-divider{height:1px;background:var(--border);margin:8px 0;}
+.user-btn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:9px;background:var(--card);border:1px solid var(--border2);cursor:pointer;transition:all 0.2s;position:relative;}
+.user-btn:hover{border-color:var(--gold);}
+.user-avatar{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;flex-shrink:0;font-family:var(--fd);}
+.user-name{font-size:13px;font-weight:600;color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-chevron{font-size:10px;color:var(--text3);}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:6px;min-width:180px;box-shadow:0 12px 40px rgba(0,0,0,0.4);z-index:1100;display:none;flex-direction:column;gap:2px;}
+.user-dropdown.open{display:flex;}
+.user-dropdown a,.user-dropdown button{padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-align:left;width:100%;display:block;transition:all 0.2s;background:none;border:none;cursor:pointer;font-family:var(--fb);}
+.user-dropdown a:hover,.user-dropdown button:hover{background:var(--bg2);color:var(--text);}
+.user-dropdown .dd-divider{height:1px;background:var(--border);margin:4px 0;}
+.user-dropdown .dd-email{padding:8px 12px;font-size:11px;color:var(--text3);font-family:var(--fm);}
+.mob-user-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.mob-user-info{flex:1;min-width:0;}
+.mob-user-name{font-size:14px;font-weight:700;color:var(--text);}
+.mob-user-email{font-size:11px;color:var(--text3);font-family:var(--fm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* PAGE LAYOUT */
+.page-wrap{padding-top:calc(var(--nav-h) + var(--tick-h));}
+
+/* BRIEF BAR */
+.brief-bar-section{background:var(--bg2);border-bottom:1px solid var(--border);padding:24px 28px;position:sticky;top:calc(var(--nav-h) + var(--tick-h));z-index:80;}
+.brief-bar-inner{max-width:var(--max-w);margin:0 auto;}
+.brief-bar-label{display:flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.brief-bar-label::before{content:'';width:20px;height:1px;background:var(--gold);}
+.brief-bar-row{display:flex;gap:10px;align-items:stretch;}
+.brief-bar-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:13px 18px;font-size:14px;color:var(--text);font-family:var(--fb);outline:none;transition:border-color 0.2s;}
+.brief-bar-input:focus{border-color:var(--gold);}
+.brief-bar-input::placeholder{color:var(--text3);}
+.btn-create{display:flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:14px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;flex-shrink:0;border:none;cursor:pointer;}
+.btn-create:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo);}
+.btn-create:disabled{opacity:0.6;transform:none;box-shadow:none;cursor:not-allowed;}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(7,9,15,0.3);border-top-color:#07090f;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* MAIN LAYOUT */
+.main-layout{max-width:var(--max-w);margin:0 auto;padding:32px 28px;display:grid;grid-template-columns:1fr 400px;gap:28px;align-items:start;}
+
+/* CHAT PANEL */
+.chat-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - var(--nav-h) - var(--tick-h) - 130px);min-height:500px;position:sticky;top:calc(var(--nav-h) + var(--tick-h) + 110px);}
+.chat-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--bg2);flex-shrink:0;}
+.dijo-avatar-lg{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:14px;color:#07090f;flex-shrink:0;}
+.chat-header-info{}
+.chat-header-name{font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.01em;}
+.chat-header-status{display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;}
+.status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;}
+.chat-messages::-webkit-scrollbar{width:4px;}
+.chat-messages::-webkit-scrollbar-track{background:transparent;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.msg{display:flex;gap:9px;align-items:flex-start;}
+.msg.user{flex-direction:row-reverse;}
+.msg-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;}
+.msg-av-dijo{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;font-family:var(--fd);}
+.msg-av-user{background:var(--bg2);border:1px solid var(--border2);color:var(--text2);}
+.msg-bubble{padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.65;max-width:85%;}
+.msg-bubble-dijo{background:var(--bg2);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text);}
+.msg-bubble-user{background:var(--gold-dim);border:1px solid var(--gold-glo);border-bottom-right-radius:4px;color:var(--text);}
+.msg-bubble strong{color:var(--text);}
+.msg-bubble a{color:var(--gold);}
+.chat-suggestion-chips{display:flex;flex-wrap:wrap;gap:7px;padding:0 20px 14px;}
+.chip{padding:6px 13px;border-radius:20px;font-size:12px;font-weight:500;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.chip:hover{border-color:var(--gold);color:var(--gold);}
+.chat-input-row{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;background:var(--bg2);}
+.chat-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--text);font-family:var(--fb);outline:none;transition:border-color 0.2s;}
+.chat-input:focus{border-color:var(--gold);}
+.chat-send-btn{width:36px;height:36px;border-radius:var(--r);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;display:flex;align-items:center;justify-content:center;font-size:16px;border:none;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+.chat-send-btn:hover{transform:scale(1.05);}
+
+/* CONTENT PANEL */
+.content-panel{}
+
+/* TEMPLATE SELECTOR */
+.template-section{margin-bottom:28px;}
+.template-section-label{font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+.templates-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.template-card{background:var(--card);border:2px solid var(--border);border-radius:var(--r2);padding:20px;cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden;}
+.template-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
+.template-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.15);}
+.template-card.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold-glo);}
+.template-card.selected::before{transform:scaleX(1);}
+.tc-1::before,.tc-1.selected{--acc:var(--gold);}
+.tc-1::before{background:var(--gold);}
+.tc-2::before{background:var(--blue2);}
+.tc-2.selected{border-color:var(--blue2);box-shadow:0 0 0 1px rgba(79,142,247,0.2);}
+.tc-3::before{background:var(--green);}
+.tc-3.selected{border-color:var(--green);box-shadow:0 0 0 1px rgba(45,212,160,0.2);}
+.tc-4::before{background:var(--purple);}
+.tc-4.selected{border-color:var(--purple);box-shadow:0 0 0 1px rgba(168,85,247,0.2);}
+.tc-ico{font-size:28px;margin-bottom:10px;}
+.tc-name{font-family:var(--fd);font-size:14px;font-weight:800;letter-spacing:-0.01em;margin-bottom:5px;}
+.tc-desc{font-size:12px;color:var(--text2);line-height:1.55;}
+.tc-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:4px;margin-top:8px;letter-spacing:0.08em;text-transform:uppercase;}
+.tc-badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+.tc-badge-blue{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,0.2);}
+.tc-badge-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
+.tc-badge-purple{background:rgba(168,85,247,0.10);color:var(--purple);border:1px solid rgba(168,85,247,0.2);}
+.tc-check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--gold);display:none;align-items:center;justify-content:center;font-size:10px;color:#07090f;font-weight:900;}
+.template-card.selected .tc-check{display:flex;}
+
+/* OUTPUT AREA */
+.output-area{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;}
+.output-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);}
+.output-title{font-family:var(--fd);font-size:14px;font-weight:800;letter-spacing:-0.01em;}
+.output-actions{display:flex;gap:8px;}
+.btn-download{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;border:none;cursor:pointer;}
+.btn-download:hover{transform:translateY(-1px);box-shadow:0 4px 14px var(--gold-glo);}
+.btn-download:disabled{opacity:0.4;transform:none;box-shadow:none;cursor:not-allowed;}
+.btn-copy-all{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);transition:all 0.2s;cursor:pointer;}
+.btn-copy-all:hover{border-color:var(--gold);color:var(--gold);}
+.output-empty{padding:48px 24px;text-align:center;}
+.output-empty-ico{font-size:48px;margin-bottom:14px;opacity:0.4;}
+.output-empty-title{font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:8px;color:var(--text2);}
+.output-empty-sub{font-size:14px;color:var(--text3);max-width:280px;margin:0 auto;line-height:1.65;}
+.output-body{padding:24px;}
+
+/* TEMPLATE CONTENT BLOCKS */
+.t-section{margin-bottom:24px;}
+.t-section:last-child{margin-bottom:0;}
+.t-section-label{font-family:var(--fm);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.t-section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.t-block{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:13.5px;color:var(--text2);line-height:1.75;}
+.t-block strong{color:var(--text);}
+.t-block p{margin-bottom:8px;}
+.t-block p:last-child{margin-bottom:0;}
+.t-highlight{background:var(--gold-dim);border:1px solid var(--gold-glo);border-radius:var(--r);padding:12px 16px;font-size:13px;color:var(--text);font-weight:600;margin-bottom:10px;}
+.t-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.t-stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;text-align:center;}
+.t-stat-num{font-family:var(--fd);font-size:22px;font-weight:900;color:var(--gold);letter-spacing:-0.03em;line-height:1;margin-bottom:3px;}
+.t-stat-label{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+.t-tag-row{display:flex;flex-wrap:wrap;gap:6px;}
+.t-tag{font-family:var(--fm);font-size:11px;padding:3px 10px;border-radius:5px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+.t-tag-blue{background:var(--blue-dim);color:var(--blue2);border-color:rgba(79,142,247,0.2);}
+.t-tag-green{background:var(--green-dim);color:var(--green);border-color:rgba(45,212,160,0.25);}
+.t-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;}
+.t-step:last-child{margin-bottom:0;}
+.t-step-num{width:26px;height:26px;border-radius:50%;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);font-family:var(--fm);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.t-step-content{font-size:13.5px;color:var(--text2);line-height:1.65;}
+.t-step-content strong{color:var(--text);}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:0 28px;}
+
+/* FOOTER */
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:60px 28px 36px;}
+.footer-inner{max-width:var(--max-w);margin:0 auto;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
+.footer-brand p{color:var(--text2);font-size:14px;line-height:1.7;margin-top:14px;max-width:260px;}
+.fc h4{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+.fc a{display:block;font-size:14px;color:var(--text2);margin-bottom:9px;transition:color 0.2s;}
+.fc a:hover{color:var(--gold);}
+.footer-bot{display:flex;justify-content:space-between;align-items:center;padding-top:28px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text3);flex-wrap:wrap;gap:12px;}
+.footer-legal-links{display:flex;gap:18px;}
+.footer-legal-links a{font-size:12.5px;color:var(--text3);transition:color 0.2s;}
+.footer-legal-links a:hover{color:var(--gold);}
+
+/* ANIMATIONS */
+.anim{opacity:0;transform:translateY(22px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.anim.visible{opacity:1;transform:none;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9000;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:12px 18px;font-size:13px;font-weight:500;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,0.3);transform:translateY(80px);opacity:0;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:8px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* RESPONSIVE */
+@media(max-width:1000px){
+  .main-layout{grid-template-columns:1fr;}.chat-panel{position:static;height:480px;}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:28px;}
+}
+@media(max-width:860px){
+  .nav-links,.btn-ghost-nav{display:none;}.hamburger{display:flex;}
+  .user-name,.user-chevron{display:none;}.user-btn{padding:5px;}
+  .brief-bar-row{flex-direction:column;}
+  .templates-grid{grid-template-columns:1fr;}
+}
+@media(max-width:640px){
+  .t-row{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr;}
+  .footer-bot{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="ticker-scroll">
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI Assistant — Your personal financial co-pilot is always on</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>Creator Intelligence Engine — AI content adviser powered by real trend data</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>YouTube integration — Connect your channel now</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>TikTok &amp; Instagram — Pending API review</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI Assistant — Your personal financial co-pilot is always on</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
+      <span class="t-item"><span class="t-tag tag-new">New</span>Creator Intelligence Engine — AI content adviser powered by real trend data</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>YouTube integration — Connect your channel now</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>TikTok &amp; Instagram — Pending API review</span>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="logo.png" class="logo-img" alt="ImpactGrid Creator Intelligence" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div class="logo-mark" style="display:none;">IG</div>
+      ImpactGrid Creator Intelligence
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="consulting.html">Consulting</a></li>
+      <li><a href="analytics.html">Analytics</a></li>
+      <li><a href="creator-studio.html">Creator Studio</a></li>
+      <li><a href="network.html">Network</a></li>
+      <li><a href="ai.html" class="active">Dijo AI</a></li>
+      <li><a href="dashboard.html">Available Jobs</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+      <div id="navLoggedOut" style="display:flex;align-items:center;gap:9px;">
+        <a href="login.html" class="btn-ghost-nav">Login</a>
+        <a href="join.html" class="btn-gold-nav">Join ImpactGrid</a>
+      </div>
+      <div id="navLoggedIn" style="display:none;position:relative;">
+        <button class="user-btn" id="userBtn" onclick="toggleUserMenu()">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <span class="user-name" id="userName">Account</span>
+          <span class="user-chevron">▾</span>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dd-email" id="userEmail"></div>
+          <div class="dd-divider"></div>
+          <a href="dashboard.html">My Dashboard</a>
+          <a href="join.html">My Profile</a>
+          <div class="dd-divider"></div>
+          <button onclick="igSignOut()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mob-nav" id="mobNav">
+  <div style="font-weight:800;font-size:10px;margin-bottom:10px;color:var(--text3);font-family:var(--fm);letter-spacing:0.08em;text-transform:uppercase;">ImpactGrid Creator Intelligence</div>
+  <div class="mob-user-section" id="mobUserSection" style="display:none;">
+    <div class="user-avatar" id="mobUserAvatar">?</div>
+    <div class="mob-user-info">
+      <div class="mob-user-name" id="mobUserName">My Account</div>
+      <div class="mob-user-email" id="mobUserEmail"></div>
+    </div>
+  </div>
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="consulting.html">Consulting</a>
+  <a href="analytics.html">Analytics</a>
+  <a href="creator-studio.html">Creator Studio</a>
+  <a href="network.html">Network</a>
+  <a href="ai.html" class="active">Dijo AI</a>
+  <a href="dashboard.html">Available Jobs</a>
+  <div class="mob-nav-divider"></div>
+  <div id="mobAuthLinks">
+    <a href="login.html" style="margin-bottom:5px;display:block;padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);">Login</a>
+    <a href="join.html" class="mob-cta" style="display:block;padding:13px 16px;text-align:center;">Join ImpactGrid</a>
+  </div>
+  <div id="mobLoggedInLinks" style="display:none;">
+    <a href="dashboard.html" style="color:var(--gold);font-weight:700;display:block;padding:13px 16px;border-radius:var(--r);font-size:16px;">My Dashboard</a>
+    <button onclick="igSignOut()" style="width:100%;text-align:left;padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);background:none;border:none;cursor:pointer;font-family:var(--fb);">Sign Out</button>
+  </div>
+</div>
+
+<!-- PAGE -->
+<div class="page-wrap">
+
+  <!-- BRIEF BAR -->
+  <div class="brief-bar-section">
+    <div class="brief-bar-inner">
+      <div class="brief-bar-label">Brief Dijo — Tell me what you want to create</div>
+      <div class="brief-bar-row">
+        <input class="brief-bar-input" id="briefInput" type="text"
+          placeholder="e.g. I'm a fitness creator launching a 30-day challenge and need a brand pitch for gym partnerships…"
+          onkeydown="if(event.key==='Enter')handleCreate()"/>
+        <button class="btn-create" id="createBtn" onclick="handleCreate()">
+          <span id="createBtnText">✦ Create with Dijo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="main-layout">
+
+    <!-- LEFT: TEMPLATE SELECTOR + OUTPUT -->
+    <div class="content-panel anim">
+
+      <!-- TEMPLATE SELECTOR -->
+      <div class="template-section">
+        <div class="template-section-label">Choose a Dijo Professional Template</div>
+        <div class="templates-grid">
+          <div class="template-card tc-1" id="tc-pitch" onclick="selectTemplate('pitch')">
+            <div class="tc-check">✓</div>
+            <div class="tc-ico">🎯</div>
+            <div class="tc-name">Pitch Deck Brief</div>
+            <div class="tc-desc">A structured brand or investor pitch — problem, solution, audience, ask, and terms.</div>
+            <div class="tc-badge tc-badge-gold">⬇ Downloadable</div>
+          </div>
+          <div class="template-card tc-2" id="tc-content" onclick="selectTemplate('content')">
+            <div class="tc-check">✓</div>
+            <div class="tc-ico">📅</div>
+            <div class="tc-name">Content Strategy Plan</div>
+            <div class="tc-desc">4-week content roadmap with platform, format, posting schedule, and hooks per week.</div>
+            <div class="tc-badge tc-badge-blue">⬇ Downloadable</div>
+          </div>
+          <div class="template-card tc-3" id="tc-brand" onclick="selectTemplate('brand')">
+            <div class="tc-check">✓</div>
+            <div class="tc-ico">🤝</div>
+            <div class="tc-name">Brand Partnership Proposal</div>
+            <div class="tc-desc">Professional outreach document for brand deals — deliverables, audience, rates, and timeline.</div>
+            <div class="tc-badge tc-badge-green">⬇ Downloadable</div>
+          </div>
+          <div class="template-card tc-4" id="tc-mediakit" onclick="selectTemplate('mediakit')">
+            <div class="tc-check">✓</div>
+            <div class="tc-ico">📊</div>
+            <div class="tc-name">Creator Media Kit</div>
+            <div class="tc-desc">One-page creator profile with audience stats, niche positioning, rates, and contact.</div>
+            <div class="tc-badge tc-badge-purple">⬇ Downloadable</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTPUT AREA -->
+      <div class="output-area">
+        <div class="output-header">
+          <span class="output-title" id="outputTitle">Dijo Output</span>
+          <div class="output-actions">
+            <button class="btn-copy-all" id="copyAllBtn" onclick="copyOutput()" disabled>📋 Copy</button>
+            <button class="btn-download" id="downloadBtn" onclick="downloadTemplate()" disabled>⬇ Download</button>
+          </div>
+        </div>
+        <div id="outputBody">
+          <div class="output-empty">
+            <div class="output-empty-ico">🤖</div>
+            <div class="output-empty-title">Ready to Create</div>
+            <div class="output-empty-sub">Choose a template above, brief Dijo at the top, and hit Create. Your professional document will appear here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CHAT PANEL -->
+    <div class="chat-panel anim">
+      <div class="chat-header">
+        <div class="dijo-avatar-lg">DJ</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name">Dijo AI Assistant</div>
+          <div class="chat-header-status"><span class="status-dot"></span>Always On</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg">
+          <div class="msg-av msg-av-dijo">DJ</div>
+          <div class="msg-bubble msg-bubble-dijo">Hello. I'm Dijo — your ImpactGrid AI assistant. I'll help you create professional pitch decks, content plans, brand proposals, and media kits.<br><br>Tell me about your business or creative work at the top, choose a template, and hit <strong>Create</strong>. Or just ask me anything below.</div>
+        </div>
+      </div>
+      <div class="chat-suggestion-chips" id="suggestionChips">
+        <button class="chip" onclick="chipAsk('What template should I use for a brand deal?')">Brand deal template?</button>
+        <button class="chip" onclick="chipAsk('How do I write a strong pitch?')">Writing a pitch?</button>
+        <button class="chip" onclick="chipAsk('I have 10k followers, what should I create first?')">Where to start?</button>
+        <button class="chip" onclick="chipAsk('What makes a good media kit?')">Media kit tips?</button>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chatInput" type="text" placeholder="Ask Dijo anything…" onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="chat-send-btn" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+
+  </div><!-- end main-layout -->
+
+  <div class="divider" style="margin-top:0;"></div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo">
+            <img src="logo.png" class="logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+            <div class="logo-mark" style="display:none;">IG</div>
+            <span>ImpactGrid Creator Intelligence</span>
+          </div>
+          <p>ImpactGrid Creator Intelligence — Turning data into strategic advantage with analytics, AI, and creator tools.</p>
+        </div>
+        <div class="fc"><h4>Platform</h4><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="network.html">Network</a><a href="ai.html">Dijo AI</a></div>
+        <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="dashboard.html">Available Jobs</a><a href="mailto:support@impactgridgroup.com">Contact</a></div>
+        <div class="fc"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>
+      </div>
+      <div class="footer-bot">
+        <span>&copy; 2026 ImpactGrid Group Ltd. All rights reserved.</span>
+        <div class="footer-legal-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>
+        <button onclick="toggleTheme()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;" id="footerThemeBtn">☀️ Light Mode</button>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- end page-wrap -->
+
+<div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastMsg">Done!</span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="creator-ai.js"></script>
+<script src="impactgrid-chat-bubble.js"></script>
+<script>
+/* ── Theme ── */
+var dark=false;
+function toggleTheme(){
+  dark=!dark;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('themeBtn').textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';
+  var ftb=document.getElementById('footerThemeBtn');if(ftb)ftb.textContent=dark?'\uD83C\uDF19 Dark Mode':'\u2600\uFE0F Light Mode';
+  try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}
+}
+try{
+  var saved=localStorage.getItem('igt');
+  if(saved==='d'){dark=true;document.documentElement.setAttribute('data-theme','dark');document.getElementById('themeBtn').textContent='\uD83C\uDF19';var fb=document.getElementById('footerThemeBtn');if(fb)fb.textContent='\uD83C\uDF19 Dark Mode';}
+  else{dark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('themeBtn').textContent='\u2600\uFE0F';var fb2=document.getElementById('footerThemeBtn');if(fb2)fb2.textContent='\u2600\uFE0F Light Mode';}
+}catch(e){}
+
+/* ── Hamburger ── */
+var hamburger=document.getElementById('hamburger'),mobNav=document.getElementById('mobNav');
+hamburger.addEventListener('click',function(){var open=mobNav.classList.toggle('open');hamburger.classList.toggle('active',open);hamburger.setAttribute('aria-label',open?'Close menu':'Open menu');});
+mobNav.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){mobNav.classList.remove('open');hamburger.classList.remove('active');});});
+
+/* ── User dropdown ── */
+function toggleUserMenu(){document.getElementById('userDropdown').classList.toggle('open');}
+document.addEventListener('click',function(e){var btn=document.getElementById('userBtn');var dd=document.getElementById('userDropdown');if(btn&&dd&&!btn.contains(e.target)&&!dd.contains(e.target))dd.classList.remove('open');});
+
+/* ── Auth ── */
+function setNavUser(user){
+  if(!user)return;
+  var email=user.email||'';
+  var name=user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name)||email.split('@')[0]||'Account';
+  var initial=(name.charAt(0)||'?').toUpperCase();
+  document.getElementById('navLoggedOut').style.display='none';document.getElementById('navLoggedIn').style.display='block';
+  document.getElementById('userAvatar').textContent=initial;document.getElementById('userName').textContent=name.split(' ')[0];document.getElementById('userEmail').textContent=email;
+  document.getElementById('mobUserSection').style.display='flex';document.getElementById('mobUserAvatar').textContent=initial;document.getElementById('mobUserName').textContent=name;document.getElementById('mobUserEmail').textContent=email;
+  document.getElementById('mobAuthLinks').style.display='none';document.getElementById('mobLoggedInLinks').style.display='block';
+}
+window.igSignOut=async function(){try{if(window.getSupabase)await getSupabase().auth.signOut();else if(window.supabaseClient)await window.supabaseClient.auth.signOut();}catch(e){}window.location.href='index.html';};
+function checkAuth(){
+  var client=null;try{if(window.getSupabase)client=getSupabase();}catch(e){}try{if(!client&&window.supabaseClient)client=window.supabaseClient;}catch(e){}
+  if(!client){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('supabase')!==-1){var v=JSON.parse(localStorage.getItem(k));if(v&&v.user){setNavUser(v.user);return;}}}}catch(e){}return;}
+  client.auth.getUser().then(function(res){if(res&&res.data&&res.data.user)setNavUser(res.data.user);}).catch(function(){});
+  client.auth.onAuthStateChange(function(event,session){if(session&&session.user)setNavUser(session.user);else if(event==='SIGNED_OUT'){document.getElementById('navLoggedOut').style.display='flex';document.getElementById('navLoggedIn').style.display='none';document.getElementById('mobUserSection').style.display='none';document.getElementById('mobAuthLinks').style.display='block';document.getElementById('mobLoggedInLinks').style.display='none';}});
+}
+window.addEventListener('load',function(){setTimeout(checkAuth,300);});
+
+/* ── Scroll animations ── */
+var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.05});
+document.querySelectorAll('.anim').forEach(function(el){obs.observe(el);});
+
+/* ── Toast ── */
+function showToast(icon,msg){var t=document.getElementById('toast');document.getElementById('toastIcon').textContent=icon;document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+
+/* ================================================================
+   DIJO CORE
+================================================================ */
+var selectedTemplate = null;
+var currentBrief = '';
+var generatedContent = '';
+var generatedTitle = '';
+
+/* Template selector */
+function selectTemplate(type){
+  selectedTemplate=type;
+  document.querySelectorAll('.template-card').forEach(function(c){c.classList.remove('selected');});
+  document.getElementById('tc-'+type).classList.add('selected');
+  var names={pitch:'Pitch Deck Brief',content:'Content Strategy Plan',brand:'Brand Partnership Proposal',mediakit:'Creator Media Kit'};
+  addDijoMessage('Good choice. The <strong>'+names[type]+'</strong> template is selected. Now brief me above — tell me about your project, brand, or audience, then hit Create.');
+  hideSuggestions();
+}
+
+/* Brief + Create */
+function handleCreate(){
+  var brief=document.getElementById('briefInput').value.trim();
+  if(!brief){showToast('⚠️','Tell Dijo what you want to create first.');return;}
+  if(!selectedTemplate){
+    addDijoMessage("I need to know what format to use. Pick one of the four templates on the left — Pitch Deck, Content Plan, Brand Proposal, or Media Kit — then I'll generate it for you.");
+    suggestTemplates();
+    return;
   }
+  currentBrief=brief;
+  var btn=document.getElementById('createBtn');var btnText=document.getElementById('createBtnText');
+  btn.disabled=true;btnText.innerHTML='<span class="spinner" style="border-color:rgba(7,9,15,0.3);border-top-color:#07090f;"></span> Generating…';
+  addUserMessage(brief);
+  setTimeout(function(){
+    generateTemplate(selectedTemplate,brief);
+    btn.disabled=false;btnText.innerHTML='✦ Create with Dijo';
+  },900);
+}
 
-};
+/* ── TEMPLATE GENERATORS ── */
+function generateTemplate(type,brief){
+  var parsed=parseBrief(brief);
+  var html='';var title='';
+  if(type==='pitch'){title='Pitch Deck Brief';html=buildPitch(parsed,brief);}
+  else if(type==='content'){title='Content Strategy Plan';html=buildContentPlan(parsed,brief);}
+  else if(type==='brand'){title='Brand Partnership Proposal';html=buildBrandProposal(parsed,brief);}
+  else if(type==='mediakit'){title='Creator Media Kit';html=buildMediaKit(parsed,brief);}
+  generatedContent=html;generatedTitle=title;
+  document.getElementById('outputTitle').textContent='✦ '+title;
+  document.getElementById('outputBody').innerHTML='<div class="output-body">'+html+'</div>';
+  document.getElementById('downloadBtn').disabled=false;
+  document.getElementById('copyAllBtn').disabled=false;
+  var names={pitch:'Pitch Deck Brief',content:'Content Strategy Plan',brand:'Brand Partnership Proposal',mediakit:'Creator Media Kit'};
+  addDijoMessage('Done. Your <strong>'+names[type]+'</strong> is ready. Hit <strong>Download</strong> to save it as a professional HTML file, or <strong>Copy</strong> to paste it anywhere. Want me to adjust any section?');
+  showToast('✅','Template generated!');
+}
+
+/* ── BRIEF PARSER ── */
+function parseBrief(brief){
+  var b=brief.toLowerCase();
+  var niche='creator';
+  if(b.match(/fitness|gym|workout|health|wellness/))niche='health';
+  else if(b.match(/finance|money|invest|income|hustle/))niche='finance';
+  else if(b.match(/business|startup|founder|brand|agency/))niche='business';
+  else if(b.match(/ai|tech|software|saas|automation/))niche='ai_tech';
+  else if(b.match(/product|ivity|habit|routine|focus/))niche='productivity';
+
+  var platform='TikTok';
+  if(b.match(/youtube/))platform='YouTube';
+  else if(b.match(/instagram/))platform='Instagram';
+  else if(b.match(/linkedin/))platform='LinkedIn';
+
+  var followers='10K';
+  var fMatch=b.match(/(\d+[km]?\s*(followers|subscribers|audience|community))/i);
+  if(fMatch)followers=fMatch[1];
+
+  var name='';
+  var nMatch=brief.match(/I[''`]?m\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+  if(nMatch)name=nMatch[1];
+
+  return{niche:niche,platform:platform,followers:followers,name:name,raw:brief};
+}
+
+/* ────────────────────────────────────────────────────────
+   TEMPLATE 1 — PITCH DECK BRIEF
+──────────────────────────────────────────────────────── */
+function buildPitch(p,brief){
+  var niches={health:'Health & Wellness',finance:'Personal Finance',business:'Business & Entrepreneurship',ai_tech:'AI & Technology',productivity:'Productivity',creator:'Creator Economy'};
+  var niceName=niches[p.niche]||'Creator';
+  return sec('Executive Summary',
+    block('<strong>Concept:</strong> '+cap(brief.split('.')[0])+'.<p><strong>Category:</strong> '+niceName+'</p><p><strong>Primary Platform:</strong> '+p.platform+'</p><p><strong>Audience Size:</strong> '+p.followers+' engaged community</p>')
+  )+
+  sec('The Problem',
+    highlight('Most content in this space is surface-level, generic, or dishonest. The audience is smarter than that — and they know it.')+
+    block('The creator who wins here is the one who goes deeper, stays consistent, and builds trust first. That is exactly what this project is built to do.')
+  )+
+  sec('The Solution',
+    block('<p><strong>What we do differently:</strong> We combine real data, honest storytelling, and a defined audience segment to produce content that compounds — not just content that trends.</p><p><strong>Format:</strong> '+getFormat(p.niche)+' on '+p.platform+'</p><p><strong>Frequency:</strong> 3× per week in ramp-up phase, scaling to daily.</p>')
+  )+
+  sec('Audience',
+    rowStats([{num:p.followers,label:'Community Size'},{num:getEngRate(p.niche),label:'Avg Engagement Rate'},{num:getPrimary(p.niche),label:'Core Demographic'}])+
+    block('<strong>Psychographic:</strong> '+getAudienceMotivation(p.niche)+'. This is an audience that acts on recommendations and converts at above-industry average rates.')
+  )+
+  sec('Content Pillars',
+    steps([
+      {title:'Education',desc:'Practical, actionable content that demonstrates expertise and builds authority.'},
+      {title:'Story',desc:'Authentic narrative — real results, real challenges, real numbers. This is the highest-trust format.'},
+      {title:'Engagement',desc:'Opinion-led and question-driven content designed to generate comments and shares.'},
+      {title:'Conversion',desc:'Calls to action tied to products, partnerships, or platform growth.'}
+    ])
+  )+
+  sec('The Ask',
+    highlight('Partnership Opportunity: '+getAsk(p.niche))+
+    block('<p><strong>What we offer in return:</strong> Authentic integration, aligned audience, guaranteed deliverables, and full performance reporting.</p><p><strong>Timeline:</strong> Campaign launch within 14 days of agreement. Full reporting at 30 and 60 days.</p>')
+  )+
+  sec('Next Steps',
+    steps([
+      {title:'Review this brief',desc:'Share with your team and confirm alignment on audience and goals.'},
+      {title:'Discovery call',desc:'30-minute call to align on deliverables, tone, and timeline.'},
+      {title:'Agreement',desc:'Simple one-page partnership agreement — no unnecessary complexity.'},
+      {title:'Launch',desc:'Content goes live within 14 days of signing.'}
+    ])
+  );
+}
+
+/* ────────────────────────────────────────────────────────
+   TEMPLATE 2 — CONTENT STRATEGY PLAN
+──────────────────────────────────────────────────────── */
+function buildContentPlan(p,brief){
+  var nd=getND(p.niche);
+  return sec('Strategy Overview',
+    block('<p><strong>Niche:</strong> '+brief.split('.')[0]+'</p><p><strong>Primary Platform:</strong> '+p.platform+'</p><p><strong>Posting Frequency:</strong> 3–5× per week</p><p><strong>Peak Window:</strong> '+nd.peakDay+' at '+nd.peakTime+'</p>')
+  )+
+  sec('Week 1 — Establish Authority',
+    highlight('Goal: Post your strongest educational piece. This is your authority anchor.')+
+    block('<p><strong>Content type:</strong> Educational / How-To</p><p><strong>Hook:</strong> '+nd.hooks[0]+'</p><p><strong>Format:</strong> '+nd.bestFormat+'</p><p><strong>Posting day/time:</strong> '+nd.peakDay+' · '+nd.peakTime+'</p><p><strong>Caption style:</strong> '+nd.captions[0]+'</p>')
+  )+
+  sec('Week 2 — Drive Engagement',
+    highlight('Goal: Generate comments and saves. Engagement in Week 2 signals the algorithm to push Week 1 content further.')+
+    block('<p><strong>Content type:</strong> Opinion / Controversial take</p><p><strong>Hook:</strong> '+nd.hooks[1]+'</p><p><strong>Format:</strong> Talking head or text overlay</p><p><strong>CTA:</strong> Ask a direct question — force a comment response.</p><p><strong>Caption:</strong> Short, punchy, ends with a question mark.</p>')
+  )+
+  sec('Week 3 — Build Trust',
+    highlight('Goal: Convert viewers to followers with a personal story or real result.')+
+    block('<p><strong>Content type:</strong> Story-led / Transformation</p><p><strong>Hook:</strong> '+nd.hooks[2]+'</p><p><strong>Format:</strong> Personal narrative, 45–75 seconds</p><p><strong>Key element:</strong> Include a specific number or measurable result. Vague stories don\'t convert.</p>')
+  )+
+  sec('Week 4 — Scale & Repurpose',
+    highlight('Goal: Extract maximum value from your best-performing piece.')+
+    block('<p><strong>Action:</strong> Identify your top video from weeks 1–3 by watch time and saves.</p><p><strong>Repurpose for:</strong> '+p.platform+' → Recut for secondary platform → transcript to LinkedIn → key stat to Instagram Story</p><p><strong>One idea, four formats.</strong> This is how you compound effort without doubling workload.</p>')
+  )+
+  sec('Hashtag Strategy',
+    block('<div class="t-tag-row">'+nd.hashtags.slice(0,6).map(function(t){return '<span class="t-tag">'+t+'</span>';}).join('')+'</div><div class="t-tag-row" style="margin-top:8px;">'+nd.hashtags.slice(6,12).map(function(t){return '<span class="t-tag t-tag-blue">'+t+'</span>';}).join('')+'</div>')
+  )+
+  sec('KPIs to Track',
+    rowStats([{num:'3s',label:'Retention Rate'},{num:'8%+',label:'Target Engagement'},{num:'Saves',label:'Most Valuable Signal'},{num:'Week 4',label:'Review & Optimise'}])
+  );
+}
+
+/* ────────────────────────────────────────────────────────
+   TEMPLATE 3 — BRAND PARTNERSHIP PROPOSAL
+──────────────────────────────────────────────────────── */
+function buildBrandProposal(p,brief){
+  var nd=getND(p.niche);
+  var niches={health:'Health & Wellness',finance:'Personal Finance',business:'Business & Entrepreneurship',ai_tech:'AI & Technology',productivity:'Productivity',creator:'Creator Economy'};
+  return sec('About This Creator',
+    block('<p><strong>Niche:</strong> '+niches[p.niche]||'Creator'+'</p><p><strong>Primary Platform:</strong> '+p.platform+'</p><p><strong>Community size:</strong> '+p.followers+' followers/subscribers</p><p><strong>Content style:</strong> Direct, educational, trust-first. No fluff, no performance — just genuine value.</p>')
+  )+
+  sec('Why This Audience',
+    rowStats([{num:p.followers,label:'Audience Size'},{num:getEngRate(p.niche),label:'Engagement Rate'},{num:getPrimary(p.niche),label:'Core Demographic'},{num:'92%',label:'Organic Reach'}])+
+    block('<strong>Audience motivation:</strong> '+getAudienceMotivation(p.niche)+'.<p style="margin-top:8px;"><strong>Why they convert:</strong> This audience follows for expertise and trust — they act on recommendations from voices they believe in. Average product conversion rates in this segment run 2–4× the platform average.</p>')
+  )+
+  sec('Proposed Deliverables',
+    steps([
+      {title:'Dedicated Video Integration',desc:'1× branded video (60–90s) on '+p.platform+'. Full creative brief collaboration, authentic placement, delivered within 14 days.'},
+      {title:'Story/Short-form Support',desc:'3× supporting posts — Stories, Shorts, or Reels — reinforcing the campaign message across the content week.'},
+      {title:'Caption Integration',desc:'Brand mention with trackable link in all primary post captions for 30 days.'},
+      {title:'Performance Report',desc:'Full metrics report at Day 14 and Day 30 — views, engagement, click-through, and conversion data.'}
+    ])
+  )+
+  sec('Investment',
+    highlight('Rates are per campaign. Volume discounts available for 3-month+ partnerships.')+
+    block('<p><strong>Single video integration:</strong> £[insert rate]</p><p><strong>Full campaign (video + stories + 30-day caption):</strong> £[insert rate]</p><p><strong>3-month exclusive category partner:</strong> £[insert rate]</p><p style="margin-top:10px;color:var(--text3);font-size:12px;">All rates are negotiable based on campaign scope, exclusivity, and timeline. Happy to discuss on a discovery call.</p>')
+  )+
+  sec('What We Need From You',
+    steps([
+      {title:'Brand brief',desc:'2–3 pages covering your product, key message, target audience, and any mandatory inclusions.'},
+      {title:'Asset pack',desc:'Logo, product imagery, and any approved copy for caption use.'},
+      {title:'Approval process',desc:'We will share a content draft for approval before publishing. One round of feedback included.'},
+      {title:'Payment terms',desc:'50% on agreement, 50% on delivery. Net-14 invoicing.'}
+    ])
+  )+
+  sec('Next Steps',
+    block('<p>If this aligns with your campaign goals, the next step is a 20-minute discovery call to agree scope and timeline.</p><p style="margin-top:8px;"><strong>Contact:</strong> [your email] · <strong>Response time:</strong> Within 24 hours</p>')
+  );
+}
+
+/* ────────────────────────────────────────────────────────
+   TEMPLATE 4 — CREATOR MEDIA KIT
+──────────────────────────────────────────────────────── */
+function buildMediaKit(p,brief){
+  var nd=getND(p.niche);
+  var niches={health:'Health & Wellness',finance:'Personal Finance',business:'Business & Entrepreneurship',ai_tech:'AI & Technology',productivity:'Productivity',creator:'Creator Economy'};
+  var niceName=niches[p.niche]||'Creator';
+  return sec('Creator Profile',
+    highlight('"'+nd.hooks[0]+'"')+
+    block('<p><strong>Niche:</strong> '+niceName+'</p><p><strong>Primary Platform:</strong> '+p.platform+'</p><p><strong>Content Style:</strong> Direct, educational, trust-led. No fabricated results — real insights, real numbers, real audience.</p><p><strong>Posting frequency:</strong> 3–5× per week</p>')
+  )+
+  sec('Audience At a Glance',
+    rowStats([
+      {num:p.followers,label:'Followers / Subscribers'},
+      {num:getEngRate(p.niche),label:'Avg Engagement Rate'},
+      {num:getPrimary(p.niche),label:'Primary Age Group'},
+      {num:'85%',label:'Return Viewer Rate'}
+    ])+
+    block('<p><strong>Top audience segments:</strong> '+getAudienceMotivation(p.niche)+'</p><p><strong>Geography:</strong> Primarily UK, US, AU — English-speaking markets</p><p><strong>Platform breakdown:</strong> '+p.platform+' (primary) · Secondary platforms growing</p>')
+  )+
+  sec('Content Pillars',
+    block('<div class="t-tag-row">'+['Education','Storytelling','Opinions','How-To','Reviews','Behind the Scenes'].map(function(t,i){var cls=i%3===0?'':i%3===1?'t-tag-blue':'t-tag-green';return '<span class="t-tag '+cls+'">'+t+'</span>';}).join('')+'</div>')
+  )+
+  sec('Top Performing Content',
+    steps([
+      {title:'Hook format',desc:nd.hooks[0]},
+      {title:'Best performing style',desc:nd.bestFormat+' — consistent top performer across all recent content'},
+      {title:'Peak engagement window',desc:nd.peakDay+' · '+nd.peakTime+' — tested and confirmed across last 90 days'}
+    ])
+  )+
+  sec('Partnership Packages',
+    block('<p><strong>Sponsored Integration:</strong> Single video + caption mention — from £[rate]</p><p><strong>Campaign Package:</strong> 4-week campaign (video + stories + captions) — from £[rate]</p><p><strong>Long-term Partner:</strong> 3-month exclusive category — from £[rate]</p><p><strong>UGC Only:</strong> Content creation without posting rights — from £[rate]</p>')
+  )+
+  sec('Past Brand Work',
+    block('<p>Previous brand collaborations available on request. References and case studies provided upon inquiry.</p><p><strong>Categories worked in:</strong> '+getCategoryWork(p.niche)+'</p>')
+  )+
+  sec('Contact',
+    highlight('Ready to work together? Let\'s talk.')+
+    block('<p><strong>Email:</strong> [your email address]</p><p><strong>Platform DM:</strong> @[your handle] on '+p.platform+'</p><p><strong>Response time:</strong> Within 24 hours</p><p><strong>Preferred contact:</strong> Email for formal enquiries, DM for quick questions.</p>')
+  );
+}
+
+/* ── HTML HELPERS ── */
+function sec(label,content){return '<div class="t-section"><div class="t-section-label">'+label+'</div>'+content+'</div>';}
+function block(html){return '<div class="t-block">'+html+'</div>';}
+function highlight(html){return '<div class="t-highlight">'+html+'</div>';}
+function rowStats(items){
+  return '<div class="t-row">'+items.map(function(i){return '<div class="t-stat"><div class="t-stat-num">'+i.num+'</div><div class="t-stat-label">'+i.label+'</div></div>';}).join('')+'</div>';
+}
+function steps(items){
+  return '<div class="t-block">'+items.map(function(s,i){
+    return '<div class="t-step"><div class="t-step-num">'+(i+1)+'</div><div class="t-step-content"><strong>'+s.title+'</strong> — '+s.desc+'</div></div>';
+  }).join('')+'</div>';
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+/* ── NICHE HELPERS ── */
+function getND(niche){
+  if(typeof CreatorAI!=='undefined'&&CreatorAI.nicheData&&CreatorAI.nicheData[niche])return CreatorAI.nicheData[niche];
+  return{hooks:['This changed everything…','Stop doing it the hard way.','I tried this for 30 days.','One year later, here\'s what I know.','The data will surprise you.'],captions:['Direct. Honest. Worth your time.'],hashtags:['#trending','#tips','#creator','#growth','#2026'],bestPlatform:'TikTok',bestFormat:'Short-form video',peakTime:'19:30–21:00',peakDay:'Thursday'};
+}
+function getFormat(n){var f={ai_tech:'Short-form educational (60–90s)',finance:'Talking head or text overlay',business:'Educational or carousel',creator:'Tutorial or behind-the-scenes',productivity:'Educational talking head',health:'Transformation or tutorial'};return f[n]||'Short-form video';}
+function getEngRate(n){var r={ai_tech:'7.2%',finance:'6.8%',business:'5.9%',creator:'8.1%',productivity:'6.4%',health:'9.2%'};return r[n]||'6.5%';}
+function getPrimary(n){var r={ai_tech:'25–34',finance:'22–35',business:'28–42',creator:'18–28',productivity:'22–38',health:'20–40'};return r[n]||'18–35';}
+function getAudienceMotivation(n){var r={ai_tech:'Competitive advantage and time-saving',finance:'Financial independence and security',business:'Autonomy, income growth, and recognition',creator:'Audience growth and monetisation',productivity:'Performing better without burning out',health:'Sustainable results and wellbeing'};return r[n]||'Entertainment, information, and self-improvement';}
+function getAsk(n){var r={ai_tech:'Integration partnership for AI or productivity tools. Audience is high-intent and tool-curious.',finance:'Financial product or app integration. Audience is actively looking for trusted tools.',business:'B2B software, coaching, or business tool partnership. Decision-makers in the audience.',creator:'Creator economy platform or tool partnership. Direct audience of aspiring creators.',productivity:'Productivity app or system integration. Audience implements recommendations immediately.',health:'Health, supplement, or wellness partnership. High-conversion audience with strong purchase intent.'};return r[n]||'Content partnership aligned to audience interests.';}
+function getCategoryWork(n){var r={ai_tech:'SaaS, productivity tools, tech education, AI platforms',finance:'Fintech, investment platforms, financial education, banking',business:'Business coaching, CRM tools, B2B software, consulting',creator:'Creator platforms, editing tools, courses, equipment',productivity:'Apps, planners, focus tools, wellness-productivity crossover',health:'Supplements, fitness equipment, wellness apps, meal prep'};return r[n]||'Various brand categories aligned to audience interests';}
+
+/* ── DOWNLOAD ── */
+function downloadTemplate(){
+  if(!generatedContent)return;
+  var isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  var bg=isDark?'#07090f':'#f0f3fa';
+  var text=isDark?'#eef0f6':'#0d1017';
+  var card=isDark?'#151a28':'#ffffff';
+  var border=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.08)';
+  var text2=isDark?'#8a91a8':'#4a5068';
+  var text3=isDark?'#4a5068':'#9099b8';
+  var bg2=isDark?'#0d1017':'#e4e8f4';
+  var bg3=isDark?'#111520':'#d8ddef';
+  var gold=isDark?'#f0b429':'#c97e08';
+  var goldDim=isDark?'rgba(240,180,41,0.10)':'rgba(201,126,8,0.09)';
+  var goldGlo=isDark?'rgba(240,180,41,0.22)':'rgba(201,126,8,0.20)';
+  var blue2=isDark?'#7eb3ff':'#1a52b0';
+  var blueDim=isDark?'rgba(79,142,247,0.10)':'rgba(45,110,219,0.08)';
+  var green=isDark?'#2dd4a0':'#0fa876';
+  var greenDim=isDark?'rgba(45,212,160,0.10)':'rgba(15,168,118,0.10)';
+  var purple='#a855f7';
+  var today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  var slug=generatedTitle.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  var html='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>'+generatedTitle+' — ImpactGrid</title>'+
+  '<link rel="preconnect" href="https://fonts.googleapis.com"/>'+
+  '<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>'+
+  '<style>'+
+  '*{box-sizing:border-box;margin:0;padding:0;}'+
+  'body{background:'+bg+';color:'+text+';font-family:"DM Sans",sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;padding:0;}'+
+  '.page{max-width:860px;margin:0 auto;padding:48px 32px;}'+
+  '.doc-header{border-bottom:3px solid '+gold+';padding-bottom:28px;margin-bottom:40px;}'+
+  '.doc-logo{font-family:"Syne",sans-serif;font-size:13px;font-weight:900;letter-spacing:-0.02em;color:'+gold+';margin-bottom:14px;display:flex;align-items:center;gap:8px;}'+
+  '.doc-logo::before{content:"IG";display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:'+gold+';color:#07090f;font-size:10px;font-weight:900;}'+
+  '.doc-title{font-family:"Syne",sans-serif;font-size:clamp(28px,4vw,40px);font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:10px;}'+
+  '.doc-meta{font-family:"DM Mono",monospace;font-size:11px;color:'+text3+';letter-spacing:0.08em;}'+
+  '.t-section{margin-bottom:32px;}'+
+  '.t-section-label{font-family:"DM Mono",monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:'+text3+';margin-bottom:10px;display:flex;align-items:center;gap:8px;}'+
+  '.t-section-label::after{content:"";flex:1;height:1px;background:'+border+';}'+
+  '.t-block{background:'+bg2+';border:1px solid '+border+';border-radius:12px;padding:16px 18px;font-size:13.5px;color:'+text2+';line-height:1.75;}'+
+  '.t-block strong{color:'+text+';}'+
+  '.t-block p{margin-bottom:8px;}.t-block p:last-child{margin-bottom:0;}'+
+  '.t-highlight{background:'+goldDim+';border:1px solid '+goldGlo+';border-radius:12px;padding:14px 18px;font-size:13px;color:'+text+';font-weight:600;margin-bottom:12px;}'+
+  '.t-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}'+
+  '@media(max-width:600px){.t-row{grid-template-columns:1fr 1fr;}}'+
+  '.t-stat{background:'+bg2+';border:1px solid '+border+';border-radius:10px;padding:12px 14px;text-align:center;}'+
+  '.t-stat-num{font-family:"Syne",sans-serif;font-size:20px;font-weight:900;color:'+gold+';letter-spacing:-0.03em;line-height:1;margin-bottom:3px;}'+
+  '.t-stat-label{font-family:"DM Mono",monospace;font-size:9px;color:'+text3+';text-transform:uppercase;letter-spacing:0.1em;}'+
+  '.t-tag-row{display:flex;flex-wrap:wrap;gap:6px;}'+
+  '.t-tag{font-family:"DM Mono",monospace;font-size:11px;padding:3px 10px;border-radius:5px;background:'+goldDim+';color:'+gold+';border:1px solid '+goldGlo+';}'+
+  '.t-tag-blue{background:'+blueDim+';color:'+blue2+';border-color:rgba(79,142,247,0.2);}'+
+  '.t-tag-green{background:'+greenDim+';color:'+green+';border-color:rgba(45,212,160,0.25);}'+
+  '.t-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;}'+
+  '.t-step:last-child{margin-bottom:0;}'+
+  '.t-step-num{width:26px;height:26px;border-radius:50%;background:'+goldDim+';border:1px solid '+goldGlo+';color:'+gold+';font-family:"DM Mono",monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}'+
+  '.t-step-content{font-size:13.5px;color:'+text2+';line-height:1.65;}'+
+  '.t-step-content strong{color:'+text+';}'+
+  '.doc-footer{margin-top:48px;padding-top:24px;border-top:1px solid '+border+';display:flex;justify-content:space-between;align-items:center;font-family:"DM Mono",monospace;font-size:11px;color:'+text3+';flex-wrap:wrap;gap:8px;}'+
+  '@media print{body{background:#fff;color:#000;}.t-block{background:#f5f5f5;border-color:#ddd;}.t-highlight{background:#fff8e6;border-color:#e6c060;}}'+
+  '</style></head><body>'+
+  '<div class="page">'+
+  '<div class="doc-header">'+
+  '<div class="doc-logo">ImpactGrid Creator Intelligence</div>'+
+  '<h1 class="doc-title">'+generatedTitle+'</h1>'+
+  '<div class="doc-meta">Generated by Dijo AI · '+today+' · ImpactGrid Group Ltd</div>'+
+  '</div>'+
+  generatedContent+
+  '<div class="doc-footer">'+
+  '<span>© 2026 ImpactGrid Group Ltd</span>'+
+  '<span>Generated by Dijo AI Assistant · impactgridgroup.com</span>'+
+  '</div>'+
+  '</div>'+
+  '</body></html>';
+  var blob=new Blob([html],{type:'text/html'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='dijo-'+slug+'-'+Date.now()+'.html';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('⬇','Template downloaded!');
+}
+
+/* ── COPY OUTPUT ── */
+function copyOutput(){
+  var el=document.getElementById('outputBody');if(!el)return;
+  navigator.clipboard.writeText(el.innerText||el.textContent).then(function(){showToast('📋','Copied to clipboard!');}).catch(function(){});
+}
+
+/* ── CHAT ── */
+var chatHistory=[];
+var dijoReplies=[
+  function(q){
+    var ql=q.toLowerCase();
+    if(ql.match(/which template|what template|should i use/)){
+      if(ql.match(/brand|sponsor|deal|partner/))return 'For brand deals and sponsorships, the <strong>Brand Partnership Proposal</strong> is the one. It\'s built for outreach — audience stats, deliverables, rates, and a clear ask. Brands get sent dozens of these — make yours count.';
+      if(ql.match(/pitch|investor|deck/))return 'Use the <strong>Pitch Deck Brief</strong>. It covers problem, solution, audience, and the ask — everything you need to get a meeting or a yes. Keep it tight and let the numbers do the talking.';
+      if(ql.match(/media kit|press|profile/))return 'The <strong>Creator Media Kit</strong> is your one-pager. It goes in every partnership email — audience snapshot, content style, rates, and contact. Without one, you\'re invisible to brands.';
+      if(ql.match(/content|plan|strategy|schedule/))return 'The <strong>Content Strategy Plan</strong> gives you a 4-week roadmap — hooks, platform, posting windows, and how to build momentum week by week. Good if you\'re starting a new push or relaunching.';
+      return 'It depends on what you\'re trying to achieve. Tell me: are you pitching to a brand, reaching out to investors, or trying to grow your audience?';
+    }
+    if(ql.match(/how do i|how to|tips for|advice on/).test(ql)&&ql.match(/pitch/)){return 'A strong pitch has five things: a clear problem, a specific solution, audience proof (numbers), a direct ask, and a next step. Most people write too much and say too little. Short wins.';}
+    if(ql.match(/media kit/)){return 'A media kit needs: your niche in one sentence, your audience size and engagement rate, your top-performing content format, your partnership packages and rates, and your contact details. One page. No fluff.';}
+    if(ql.match(/follower|audience|how many/)){return 'Audience size matters less than engagement rate. A creator with 5K followers and 12% engagement will outperform someone with 100K and 0.8% on almost every brand metric. Lead with engagement, not vanity numbers.';}
+    if(ql.match(/rate|price|charge|how much/)){return 'Rates depend on niche, platform, and engagement. A rough benchmark: £50–150 per 1K engaged followers per video placement. Adjust for exclusivity, deliverables, and how much the brand needs you specifically. Never undersell.';}
+    if(ql.match(/start|begin|first step|where to/)){return 'Start with the Content Strategy Plan. Get consistent for 4 weeks first — then approach brands. An active, growing channel is worth ten times more than a dormant one to any sponsor.';}
+    return null;
+  }
+];
+
+function sendChat(){
+  var input=document.getElementById('chatInput');var msg=input.value.trim();if(!msg)return;
+  addUserMessage(msg);input.value='';hideSuggestions();
+  setTimeout(function(){
+    var reply=null;
+    for(var i=0;i<dijoReplies.length;i++){reply=dijoReplies[i](msg);if(reply)break;}
+    if(!reply)reply=getFallbackReply(msg);
+    addDijoMessage(reply);
+  },480);
+}
+
+function chipAsk(q){document.getElementById('chatInput').value=q;sendChat();}
+
+function getFallbackReply(q){
+  var ql=q.toLowerCase();
+  if(ql.match(/thank|thanks/))return 'No problem. When you\'re ready to create, brief me at the top and pick a template — I\'ll generate the whole document in seconds.';
+  if(ql.match(/hi|hello|hey|morning/))return 'Hello. Brief me at the top, pick a template on the left, and hit Create. I\'ll do the rest. Or just ask me anything.';
+  if(ql.match(/analytic|data|metric|performance/))return 'For business analytics, head over to the <a href="analytics.html">Analytics platform</a> — that\'s where Dijo analyses your actual financial data, risk scores, and forecasts in real time.';
+  if(ql.match(/creator|tiktok|youtube|instagram|trend/))return 'For trend intelligence and content generation, the <a href="creator-editor.html">Creator Intelligence Dashboard</a> is the right tool. It scores trends, generates full content packages, and connects your YouTube channel.';
+  return 'To get the most out of me here, brief me at the top — describe your project, business, or audience — then choose a template. I\'ll build a professional document from your brief in seconds. Or try one of the suggestion chips below.';
+}
+
+function addUserMessage(text){
+  var msgs=document.getElementById('chatMessages');
+  var div=document.createElement('div');div.className='msg user';
+  div.innerHTML='<div class="msg-av msg-av-user">You</div><div class="msg-bubble msg-bubble-user">'+escHtml(text)+'</div>';
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addDijoMessage(html){
+  var msgs=document.getElementById('chatMessages');
+  var div=document.createElement('div');div.className='msg';
+  div.innerHTML='<div class="msg-av msg-av-dijo">DJ</div><div class="msg-bubble msg-bubble-dijo">'+html+'</div>';
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function suggestTemplates(){
+  var chips=document.getElementById('suggestionChips');
+  chips.innerHTML='<button class="chip" onclick="selectTemplate(\'pitch\')">🎯 Pitch Deck</button><button class="chip" onclick="selectTemplate(\'content\')">📅 Content Plan</button><button class="chip" onclick="selectTemplate(\'brand\')">🤝 Brand Proposal</button><button class="chip" onclick="selectTemplate(\'mediakit\')">📊 Media Kit</button>';
+  chips.style.display='flex';
+}
+function hideSuggestions(){document.getElementById('suggestionChips').style.display='none';}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function creatorAIAsk(q){document.getElementById('chatInput').value=q;sendChat();}
+
+setInterval(function(){fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});},600000);
+</script>
+</body>
+</html>
