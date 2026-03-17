@@ -8,68 +8,166 @@
 <link rel="stylesheet" href="shared.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-.dash-layout { display:grid; grid-template-columns:250px 1fr; min-height:100vh; padding-top:var(--nav-h); }
-.dash-sidebar { background:var(--ink2); border-right:1px solid var(--border); padding:24px 16px; position:sticky; top:var(--nav-h); height:calc(100vh - var(--nav-h)); overflow-y:auto; display:flex; flex-direction:column; }
-.admin-brand { display:flex; align-items:center; gap:10px; padding:14px 12px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.18); border-radius:var(--r); margin-bottom:24px; }
-.admin-brand-icon { width:34px; height:34px; border-radius:8px; background:rgba(239,68,68,0.15); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
-.admin-brand-name { font-size:13px; font-weight:800; color:#fca5a5; }
-.admin-brand-sub  { font-size:11px; color:rgba(252,165,165,0.6); margin-top:1px; }
-.sidebar-section-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; padding:0 8px; margin-bottom:6px; margin-top:18px; }
-.sidebar-nav a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); font-size:13.5px; font-weight:500; color:var(--text2); transition:all 0.2s; margin-bottom:2px; text-decoration:none; }
-.sidebar-nav a:hover { background:var(--card); color:var(--text); }
-.sidebar-nav a.active { background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.18); }
-.nav-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
-.nav-badge { margin-left:auto; background:rgba(239,68,68,0.2); color:#fca5a5; font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; }
-.sidebar-spacer { flex:1; }
-.sidebar-logout { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); font-size:13.5px; font-weight:500; color:var(--text3); cursor:pointer; transition:all 0.2s; border:none; background:none; width:100%; font-family:inherit; }
-.sidebar-logout:hover { background:var(--red-dim); color:var(--red); }
-.dash-main { padding:40px; overflow-y:auto; }
-.dash-section { display:none; }
-.dash-section.active { display:block; }
-.stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:32px; }
-.stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:20px; }
-.stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-.stat-value { font-size:26px; font-weight:900; letter-spacing:-0.03em; color:var(--text); }
-.stat-sub { font-size:11px; color:var(--text3); margin-top:4px; }
-.content-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:28px; margin-bottom:20px; }
-.section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
-.section-head h2 { font-size:18px; font-weight:800; letter-spacing:-0.02em; }
-table { width:100%; border-collapse:collapse; }
-th { text-align:left; font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; padding:10px 14px; border-bottom:1px solid var(--border); font-weight:700; }
-td { padding:13px 14px; border-bottom:1px solid var(--border); font-size:13.5px; vertical-align:middle; }
-tr:last-child td { border-bottom:none; }
-tr:hover td { background:rgba(255,255,255,0.015); }
-.act-btn { padding:5px 12px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; font-family:inherit; }
-.approve-btn { background:rgba(34,197,94,0.1); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
-.approve-btn:hover { background:var(--green); color:#000; }
-.reject-btn  { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.2); margin-left:5px; }
-.reject-btn:hover { background:var(--red); color:#fff; }
-.pause-btn   { background:rgba(234,179,8,0.1); color:#eab308; border:1px solid rgba(234,179,8,0.2); }
-.pause-btn:hover { background:#eab308; color:#000; }
-.del-btn     { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.2); margin-left:5px; }
-.del-btn:hover { background:var(--red); color:#fff; }
-.pill { display:inline-flex; align-items:center; font-size:11px; font-weight:600; padding:3px 9px; border-radius:100px; }
-.pill-active   { background:rgba(34,197,94,0.1); color:var(--green); }
-.pill-pending  { background:rgba(234,179,8,0.1); color:#eab308; }
-.pill-rejected { background:var(--red-dim); color:var(--red); }
-.pill-paused   { background:rgba(255,255,255,0.06); color:var(--text3); }
-.pill-applied  { background:rgba(79,142,247,0.1); color:var(--blue2); }
-.pill-booked   { background:rgba(34,197,94,0.1); color:var(--green); }
-.empty-state { text-align:center; padding:48px 24px; color:var(--text3); font-size:14px; }
-.empty-icon  { font-size:36px; margin-bottom:12px; }
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.quick-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:24px; }
-.quick-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:20px; cursor:pointer; transition:all 0.25s; }
-.quick-card:hover { border-color:var(--gold-glow); transform:translateY(-2px); }
-.quick-card-icon { font-size:24px; margin-bottom:10px; }
-.quick-card-title { font-size:14px; font-weight:700; margin-bottom:4px; }
-.quick-card-desc  { font-size:12px; color:var(--text3); }
+:root{
+  --admin-accent:#ef4444;
+  --admin-accent-dim:rgba(239,68,68,0.10);
+  --admin-accent-glo:rgba(239,68,68,0.22);
+}
+.dash-layout{display:grid;grid-template-columns:256px 1fr;min-height:100vh;padding-top:var(--nav-h);}
+.dash-sidebar{background:var(--ink2);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;display:flex;flex-direction:column;}
+.admin-brand{display:flex;align-items:center;gap:10px;padding:14px 12px;background:var(--admin-accent-dim);border:1px solid var(--admin-accent-glo);border-radius:var(--r);margin-bottom:20px;}
+.admin-brand-icon{width:36px;height:36px;border-radius:8px;background:rgba(239,68,68,0.18);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.admin-brand-name{font-size:13px;font-weight:800;color:#fca5a5;letter-spacing:-0.01em;}
+.admin-brand-sub{font-size:11px;color:rgba(252,165,165,0.55);margin-top:1px;}
+.sidebar-section-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;font-weight:700;padding:0 8px;margin-bottom:6px;margin-top:18px;}
+.sidebar-nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);font-size:13px;font-weight:500;color:var(--text2);transition:all 0.2s;margin-bottom:2px;text-decoration:none;border:1px solid transparent;}
+.sidebar-nav a:hover{background:var(--card);color:var(--text);}
+.sidebar-nav a.active{background:var(--admin-accent-dim);color:#fca5a5;border-color:var(--admin-accent-glo);}
+.nav-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:rgba(239,68,68,0.25);color:#fca5a5;font-size:10px;font-weight:700;padding:1px 6px;border-radius:100px;}
+.sidebar-spacer{flex:1;}
+.sidebar-logout{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;transition:all 0.2s;border:none;background:none;width:100%;font-family:inherit;}
+.sidebar-logout:hover{background:var(--admin-accent-dim);color:var(--admin-accent);}
+.dash-main{padding:36px 40px;overflow-y:auto;max-width:1400px;}
+.dash-section{display:none;}
+.dash-section.active{display:block;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px;}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.stat-value{font-size:24px;font-weight:900;letter-spacing:-0.03em;color:var(--text);}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* CONTENT CARDS */
+.content-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:26px;margin-bottom:20px;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.section-head h2{font-size:18px;font-weight:800;letter-spacing:-0.02em;}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.012);}
+
+/* BUTTONS */
+.act-btn{padding:5px 11px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;font-family:inherit;}
+.approve-btn{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.approve-btn:hover{background:var(--green);color:#000;}
+.reject-btn{background:var(--admin-accent-dim);color:var(--admin-accent);border:1px solid var(--admin-accent-glo);margin-left:4px;}
+.reject-btn:hover{background:var(--admin-accent);color:#fff;}
+.pause-btn{background:rgba(234,179,8,0.1);color:#eab308;border:1px solid rgba(234,179,8,0.2);}
+.pause-btn:hover{background:#eab308;color:#000;}
+.del-btn{background:var(--admin-accent-dim);color:var(--admin-accent);border:1px solid var(--admin-accent-glo);margin-left:4px;}
+.del-btn:hover{background:var(--admin-accent);color:#fff;}
+.edit-btn{background:var(--gold-dim,rgba(240,180,41,0.10));color:var(--gold);border:1px solid var(--gold-glow,rgba(240,180,41,0.22));margin-left:4px;}
+.edit-btn:hover{background:var(--gold);color:#000;}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;}
+.pill-active{background:rgba(34,197,94,0.1);color:var(--green);}
+.pill-pending{background:rgba(234,179,8,0.1);color:#eab308;}
+.pill-rejected{background:var(--admin-accent-dim);color:var(--admin-accent);}
+.pill-paused{background:rgba(255,255,255,0.06);color:var(--text3);}
+.pill-applied{background:rgba(79,142,247,0.1);color:var(--blue2);}
+.pill-booked{background:rgba(34,197,94,0.1);color:var(--green);}
+
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3);font-size:14px;}
+.empty-icon{font-size:36px;margin-bottom:12px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px;}
+.quick-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px;cursor:pointer;transition:all 0.25s;}
+.quick-card:hover{border-color:var(--gold-glow,rgba(240,180,41,0.22));transform:translateY(-2px);}
+.quick-card-icon{font-size:22px;margin-bottom:10px;}
+.quick-card-title{font-size:14px;font-weight:700;margin-bottom:3px;}
+.quick-card-desc{font-size:12px;color:var(--text3);}
+
+/* ═══ CONTENT WORKSTATION ═══ */
+.ws-layout{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
+
+/* SLIDE MANAGER */
+.slide-drop-zone{border:2px dashed var(--border);border-radius:var(--r2);padding:36px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.01);}
+.slide-drop-zone:hover,.slide-drop-zone.drag-over{border-color:var(--gold,#f0b429);background:rgba(240,180,41,0.04);}
+.slide-drop-zone-icon{font-size:36px;margin-bottom:10px;}
+.slide-drop-zone-text{font-size:14px;font-weight:600;color:var(--text2);}
+.slide-drop-zone-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+.slide-drop-zone input[type=file]{display:none;}
+
+.slide-upload-progress{background:var(--admin-accent-dim);border:1px solid var(--admin-accent-glo);border-radius:var(--r);padding:14px 16px;margin-top:14px;display:none;}
+.progress-bar-track{height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-top:8px;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--admin-accent),#f87171);border-radius:3px;transition:width 0.3s;}
+
+/* SLIDE CAPTION EDITOR */
+.slide-caption-form{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;}
+.slide-caption-form h3{font-size:14px;font-weight:800;margin-bottom:16px;}
+.caption-field{margin-bottom:12px;}
+.caption-field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.caption-field input,.caption-field textarea,.caption-field select{width:100%;background:var(--bg,rgba(255,255,255,0.04));border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:border-color 0.2s;resize:none;}
+.caption-field input:focus,.caption-field textarea:focus,.caption-field select:focus{border-color:var(--gold,#f0b429);}
+.color-row{display:flex;gap:8px;margin-top:6px;}
+.color-swatch{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;flex-shrink:0;}
+.color-swatch.selected,.color-swatch:hover{border-color:var(--gold,#f0b429);transform:scale(1.1);}
+.caption-preview{background:rgba(0,0,0,0.85);border-radius:var(--r);padding:14px;margin-top:12px;border:1px solid rgba(255,255,255,0.1);}
+.caption-preview-title{font-size:16px;font-weight:800;letter-spacing:-0.02em;line-height:1.2;}
+.caption-preview-body{font-size:12px;opacity:0.75;margin-top:5px;line-height:1.5;}
+.caption-preview-tag{display:inline-flex;font-size:9px;padding:2px 8px;border-radius:4px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+
+/* SLIDE CARDS */
+.slides-grid{display:flex;flex-direction:column;gap:12px;margin-top:4px;}
+.slide-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;transition:all 0.2s;}
+.slide-card:hover{border-color:var(--border2,rgba(255,255,255,0.13));}
+.slide-card.editing{border-color:var(--gold,#f0b429);}
+.slide-thumb-row{display:flex;align-items:center;gap:14px;padding:14px;}
+.slide-thumb{width:90px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,0.05);}
+.slide-thumb-video{position:relative;}
+.slide-thumb-video::after{content:'▶';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(0,0,0,0.4);border-radius:8px;color:#fff;}
+.slide-info{flex:1;min-width:0;}
+.slide-info-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.slide-info-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.slide-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.slide-drag-handle{cursor:grab;color:var(--text3);font-size:16px;padding:0 4px;}
+.slide-drag-handle:active{cursor:grabbing;}
+.slide-order-badge{font-family:monospace;font-size:10px;background:rgba(255,255,255,0.08);border-radius:4px;padding:2px 6px;color:var(--text3);}
+.slide-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);}
+.toggle-switch{width:32px;height:18px;background:rgba(255,255,255,0.1);border-radius:9px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle-switch.on{background:var(--green,#2dd4a0);}
+.toggle-switch::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform 0.2s;}
+.toggle-switch.on::after{transform:translateX(14px);}
+
+/* SITE CONTENT EDITOR */
+.content-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.content-item{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+.content-item-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
+.content-item-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:border-color 0.2s;resize:none;}
+.content-item-input:focus{border-color:var(--gold,#f0b429);}
+.content-save-row{display:flex;justify-content:flex-end;margin-top:10px;}
+
+/* TICKER EDITOR */
+.ticker-items-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.ticker-item-row{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.ticker-item-row input{flex:1;background:none;border:none;color:var(--text);font-size:13px;font-family:inherit;outline:none;}
+.ticker-item-type{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:0.08em;flex-shrink:0;cursor:pointer;}
+.ticker-type-new{background:rgba(240,180,41,0.14);color:#f0b429;border:1px solid rgba(240,180,41,0.3);}
+.ticker-type-live{background:rgba(45,212,160,0.12);color:#2dd4a0;border:1px solid rgba(45,212,160,0.3);}
+.ticker-type-soon{background:rgba(79,142,247,0.12);color:#7eb3ff;border:1px solid rgba(79,142,247,0.3);}
+
+/* UPLOAD PROGRESS NOTIFICATION */
+.upload-toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--card,#151a28);border:1px solid var(--border);border-radius:12px;padding:14px 18px;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4);transform:translateY(80px);opacity:0;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:12px;}
+.upload-toast.show{transform:translateY(0);opacity:1;}
+.upload-toast-icon{font-size:20px;flex-shrink:0;}
+.upload-toast-msg{font-size:13px;font-weight:500;}
+.upload-toast-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+
 @media(max-width:900px){
-  .dash-layout { grid-template-columns:1fr; }
-  .dash-sidebar { display:none; }
-  .dash-main { padding:24px 16px; }
-  .stats-row { grid-template-columns:1fr 1fr; }
-  .quick-actions { grid-template-columns:1fr 1fr; }
+  .dash-layout{grid-template-columns:1fr;}
+  .dash-sidebar{display:none;}
+  .dash-main{padding:20px 16px;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .quick-actions{grid-template-columns:1fr 1fr;}
+  .ws-layout{grid-template-columns:1fr;}
+  .content-editor-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
@@ -84,9 +182,17 @@ tr:hover td { background:rgba(255,255,255,0.015); }
         <div class="admin-brand-sub">ImpactGrid Group</div>
       </div>
     </div>
-    <div class="sidebar-section-label">Management</div>
-    <nav class="sidebar-nav">
+
+    <div class="sidebar-section-label">Content</div>
+    <nav class="sidebar-nav" id="sidebarNav">
       <a href="#" class="active" onclick="return showSection('overview',this)"><span class="nav-icon">◈</span> Overview</a>
+      <a href="#" onclick="return showSection('workstation',this)"><span class="nav-icon">🖥️</span> Content Workstation</a>
+      <a href="#" onclick="return showSection('slides',this)"><span class="nav-icon">🎞️</span> Homepage Slides</a>
+      <a href="#" onclick="return showSection('ticker',this)"><span class="nav-icon">📢</span> Ticker Messages</a>
+    </nav>
+
+    <div class="sidebar-section-label">Network</div>
+    <nav class="sidebar-nav">
       <a href="#" onclick="return showSection('pending',this)"><span class="nav-icon">⏳</span> Pending Approval <span class="nav-badge" id="pendingBadge" style="display:none;">0</span></a>
       <a href="#" onclick="return showSection('applications',this)"><span class="nav-icon">📥</span> Applications</a>
       <a href="#" onclick="return showSection('professionals',this)"><span class="nav-icon">👤</span> Professionals</a>
@@ -94,6 +200,7 @@ tr:hover td { background:rgba(255,255,255,0.015); }
       <a href="#" onclick="return showSection('jobs',this)"><span class="nav-icon">📋</span> Jobs</a>
       <a href="#" onclick="return showSection('postjob',this)"><span class="nav-icon">➕</span> Post a Job</a>
     </nav>
+
     <div class="sidebar-spacer"></div>
     <a href="index.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:13px;color:var(--text3);border-radius:var(--r);margin-bottom:4px;text-decoration:none;">← Back to Site</a>
     <button class="sidebar-logout" onclick="igLogout()"><span>⎋</span> Sign Out</button>
@@ -101,106 +208,230 @@ tr:hover td { background:rgba(255,255,255,0.015); }
 
   <main class="dash-main">
 
-    <!-- OVERVIEW -->
+    <!-- ═══ OVERVIEW ═══ -->
     <div class="dash-section active" id="section-overview">
-      <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.025em;margin-bottom:6px;">Admin Overview</h1>
-      <p style="font-size:14px;color:var(--text2);margin-bottom:28px;">Full control of the ImpactGrid Network.</p>
+      <h1 style="font-size:24px;font-weight:900;letter-spacing:-0.025em;margin-bottom:4px;">Admin Overview</h1>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:24px;">Full control of the ImpactGrid Network and site content.</p>
       <div class="stats-row">
         <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" id="stat-pending" style="color:#eab308;">—</div><div class="stat-sub">Awaiting review</div></div>
         <div class="stat-card"><div class="stat-label">Professionals</div><div class="stat-value" id="stat-pros">—</div><div class="stat-sub">Active members</div></div>
         <div class="stat-card"><div class="stat-label">Employers</div><div class="stat-value" id="stat-emps">—</div><div class="stat-sub">On network</div></div>
-        <div class="stat-card"><div class="stat-label">Active Jobs</div><div class="stat-value" id="stat-jobs" style="color:var(--gold);">—</div><div class="stat-sub">Live listings</div></div>
-        <div class="stat-card"><div class="stat-label">Applications</div><div class="stat-value" id="stat-apps" style="color:var(--blue2);">—</div><div class="stat-sub">Total submitted</div></div>
+        <div class="stat-card"><div class="stat-label">Active Jobs</div><div class="stat-value" id="stat-jobs" style="color:var(--gold,#f0b429);">—</div><div class="stat-sub">Live listings</div></div>
+        <div class="stat-card"><div class="stat-label">Slides Live</div><div class="stat-value" id="stat-slides" style="color:var(--blue2,#7eb3ff);">—</div><div class="stat-sub">Homepage carousel</div></div>
       </div>
       <div class="quick-actions">
-        <div class="quick-card" onclick="showSection('pending',document.querySelectorAll('.sidebar-nav a')[1])">
+        <div class="quick-card" onclick="showSection('slides',document.querySelectorAll('.sidebar-nav a')[2])">
+          <div class="quick-card-icon">🎞️</div>
+          <div class="quick-card-title">Homepage Slides</div>
+          <div class="quick-card-desc">Upload videos & images, add captions, manage the hero slideshow</div>
+        </div>
+        <div class="quick-card" onclick="showSection('pending',document.querySelectorAll('.sidebar-nav a')[4])">
           <div class="quick-card-icon">⏳</div>
           <div class="quick-card-title">Review Pending</div>
           <div class="quick-card-desc">Approve or reject professionals waiting for access</div>
         </div>
-        <div class="quick-card" onclick="showSection('jobs',document.querySelectorAll('.sidebar-nav a')[5])">
-          <div class="quick-card-icon">📋</div>
-          <div class="quick-card-title">Manage Jobs</div>
-          <div class="quick-card-desc">View, pause, or remove job listings from the network</div>
-        </div>
-        <div class="quick-card" onclick="showSection('applications',document.querySelectorAll('.sidebar-nav a')[2])">
-          <div class="quick-card-icon">📥</div>
-          <div class="quick-card-title">Applications</div>
-          <div class="quick-card-desc">See who applied and approve bookings</div>
+        <div class="quick-card" onclick="showSection('postjob',document.querySelectorAll('.sidebar-nav a')[8])">
+          <div class="quick-card-icon">➕</div>
+          <div class="quick-card-title">Post a Job</div>
+          <div class="quick-card-desc">Add new jobs visible to all professionals on the network</div>
         </div>
       </div>
     </div>
 
-    <!-- PENDING -->
+    <!-- ═══ CONTENT WORKSTATION ═══ -->
+    <div class="dash-section" id="section-workstation">
+      <h1 style="font-size:24px;font-weight:900;letter-spacing:-0.025em;margin-bottom:4px;">Content Workstation</h1>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:24px;">Edit homepage sections, hero text, and site-wide content. Changes go live immediately.</p>
+
+      <div class="ws-layout">
+        <div>
+          <!-- HERO TEXT -->
+          <div class="content-card">
+            <div class="section-head"><h2>🏠 Homepage Text</h2><button class="act-btn approve-btn" onclick="saveAllContent()">💾 Save All Changes</button></div>
+            <div class="content-editor-grid" id="contentEditorGrid">
+              <div class="empty-state">Loading content…</div>
+            </div>
+          </div>
+
+          <!-- ECOSYSTEM CARDS -->
+          <div class="content-card">
+            <div class="section-head"><h2>🔗 Ecosystem Cards</h2><button class="act-btn approve-btn" onclick="saveEcoCards()">💾 Save</button></div>
+            <div id="ecoCardsEditor">
+              <div class="empty-state">Loading…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: LIVE PREVIEW HINT -->
+        <div>
+          <div class="content-card" style="position:sticky;top:20px;">
+            <h3 style="font-size:14px;font-weight:800;margin-bottom:14px;">💡 How It Works</h3>
+            <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+              <p style="margin-bottom:10px;">Changes made here update the <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:12px;">site_content</code> table in Supabase.</p>
+              <p style="margin-bottom:10px;">The homepage reads this table on load — so every visitor sees your latest content within seconds.</p>
+              <p style="margin-bottom:10px;">If Supabase is unavailable, the site falls back to its built-in defaults.</p>
+            </div>
+            <div style="margin-top:16px;padding:12px 14px;background:var(--admin-accent-dim);border:1px solid var(--admin-accent-glo);border-radius:8px;font-size:12px;color:#fca5a5;line-height:1.6;">
+              <strong>Required Supabase tables:</strong><br>
+              <code style="font-size:11px;">site_content (key, value)</code><br>
+              <code style="font-size:11px;">site_slides (id, url, type, title, subtitle, caption, tag_text, tag_type, cta_text, cta_url, overlay_color, sort_order, active)</code><br>
+              <code style="font-size:11px;">site_ticker (id, text, type, sort_order, active)</code><br>
+              Storage bucket: <code style="font-size:11px;">site-media</code> (public)
+            </div>
+            <a href="index.html" target="_blank" class="act-btn approve-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;padding:9px;">🔗 Preview Homepage</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ HOMEPAGE SLIDES ═══ -->
+    <div class="dash-section" id="section-slides">
+      <h1 style="font-size:24px;font-weight:900;letter-spacing:-0.025em;margin-bottom:4px;">Homepage Slides</h1>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:24px;">Upload images or videos that appear in the hero slideshow. Add overlay text, captions, and CTAs to each slide.</p>
+
+      <div class="ws-layout">
+        <!-- LEFT: uploader + slide list -->
+        <div>
+          <!-- UPLOAD ZONE -->
+          <div class="content-card" style="margin-bottom:20px;">
+            <div class="section-head"><h2>📤 Upload New Slide</h2></div>
+            <div class="slide-drop-zone" id="dropZone" onclick="document.getElementById('slideFileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+              <div class="slide-drop-zone-icon">🎞️</div>
+              <div class="slide-drop-zone-text">Drag & drop a video or image here</div>
+              <div class="slide-drop-zone-sub">MP4, MOV, WebM · JPG, PNG, WebP · Max 200MB</div>
+              <input type="file" id="slideFileInput" accept="video/mp4,video/mov,video/webm,image/jpeg,image/png,image/webp" onchange="handleFileSelect(event)"/>
+            </div>
+            <div class="slide-upload-progress" id="uploadProgress">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-size:13px;font-weight:600;color:#fca5a5;" id="uploadFileName">Uploading…</span>
+                <span style="font-size:12px;color:var(--text3);" id="uploadPct">0%</span>
+              </div>
+              <div class="progress-bar-track"><div class="progress-bar-fill" id="uploadBar" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- EXISTING SLIDES -->
+          <div class="content-card">
+            <div class="section-head">
+              <h2>🎞️ Current Slides</h2>
+              <button class="act-btn approve-btn" onclick="loadSlides()">↻ Refresh</button>
+            </div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:16px;">Click a slide to edit its caption and overlay text. Drag to reorder.</p>
+            <div class="slides-grid" id="slidesGrid">
+              <div class="empty-state"><div class="empty-icon">🎞️</div>Loading slides…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: caption editor -->
+        <div>
+          <div class="slide-caption-form" id="captionEditor" style="position:sticky;top:20px;">
+            <h3>✏️ Edit Slide Caption</h3>
+            <div id="captionEditorInner">
+              <div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">
+                <div style="font-size:32px;margin-bottom:10px;">👈</div>
+                Select a slide from the left to edit its caption and overlay text.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TICKER EDITOR ═══ -->
+    <div class="dash-section" id="section-ticker">
+      <h1 style="font-size:24px;font-weight:900;letter-spacing:-0.025em;margin-bottom:4px;">Ticker Messages</h1>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:24px;">Edit the scrolling news ticker shown at the top of every page. Add, edit, reorder, and remove items.</p>
+
+      <div class="content-card">
+        <div class="section-head">
+          <h2>📢 Ticker Items</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="act-btn approve-btn" onclick="addTickerItem()">+ Add Item</button>
+            <button class="act-btn edit-btn" onclick="saveTickerItems()">💾 Save All</button>
+          </div>
+        </div>
+        <div class="ticker-items-list" id="tickerItemsList">
+          <div class="empty-state">Loading…</div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-top:12px;">Click the colour tag (New/Live/Soon) to cycle through types. Drag rows to reorder.</div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="content-card">
+        <div class="section-head"><h2>👁️ Preview</h2></div>
+        <div style="background:linear-gradient(90deg,rgba(240,180,41,0.10),rgba(240,180,41,0.05),rgba(240,180,41,0.10));border:1px solid rgba(240,180,41,0.22);border-radius:8px;overflow:hidden;height:34px;display:flex;align-items:center;">
+          <div style="padding:0 12px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#f0b429;border-right:1px solid rgba(240,180,41,0.22);height:100%;display:flex;align-items:center;gap:5px;background:rgba(240,180,41,0.10);white-space:nowrap;flex-shrink:0;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#f0b429;display:inline-block;"></span>ImpactGrid Live
+          </div>
+          <div style="overflow:hidden;flex:1;padding:0 16px;font-size:12px;color:var(--text2);" id="tickerPreview">Edit ticker items above to see preview</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PENDING ═══ -->
     <div class="dash-section" id="section-pending">
       <div class="content-card">
-        <div class="section-head"><h2>⏳ Pending Approval</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadPending()">↻ Refresh</button></div>
+        <div class="section-head"><h2>⏳ Pending Approval</h2><button class="act-btn edit-btn" style="font-size:12px;padding:6px 12px;" onclick="loadPending()">↻ Refresh</button></div>
         <div id="pendingList"><div class="empty-state"><div class="empty-icon">⏳</div>Loading…</div></div>
       </div>
     </div>
 
-    <!-- APPLICATIONS -->
+    <!-- ═══ APPLICATIONS ═══ -->
     <div class="dash-section" id="section-applications">
       <div class="content-card">
-        <div class="section-head"><h2>📥 All Applications</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadApplications()">↻ Refresh</button></div>
+        <div class="section-head"><h2>📥 All Applications</h2><button class="act-btn edit-btn" style="font-size:12px;padding:6px 12px;" onclick="loadApplications()">↻ Refresh</button></div>
         <div id="applicationsList"><div class="empty-state"><div class="empty-icon">📥</div>Loading…</div></div>
       </div>
     </div>
 
-    <!-- PROFESSIONALS -->
+    <!-- ═══ PROFESSIONALS ═══ -->
     <div class="dash-section" id="section-professionals">
       <div class="content-card">
-        <div class="section-head"><h2>👤 All Professionals</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadProfessionals()">↻ Refresh</button></div>
+        <div class="section-head"><h2>👤 All Professionals</h2><button class="act-btn edit-btn" style="font-size:12px;padding:6px 12px;" onclick="loadProfessionals()">↻ Refresh</button></div>
         <div id="prosList"><div class="empty-state">Loading…</div></div>
       </div>
     </div>
 
-    <!-- EMPLOYERS -->
+    <!-- ═══ EMPLOYERS ═══ -->
     <div class="dash-section" id="section-employers">
       <div class="content-card">
-        <div class="section-head"><h2>🏢 All Employers</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadEmployers()">↻ Refresh</button></div>
+        <div class="section-head"><h2>🏢 All Employers</h2><button class="act-btn edit-btn" style="font-size:12px;padding:6px 12px;" onclick="loadEmployers()">↻ Refresh</button></div>
         <div id="empsList"><div class="empty-state">Loading…</div></div>
       </div>
     </div>
 
-    <!-- JOBS -->
+    <!-- ═══ JOBS ═══ -->
     <div class="dash-section" id="section-jobs">
       <div class="content-card">
-        <div class="section-head"><h2>📋 All Jobs</h2><button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadJobs()">↻ Refresh</button></div>
+        <div class="section-head"><h2>📋 All Jobs</h2><button class="act-btn edit-btn" style="font-size:12px;padding:6px 12px;" onclick="loadJobs()">↻ Refresh</button></div>
         <div id="jobsList"><div class="empty-state">Loading…</div></div>
       </div>
     </div>
 
-    <!-- POST A JOB -->
+    <!-- ═══ POST A JOB ═══ -->
     <div class="dash-section" id="section-postjob">
       <div class="content-card">
-        <div class="section-head">
-          <h2>➕ Post a Job</h2>
-        </div>
-        <p style="font-size:13.5px;color:var(--text2);margin-bottom:24px;">Jobs you post here appear immediately in professionals' Available Jobs tab.</p>
-        <div id="alertPostJob" class="alert" style="margin-bottom:16px;"></div>
-        <div class="form-grid" style="margin-bottom:14px;">
-          <div class="form-group"><label class="form-label">Job Title *</label><input class="form-input" id="j-title" type="text" placeholder="e.g. Data Analyst, Marketing Lead"/></div>
+        <div class="section-head"><h2>➕ Post a Job</h2></div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:20px;">Jobs posted here appear immediately in professionals' Available Jobs tab.</p>
+        <div id="alertPostJob" class="alert" style="margin-bottom:14px;"></div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-group"><label class="form-label">Job Title *</label><input class="form-input" id="j-title" type="text" placeholder="e.g. Data Analyst"/></div>
           <div class="form-group"><label class="form-label">Company Name *</label><input class="form-input" id="j-company" type="text" placeholder="e.g. Acme Corp"/></div>
         </div>
-        <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Description *</label><textarea class="form-textarea" id="j-desc" rows="4" placeholder="Describe the role, responsibilities, and what you're looking for…"></textarea></div>
-        <div class="form-grid" style="margin-bottom:14px;">
-          <div class="form-group"><label class="form-label">Budget / Rate</label><input class="form-input" id="j-budget" type="text" placeholder="e.g. £500/day, £3,000 fixed"/></div>
-          <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="j-location" type="text" placeholder="e.g. Remote, London, Hybrid"/></div>
+        <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Description *</label><textarea class="form-textarea" id="j-desc" rows="4" placeholder="Describe the role…"></textarea></div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-group"><label class="form-label">Budget / Rate</label><input class="form-input" id="j-budget" type="text" placeholder="e.g. £500/day"/></div>
+          <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="j-location" type="text" placeholder="e.g. Remote, London"/></div>
         </div>
-        <div class="form-grid" style="margin-bottom:14px;">
-          <div class="form-group"><label class="form-label">Skills Required</label><input class="form-input" id="j-skills" type="text" placeholder="e.g. Python, Excel, Marketing"/></div>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-group"><label class="form-label">Skills Required</label><input class="form-input" id="j-skills" type="text" placeholder="e.g. Python, Excel"/></div>
           <div class="form-group"><label class="form-label">Deadline</label><input class="form-input" id="j-deadline" type="text" placeholder="e.g. 31 March 2026"/></div>
         </div>
-        <button class="btn btn-gold" style="padding:11px 28px;font-size:14px;margin-top:8px;" onclick="postJob()">Post Job →</button>
+        <button class="btn btn-gold" style="padding:10px 24px;font-size:14px;margin-top:6px;" onclick="postJob()">Post Job →</button>
       </div>
-
-      <!-- Edit existing jobs -->
       <div class="content-card">
-        <div class="section-head">
-          <h2>✏️ Edit Existing Jobs</h2>
-          <button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadEditJobs()">↻ Refresh</button>
-        </div>
+        <div class="section-head"><h2>✏️ Edit Existing Jobs</h2><button class="act-btn edit-btn" style="font-size:12px;padding:6px 12px;" onclick="loadEditJobs()">↻ Refresh</button></div>
         <div id="editJobsList"><div class="empty-state">Loading…</div></div>
       </div>
     </div>
@@ -208,293 +439,682 @@ tr:hover td { background:rgba(255,255,255,0.015); }
   </main>
 </div>
 
+<!-- UPLOAD TOAST -->
+<div class="upload-toast" id="uploadToast">
+  <span class="upload-toast-icon" id="toastIcon">📤</span>
+  <div><div class="upload-toast-msg" id="toastMsg">Uploading…</div><div class="upload-toast-sub" id="toastSub"></div></div>
+</div>
+
 <script src="nav.js"></script>
 <script src="supabase-config.js"></script>
 <script>
 renderNav('');
 
-/* ── YOUR ADMIN EMAIL ── */
 var ADMIN_EMAIL = 'admin@impactgridgroup.com';
+var BUCKET      = 'site-media';
+var editingSlideId = null;
+var tickerItems    = [];
+var allSlides      = [];
 
-document.addEventListener('DOMContentLoaded', async function() {
+/* ── BOOT ── */
+document.addEventListener('DOMContentLoaded', async function(){
   var c = getSupabase();
   var { data } = await c.auth.getSession();
-  if (!data.session) { window.location.href = 'login.html'; return; }
-  if (data.session.user.email !== ADMIN_EMAIL) { window.location.href = 'dashboard.html'; return; }
+  if (!data.session){ window.location.href = 'login.html'; return; }
+  if (data.session.user.email !== ADMIN_EMAIL){ window.location.href = 'dashboard.html'; return; }
   loadStats();
+  ensureTablesExist();
 });
 
-function showSection(id, el) {
+/* ── SECTION SWITCHING ── */
+function showSection(id, el){
   document.querySelectorAll('.dash-section').forEach(function(s){ s.classList.remove('active'); });
   document.querySelectorAll('.sidebar-nav a').forEach(function(a){ a.classList.remove('active'); });
   document.getElementById('section-' + id).classList.add('active');
-  if (el) el.classList.add('active');
-  if (id === 'pending')       loadPending();
-  if (id === 'applications')  loadApplications();
-  if (id === 'professionals') loadProfessionals();
-  if (id === 'employers')     loadEmployers();
-  if (id === 'jobs')          loadJobs();
-  if (id === 'postjob')       loadEditJobs();
+  if(el) el.classList.add('active');
+  var loaders = {
+    pending:'loadPending', applications:'loadApplications', professionals:'loadProfessionals',
+    employers:'loadEmployers', jobs:'loadJobs', postjob:'loadEditJobs',
+    slides:'loadSlides', workstation:'loadContentEditor', ticker:'loadTickerEditor'
+  };
+  if(loaders[id]) window[loaders[id]]();
   return false;
 }
 
-async function loadStats() {
-  try {
+/* ── TOAST ── */
+function showToast(icon, msg, sub, persist){
+  var t = document.getElementById('uploadToast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent  = msg;
+  document.getElementById('toastSub').textContent  = sub || '';
+  t.classList.add('show');
+  if(!persist) setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+function hideToast(){ document.getElementById('uploadToast').classList.remove('show'); }
+
+/* ── STATS ── */
+async function loadStats(){
+  try{
     var c = getSupabase();
-    var [pend, pros, emps, jobs, apps] = await Promise.all([
+    var [pend, pros, emps, jobs, slides] = await Promise.all([
       c.from('profiles').select('id').eq('status','pending'),
       c.from('profiles').select('id').eq('role','professional').eq('status','active'),
       c.from('profiles').select('id').eq('role','employer'),
       c.from('jobs').select('id').eq('status','active'),
-      c.from('applications').select('id')
+      c.from('site_slides').select('id').eq('active',true)
     ]);
     var pc = (pend.data||[]).length;
     document.getElementById('stat-pending').textContent = pc;
     document.getElementById('stat-pros').textContent    = (pros.data||[]).length;
     document.getElementById('stat-emps').textContent    = (emps.data||[]).length;
     document.getElementById('stat-jobs').textContent    = (jobs.data||[]).length;
-    document.getElementById('stat-apps').textContent    = (apps.data||[]).length;
+    document.getElementById('stat-slides').textContent  = (slides.data||[]).length;
     var badge = document.getElementById('pendingBadge');
-    if (pc > 0) { badge.textContent = pc; badge.style.display = 'inline-flex'; }
-  } catch(e) {}
+    if(pc > 0){ badge.textContent = pc; badge.style.display = 'inline-flex'; }
+  }catch(e){ console.warn('[Stats]', e.message); }
 }
 
-async function loadPending() {
-  var el = document.getElementById('pendingList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div>Loading…</div>';
-  try {
+/* ── ENSURE TABLES ── */
+async function ensureTablesExist(){
+  // Tables must be created in Supabase SQL editor — we just verify they exist
+  try{ await getSupabase().from('site_slides').select('id').limit(1); }catch(e){}
+  try{ await getSupabase().from('site_content').select('key').limit(1); }catch(e){}
+  try{ await getSupabase().from('site_ticker').select('id').limit(1); }catch(e){}
+}
+
+/* ════════════════════════════════════════════════════════════
+   SLIDE MANAGER
+════════════════════════════════════════════════════════════ */
+
+/* DRAG & DROP UPLOAD */
+function handleDragOver(e){ e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+function handleDragLeave(e){ document.getElementById('dropZone').classList.remove('drag-over'); }
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  var files = e.dataTransfer.files;
+  if(files && files[0]) uploadSlideFile(files[0]);
+}
+function handleFileSelect(e){
+  var file = e.target.files && e.target.files[0];
+  if(file) uploadSlideFile(file);
+  e.target.value = '';
+}
+
+async function uploadSlideFile(file){
+  var allowedTypes = ['video/mp4','video/quicktime','video/webm','image/jpeg','image/png','image/webp'];
+  if(!allowedTypes.includes(file.type)){ showToast('⚠️','Unsupported file type','Use MP4, MOV, WebM, JPG, PNG, or WebP'); return; }
+  if(file.size > 200 * 1024 * 1024){ showToast('⚠️','File too large','Maximum 200MB per file'); return; }
+
+  var isVideo = file.type.startsWith('video/');
+  var ext     = file.name.split('.').pop();
+  var fname   = 'slides/' + Date.now() + '-' + Math.random().toString(36).substring(2,8) + '.' + ext;
+
+  /* Show progress */
+  var progressEl = document.getElementById('uploadProgress');
+  progressEl.style.display = 'block';
+  document.getElementById('uploadFileName').textContent = file.name;
+  document.getElementById('uploadBar').style.width = '0%';
+  document.getElementById('uploadPct').textContent = '0%';
+  showToast('📤', 'Uploading ' + file.name, 'Please wait…', true);
+
+  try{
     var c = getSupabase();
-    var { data } = await c.from('profiles').select('*').eq('status','pending').eq('role','professional').order('created_at',{ascending:false});
-    if (!data || !data.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div>No pending applications — all clear!</div>'; return; }
-    el.innerHTML = '<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Applied</th><th>Actions</th></tr></thead><tbody>' +
-      data.map(function(p) {
-        return '<tr>' +
-          '<td style="font-weight:700;">' + esc(p.full_name||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc(p.email||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc((p.skills||'—').substring(0,35)) + '</td>' +
-          '<td style="color:var(--text2);">' + esc(p.location||'—') + '</td>' +
-          '<td style="color:var(--text3);">' + new Date(p.created_at).toLocaleDateString('en-GB') + '</td>' +
-          '<td>' +
-            '<button class="act-btn approve-btn" onclick="approveUser(\'' + p.id + '\',\'' + esc(p.full_name||'') + '\')">✓ Approve</button>' +
-            '<button class="act-btn reject-btn"  onclick="rejectUser(\'' + p.id + '\')">✕ Reject</button>' +
-          '</td></tr>';
-      }).join('') + '</tbody></table>';
-  } catch(e) { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
-}
 
-async function approveUser(id, name) {
-  if (!confirm('Approve ' + (name||'this professional') + '? They will be able to access the network.')) return;
-  await getSupabase().from('profiles').update({ status:'active' }).eq('id', id);
-  loadPending(); loadStats();
-}
-
-async function rejectUser(id) {
-  if (!confirm('Reject this application?')) return;
-  await getSupabase().from('profiles').update({ status:'rejected' }).eq('id', id);
-  loadPending(); loadStats();
-}
-
-async function loadApplications() {
-  var el = document.getElementById('applicationsList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">📥</div>Loading…</div>';
-  try {
-    var c = getSupabase();
-    var { data: apps } = await c.from('applications').select('*').order('applied_at',{ascending:false});
-    if (!apps || !apps.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📥</div>No applications yet.</div>'; return; }
-    var jobIds = [...new Set(apps.map(function(a){ return a.job_id; }).filter(Boolean))];
-    var proIds = [...new Set(apps.map(function(a){ return a.professional_id; }).filter(Boolean))];
-    var { data: jobs } = await c.from('jobs').select('id,title,company_name').in('id', jobIds);
-    var { data: pros } = await c.from('profiles').select('id,full_name,email').in('id', proIds);
-    var jm = {}; (jobs||[]).forEach(function(j){ jm[j.id]=j; });
-    var pm = {}; (pros||[]).forEach(function(p){ pm[p.id]=p; });
-    el.innerHTML = '<table><thead><tr><th>Professional</th><th>Job</th><th>Company</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>' +
-      apps.map(function(a) {
-        var job = jm[a.job_id]||{}; var pro = pm[a.professional_id]||{};
-        var pc = {applied:'pill-applied',booked:'pill-booked',rejected:'pill-rejected'}[a.status]||'pill-applied';
-        return '<tr>' +
-          '<td style="font-weight:700;">' + esc(pro.full_name||'Unknown') + '<br><span style="font-size:11px;color:var(--text3);">' + esc(pro.email||'') + '</span></td>' +
-          '<td style="font-weight:600;">' + esc(job.title||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc(job.company_name||'—') + '</td>' +
-          '<td><span class="pill ' + pc + '">' + (a.status||'applied') + '</span></td>' +
-          '<td style="color:var(--text3);">' + new Date(a.applied_at).toLocaleDateString('en-GB') + '</td>' +
-          '<td>' +
-            (a.status !== 'booked'    ? '<button class="act-btn approve-btn" onclick="bookApp(\'' + a.id + '\')">✓ Book</button>' : '<span style="font-size:12px;color:var(--green);">✅ Booked</span>') +
-            (a.status !== 'rejected'  ? '<button class="act-btn reject-btn" onclick="rejectApp(\'' + a.id + '\')">✕</button>' : '') +
-          '</td></tr>';
-      }).join('') + '</tbody></table>';
-  } catch(e) { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
-}
-
-async function bookApp(id) {
-  if (!confirm('Book this professional for the job? They will see it in their My Bookings tab.')) return;
-  await getSupabase().from('applications').update({ status:'booked' }).eq('id', id);
-  loadApplications(); loadStats();
-}
-async function rejectApp(id) {
-  if (!confirm('Reject this application?')) return;
-  await getSupabase().from('applications').update({ status:'rejected' }).eq('id', id);
-  loadApplications();
-}
-
-async function loadProfessionals() {
-  var el = document.getElementById('prosList');
-  el.innerHTML = '<div class="empty-state">Loading…</div>';
-  try {
-    var c = getSupabase();
-    var { data } = await c.from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
-    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">👤</div>No professionals yet.</div>'; return; }
-    el.innerHTML = '<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
-      data.map(function(p) {
-        var pc = {active:'pill-active',pending:'pill-pending',rejected:'pill-rejected'}[p.status]||'pill-pending';
-        return '<tr>' +
-          '<td style="font-weight:700;">' + esc(p.full_name||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc(p.email||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc((p.skills||'—').substring(0,35)) + '</td>' +
-          '<td style="color:var(--text2);">' + esc(p.location||'—') + '</td>' +
-          '<td><span class="pill ' + pc + '">' + (p.status||'—') + '</span></td>' +
-          '<td>' +
-            (p.status !== 'active' ? '<button class="act-btn approve-btn" onclick="approveUser(\'' + p.id + '\',\'' + esc(p.full_name||'') + '\')">✓ Approve</button>' : '') +
-            '<button class="act-btn del-btn" onclick="removeProfile(\'' + p.id + '\')">Remove</button>' +
-          '</td></tr>';
-      }).join('') + '</tbody></table>';
-  } catch(e){}
-}
-
-async function loadEmployers() {
-  var el = document.getElementById('empsList');
-  el.innerHTML = '<div class="empty-state">Loading…</div>';
-  try {
-    var c = getSupabase();
-    var { data } = await c.from('profiles').select('*').eq('role','employer').order('created_at',{ascending:false});
-    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div>No employers yet.</div>'; return; }
-    el.innerHTML = '<table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Industry</th><th>Size</th><th>Joined</th></tr></thead><tbody>' +
-      data.map(function(p) {
-        return '<tr>' +
-          '<td style="font-weight:700;">' + esc(p.full_name||'—') + '</td>' +
-          '<td style="font-weight:600;">' + esc(p.company_name||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc(p.email||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc(p.industry||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc(p.company_size||'—') + '</td>' +
-          '<td style="color:var(--text3);">' + new Date(p.created_at).toLocaleDateString('en-GB') + '</td>' +
-        '</tr>';
-      }).join('') + '</tbody></table>';
-  } catch(e){}
-}
-
-async function loadJobs() {
-  var el = document.getElementById('jobsList');
-  el.innerHTML = '<div class="empty-state">Loading…</div>';
-  try {
-    var c = getSupabase();
-    var { data } = await c.from('jobs').select('*').order('created_at',{ascending:false});
-    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No jobs posted yet.</div>'; return; }
-    el.innerHTML = '<table><thead><tr><th>Title</th><th>Company</th><th>Budget</th><th>Location</th><th>Status</th><th>Posted</th><th>Actions</th></tr></thead><tbody>' +
-      data.map(function(j) {
-        var pc = {active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
-        return '<tr>' +
-          '<td style="font-weight:700;">' + esc(j.title||'—') + '</td>' +
-          '<td>' + esc(j.company_name||'—') + '</td>' +
-          '<td style="color:var(--gold);">' + esc(j.budget||'—') + '</td>' +
-          '<td style="color:var(--text2);">' + esc(j.location||'—') + '</td>' +
-          '<td><span class="pill ' + pc + '">' + (j.status||'active') + '</span></td>' +
-          '<td style="color:var(--text3);">' + new Date(j.created_at).toLocaleDateString('en-GB') + '</td>' +
-          '<td>' +
-            (j.status === 'active'
-              ? '<button class="act-btn pause-btn" onclick="toggleJob(\'' + j.id + '\',\'paused\')">⏸ Pause</button>'
-              : '<button class="act-btn approve-btn" onclick="toggleJob(\'' + j.id + '\',\'active\')">▶ Activate</button>') +
-            '<button class="act-btn del-btn" onclick="removeJob(\'' + j.id + '\')">✕ Remove</button>' +
-          '</td></tr>';
-      }).join('') + '</tbody></table>';
-  } catch(e){}
-}
-
-async function toggleJob(id, status) {
-  await getSupabase().from('jobs').update({ status: status }).eq('id', id);
-  loadJobs(); loadStats();
-}
-async function removeJob(id) {
-  if (!confirm('Remove this job from the network?')) return;
-  await getSupabase().from('jobs').update({ status:'removed' }).eq('id', id);
-  loadJobs(); loadStats();
-}
-async function removeProfile(id) {
-  if (!confirm('Remove this profile?')) return;
-  await getSupabase().from('profiles').delete().eq('id', id);
-  loadProfessionals(); loadStats();
-}
-async function igLogout() {
-  await getSupabase().auth.signOut();
-  window.location.href = 'index.html';
-}
-async function postJob() {
-  var title   = document.getElementById('j-title').value.trim();
-  var company = document.getElementById('j-company').value.trim();
-  var desc    = document.getElementById('j-desc').value.trim();
-  var alert   = document.getElementById('alertPostJob');
-  if (!title || !company || !desc) {
-    alert.textContent = 'Please fill in Title, Company and Description.';
-    alert.className = 'alert alert-error show'; return;
-  }
-  try {
-    var c = getSupabase();
-    var { data: sess } = await c.auth.getSession();
-    var { error } = await c.from('jobs').insert({
-      employer_id:  sess.session.user.id,
-      company_name: company,
-      title:        title,
-      description:  desc,
-      budget:       document.getElementById('j-budget').value.trim(),
-      location:     document.getElementById('j-location').value.trim(),
-      skills:       document.getElementById('j-skills').value.trim(),
-      deadline:     document.getElementById('j-deadline').value.trim(),
-      status:       'active',
-      created_at:   new Date().toISOString()
+    /* Upload to Supabase Storage */
+    var { data: uploadData, error: uploadError } = await c.storage.from(BUCKET).upload(fname, file, {
+      contentType: file.type,
+      upsert: false
     });
-    if (error) throw error;
-    alert.textContent = '✅ Job posted! Professionals can see it now.';
-    alert.className = 'alert alert-success show';
-    /* Clear form */
-    ['j-title','j-company','j-desc','j-budget','j-location','j-skills','j-deadline'].forEach(function(id){ document.getElementById(id).value=''; });
+    if(uploadError) throw uploadError;
+
+    /* Simulate progress (Storage API doesn't expose real progress) */
+    for(var p = 10; p <= 90; p += 10){
+      await new Promise(function(r){ setTimeout(r, 80); });
+      document.getElementById('uploadBar').style.width = p + '%';
+      document.getElementById('uploadPct').textContent = p + '%';
+    }
+
+    /* Get public URL */
+    var { data: urlData } = c.storage.from(BUCKET).getPublicUrl(fname);
+    var publicUrl = urlData.publicUrl;
+
+    /* Insert into site_slides table */
+    var maxOrder = allSlides.length > 0 ? Math.max.apply(null, allSlides.map(function(s){ return s.sort_order || 0; })) : 0;
+    var { data: slideRow, error: insertError } = await c.from('site_slides').insert({
+      url:         publicUrl,
+      type:        isVideo ? 'video' : 'image',
+      title:       file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+      subtitle:    '',
+      caption:     '',
+      tag_text:    'New',
+      tag_type:    'new',
+      cta_text:    '',
+      cta_url:     '',
+      overlay_color: '#f0b429',
+      sort_order:  maxOrder + 1,
+      active:      true,
+      storage_path: fname
+    }).select().single();
+
+    if(insertError) throw insertError;
+
+    document.getElementById('uploadBar').style.width = '100%';
+    document.getElementById('uploadPct').textContent = '100%';
+    progressEl.style.display = 'none';
+
+    showToast('✅', 'Uploaded successfully!', isVideo ? 'Video slide added to homepage' : 'Image slide added to homepage');
+    loadSlides();
     loadStats();
-    loadEditJobs();
-    setTimeout(function(){ alert.classList.remove('show'); }, 4000);
-  } catch(e) {
-    alert.textContent = 'Error: ' + e.message;
-    alert.className = 'alert alert-error show';
+
+    /* Open caption editor for the new slide */
+    setTimeout(function(){ openCaptionEditor(slideRow); }, 500);
+
+  }catch(err){
+    progressEl.style.display = 'none';
+    showToast('⚠️', 'Upload failed', err.message);
+    console.error('[Upload]', err);
   }
 }
 
-async function loadEditJobs() {
-  var el = document.getElementById('editJobsList');
-  if (!el) return;
-  el.innerHTML = '<div class="empty-state">Loading…</div>';
-  try {
-    var c = getSupabase();
-    var { data } = await c.from('jobs').select('*').order('created_at',{ascending:false});
-    if (!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No jobs yet — post one above.</div>'; return; }
-    el.innerHTML = data.map(function(j) {
-      var pc = {active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
-      return '<div style="background:var(--ink3,rgba(255,255,255,0.02));border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px;">' +
-        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">' +
-          '<div>' +
-            '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">' + esc(j.title||'—') + '</div>' +
-            '<div style="font-size:13px;color:var(--text2);">🏢 ' + esc(j.company_name||'—') + (j.location?' · 📍 '+esc(j.location):'') + (j.budget?' · <span style="color:var(--gold);font-weight:700;">'+esc(j.budget)+'</span>':'') + '</div>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
-            '<span class="pill ' + pc + '">' + (j.status||'active') + '</span>' +
-            (j.status === 'active'
-              ? '<button class="act-btn pause-btn" onclick="toggleJob(\'' + j.id + '\',\'paused\')">⏸ Pause</button>'
-              : '<button class="act-btn approve-btn" onclick="toggleJob(\'' + j.id + '\',\'active\')">▶ Activate</button>') +
-            '<button class="act-btn del-btn" onclick="removeJob(\'' + j.id + '\')">✕</button>' +
-          '</div>' +
-        '</div>' +
-        (j.description ? '<div style="font-size:13px;color:var(--text2);margin-top:10px;line-height:1.5;">' + esc(j.description.substring(0,150)) + (j.description.length>150?'…':'') + '</div>' : '') +
+/* LOAD SLIDES */
+async function loadSlides(){
+  var el = document.getElementById('slidesGrid');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎞️</div>Loading…</div>';
+  try{
+    var { data } = await getSupabase().from('site_slides').select('*').order('sort_order', {ascending:true});
+    allSlides = data || [];
+    if(!allSlides.length){ el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎞️</div>No slides yet — upload your first one above.</div>'; return; }
+    el.innerHTML = allSlides.map(function(s, i){
+      var isVideo = s.type === 'video';
+      var thumbStyle = isVideo
+        ? 'background:rgba(255,96,96,0.15);display:flex;align-items:center;justify-content:center;font-size:24px;'
+        : 'object-fit:cover;';
+      var thumbContent = isVideo
+        ? '<div style="width:90px;height:56px;border-radius:8px;'+thumbStyle+'flex-shrink:0;"><span>▶️</span></div>'
+        : '<img src="'+esc(s.url)+'" style="width:90px;height:56px;border-radius:8px;'+thumbStyle+'flex-shrink:0;" alt="" onerror="this.style.background=\'rgba(255,255,255,0.05)\';this.src=\'\';"/>';
+      return '<div class="slide-card'+(editingSlideId===s.id?' editing':'')+'" id="slideCard-'+s.id+'">'+
+        '<div class="slide-thumb-row">'+
+          '<div class="slide-drag-handle" title="Drag to reorder">⠿</div>'+
+          '<span class="slide-order-badge">#'+(i+1)+'</span>'+
+          thumbContent+
+          '<div class="slide-info">'+
+            '<div class="slide-info-title">'+(s.title||'Untitled slide')+'</div>'+
+            '<div class="slide-info-meta">'+(s.type==='video'?'🎬 Video':'🖼 Image')+(s.caption?' · has caption':'')+'</div>'+
+          '</div>'+
+          '<div class="slide-actions">'+
+            '<div class="slide-toggle">'+
+              '<div class="toggle-switch'+(s.active?' on':'')+'" onclick="toggleSlideActive(\''+s.id+'\','+s.active+')" title="'+(s.active?'Active — click to hide':'Hidden — click to show')+'"></div>'+
+            '</div>'+
+            '<button class="act-btn edit-btn" onclick="openCaptionEditor('+JSON.stringify(s).replace(/"/g,'&quot;')+')" title="Edit caption">✏️</button>'+
+            '<button class="act-btn del-btn" onclick="deleteSlide(\''+s.id+'\',\''+esc(s.storage_path||'')+'\')">✕</button>'+
+          '</div>'+
+        '</div>'+
       '</div>';
     }).join('');
-  } catch(e){ el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+  }catch(e){ el.innerHTML = '<div class="empty-state">Error: '+esc(e.message)+'</div>'; }
 }
 
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+/* TOGGLE ACTIVE */
+async function toggleSlideActive(id, current){
+  await getSupabase().from('site_slides').update({ active: !current }).eq('id', id);
+  loadSlides(); loadStats();
+}
+
+/* DELETE SLIDE */
+async function deleteSlide(id, storagePath){
+  if(!confirm('Delete this slide? This cannot be undone.')) return;
+  var c = getSupabase();
+  if(storagePath){ try{ await c.storage.from(BUCKET).remove([storagePath]); }catch(e){} }
+  await c.from('site_slides').delete().eq('id', id);
+  if(editingSlideId === id){
+    editingSlideId = null;
+    document.getElementById('captionEditorInner').innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;"><div style="font-size:32px;margin-bottom:10px;">👈</div>Select a slide to edit its caption.</div>';
+  }
+  loadSlides(); loadStats();
+  showToast('🗑️','Slide deleted','');
+}
+
+/* CAPTION EDITOR */
+var OVERLAY_COLORS = [
+  {hex:'#f0b429',label:'Gold'},
+  {hex:'#4f8ef7',label:'Blue'},
+  {hex:'#2dd4a0',label:'Green'},
+  {hex:'#a855f7',label:'Purple'},
+  {hex:'#f75f4f',label:'Red'},
+  {hex:'#ffffff',label:'White'}
+];
+var TAG_TYPES = ['new','live','soon'];
+var TAG_LABELS = {new:'New',live:'Live',soon:'Soon'};
+
+function openCaptionEditor(slide){
+  editingSlideId = slide.id;
+
+  /* Highlight selected card */
+  document.querySelectorAll('.slide-card').forEach(function(c){ c.classList.remove('editing'); });
+  var card = document.getElementById('slideCard-' + slide.id);
+  if(card) card.classList.add('editing');
+
+  var colorSwatches = OVERLAY_COLORS.map(function(c){
+    return '<div class="color-swatch'+(slide.overlay_color===c.hex?' selected':'')+'" style="background:'+c.hex+';" onclick="pickColor(this,\''+c.hex+'\')" title="'+c.label+'"></div>';
+  }).join('');
+
+  document.getElementById('captionEditorInner').innerHTML =
+    '<div class="caption-field"><label>Slide Title</label><input type="text" id="cap-title" placeholder="e.g. ImpactGrid V3.0 Is Here" value="'+esc(slide.title||'')+'"/></div>'+
+    '<div class="caption-field"><label>Subtitle / Tag Line</label><input type="text" id="cap-subtitle" placeholder="e.g. New Release" value="'+esc(slide.subtitle||'')+'"/></div>'+
+    '<div class="caption-field"><label>Description</label><textarea id="cap-caption" rows="3" placeholder="Short description shown under the title…">'+esc(slide.caption||'')+'</textarea></div>'+
+    '<div class="caption-field"><label>Tag Badge Text</label><input type="text" id="cap-tag-text" placeholder="e.g. New, Live Now, Coming Soon" value="'+esc(slide.tag_text||'New')+'"/></div>'+
+    '<div class="caption-field"><label>Tag Badge Type</label><select id="cap-tag-type">'+
+      TAG_TYPES.map(function(t){ return '<option value="'+t+'"'+(slide.tag_type===t?' selected':'')+'>'+TAG_LABELS[t]+'</option>'; }).join('')+
+    '</select></div>'+
+    '<div class="caption-field"><label>CTA Button Text</label><input type="text" id="cap-cta-text" placeholder="e.g. Learn More →" value="'+esc(slide.cta_text||'')+'"/></div>'+
+    '<div class="caption-field"><label>CTA Button URL</label><input type="text" id="cap-cta-url" placeholder="e.g. /analytics.html" value="'+esc(slide.cta_url||'')+'"/></div>'+
+    '<div class="caption-field"><label>Accent Colour</label><div class="color-row">'+colorSwatches+'</div><input type="hidden" id="cap-color" value="'+(slide.overlay_color||'#f0b429')+'"/></div>'+
+    '<div class="caption-preview" id="captionPreview">'+buildPreview(slide)+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px;">'+
+      '<button class="act-btn approve-btn" style="flex:1;padding:10px;font-size:13px;" onclick="saveCaption(\''+slide.id+'\')">💾 Save Caption</button>'+
+      '<button class="act-btn del-btn" style="padding:10px 14px;font-size:13px;" onclick="deleteSlide(\''+slide.id+'\',\''+esc(slide.storage_path||'')+'\')" title="Delete slide">🗑</button>'+
+    '</div>';
+
+  /* Live preview updates */
+  ['cap-title','cap-subtitle','cap-caption','cap-tag-text','cap-cta-text'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('input', updatePreview);
+  });
+  document.getElementById('cap-tag-type').addEventListener('change', updatePreview);
+}
+
+function pickColor(el, hex){
+  document.querySelectorAll('.color-swatch').forEach(function(s){ s.classList.remove('selected'); });
+  el.classList.add('selected');
+  document.getElementById('cap-color').value = hex;
+  updatePreview();
+}
+
+function buildPreview(data){
+  var tagColors = {new:'background:rgba(240,180,41,0.14);color:#f0b429;border:1px solid rgba(240,180,41,0.3);',live:'background:rgba(45,212,160,0.12);color:#2dd4a0;border:1px solid rgba(45,212,160,0.3);',soon:'background:rgba(79,142,247,0.1);color:#7eb3ff;border:1px solid rgba(79,142,247,0.2);'};
+  var tagStyle = tagColors[data.tag_type||'new'] || tagColors.new;
+  var accent   = data.overlay_color || '#f0b429';
+  return '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'+tagStyle+'">'+(data.tag_text||'New')+'</div>'+
+    '<div style="font-size:15px;font-weight:900;letter-spacing:-0.02em;color:#fff;line-height:1.2;margin-bottom:6px;">'+(data.title||'Slide Title')+'</div>'+
+    '<div style="font-size:11px;color:rgba(255,255,255,0.7);line-height:1.5;margin-bottom:8px;">'+(data.caption||'Your description will appear here.')+'</div>'+
+    (data.cta_text ? '<div style="font-size:11px;font-weight:700;color:'+accent+';">'+data.cta_text+' →</div>' : '');
+}
+
+function updatePreview(){
+  var el = document.getElementById('captionPreview');
+  if(!el) return;
+  el.innerHTML = buildPreview({
+    tag_text:      document.getElementById('cap-tag-text')?.value || 'New',
+    tag_type:      document.getElementById('cap-tag-type')?.value || 'new',
+    title:         document.getElementById('cap-title')?.value || '',
+    caption:       document.getElementById('cap-caption')?.value || '',
+    cta_text:      document.getElementById('cap-cta-text')?.value || '',
+    overlay_color: document.getElementById('cap-color')?.value || '#f0b429'
+  });
+}
+
+async function saveCaption(id){
+  var payload = {
+    title:         document.getElementById('cap-title')?.value.trim()    || '',
+    subtitle:      document.getElementById('cap-subtitle')?.value.trim() || '',
+    caption:       document.getElementById('cap-caption')?.value.trim()  || '',
+    tag_text:      document.getElementById('cap-tag-text')?.value.trim() || 'New',
+    tag_type:      document.getElementById('cap-tag-type')?.value        || 'new',
+    cta_text:      document.getElementById('cap-cta-text')?.value.trim() || '',
+    cta_url:       document.getElementById('cap-cta-url')?.value.trim()  || '',
+    overlay_color: document.getElementById('cap-color')?.value           || '#f0b429'
+  };
+  var { error } = await getSupabase().from('site_slides').update(payload).eq('id', id);
+  if(error){ showToast('⚠️','Save failed', error.message); return; }
+  showToast('✅','Caption saved!','Changes live on homepage');
+  loadSlides();
+}
+
+/* ════════════════════════════════════════════════════════════
+   CONTENT WORKSTATION
+════════════════════════════════════════════════════════════ */
+var CONTENT_KEYS = [
+  { key:'hero_title',       label:'Hero Section Title',      type:'text',     default:'Everything Connected. Everything Intelligent.' },
+  { key:'hero_subtitle',    label:'Hero Section Subtitle',   type:'text',     default:'ImpactGrid Creator Intelligence — Turning Data Into Strategic Advantage' },
+  { key:'ecosystem_title',  label:'Ecosystem Section Title', type:'text',     default:'The ImpactGrid Ecosystem' },
+  { key:'ecosystem_label',  label:'Ecosystem Label Tag',     type:'text',     default:'The ImpactGrid Ecosystem' },
+  { key:'usecases_title',   label:'Use Cases Title',         type:'text',     default:'See What ImpactGrid Actually Does' },
+  { key:'usecases_sub',     label:'Use Cases Subtitle',      type:'textarea', default:'Three products. Three real use cases. One ecosystem built for people who take their growth seriously.' },
+  { key:'cta_title',        label:'CTA Banner Title',        type:'text',     default:'Ready to Build With Intelligence?' },
+  { key:'cta_subtitle',     label:'CTA Banner Subtitle',     type:'textarea', default:'Join the ImpactGrid ecosystem and take your business or creative work to the next level.' },
+  { key:'footer_tagline',   label:'Footer Tagline',          type:'textarea', default:'ImpactGrid Creator Intelligence — Turning data into strategic advantage with analytics, AI, and creator tools.' }
+];
+
+var contentValues = {};
+
+async function loadContentEditor(){
+  var el = document.getElementById('contentEditorGrid');
+  try{
+    var { data } = await getSupabase().from('site_content').select('*');
+    contentValues = {};
+    (data||[]).forEach(function(row){ contentValues[row.key] = row.value; });
+    el.innerHTML = CONTENT_KEYS.map(function(ck){
+      var val = contentValues[ck.key] || ck.default;
+      var field = ck.type === 'textarea'
+        ? '<textarea class="content-item-input" id="content-'+ck.key+'" rows="3">'+esc(val)+'</textarea>'
+        : '<input type="text" class="content-item-input" id="content-'+ck.key+'" value="'+esc(val)+'"/>';
+      return '<div class="content-item"><div class="content-item-label">'+esc(ck.label)+'</div>'+field+'</div>';
+    }).join('');
+    loadEcoCardsEditor(data||[]);
+  }catch(e){ el.innerHTML = '<div class="empty-state">Could not load content. Make sure the <code>site_content</code> table exists in Supabase.</div>'; }
+}
+
+async function saveAllContent(){
+  var upserts = CONTENT_KEYS.map(function(ck){
+    var el = document.getElementById('content-'+ck.key);
+    return { key: ck.key, value: el ? el.value : (contentValues[ck.key] || ck.default) };
+  });
+  var { error } = await getSupabase().from('site_content').upsert(upserts, { onConflict:'key' });
+  if(error){ showToast('⚠️','Save failed', error.message); return; }
+  showToast('✅','Homepage content saved!','Changes live immediately');
+}
+
+var ECO_KEYS = [
+  { prefix:'eco_consulting',  label:'Consulting Card',   icon:'📊' },
+  { prefix:'eco_analytics',   label:'Analytics Card',    icon:'⚡' },
+  { prefix:'eco_creator',     label:'Creator Studio Card',icon:'🎬' },
+  { prefix:'eco_network',     label:'Network Card',      icon:'🌐' }
+];
+
+function loadEcoCardsEditor(existingData){
+  var el = document.getElementById('ecoCardsEditor'); if(!el) return;
+  var kvMap = {};
+  existingData.forEach(function(row){ kvMap[row.key] = row.value; });
+  el.innerHTML = '<div class="content-editor-grid">' +
+    ECO_KEYS.map(function(ek){
+      var titleKey = ek.prefix+'_title';
+      var descKey  = ek.prefix+'_desc';
+      var titleVal = kvMap[titleKey] || ek.label.replace(' Card','');
+      var descVal  = kvMap[descKey]  || '';
+      return '<div class="content-item">'+
+        '<div class="content-item-label">'+ek.icon+' '+ek.label+'</div>'+
+        '<input type="text" class="content-item-input" id="'+titleKey+'" placeholder="Card title" value="'+esc(titleVal)+'" style="margin-bottom:8px;"/>'+
+        '<textarea class="content-item-input" id="'+descKey+'" placeholder="Card description" rows="2">'+esc(descVal)+'</textarea>'+
+      '</div>';
+    }).join('') + '</div>';
+}
+
+async function saveEcoCards(){
+  var upserts = [];
+  ECO_KEYS.forEach(function(ek){
+    var te = document.getElementById(ek.prefix+'_title');
+    var de = document.getElementById(ek.prefix+'_desc');
+    if(te) upserts.push({ key: ek.prefix+'_title', value: te.value });
+    if(de) upserts.push({ key: ek.prefix+'_desc',  value: de.value });
+  });
+  var { error } = await getSupabase().from('site_content').upsert(upserts, { onConflict:'key' });
+  if(error){ showToast('⚠️','Save failed', error.message); return; }
+  showToast('✅','Ecosystem cards saved!','');
+}
+
+/* ════════════════════════════════════════════════════════════
+   TICKER EDITOR
+════════════════════════════════════════════════════════════ */
+async function loadTickerEditor(){
+  var el = document.getElementById('tickerItemsList');
+  try{
+    var { data } = await getSupabase().from('site_ticker').select('*').order('sort_order',{ascending:true});
+    tickerItems = data && data.length ? data : getDefaultTickerItems();
+    renderTickerList();
+  }catch(e){
+    tickerItems = getDefaultTickerItems();
+    renderTickerList();
+  }
+}
+
+function getDefaultTickerItems(){
+  return [
+    {id:null,text:'ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live',type:'new',sort_order:1,active:true},
+    {id:null,text:'Dijo AI Assistant — Your personal financial co-pilot is always on',type:'live',sort_order:2,active:true},
+    {id:null,text:'Creator Intelligence Engine — AI content adviser powered by real trend data',type:'new',sort_order:3,active:true},
+    {id:null,text:'TikTok & Instagram — Pending API review',type:'soon',sort_order:4,active:true}
+  ];
+}
+
+function renderTickerList(){
+  var el = document.getElementById('tickerItemsList'); if(!el) return;
+  el.innerHTML = tickerItems.map(function(item, i){
+    var typeClasses = {new:'ticker-type-new',live:'ticker-type-live',soon:'ticker-type-soon'};
+    var typeClass = typeClasses[item.type||'new'] || 'ticker-type-new';
+    var typeLabel = {new:'New',live:'Live',soon:'Soon'}[item.type||'new'] || 'New';
+    return '<div class="ticker-item-row" data-idx="'+i+'">'+
+      '<span style="cursor:grab;color:var(--text3);margin-right:4px;">⠿</span>'+
+      '<span class="ticker-item-type '+typeClass+'" onclick="cycleTickerType('+i+')" title="Click to change type">'+typeLabel+'</span>'+
+      '<input type="text" value="'+esc(item.text||'')+'" placeholder="Ticker message…" oninput="tickerItems['+i+'].text=this.value;updateTickerPreview()" />'+
+      '<button onclick="removeTickerItem('+i+')" style="flex-shrink:0;background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 4px;" title="Remove">×</button>'+
+    '</div>';
+  }).join('');
+  updateTickerPreview();
+}
+
+function cycleTickerType(idx){
+  var types = ['new','live','soon'];
+  var cur   = types.indexOf(tickerItems[idx].type||'new');
+  tickerItems[idx].type = types[(cur+1)%3];
+  renderTickerList();
+}
+
+function addTickerItem(){
+  tickerItems.push({id:null,text:'',type:'new',sort_order:tickerItems.length+1,active:true});
+  renderTickerList();
+  var inputs = document.querySelectorAll('.ticker-item-row input[type=text]');
+  if(inputs.length) inputs[inputs.length-1].focus();
+}
+
+function removeTickerItem(idx){
+  tickerItems.splice(idx,1);
+  renderTickerList();
+}
+
+function updateTickerPreview(){
+  var prev = document.getElementById('tickerPreview');
+  if(!prev) return;
+  var items = tickerItems.filter(function(t){ return t.text; });
+  if(!items.length){ prev.textContent = 'No items'; return; }
+  prev.textContent = items.map(function(t){ return '['+((t.type||'new').toUpperCase())+'] '+t.text; }).join('  ·  ');
+}
+
+async function saveTickerItems(){
+  /* Collect from DOM */
+  var rows = document.querySelectorAll('.ticker-item-row');
+  rows.forEach(function(row, i){
+    var inp = row.querySelector('input[type=text]');
+    if(inp && tickerItems[i]) tickerItems[i].text = inp.value;
+    tickerItems[i].sort_order = i + 1;
+  });
+
+  var toSave = tickerItems.filter(function(t){ return t.text.trim(); });
+  try{
+    /* Delete all existing ticker items and re-insert */
+    await getSupabase().from('site_ticker').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    var { error } = await getSupabase().from('site_ticker').insert(
+      toSave.map(function(t, i){ return { text: t.text.trim(), type: t.type||'new', sort_order: i+1, active: true }; })
+    );
+    if(error) throw error;
+    showToast('✅','Ticker saved!',toSave.length+' items live on site');
+    loadTickerEditor();
+  }catch(e){ showToast('⚠️','Save failed', e.message); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   NETWORK MANAGEMENT (unchanged from original)
+════════════════════════════════════════════════════════════ */
+async function loadPending(){
+  var el = document.getElementById('pendingList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div>Loading…</div>';
+  try{
+    var c = getSupabase();
+    var { data } = await c.from('profiles').select('*').eq('status','pending').eq('role','professional').order('created_at',{ascending:false});
+    if(!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div>No pending applications — all clear!</div>'; return; }
+    el.innerHTML='<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Applied</th><th>Actions</th></tr></thead><tbody>'+
+      data.map(function(p){
+        return '<tr>'+
+          '<td style="font-weight:700;">'+esc(p.full_name||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc(p.email||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc((p.skills||'—').substring(0,35))+'</td>'+
+          '<td style="color:var(--text2);">'+esc(p.location||'—')+'</td>'+
+          '<td style="color:var(--text3);">'+new Date(p.created_at).toLocaleDateString('en-GB')+'</td>'+
+          '<td>'+
+            '<button class="act-btn approve-btn" onclick="approveUser(\''+p.id+'\',\''+esc(p.full_name||'')+'\')">✓ Approve</button>'+
+            '<button class="act-btn reject-btn"  onclick="rejectUser(\''+p.id+'\')">✕ Reject</button>'+
+          '</td></tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){ el.innerHTML='<div class="empty-state">Error: '+esc(e.message)+'</div>'; }
+}
+
+async function approveUser(id, name){
+  if(!confirm('Approve '+(name||'this professional')+'? They will be able to access the network.')) return;
+  await getSupabase().from('profiles').update({status:'active'}).eq('id',id);
+  loadPending(); loadStats();
+}
+async function rejectUser(id){
+  if(!confirm('Reject this application?')) return;
+  await getSupabase().from('profiles').update({status:'rejected'}).eq('id',id);
+  loadPending(); loadStats();
+}
+
+async function loadApplications(){
+  var el=document.getElementById('applicationsList');
+  el.innerHTML='<div class="empty-state"><div class="empty-icon">📥</div>Loading…</div>';
+  try{
+    var c=getSupabase();
+    var {data:apps}=await c.from('applications').select('*').order('applied_at',{ascending:false});
+    if(!apps||!apps.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📥</div>No applications yet.</div>';return;}
+    var jobIds=[...new Set(apps.map(function(a){return a.job_id;}).filter(Boolean))];
+    var proIds=[...new Set(apps.map(function(a){return a.professional_id;}).filter(Boolean))];
+    var {data:jobs}=await c.from('jobs').select('id,title,company_name').in('id',jobIds);
+    var {data:pros}=await c.from('profiles').select('id,full_name,email').in('id',proIds);
+    var jm={};(jobs||[]).forEach(function(j){jm[j.id]=j;});
+    var pm={};(pros||[]).forEach(function(p){pm[p.id]=p;});
+    el.innerHTML='<table><thead><tr><th>Professional</th><th>Job</th><th>Company</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>'+
+      apps.map(function(a){
+        var job=jm[a.job_id]||{};var pro=pm[a.professional_id]||{};
+        var pc={applied:'pill-applied',booked:'pill-booked',rejected:'pill-rejected'}[a.status]||'pill-applied';
+        return '<tr>'+
+          '<td style="font-weight:700;">'+esc(pro.full_name||'Unknown')+'<br><span style="font-size:11px;color:var(--text3);">'+esc(pro.email||'')+'</span></td>'+
+          '<td style="font-weight:600;">'+esc(job.title||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc(job.company_name||'—')+'</td>'+
+          '<td><span class="pill '+pc+'">'+(a.status||'applied')+'</span></td>'+
+          '<td style="color:var(--text3);">'+new Date(a.applied_at).toLocaleDateString('en-GB')+'</td>'+
+          '<td>'+(a.status!=='booked'?'<button class="act-btn approve-btn" onclick="bookApp(\''+a.id+'\')">✓ Book</button>':'<span style="font-size:12px;color:var(--green);">✅ Booked</span>')+(a.status!=='rejected'?'<button class="act-btn reject-btn" onclick="rejectApp(\''+a.id+'\')">✕</button>':'')+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){el.innerHTML='<div class="empty-state">Error: '+esc(e.message)+'</div>';}
+}
+
+async function bookApp(id){if(!confirm('Book this professional?'))return;await getSupabase().from('applications').update({status:'booked'}).eq('id',id);loadApplications();}
+async function rejectApp(id){if(!confirm('Reject?'))return;await getSupabase().from('applications').update({status:'rejected'}).eq('id',id);loadApplications();}
+
+async function loadProfessionals(){
+  var el=document.getElementById('prosList');el.innerHTML='<div class="empty-state">Loading…</div>';
+  try{
+    var {data}=await getSupabase().from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
+    if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">👤</div>No professionals yet.</div>';return;}
+    el.innerHTML='<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+      data.map(function(p){
+        var pc={active:'pill-active',pending:'pill-pending',rejected:'pill-rejected'}[p.status]||'pill-pending';
+        return '<tr>'+
+          '<td style="font-weight:700;">'+esc(p.full_name||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc(p.email||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc((p.skills||'—').substring(0,35))+'</td>'+
+          '<td style="color:var(--text2);">'+esc(p.location||'—')+'</td>'+
+          '<td><span class="pill '+pc+'">'+(p.status||'—')+'</span></td>'+
+          '<td>'+(p.status!=='active'?'<button class="act-btn approve-btn" onclick="approveUser(\''+p.id+'\',\''+esc(p.full_name||'')+'\')">✓ Approve</button>':'')+'<button class="act-btn del-btn" onclick="removeProfile(\''+p.id+'\')">Remove</button></td></tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){}
+}
+
+async function loadEmployers(){
+  var el=document.getElementById('empsList');el.innerHTML='<div class="empty-state">Loading…</div>';
+  try{
+    var {data}=await getSupabase().from('profiles').select('*').eq('role','employer').order('created_at',{ascending:false});
+    if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div>No employers yet.</div>';return;}
+    el.innerHTML='<table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Industry</th><th>Size</th><th>Joined</th></tr></thead><tbody>'+
+      data.map(function(p){
+        return '<tr>'+
+          '<td style="font-weight:700;">'+esc(p.full_name||'—')+'</td>'+
+          '<td style="font-weight:600;">'+esc(p.company_name||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc(p.email||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc(p.industry||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc(p.company_size||'—')+'</td>'+
+          '<td style="color:var(--text3);">'+new Date(p.created_at).toLocaleDateString('en-GB')+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){}
+}
+
+async function loadJobs(){
+  var el=document.getElementById('jobsList');el.innerHTML='<div class="empty-state">Loading…</div>';
+  try{
+    var {data}=await getSupabase().from('jobs').select('*').order('created_at',{ascending:false});
+    if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No jobs posted yet.</div>';return;}
+    el.innerHTML='<table><thead><tr><th>Title</th><th>Company</th><th>Budget</th><th>Location</th><th>Status</th><th>Posted</th><th>Actions</th></tr></thead><tbody>'+
+      data.map(function(j){
+        var pc={active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
+        return '<tr>'+
+          '<td style="font-weight:700;">'+esc(j.title||'—')+'</td>'+
+          '<td>'+esc(j.company_name||'—')+'</td>'+
+          '<td style="color:var(--gold,#f0b429);">'+esc(j.budget||'—')+'</td>'+
+          '<td style="color:var(--text2);">'+esc(j.location||'—')+'</td>'+
+          '<td><span class="pill '+pc+'">'+(j.status||'active')+'</span></td>'+
+          '<td style="color:var(--text3);">'+new Date(j.created_at).toLocaleDateString('en-GB')+'</td>'+
+          '<td>'+(j.status==='active'?'<button class="act-btn pause-btn" onclick="toggleJob(\''+j.id+'\',\'paused\')">⏸ Pause</button>':'<button class="act-btn approve-btn" onclick="toggleJob(\''+j.id+'\',\'active\')">▶ Activate</button>')+'<button class="act-btn del-btn" onclick="removeJob(\''+j.id+'\')">✕ Remove</button></td></tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){}
+}
+
+async function toggleJob(id,status){await getSupabase().from('jobs').update({status:status}).eq('id',id);loadJobs();loadStats();}
+async function removeJob(id){if(!confirm('Remove this job?'))return;await getSupabase().from('jobs').update({status:'removed'}).eq('id',id);loadJobs();loadStats();}
+async function removeProfile(id){if(!confirm('Remove this profile?'))return;await getSupabase().from('profiles').delete().eq('id',id);loadProfessionals();loadStats();}
+async function igLogout(){await getSupabase().auth.signOut();window.location.href='index.html';}
+
+async function postJob(){
+  var title=document.getElementById('j-title').value.trim();
+  var company=document.getElementById('j-company').value.trim();
+  var desc=document.getElementById('j-desc').value.trim();
+  var alert=document.getElementById('alertPostJob');
+  if(!title||!company||!desc){alert.textContent='Please fill in Title, Company and Description.';alert.className='alert alert-error show';return;}
+  try{
+    var c=getSupabase();
+    var {data:sess}=await c.auth.getSession();
+    var {error}=await c.from('jobs').insert({employer_id:sess.session.user.id,company_name:company,title:title,description:desc,budget:document.getElementById('j-budget').value.trim(),location:document.getElementById('j-location').value.trim(),skills:document.getElementById('j-skills').value.trim(),deadline:document.getElementById('j-deadline').value.trim(),status:'active',created_at:new Date().toISOString()});
+    if(error)throw error;
+    alert.textContent='✅ Job posted!';alert.className='alert alert-success show';
+    ['j-title','j-company','j-desc','j-budget','j-location','j-skills','j-deadline'].forEach(function(id){document.getElementById(id).value='';});
+    loadStats();loadEditJobs();
+    setTimeout(function(){alert.classList.remove('show');},4000);
+  }catch(e){alert.textContent='Error: '+e.message;alert.className='alert alert-error show';}
+}
+
+async function loadEditJobs(){
+  var el=document.getElementById('editJobsList');if(!el)return;
+  el.innerHTML='<div class="empty-state">Loading…</div>';
+  try{
+    var {data}=await getSupabase().from('jobs').select('*').order('created_at',{ascending:false});
+    if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No jobs yet — post one above.</div>';return;}
+    el.innerHTML=data.map(function(j){
+      var pc={active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
+      return '<div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;">'+
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">'+
+          '<div><div style="font-size:14px;font-weight:700;margin-bottom:3px;">'+esc(j.title||'—')+'</div>'+
+          '<div style="font-size:12px;color:var(--text2);">🏢 '+esc(j.company_name||'—')+(j.location?' · 📍 '+esc(j.location):'')+(j.budget?' · <span style="color:var(--gold,#f0b429);font-weight:700;">'+esc(j.budget)+'</span>':'')+'</div></div>'+
+          '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">'+
+            '<span class="pill '+pc+'">'+(j.status||'active')+'</span>'+
+            (j.status==='active'?'<button class="act-btn pause-btn" onclick="toggleJob(\''+j.id+'\',\'paused\')">⏸</button>':'<button class="act-btn approve-btn" onclick="toggleJob(\''+j.id+'\',\'active\')">▶</button>')+
+            '<button class="act-btn del-btn" onclick="removeJob(\''+j.id+'\')">✕</button>'+
+          '</div>'+
+        '</div>'+
+        (j.description?'<div style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.5;">'+esc(j.description.substring(0,120))+(j.description.length>120?'…':'')+'</div>':'')+
+      '</div>';
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty-state">Error: '+esc(e.message)+'</div>';}
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>
