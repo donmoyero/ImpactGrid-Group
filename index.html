@@ -72,13 +72,34 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .btn-ghost-nav:hover{color:var(--text);}
 .btn-gold-nav{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
 .btn-gold-nav:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo);}
-.hamburger{display:none;flex-direction:column;gap:5px;padding:8px;margin-left:6px;}
+.hamburger{display:none;flex-direction:column;gap:5px;padding:8px;margin-left:6px;border-radius:9px;border:1px solid var(--border2);background:var(--card);}
 .hamburger span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s;}
+.hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.active span:nth-child(2){opacity:0;}
+.hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 .mob-nav{display:none;position:fixed;top:var(--nav-h);left:0;right:0;bottom:0;background:var(--bg2);z-index:999;padding:20px;flex-direction:column;gap:5px;overflow-y:auto;}
 .mob-nav.open{display:flex;}
-.mob-nav a{padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);transition:all 0.2s;}
-.mob-nav a:hover{background:var(--card);color:var(--text);}
+.mob-nav a{padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);transition:all 0.2s;border:1px solid transparent;}
+.mob-nav a:hover{background:var(--card);color:var(--text);border-color:var(--border);}
+.mob-nav a.active{color:var(--text);background:var(--card);border-color:var(--border);}
 .mob-cta{margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f!important;font-weight:700;text-align:center;border-radius:var(--r);}
+.mob-nav-divider{height:1px;background:var(--border);margin:8px 0;}
+/* USER AVATAR */
+.user-btn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:9px;background:var(--card);border:1px solid var(--border2);cursor:pointer;transition:all 0.2s;position:relative;}
+.user-btn:hover{border-color:var(--gold);}
+.user-avatar{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;flex-shrink:0;font-family:var(--fd);}
+.user-name{font-size:13px;font-weight:600;color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-chevron{font-size:10px;color:var(--text3);}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:6px;min-width:180px;box-shadow:0 12px 40px rgba(0,0,0,0.4);z-index:1100;display:none;flex-direction:column;gap:2px;}
+.user-dropdown.open{display:flex;}
+.user-dropdown a,.user-dropdown button{padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-align:left;width:100%;display:block;transition:all 0.2s;background:none;border:none;cursor:pointer;font-family:var(--fb);}
+.user-dropdown a:hover,.user-dropdown button:hover{background:var(--bg2);color:var(--text);}
+.user-dropdown .dd-divider{height:1px;background:var(--border);margin:4px 0;}
+.user-dropdown .dd-email{padding:8px 12px;font-size:11px;color:var(--text3);font-family:var(--fm);}
+.mob-user-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.mob-user-info{flex:1;min-width:0;}
+.mob-user-name{font-size:14px;font-weight:700;color:var(--text);}
+.mob-user-email{font-size:11px;color:var(--text3);font-family:var(--fm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* HERO */
 .hero{position:sticky;top:0;height:100vh;min-height:600px;overflow:hidden;}
@@ -261,6 +282,8 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 @media(max-width:860px){
   .nav-links,.btn-ghost-nav{display:none;}
   .hamburger{display:flex;}
+  .user-name,.user-chevron{display:none;}
+  .user-btn{padding:5px;}
   .footer-grid{grid-template-columns:1fr 1fr;gap:28px;}
   .slide{grid-template-columns:auto 1fr;}
   .s-meta{display:none;}
@@ -327,21 +350,61 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
     </ul>
     <div class="nav-right">
       <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-      <a href="login.html" class="btn-ghost-nav">Login</a>
-      <a href="join.html" class="btn-gold-nav">Join ImpactGrid</a>
+      <!-- shown when logged out -->
+      <div id="navLoggedOut" style="display:flex;align-items:center;gap:9px;">
+        <a href="login.html" class="btn-ghost-nav">Login</a>
+        <a href="join.html" class="btn-gold-nav">Join ImpactGrid</a>
+      </div>
+      <!-- shown when logged in -->
+      <div id="navLoggedIn" style="display:none;position:relative;">
+        <button class="user-btn" id="userBtn" onclick="toggleUserMenu()">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <span class="user-name" id="userName">Account</span>
+          <span class="user-chevron">▾</span>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dd-email" id="userEmail"></div>
+          <div class="dd-divider"></div>
+          <a href="dashboard.html">My Dashboard</a>
+          <a href="join.html">My Profile</a>
+          <div class="dd-divider"></div>
+          <button onclick="igSignOut()">Sign Out</button>
+        </div>
+      </div>
     </div>
-    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    <button class="hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
 <div class="mob-nav" id="mobNav">
-  <div style="font-weight:800;font-size:16px;margin-bottom:10px;">
+  <div style="font-weight:800;font-size:16px;margin-bottom:10px;color:var(--text3);font-family:var(--fm);letter-spacing:0.08em;text-transform:uppercase;font-size:10px;">
     ImpactGrid Creator Intelligence
   </div>
-  <a href="index.html">Home</a><a href="about.html">About</a><a href="consulting.html">Consulting</a>
-  <a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a>
-  <a href="network.html">Network</a><a href="ai.html">Dijo AI</a><a href="dashboard.html">Available Jobs</a>
-  <a href="login.html">Login</a><a href="join.html" class="mob-cta">Join ImpactGrid</a>
+  <!-- logged-in user block, hidden by default -->
+  <div class="mob-user-section" id="mobUserSection" style="display:none;">
+    <div class="user-avatar" id="mobUserAvatar">?</div>
+    <div class="mob-user-info">
+      <div class="mob-user-name" id="mobUserName">My Account</div>
+      <div class="mob-user-email" id="mobUserEmail"></div>
+    </div>
+  </div>
+  <a href="index.html" class="active">Home</a>
+  <a href="about.html">About</a>
+  <a href="consulting.html">Consulting</a>
+  <a href="analytics.html">Analytics</a>
+  <a href="creator-studio.html">Creator Studio</a>
+  <a href="network.html">Network</a>
+  <a href="ai.html">Dijo AI</a>
+  <a href="dashboard.html">Available Jobs</a>
+  <div class="mob-nav-divider"></div>
+  <div id="mobAuthLinks">
+    <a href="login.html" style="margin-bottom:5px;display:block;padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);">Login</a>
+    <a href="join.html" class="mob-cta" style="display:block;padding:13px 16px;text-align:center;">Join ImpactGrid</a>
+  </div>
+  <div id="mobLoggedInLinks" style="display:none;">
+    <a href="dashboard.html" style="color:var(--gold);font-weight:700;display:block;padding:13px 16px;border-radius:var(--r);font-size:16px;">My Dashboard</a>
+    <button onclick="igSignOut()" style="width:100%;text-align:left;padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);background:none;border:none;cursor:pointer;font-family:var(--fb);">Sign Out</button>
+  </div>
 </div>
 
 <!-- HERO -->
@@ -703,10 +766,100 @@ try{
   }
 }catch(e){}
 
-document.getElementById('hamburger').addEventListener('click',function(){
-  document.getElementById('mobNav').classList.toggle('open');
+/* ── Hamburger ── */
+var hamburger=document.getElementById('hamburger');
+var mobNav=document.getElementById('mobNav');
+hamburger.addEventListener('click',function(){
+  var open=mobNav.classList.toggle('open');
+  hamburger.classList.toggle('active',open);
+  hamburger.setAttribute('aria-label',open?'Close menu':'Open menu');
+});
+/* Close mobile nav when a link inside it is tapped */
+mobNav.querySelectorAll('a').forEach(function(a){
+  a.addEventListener('click',function(){
+    mobNav.classList.remove('open');
+    hamburger.classList.remove('active');
+  });
 });
 
+/* ── User dropdown (desktop) ── */
+function toggleUserMenu(){
+  document.getElementById('userDropdown').classList.toggle('open');
+}
+document.addEventListener('click',function(e){
+  var btn=document.getElementById('userBtn');
+  var dd=document.getElementById('userDropdown');
+  if(btn&&dd&&!btn.contains(e.target)&&!dd.contains(e.target)){
+    dd.classList.remove('open');
+  }
+});
+
+/* ── Auth state ── */
+function setNavUser(user){
+  if(!user){return;}
+  var email=user.email||'';
+  var name=user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name)||email.split('@')[0]||'Account';
+  var initial=(name.charAt(0)||'?').toUpperCase();
+  /* Desktop */
+  document.getElementById('navLoggedOut').style.display='none';
+  document.getElementById('navLoggedIn').style.display='block';
+  document.getElementById('userAvatar').textContent=initial;
+  document.getElementById('userName').textContent=name.split(' ')[0];
+  document.getElementById('userEmail').textContent=email;
+  /* Mobile */
+  document.getElementById('mobUserSection').style.display='flex';
+  document.getElementById('mobUserAvatar').textContent=initial;
+  document.getElementById('mobUserName').textContent=name;
+  document.getElementById('mobUserEmail').textContent=email;
+  document.getElementById('mobAuthLinks').style.display='none';
+  document.getElementById('mobLoggedInLinks').style.display='block';
+}
+
+window.igSignOut=async function(){
+  try{
+    if(window.getSupabase)await getSupabase().auth.signOut();
+    else if(window.supabaseClient)await window.supabaseClient.auth.signOut();
+  }catch(e){}
+  window.location.href='index.html';
+};
+
+/* Wait for Supabase to load then check session */
+function checkAuth(){
+  var client=null;
+  try{if(window.getSupabase)client=getSupabase();}catch(e){}
+  try{if(!client&&window.supabaseClient)client=window.supabaseClient;}catch(e){}
+  if(!client){
+    /* Fallback: read from localStorage directly */
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i);
+        if(k&&k.indexOf('supabase')!==-1){
+          var v=JSON.parse(localStorage.getItem(k));
+          if(v&&v.user){setNavUser(v.user);return;}
+          if(v&&v.access_token&&v.user){setNavUser(v.user);return;}
+        }
+      }
+    }catch(e){}
+    return;
+  }
+  client.auth.getUser().then(function(res){
+    if(res&&res.data&&res.data.user)setNavUser(res.data.user);
+  }).catch(function(){});
+  client.auth.onAuthStateChange(function(event,session){
+    if(session&&session.user)setNavUser(session.user);
+    else if(event==='SIGNED_OUT'){
+      document.getElementById('navLoggedOut').style.display='flex';
+      document.getElementById('navLoggedIn').style.display='none';
+      document.getElementById('mobUserSection').style.display='none';
+      document.getElementById('mobAuthLinks').style.display='block';
+      document.getElementById('mobLoggedInLinks').style.display='none';
+    }
+  });
+}
+/* Run after scripts load */
+window.addEventListener('load',function(){setTimeout(checkAuth,300);});
+
+/* ── Stars ── */
 (function(){
   var c=document.getElementById('stars');
   if(!c)return;
@@ -723,6 +876,7 @@ var ks=document.createElement('style');
 ks.textContent='@keyframes twinkle{0%,100%{opacity:0.5;}50%{opacity:0.05;}}';
 document.head.appendChild(ks);
 
+/* ── Slides ── */
 (function(){
   var track=document.getElementById('slideTrack');
   var dots=document.querySelectorAll('.s-dot');
@@ -744,6 +898,7 @@ document.head.appendChild(ks);
   start();
 })();
 
+/* ── Scroll animations ── */
 var obs=new IntersectionObserver(function(entries){
   entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});
 },{threshold:0.08});
