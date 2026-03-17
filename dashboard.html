@@ -1,128 +1,274 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>My Dashboard — ImpactGrid Network</title>
+<title>My Dashboard — ImpactGrid Creator Intelligence</title>
+<meta name="description" content="Your ImpactGrid professional dashboard — jobs, bookings, and profile."/>
 <link rel="icon" href="favicon.ico"/>
-<link rel="stylesheet" href="shared.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-.dash-layout { display:grid; grid-template-columns:260px 1fr; min-height:100vh; padding-top:var(--nav-h); }
-.dash-sidebar { background:var(--ink2); border-right:1px solid var(--border); padding:28px 16px; position:sticky; top:var(--nav-h); height:calc(100vh - var(--nav-h)); overflow-y:auto; display:flex; flex-direction:column; }
-.dash-profile-mini { display:flex; align-items:center; gap:12px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:var(--r); margin-bottom:24px; }
-.dash-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--gold2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:var(--ink); flex-shrink:0; }
-.dash-profile-name { font-size:14px; font-weight:700; }
-.dash-profile-role { font-size:12px; color:var(--text3); margin-top:2px; }
-.dash-status { display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:2px 8px; border-radius:100px; font-weight:600; margin-top:4px; }
-.status-active  { background:rgba(34,197,94,0.1); color:var(--green); }
-.status-pending { background:rgba(234,179,8,0.1); color:#eab308; }
-.status-rejected{ background:var(--red-dim); color:var(--red); }
-.sidebar-section-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; padding:0 8px; margin-bottom:6px; }
-.sidebar-nav a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); font-size:13.5px; font-weight:500; color:var(--text2); transition:all 0.2s; margin-bottom:2px; text-decoration:none; }
-.sidebar-nav a:hover { background:var(--card); color:var(--text); }
-.sidebar-nav a.active { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-glow); }
-.nav-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
-.sidebar-spacer { flex:1; }
-.sidebar-logout { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); font-size:13.5px; font-weight:500; color:var(--text3); cursor:pointer; transition:all 0.2s; border:none; background:none; width:100%; font-family:inherit; }
-.sidebar-logout:hover { background:var(--red-dim); color:var(--red); }
-.dash-main { padding:40px; overflow-y:auto; }
-.dash-section { display:none; }
-.dash-section.active { display:block; }
-/* Stats */
-.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:32px; }
-.stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:22px; }
-.stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
-.stat-value { font-size:30px; font-weight:900; letter-spacing:-0.03em; color:var(--gold); }
-.stat-sub   { font-size:12px; color:var(--text2); margin-top:4px; }
-/* Content card */
-.content-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:28px; margin-bottom:20px; }
-.section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
-.section-head h2 { font-size:18px; font-weight:800; letter-spacing:-0.02em; }
-/* Job cards */
-.job-card { background:var(--ink3,var(--bg3)); border:1px solid var(--border); border-radius:var(--r); padding:22px; margin-bottom:14px; transition:all 0.2s; position:relative; }
-.job-card:hover { border-color:var(--border2); transform:translateY(-1px); }
-.job-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:8px; }
-.job-title { font-size:16px; font-weight:700; }
-.job-budget { font-family:var(--fm,monospace); font-size:14px; font-weight:700; color:var(--gold); white-space:nowrap; }
-.job-company { font-size:13px; color:var(--text2); margin-bottom:10px; }
-.job-desc { font-size:13.5px; color:var(--text2); line-height:1.6; margin-bottom:14px; }
-.job-tags { display:flex; gap:8px; flex-wrap:wrap; }
-.job-tag { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text2); background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 10px; }
-[data-theme="light"] .job-tag { background:rgba(0,0,0,0.04); }
-.apply-btn { margin-top:16px; padding:9px 20px; background:var(--gold-dim); border:1px solid var(--gold-glow); border-radius:9px; color:var(--gold2); font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:inherit; }
-.apply-btn:hover { background:var(--gold); color:var(--ink); }
-.apply-btn:disabled { opacity:0.5; cursor:not-allowed; }
-/* Booking cards */
-.booking-card { background:var(--ink3,var(--bg3)); border:1px solid rgba(34,197,94,0.2); border-radius:var(--r); padding:22px; margin-bottom:14px; position:relative; }
-.booking-badge { position:absolute; top:16px; right:16px; display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:4px 10px; border-radius:100px; background:rgba(34,197,94,0.1); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
-/* Pending banner */
-.pending-banner { background:linear-gradient(135deg,rgba(234,179,8,0.1),rgba(234,179,8,0.05)); border:1px solid rgba(234,179,8,0.25); border-radius:var(--r); padding:16px 20px; margin-bottom:28px; display:none; }
-.pending-banner.show { display:flex; align-items:center; gap:12px; }
-.pending-banner p { font-size:14px; color:#fde68a; line-height:1.5; }
-/* Profile form */
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.profile-avatar-lg { width:68px; height:68px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--gold2)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:26px; color:var(--ink); flex-shrink:0; }
-/* Empty state */
-.empty-state { text-align:center; padding:48px 24px; color:var(--text3); }
-.empty-icon { font-size:36px; margin-bottom:12px; }
-@media(max-width:900px){
-  .dash-layout { grid-template-columns:1fr; }
-  .dash-sidebar { display:none; }
-  .dash-main { padding:24px 16px; }
-  .stats-row { grid-template-columns:1fr 1fr; }
-  .form-grid { grid-template-columns:1fr; }
+:root{
+  --bg:#07090f;--bg2:#0d1017;--bg3:#111520;
+  --card:#151a28;--card2:#1c2235;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
+  --gold:#f0b429;--gold2:#ffd166;
+  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
+  --blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);
+  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
+  --red:#f75f4f;--red-dim:rgba(247,95,79,0.10);
+  --purple:#a855f7;
+  --nav-h:64px;--tick-h:34px;--max-w:1240px;--r:12px;--r2:20px;
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+}
+[data-theme="light"]{
+  --bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;
+  --card:#ffffff;--card2:#f5f7fc;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
+  --gold:#c97e08;--gold2:#a86505;
+  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);
+  --blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);
+  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
+  --red:#d94f3d;--red-dim:rgba(217,79,61,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background 0.35s,color 0.35s;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
+h1,h2,h3,h4{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
+input,textarea,select{font-family:var(--fb);font-size:14px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;width:100%;outline:none;transition:border-color 0.2s;}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.45;}
+
+/* TOPBAR — matches creator-editor pattern for app shell */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.90);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;display:flex;align-items:center;gap:16px;padding:0 24px;transition:background 0.35s;}
+[data-theme="light"] .topbar{background:rgba(240,243,250,0.95);}
+.topbar-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:16px;letter-spacing:-0.03em;flex-shrink:0;}
+.logo-mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#07090f;}
+.logo-img{width:30px;height:30px;object-fit:contain;border-radius:5px;}
+.topbar-divider{width:1px;height:26px;background:var(--border2);margin:0 4px;}
+.topbar-breadcrumb{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.topbar-breadcrumb a{color:var(--text3);transition:color 0.2s;}
+.topbar-breadcrumb a:hover{color:var(--gold);}
+.topbar-breadcrumb strong{color:var(--text);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.theme-btn{width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;}
+.theme-btn:hover{border-color:var(--gold);}
+.topbar-user{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:8px;background:var(--card);border:1px solid var(--border2);transition:all 0.2s;}
+.user-avatar-sm{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#07090f;flex-shrink:0;font-family:var(--fd);}
+.user-name-sm{font-size:12px;font-weight:600;color:var(--text);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.topbar-back{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);padding:6px 12px;border-radius:8px;border:1px solid var(--border2);transition:all 0.2s;}
+.topbar-back:hover{color:var(--text);}
+
+/* LAYOUT */
+.dash-layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;padding-top:var(--nav-h);}
+
+/* SIDEBAR */
+.dash-sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;display:flex;flex-direction:column;}
+.sidebar-profile{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:24px;}
+.sidebar-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:16px;color:#07090f;flex-shrink:0;}
+.sidebar-profile-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.sidebar-profile-role{font-size:11px;color:var(--text3);}
+.sidebar-status{display:inline-flex;align-items:center;gap:4px;font-family:var(--fm);font-size:9px;padding:2px 8px;border-radius:20px;font-weight:600;margin-top:5px;text-transform:uppercase;letter-spacing:0.08em;}
+.status-active{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
+.status-pending{background:rgba(234,179,8,0.10);color:#d4a30a;border:1px solid rgba(234,179,8,0.25);}
+.status-rejected{background:var(--red-dim);color:var(--red);border:1px solid rgba(247,95,79,0.25);}
+.sidebar-label{font-family:var(--fm);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);padding:0 6px;margin-bottom:8px;margin-top:4px;}
+.sidebar-nav a,.sidebar-nav button{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);transition:all 0.2s;cursor:pointer;border:1px solid transparent;width:100%;text-align:left;background:none;font-family:var(--fb);}
+.sidebar-nav a:hover,.sidebar-nav button:hover{background:var(--card);color:var(--text);}
+.sidebar-nav a.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-glo);}
+.sidebar-nav a.active .nav-ico{color:var(--gold);}
+.nav-ico{font-size:15px;flex-shrink:0;width:20px;text-align:center;}
+.sidebar-spacer{flex:1;}
+.sidebar-logout{color:var(--text3)!important;}
+.sidebar-logout:hover{background:var(--red-dim)!important;color:var(--red)!important;}
+
+/* MAIN */
+.dash-main{padding:36px 40px;overflow-y:auto;background:var(--bg);}
+
+/* PENDING BANNER */
+.pending-banner{background:linear-gradient(135deg,rgba(234,179,8,0.08),rgba(234,179,8,0.03));border:1px solid rgba(234,179,8,0.25);border-radius:var(--r);padding:14px 18px;margin-bottom:28px;display:none;align-items:center;gap:12px;}
+.pending-banner.show{display:flex;}
+.pending-banner p{font-size:13.5px;color:#fde68a;line-height:1.55;}
+
+/* SECTION */
+.dash-section{display:none;}
+.dash-section.active{display:block;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:22px;transition:all 0.25s;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.stat-card:hover::before{transform:scaleX(1);}
+.stat-label{font-family:var(--fm);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+.stat-value{font-family:var(--fd);font-size:30px;font-weight:900;letter-spacing:-0.03em;line-height:1;}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:5px;}
+
+/* CONTENT CARDS */
+.content-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:28px;margin-bottom:20px;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:12px;}
+.section-head h2{font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.02em;}
+.btn-ghost{padding:7px 14px;border-radius:9px;font-size:12px;font-weight:600;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);transition:all 0.2s;cursor:pointer;}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-save{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;border:none;cursor:pointer;}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 14px var(--gold-glo);}
+
+/* JOB CARDS */
+.job-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:12px;transition:all 0.2s;position:relative;overflow:hidden;}
+.job-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
+.job-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.job-card:hover::before{transform:scaleX(1);}
+.job-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;}
+.job-title{font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.01em;}
+.job-budget{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-glo);padding:2px 8px;border-radius:5px;white-space:nowrap;flex-shrink:0;}
+.job-company{font-size:12.5px;color:var(--text2);margin-bottom:10px;}
+.job-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px;}
+.job-tags{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.job-tag{font-family:var(--fm);font-size:10px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;letter-spacing:0.04em;}
+.job-tag-deadline{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-glo);}
+.apply-btn{padding:8px 18px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:var(--r);color:#07090f;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--fb);}
+.apply-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px var(--gold-glo);}
+.apply-btn:disabled{opacity:0.55;transform:none;box-shadow:none;cursor:not-allowed;background:var(--bg3);color:var(--text3);border:1px solid var(--border2);}
+
+/* BOOKING CARDS */
+.booking-card{background:var(--bg2);border:1px solid rgba(45,212,160,0.2);border-radius:var(--r);padding:20px;margin-bottom:12px;position:relative;overflow:hidden;}
+.booking-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);}
+.booking-badge{position:absolute;top:14px;right:14px;display:inline-flex;align-items:center;gap:4px;font-family:var(--fm);font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);text-transform:uppercase;letter-spacing:0.08em;}
+.booking-title{font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.01em;margin-bottom:5px;padding-right:100px;}
+.booking-company{font-size:12.5px;color:var(--text2);margin-bottom:8px;}
+.booking-budget{font-family:var(--fm);font-size:14px;font-weight:700;color:var(--green);margin-bottom:10px;}
+.booking-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:8px;}
+.booking-date{font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:0.06em;}
+
+/* PROFILE FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);}
+.profile-avatar-lg{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:24px;color:#07090f;flex-shrink:0;}
+
+/* ALERT */
+.alert{font-size:13px;padding:10px 14px;border-radius:var(--r);margin-bottom:14px;display:none;}
+.alert.show{display:block;}
+.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
+.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(247,95,79,0.25);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3);}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:0.5;}
+.empty-title{font-family:var(--fd);font-size:16px;font-weight:800;color:var(--text2);margin-bottom:6px;}
+.empty-sub{font-size:13px;line-height:1.65;color:var(--text3);}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  .dash-layout{grid-template-columns:1fr;}
+  .dash-sidebar{display:none;}
+  .dash-main{padding:24px 16px;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+@media(max-width:560px){
+  .stats-row{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
-<div id="nav-container"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">
+    <img src="logo.png" class="logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+    <div class="logo-mark" style="display:none;">IG</div>
+    ImpactGrid
+  </a>
+  <div class="topbar-divider"></div>
+  <div class="topbar-breadcrumb">
+    <a href="index.html">Home</a>
+    <span>&rsaquo;</span>
+    <strong>My Dashboard</strong>
+  </div>
+  <div class="topbar-right">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+    <div class="topbar-user" id="topbarUser">
+      <div class="user-avatar-sm" id="topbarAvatar">?</div>
+      <span class="user-name-sm" id="topbarName">Account</span>
+    </div>
+    <a href="index.html" class="topbar-back">← Back to Site</a>
+  </div>
+</div>
+
+<!-- LAYOUT -->
 <div class="dash-layout">
 
-  <!-- Sidebar -->
+  <!-- SIDEBAR -->
   <aside class="dash-sidebar">
-    <div class="dash-profile-mini">
-      <div class="dash-avatar" id="avatarMini">?</div>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="avatarMini">?</div>
       <div>
-        <div class="dash-profile-name" id="nameMini">Loading…</div>
-        <div class="dash-profile-role">Professional</div>
-        <div class="dash-status status-pending" id="statusBadge">Pending</div>
+        <div class="sidebar-profile-name" id="nameMini">Loading…</div>
+        <div class="sidebar-profile-role">Professional</div>
+        <div class="sidebar-status status-pending" id="statusBadge">Pending</div>
       </div>
     </div>
 
-    <div class="sidebar-section-label">Menu</div>
+    <div class="sidebar-label">Menu</div>
     <nav class="sidebar-nav">
-      <a href="#" class="active" onclick="return showSection('overview',this)"><span class="nav-icon">◈</span> Dashboard</a>
-      <a href="#" onclick="return showSection('jobs',this)"><span class="nav-icon">📋</span> Available Jobs</a>
-      <a href="#" onclick="return showSection('bookings',this)"><span class="nav-icon">✅</span> My Bookings</a>
-      <a href="#" onclick="return showSection('profile',this)"><span class="nav-icon">👤</span> My Profile</a>
-      <a href="creator-studio.html"><span class="nav-icon">🎬</span> Creator Studio</a>
-      <a href="https://impactgridanalytics.com" target="_blank"><span class="nav-icon">⚡</span> Analytics ↗</a>
+      <a href="#" class="active" onclick="return showSection('overview',this)">
+        <span class="nav-ico">◈</span> Dashboard
+      </a>
+      <a href="#" onclick="return showSection('jobs',this)">
+        <span class="nav-ico">📋</span> Available Jobs
+      </a>
+      <a href="#" onclick="return showSection('bookings',this)">
+        <span class="nav-ico">✅</span> My Bookings
+      </a>
+      <a href="#" onclick="return showSection('profile',this)">
+        <span class="nav-ico">👤</span> My Profile
+      </a>
+      <a href="creator-studio.html">
+        <span class="nav-ico">🎬</span> Creator Studio
+      </a>
+      <a href="https://impactgridanalytics.com" target="_blank">
+        <span class="nav-ico">⚡</span> Analytics ↗
+      </a>
+      <a href="ai.html">
+        <span class="nav-ico">🤖</span> Dijo AI
+      </a>
     </nav>
 
     <div class="sidebar-spacer"></div>
-    <a href="index.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:13px;color:var(--text3);border-radius:var(--r);margin-bottom:4px;text-decoration:none;">← Back to Site</a>
-    <button class="sidebar-logout" onclick="igLogout()"><span>⎋</span> Sign Out</button>
+    <nav class="sidebar-nav" style="margin-top:8px;">
+      <button class="sidebar-logout" onclick="igLogout()">
+        <span class="nav-ico">⎋</span> Sign Out
+      </button>
+    </nav>
   </aside>
 
-  <!-- Main -->
+  <!-- MAIN -->
   <main class="dash-main">
 
     <!-- Pending banner -->
     <div class="pending-banner" id="pendingBanner">
-      <span style="font-size:22px;">⏳</span>
+      <span style="font-size:22px;flex-shrink:0;">⏳</span>
       <p><strong>Account under review.</strong> Your profile is being reviewed by our team. You will be notified once approved — usually within 24 hours.</p>
     </div>
 
-    <!-- OVERVIEW -->
+    <!-- ── OVERVIEW ── -->
     <div class="dash-section active" id="section-overview">
-      <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.02em;margin-bottom:6px;">Welcome back, <span id="welcomeName">…</span> 👋</h1>
-      <p style="font-size:14px;color:var(--text2);margin-bottom:28px;" id="welcomeDate"></p>
+      <div style="margin-bottom:28px;">
+        <h1 style="font-size:clamp(22px,3vw,28px);margin-bottom:6px;">Welcome back, <span id="welcomeName" style="color:var(--gold);">…</span> 👋</h1>
+        <p style="font-size:13px;color:var(--text3);font-family:var(--fm);" id="welcomeDate"></p>
+      </div>
 
       <div class="stats-row">
         <div class="stat-card">
           <div class="stat-label">Applications Sent</div>
-          <div class="stat-value" id="statApps">—</div>
+          <div class="stat-value" id="statApps" style="color:var(--blue2);">—</div>
           <div class="stat-sub">Jobs applied to</div>
         </div>
         <div class="stat-card">
@@ -137,298 +283,309 @@
         </div>
       </div>
 
-      <!-- Recent jobs preview -->
       <div class="content-card">
         <div class="section-head">
           <h2>Latest Opportunities</h2>
-          <a href="#" onclick="return showSection('jobs',document.querySelectorAll('.sidebar-nav a')[1])" style="font-size:13px;color:var(--gold);">View all →</a>
+          <a href="#" onclick="return showSection('jobs',document.querySelectorAll('.sidebar-nav a')[1])" style="font-size:13px;font-weight:700;color:var(--gold);">View all &#8594;</a>
         </div>
         <div id="recentJobsPreview">
-          <div class="empty-state"><div class="empty-icon">📋</div><p>Loading jobs…</p></div>
+          <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-sub">Loading jobs…</div></div>
         </div>
+      </div>
+
+      <!-- Quick links -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <a href="creator-studio.html" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;display:flex;flex-direction:column;gap:8px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-size:24px;">🎬</span>
+          <span style="font-family:var(--fd);font-size:14px;font-weight:800;">Creator Studio</span>
+          <span style="font-size:12px;color:var(--text2);">Trend intelligence &amp; AI content tools</span>
+        </a>
+        <a href="https://impactgridanalytics.com" target="_blank" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;display:flex;flex-direction:column;gap:8px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--blue2)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-size:24px;">⚡</span>
+          <span style="font-family:var(--fd);font-size:14px;font-weight:800;">Analytics Platform</span>
+          <span style="font-size:12px;color:var(--text2);">Business intelligence &amp; forecasting</span>
+        </a>
+        <a href="ai.html" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;display:flex;flex-direction:column;gap:8px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-size:24px;">🤖</span>
+          <span style="font-family:var(--fd);font-size:14px;font-weight:800;">Dijo AI Assistant</span>
+          <span style="font-size:12px;color:var(--text2);">Pitch decks, content plans &amp; strategy</span>
+        </a>
       </div>
     </div>
 
-    <!-- AVAILABLE JOBS -->
+    <!-- ── AVAILABLE JOBS ── -->
     <div class="dash-section" id="section-jobs">
       <div class="content-card">
         <div class="section-head">
           <h2>📋 Available Jobs</h2>
-          <button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadJobs()">↻ Refresh</button>
+          <button class="btn-ghost" onclick="loadJobs()">↻ Refresh</button>
         </div>
         <div id="jobsList">
-          <div class="empty-state"><div class="empty-icon">📋</div><p>Loading opportunities…</p></div>
+          <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-sub">Loading opportunities…</div></div>
         </div>
       </div>
     </div>
 
-    <!-- MY BOOKINGS -->
+    <!-- ── MY BOOKINGS ── -->
     <div class="dash-section" id="section-bookings">
       <div class="content-card">
         <div class="section-head">
           <h2>✅ My Bookings</h2>
-          <button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="loadBookings()">↻ Refresh</button>
+          <button class="btn-ghost" onclick="loadBookings()">↻ Refresh</button>
         </div>
         <p style="font-size:13.5px;color:var(--text2);margin-bottom:20px;">Jobs you have been confirmed for by ImpactGrid admin.</p>
         <div id="bookingsList">
-          <div class="empty-state"><div class="empty-icon">✅</div><p>Loading your bookings…</p></div>
+          <div class="empty-state"><div class="empty-icon">✅</div><div class="empty-sub">Loading your bookings…</div></div>
         </div>
       </div>
     </div>
 
-    <!-- MY PROFILE -->
+    <!-- ── MY PROFILE ── -->
     <div class="dash-section" id="section-profile">
       <div class="content-card">
         <div class="section-head">
           <h2>👤 My Profile</h2>
-          <button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="saveProfile()">Save Changes</button>
+          <button class="btn-save" onclick="saveProfile()">Save Changes</button>
         </div>
         <div style="display:flex;align-items:center;gap:18px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border);">
           <div class="profile-avatar-lg" id="avatarLg">?</div>
           <div>
-            <div style="font-size:18px;font-weight:800;" id="profileName">—</div>
-            <div style="font-size:14px;color:var(--text2);margin-top:4px;" id="profileEmail">—</div>
+            <div style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:4px;" id="profileName">—</div>
+            <div style="font-size:14px;color:var(--text2);font-family:var(--fm);" id="profileEmail">—</div>
           </div>
         </div>
-        <div id="alertProfile" class="alert"></div>
-        <div class="form-grid" style="margin-bottom:14px;">
-          <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="p-fname" type="text"/></div>
-          <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="p-lname" type="text"/></div>
+        <div class="alert" id="alertProfile"></div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">First Name</label><input id="p-fname" type="text" placeholder="First name"/></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input id="p-lname" type="text" placeholder="Last name"/></div>
         </div>
-        <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Bio</label><textarea class="form-textarea" id="p-bio" rows="3" placeholder="Tell employers about yourself…"></textarea></div>
-        <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Skills</label><input class="form-input" id="p-skills" type="text" placeholder="e.g. Data Analysis, Python, Marketing"/></div>
-        <div class="form-grid" style="margin-bottom:14px;">
-          <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="p-location" type="text"/></div>
-          <div class="form-group"><label class="form-label">Availability</label>
-            <select class="form-select" id="p-availability">
-              <option value="available">Available</option>
+        <div class="form-group"><label class="form-label">Bio</label><textarea id="p-bio" rows="3" placeholder="Tell employers about yourself — your experience, what you do, and what you're looking for…"></textarea></div>
+        <div class="form-group"><label class="form-label">Skills</label><input id="p-skills" type="text" placeholder="e.g. Data Analysis, Python, Marketing, Content Strategy"/></div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Location</label><input id="p-location" type="text" placeholder="e.g. London, UK or Remote"/></div>
+          <div class="form-group">
+            <label class="form-label">Availability</label>
+            <select id="p-availability">
+              <option value="available">Available now</option>
               <option value="open">Open to offers</option>
-              <option value="unavailable">Not available</option>
+              <option value="unavailable">Not currently available</option>
             </select>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Portfolio URL</label><input class="form-input" id="p-portfolio" type="url" placeholder="https://yourportfolio.com"/></div>
+        <div class="form-group"><label class="form-label">Portfolio URL</label><input id="p-portfolio" type="url" placeholder="https://yourportfolio.com"/></div>
       </div>
     </div>
 
   </main>
-</div>
+</div><!-- end dash-layout -->
 
-<script src="nav.js"></script>
 <script src="supabase-config.js"></script>
+<script src="impactgrid-chat-bubble.js"></script>
 <script>
-renderNav('');
+/* ── Theme ── */
+var dark=false;
+function toggleTheme(){
+  dark=!dark;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('themeBtn').textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';
+  try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}
+}
+try{
+  var saved=localStorage.getItem('igt');
+  if(saved==='d'){dark=true;document.documentElement.setAttribute('data-theme','dark');document.getElementById('themeBtn').textContent='\uD83C\uDF19';}
+  else{dark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('themeBtn').textContent='\u2600\uFE0F';}
+}catch(e){}
 
-var currentUser = null;
-var appliedJobIds = [];
+/* ── Core ── */
+var currentUser=null;
 
-document.addEventListener('DOMContentLoaded', async function() {
-  var c = getSupabase();
-  var { data } = await c.auth.getSession();
-  if (!data.session) { window.location.href = 'login.html'; return; }
-  currentUser = data.session.user;
+document.addEventListener('DOMContentLoaded',async function(){
+  var c=getSupabase();
+  var res=await c.auth.getSession();
+  if(!res.data.session){window.location.href='login.html';return;}
+  currentUser=res.data.session.user;
 
-  /* Redirect admin away from professional dashboard */
-  if (currentUser.email === 'admin@impactgridgroup.com') { window.location.href = 'admin.html'; return; }
-  var { data: profileCheck } = await c.from('profiles').select('role').eq('id', currentUser.id).single();
-  if (profileCheck && profileCheck.role === 'admin') { window.location.href = 'admin.html'; return; }
-  if (profileCheck && profileCheck.role === 'employer') { window.location.href = 'employer-dashboard.html'; return; }
-  var meta = currentUser.user_metadata || {};
+  /* Redirect admin */
+  if(currentUser.email==='admin@impactgridgroup.com'){window.location.href='admin.html';return;}
+  var pCheck=await c.from('profiles').select('role').eq('id',currentUser.id).single();
+  if(pCheck.data&&pCheck.data.role==='admin'){window.location.href='admin.html';return;}
+  if(pCheck.data&&pCheck.data.role==='employer'){window.location.href='employer-dashboard.html';return;}
 
-  /* Name / avatar */
-  var name = meta.first_name || (meta.full_name||'').split(' ')[0] || 'Professional';
-  var initial = name[0].toUpperCase();
-  document.getElementById('avatarMini').textContent = initial;
-  document.getElementById('avatarLg').textContent   = initial;
-  document.getElementById('nameMini').textContent   = meta.full_name || name;
-  document.getElementById('welcomeName').textContent = name;
-  document.getElementById('profileName').textContent = meta.full_name || name;
-  document.getElementById('profileEmail').textContent = currentUser.email;
-  document.getElementById('welcomeDate').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var meta=currentUser.user_metadata||{};
+  var name=meta.first_name||(meta.full_name||'').split(' ')[0]||'Professional';
+  var initial=(name[0]||'?').toUpperCase();
+
+  /* Fill UI */
+  ['avatarMini','avatarLg','topbarAvatar'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=initial;});
+  document.getElementById('nameMini').textContent=meta.full_name||name;
+  document.getElementById('topbarName').textContent=name;
+  document.getElementById('welcomeName').textContent=name;
+  document.getElementById('profileName').textContent=meta.full_name||name;
+  document.getElementById('profileEmail').textContent=currentUser.email;
+  document.getElementById('welcomeDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
   /* Profile form prefill */
-  var parts = (meta.full_name||'').split(' ');
-  document.getElementById('p-fname').value    = parts[0]||'';
-  document.getElementById('p-lname').value    = parts.slice(1).join(' ')||'';
-  document.getElementById('p-skills').value   = meta.skills||'';
-  document.getElementById('p-location').value = meta.location||'';
-  document.getElementById('p-portfolio').value = meta.portfolio||'';
+  var parts=(meta.full_name||'').split(' ');
+  document.getElementById('p-fname').value=parts[0]||'';
+  document.getElementById('p-lname').value=parts.slice(1).join(' ')||'';
+  document.getElementById('p-skills').value=meta.skills||'';
+  document.getElementById('p-location').value=meta.location||'';
+  document.getElementById('p-portfolio').value=meta.portfolio||'';
 
-  /* Load profile from DB for status */
-  var { data: profile } = await c.from('profiles').select('*').eq('id', currentUser.id).single();
-  var status = (profile && profile.status) || 'pending';
-  var badge = document.getElementById('statusBadge');
-  badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-  badge.className = 'dash-status status-' + status;
-  if (status === 'pending') document.getElementById('pendingBanner').classList.add('show');
-  if (profile && profile.bio) document.getElementById('p-bio').value = profile.bio;
-  if (profile && profile.availability) document.getElementById('p-availability').value = profile.availability;
+  /* Load profile from DB */
+  var prof=await c.from('profiles').select('*').eq('id',currentUser.id).single();
+  var status=(prof.data&&prof.data.status)||'pending';
+  var badge=document.getElementById('statusBadge');
+  badge.textContent=status.charAt(0).toUpperCase()+status.slice(1);
+  badge.className='sidebar-status status-'+status;
+  if(status==='pending')document.getElementById('pendingBanner').classList.add('show');
+  if(prof.data&&prof.data.bio)document.getElementById('p-bio').value=prof.data.bio;
+  if(prof.data&&prof.data.availability)document.getElementById('p-availability').value=prof.data.availability;
 
-  /* Load stats + data */
   loadStats();
   loadJobs();
 });
 
-function showSection(id, el) {
-  document.querySelectorAll('.dash-section').forEach(function(s){ s.classList.remove('active'); });
-  document.querySelectorAll('.sidebar-nav a').forEach(function(a){ a.classList.remove('active'); });
-  document.getElementById('section-' + id).classList.add('active');
-  if (el) el.classList.add('active');
-  if (id === 'jobs')     loadJobs();
-  if (id === 'bookings') loadBookings();
+function showSection(id,el){
+  document.querySelectorAll('.dash-section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.sidebar-nav a').forEach(function(a){a.classList.remove('active');});
+  document.getElementById('section-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='jobs')loadJobs();
+  if(id==='bookings')loadBookings();
   return false;
 }
 
-async function loadStats() {
-  try {
-    var c = getSupabase();
-    var [apps, bookings, jobs] = await Promise.all([
-      c.from('applications').select('id').eq('professional_id', currentUser.id),
-      c.from('applications').select('id').eq('professional_id', currentUser.id).eq('status','booked'),
+async function loadStats(){
+  try{
+    var c=getSupabase();
+    var results=await Promise.all([
+      c.from('applications').select('id,job_id').eq('professional_id',currentUser.id),
+      c.from('applications').select('id').eq('professional_id',currentUser.id).eq('status','booked'),
       c.from('jobs').select('id').eq('status','active')
     ]);
-    document.getElementById('statApps').textContent     = (apps.data||[]).length;
-    document.getElementById('statBookings').textContent = (bookings.data||[]).length;
-    document.getElementById('statJobs').textContent     = (jobs.data||[]).length;
-    /* Get applied IDs to disable buttons */
-    appliedJobIds = (apps.data||[]).map(function(a){ return a.job_id; });
-  } catch(e){}
+    document.getElementById('statApps').textContent=(results[0].data||[]).length;
+    document.getElementById('statBookings').textContent=(results[1].data||[]).length;
+    document.getElementById('statJobs').textContent=(results[2].data||[]).length;
+  }catch(e){}
 }
 
-async function loadJobs() {
-  var el = document.getElementById('jobsList');
-  var elPrev = document.getElementById('recentJobsPreview');
-  try {
-    var c = getSupabase();
-    var { data: jobs } = await c.from('jobs').select('*').eq('status','active').order('created_at',{ascending:false});
-    /* Get this user's applications */
-    var { data: myApps } = await c.from('applications').select('job_id,status').eq('professional_id', currentUser.id);
-    var appMap = {};
-    (myApps||[]).forEach(function(a){ appMap[a.job_id] = a.status; });
+async function loadJobs(){
+  var el=document.getElementById('jobsList');
+  var elPrev=document.getElementById('recentJobsPreview');
+  try{
+    var c=getSupabase();
+    var jobsRes=await c.from('jobs').select('*').eq('status','active').order('created_at',{ascending:false});
+    var appsRes=await c.from('applications').select('job_id,status').eq('professional_id',currentUser.id);
+    var appMap={};(appsRes.data||[]).forEach(function(a){appMap[a.job_id]=a.status;});
+    var jobs=jobsRes.data||[];
 
-    if (!jobs||!jobs.length) {
-      var empty = '<div class="empty-state"><div class="empty-icon">🔍</div><p>No jobs posted yet. Check back soon — employers are joining the network.</p></div>';
-      if (el) el.innerHTML = empty;
-      if (elPrev) elPrev.innerHTML = empty;
-      return;
+    if(!jobs.length){
+      var empty='<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No jobs posted yet</div><div class="empty-sub">Check back soon — employers are joining the network.</div></div>';
+      if(el)el.innerHTML=empty;if(elPrev)elPrev.innerHTML=empty;return;
     }
 
-    var html = jobs.map(function(j) {
-      var appStatus = appMap[j.id];
-      var btnHtml = appStatus
-        ? '<button class="apply-btn" disabled>' + (appStatus === 'booked' ? '✅ Booked!' : appStatus === 'rejected' ? '✕ Not selected' : '✓ Applied') + '</button>'
-        : '<button class="apply-btn" onclick="applyJob(\'' + j.id + '\',this)">Apply Now →</button>';
-      return '<div class="job-card">' +
-        '<div class="job-card-head">' +
-          '<div class="job-title">' + esc(j.title||'Untitled') + '</div>' +
-          (j.budget ? '<div class="job-budget">' + esc(j.budget) + '</div>' : '') +
-        '</div>' +
-        '<div class="job-company">📍 ' + esc(j.company_name||'ImpactGrid Employer') + (j.location ? ' · ' + esc(j.location) : '') + '</div>' +
-        (j.description ? '<div class="job-desc">' + esc(j.description.substring(0,200)) + (j.description.length>200?'…':'') + '</div>' : '') +
-        '<div class="job-tags">' +
-          (j.skills ? j.skills.split(',').slice(0,4).map(function(s){ return '<span class="job-tag">🏷 ' + esc(s.trim()) + '</span>'; }).join('') : '') +
-          (j.deadline ? '<span class="job-tag">📅 Deadline: ' + esc(j.deadline) + '</span>' : '') +
-        '</div>' +
-        btnHtml +
+    function jobCard(j,preview){
+      var appStatus=appMap[j.id];
+      var skills=(j.skills||'').split(',').map(function(s){return s.trim();}).filter(Boolean).slice(0,4);
+      var btnHtml=appStatus
+        ?'<button class="apply-btn" disabled>'+(appStatus==='booked'?'✅ Booked':appStatus==='rejected'?'✕ Not selected':'✓ Applied')+'</button>'
+        :'<button class="apply-btn" onclick="applyJob(\''+j.id+'\',this)">Apply Now &#8594;</button>';
+      if(preview){
+        return'<div class="job-card">'+
+          '<div class="job-card-head"><div class="job-title">'+esc(j.title||'Opportunity')+'</div>'+(j.budget?'<div class="job-budget">'+esc(j.budget)+'</div>':'')+' </div>'+
+          '<div class="job-company">🏢 '+esc(j.company_name||'ImpactGrid Employer')+(j.location?' &middot; 📍 '+esc(j.location):'')+' </div>'+
+          '<a href="#" onclick="return showSection(\'jobs\',document.querySelectorAll(\'.sidebar-nav a\')[1])" style="font-size:13px;font-weight:700;color:var(--gold);">View &amp; Apply &#8594;</a>'+
+        '</div>';
+      }
+      return'<div class="job-card">'+
+        '<div class="job-card-head"><div class="job-title">'+esc(j.title||'Opportunity')+'</div>'+(j.budget?'<div class="job-budget">'+esc(j.budget)+'</div>':'')+' </div>'+
+        '<div class="job-company">🏢 '+esc(j.company_name||'ImpactGrid Employer')+(j.location?' &middot; 📍 '+esc(j.location):'')+' </div>'+
+        (j.description?'<div class="job-desc">'+esc(j.description.substring(0,200))+(j.description.length>200?'…':'')+'</div>':'')+
+        (skills.length?'<div class="job-tags">'+skills.map(function(s){return'<span class="job-tag">'+esc(s)+'</span>';}).join('')+(j.deadline?'<span class="job-tag job-tag-deadline">📅 '+esc(j.deadline)+'</span>':'')+'</div>':'')+
+        btnHtml+
       '</div>';
-    }).join('');
+    }
 
-    if (el) el.innerHTML = html;
-    if (elPrev) elPrev.innerHTML = jobs.slice(0,2).map(function(j) {
-      return '<div class="job-card">' +
-        '<div class="job-card-head"><div class="job-title">' + esc(j.title||'Untitled') + '</div>' + (j.budget?'<div class="job-budget">'+esc(j.budget)+'</div>':'') + '</div>' +
-        '<div class="job-company">📍 ' + esc(j.company_name||'ImpactGrid Employer') + '</div>' +
-        '<a href="#" onclick="return showSection(\'jobs\',document.querySelectorAll(\'.sidebar-nav a\')[1])" style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:13px;font-weight:700;color:var(--gold);">View & Apply →</a>' +
-      '</div>';
-    }).join('');
-  } catch(e) {
-    if (el) el.innerHTML = '<div class="empty-state">Error loading jobs: ' + e.message + '</div>';
+    if(el)el.innerHTML=jobs.map(function(j){return jobCard(j,false);}).join('');
+    if(elPrev)elPrev.innerHTML=jobs.slice(0,2).map(function(j){return jobCard(j,true);}).join('');
+  }catch(e){
+    if(el)el.innerHTML='<div class="empty-state"><div class="empty-title">Error loading jobs</div><div class="empty-sub">'+esc(e.message)+'</div></div>';
   }
 }
 
-async function applyJob(jobId, btn) {
-  if (!currentUser) return;
-  btn.disabled = true; btn.textContent = 'Applying…';
-  try {
-    var c = getSupabase();
-    var { error } = await c.from('applications').insert({
-      job_id: jobId,
-      professional_id: currentUser.id,
-      status: 'applied',
-      applied_at: new Date().toISOString()
-    });
-    if (error) throw error;
-    btn.textContent = '✓ Applied';
+async function applyJob(jobId,btn){
+  if(!currentUser)return;
+  btn.disabled=true;btn.textContent='Applying…';
+  try{
+    var c=getSupabase();
+    var res=await c.from('applications').insert({job_id:jobId,professional_id:currentUser.id,status:'applied',applied_at:new Date().toISOString()});
+    if(res.error)throw res.error;
+    btn.textContent='✓ Applied';btn.style.background='var(--green-dim)';btn.style.color='var(--green)';btn.style.border='1px solid rgba(45,212,160,0.25)';
     loadStats();
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Apply Now →';
-    alert('Could not apply: ' + e.message);
+  }catch(e){
+    btn.disabled=false;btn.textContent='Apply Now →';
+    alert('Could not apply: '+e.message);
   }
 }
 
-async function loadBookings() {
-  var el = document.getElementById('bookingsList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><p>Loading…</p></div>';
-  try {
-    var c = getSupabase();
-    var { data: apps } = await c.from('applications').select('*').eq('professional_id', currentUser.id).eq('status','booked');
-    if (!apps||!apps.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No confirmed bookings yet.<br>Apply to jobs and wait for admin approval.</p></div>'; return;
-    }
-    var jobIds = apps.map(function(a){ return a.job_id; }).filter(Boolean);
-    var { data: jobs } = await c.from('jobs').select('*').in('id', jobIds);
-    var jm = {}; (jobs||[]).forEach(function(j){ jm[j.id]=j; });
-
-    el.innerHTML = apps.map(function(a) {
-      var j = jm[a.job_id]||{};
-      return '<div class="booking-card">' +
-        '<div class="booking-badge">✅ Confirmed</div>' +
-        '<div class="job-title" style="margin-bottom:6px;padding-right:100px;">' + esc(j.title||'Job') + '</div>' +
-        '<div class="job-company" style="margin-bottom:10px;">🏢 ' + esc(j.company_name||'ImpactGrid Employer') + (j.location?(' · 📍 '+esc(j.location)):'') + '</div>' +
-        (j.budget ? '<div style="font-family:monospace;font-size:15px;font-weight:700;color:var(--gold);margin-bottom:10px;">💰 ' + esc(j.budget) + '</div>' : '') +
-        (j.description ? '<div class="job-desc">' + esc(j.description.substring(0,200)) + '</div>' : '') +
-        '<div style="font-size:12px;color:var(--text3);margin-top:12px;">Booked on ' + new Date(a.applied_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) + '</div>' +
+async function loadBookings(){
+  var el=document.getElementById('bookingsList');
+  el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-sub">Loading…</div></div>';
+  try{
+    var c=getSupabase();
+    var appsRes=await c.from('applications').select('*').eq('professional_id',currentUser.id).eq('status','booked');
+    var apps=appsRes.data||[];
+    if(!apps.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No bookings yet</div><div class="empty-sub">Apply to jobs and wait for admin confirmation.</div></div>';return;}
+    var jobIds=apps.map(function(a){return a.job_id;}).filter(Boolean);
+    var jobsRes=await c.from('jobs').select('*').in('id',jobIds);
+    var jm={};(jobsRes.data||[]).forEach(function(j){jm[j.id]=j;});
+    el.innerHTML=apps.map(function(a){
+      var j=jm[a.job_id]||{};
+      return'<div class="booking-card">'+
+        '<div class="booking-badge">✅ Confirmed</div>'+
+        '<div class="booking-title">'+esc(j.title||'Job')+'</div>'+
+        '<div class="booking-company">🏢 '+esc(j.company_name||'ImpactGrid Employer')+(j.location?' &middot; 📍 '+esc(j.location):'')+' </div>'+
+        (j.budget?'<div class="booking-budget">'+esc(j.budget)+'</div>':'')+
+        (j.description?'<div class="booking-desc">'+esc(j.description.substring(0,200))+(j.description.length>200?'…':'')+'</div>':'')+
+        '<div class="booking-date">Booked '+new Date(a.applied_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>'+
       '</div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+  }catch(e){el.innerHTML='<div class="empty-state"><div class="empty-title">Error</div><div class="empty-sub">'+esc(e.message)+'</div></div>';}
 }
 
-async function saveProfile() {
-  if (!currentUser) return;
-  var c = getSupabase();
-  var fname = document.getElementById('p-fname').value.trim();
-  var lname = document.getElementById('p-lname').value.trim();
-  try {
+async function saveProfile(){
+  if(!currentUser)return;
+  var c=getSupabase();
+  var fname=document.getElementById('p-fname').value.trim();
+  var lname=document.getElementById('p-lname').value.trim();
+  try{
     await c.from('profiles').upsert({
-      id: currentUser.id,
-      email: currentUser.email,
-      full_name: (fname + ' ' + lname).trim(),
-      bio: document.getElementById('p-bio').value.trim(),
-      skills: document.getElementById('p-skills').value.trim(),
-      location: document.getElementById('p-location').value.trim(),
-      availability: document.getElementById('p-availability').value,
-      portfolio_url: document.getElementById('p-portfolio').value.trim(),
-      role: 'professional',
-      updated_at: new Date().toISOString()
+      id:currentUser.id,email:currentUser.email,
+      full_name:(fname+' '+lname).trim(),
+      bio:document.getElementById('p-bio').value.trim(),
+      skills:document.getElementById('p-skills').value.trim(),
+      location:document.getElementById('p-location').value.trim(),
+      availability:document.getElementById('p-availability').value,
+      portfolio_url:document.getElementById('p-portfolio').value.trim(),
+      role:'professional',updated_at:new Date().toISOString()
     });
-    var el = document.getElementById('alertProfile');
-    el.textContent = '✅ Profile saved successfully.';
-    el.className = 'alert alert-success show';
-    setTimeout(function(){ el.classList.remove('show'); }, 3000);
-  } catch(e) {
-    var el = document.getElementById('alertProfile');
-    el.textContent = '❌ Failed to save: ' + e.message;
-    el.className = 'alert alert-error show';
-  }
+    showAlert('alertProfile','✅ Profile saved successfully.','alert-success');
+  }catch(e){showAlert('alertProfile','❌ Failed to save: '+e.message,'alert-error');}
 }
 
-async function igLogout() {
+function showAlert(id,msg,cls){
+  var el=document.getElementById(id);
+  el.textContent=msg;el.className='alert '+cls+' show';
+  setTimeout(function(){el.classList.remove('show');},3500);
+}
+
+async function igLogout(){
   await getSupabase().auth.signOut();
-  window.location.href = 'index.html';
+  window.location.href='index.html';
 }
 
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
