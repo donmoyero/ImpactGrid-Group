@@ -239,6 +239,29 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 @media(max-width:1100px){.two-col,.gen-layout,.aud-layout{grid-template-columns:1fr;}}
 @media(max-width:860px){:root{--sidebar-w:0px;}.sidebar{display:none;}.yt-features{grid-template-columns:1fr;}}
 @media(max-width:640px){.dash-grid{grid-template-columns:repeat(2,1fr);}.panel{padding:16px;}}
+
+/* ── EVALUATOR ── */
+.eval-layout{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start;}
+.eval-chat-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;height:560px;}
+.eval-chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.eval-chat-msgs::-webkit-scrollbar{width:4px;}
+.eval-chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.eval-msg{display:flex;gap:8px;align-items:flex-start;}
+.eval-msg.eval-msg-user{flex-direction:row-reverse;}
+.eval-msg-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:10px;font-weight:900;color:#07090f;flex-shrink:0;}
+.eval-msg-av-user{background:var(--bg2);border:1px solid var(--border2);font-size:11px;color:var(--text2);font-family:var(--fb);}
+.eval-msg-bubble{padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.65;max-width:88%;}
+.eval-msg-dijo .eval-msg-bubble{background:var(--bg2);border:1px solid var(--border);border-bottom-left-radius:3px;color:var(--text);}
+.eval-msg-user .eval-msg-bubble{background:var(--gold-dim);border:1px solid var(--gold-glo);border-bottom-right-radius:3px;color:var(--text);}
+.eval-msg-bubble strong{color:var(--text);}
+.eval-chip{padding:5px 11px;border-radius:16px;font-size:11px;font-weight:500;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.eval-chip:hover{border-color:var(--gold);color:var(--gold);}
+.eval-metric-bar-row{display:flex;flex-direction:column;gap:5px;}
+.eval-metric-label{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text2);}
+.eval-metric-label span:last-child{font-family:var(--fm);font-size:10px;color:var(--gold);font-weight:600;}
+.eval-metric-track{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.eval-metric-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width 1s cubic-bezier(0.4,0,0.2,1);}
+@media(max-width:1100px){.eval-layout{grid-template-columns:1fr;}.eval-chat-panel{height:480px;}}
 </style>
 </head>
 <body>
@@ -306,6 +329,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <div class="nav-item" onclick="switchTab('trends')"><span class="nav-ico">📡</span>Trend Feed</div>
       <div class="nav-item" onclick="switchTab('generator')"><span class="nav-ico">✍️</span>AI Generator</div>
       <div class="nav-item" onclick="switchTab('audience')"><span class="nav-ico">👥</span>Audience</div>
+      <div class="nav-item" onclick="switchTab('evaluator')"><span class="nav-ico">🎯</span>Dijo Evaluator<span class="nav-badge badge-live">AI</span></div>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">Platforms</div>
@@ -329,6 +353,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <button class="tab-btn" id="tab-trends" onclick="switchTab('trends')"><span>📡</span>Trend Feed</button>
       <button class="tab-btn" id="tab-generator" onclick="switchTab('generator')"><span>✍️</span>AI Generator</button>
       <button class="tab-btn" id="tab-audience" onclick="switchTab('audience')"><span>👥</span>Audience</button>
+      <button class="tab-btn" id="tab-evaluator" onclick="switchTab('evaluator')"><span>🎯</span>Evaluator</button>
       <button class="tab-btn" id="tab-youtube" onclick="switchTab('youtube')"><span>▶️</span>YouTube</button>
       <button class="tab-btn tab-soon"><span>🎵</span>TikTok<span class="tab-soon-badge">SOON</span></button>
       <button class="tab-btn tab-soon"><span>📸</span>Instagram<span class="tab-soon-badge">SOON</span></button>
@@ -484,6 +509,115 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:var(--r);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;">Analyse</button>
       </div>
       <div id="audienceOutput"><div style="text-align:center;padding:48px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);">Enter a topic above to generate a full audience breakdown.</div></div>
+    </div>
+
+    <!-- DIJO EVALUATOR -->
+    <div class="panel" id="panel-evaluator">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+        <h2 style="font-size:20px;">Dijo Evaluator</h2>
+        <span class="dijo-badge">Powered by Dijo AI</span>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px;">Dijo scores your connected accounts on engagement, consistency, growth, and content quality — then advises you on exactly what to do next.</p>
+
+      <!-- NOT CONNECTED STATE -->
+      <div id="eval-no-account">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:48px;text-align:center;">
+          <div style="font-size:52px;margin-bottom:16px;">🔌</div>
+          <h3 style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:10px;">Connect an Account First</h3>
+          <p style="font-size:14px;color:var(--text2);max-width:400px;margin:0 auto 24px;">Dijo Evaluator needs your real channel data to score and advise you. Connect your YouTube channel to get started.</p>
+          <button onclick="switchTab('youtube')" style="padding:11px 24px;border-radius:var(--r);background:linear-gradient(135deg,#ff4040,#ff6060);color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer;">Connect YouTube →</button>
+        </div>
+      </div>
+
+      <!-- LOADING -->
+      <div id="eval-loading" style="display:none;text-align:center;padding:56px;">
+        <span class="spinner spinner-gold" style="width:22px;height:22px;border-width:3px;"></span>
+        <p style="margin-top:16px;font-size:14px;color:var(--text3);" id="eval-loading-msg">Dijo is analysing your channel…</p>
+      </div>
+
+      <!-- MAIN EVALUATOR -->
+      <div id="eval-main" style="display:none;">
+        <!-- Account bar + run button -->
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+          <div id="eval-avatar" style="width:42px;height:42px;border-radius:50%;background:rgba(255,96,96,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0;">▶️</div>
+          <div style="flex:1;min-width:0;">
+            <div id="eval-channel-name" style="font-weight:700;font-size:14px;margin-bottom:1px;">—</div>
+            <div id="eval-channel-handle" style="font-size:11px;color:var(--text3);">YouTube</div>
+          </div>
+          <button id="evalRunBtn" onclick="runEvaluation()" style="padding:9px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;">⚡ Re-evaluate</button>
+        </div>
+
+        <div class="eval-layout">
+          <!-- LEFT: score + metrics -->
+          <div>
+            <div id="eval-score-card" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:28px 24px;margin-bottom:14px;text-align:center;">
+              <div style="font-family:var(--fm);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:16px;">Overall Creator Score</div>
+              <div style="position:relative;width:130px;height:130px;margin:0 auto 16px;">
+                <svg viewBox="0 0 130 130" style="width:130px;height:130px;transform:rotate(-90deg);">
+                  <circle cx="65" cy="65" r="54" fill="none" stroke="var(--bg3)" stroke-width="11"/>
+                  <circle id="eval-score-ring" cx="65" cy="65" r="54" fill="none" stroke="var(--gold)" stroke-width="11" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" style="transition:stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1),stroke 0.4s;"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                  <div id="eval-score-num" style="font-family:var(--fd);font-size:32px;font-weight:900;letter-spacing:-0.04em;line-height:1;color:var(--gold);">—</div>
+                  <div style="font-family:var(--fm);font-size:9px;color:var(--text3);letter-spacing:0.08em;margin-top:2px;">/100</div>
+                </div>
+              </div>
+              <div id="eval-verdict" style="font-size:15px;font-weight:700;margin-bottom:4px;">—</div>
+              <div id="eval-tier" style="font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;">—</div>
+            </div>
+
+            <!-- Metric bars -->
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;">
+              <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:var(--fm);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);">Score Breakdown</div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;" id="eval-metric-bars"></div>
+            </div>
+
+            <!-- Stats row -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="eval-stats-row">
+              <div class="stat-card" style="padding:14px 12px;">
+                <div class="sc-label">Subscribers</div>
+                <div class="sc-value" style="font-size:18px;color:var(--yt);" id="eval-subs">—</div>
+              </div>
+              <div class="stat-card" style="padding:14px 12px;">
+                <div class="sc-label">Total Views</div>
+                <div class="sc-value" style="font-size:18px;" id="eval-views">—</div>
+              </div>
+              <div class="stat-card" style="padding:14px 12px;">
+                <div class="sc-label">Videos</div>
+                <div class="sc-value" style="font-size:18px;color:var(--green);" id="eval-vcount">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Dijo chat -->
+          <div class="eval-chat-panel">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:10px;flex-shrink:0;">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:11px;font-weight:900;color:#07090f;flex-shrink:0;">DJ</div>
+              <div>
+                <div style="font-family:var(--fd);font-size:13px;font-weight:800;letter-spacing:-0.01em;">Dijo Adviser</div>
+                <div style="display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9px;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;"><span style="width:4px;height:4px;border-radius:50%;background:var(--green);display:inline-block;animation:livePulse 1.5s infinite;"></span>Always On · Llama 3.3 70B</div>
+              </div>
+              <button onclick="clearEvalChat()" style="margin-left:auto;font-family:var(--fm);font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer;">Clear</button>
+            </div>
+            <div class="eval-chat-msgs" id="evalChatMsgs">
+              <div class="eval-msg eval-msg-dijo">
+                <div class="eval-msg-av">DJ</div>
+                <div class="eval-msg-bubble">Hello. I'm Dijo — your ImpactGrid creator adviser.<br><br>Hit <strong>Evaluate</strong> to score your connected YouTube channel, then ask me anything about your strategy, growth, or next steps. I'll use your real channel data to give you honest, specific advice.</div>
+              </div>
+            </div>
+            <div id="eval-chips-row" style="padding:10px 12px 0;border-top:1px solid var(--border);background:var(--bg2);display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;">
+              <button class="eval-chip" onclick="evalAsk('What should I focus on to grow faster?')">Grow faster?</button>
+              <button class="eval-chip" onclick="evalAsk('What type of content should I make next?')">Content ideas?</button>
+              <button class="eval-chip" onclick="evalAsk('How is my engagement rate vs the benchmark?')">Engagement rate?</button>
+              <button class="eval-chip" onclick="evalAsk('Give me a 30-day action plan to improve my channel.')">30-day plan</button>
+            </div>
+            <div style="padding:10px 12px 12px;background:var(--bg2);display:flex;gap:8px;flex-shrink:0;">
+              <input type="text" id="evalChatInput" placeholder="Ask Dijo about your channel…" style="flex:1;padding:9px 13px;font-size:13px;" onkeydown="if(event.key==='Enter')evalSendMsg()"/>
+              <button onclick="evalSendMsg()" style="width:36px;height:36px;border-radius:var(--r);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;display:flex;align-items:center;justify-content:center;font-size:16px;border:none;cursor:pointer;flex-shrink:0;">➤</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- YOUTUBE -->
@@ -959,10 +1093,350 @@ window.addEventListener('load',function(){
   setTimeout(checkAuth,300);
   buildTrendData();
   initYouTube();
+  initEvaluator();
   // Keep Dijo warm (Render free tier spins down after 15 min inactivity)
   setInterval(function(){fetch(DIJO+'/ping').catch(function(){});},600000);
 });
 window.creatorAIAsk=function(q){document.getElementById('genTopic').value=q;switchTab('generator');showToast('💡','Topic loaded!');};
+
+/* ════════════════════════════════════════════════════════════
+   DIJO EVALUATOR
+   Scores connected YouTube channel across 5 dimensions,
+   then powers a contextual Dijo AI chat using real data.
+════════════════════════════════════════════════════════════ */
+var evalChannelData  = null;   // stored YouTube channel object
+var evalVideosData   = null;   // stored videos array
+var evalScoreData    = null;   // computed score object
+var evalChatHistory  = [];     // chat messages for context
+
+function initEvaluator(){
+  // Called on tab switch too — check if YouTube is connected
+  try{
+    if(typeof YouTubeAuth==='undefined') return;
+    var session = YouTubeAuth.getSession();
+    if(session && session.channel){
+      evalChannelData = session.channel;
+      showEvalMain(session.channel);
+    }
+  }catch(e){}
+}
+
+function showEvalMain(channel){
+  document.getElementById('eval-no-account').style.display = 'none';
+  document.getElementById('eval-loading').style.display    = 'none';
+  document.getElementById('eval-main').style.display       = 'block';
+
+  // Populate account bar
+  var name   = (channel && channel.snippet && channel.snippet.title) ? channel.snippet.title : 'YouTube Channel';
+  var handle = (channel && channel.snippet && channel.snippet.customUrl) ? channel.snippet.customUrl : '';
+  document.getElementById('eval-channel-name').textContent   = name;
+  document.getElementById('eval-channel-handle').textContent = handle || 'YouTube';
+
+  // Avatar
+  if(channel && channel.snippet && channel.snippet.thumbnails && channel.snippet.thumbnails.default){
+    var av = document.getElementById('eval-avatar');
+    av.innerHTML = '<img src="'+channel.snippet.thumbnails.default.url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt=""/>';
+  }
+
+  // Stats
+  if(channel && channel.statistics){
+    function fmt(n){ return n ? Number(n).toLocaleString() : '—'; }
+    document.getElementById('eval-subs').textContent   = fmt(channel.statistics.subscriberCount);
+    document.getElementById('eval-views').textContent  = fmt(channel.statistics.viewCount);
+    document.getElementById('eval-vcount').textContent = fmt(channel.statistics.videoCount);
+  }
+}
+
+/* ── COMPUTE SCORE ── */
+function computeChannelScore(channel, videos){
+  var stats  = (channel && channel.statistics) || {};
+  var subs   = parseInt(stats.subscriberCount  || 0);
+  var views  = parseInt(stats.viewCount        || 0);
+  var vcount = parseInt(stats.videoCount       || 0);
+
+  // 1. Audience size score (0-20)
+  var audienceScore = 0;
+  if(subs >= 1000000) audienceScore = 20;
+  else if(subs >= 100000) audienceScore = 16;
+  else if(subs >= 10000)  audienceScore = 12;
+  else if(subs >= 1000)   audienceScore = 8;
+  else if(subs >= 100)    audienceScore = 5;
+  else                    audienceScore = 2;
+
+  // 2. Views per subscriber (engagement proxy) (0-20)
+  var vpsRatio = subs > 0 ? views / subs : 0;
+  var engScore = 0;
+  if(vpsRatio >= 200)     engScore = 20;
+  else if(vpsRatio >= 100) engScore = 16;
+  else if(vpsRatio >= 50)  engScore = 12;
+  else if(vpsRatio >= 20)  engScore = 8;
+  else if(vpsRatio >= 5)   engScore = 5;
+  else                     engScore = 2;
+
+  // 3. Content volume (0-20)
+  var volScore = 0;
+  if(vcount >= 200)      volScore = 20;
+  else if(vcount >= 100) volScore = 17;
+  else if(vcount >= 50)  volScore = 14;
+  else if(vcount >= 20)  volScore = 10;
+  else if(vcount >= 5)   volScore = 6;
+  else                   volScore = 2;
+
+  // 4. Recent video performance (0-20) — avg views on latest 5 videos vs subscriber benchmark
+  var recScore = 10; // default midpoint
+  if(videos && videos.length){
+    var recent  = videos.slice(0, 5);
+    var avgViews = recent.reduce(function(sum, v){
+      return sum + parseInt((v.statistics && v.statistics.viewCount) || 0);
+    }, 0) / recent.length;
+    var viewRatio = subs > 0 ? avgViews / subs : 0;
+    if(viewRatio >= 0.5)       recScore = 20;
+    else if(viewRatio >= 0.2)  recScore = 17;
+    else if(viewRatio >= 0.1)  recScore = 13;
+    else if(viewRatio >= 0.05) recScore = 9;
+    else if(viewRatio >= 0.01) recScore = 5;
+    else                       recScore = 2;
+  }
+
+  // 5. Like-to-view ratio on recent videos (0-20)
+  var ltvScore = 10; // default
+  if(videos && videos.length){
+    var totalViews = 0; var totalLikes = 0;
+    videos.slice(0,5).forEach(function(v){
+      totalViews += parseInt((v.statistics && v.statistics.viewCount) || 0);
+      totalLikes += parseInt((v.statistics && v.statistics.likeCount) || 0);
+    });
+    var ltv = totalViews > 0 ? totalLikes / totalViews : 0;
+    if(ltv >= 0.06)       ltvScore = 20;
+    else if(ltv >= 0.04)  ltvScore = 17;
+    else if(ltv >= 0.02)  ltvScore = 13;
+    else if(ltv >= 0.01)  ltvScore = 9;
+    else if(ltv >= 0.005) ltvScore = 5;
+    else                  ltvScore = 2;
+  }
+
+  var total = audienceScore + engScore + volScore + recScore + ltvScore;
+
+  var verdict = total >= 80 ? '🔥 Top Tier Creator' :
+                total >= 65 ? '⚡ Established Creator' :
+                total >= 50 ? '📈 Growing Channel' :
+                total >= 35 ? '🌱 Early Stage' : '🚀 Just Getting Started';
+
+  var tier = total >= 80 ? 'Elite' :
+             total >= 65 ? 'Established' :
+             total >= 50 ? 'Growth Stage' :
+             total >= 35 ? 'Emerging' : 'Beginner';
+
+  var ringColor = total >= 80 ? 'var(--green)' :
+                  total >= 65 ? 'var(--gold)' :
+                  total >= 50 ? 'var(--blue2)' : 'var(--text2)';
+
+  return{
+    total:total,
+    verdict:verdict,
+    tier:tier,
+    ringColor:ringColor,
+    metrics:[
+      {label:'Audience Size',     score:audienceScore, max:20},
+      {label:'View Engagement',   score:engScore,      max:20},
+      {label:'Content Volume',    score:volScore,      max:20},
+      {label:'Recent Performance',score:recScore,      max:20},
+      {label:'Like Rate',         score:ltvScore,      max:20}
+    ],
+    raw:{ subs:subs, views:views, vcount:vcount, vpsRatio:vpsRatio.toFixed(1) }
+  };
+}
+
+/* ── RUN EVALUATION ── */
+async function runEvaluation(){
+  var session;
+  try{ session = YouTubeAuth.getSession(); }catch(e){}
+  if(!session){
+    showToast('⚠️','Connect YouTube first');
+    switchTab('youtube');
+    return;
+  }
+
+  document.getElementById('eval-main').style.display    = 'none';
+  document.getElementById('eval-no-account').style.display = 'none';
+  document.getElementById('eval-loading').style.display = 'block';
+  document.getElementById('eval-loading-msg').textContent = 'Dijo is fetching your channel data…';
+
+  var channel = session.channel;
+  var videos  = null;
+
+  // Fetch fresh videos for scoring
+  try{
+    document.getElementById('eval-loading-msg').textContent = 'Analysing your recent videos…';
+    var vRes = await YouTubeAuth.fetchVideos(session.accessToken, 10);
+    videos   = vRes && vRes.items ? vRes.items : [];
+    evalVideosData = videos;
+  }catch(e){ console.warn('[Eval] Could not fetch videos:', e.message); }
+
+  // Compute score
+  var scoreData   = computeChannelScore(channel, videos);
+  evalScoreData   = scoreData;
+  evalChannelData = channel;
+
+  document.getElementById('eval-loading-msg').textContent = 'Dijo is preparing your evaluation…';
+
+  // Render score UI
+  document.getElementById('eval-loading').style.display = 'none';
+  showEvalMain(channel);
+  renderEvalScore(scoreData);
+
+  // Ask Dijo for personalised intro analysis
+  await evalGetDijoIntro(channel, videos, scoreData);
+  showToast('✅','Evaluation complete!');
+}
+
+function renderEvalScore(s){
+  // Animate ring
+  var ring = document.getElementById('eval-score-ring');
+  var circumference = 339.3;
+  var offset = circumference - (s.total / 100) * circumference;
+  ring.style.stroke = s.ringColor;
+  setTimeout(function(){ ring.style.strokeDashoffset = offset; }, 80);
+
+  document.getElementById('eval-score-num').textContent = s.total;
+  document.getElementById('eval-score-num').style.color = s.ringColor;
+  document.getElementById('eval-verdict').textContent   = s.verdict;
+  document.getElementById('eval-verdict').style.color   = s.ringColor;
+  document.getElementById('eval-tier').textContent      = s.tier + ' · ' + s.total + '/100';
+
+  // Metric bars
+  var barsEl = document.getElementById('eval-metric-bars');
+  barsEl.innerHTML = s.metrics.map(function(m){
+    var pct = Math.round((m.score / m.max) * 100);
+    return '<div class="eval-metric-bar-row">'+
+      '<div class="eval-metric-label"><span>'+m.label+'</span><span>'+m.score+'/'+m.max+'</span></div>'+
+      '<div class="eval-metric-track"><div class="eval-metric-fill" style="width:0%" data-pct="'+pct+'%"></div></div>'+
+    '</div>';
+  }).join('');
+
+  // Animate metric fill bars after brief delay
+  setTimeout(function(){
+    barsEl.querySelectorAll('.eval-metric-fill').forEach(function(el){
+      el.style.width = el.dataset.pct;
+    });
+  }, 200);
+}
+
+/* ── DIJO INTRO ANALYSIS ── */
+async function evalGetDijoIntro(channel, videos, score){
+  var stats    = (channel && channel.statistics) || {};
+  var name     = (channel && channel.snippet && channel.snippet.title) || 'Your Channel';
+  var topVids  = '';
+  if(videos && videos.length){
+    topVids = videos.slice(0,3).map(function(v,i){
+      var s = v.statistics || {}; var t = (v.snippet && v.snippet.title) || 'Untitled';
+      return (i+1)+'. "'+t+'" — '+Number(s.viewCount||0).toLocaleString()+' views, '+Number(s.likeCount||0).toLocaleString()+' likes';
+    }).join('\n');
+  }
+
+  var prompt = 'You are evaluating a YouTube channel. Here is the real data:\n\n'+
+    'Channel: '+name+'\n'+
+    'Subscribers: '+Number(stats.subscriberCount||0).toLocaleString()+'\n'+
+    'Total Views: '+Number(stats.viewCount||0).toLocaleString()+'\n'+
+    'Total Videos: '+(stats.videoCount||0)+'\n'+
+    'Views per subscriber ratio: '+score.raw.vpsRatio+'\n'+
+    'Creator Score: '+score.total+'/100 ('+score.tier+')\n\n'+
+    'Top 3 recent videos:\n'+(topVids||'Not available')+'\n\n'+
+    'Give a 3-4 sentence honest evaluation of this channel\'s performance. Then give 3 specific, actionable things they should do RIGHT NOW to grow. Be direct and data-specific — reference their actual numbers.';
+
+  try{
+    var reply = await callDijo(prompt);
+    addEvalMsg('dijo', reply);
+    // Store context for follow-up questions
+    evalChatHistory = [
+      { role:'system', ctx: 'Channel: '+name+' | Subs: '+Number(stats.subscriberCount||0).toLocaleString()+' | Views: '+Number(stats.viewCount||0).toLocaleString()+' | Videos: '+(stats.videoCount||0)+' | Score: '+score.total+'/100 ('+score.tier+')' },
+      { role:'dijo', content: reply }
+    ];
+  }catch(e){
+    addEvalMsg('dijo', 'I\'ve scored your channel at <strong>'+score.total+'/100</strong> ('+score.tier+'). Connect to the internet and I\'ll give you a full analysis with specific growth recommendations.');
+  }
+}
+
+/* ── EVAL CHAT ── */
+function evalSendMsg(){
+  var input = document.getElementById('evalChatInput');
+  var msg   = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  evalAsk(msg);
+  // Hide chips after first user message
+  var chips = document.getElementById('eval-chips-row');
+  if(chips) chips.style.display='none';
+}
+
+async function evalAsk(question){
+  addEvalMsg('user', escHtml(question));
+  // Build context-rich prompt using real channel data
+  var ctx = '';
+  if(evalScoreData && evalChannelData){
+    var st = (evalChannelData.statistics)||{};
+    var nm = (evalChannelData.snippet&&evalChannelData.snippet.title)||'this channel';
+    ctx = '[Context — '+nm+': '+Number(st.subscriberCount||0).toLocaleString()+' subs, '+
+          Number(st.viewCount||0).toLocaleString()+' total views, '+(st.videoCount||0)+' videos, '+
+          'Creator Score '+evalScoreData.total+'/100 ('+evalScoreData.tier+'), '+
+          'Views/Sub ratio: '+evalScoreData.raw.vpsRatio+']\n\n';
+  }
+
+  // Typing indicator
+  var typingId = 'typing-'+Date.now();
+  var msgEl = document.createElement('div');
+  msgEl.className = 'eval-msg eval-msg-dijo';
+  msgEl.id = typingId;
+  msgEl.innerHTML = '<div class="eval-msg-av">DJ</div><div class="eval-msg-bubble" style="color:var(--text3);font-style:italic;"><span class="spinner spinner-gold" style="width:10px;height:10px;border-width:1.5px;"></span> Dijo is thinking…</div>';
+  document.getElementById('evalChatMsgs').appendChild(msgEl);
+  scrollEvalChat();
+
+  try{
+    var fullPrompt = ctx + question;
+    var reply = await callDijo(fullPrompt);
+    // Remove typing indicator and add real reply
+    var el = document.getElementById(typingId);
+    if(el) el.remove();
+    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'));
+    evalChatHistory.push({role:'user',content:question},{role:'dijo',content:reply});
+  }catch(err){
+    var el2 = document.getElementById(typingId);
+    if(el2) el2.remove();
+    addEvalMsg('dijo', 'Dijo is unavailable right now — try again in a moment.');
+  }
+}
+
+function addEvalMsg(from, html){
+  var msgs = document.getElementById('evalChatMsgs');
+  var div  = document.createElement('div');
+  div.className = 'eval-msg ' + (from === 'user' ? 'eval-msg-user' : 'eval-msg-dijo');
+  var avHtml = from === 'user'
+    ? '<div class="eval-msg-av eval-msg-av-user">You</div>'
+    : '<div class="eval-msg-av">DJ</div>';
+  div.innerHTML = avHtml + '<div class="eval-msg-bubble">'+html+'</div>';
+  msgs.appendChild(div);
+  scrollEvalChat();
+}
+
+function scrollEvalChat(){
+  var msgs = document.getElementById('evalChatMsgs');
+  if(msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+function clearEvalChat(){
+  var msgs = document.getElementById('evalChatMsgs');
+  msgs.innerHTML = '<div class="eval-msg eval-msg-dijo"><div class="eval-msg-av">DJ</div><div class="eval-msg-bubble">Chat cleared. What would you like to know about your channel?</div></div>';
+  evalChatHistory = [];
+  var chips = document.getElementById('eval-chips-row');
+  if(chips) chips.style.display='flex';
+}
+
+// Re-init evaluator when switching to its tab
+var _origSwitchTab = switchTab;
+switchTab = function(name){
+  _origSwitchTab(name);
+  if(name === 'evaluator') initEvaluator();
+};
 </script>
 </body>
 </html>
