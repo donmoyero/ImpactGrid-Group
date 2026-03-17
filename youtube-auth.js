@@ -15,7 +15,7 @@
 var YouTubeAuth = (function() {
 
   /* ── CONFIG ── */
-  var CLIENT_ID    = 'YOUR_YOUTUBE_CLIENT_ID'; // e.g. '123456789-abc.apps.googleusercontent.com'
+  var CLIENT_ID    = '553098113704-irr87o5f1t8tnbn6l3hsml4dhq8mvab5.apps.googleusercontent.com'; // e.g. '123456789-abc.apps.googleusercontent.com'
   var REDIRECT_URI = 'https://impactgridgroup.com/youtube-callback.html';
   var DIJO_URL     = 'https://impactgrid-dijo.onrender.com';
 
