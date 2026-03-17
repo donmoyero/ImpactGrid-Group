@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -349,7 +349,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <li><a href="dashboard.html">Available Jobs</a></li>
     </ul>
     <div class="nav-right">
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
       <!-- shown when logged out -->
       <div id="navLoggedOut" style="display:flex;align-items:center;gap:9px;">
         <a href="login.html" class="btn-ghost-nav">Login</a>
@@ -735,7 +735,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
           <a href="privacy.html">Privacy Policy</a>
           <a href="terms.html">Terms of Service</a>
         </div>
-        <button onclick="toggleTheme()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;" id="footerThemeBtn">&#x1F319; Dark Mode</button>
+        <button onclick="toggleTheme()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;" id="footerThemeBtn">&#x2600;&#xFE0F; Light Mode</button>
       </div>
     </div>
   </footer>
@@ -747,7 +747,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <script src="supabase-config.js"></script>
 <script src="impactgrid-chat-bubble.js"></script>
 <script>
-var dark=true;
+var dark=false;
 function toggleTheme(){
   dark=!dark;
   document.documentElement.setAttribute('data-theme',dark?'dark':'light');
@@ -757,12 +757,19 @@ function toggleTheme(){
   try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}
 }
 try{
-  if(localStorage.getItem('igt')==='l'){
+  var saved=localStorage.getItem('igt');
+  if(saved==='d'){
+    dark=true;
+    document.documentElement.setAttribute('data-theme','dark');
+    document.getElementById('themeBtn').textContent='\uD83C\uDF19';
+    var fb=document.getElementById('footerThemeBtn');
+    if(fb)fb.textContent='\uD83C\uDF19 Dark Mode';
+  } else {
     dark=false;
     document.documentElement.setAttribute('data-theme','light');
     document.getElementById('themeBtn').textContent='\u2600\uFE0F';
-    var fb=document.getElementById('footerThemeBtn');
-    if(fb)fb.textContent='\u2600\uFE0F Light Mode';
+    var fb2=document.getElementById('footerThemeBtn');
+    if(fb2)fb2.textContent='\u2600\uFE0F Light Mode';
   }
 }catch(e){}
 
