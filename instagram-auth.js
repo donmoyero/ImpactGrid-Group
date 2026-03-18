@@ -16,12 +16,8 @@ var InstagramAuth = (function() {
   var REDIRECT_URI = 'https://impactgridgroup.com/instagram-callback.html';
   var DIJO_URL     = 'https://impactgrid-dijo.onrender.com';
 
-  /* ── Scopes — Instagram Business only, no Facebook Page scopes ── */
-  var SCOPES = [
-    'instagram_business_basic',
-    'instagram_business_content_publish',
-    'instagram_business_manage_insights'
-  ].join(',');
+  /* ── Scopes — single basic scope to start ── */
+  var SCOPES = 'instagram_business_basic';
 
   /* ── State generator for CSRF protection ── */
   function generateState() {
