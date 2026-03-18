@@ -16,7 +16,7 @@
 var InstagramAuth = (function() {
 
   /* ── CONFIG — replace with your real values ── */
-  var APP_ID       = '1626447435061148'; // e.g. '1234567890'
+  var APP_ID       = '1600405687856906'; // e.g. '1234567890'
   var REDIRECT_URI = 'https://impactgridgroup.com/instagram-callback.html';
   var DIJO_URL     = 'https://impactgrid-dijo.onrender.com';
 
