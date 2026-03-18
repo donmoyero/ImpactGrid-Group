@@ -7,27 +7,20 @@
    - Display API (profile + media)
    - Insights API (engagement + reach)
    - Content Publishing API (post photos/videos/reels)
-
-   SETUP:
-   Replace INSTAGRAM_APP_ID with your Meta App ID from
-   developers.facebook.com → Your App → App Settings → Basic
 ================================================================ */
 
 var InstagramAuth = (function() {
 
-  /* ── CONFIG — replace with your real values ── */
-  var APP_ID       = '1600405687856906'; // e.g. '1234567890'
+  /* ── CONFIG ── */
+  var APP_ID       = '1600405687856906';
   var REDIRECT_URI = 'https://impactgridgroup.com/instagram-callback.html';
   var DIJO_URL     = 'https://impactgrid-dijo.onrender.com';
 
-  /* ── Scopes ── */
+  /* ── Scopes — Instagram Business only, no Facebook Page scopes ── */
   var SCOPES = [
     'instagram_business_basic',
     'instagram_business_content_publish',
-    'instagram_business_manage_insights',
-    'instagram_basic',
-    'pages_show_list',
-    'pages_read_engagement'
+    'instagram_business_manage_insights'
   ].join(',');
 
   /* ── State generator for CSRF protection ── */
@@ -58,7 +51,8 @@ var InstagramAuth = (function() {
         state:         state
       });
 
-      var authURL = 'https://www.facebook.com/v19.0/dialog/oauth?' + params.toString();
+      /* ── Use Instagram OAuth endpoint, not Facebook dialog ── */
+      var authURL = 'https://api.instagram.com/oauth/authorize?' + params.toString();
       window.location.href = authURL;
 
     } catch(e) {
