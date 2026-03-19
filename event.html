@@ -797,7 +797,7 @@ function distanceToConfidence(dist){ return Math.max(0, Math.min(1, 1 - dist)); 
 /* ── API Keys (set by admin via URL params or hardcoded for now) ── */
 var GROK_API_KEY  = ''; /* Not used — skipping xAI for now */
 var GROQ_API_KEY  = ''; /* Key handled server-side via EVENTS_API */
-var EVENTS_API    = 'https://impactgrid-events-api.onrender.com';
+var EVENTS_API    = 'https://impactgrid-events-api.onrender.com'; /* Backend API */
 
 /* ════════════ BOOT ════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
@@ -994,7 +994,10 @@ function renderPhotos(photos){
       '</div>' +
       matchedBadge +
       '<div class="photo-card-overlay">' +
-        (matchedPhotos[p.id] && matchedPhotos[p.id].tier === 'instant' ? '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo.jpg" class="photo-card-overlay-btn" onclick="event.stopPropagation()">⬇️ Download</a>' : '<button class="photo-card-overlay-btn" onclick="event.stopPropagation();openRequestModal(''+p.id+'')">D83DDCE5 Request</button>') +
+        (matchedPhotos[p.id] && matchedPhotos[p.id].tier === 'instant'
+          ? '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo.jpg" class="photo-card-overlay-btn" onclick="event.stopPropagation()">⬇️ Download</a>'
+          : '<button class="photo-card-overlay-btn" onclick="event.stopPropagation();openRequestModal(\'' + p.id + '\')">📥 Request</button>'
+        ) +
       '</div>' +
     '</div>';
   }).join('');
