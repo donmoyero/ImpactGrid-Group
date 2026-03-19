@@ -486,7 +486,7 @@ tr:hover td{background:rgba(255,255,255,.012);}
             <div class="card-body">
               <div id="createEventAlert" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
               <div class="form-grid" style="margin-bottom:12px;">
-                <div class="field-group"><div class="field-label">Event Name *</div><input type="text" id="ev-name" placeholder="e.g. Johnson Wedding 2026"/></div>
+                <div class="field-group"><div class="field-label">Event Name *</div><input type="text" id="ev-name" placeholder="e.g. Johnson Wedding 2026" oninput="updateTemplatePreview()"/></div>
                 <div class="field-group"><div class="field-label">Event Type *</div><select id="ev-type"><option value="professional">Professional</option><option value="kids">Kids Event</option></select></div>
               </div>
               <div class="form-grid" style="margin-bottom:12px;">
@@ -499,7 +499,16 @@ tr:hover td{background:rgba(255,255,255,.012);}
                   <div style="display:flex;gap:8px;"><input type="text" id="ev-code" placeholder="Auto-generated" style="flex:1;font-family:var(--fm);letter-spacing:.1em;text-transform:uppercase;"/><button class="btn btn-ghost" onclick="generateCode()" style="flex-shrink:0;">🎲 Generate</button></div>
                   <div class="field-hint">Guests need this to access the event</div>
                 </div>
-                <div class="field-group"><div class="field-label">Template</div><select id="ev-template"><option value="professional">Professional (Dark)</option><option value="kids">Kids (Bright)</option></select></div>
+                <div class="field-group"><div class="field-label">Template</div><select id="ev-template" onchange="updateTemplatePreview()">
+  <option value="professional">📊 Professional — Clean white, editorial</option>
+  <option value="kids">🎉 Kids — Bright, confetti, playful</option>
+  <option value="birthday">🎂 Birthday — Festive, warm, celebratory</option>
+  <option value="wedding">💍 Wedding — Soft cream, romantic, floral</option>
+  <option value="sports">🏆 Sports — Bold, high contrast, energetic</option>
+  <option value="nightlife">🎧 Nightlife — Dark, neon, electric</option>
+  <option value="gala">✦ Gala/Premium — Gold, luxury, cinematic</option>
+  <option value="ceremony">🎓 Ceremony — Elegant, warm, traditional</option>
+</select></div>
               </div>
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;">
                 <div class="toggle on" id="ev-watermark-toggle" onclick="toggleWatermark()"></div>
@@ -514,8 +523,22 @@ tr:hover td{background:rgba(255,255,255,.012);}
           </div>
         </div>
         <div class="ws-sticky">
-          <div class="hint-box"><strong>How events work</strong><br><br>After creating an event you can upload photos from the <strong>Upload Photos</strong> section.<br><br>Guests visit the event link, enter the code if required, and browse watermarked previews.<br><br>They can use face recognition to find their photos, then request a download.<br><br>You approve or reject requests from <strong>Download Requests</strong>.</div>
-          <div class="hint-box hint-warn" style="margin-top:12px;"><strong>30-day expiry</strong><br>Events and all their photos are automatically deleted after the expiry date.</div>
+          <!-- LIVE TEMPLATE PREVIEW -->
+          <div id="templatePreviewCard" style="border-radius:var(--r2);overflow:hidden;border:1px solid var(--border2);box-shadow:var(--shadow);transition:all .3s;">
+            <div style="padding:10px 14px;font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);background:var(--bg2);">
+              👁 Live Template Preview
+            </div>
+            <div id="templatePreviewInner" style="padding:0;">
+              <!-- Filled by updateTemplatePreview() -->
+            </div>
+          </div>
+
+          <div class="hint-box" style="margin-top:12px;">
+            <strong>How events work</strong><br><br>
+            After creating, upload photos from <strong>Upload Photos</strong>.<br><br>
+            Guests enter their code, browse watermarked photos, use face recognition to find themselves, then download instantly if 90%+ match or request approval if borderline.
+          </div>
+          <div class="hint-box hint-warn" style="margin-top:10px;"><strong>30-day expiry</strong><br>Events and all photos auto-delete after the expiry date.</div>
         </div>
       </div>
     </div>
@@ -636,6 +659,123 @@ var heroEditId  = null;
 var tickerItems = [];
 var testimonials= [];
 var updateCards = [];
+
+
+/* ════════════════════════════════════════════════════
+   TEMPLATE LIVE PREVIEW
+════════════════════════════════════════════════════ */
+var TPL_PREVIEWS = {
+  professional: {
+    bg:'#f8f9fc', accent:'#2563eb', text:'#0d1020', text2:'#505878',
+    navBg:'#ffffff', navBorder:'#e2e5f0',
+    cardBg:'#ffffff', cardBorder:'#e2e5f0',
+    btnBg:'#2563eb', btnColor:'#fff',
+    name:'Professional', desc:'Clean white · Editorial · Corporate',
+    emoji:'📊', font:"'DM Sans',sans-serif", titleFont:"'Syne',sans-serif"
+  },
+  kids: {
+    bg:'#fffbf0', accent:'#f97316', text:'#1c1400', text2:'#7a6000',
+    navBg:'#ffffff', navBorder:'#fbbf24',
+    cardBg:'#ffffff', cardBorder:'#fde68a',
+    btnBg:'linear-gradient(135deg,#f97316,#ec4899)', btnColor:'#fff',
+    name:'Kids', desc:'Bright · Confetti · Playful',
+    emoji:'🎉', font:"'Nunito',sans-serif", titleFont:"'Nunito',sans-serif"
+  },
+  birthday: {
+    bg:'#fff5f8', accent:'#f43f5e', text:'#1a0510', text2:'#7f3045',
+    navBg:'rgba(255,245,248,.96)', navBorder:'#fb7185',
+    cardBg:'#ffffff', cardBorder:'#fecdd3',
+    btnBg:'linear-gradient(135deg,#f43f5e,#a855f7)', btnColor:'#fff',
+    name:'Birthday', desc:'Festive · Warm · Celebratory',
+    emoji:'🎂', font:"'Nunito',sans-serif", titleFont:"'Nunito',sans-serif"
+  },
+  wedding: {
+    bg:'#fdfaf7', accent:'#9b7653', text:'#1a1208', text2:'#6b5a3e',
+    navBg:'rgba(253,250,247,.96)', navBorder:'#c9a96e',
+    cardBg:'#ffffff', cardBorder:'#e8dcc8',
+    btnBg:'linear-gradient(135deg,#9b7653,#c4a46b)', btnColor:'#fff',
+    name:'Wedding', desc:'Soft cream · Romantic · Floral',
+    emoji:'💍', font:"'DM Sans',sans-serif", titleFont:"'Cormorant Garamond',serif"
+  },
+  sports: {
+    bg:'#f0f4ff', accent:'#4f46e5', text:'#0a0e1a', text2:'#3730a3',
+    navBg:'#4f46e5', navBorder:'#4f46e5',
+    cardBg:'#ffffff', cardBorder:'#c7d2fe',
+    btnBg:'#4f46e5', btnColor:'#fff',
+    name:'Sports', desc:'Bold · High contrast · Energetic',
+    emoji:'🏆', font:"'DM Sans',sans-serif", titleFont:"'Oswald',sans-serif"
+  },
+  nightlife: {
+    bg:'#080612', accent:'#8b5cf6', text:'#f0ecff', text2:'#9d8fff',
+    navBg:'rgba(8,6,18,.9)', navBorder:'rgba(139,92,246,.35)',
+    cardBg:'#16122a', cardBorder:'rgba(139,92,246,.35)',
+    btnBg:'linear-gradient(135deg,#8b5cf6,#f472b6)', btnColor:'#fff',
+    name:'Nightlife', desc:'Dark · Neon · Electric',
+    emoji:'🎧', font:"'DM Sans',sans-serif", titleFont:"'Syne',sans-serif"
+  },
+  gala: {
+    bg:'#0a0804', accent:'#d4af37', text:'#f5f0e8', text2:'#a09070',
+    navBg:'rgba(10,8,4,.96)', navBorder:'rgba(212,175,55,.3)',
+    cardBg:'#18140a', cardBorder:'rgba(212,175,55,.3)',
+    btnBg:'linear-gradient(135deg,#d4af37,#f0d060)', btnColor:'#000',
+    name:'Gala / Premium', desc:'Gold · Luxury · Cinematic',
+    emoji:'✦', font:"'DM Sans',sans-serif", titleFont:"'Cormorant Garamond',serif"
+  },
+  ceremony: {
+    bg:'#faf8f5', accent:'#7c5c3a', text:'#1a1510', text2:'#6b5c45',
+    navBg:'rgba(250,248,245,.97)', navBorder:'#b8a48a',
+    cardBg:'#ffffff', cardBorder:'#ddd0bc',
+    btnBg:'linear-gradient(135deg,#7c5c3a,#a07850)', btnColor:'#fff',
+    name:'Ceremony', desc:'Elegant · Warm · Traditional',
+    emoji:'🎓', font:"'DM Sans',sans-serif", titleFont:"'Playfair Display',serif"
+  }
+};
+
+function updateTemplatePreview(){
+  var sel = document.getElementById('ev-template');
+  var tplKey = sel ? sel.value : 'professional';
+  var t = TPL_PREVIEWS[tplKey] || TPL_PREVIEWS.professional;
+  var evName = document.getElementById('ev-name').value.trim() || 'Your Event Name';
+  var evCode = document.getElementById('ev-code').value.trim() || 'XXXXXX';
+
+  var inner = document.getElementById('templatePreviewInner');
+  if(!inner) return;
+
+  inner.innerHTML =
+    /* Mini nav */
+    '<div style="background:'+t.navBg+';border-bottom:2px solid '+t.navBorder+';padding:8px 14px;display:flex;align-items:center;gap:8px;">'+
+      '<div style="width:18px;height:18px;border-radius:4px;background:'+t.btnBg+';display:flex;align-items:center;justify-content:center;font-size:8px;color:'+t.btnColor+';flex-shrink:0;">IG</div>'+
+      '<span style="font-family:'+t.titleFont+';font-size:11px;font-weight:700;color:'+t.text+';">ImpactGrid</span>'+
+      '<span style="font-size:9px;color:'+t.text2+';margin-left:4px;">· '+esc(evName)+'</span>'+
+      '<span style="margin-left:auto;font-family:monospace;font-size:8px;color:'+t.accent+';background:rgba(128,128,128,.1);padding:2px 6px;border-radius:3px;">'+esc(evCode)+'</span>'+
+    '</div>'+
+
+    /* Mini hero */
+    '<div style="background:'+t.bg+';padding:20px 14px 14px;text-align:center;border-bottom:1px solid '+t.cardBorder+';">'+
+      '<div style="font-size:24px;margin-bottom:6px;">'+t.emoji+'</div>'+
+      '<div style="font-family:'+t.titleFont+';font-size:14px;font-weight:700;color:'+t.text+';margin-bottom:4px;">'+esc(evName)+'</div>'+
+      '<div style="font-size:10px;color:'+t.text2+';">'+t.desc+'</div>'+
+    '</div>'+
+
+    /* Mini gallery */
+    '<div style="background:'+t.bg+';padding:12px 14px;">'+
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:10px;">'+
+        ['#e2e5f0','#cdd5e0','#d5dce8','#c8d2e0'].map(function(c){
+          return '<div style="aspect-ratio:3/2;background:'+c+';border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;">📷</div>';
+        }).join('')+
+      '</div>'+
+      '<div style="display:flex;gap:6px;justify-content:center;">'+
+        '<div style="background:rgba(128,128,128,.1);border:1px solid '+t.cardBorder+';color:'+t.text2+';font-size:9px;padding:4px 10px;border-radius:4px;font-weight:600;">🔍 Find My Photos</div>'+
+        '<div style="background:'+t.btnBg+';color:'+t.btnColor+';font-size:9px;padding:4px 10px;border-radius:4px;font-weight:700;">📥 Request</div>'+
+      '</div>'+
+    '</div>'+
+
+    /* Template badge */
+    '<div style="background:'+t.navBg+';border-top:1px solid '+t.cardBorder+';padding:8px 14px;display:flex;align-items:center;justify-content:space-between;">'+
+      '<span style="font-size:9px;font-weight:700;color:'+t.accent+';">'+t.emoji+' '+t.name+' Template</span>'+
+      '<a href="event.html?event=preview&code=TEST" target="_blank" style="font-size:9px;color:'+t.text2+';text-decoration:underline;">Full preview ↗</a>'+
+    '</div>';
+}
 
 /* ══ THEME ══ */
 function toggleAdminTheme(){
@@ -1115,6 +1255,7 @@ var evRequireCode = true;
 var selectedEventId = null;
 
 function setDefaultExpiry(){
+  updateTemplatePreview();
   var el=document.getElementById('ev-expiry'); if(!el)return;
   var d=new Date(); d.setDate(d.getDate()+30);
   el.value=d.toISOString().split('T')[0];
