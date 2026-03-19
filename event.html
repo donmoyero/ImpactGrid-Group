@@ -795,8 +795,8 @@ var CONF_MEDIUM  = 0.80;  /* 80–89% → send to AI second opinion */
 function distanceToConfidence(dist){ return Math.max(0, Math.min(1, 1 - dist)); }
 
 /* ── API Keys (set by admin via URL params or hardcoded for now) ── */
-var GROK_API_KEY  = '';  /* xAI Grok key — add when ready */
-var GROQ_API_KEY  = '';  /* Groq (Llama) key — add when ready */
+var GROK_API_KEY  = ''; /* Not used — skipping xAI for now */
+var GROQ_API_KEY  = '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';
 
 /* ════════════ BOOT ════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
@@ -1121,50 +1121,30 @@ async function runFaceRecognition(selfieFile){
 
     URL.revokeObjectURL(selfieUrl);
 
-    /* ─── LAYER 2: Grok second opinion for medium confidence ─── */
-    var grokApproved = [];
-    var needsTiebreaker = [];
+    /* ─── LAYER 2: Llama (Groq) second opinion for medium confidence ─── */
+    var llamaApproved  = [];
+    var requestNeeded  = [];
 
     if(mediumConfidence.length > 0){
-      resultText.textContent = 'Layer 2 — Grok AI verifying ' + mediumConfidence.length + ' uncertain match' + (mediumConfidence.length > 1 ? 'es' : '') + '…';
+      resultText.textContent = 'Layer 2 — Llama AI verifying ' + mediumConfidence.length + ' uncertain match' + (mediumConfidence.length > 1 ? 'es' : '') + '…';
       resultFill.style.width = '65%';
 
       for(var m = 0; m < mediumConfidence.length; m++){
         var item = mediumConfidence[m];
-        var grokResult = await askGrok(item.photo.preview_url, item.confidence);
-        if(grokResult === 'yes'){
-          grokApproved.push(item);
-        } else if(grokResult === 'uncertain'){
-          needsTiebreaker.push(item);
-        }
-        /* grokResult === 'no' → skip */
-      }
-    }
-
-    /* ─── LAYER 3: Llama tiebreaker ─── */
-    var llamaApproved = [];
-
-    if(needsTiebreaker.length > 0){
-      resultText.textContent = 'Layer 3 — Llama AI tiebreaker on ' + needsTiebreaker.length + ' photo' + (needsTiebreaker.length > 1 ? 's' : '') + '…';
-      resultFill.style.width = '82%';
-
-      for(var n = 0; n < needsTiebreaker.length; n++){
-        var item2 = needsTiebreaker[n];
-        var llamaResult = await askLlama(item2.photo.preview_url, item2.confidence);
+        var llamaResult = await askLlama(item.photo.preview_url, item.confidence);
         if(llamaResult === 'yes'){
-          llamaApproved.push(item2);
+          llamaApproved.push(item);
+        } else {
+          requestNeeded.push(item);
+          /* uncertain or no → falls to download request */
         }
-        /* If Llama also uncertain/no → falls to download request */
       }
     }
 
     resultFill.style.width = '100%';
 
     /* ─── RESULTS ─── */
-    var instantDownload = highConfidence.concat(grokApproved).concat(llamaApproved);
-    var requestNeeded   = mediumConfidence.filter(function(i){
-      return !grokApproved.includes(i) && !llamaApproved.includes(i);
-    });
+    var instantDownload = highConfidence.concat(llamaApproved);
 
     /* Update matched state */
     matchedIds = new Set();
