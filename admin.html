@@ -485,9 +485,9 @@ tr:hover td{background:rgba(255,255,255,.012);}
             <div class="card-head"><h2>📋 Event Details</h2></div>
             <div class="card-body">
               <div id="createEventAlert" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-              <div class="form-grid" style="margin-bottom:12px;">
-                <div class="field-group"><div class="field-label">Event Name *</div><input type="text" id="ev-name" placeholder="e.g. Johnson Wedding 2026" oninput="updateTemplatePreview()"/></div>
-                <div class="field-group"><div class="field-label">Event Type *</div><select id="ev-type"><option value="professional">Professional</option><option value="kids">Kids Event</option></select></div>
+              <div class="field-group" style="margin-bottom:12px;">
+                <div class="field-label">Event Name *</div>
+                <input type="text" id="ev-name" placeholder="e.g. Johnson Wedding 2026" oninput="updateTemplatePreview()"/>
               </div>
               <div class="form-grid" style="margin-bottom:12px;">
                 <div class="field-group"><div class="field-label">Owner Email</div><input type="email" id="ev-owner" placeholder="owner@email.com"/><div class="field-hint">The person who manages this event</div></div>
@@ -499,14 +499,14 @@ tr:hover td{background:rgba(255,255,255,.012);}
                   <div style="display:flex;gap:8px;"><input type="text" id="ev-code" placeholder="Auto-generated" style="flex:1;font-family:var(--fm);letter-spacing:.1em;text-transform:uppercase;"/><button class="btn btn-ghost" onclick="generateCode()" style="flex-shrink:0;">🎲 Generate</button></div>
                   <div class="field-hint">Guests need this to access the event</div>
                 </div>
-                <div class="field-group"><div class="field-label">Template</div><select id="ev-template" onchange="updateTemplatePreview()">
+                <div class="field-group"><div class="field-label">Template *</div><select id="ev-template" onchange="updateTemplatePreview()" style="width:100%;">
   <option value="professional">📊 Professional — Clean white, editorial</option>
   <option value="kids">🎉 Kids — Bright, confetti, playful</option>
   <option value="birthday">🎂 Birthday — Festive, warm, celebratory</option>
   <option value="wedding">💍 Wedding — Soft cream, romantic, floral</option>
   <option value="sports">🏆 Sports — Bold, high contrast, energetic</option>
   <option value="nightlife">🎧 Nightlife — Dark, neon, electric</option>
-  <option value="gala">✦ Gala/Premium — Gold, luxury, cinematic</option>
+  <option value="gala">✦ Gala / Premium — Gold, luxury, cinematic</option>
   <option value="ceremony">🎓 Ceremony — Elegant, warm, traditional</option>
 </select></div>
               </div>
@@ -1277,7 +1277,7 @@ function toggleRequireCode(){evRequireCode=!evRequireCode;var el=document.getEle
 
 async function igCreateEvent(){
   var name=document.getElementById('ev-name').value.trim();
-  var type=document.getElementById('ev-type').value;
+  var type=document.getElementById('ev-template').value;
   var expiry=document.getElementById('ev-expiry').value;
   var code=document.getElementById('ev-code').value.trim().toUpperCase();
   var template=document.getElementById('ev-template').value;
@@ -1298,7 +1298,7 @@ async function igCreateEvent(){
     var c=getSupabase();
     var {data:sess}=await c.auth.getSession();
     var {data:ev,error:evErr}=await c.from('events').insert({
-      name:name,type:type,
+      name:name,type:type,template:type,
       owner_id:sess.session?sess.session.user.id:null,
       owner_email:document.getElementById('ev-owner').value.trim()||null,
       event_code:code,event_slug:slug,
@@ -1341,7 +1341,7 @@ async function loadEvents(){
         var statusPill=ev.is_active?'<span class="pill pill-active">Active</span>':'<span class="pill pill-paused">Inactive</span>';
         return '<tr>'+
           '<td style="font-weight:700;">'+esc(ev.name)+'<br><span style="font-size:10px;color:var(--text3);font-family:var(--fm);">'+esc(ev.event_slug||'')+'</span></td>'+
-          '<td><span class="pill '+(ev.type==='kids'?'pill-applied':'pill-booked')+'">'+esc(ev.type)+'</span></td>'+
+          '<td><span class="pill pill-applied" style="font-size:9px;">'+esc(tplLabel(ev.type||ev.template||'professional'))+'</span></td>'+
           '<td style="font-family:var(--fm);letter-spacing:.1em;font-size:12px;color:var(--gold);">'+esc(ev.event_code||'—')+'</td>'+
           '<td style="font-size:12px;color:'+(daysLeft<5?'var(--red)':'var(--text2)')+';">'+expStr+'</td>'+
           '<td>'+statusPill+'</td>'+
@@ -1695,6 +1695,14 @@ async function loadEditJobs(){
 }
 
 async function igLogout(){await getSupabase().auth.signOut();window.location.href='index.html';}
+
+/* ── Template label helper ── */
+function tplLabel(t){
+  var map={professional:'📊 Professional',kids:'🎉 Kids',birthday:'🎂 Birthday',
+    wedding:'💍 Wedding',sports:'🏆 Sports',nightlife:'🎧 Nightlife',
+    gala:'✦ Gala',ceremony:'🎓 Ceremony'};
+  return map[t]||t;
+}
 
 /* ── HELPERS ── */
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
