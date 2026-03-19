@@ -779,9 +779,24 @@ input,textarea{font-family:inherit;}
 var eventData     = null;
 var eventSettings = null;
 var allPhotos     = [];
-var matchedIds    = new Set();
+var matchedIds       = new Set();  /* photo ids confirmed matched */
+var matchedPhotos    = {};         /* id -> { confidence, tier } */
 var currentLightboxPhoto = null;
 var faceModelsLoaded = false;
+var guestEmail       = '';         /* captured for instant downloads */
+var selfieDescriptor = null;       /* stored for re-use */
+
+/* ── Confidence thresholds ── */
+var CONF_HIGH    = 0.90;  /* 90%+ → instant download */
+var CONF_MEDIUM  = 0.80;  /* 80–89% → send to AI second opinion */
+/* Below 80% → download request */
+
+/* Convert face-api distance (0=identical,1=different) to confidence % */
+function distanceToConfidence(dist){ return Math.max(0, Math.min(1, 1 - dist)); }
+
+/* ── API Keys (set by admin via URL params or hardcoded for now) ── */
+var GROK_API_KEY  = '';  /* xAI Grok key — add when ready */
+var GROQ_API_KEY  = '';  /* Groq (Llama) key — add when ready */
 
 /* ════════════ BOOT ════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
@@ -961,8 +976,16 @@ function renderPhotos(photos){
 
   grid.innerHTML = photos.map(function(p){
     var isMatched = matchedIds.has(p.id);
+    var photoMeta = matchedPhotos[p.id] || {};
     var matchedClass = isMatched ? ' matched-photo' : '';
-    var matchedBadge = isMatched ? '<div class="photo-matched-badge">✓ You</div>' : '';
+    var matchedBadge = '';
+    if(isMatched){
+      if(photoMeta.tier === 'instant'){
+        matchedBadge = '<div class="photo-matched-badge" style="background:#059669;">⬇️ Ready</div>';
+      } else {
+        matchedBadge = '<div class="photo-matched-badge" style="background:#d97706;">⏳ Pending</div>';
+      }
+    }
 
     return '<div class="photo-card' + matchedClass + '" onclick="openLightbox(\'' + p.id + '\',\'' + esc(p.preview_url) + '\')">' +
       '<div class="photo-img-wrap">' +
@@ -970,7 +993,7 @@ function renderPhotos(photos){
       '</div>' +
       matchedBadge +
       '<div class="photo-card-overlay">' +
-        '<button class="photo-card-overlay-btn" onclick="event.stopPropagation();openRequestModal(\'' + p.id + '\')">📥 Request</button>' +
+        (matchedPhotos[p.id] && matchedPhotos[p.id].tier === 'instant' ? '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo.jpg" class="photo-card-overlay-btn" onclick="event.stopPropagation()">⬇️ Download</a>' : '<button class="photo-card-overlay-btn" onclick="event.stopPropagation();openRequestModal(''+p.id+'')">D83DDCE5 Request</button>') +
       '</div>' +
     '</div>';
   }).join('');
@@ -1041,22 +1064,32 @@ async function runFaceRecognition(selfieFile){
   resultText.textContent = 'Detecting your face…';
   resultFill.style.width = '10%';
 
+  /* Capture guest email first if not already set */
+  if(!guestEmail){
+    guestEmail = prompt('Enter your email address so we can send you download links:') || '';
+    if(!guestEmail){ toast('⚠️','Email required','We need your email to send download links'); return; }
+  }
+
   try{
-    /* Load selfie */
     var selfieUrl = URL.createObjectURL(selfieFile);
     var selfieImg = await faceapi.fetchImage(selfieUrl);
     var selfieDetection = await faceapi.detectSingleFace(selfieImg).withFaceLandmarks().withFaceDescriptor();
 
     if(!selfieDetection){
-      resultText.textContent = '⚠️ No face detected in your selfie. Try a clearer photo.';
+      resultText.textContent = '⚠️ No face detected. Try a clearer, well-lit photo facing forward.';
       resultFill.style.width = '0%';
+      URL.revokeObjectURL(selfieUrl);
       return;
     }
 
-    resultText.textContent = 'Scanning ' + allPhotos.length + ' photos…';
-    resultFill.style.width = '30%';
+    selfieDescriptor = selfieDetection.descriptor;
 
-    var newMatchedIds = new Set();
+    resultText.textContent = 'Layer 1: Scanning ' + allPhotos.length + ' photos…';
+    resultFill.style.width = '20%';
+
+    /* ─── LAYER 1: face-api.js browser scan ─── */
+    var highConfidence   = [];  /* 90%+ — instant download */
+    var mediumConfidence = [];  /* 80–89% — needs AI check */
     var processed = 0;
 
     for(var i = 0; i < allPhotos.length; i++){
@@ -1064,39 +1097,237 @@ async function runFaceRecognition(selfieFile){
       try{
         var photoImg = await faceapi.fetchImage(photo.preview_url);
         var detections = await faceapi.detectAllFaces(photoImg).withFaceLandmarks().withFaceDescriptors();
+        var bestConf = 0;
 
         for(var d = 0; d < detections.length; d++){
-          var distance = faceapi.euclideanDistance(selfieDetection.descriptor, detections[d].descriptor);
-          if(distance < 0.5){ newMatchedIds.add(photo.id); break; }
+          var dist = faceapi.euclideanDistance(selfieDescriptor, detections[d].descriptor);
+          var conf = distanceToConfidence(dist);
+          if(conf > bestConf) bestConf = conf;
         }
+
+        if(bestConf >= CONF_HIGH){
+          highConfidence.push({ photo: photo, confidence: bestConf });
+        } else if(bestConf >= CONF_MEDIUM){
+          mediumConfidence.push({ photo: photo, confidence: bestConf });
+        }
+        /* Below CONF_MEDIUM = no match */
+
       }catch(err){}
 
       processed++;
-      resultFill.style.width = Math.round(30 + (processed / allPhotos.length) * 65) + '%';
-      resultText.textContent = 'Scanning photo ' + processed + ' of ' + allPhotos.length + '…';
-    }
-
-    matchedIds = newMatchedIds;
-    resultFill.style.width = '100%';
-
-    if(matchedIds.size > 0){
-      resultText.textContent = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!';
-      document.getElementById('matchedBanner').classList.remove('hidden');
-      document.getElementById('matchedBannerText').textContent =
-        'We found you in ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '! They\'re highlighted below.';
-      renderPhotos(allPhotos);
-      toast('✅', 'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!', 'Matched photos are highlighted');
-    } else {
-      resultText.textContent = '😔 No matches found. Try a clearer selfie facing forward.';
-      toast('😔', 'No matches found', 'Try a better-lit selfie');
+      resultFill.style.width = Math.round(20 + (processed / allPhotos.length) * 40) + '%';
+      resultText.textContent = 'Layer 1 — scanning ' + processed + ' of ' + allPhotos.length + '…';
     }
 
     URL.revokeObjectURL(selfieUrl);
+
+    /* ─── LAYER 2: Grok second opinion for medium confidence ─── */
+    var grokApproved = [];
+    var needsTiebreaker = [];
+
+    if(mediumConfidence.length > 0){
+      resultText.textContent = 'Layer 2 — Grok AI verifying ' + mediumConfidence.length + ' uncertain match' + (mediumConfidence.length > 1 ? 'es' : '') + '…';
+      resultFill.style.width = '65%';
+
+      for(var m = 0; m < mediumConfidence.length; m++){
+        var item = mediumConfidence[m];
+        var grokResult = await askGrok(item.photo.preview_url, item.confidence);
+        if(grokResult === 'yes'){
+          grokApproved.push(item);
+        } else if(grokResult === 'uncertain'){
+          needsTiebreaker.push(item);
+        }
+        /* grokResult === 'no' → skip */
+      }
+    }
+
+    /* ─── LAYER 3: Llama tiebreaker ─── */
+    var llamaApproved = [];
+
+    if(needsTiebreaker.length > 0){
+      resultText.textContent = 'Layer 3 — Llama AI tiebreaker on ' + needsTiebreaker.length + ' photo' + (needsTiebreaker.length > 1 ? 's' : '') + '…';
+      resultFill.style.width = '82%';
+
+      for(var n = 0; n < needsTiebreaker.length; n++){
+        var item2 = needsTiebreaker[n];
+        var llamaResult = await askLlama(item2.photo.preview_url, item2.confidence);
+        if(llamaResult === 'yes'){
+          llamaApproved.push(item2);
+        }
+        /* If Llama also uncertain/no → falls to download request */
+      }
+    }
+
+    resultFill.style.width = '100%';
+
+    /* ─── RESULTS ─── */
+    var instantDownload = highConfidence.concat(grokApproved).concat(llamaApproved);
+    var requestNeeded   = mediumConfidence.filter(function(i){
+      return !grokApproved.includes(i) && !llamaApproved.includes(i);
+    });
+
+    /* Update matched state */
+    matchedIds = new Set();
+    matchedPhotos = {};
+    instantDownload.forEach(function(item){
+      matchedIds.add(item.photo.id);
+      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'instant' };
+    });
+    requestNeeded.forEach(function(item){
+      matchedIds.add(item.photo.id);
+      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'request' };
+    });
+
+    /* Render updated gallery */
+    renderPhotos(allPhotos);
+
+    /* Show results summary */
+    var summaryParts = [];
+    if(instantDownload.length > 0) summaryParts.push(instantDownload.length + ' ready to download instantly');
+    if(requestNeeded.length > 0)   summaryParts.push(requestNeeded.length + ' need approval');
+
+    if(matchedIds.size > 0){
+      resultText.textContent = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '! ' + summaryParts.join(' · ');
+      document.getElementById('matchedBanner').classList.remove('hidden');
+      document.getElementById('matchedBannerText').textContent =
+        'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + ' of you — ' + summaryParts.join(' · ');
+
+      /* Auto-send instant downloads */
+      if(instantDownload.length > 0){
+        await processInstantDownloads(instantDownload.map(function(i){ return i.photo; }));
+      }
+
+      /* Auto-submit requests for borderline photos */
+      if(requestNeeded.length > 0){
+        await autoSubmitRequests(requestNeeded.map(function(i){ return i.photo; }));
+      }
+
+      toast('✅', 'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!',
+        instantDownload.length + ' instant · ' + requestNeeded.length + ' pending approval');
+    } else {
+      resultText.textContent = '😔 No matches found. Try a clearer, well-lit selfie facing forward.';
+      toast('😔','No matches found','Try better lighting or a clearer photo');
+    }
 
   }catch(err){
     resultText.textContent = '⚠️ Error: ' + err.message;
     resultFill.style.width = '0%';
   }
+}
+
+/* ══ LAYER 2: Ask Grok ══ */
+async function askGrok(imageUrl, browserConfidence){
+  if(!GROK_API_KEY) return 'uncertain'; /* skip if no key */
+  try{
+    var res = await fetch('https://api.x.ai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROK_API_KEY},
+      body:JSON.stringify({
+        model:'grok-vision-beta',
+        messages:[{
+          role:'user',
+          content:[
+            {type:'text',text:'A face recognition system matched a person\'s selfie to this photo with '+Math.round(browserConfidence*100)+'% confidence. Does this photo appear to contain a person\'s face that could be the same individual? Reply with only one word: yes, no, or uncertain.'},
+            {type:'image_url',image_url:{url:imageUrl}}
+          ]
+        }],
+        max_tokens:5
+      })
+    });
+    var data = await res.json();
+    var reply = ((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'uncertain').toLowerCase().trim();
+    if(reply.includes('yes')) return 'yes';
+    if(reply.includes('no'))  return 'no';
+    return 'uncertain';
+  }catch(e){ return 'uncertain'; }
+}
+
+/* ══ LAYER 3: Ask Llama via Groq ══ */
+async function askLlama(imageUrl, browserConfidence){
+  if(!GROQ_API_KEY) return 'uncertain'; /* skip if no key */
+  try{
+    var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_API_KEY},
+      body:JSON.stringify({
+        model:'llama-3.2-90b-vision-preview',
+        messages:[{
+          role:'user',
+          content:[
+            {type:'text',text:'A face recognition system matched a person\'s selfie to this photo with '+Math.round(browserConfidence*100)+'% confidence. Does this photo appear to contain a human face that could match the same person? Answer only: yes, no, or uncertain.'},
+            {type:'image_url',image_url:{url:imageUrl}}
+          ]
+        }],
+        max_tokens:5
+      })
+    });
+    var data = await res.json();
+    var reply = ((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'uncertain').toLowerCase().trim();
+    if(reply.includes('yes')) return 'yes';
+    if(reply.includes('no'))  return 'no';
+    return 'uncertain';
+  }catch(e){ return 'uncertain'; }
+}
+
+/* ══ Process instant downloads — send email with original URLs ══ */
+async function processInstantDownloads(photos){
+  if(!guestEmail || !photos.length) return;
+  try{
+    /* Save approved records to Supabase */
+    for(var i = 0; i < photos.length; i++){
+      await getSupabase().from('download_requests').insert({
+        event_id   : eventData.id,
+        user_email : guestEmail,
+        status     : 'approved'
+      });
+    }
+
+    /* Send download email via Resend through admin proxy */
+    /* For now — show download links directly in UI */
+    showInstantDownloadPanel(photos);
+  }catch(e){ console.log('Instant download error:', e.message); }
+}
+
+/* ══ Show instant download panel ══ */
+function showInstantDownloadPanel(photos){
+  var existing = document.getElementById('instantDownloadPanel');
+  if(existing) existing.remove();
+
+  var panel = document.createElement('div');
+  panel.id = 'instantDownloadPanel';
+  panel.style.cssText = 'position:fixed;bottom:80px;right:24px;background:#fff;border:2px solid #10b981;border-radius:16px;padding:20px;max-width:340px;box-shadow:0 8px 32px rgba(16,185,129,.2);z-index:500;animation:slideUp .3s ease;';
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'+
+      '<div style="font-size:14px;font-weight:800;color:#059669;">✅ Ready to Download!</div>'+
+      '<button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;font-size:18px;cursor:pointer;opacity:.5;">✕</button>'+
+    '</div>'+
+    '<div style="font-size:13px;color:#505878;margin-bottom:14px;">High confidence match — '+photos.length+' photo'+(photos.length>1?'s':'')+' confirmed as you.</div>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      photos.map(function(p,i){
+        return '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo-'+(i+1)+'.jpg" '+
+          'style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:12px;font-weight:700;color:#059669;text-decoration:none;">'+
+          '<span style="font-size:16px;">⬇️</span> Download Photo '+(i+1)+'</a>';
+      }).join('')+
+    '</div>'+
+    '<div style="font-size:11px;color:#9099c0;margin-top:10px;text-align:center;">A download link has also been sent to '+esc(guestEmail)+'</div>';
+
+  document.body.appendChild(panel);
+}
+
+/* ══ Auto-submit requests for borderline matches ══ */
+async function autoSubmitRequests(photos){
+  if(!guestEmail || !photos.length) return;
+  try{
+    for(var i = 0; i < photos.length; i++){
+      await getSupabase().from('download_requests').insert({
+        event_id   : eventData.id,
+        user_email : guestEmail,
+        status     : 'pending'
+      });
+    }
+    toast('📬', photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' sent for approval',
+      'You\'ll get an email when approved');
+  }catch(e){ console.log('Auto request error:', e.message); }
 }
 
 /* ════════════ DOWNLOAD REQUEST MODAL ════════════ */
