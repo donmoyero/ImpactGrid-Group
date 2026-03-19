@@ -1,16 +1,22 @@
-/* ═══════════════════════════════════════════════
-   ImpactGrid Group — Supabase Configuration
-   Project: impactgrid-group
-   Dashboard: https://supabase.com/dashboard/project/exeiojgldxqaakkybdij
-═══════════════════════════════════════════════ */
-var SUPABASE_URL  = 'https://exeiojgldxqaakkybdij.supabase.co';
-var SUPABASE_ANON = 'sb_publishable_ZuzIHR43W_7OpCejLpFyTQ_r5HQYHSq';
+// ================================================================
+//  ImpactGrid — Supabase Clients
+//  config/supabase-client.js
+//
+//  Two projects:
+//    supabase      — Creator Intelligence (trends, videos, ingestion)
+//    groupSupabase — ImpactGrid Group (analytics, financial)
+// ================================================================
 
-var _supabaseClient = null;
-function getSupabase() {
-  if (!_supabaseClient) {
-    _supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-  }
-  return _supabaseClient;
-}
-window.supabaseClient = getSupabase();
+import { createClient } from "@supabase/supabase-js";
+
+// ── Creator Intelligence — used by ingestion.js ──
+export const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY
+);
+
+// ── ImpactGrid Group — used by analytics/financial routes ──
+export const groupSupabase = createClient(
+  process.env.GROUP_SUPABASE_URL,
+  process.env.GROUP_SUPABASE_SERVICE_KEY || process.env.GROUP_SUPABASE_KEY
+);
