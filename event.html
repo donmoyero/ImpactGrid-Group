@@ -948,22 +948,14 @@ function handleSelfie(e){
 function distanceToConfidence(dist){ return Math.max(0, Math.min(1, 1 - dist)); }
 
 async function runFaceRecognition(selfieFile){
-  /* Get guest email */
-  var emailInput = document.getElementById('guestEmailInput');
-  guestEmail = emailInput ? emailInput.value.trim() : '';
-  if(!guestEmail){
-    toast('⚠️','Email required','Enter your email above first');
-    if(emailInput) emailInput.focus();
-    return;
-  }
-
   if(!faceModelsLoaded){
-    toast('⏳','Loading AI models…','Please wait a moment');
+    toast('⏳','Loading AI models…','Takes a few seconds');
     await loadFaceModels();
+    if(!faceModelsLoaded){ toast('⚠️','Could not load models','Check your connection'); return; }
   }
 
-  var resultText = document.getElementById('faceResultText');
-  var resultFill = document.getElementById('faceResultFill');
+  var resultText   = document.getElementById('faceResultText');
+  var resultFill   = document.getElementById('faceResultFill');
   var resultDetail = document.getElementById('faceResultDetail');
   document.getElementById('faceResults').classList.remove('hidden');
   resultText.textContent   = 'Detecting your face…';
@@ -971,59 +963,79 @@ async function runFaceRecognition(selfieFile){
   resultDetail.textContent = '';
 
   try{
+    /* Detect face in selfie */
     var selfieUrl = URL.createObjectURL(selfieFile);
     var selfieImg = await faceapi.fetchImage(selfieUrl);
-    var selfieDetection = await faceapi.detectSingleFace(selfieImg).withFaceLandmarks().withFaceDescriptor();
+    var selfieDetect = await faceapi.detectSingleFace(selfieImg)
+      .withFaceLandmarks().withFaceDescriptor();
 
-    if(!selfieDetection){
-      resultText.textContent = '⚠️ No face detected. Try a clearer, well-lit photo facing forward.';
+    if(!selfieDetect){
+      resultText.textContent = '⚠️ No face detected. Use a clear, well-lit selfie facing forward.';
       resultFill.style.width = '0%';
       URL.revokeObjectURL(selfieUrl);
       return;
     }
-
-    resultText.textContent = 'Scanning ' + allPhotos.length + ' photos with Layer 1…';
-    resultFill.style.width = '20%';
-
-    /* Layer 1 — browser face-api */
-    var highConf   = [];
-    var medConf    = [];
-    var processed  = 0;
-
-    for(var i = 0; i < allPhotos.length; i++){
-      var photo = allPhotos[i];
-      try{
-        var photoImg   = await faceapi.fetchImage(photo.preview_url);
-        var detections = await faceapi.detectAllFaces(photoImg).withFaceLandmarks().withFaceDescriptors();
-        var bestConf   = 0;
-
-        for(var d = 0; d < detections.length; d++){
-          var dist = faceapi.euclideanDistance(selfieDetection.descriptor, detections[d].descriptor);
-          var conf = distanceToConfidence(dist);
-          if(conf > bestConf) bestConf = conf;
-        }
-
-        if(bestConf >= CONF_HIGH)     highConf.push({ photo:photo, confidence:bestConf });
-        else if(bestConf >= CONF_MED) medConf.push({ photo:photo, confidence:bestConf });
-
-      }catch(err){}
-
-      processed++;
-      resultFill.style.width   = Math.round(20 + (processed / allPhotos.length) * 40) + '%';
-      resultText.textContent   = 'Layer 1 — scanning ' + processed + ' of ' + allPhotos.length + '…';
-      resultDetail.textContent = highConf.length + ' high confidence · ' + medConf.length + ' borderline';
-    }
-
     URL.revokeObjectURL(selfieUrl);
 
-    /* Layer 2 — Llama via backend for borderline */
+    var selfieArr = Array.from(selfieDetect.descriptor);
+    resultText.textContent = 'Searching face index…';
+    resultFill.style.width = '30%';
+
+    /* Load pre-indexed embeddings from Supabase */
+    var { data: embeddings, error: embErr } = await getSupabase()
+      .from('face_embeddings')
+      .select('photo_id, embedding, group_id')
+      .eq('event_id', eventData.id);
+
+    if(embErr || !embeddings || !embeddings.length){
+      /* Fallback to full image scan if no embeddings */
+      resultText.textContent = 'No face index found — scanning photos directly…';
+      await runFullScan(selfieDetect.descriptor);
+      return;
+    }
+
+    resultText.textContent = 'Matching against ' + embeddings.length + ' indexed faces…';
+    resultFill.style.width = '50%';
+
+    /* Compare selfie against all indexed embeddings */
+    var photoScores = {};  /* photo_id -> best confidence */
+    var THRESHOLD_HIGH = CONF_HIGH;
+    var THRESHOLD_MED  = CONF_MED;
+
+    embeddings.forEach(function(emb){
+      var embArr = Array.isArray(emb.embedding)
+        ? emb.embedding
+        : Object.values(emb.embedding);
+      var dist = euclideanDistance(selfieArr, embArr);
+      var conf = Math.max(0, Math.min(1, 1 - dist));
+
+      if(!photoScores[emb.photo_id] || conf > photoScores[emb.photo_id]){
+        photoScores[emb.photo_id] = conf;
+      }
+    });
+
+    resultFill.style.width = '75%';
+
+    /* Classify results */
+    var highConf  = [];
+    var medConf   = [];
+
+    Object.keys(photoScores).forEach(function(photoId){
+      var conf  = photoScores[photoId];
+      var photo = allPhotos.find(function(p){ return p.id === photoId; });
+      if(!photo) return;
+
+      if(conf >= THRESHOLD_HIGH)     highConf.push({ photo:photo, confidence:conf });
+      else if(conf >= THRESHOLD_MED) medConf.push({ photo:photo, confidence:conf });
+    });
+
+    /* Layer 2 — Llama for borderline */
     var llamaApproved = [];
     var requestNeeded = [];
 
     if(medConf.length > 0){
-      resultText.textContent = 'Layer 2 — Llama AI verifying ' + medConf.length + ' borderline match' + (medConf.length > 1 ? 'es' : '') + '…';
-      resultFill.style.width = '65%';
-
+      resultText.textContent = 'AI verifying ' + medConf.length + ' borderline match' + (medConf.length>1?'es':'') + '…';
+      resultFill.style.width = '85%';
       for(var m = 0; m < medConf.length; m++){
         var item   = medConf[m];
         var result = await askLlama(item.photo.preview_url, item.confidence);
@@ -1034,19 +1046,17 @@ async function runFaceRecognition(selfieFile){
 
     resultFill.style.width = '100%';
 
-    /* Build results */
     var instantDownload = highConf.concat(llamaApproved);
-
     matchedIds    = new Set();
     matchedPhotos = {};
 
     instantDownload.forEach(function(item){
       matchedIds.add(item.photo.id);
-      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'instant' };
+      matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'instant' };
     });
     requestNeeded.forEach(function(item){
       matchedIds.add(item.photo.id);
-      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'request' };
+      matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'request' };
     });
 
     renderPhotos(allPhotos);
@@ -1056,24 +1066,85 @@ async function runFaceRecognition(selfieFile){
     if(requestNeeded.length > 0)   parts.push(requestNeeded.length + ' pending approval');
 
     if(matchedIds.size > 0){
-      resultText.textContent = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!';
+      resultText.textContent   = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!';
       resultDetail.textContent = parts.join(' · ');
       document.getElementById('matchedBanner').classList.remove('hidden');
-      document.getElementById('matchedBannerText').textContent = 'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + ' — ' + parts.join(' · ');
+      document.getElementById('matchedBannerText').textContent =
+        'Found ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + ' — ' + parts.join(' · ');
 
       if(instantDownload.length > 0) await processInstantDownloads(instantDownload.map(function(i){ return i.photo; }));
       if(requestNeeded.length > 0)   await autoSubmitRequests(requestNeeded.map(function(i){ return i.photo; }));
 
-      toast('✅', 'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!', parts.join(' · '));
+      toast('✅','Found '+matchedIds.size+' photo'+(matchedIds.size>1?'s':'')+'!', parts.join(' · '));
     } else {
       resultText.textContent   = '😔 No matches found.';
-      resultDetail.textContent = 'Try a clearer, well-lit selfie facing directly forward.';
-      toast('😔','No matches found','Try better lighting or face the camera directly');
+      resultDetail.textContent = 'Try a clearer selfie in good lighting facing directly forward.';
+      toast('😔','No matches found','Try a better lit, forward-facing selfie');
     }
 
   }catch(err){
     resultText.textContent = '⚠️ Error: ' + err.message;
     resultFill.style.width = '0%';
+  }
+}
+
+/* ── Euclidean distance between two descriptor arrays ── */
+function euclideanDistance(a, b){
+  var sum = 0;
+  for(var i = 0; i < a.length; i++){ var d = a[i]-b[i]; sum += d*d; }
+  return Math.sqrt(sum);
+}
+
+/* ── Fallback: scan full images if no index exists ── */
+async function runFullScan(selfieDescriptor){
+  var resultText   = document.getElementById('faceResultText');
+  var resultFill   = document.getElementById('faceResultFill');
+  var resultDetail = document.getElementById('faceResultDetail');
+  var highConf = []; var medConf = [];
+
+  for(var i = 0; i < allPhotos.length; i++){
+    var photo = allPhotos[i];
+    try{
+      var photoImg   = await faceapi.fetchImage(photo.preview_url);
+      var detections = await faceapi.detectAllFaces(photoImg).withFaceLandmarks().withFaceDescriptors();
+      var best = 0;
+      for(var d = 0; d < detections.length; d++){
+        var conf = Math.max(0, Math.min(1, 1 - euclideanDistance(
+          Array.from(selfieDescriptor),
+          Array.from(detections[d].descriptor)
+        )));
+        if(conf > best) best = conf;
+      }
+      if(best >= CONF_HIGH)     highConf.push({ photo:photo, confidence:best });
+      else if(best >= CONF_MED) medConf.push({ photo:photo, confidence:best });
+    }catch(e){}
+    resultFill.style.width   = Math.round(30 + ((i+1)/allPhotos.length)*60) + '%';
+    resultText.textContent   = 'Scanning ' + (i+1) + ' of ' + allPhotos.length + '…';
+    resultDetail.textContent = highConf.length + ' matches found so far';
+  }
+
+  /* Same result handling */
+  var instantDownload = highConf;
+  var requestNeeded   = medConf;
+  matchedIds = new Set(); matchedPhotos = {};
+  instantDownload.forEach(function(item){
+    matchedIds.add(item.photo.id);
+    matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'instant' };
+  });
+  requestNeeded.forEach(function(item){
+    matchedIds.add(item.photo.id);
+    matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'request' };
+  });
+  renderPhotos(allPhotos);
+  resultFill.style.width = '100%';
+
+  if(matchedIds.size > 0){
+    resultText.textContent = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!';
+    if(instantDownload.length > 0) await processInstantDownloads(instantDownload.map(function(i){ return i.photo; }));
+    if(requestNeeded.length > 0)   await autoSubmitRequests(requestNeeded.map(function(i){ return i.photo; }));
+    toast('✅','Found '+matchedIds.size+' photo'+(matchedIds.size>1?'s':'')+'!','');
+  } else {
+    resultText.textContent = '😔 No matches found. Try a clearer selfie.';
   }
 }
 
@@ -1131,7 +1202,15 @@ function showInstantPanel(photos){
 
 /* ════════════ AUTO SUBMIT REQUESTS ════════════ */
 async function autoSubmitRequests(photos){
-  if(!guestEmail || !photos.length) return;
+  if(!photos.length) return;
+  if(!guestEmail){
+    var emailEl = document.getElementById('guestEmailInput');
+    guestEmail  = emailEl ? emailEl.value.trim() : '';
+  }
+  if(!guestEmail){
+    guestEmail = prompt('Enter your email to receive approval notifications:') || '';
+  }
+  if(!guestEmail) return;
   try{
     for(var i = 0; i < photos.length; i++){
       await getSupabase().from('download_requests').insert({
