@@ -796,7 +796,8 @@ function distanceToConfidence(dist){ return Math.max(0, Math.min(1, 1 - dist)); 
 
 /* ── API Keys (set by admin via URL params or hardcoded for now) ── */
 var GROK_API_KEY  = ''; /* Not used — skipping xAI for now */
-var GROQ_API_KEY  = ''; /* Handled server-side */
+var GROQ_API_KEY  = ''; /* Key handled server-side via EVENTS_API */
+var EVENTS_API    = 'https://impactgrid-events-api.onrender.com';
 
 /* ════════════ BOOT ════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
@@ -1195,57 +1196,21 @@ async function runFaceRecognition(selfieFile){
   }
 }
 
-/* ══ LAYER 2: Ask Grok ══ */
+/* ══ LAYER 2: Ask Llama via secure backend (Groq key never exposed) ══ */
 async function askGrok(imageUrl, browserConfidence){
-  if(!GROK_API_KEY) return 'uncertain'; /* skip if no key */
-  try{
-    var res = await fetch('https://api.x.ai/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROK_API_KEY},
-      body:JSON.stringify({
-        model:'grok-vision-beta',
-        messages:[{
-          role:'user',
-          content:[
-            {type:'text',text:'A face recognition system matched a person\'s selfie to this photo with '+Math.round(browserConfidence*100)+'% confidence. Does this photo appear to contain a person\'s face that could be the same individual? Reply with only one word: yes, no, or uncertain.'},
-            {type:'image_url',image_url:{url:imageUrl}}
-          ]
-        }],
-        max_tokens:5
-      })
-    });
-    var data = await res.json();
-    var reply = ((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'uncertain').toLowerCase().trim();
-    if(reply.includes('yes')) return 'yes';
-    if(reply.includes('no'))  return 'no';
-    return 'uncertain';
-  }catch(e){ return 'uncertain'; }
+  return 'uncertain'; /* Grok not active — using Llama */
 }
 
-/* ══ LAYER 3: Ask Llama via Groq ══ */
 async function askLlama(imageUrl, browserConfidence){
-  if(!GROQ_API_KEY) return 'uncertain'; /* skip if no key */
   try{
-    var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var res = await fetch(EVENTS_API + '/api/face-verify',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_API_KEY},
-      body:JSON.stringify({
-        model:'llama-3.2-90b-vision-preview',
-        messages:[{
-          role:'user',
-          content:[
-            {type:'text',text:'A face recognition system matched a person\'s selfie to this photo with '+Math.round(browserConfidence*100)+'% confidence. Does this photo appear to contain a human face that could match the same person? Answer only: yes, no, or uncertain.'},
-            {type:'image_url',image_url:{url:imageUrl}}
-          ]
-        }],
-        max_tokens:5
-      })
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({imageUrl:imageUrl, confidence:browserConfidence})
     });
+    if(!res.ok) return 'uncertain';
     var data = await res.json();
-    var reply = ((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'uncertain').toLowerCase().trim();
-    if(reply.includes('yes')) return 'yes';
-    if(reply.includes('no'))  return 'no';
-    return 'uncertain';
+    return data.result || 'uncertain';
   }catch(e){ return 'uncertain'; }
 }
 
