@@ -672,8 +672,16 @@ input,textarea{font-family:inherit;}
 <script>
 /* ════════════ CONFIG ════════════ */
 var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
-var CONF_HIGH  = 0.90;  /* 90%+ → instant download */
-var CONF_MED   = 0.80;  /* 80–89% → Llama check */
+/* ── Confidence thresholds (tuned for real-world photos) ── */
+var CONF_HIGH  = 0.62;  /* 62%+ → instant download (was 90% — too strict) */
+var CONF_MED   = 0.45;  /* 45–61% → Llama/Face++ check (was 80%) */
+var CONF_LOW   = 0.35;  /* Below 35% → ignore */
+
+/* ── Face++ routed through Render backend (keys never in browser) ── */
+var USE_FACEPP = true; /* Always on — keys live on Render server */
+
+/* ── Debug mode — shows confidence scores on photos ── */
+var DEBUG_SCORES  = true;  /* Set to false in production */
 
 /* ════════════ STATE ════════════ */
 var eventData    = null;
@@ -881,12 +889,18 @@ function renderPhotos(photos){
     var isMatched  = matchedIds.has(p.id);
     var meta       = matchedPhotos[p.id] || {};
     var matchClass = isMatched ? ' matched-photo' : '';
+    var confPct    = meta.confidence ? Math.round(meta.confidence * 100) : 0;
     var badge      = '';
 
     if(isMatched){
-      badge = meta.tier === 'instant'
-        ? '<div class="photo-matched-badge" style="background:#059669;">⬇️ Ready</div>'
-        : '<div class="photo-matched-badge" style="background:#d97706;">⏳ Pending</div>';
+      var badgeBg  = meta.tier === 'instant' ? '#059669' : '#d97706';
+      var badgeTxt = meta.tier === 'instant' ? '⬇️ Ready' : '⏳ Pending';
+      badge = '<div class="photo-matched-badge" style="background:' + badgeBg + ';">' + badgeTxt + '</div>';
+      if(DEBUG_SCORES && confPct > 0){
+        badge += '<div style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:monospace;z-index:3;">' + confPct + '%</div>';
+      }
+    } else if(DEBUG_SCORES && meta.confidence && meta.confidence >= CONF_LOW){
+      badge = '<div style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.5);color:#ddd;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:monospace;z-index:3;">' + confPct + '%?</div>';
     }
 
     var overlayBtn = isMatched && meta.tier === 'instant'
@@ -948,6 +962,8 @@ function handleSelfie(e){
 function distanceToConfidence(dist){ return Math.max(0, Math.min(1, 1 - dist)); }
 
 async function runFaceRecognition(selfieFile){
+  selfieFileRef = selfieFile; /* Store for Face++ use */
+
   if(!faceModelsLoaded){
     toast('⏳','Loading AI models…','Takes a few seconds');
     await loadFaceModels();
@@ -1001,6 +1017,7 @@ async function runFaceRecognition(selfieFile){
     var photoScores = {};  /* photo_id -> best confidence */
     var THRESHOLD_HIGH = CONF_HIGH;
     var THRESHOLD_MED  = CONF_MED;
+    var THRESHOLD_LOW  = CONF_LOW;
 
     embeddings.forEach(function(emb){
       var embArr = Array.isArray(emb.embedding)
@@ -1020,13 +1037,24 @@ async function runFaceRecognition(selfieFile){
     var highConf  = [];
     var medConf   = [];
 
+    /* Debug — log all scores */
+    if(DEBUG_SCORES){
+      console.log('[FaceMatch] All photo scores:');
+      Object.keys(photoScores).sort(function(a,b){ return photoScores[b]-photoScores[a]; }).forEach(function(pid){
+        console.log('  ' + Math.round(photoScores[pid]*100) + '% — photo ' + pid.substring(0,8));
+      });
+    }
+
     Object.keys(photoScores).forEach(function(photoId){
       var conf  = photoScores[photoId];
       var photo = allPhotos.find(function(p){ return p.id === photoId; });
       if(!photo) return;
 
+      if(conf < THRESHOLD_LOW) return;  /* Too low — ignore */
+
       if(conf >= THRESHOLD_HIGH)     highConf.push({ photo:photo, confidence:conf });
       else if(conf >= THRESHOLD_MED) medConf.push({ photo:photo, confidence:conf });
+      else                           medConf.push({ photo:photo, confidence:conf }); /* Low but possible */
     });
 
     /* Layer 2 — Llama for borderline */
@@ -1148,10 +1176,17 @@ async function runFullScan(selfieDescriptor){
   }
 }
 
-/* ════════════ LLAMA VIA BACKEND ════════════ */
+/* ════════════ SECOND OPINION — Face++ or Llama ════════════ */
+var selfieFileRef = null; /* Stores selfie file for Face++ */
+
 async function askLlama(imageUrl, confidence){
+  /* Use Face++ via secure backend — much more accurate than Llama */
+  if(USE_FACEPP && selfieFileRef){
+    return await askFacePP(imageUrl);
+  }
+  /* Fallback — Llama via backend */
   try{
-    var res  = await fetch(EVENTS_API + '/api/face-verify',{
+    var res = await fetch(EVENTS_API + '/api/face-verify',{
       method :'POST',
       headers:{'Content-Type':'application/json'},
       body   :JSON.stringify({ imageUrl:imageUrl, confidence:confidence })
@@ -1160,6 +1195,48 @@ async function askLlama(imageUrl, confidence){
     var data = await res.json();
     return data.result || 'uncertain';
   }catch(e){ return 'uncertain'; }
+}
+
+/* ════════════ FACE++ VIA RENDER BACKEND (secure) ════════════ */
+async function askFacePP(photoUrl){
+  /* selfieUrl — we need a URL not a file for the backend */
+  /* Convert selfie file to data URL first, send to backend */
+  try{
+    /* Upload selfie to Supabase temp storage to get a URL */
+    var selfieUrl = await uploadSelfieTemp(selfieFileRef);
+    if(!selfieUrl) return 'uncertain';
+
+    var res = await fetch(EVENTS_API + '/api/facepp-compare',{
+      method :'POST',
+      headers:{'Content-Type':'application/json'},
+      body   :JSON.stringify({ selfieUrl:selfieUrl, photoUrl:photoUrl })
+    });
+    if(!res.ok) return 'uncertain';
+    var data = await res.json();
+    if(DEBUG_SCORES) console.log('[Face++]', data);
+    return data.result || 'uncertain';
+  }catch(e){
+    console.log('[Face++] error:', e.message);
+    return 'uncertain';
+  }
+}
+
+/* Upload selfie temporarily for Face++ backend to access */
+async function uploadSelfieTemp(file){
+  try{
+    var ts   = Date.now();
+    var path = 'selfies/temp_' + ts + '.jpg';
+    var { error } = await getSupabase().storage
+      .from('events')
+      .upload(path, file, { contentType:'image/jpeg', upsert:true });
+    if(error) return null;
+    var { data } = getSupabase().storage.from('events').getPublicUrl(path);
+    /* Schedule deletion after 5 minutes */
+    setTimeout(async function(){
+      try{ await getSupabase().storage.from('events').remove([path]); }catch(e){}
+    }, 5 * 60 * 1000);
+    return data.publicUrl;
+  }catch(e){ return null; }
 }
 
 /* ════════════ INSTANT DOWNLOADS ════════════ */
