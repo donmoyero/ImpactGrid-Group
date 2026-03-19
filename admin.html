@@ -307,6 +307,37 @@ tr:hover td{background:rgba(255,255,255,.012);}
   .topbar-logo{pointer-events:none;}
 }
 
+
+/* ══ FACE INDEX STYLES ══ */
+.face-group-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);
+  padding:16px;margin-bottom:14px;transition:border-color .2s;
+}
+.face-group-card:hover{border-color:var(--border2);}
+.face-group-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;}
+.face-group-id{font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:.08em;}
+.face-group-count{font-size:11px;color:var(--text2);background:var(--card);border:1px solid var(--border);padding:2px 8px;border-radius:100px;}
+.face-thumbs{display:flex;gap:6px;flex-wrap:wrap;}
+.face-thumb{
+  width:56px;height:56px;border-radius:var(--r);overflow:hidden;
+  background:var(--card);border:1px solid var(--border);flex-shrink:0;
+  cursor:pointer;transition:all .2s;position:relative;
+}
+.face-thumb:hover{border-color:var(--gold);transform:scale(1.08);}
+.face-thumb img{width:100%;height:100%;object-fit:cover;}
+.face-thumb-more{
+  width:56px;height:56px;border-radius:var(--r);
+  background:var(--card);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--text3);
+}
+.index-progress{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:10px;
+}
+.index-progress-bar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-top:8px;}
+.index-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:2px;transition:width .3s;}
+
 </style>
 </head>
 <body>
@@ -364,6 +395,7 @@ tr:hover td{background:rgba(255,255,255,.012);}
         <a href="#" onclick="return nav('createevent',this)"><span class="sb-ico">➕</span>Create Event</a>
         <a href="#" onclick="return nav('uploadphotos',this)"><span class="sb-ico">🖼️</span>Upload Photos</a>
         <a href="#" onclick="return nav('downloadrequests',this)"><span class="sb-ico">📥</span>Download Requests<span class="sb-badge" id="requestsBadge" style="display:none;">0</span></a>
+        <a href="#" onclick="return nav('faces',this)"><span class="sb-ico">👥</span>Face Index</a>
       </nav>
     </div>
 
@@ -662,6 +694,55 @@ tr:hover td{background:rgba(255,255,255,.012);}
       </div>
     </div>
 
+
+    <!-- ══════════════════════════════════════
+         FACES — FACE INDEX PANEL
+    ══════════════════════════════════════ -->
+    <div class="page" id="page-faces">
+      <div class="page-header">
+        <div class="page-title">Face Index</div>
+        <div class="page-sub">AI-detected faces grouped by similarity. Used to improve guest photo matching accuracy.</div>
+      </div>
+
+      <!-- Event selector -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="padding:16px 18px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <div class="field-label" style="margin-bottom:6px;">Select Event</div>
+              <select id="faces-event-select" onchange="loadFacesForEvent()" style="width:100%;">
+                <option value="">— Select an event —</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:2px;">
+              <button class="btn btn-ghost btn-sm" onclick="loadFacesPanel()">↻ Refresh</button>
+              <button class="btn btn-gold btn-sm" id="reindexBtn" onclick="reindexEventFaces()" style="display:none;">🔄 Re-index All</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div id="facesStatsBar" style="display:none;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="stat-card"><div class="stat-label">Total Faces</div><div class="stat-val" id="stat-total-faces" style="color:var(--gold);">—</div><div class="stat-sub">Detected across all photos</div></div>
+          <div class="stat-card"><div class="stat-label">Face Groups</div><div class="stat-val" id="stat-face-groups" style="color:var(--blue2);">—</div><div class="stat-sub">Unique people detected</div></div>
+          <div class="stat-card"><div class="stat-label">Photos Indexed</div><div class="stat-val" id="stat-indexed-photos" style="color:var(--green);">—</div><div class="stat-sub">With detected faces</div></div>
+        </div>
+      </div>
+
+      <!-- Face groups grid -->
+      <div class="card">
+        <div class="card-head">
+          <h2>👥 Detected Face Groups</h2>
+          <div style="font-size:12px;color:var(--text3);">Each group = one person detected across multiple photos</div>
+        </div>
+        <div class="card-body" id="facesGroupGrid">
+          <div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Select an event to view face groups</div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- NETWORK -->
     <div class="page" id="page-pending">
       <div class="card"><div class="card-head"><h2>⏳ Pending Approval</h2><button class="btn btn-ghost btn-sm" onclick="loadPending()">↻</button></div><div class="card-body table-wrap" id="pendingList"><div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div></div></div>
@@ -944,7 +1025,8 @@ function nav(id, el){
     professionals:'loadProfessionals', employers:'loadEmployers',
     jobs:'loadJobs', postjob:'loadEditJobs',
     events:'loadEvents', createevent:'setDefaultExpiry',
-    uploadphotos:'loadUploadPhotos', downloadrequests:'loadDownloadRequests'
+    uploadphotos:'loadUploadPhotos', downloadrequests:'loadDownloadRequests',
+    faces:'loadFacesPanel'
   };
   if(loaders[id] && window[loaders[id]]) window[loaders[id]]();
   return false;
@@ -1819,6 +1901,337 @@ async function loadEditJobs(){
 }
 
 async function igLogout(){await getSupabase().auth.signOut();window.location.href='index.html';}
+
+/* ════════════════════════════════════════════════════
+   FACE INDEXING SYSTEM
+   - Detects faces on upload using face-api.js
+   - Stores embeddings in Supabase face_embeddings table
+   - Groups similar faces using clustering
+   - Admin can view grouped faces per event
+════════════════════════════════════════════════════ */
+
+var faceApiLoaded   = false;
+var faceApiLoading  = false;
+
+/* Load face-api models */
+async function ensureFaceApi(){
+  if(faceApiLoaded) return true;
+  if(faceApiLoading) return false;
+  faceApiLoading = true;
+  try{
+    /* Load face-api.js dynamically */
+    if(typeof faceapi === 'undefined'){
+      await new Promise(function(resolve,reject){
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    var MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+    await Promise.all([
+      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+    faceApiLoaded  = true;
+    faceApiLoading = false;
+    return true;
+  }catch(e){
+    faceApiLoading = false;
+    console.log('Face API load error:', e.message);
+    return false;
+  }
+}
+
+/* ── Index faces in a photo after upload ── */
+async function indexPhotoFaces(photoId, previewUrl, eventId){
+  var loaded = await ensureFaceApi();
+  if(!loaded) return;
+
+  try{
+    var img = await faceapi.fetchImage(previewUrl);
+    var detections = await faceapi
+      .detectAllFaces(img)
+      .withFaceLandmarks()
+      .withFaceDescriptors();
+
+    if(!detections || !detections.length) return;
+
+    var c = getSupabase();
+
+    /* Save each detected face embedding */
+    for(var i = 0; i < detections.length; i++){
+      var det = detections[i];
+
+      /* Crop face thumbnail using canvas */
+      var box       = det.detection.box;
+      var padding   = Math.max(box.width, box.height) * 0.3;
+      var cropX     = Math.max(0, box.x - padding);
+      var cropY     = Math.max(0, box.y - padding);
+      var cropW     = Math.min(img.width  - cropX, box.width  + padding * 2);
+      var cropH     = Math.min(img.height - cropY, box.height + padding * 2);
+
+      var canvas    = document.createElement('canvas');
+      canvas.width  = 80;
+      canvas.height = 80;
+      var ctx       = canvas.getContext('2d');
+      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 80, 80);
+      var cropDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+      /* Upload face crop to storage */
+      var cropPath  = eventId + '/faces/' + photoId + '_face' + i + '.jpg';
+      var cropBlob  = await (await fetch(cropDataUrl)).blob();
+      var { data: cropUpload } = await c.storage
+        .from('events')
+        .upload(cropPath, cropBlob, { contentType:'image/jpeg', upsert:true });
+
+      var { data: cropUrl } = c.storage.from('events').getPublicUrl(cropPath);
+
+      /* Save embedding */
+      await c.from('face_embeddings').insert({
+        event_id    : eventId,
+        photo_id    : photoId,
+        face_index  : i,
+        embedding   : Array.from(det.descriptor),
+        face_crop_url: cropUrl.publicUrl,
+        group_id    : -1  /* ungrouped initially */
+      });
+    }
+
+    /* Re-run grouping for this event */
+    await groupEventFaces(eventId);
+
+  }catch(e){ console.log('Face index error:', e.message); }
+}
+
+/* ── Cosine distance between two embeddings ── */
+function embeddingDistance(a, b){
+  var sum = 0;
+  for(var i = 0; i < a.length; i++){
+    var d = a[i] - b[i];
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
+}
+
+/* ── Group faces by similarity (simple clustering) ── */
+async function groupEventFaces(eventId){
+  try{
+    var c = getSupabase();
+    var { data: embeddings } = await c
+      .from('face_embeddings')
+      .select('id, embedding')
+      .eq('event_id', eventId);
+
+    if(!embeddings || embeddings.length < 2) return;
+
+    var THRESHOLD = 0.5;  /* Faces closer than this = same person */
+    var groups    = [];   /* Array of arrays of embedding IDs */
+
+    for(var i = 0; i < embeddings.length; i++){
+      var emb  = embeddings[i];
+      var arr  = Array.isArray(emb.embedding) ? emb.embedding : Object.values(emb.embedding);
+      var placed = false;
+
+      for(var g = 0; g < groups.length; g++){
+        /* Compare to first member of group (centroid would be better but this is fast) */
+        var groupLeadId  = groups[g][0];
+        var groupLead    = embeddings.find(function(e){ return e.id === groupLeadId; });
+        var leadArr      = Array.isArray(groupLead.embedding) ? groupLead.embedding : Object.values(groupLead.embedding);
+        var dist         = embeddingDistance(arr, leadArr);
+
+        if(dist < THRESHOLD){
+          groups[g].push(emb.id);
+          placed = true;
+          break;
+        }
+      }
+
+      if(!placed) groups.push([emb.id]);
+    }
+
+    /* Update group_id for each embedding */
+    for(var g = 0; g < groups.length; g++){
+      var ids = groups[g];
+      await c.from('face_embeddings')
+        .update({ group_id: g })
+        .in('id', ids);
+    }
+
+  }catch(e){ console.log('Grouping error:', e.message); }
+}
+
+/* ── Load faces panel ── */
+async function loadFacesPanel(){
+  var sel = document.getElementById('faces-event-select');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— Select an event —</option>';
+  try{
+    var { data: events } = await getSupabase()
+      .from('events')
+      .select('id,name,event_code')
+      .eq('is_active', true)
+      .order('created_at', { ascending:false });
+
+    (events||[]).forEach(function(ev){
+      var opt = document.createElement('option');
+      opt.value = ev.id;
+      opt.textContent = ev.name + ' (' + ev.event_code + ')';
+      sel.appendChild(opt);
+    });
+  }catch(e){}
+}
+
+/* ── Load faces for selected event ── */
+async function loadFacesForEvent(){
+  var sel     = document.getElementById('faces-event-select');
+  var eventId = sel ? sel.value : '';
+  var grid    = document.getElementById('facesGroupGrid');
+  var statsBar = document.getElementById('facesStatsBar');
+  var reindexBtn = document.getElementById('reindexBtn');
+
+  if(!eventId){
+    grid.innerHTML = '<div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Select an event to view face groups</div></div>';
+    statsBar.style.display = 'none';
+    reindexBtn.style.display = 'none';
+    return;
+  }
+
+  reindexBtn.style.display = 'inline-flex';
+  grid.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading face groups…</div></div>';
+
+  try{
+    var c = getSupabase();
+    var { data: embeddings } = await c
+      .from('face_embeddings')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('group_id', { ascending:true });
+
+    if(!embeddings || !embeddings.length){
+      grid.innerHTML = '<div class="empty"><div class="empty-ico">📷</div><div class="empty-txt">No faces indexed yet.<br><span style="font-size:12px;">Upload photos to this event — faces are detected automatically.</span></div></div>';
+      statsBar.style.display = 'none';
+      return;
+    }
+
+    /* Group by group_id */
+    var groups = {};
+    embeddings.forEach(function(emb){
+      var gid = emb.group_id >= 0 ? emb.group_id : 'ungrouped';
+      if(!groups[gid]) groups[gid] = [];
+      groups[gid].push(emb);
+    });
+
+    var groupKeys   = Object.keys(groups).filter(function(k){ return k !== 'ungrouped'; });
+    var ungrouped   = groups['ungrouped'] || [];
+    var totalPhotos = new Set(embeddings.map(function(e){ return e.photo_id; })).size;
+
+    /* Update stats */
+    statsBar.style.display = 'block';
+    document.getElementById('stat-total-faces').textContent    = embeddings.length;
+    document.getElementById('stat-face-groups').textContent    = groupKeys.length;
+    document.getElementById('stat-indexed-photos').textContent = totalPhotos;
+
+    /* Render groups */
+    var html = '';
+
+    if(groupKeys.length === 0){
+      html = '<div class="empty"><div class="empty-ico">🔄</div><div class="empty-txt">Faces detected but not yet grouped. Click Re-index All.</div></div>';
+    } else {
+      /* Sort groups by size descending */
+      groupKeys.sort(function(a,b){ return groups[b].length - groups[a].length; });
+
+      groupKeys.forEach(function(gid){
+        var members = groups[gid];
+        var shown   = members.slice(0, 8);
+        var extra   = members.length - shown.length;
+
+        html += '<div class="face-group-card">';
+        html += '<div class="face-group-header">';
+        html += '<div style="display:flex;align-items:center;gap:8px;">';
+        html += '<div style="font-size:13px;font-weight:700;">Person ' + (parseInt(gid)+1) + '</div>';
+        html += '<div class="face-group-count">' + members.length + ' photo' + (members.length>1?'s':'') + '</div>';
+        html += '</div>';
+        html += '<div class="face-group-id">Group #' + gid + '</div>';
+        html += '</div>';
+        html += '<div class="face-thumbs">';
+
+        shown.forEach(function(emb){
+          if(emb.face_crop_url){
+            html += '<div class="face-thumb" title="Photo face ' + emb.face_index + '">';
+            html += '<img src="' + esc(emb.face_crop_url) + '" alt="" onerror="this.parentElement.style.background=\'var(--bg3)\'"/>';
+            html += '</div>';
+          }
+        });
+
+        if(extra > 0){
+          html += '<div class="face-thumb-more">+' + extra + '</div>';
+        }
+
+        html += '</div>';
+        html += '</div>';
+      });
+    }
+
+    grid.innerHTML = html || '<div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">No face groups found.</div></div>';
+
+  }catch(e){
+    grid.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+  }
+}
+
+/* ── Re-index all photos for an event ── */
+async function reindexEventFaces(){
+  var sel     = document.getElementById('faces-event-select');
+  var eventId = sel ? sel.value : '';
+  if(!eventId){ toast('⚠️','No event selected',''); return; }
+
+  if(!confirm('Re-index all faces for this event? This will re-detect and re-group all faces. May take a few minutes.')) return;
+
+  var btn = document.getElementById('reindexBtn');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Indexing…';
+
+  toast('🔄','Re-indexing faces…','This may take a moment',true);
+
+  try{
+    var c = getSupabase();
+
+    /* Delete existing embeddings for this event */
+    await c.from('face_embeddings').delete().eq('event_id', eventId);
+
+    /* Get all photos */
+    var { data: photos } = await c.from('photos').select('*').eq('event_id', eventId);
+    if(!photos || !photos.length){
+      toast('⚠️','No photos found','Upload photos first');
+      btn.disabled = false; btn.textContent = '🔄 Re-index All';
+      return;
+    }
+
+    var loaded = await ensureFaceApi();
+    if(!loaded){
+      toast('⚠️','Could not load face models','Check your connection');
+      btn.disabled = false; btn.textContent = '🔄 Re-index All';
+      return;
+    }
+
+    for(var i = 0; i < photos.length; i++){
+      btn.textContent = '⏳ ' + (i+1) + '/' + photos.length;
+      await indexPhotoFaces(photos[i].id, photos[i].preview_url, eventId);
+    }
+
+    toast('✅','Re-indexing complete!', photos.length + ' photos indexed');
+    btn.disabled = false; btn.textContent = '🔄 Re-index All';
+    loadFacesForEvent();
+
+  }catch(e){
+    toast('⚠️','Re-index failed', e.message);
+    btn.disabled = false; btn.textContent = '🔄 Re-index All';
+  }
+}
+
+
 
 /* ── Template label helper ── */
 function tplLabel(t){
