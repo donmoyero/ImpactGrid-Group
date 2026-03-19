@@ -689,7 +689,16 @@ tr:hover td{background:rgba(255,255,255,.012);}
         <div class="page-sub">Review and approve guest photo download requests.</div>
       </div>
       <div class="card">
-        <div class="card-head"><h2>📥 All Requests</h2><button class="btn btn-ghost btn-sm" onclick="loadDownloadRequests()">↻ Refresh</button></div>
+        <div class="card-head">
+          <h2>📥 Download Requests</h2>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm active" id="req-filter-all" onclick="filterRequests('all',this)">All</button>
+            <button class="btn btn-ghost btn-sm" id="req-filter-pending" onclick="filterRequests('pending',this)">⏳ Pending</button>
+            <button class="btn btn-ghost btn-sm" id="req-filter-approved" onclick="filterRequests('approved',this)">✅ Approved</button>
+            <button class="btn btn-ghost btn-sm" id="req-filter-rejected" onclick="filterRequests('rejected',this)">✕ Rejected</button>
+            <button class="btn btn-ghost btn-sm" onclick="loadDownloadRequests()">↻</button>
+          </div>
+        </div>
         <div class="card-body table-wrap" id="downloadRequestsList"><div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div></div>
       </div>
     </div>
@@ -1668,39 +1677,157 @@ function onUploadEventChange(){
 
 function handlePhotoInputChange(e){var files=Array.from(e.target.files||[]);if(files.length)uploadPhotos(files);e.target.value='';}
 
+/* ════════════════════════════════════════════════════
+   WATERMARK — Burns diagonal ImpactGrid text onto preview
+   Uses Canvas API — all in browser, no server needed
+════════════════════════════════════════════════════ */
+async function createWatermarkedBlob(file){
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    /* IMPORTANT: crossOrigin needed for canvas security */
+    img.crossOrigin = 'anonymous';
+    var objectUrl = URL.createObjectURL(file);
+
+    img.onload = function(){
+      try{
+        /* Resize to max 1400px for web quality */
+        var maxW  = 1400;
+        var scale = img.width > maxW ? maxW / img.width : 1;
+        var w     = Math.round(img.width  * scale);
+        var h     = Math.round(img.height * scale);
+
+        var canvas  = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+
+        /* Draw original image */
+        ctx.drawImage(img, 0, 0, w, h);
+
+        /* ── Diagonal tiled watermark ── */
+        var fontSize = Math.max(16, Math.round(w / 18));
+        ctx.save();
+        ctx.globalAlpha   = 0.22;
+        ctx.fillStyle     = '#ffffff';
+        ctx.font          = 'bold ' + fontSize + 'px "DM Sans", Arial, sans-serif';
+        ctx.textAlign     = 'center';
+        ctx.textBaseline  = 'middle';
+
+        /* Rotate around center */
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate(-Math.PI / 6);  /* -30 degrees diagonal */
+
+        var text  = '© ImpactGrid';
+        var stepX = fontSize * 7;
+        var stepY = fontSize * 3.5;
+        var cols  = Math.ceil(w / stepX) + 3;
+        var rows  = Math.ceil(h / stepY) + 3;
+
+        for(var row = -rows; row <= rows; row++){
+          for(var col = -cols; col <= cols; col++){
+            ctx.fillText(text, col * stepX, row * stepY);
+          }
+        }
+        ctx.restore();
+
+        URL.revokeObjectURL(objectUrl);
+
+        /* Convert to JPEG blob at 90% quality */
+        canvas.toBlob(function(blob){
+          if(blob) resolve(blob);
+          else     reject(new Error('Canvas toBlob failed'));
+        }, 'image/jpeg', 0.90);
+
+      }catch(err){
+        URL.revokeObjectURL(objectUrl);
+        reject(err);
+      }
+    };
+
+    img.onerror = function(){
+      URL.revokeObjectURL(objectUrl);
+      /* If image load fails, return original file as fallback */
+      resolve(file);
+    };
+
+    img.src = objectUrl;
+  });
+}
+
 async function uploadPhotos(files){
   if(!selectedEventId){toast('⚠️','No event selected','Pick an event first');return;}
   var prog=document.getElementById('photoUploadProgress');
   prog.innerHTML='';
+
   for(var i=0;i<files.length;i++){
     var file=files[i];
     var allowed=['image/jpeg','image/png','image/webp'];
     if(!allowed.includes(file.type)){toast('⚠️','Skipped '+file.name,'Not a supported image type');continue;}
-    var ext=file.name.split('.').pop();
-    var fname=Date.now()+'-'+Math.random().toString(36).substring(2,8)+'.'+ext;
-    var path=selectedEventId+'/original/'+fname;
-    var prevPath=selectedEventId+'/preview/'+fname;
-    var rowId='prog-'+i;
-    prog.innerHTML+='<div id="'+rowId+'" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:6px;">'+
-      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;font-weight:600;">'+esc(file.name)+'</span><span id="'+rowId+'-pct" style="font-size:11px;color:var(--text3);">Uploading…</span></div>'+
-      '<div class="prog-track"><div class="prog-fill" id="'+rowId+'-bar" style="width:0%;"></div></div></div>';
+
+    var ts       = Date.now()+'-'+Math.random().toString(36).substring(2,8);
+    var origPath = selectedEventId+'/original/'+ts+'.'+file.name.split('.').pop();
+    var prevPath = selectedEventId+'/preview/' +ts+'.jpg';
+    var rowId    = 'prog-'+i;
+
+    prog.innerHTML+=
+      '<div id="'+rowId+'" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:6px;">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'+
+        '<span style="font-size:12px;font-weight:600;">'+esc(file.name)+'</span>'+
+        '<span id="'+rowId+'-pct" style="font-size:11px;color:var(--text3);">Starting…</span>'+
+      '</div>'+
+      '<div class="prog-track"><div class="prog-fill" id="'+rowId+'-bar" style="width:0%;"></div></div>'+
+      '</div>';
+
+    var setStatus = function(id){ return function(msg,pct,color){
+      var el = document.getElementById(id+'-pct');
+      var bar= document.getElementById(id+'-bar');
+      if(el)  el.textContent = msg;
+      if(bar){ bar.style.width=pct+'%'; if(color) bar.style.background=color; }
+    };}(rowId);
+
     try{
-      var c=getSupabase();
-      var {error:upErr}=await c.storage.from('events').upload(path,file,{contentType:file.type,upsert:false});
-      if(upErr)throw upErr;
-      await c.storage.from('events').upload(prevPath,file,{contentType:file.type,upsert:false});
-      var {data:urlData}=c.storage.from('events').getPublicUrl(prevPath);
-      var {data:origUrl}=c.storage.from('events').getPublicUrl(path);
-      await c.from('photos').insert({event_id:selectedEventId,preview_url:urlData.publicUrl,original_url:origUrl.publicUrl});
-      document.getElementById(rowId+'-pct').textContent='✅ Done';
-      document.getElementById(rowId+'-bar').style.width='100%';
-      document.getElementById(rowId+'-bar').style.background='var(--green)';
+      var c = getSupabase();
+
+      /* Step 1 — Upload original (full quality, untouched) */
+      setStatus('Uploading original…', 20, '');
+      var {error:origErr}=await c.storage.from('events').upload(origPath,file,{contentType:file.type,upsert:false});
+      if(origErr) throw origErr;
+
+      /* Step 2 — Generate watermarked preview in browser */
+      setStatus('Adding © ImpactGrid watermark…', 50, '');
+      var previewBlob = await createWatermarkedBlob(file);
+
+      /* Step 3 — Upload watermarked preview */
+      setStatus('Uploading preview…', 75, '');
+      var {error:prevErr}=await c.storage.from('events').upload(prevPath,previewBlob,{contentType:'image/jpeg',upsert:false});
+      if(prevErr) throw prevErr;
+
+      /* Step 4 — Save to DB */
+      var {data:origUrl}=c.storage.from('events').getPublicUrl(origPath);
+      var {data:prevUrl}=c.storage.from('events').getPublicUrl(prevPath);
+
+      var {data:photoRow}=await c.from('photos').insert({
+        event_id    :selectedEventId,
+        preview_url :prevUrl.publicUrl,
+        original_url:origUrl.publicUrl
+      }).select().single();
+
+      setStatus('✅ Done + watermarked', 100, 'var(--green)');
+
+      /* Step 5 — Auto-index faces in background */
+      if(photoRow){
+        setStatus('✅ Indexing faces…', 100, 'var(--green)');
+        indexPhotoFaces(photoRow.id, prevUrl.publicUrl, selectedEventId).then(function(){
+          setStatus('✅ Complete', 100, 'var(--green)');
+        });
+      }
+
     }catch(err){
-      document.getElementById(rowId+'-pct').textContent='⚠️ Failed';
-      document.getElementById(rowId+'-bar').style.background='var(--red)';
+      setStatus('⚠️ '+err.message, 100, 'var(--red)');
     }
   }
-  toast('✅','Upload complete!',files.length+' photo'+(files.length>1?'s':'')+' added');
+
+  toast('✅','Upload complete!',files.length+' photo'+(files.length>1?'s':'')+' with watermarks');
   loadEventPhotos();
 }
 
@@ -1736,26 +1863,74 @@ async function loadDownloadRequests(){
   var el=document.getElementById('downloadRequestsList');if(!el)return;
   el.innerHTML='<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
   try{
-    var {data}=await getSupabase().from('download_requests').select('*, events(name)').order('created_at',{ascending:false});
-    var pending=(data||[]).filter(function(r){return r.status==='pending';}).length;
-    var badge=document.getElementById('requestsBadge');
-    if(badge){badge.textContent=pending;badge.style.display=pending>0?'inline-flex':'none';}
-    if(!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">No download requests yet.</div></div>';return;}
-    el.innerHTML='<table><thead><tr><th>Guest Email</th><th>Event</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>'+
-      data.map(function(r){
-        var pc={pending:'pill-pending',approved:'pill-active',rejected:'pill-rejected'}[r.status]||'pill-pending';
-        return '<tr>'+
-          '<td style="font-weight:600;">'+esc(r.user_email)+'</td>'+
-          '<td>'+esc((r.events&&r.events.name)||'—')+'</td>'+
-          '<td><span class="pill '+pc+'">'+esc(r.status)+'</span></td>'+
-          '<td style="color:var(--text3);">'+new Date(r.created_at).toLocaleDateString('en-GB')+'</td>'+
-          '<td><div class="td-actions">'+
-            (r.status!=='approved'?'<button class="btn btn-green btn-sm" onclick="approveRequest(\''+r.id+'\',\''+esc(r.user_email)+'\')">✓ Approve</button>':'')+
-            (r.status!=='rejected'?'<button class="btn btn-red btn-sm" onclick="rejectRequest(\''+r.id+'\')">✕ Reject</button>':'')+
-          '</div></td>'+
-        '</tr>';
-      }).join('')+'</tbody></table>';
+    var {data}=await getSupabase()
+      .from('download_requests')
+      .select('*, events(name)')
+      .order('created_at',{ascending:false});
+
+    allRequests = data || [];
+
+    var pending = allRequests.filter(function(r){return r.status==='pending';}).length;
+    var badge   = document.getElementById('requestsBadge');
+    if(badge){ badge.textContent=pending; badge.style.display=pending>0?'inline-flex':'none'; }
+
+    if(!allRequests.length){
+      el.innerHTML='<div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">No download requests yet.</div></div>';
+      return;
+    }
+
+    renderRequestsTable(allRequests);
+
+    if(pending > 0){
+      filterRequests('pending', document.getElementById('req-filter-pending'));
+    }
   }catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
+}
+
+/* ── Filter download requests ── */
+var allRequests = [];
+
+function filterRequests(status, btn){
+  /* Update active button */
+  document.querySelectorAll('[id^="req-filter-"]').forEach(function(b){
+    b.classList.remove('active');
+    b.style.background = '';
+    b.style.color = '';
+  });
+  if(btn){
+    btn.classList.add('active');
+    btn.style.background = 'var(--gold)';
+    btn.style.color = '#07090f';
+  }
+
+  var filtered = status === 'all'
+    ? allRequests
+    : allRequests.filter(function(r){ return r.status === status; });
+
+  renderRequestsTable(filtered);
+}
+
+function renderRequestsTable(data){
+  var el = document.getElementById('downloadRequestsList');
+  if(!data || !data.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No requests found.</div></div>';
+    return;
+  }
+  el.innerHTML = '<table><thead><tr><th>Guest Email</th><th>Event</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>'+
+    data.map(function(r){
+      var pc={pending:'pill-pending',approved:'pill-active',rejected:'pill-rejected'}[r.status]||'pill-pending';
+      var statusLabel={pending:'⏳ Pending',approved:'✅ Approved',rejected:'✕ Rejected'}[r.status]||r.status;
+      return '<tr>'+
+        '<td style="font-weight:600;">'+esc(r.user_email)+'</td>'+
+        '<td>'+esc((r.events&&r.events.name)||'—')+'</td>'+
+        '<td><span class="pill '+pc+'">'+statusLabel+'</span></td>'+
+        '<td style="color:var(--text3);">'+new Date(r.created_at).toLocaleDateString('en-GB')+'</td>'+
+        '<td><div class="td-actions">'+
+          (r.status!=='approved'?'<button class="btn btn-green btn-sm" onclick="approveRequest(\'' + r.id + '\',\'' + esc(r.user_email) + '\')">✓ Approve</button>':'')+
+          (r.status!=='rejected'?'<button class="btn btn-red btn-sm" onclick="rejectRequest(\'' + r.id + '\')">✕ Reject</button>':'')+
+        '</div></td>'+
+      '</tr>';
+    }).join('')+'</tbody></table>';
 }
 
 async function approveRequest(id,email){
