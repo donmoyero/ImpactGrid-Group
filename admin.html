@@ -10,6 +10,21 @@
 <style>
 /* ══ TOKENS ══ */
 :root{
+  --bg:#f5f7ff; --bg2:#eef1fb; --bg3:#e4e8f7;
+  --card:#ffffff; --card2:#f8f9fe;
+  --border:rgba(99,102,241,0.10); --border2:rgba(99,102,241,0.18);
+  --text:#0f1020; --text2:#4b5280; --text3:#9099c0;
+  --gold:#6366f1; --gold2:#818cf8;
+  --gold-dim:rgba(99,102,241,0.08); --gold-glo:rgba(99,102,241,0.22);
+  --blue:#4f8ef7; --blue2:#7eb3ff; --blue-dim:rgba(79,142,247,0.10);
+  --green:#10b981; --green-dim:rgba(16,185,129,0.10);
+  --red:#ef4444; --red-dim:rgba(239,68,68,0.08); --red-glo:rgba(239,68,68,0.18);
+  --r:10px; --r2:16px; --r3:20px;
+  --nav-h:56px; --sidebar-w:248px;
+  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
+  --shadow:0 4px 24px rgba(99,102,241,0.08);
+}
+[data-theme="dark"]{
   --bg:#07090f; --bg2:#0d1017; --bg3:#111520;
   --card:#151a28; --card2:#1c2235;
   --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
@@ -19,10 +34,9 @@
   --blue:#4f8ef7; --blue2:#7eb3ff; --blue-dim:rgba(79,142,247,0.10);
   --green:#2dd4a0; --green-dim:rgba(45,212,160,0.10);
   --red:#ef4444; --red-dim:rgba(239,68,68,0.10); --red-glo:rgba(239,68,68,0.22);
-  --r:10px; --r2:16px; --r3:20px;
-  --nav-h:56px; --sidebar-w:248px;
-  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
 }
+body,body *{transition:background-color .3s,border-color .3s,color .3s;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
 body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;}
@@ -39,7 +53,7 @@ img{display:block;max-width:100%;}
 .topbar-logo-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#07090f;flex-shrink:0;}
 .topbar-logo-img{width:26px;height:26px;object-fit:contain;border-radius:5px;}
 .topbar-div{width:1px;height:22px;background:var(--border2);}
-.admin-badge{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;background:var(--red-dim);border:1px solid var(--red-glo);font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#fca5a5;}
+.admin-badge{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--gold-glo);font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .topbar-user{font-family:var(--fm);font-size:10px;color:var(--text3);}
 .topbar-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--text2);border:1px solid var(--border2);transition:all .2s;}
@@ -47,6 +61,9 @@ img{display:block;max-width:100%;}
 .topbar-btn-red{color:#fca5a5;border-color:var(--red-glo);}
 .topbar-btn-red:hover{background:var(--red-dim);}
 
+
+[data-theme="dark"] .topbar{background:rgba(7,9,15,.95);}
+[data-theme="dark"] .nav{background:rgba(7,9,15,.95);}
 /* ══ SHELL ══ */
 .shell{display:flex;flex:1;overflow:hidden;}
 
@@ -245,6 +262,7 @@ tr:hover td{background:rgba(255,255,255,.012);}
   <div class="admin-badge">🔒 Admin Workstation</div>
   <div class="topbar-right">
     <span class="topbar-user" id="topbarUser"></span>
+    <button class="topbar-btn" id="themeToggleBtn" onclick="toggleAdminTheme()" title="Toggle light/dark mode">☀️</button>
     <a href="index.html" target="_blank" class="topbar-btn">🔗 View Site</a>
     <button class="topbar-btn topbar-btn-red" onclick="igLogout()">⎋ Sign Out</button>
   </div>
@@ -612,14 +630,34 @@ var ADMIN_EMAIL = 'admin@impactgridgroup.com';
 var BUCKET      = 'site-media';
 /* ── Resend API Key — add yours here once you have it ── */
 window.RESEND_API_KEY = 're_4MjknVxN_3aP4DsNcrkBV2zHcHwjp2qQv'; /* e.g. 're_abc123...' */
+var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
 var heroSlides  = [];
 var heroEditId  = null;
 var tickerItems = [];
 var testimonials= [];
 var updateCards = [];
 
+/* ══ THEME ══ */
+function toggleAdminTheme(){
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var newTheme = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  document.getElementById('themeToggleBtn').textContent = newTheme === 'dark' ? '🌙' : '☀️';
+  try{ localStorage.setItem('ig-admin-theme', newTheme); }catch(e){}
+}
+
+function initAdminTheme(){
+  try{
+    var saved = localStorage.getItem('ig-admin-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('themeToggleBtn');
+    if(btn) btn.textContent = saved === 'dark' ? '🌙' : '☀️';
+  }catch(e){}
+}
+
 /* ══ BOOT ══ */
 document.addEventListener('DOMContentLoaded', async function(){
+  initAdminTheme();
   var c = getSupabase();
   var { data } = await c.auth.getSession();
   if(!data.session){ window.location.href='login.html'; return; }
@@ -1121,6 +1159,7 @@ async function igCreateEvent(){
     var {data:ev,error:evErr}=await c.from('events').insert({
       name:name,type:type,
       owner_id:sess.session?sess.session.user.id:null,
+      owner_email:document.getElementById('ev-owner').value.trim()||null,
       event_code:code,event_slug:slug,
       expiry_date:new Date(expiry).toISOString(),
       is_active:true
@@ -1372,7 +1411,23 @@ async function loadDownloadRequests(){
   }catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
 }
 
-async function approveRequest(id,email){if(!confirm('Approve download for '+email+'?'))return;await getSupabase().from('download_requests').update({status:'approved'}).eq('id',id);toast('✅','Request approved','Email coming in Phase 4');loadDownloadRequests();}
+async function approveRequest(id,email){
+  if(!confirm('Approve download for '+email+'? They will receive an email with download links.'))return;
+  toast('📤','Sending approval…','Emailing download links to '+email,true);
+  try{
+    var res=await fetch('https://impactgrid-events-api.onrender.com/api/approve-request',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({requestId:id})
+    });
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Server error');
+    toast('✅','Approved & email sent!','Download links sent to '+email);
+  }catch(e){
+    await getSupabase().from('download_requests').update({status:'approved'}).eq('id',id);
+    toast('✅','Approved!','Could not send email: '+e.message);
+  }
+  loadDownloadRequests();
+}
 async function rejectRequest(id){if(!confirm('Reject?'))return;await getSupabase().from('download_requests').update({status:'rejected'}).eq('id',id);toast('🗑️','Request rejected','');loadDownloadRequests();}
 
 /* ════════════════════════════════════════════════════
