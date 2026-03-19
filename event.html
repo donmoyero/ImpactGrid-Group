@@ -692,6 +692,7 @@ var matchedPhotos= {};
 var guestEmail   = '';
 var faceModelsLoaded = false;
 var currentLightboxPhoto = null;
+var showingMatchedOnly   = false;
 
 /* ════════════ TEMPLATE MAP ════════════ */
 var TPL_MAP = {
@@ -1087,7 +1088,19 @@ async function runFaceRecognition(selfieFile){
       matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'request' };
     });
 
-    renderPhotos(allPhotos);
+    /* Show matched photos only */
+    var matchedPhotosArr = allPhotos.filter(function(p){ return matchedIds.has(p.id); });
+    if(matchedPhotosArr.length > 0){
+      showingMatchedOnly = true;
+      renderPhotos(matchedPhotosArr);
+      /* Update gallery header */
+      document.getElementById('galleryTitle').textContent = 'Your Photos (' + matchedPhotosArr.length + ')';
+      document.getElementById('galleryTag').textContent   = '✅ Matched to your face';
+      /* Show "show all" button */
+      showShowAllBtn();
+    } else {
+      renderPhotos(allPhotos);
+    }
 
     var parts = [];
     if(instantDownload.length > 0) parts.push(instantDownload.length + ' ready to download');
@@ -1258,23 +1271,60 @@ function showInstantPanel(photos){
   var existing = document.getElementById('instantPanel');
   if(existing) existing.remove();
 
+  var emailEl    = document.getElementById('guestEmailInput');
+  var knownEmail = guestEmail || (emailEl ? emailEl.value.trim() : '');
+
+  var emailHtml = knownEmail
+    ? '<div style="font-size:12px;padding:8px 10px;background:rgba(16,185,129,.08);border-radius:8px;margin-bottom:12px;color:#059669;">📧 Links sent to <strong>'+esc(knownEmail)+'</strong></div>'
+    : '<div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.6;margin-bottom:6px;">Your Email</div><input type="email" id="instantEmailInput" placeholder="your@email.com" style="width:100%;padding:10px 12px;font-size:14px;border-radius:8px;border:1.5px solid rgba(16,185,129,.3);outline:none;font-family:inherit;" autocomplete="email"/></div>';
+
   var panel = document.createElement('div');
   panel.id  = 'instantPanel';
-  panel.className = 'instant-download-panel';
+  panel.className = 'instant-panel';
   panel.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'+
-      '<div style="font-size:14px;font-weight:800;color:#059669;">✅ ' + photos.length + ' Photo' + (photos.length > 1 ? 's' : '') + ' Ready!</div>'+
-      '<button onclick="this.parentElement.parentElement.remove()" style="opacity:.5;font-size:18px;background:none;border:none;cursor:pointer;">✕</button>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'+
+      '<div><div style="font-size:15px;font-weight:900;color:#059669;">✅ Your Photos Found!</div>'+
+      '<div style="font-size:12px;opacity:.6;margin-top:2px;">'+photos.length+' photo'+(photos.length>1?'s':'')+' matched</div></div>'+
+      '<button onclick="document.getElementById(\'instantPanel\').remove()" style="opacity:.4;font-size:20px;line-height:1;background:none;border:none;cursor:pointer;">✕</button>'+
     '</div>'+
-    '<div style="font-size:13px;color:#505878;margin-bottom:14px;">90%+ match — confirmed as you. Click to download:</div>'+
-    photos.map(function(p, i){
-      return '<a href="' + esc(p.original_url || p.preview_url) + '" download="ImpactGrid-Photo-' + (i+1) + '.jpg" '+
-        'style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:12px;font-weight:700;color:#059669;text-decoration:none;margin-bottom:6px;">'+
-        '⬇️ Download Photo ' + (i+1) + '</a>';
-    }).join('') +
-    '<div style="font-size:11px;color:#9099c0;margin-top:8px;text-align:center;">Also sent to ' + esc(guestEmail) + '</div>';
+    emailHtml+
+    photos.map(function(p,i){
+      return '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo-'+(i+1)+'.jpg" '+
+        'style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f0fdf4;border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:13px;font-weight:700;color:#059669;text-decoration:none;margin-bottom:8px;">'+
+        '<span style="font-size:20px;">⬇️</span>'+
+        '<div><div>Download Photo '+(i+1)+'</div><div style="font-size:10px;font-weight:400;opacity:.6;">Full quality original</div></div>'+
+      '</a>';
+    }).join('')+
+    '<button onclick="confirmInstantDownload()" style="width:100%;margin-top:8px;padding:12px;background:#059669;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">'+
+      (knownEmail ? '✅ Done — Close' : '📧 Save & Get Email Links')+
+    '</button>';
 
   document.body.appendChild(panel);
+}
+
+async function confirmInstantDownload(){
+  var emailEl   = document.getElementById('guestEmailInput');
+  var instantEl = document.getElementById('instantEmailInput');
+  var email     = guestEmail
+    || (emailEl   ? emailEl.value.trim()   : '')
+    || (instantEl ? instantEl.value.trim() : '');
+
+  if(email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    guestEmail = email;
+    var matched = allPhotos.filter(function(p){
+      return matchedIds.has(p.id) && matchedPhotos[p.id] && matchedPhotos[p.id].tier === 'instant';
+    });
+    for(var i = 0; i < matched.length; i++){
+      try{
+        await getSupabase().from('download_requests').insert({
+          event_id:eventData.id, user_email:email, status:'approved'
+        });
+      }catch(e){}
+    }
+  }
+  var panel = document.getElementById('instantPanel');
+  if(panel) panel.remove();
+  toast('✅','Downloads saved!','Check your email for links');
 }
 
 /* ════════════ AUTO SUBMIT REQUESTS ════════════ */
