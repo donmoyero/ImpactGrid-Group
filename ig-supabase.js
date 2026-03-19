@@ -1,15 +1,25 @@
 /* ═══════════════════════════════════════════════════════
-   ImpactGrid — Supabase Client
-   Used by: admin.html, dashboard.html, network.html,
-            employer-dashboard.html, join.html, login.html
-            and all other pages that need Supabase access.
-   Do NOT commit service_role key here — anon key only.
+   ImpactGrid — Supabase Client (Singleton)
+   Used by all pages. Returns one shared instance
+   to avoid multiple GoTrueClient warnings.
 ═══════════════════════════════════════════════════════ */
 
 var SUPABASE_URL  = 'https://wedjsnizcvtgptobwugc.supabase.co';
 var SUPABASE_ANON = 'sb_publishable_7pp0dEBXmrEpiqsfF9SI-A_X0EWrmrW';
 
-/* Returns a fresh Supabase client instance */
+/* Singleton instance — created once, reused everywhere */
+var _supabaseClient = null;
+
 function getSupabase() {
-  return supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  if (!_supabaseClient) {
+    _supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+      auth: {
+        persistSession    : true,
+        autoRefreshToken  : true,
+        detectSessionInUrl: true,
+        storageKey        : 'ig-auth-token'
+      }
+    });
+  }
+  return _supabaseClient;
 }
