@@ -1,36 +1,21 @@
 /* ================================================================
    IMPACTGRID — TikTok OAuth Auth Initiator
    tiktok-auth.js
-
-   Handles:
-   - Login Kit  (OAuth 2.0 PKCE flow)
-   - Display API scope
-   - Content Posting API scope
-   - Share Kit scope
-
-   Usage: include on any page with a TikTok connect button.
-   Calls your Dijo server for the token exchange (Client Secret stays server-side).
-
-   SETUP:
-   Replace TIKTOK_CLIENT_KEY with your actual Client Key from
-   developers.tiktok.com → Your App → App Details
 ================================================================ */
 
 var TikTokAuth = (function() {
 
-  /* ── CONFIG — replace with your real values ── */
-  var CLIENT_KEY   = 'awi4w15huo5zrxd5'; // e.g. 'awxxxxxxxxxxxxxx'
+  var CLIENT_KEY   = 'awi4w15huo5zrxd5';
   var REDIRECT_URI = 'https://impactgridgroup.com/tiktok-callback.html';
   var DIJO_URL     = 'https://impactgrid-dijo.onrender.com';
 
-  /* ── Scopes — only request what you use ── */
+  /* ── Scopes — exactly matching your approved TikTok app ── */
   var SCOPES = [
-    'user.info.basic',       // Login Kit  — display name, avatar, open_id
-    'user.info.profile',     // Login Kit  — follower/following counts
-    'user.info.stats',       // Display API — likes, video count
-    'video.list',            // Display API — user's video list
-    'video.publish',         // Content Posting API — upload/publish videos
-    'share.sound.create'     // Share Kit  — share content to TikTok
+    'user.info.basic',    // Login Kit  — display name, avatar, open_id
+    'user.info.profile',  // Login Kit  — profile_web_link, bio, is_verified
+    'user.info.stats',    // Display API — likes, follower, following, video count
+    'video.list',         // Display API — user's video list
+    'video.upload'        // Content Posting API — upload as draft
   ].join(',');
 
   /* ── PKCE helpers ── */
@@ -61,13 +46,11 @@ var TikTokAuth = (function() {
       buttonEl.disabled = true;
       buttonEl.innerHTML = '<span class="tt-spinner"></span> Connecting…';
     }
-
     try {
-      var verifier   = generateCodeVerifier();
-      var challenge  = await generateCodeChallenge(verifier);
-      var state      = generateState();
+      var verifier  = generateCodeVerifier();
+      var challenge = await generateCodeChallenge(verifier);
+      var state     = generateState();
 
-      /* Store verifier + state in sessionStorage for callback page */
       sessionStorage.setItem('tt_code_verifier', verifier);
       sessionStorage.setItem('tt_state',         state);
 
@@ -81,8 +64,7 @@ var TikTokAuth = (function() {
         code_challenge_method: 'S256'
       });
 
-      var authURL = 'https://www.tiktok.com/v2/auth/authorize/?' + params.toString();
-      window.location.href = authURL;
+      window.location.href = 'https://www.tiktok.com/v2/auth/authorize/?' + params.toString();
 
     } catch(e) {
       console.error('[TikTokAuth] Failed to initiate OAuth:', e);
@@ -99,17 +81,13 @@ var TikTokAuth = (function() {
     var res = await fetch(DIJO_URL + '/tiktok/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code:          code,
-        redirect_uri:  REDIRECT_URI,
-        code_verifier: codeVerifier
-      })
+      body: JSON.stringify({ code: code, redirect_uri: REDIRECT_URI, code_verifier: codeVerifier })
     });
     if (!res.ok) throw new Error('Token exchange failed: HTTP ' + res.status);
     return await res.json();
   }
 
-  /* ── Fetch user profile from TikTok via Dijo ── */
+  /* ── Fetch user profile ── */
   async function fetchProfile(accessToken) {
     var res = await fetch(DIJO_URL + '/tiktok/profile', {
       method: 'POST',
@@ -120,7 +98,7 @@ var TikTokAuth = (function() {
     return await res.json();
   }
 
-  /* ── Fetch user videos from TikTok via Dijo ── */
+  /* ── Fetch user videos ── */
   async function fetchVideos(accessToken, maxCount) {
     var res = await fetch(DIJO_URL + '/tiktok/videos', {
       method: 'POST',
@@ -131,22 +109,7 @@ var TikTokAuth = (function() {
     return await res.json();
   }
 
-  /* ── Share video to TikTok (Share Kit) ── */
-  async function shareVideo(accessToken, videoUrl, title) {
-    var res = await fetch(DIJO_URL + '/tiktok/share', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        access_token: accessToken,
-        video_url:    videoUrl,
-        title:        title || ''
-      })
-    });
-    if (!res.ok) throw new Error('Share failed: HTTP ' + res.status);
-    return await res.json();
-  }
-
-  /* ── Publish video to TikTok (Content Posting API) ── */
+  /* ── Publish video (upload as draft) ── */
   async function publishVideo(accessToken, videoUrl, caption, privacyLevel) {
     var res = await fetch(DIJO_URL + '/tiktok/publish', {
       method: 'POST',
@@ -162,7 +125,7 @@ var TikTokAuth = (function() {
     return await res.json();
   }
 
-  /* ── Token storage helpers ── */
+  /* ── Token storage ── */
   function saveSession(tokenData, profile) {
     try {
       localStorage.setItem('tt_access_token',  tokenData.access_token);
@@ -199,13 +162,11 @@ var TikTokAuth = (function() {
     else console.error('[TikTokAuth]', msg);
   }
 
-  /* ── Public API ── */
   return {
     connect:       connect,
     exchangeCode:  exchangeCode,
     fetchProfile:  fetchProfile,
     fetchVideos:   fetchVideos,
-    shareVideo:    shareVideo,
     publishVideo:  publishVideo,
     saveSession:   saveSession,
     getSession:    getSession,
