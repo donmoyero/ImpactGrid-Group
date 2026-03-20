@@ -823,11 +823,16 @@ function switchTab(name){
 /* ── TOAST ── */
 function showToast(icon,msg){ var t=document.getElementById('toast'); document.getElementById('toastIcon').textContent=icon; document.getElementById('toastMsg').textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},3200); }
 
-/* ── GOOGLE TRENDS ── */
+/* ── TREND DATA — powered by Supabase via /trends/live ── */
 var allTrends = [];
-async function fetchGoogleTrends(){
-  try{ var res=await fetch(DIJO+'/trends/google?geo=GB'); var data=await res.json(); return data.trends||[]; }catch(e){ return []; }
-}
+
+function platLabel(src){ return src==='youtube'?'YouTube':src==='tiktok'?'TikTok':src==='cross'?'Cross':src==='google'?'Google':'Live'; }
+function platCls(src){ return src==='youtube'?'plat-yt':src==='tiktok'?'plat-tt':'plat-gt'; }
+
+/* Convert 0-100 Supabase score to 0-10 display score */
+function toDisplayScore(s){ return Math.min(9.9, parseFloat((s/10).toFixed(1))); }
+
+/* Fallback local score for generator (used when no Supabase score available) */
 function calcScore(topic){
   if(typeof CreatorAI!=='undefined'&&CreatorAI.calcTrendScore) return CreatorAI.calcTrendScore(topic).total;
   var tl=topic.toLowerCase(); var s=6.8;
@@ -837,48 +842,126 @@ function calcScore(topic){
   if(tl.length<20)s+=0.3;
   return Math.min(9.9,parseFloat(s.toFixed(1)));
 }
+
 function getNicheData(topic){
   if(typeof CreatorAI!=='undefined'&&CreatorAI.getNiche&&CreatorAI.nicheData){ var n=CreatorAI.getNiche(topic); return CreatorAI.nicheData[n]||{}; }
   return{bestPlatform:'TikTok',bestFormat:'Short-form video',peakDay:'Thursday',peakTime:'7pm–9pm',hashtags:[]};
 }
+
 async function buildTrendData(){
-  var gtTopics=await fetchGoogleTrends();
-  var base=['AI productivity tools','side hustle ideas 2026','digital marketing strategy','YouTube growth','personal finance tips','ChatGPT for creators','passive income','content creator tips'];
-  var combined=[...gtTopics];
-  base.forEach(function(t){ if(!combined.some(function(c){return c.toLowerCase().includes(t.toLowerCase().split(' ')[0]);})) combined.push(t); });
-  allTrends=combined.slice(0,20).map(function(topic,i){ return{topic:topic,score:calcScore(topic),plat:'gt',platLabel:'Google',rank:i+1,isReal:i<gtTopics.length}; }).sort(function(a,b){return b.score-a.score;}).map(function(t,i){t.rank=i+1;return t;});
-  renderTrendList('liveTrendList',5); renderTrendList('fullTrendList',null); renderOpportunities();
-  if(gtTopics.length) updateTicker(gtTopics.slice(0,6));
+  /* Show loading state */
+  var liveEl=document.getElementById('liveTrendList');
+  var fullEl=document.getElementById('fullTrendList');
+  if(liveEl)liveEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);"><span class="spinner spinner-gold"></span> <span style="margin-left:8px;">Fetching live trends from Dijo…</span></div>';
+  if(fullEl)fullEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);"><span class="spinner spinner-gold"></span></div>';
+
+  try{
+    /* Fetch scored trends from Supabase via Dijo */
+    var res  = await fetch(DIJO+'/trends/live?limit=20');
+    var data = await res.json();
+    var live = data.trends || [];
+
+    if(live.length){
+      /* Map Supabase trend objects to display format */
+      allTrends = live.map(function(t, i){
+        return{
+          topic:      t.topic,
+          score:      toDisplayScore(t.trend_score),
+          fullScore:  t.trend_score,
+          plat:       t.platform_source==='youtube'?'yt':t.platform_source==='tiktok'?'tt':t.platform_source==='cross'?'cross':'gt',
+          platLabel:  platLabel(t.platform_source),
+          rank:       i+1,
+          isReal:     true,
+          igPrediction: t.instagram_prediction||0,
+          igReason:   t.instagram_reason||'',
+          hashtags:   t.hashtags||[],
+          videoCount: t.video_count||0,
+          totalViews: t.total_views||0,
+          status:     t.status||'rising'
+        };
+      });
+
+      /* Update ticker with live topics */
+      updateTicker(allTrends.slice(0,6).map(function(t){return t.topic;}));
+
+    } else {
+      /* Fallback to Google RSS if Supabase empty */
+      var rssRes  = await fetch(DIJO+'/trends/google?geo=GB');
+      var rssData = await rssRes.json();
+      var topics  = rssData.trends||[];
+      allTrends = topics.slice(0,20).map(function(topic,i){
+        return{topic:topic,score:calcScore(topic),plat:'gt',platLabel:'Google',rank:i+1,isReal:true,igPrediction:0,hashtags:[],videoCount:0,totalViews:0,status:'rising'};
+      });
+      if(topics.length) updateTicker(topics.slice(0,6));
+    }
+
+  }catch(e){
+    /* Silent fallback */
+    allTrends=[];
+  }
+
+  renderTrendList('liveTrendList',5);
+  renderTrendList('fullTrendList',null);
+  renderOpportunities();
 }
+
 function updateTicker(topics){
   var scroll=document.getElementById('tickerScroll');
   var extra=topics.map(function(t){return '<span class="t-item"><span class="t-tag tag-live">Trending</span>'+escHtml(t)+'</span>';}).join('');
-  extra=extra+extra; scroll.innerHTML=extra+scroll.innerHTML;
+  extra=extra+extra;
+  scroll.innerHTML=extra+scroll.innerHTML;
 }
+
 function renderTrendItem(t){
-  var pct=Math.round((t.score/10)*100);
-  var live=t.isReal?'<span style="font-size:9px;color:var(--green);margin-left:4px;">●</span>':'';
-  var platCls=t.plat==='tt'?'plat-tt':t.plat==='yt'?'plat-yt':'plat-gt';
-  return '<div class="trend-item" onclick="loadTopic(\''+esc(t.topic)+'\')"><div class="ti-rank">#'+t.rank+'</div><div class="ti-info"><div class="ti-topic">'+escHtml(t.topic)+live+'</div><div class="ti-meta">Trend Score™ · click to generate</div></div><div class="ti-score-wrap"><div class="ti-score-bar"><div class="ti-score-fill" style="width:'+pct+'%;"></div></div><div class="ti-score-num">'+t.score.toFixed(1)+'/10</div></div><div class="ti-plat '+platCls+'">'+t.platLabel+'</div></div>';
+  var pct    = Math.round((t.score/10)*100);
+  var live   = t.isReal?'<span style="font-size:9px;color:var(--green);margin-left:4px;">●</span>':'';
+  var cross  = t.plat==='cross'?'<span style="font-size:9px;color:var(--gold);margin-left:4px;">✕</span>':'';
+  var cls    = platCls(t.plat==='yt'?'youtube':t.plat==='tt'?'tiktok':'google');
+  var label  = t.platLabel||'Live';
+  var meta   = t.videoCount>0?(t.videoCount+' videos · '+Number(t.totalViews).toLocaleString()+' views'):'Trend Score™ · click to generate';
+  return '<div class="trend-item" onclick="loadTopic(\''+esc(t.topic)+'\')">'
+    +'<div class="ti-rank">#'+t.rank+'</div>'
+    +'<div class="ti-info"><div class="ti-topic">'+escHtml(t.topic)+live+cross+'</div><div class="ti-meta">'+meta+'</div></div>'
+    +'<div class="ti-score-wrap"><div class="ti-score-bar"><div class="ti-score-fill" style="width:'+pct+'%;"></div></div><div class="ti-score-num">'+t.score.toFixed(1)+'/10</div></div>'
+    +'<div class="ti-plat '+cls+'">'+label+'</div>'
+    +'</div>';
 }
+
 function renderTrendList(id,limit){
   var el=document.getElementById(id); if(!el)return;
-  if(!allTrends.length){el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);"><span class="spinner spinner-gold"></span></div>';return;}
+  if(!allTrends.length){
+    el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">No trends yet — check back in a few minutes.</div>';
+    return;
+  }
   var list=limit?allTrends.slice(0,limit):allTrends;
   el.innerHTML=list.map(renderTrendItem).join('');
 }
+
 function filterTrends(btn,plat){
   document.querySelectorAll('[data-plat]').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active');
   var el=document.getElementById('fullTrendList'); if(!el)return;
-  if(plat==='ig'){ el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;"><div style="font-size:32px;margin-bottom:12px;">⏳</div><strong style="color:var(--blue2);">Coming Soon</strong><br>Instagram trend data pending API approval.</div>'; return; }
-  var filtered=plat==='all'?allTrends:allTrends.filter(function(t){return t.plat===plat;});
-  el.innerHTML=filtered.length?filtered.map(renderTrendItem).join(''):'<div style="text-align:center;padding:24px;color:var(--text3);">No trends for this filter.</div>';
+  if(plat==='ig'){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;"><div style="font-size:32px;margin-bottom:12px;">⏳</div><strong style="color:var(--blue2);">Coming Soon</strong><br>Instagram trend data pending API approval.</div>';
+    return;
+  }
+  var filtered = plat==='all' ? allTrends
+    : plat==='tt' ? allTrends.filter(function(t){return t.plat==='tt';})
+    : plat==='yt' ? allTrends.filter(function(t){return t.plat==='yt';})
+    : plat==='gt' ? allTrends.filter(function(t){return t.plat==='gt'||t.plat==='cross';})
+    : allTrends;
+  el.innerHTML=filtered.length?filtered.map(renderTrendItem).join(''):'<div style="text-align:center;padding:24px;color:var(--text3);">No trends for this filter yet.</div>';
 }
+
 function renderOpportunities(){
   var el=document.getElementById('oppList'); if(!el)return;
+  if(!allTrends.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">Loading…</div>';return;}
   el.innerHTML=allTrends.slice(0,3).map(function(o){
     var nd=getNicheData(o.topic);
-    return '<div class="opp-card" onclick="loadTopic(\''+esc(o.topic)+'\')"><div class="opp-header"><span class="opp-topic">'+escHtml(o.topic)+'</span><span class="opp-score">'+o.score.toFixed(1)+'</span></div><div class="opp-meta">'+(nd.bestPlatform||'TikTok')+' · '+(nd.bestFormat||'Short-form')+' · '+(nd.peakDay||'Thu')+'</div><div class="opp-tags"><span class="opp-tag">'+(nd.peakTime||'7–9pm')+'</span>'+(o.isReal?'<span class="opp-tag" style="color:var(--green);border-color:rgba(45,212,160,0.3);">● live trend</span>':'')+'</div></div>';
+    var igBadge=o.igPrediction>=60?'<span class="opp-tag" style="color:var(--ig);border-color:rgba(225,48,108,0.3);">📸 IG likely</span>':'';
+    var crossBadge=o.plat==='cross'?'<span class="opp-tag" style="color:var(--gold);border-color:var(--gold-glo);">✕ cross-platform</span>':'';
+    return '<div class="opp-card" onclick="loadTopic(\''+esc(o.topic)+'\')"><div class="opp-header"><span class="opp-topic">'+escHtml(o.topic)+'</span><span class="opp-score">'+o.score.toFixed(1)+'</span></div>'
+      +'<div class="opp-meta">'+(nd.bestPlatform||o.platLabel||'TikTok')+' · '+(o.status||'rising')+' · '+o.videoCount+' videos</div>'
+      +'<div class="opp-tags"><span class="opp-tag">● live</span>'+igBadge+crossBadge+'</div></div>';
   }).join('');
 }
 function loadTopic(topic){ document.getElementById('quickTopic').value=topic; document.getElementById('genTopic').value=topic; switchTab('generator'); showToast('💡','Topic loaded — hit Generate!'); }
