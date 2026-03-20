@@ -1245,7 +1245,13 @@ async function loadTikTokVideos(accessToken){
         +'<div class="tt-video-thumb">'+(thumb?'<img src="'+escHtml(thumb)+'" alt=""/>':'🎵')+'</div>'
         +'<div class="tt-video-info">'
         +'<div class="tt-video-title" title="'+escHtml(title)+'">'+escHtml(title)+'</div>'
-        +'<div class="tt-video-stats">👁 '+fmt(v.view_count)+' · ❤️ '+fmt(v.like_count)+' · 💬 '+fmt(v.comment_count)+' · 🔁 '+fmfunction disconnectTikTok(){
+        +'<div class="tt-video-stats">👁 '+fmt(v.view_count)+' · ❤️ '+fmt(v.like_count)+' · 💬 '+fmt(v.comment_count)+' · 🔁 '+fmt(v.share_count)+'</div></div></div>';
+    }).join('')+'</div>';
+  }catch(err){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">Could not load videos. Try reconnecting.</div>';
+  }
+}
+function disconnectTikTok(){
   try{TikTokAuth.clearSession();}catch(e){}
   document.getElementById('tt-disconnected').style.display='block';
   document.getElementById('tt-connected-view').style.display='none';
@@ -1263,12 +1269,8 @@ async function loadTikTokVideos(accessToken){
   if(evalMain)evalMain.style.display='none';
   if(evalNo)evalNo.style.display='block';
   showToast('👋','TikTok disconnected');
-}onnected';scVal.style.color='';}
-  var scSub=document.getElementById('sc-tt-sub');if(scSub)scSub.innerHTML='<span onclick="switchTab(\'tiktok\')" class="delta-link">Connect now →</span>';
-  showToast('👋','TikTok disconnected');
 }
 
-/* ── HELPERS ── */
 function copyEl(id){var el=document.getElementById(id);if(!el)return;navigator.clipboard.writeText(el.innerText||el.textContent).then(function(){showToast('📋','Copied!');}).catch(function(){});}
 function copyTags(id){var el=document.getElementById(id);if(!el)return;var text=Array.from(el.querySelectorAll('.ob-tag')).map(function(s){return s.textContent;}).join(' ');navigator.clipboard.writeText(text).then(function(){showToast('📋','Hashtags copied!');}).catch(function(){});}
 function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
