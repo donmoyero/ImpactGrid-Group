@@ -424,7 +424,20 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
           <div class="sc-delta" id="sc-tt-sub"><span onclick="switchTab('tiktok')" class="delta-link">Connect now →</span></div>
         </div>
       </div>
-      <div class="two-col">
+      <!-- ── DAILY BRIEFING CARD ── -->
+      <div class="card" id="dailyBriefingCard" style="margin-bottom:20px;">
+        <div class="card-header">
+          <span class="card-title">🧠 Dijo Daily Briefing</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="dijo-badge">AI · Live Data</span>
+            <button onclick="loadDailyBriefing(true)" style="font-family:var(--fm);font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer;">Refresh</button>
+          </div>
+        </div>
+        <div class="card-body" id="dailyBriefingBody">
+          <div style="text-align:center;padding:16px;color:var(--text3);"><span class="spinner spinner-gold"></span> <span style="margin-left:8px;">Dijo is preparing your briefing…</span></div>
+        </div>
+      </div>
+            <div class="two-col">
         <div class="card">
           <div class="card-header">
             <span class="card-title">📡 Trend Feed</span>
@@ -1224,9 +1237,92 @@ function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ── INIT ── */
+
+/* ── PHASE 3 — AI RECOMMENDATION LAYER ── */
+
+async function loadDailyBriefing(forceRefresh){
+  var el=document.getElementById('dailyBriefingBody');
+  if(!el)return;
+  try{
+    var res=await fetch(DIJO+'/ai/daily-briefing');
+    var data=await res.json();
+    if(data.briefing){
+      el.innerHTML='<div style="font-size:13.5px;color:var(--text);line-height:1.8;">'+escHtml(data.briefing).replace(/\n/g,'<br>')+'</div>'
+        +'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+        +(data.top_trends||[]).map(function(t){
+          return '<span style="font-family:var(--fm);font-size:10px;padding:3px 10px;border-radius:5px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);">'+escHtml(t.topic)+' '+t.score.toFixed(0)+'</span>';
+        }).join('')
+        +'</div>'
+        +'<div style="font-family:var(--fm);font-size:10px;color:var(--text3);margin-top:10px;">'+escHtml(data.date||'')+(data.cached?' · cached':'· live')+'</div>';
+      if(forceRefresh)showToast('🧠','Briefing refreshed!');
+    }
+  }catch(err){
+    if(el)el.innerHTML='<div style="font-size:13px;color:var(--text2);">Dijo briefing unavailable — check back shortly.</div>';
+  }
+}
+
+async function getTrendRecommendations(niche,platform){
+  try{
+    var res=await fetch(DIJO+'/ai/recommendations',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({niche:niche||'',platform:platform||'All',goal:'grow'})
+    });
+    return await res.json();
+  }catch(e){return null;}
+}
+
+async function getContentBrief(topic,platform,style){
+  try{
+    var res=await fetch(DIJO+'/ai/content-brief',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({topic:topic,platform:platform||'TikTok',style:style||'Educational'})
+    });
+    return await res.json();
+  }catch(e){return null;}
+}
+
+async function getTrendAnalysis(){
+  try{
+    var res=await fetch(DIJO+'/ai/trend-analysis',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    return await res.json();
+  }catch(e){return null;}
+}
+
+/* Enhanced full generate — uses content brief endpoint for richer output */
+async function fullGenerateWithBrief(topic,platform,style,niche){
+  try{
+    var brief=await getContentBrief(topic,platform,style);
+    if(brief&&brief.brief){
+      var lines=brief.brief.split('\n').filter(function(l){return l.trim();});
+      function extract(label){
+        var idx=lines.findIndex(function(l){return l.toLowerCase().includes(label.toLowerCase());});
+        if(idx===-1)return '';
+        var out=[];
+        for(var i=idx+1;i<Math.min(idx+6,lines.length);i++){
+          if(lines[i].match(/^[A-Z]{3,}/))break;
+          out.push(lines[i]);
+        }
+        return out.join('\n').trim();
+      }
+      return{
+        hook:    extract('hook')||lines[0]||'',
+        caption: extract('caption')||'',
+        outline: extract('outline')||extract('script')||'',
+        hashtags:(brief.hashtags&&brief.hashtags.length?brief.hashtags:[]).concat((brief.brief.match(/#[a-zA-Z][a-zA-Z0-9]*/g)||[])).slice(0,12),
+        trendScore: brief.trend_score,
+        trendStatus: brief.trend_status
+      };
+    }
+  }catch(e){}
+  return null;
+}
+
 window.addEventListener('load',function(){
   setTimeout(checkAuth,300);
   buildTrendData();
+  loadDailyBriefing();
   initYouTube();
   initTikTok();
   initEvaluator();
