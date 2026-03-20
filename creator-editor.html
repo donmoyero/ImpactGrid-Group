@@ -1134,12 +1134,20 @@ async function loadYouTubeVideos(accessToken){
 }
 function disconnectYouTube(){
   try{YouTubeAuth.clearSession();}catch(e){}
-  document.getElementById('yt-disconnected').style.display='block';document.getElementById('yt-connected-view').style.display='none';
+  document.getElementById('yt-disconnected').style.display='block';
+  document.getElementById('yt-connected-view').style.display='none';
   var dot=document.getElementById('yt-sp-dot');if(dot)dot.className='sp-dot sp-dot-off';
-  var label=document.getElementById('yt-sp-label');if(label)label.innerHTML='<span onclick="switchTab(\'youtube\')" class="delta-link">Connect</span>';
+  var label=document.getElementById('yt-sp-label');
+  if(label)label.innerHTML='<span onclick="switchTab(\'youtube\')">Connect</span>';
   var badge=document.getElementById('yt-sidebar-badge');if(badge)badge.style.display='none';
   var scVal=document.getElementById('sc-yt-val');if(scVal){scVal.textContent='Not connected';scVal.style.color='';}
-  var scSub=document.getElementById('sc-yt-sub');if(scSub)scSub.innerHTML='<span onclick="switchTab(\'youtube\')" class="delta-link">Connect now →</span>';
+  var scSub=document.getElementById('sc-yt-sub');
+  if(scSub)scSub.innerHTML='<span onclick="switchTab(\'youtube\')">Connect now</span>';
+  evalChannelData=null;evalScoreData=null;evalVideosData=null;
+  var evalMain=document.getElementById('eval-main');
+  var evalNo=document.getElementById('eval-no-account');
+  if(evalMain)evalMain.style.display='none';
+  if(evalNo)evalNo.style.display='block';
   showToast('👋','YouTube disconnected');
 }
 
@@ -1237,22 +1245,25 @@ async function loadTikTokVideos(accessToken){
         +'<div class="tt-video-thumb">'+(thumb?'<img src="'+escHtml(thumb)+'" alt=""/>':'🎵')+'</div>'
         +'<div class="tt-video-info">'
         +'<div class="tt-video-title" title="'+escHtml(title)+'">'+escHtml(title)+'</div>'
-        +'<div class="tt-video-stats">👁 '+fmt(v.view_count)+' · ❤️ '+fmt(v.like_count)+' · 💬 '+fmt(v.comment_count)+' · 🔁 '+fmt(v.share_count)+'</div>'
-        +'</div></div>';
-    }).join('')+'</div>';
-  }catch(err){
-    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">Could not load videos. Try reconnecting.</div>';
-  }
-}
-function disconnectTikTok(){
+        +'<div class="tt-video-stats">👁 '+fmt(v.view_count)+' · ❤️ '+fmt(v.like_count)+' · 💬 '+fmt(v.comment_count)+' · 🔁 '+fmfunction disconnectTikTok(){
   try{TikTokAuth.clearSession();}catch(e){}
   document.getElementById('tt-disconnected').style.display='block';
   document.getElementById('tt-connected-view').style.display='none';
   var dot=document.getElementById('tt-sp-dot');if(dot)dot.className='sp-dot sp-dot-off';
-  var label=document.getElementById('tt-sp-label');if(label)label.innerHTML='<span onclick="switchTab(\'tiktok\')" class="delta-link">Connect</span>';
+  var label=document.getElementById('tt-sp-label');
+  if(label)label.innerHTML='<span onclick="switchTab(\'tiktok\')">Connect</span>';
   var badge=document.getElementById('tt-sidebar-badge');if(badge)badge.style.display='none';
   var pill=document.getElementById('tt-topbar-pill');if(pill)pill.style.display='none';
   var scVal=document.getElementById('sc-tt-val');if(scVal){scVal.textContent='Not connected';scVal.style.color='';}
+  var scSub=document.getElementById('sc-tt-sub');
+  if(scSub)scSub.innerHTML='<span onclick="switchTab(\'tiktok\')">Connect now</span>';
+  evalChannelData=null;evalScoreData=null;evalVideosData=null;
+  var evalMain=document.getElementById('eval-main');
+  var evalNo=document.getElementById('eval-no-account');
+  if(evalMain)evalMain.style.display='none';
+  if(evalNo)evalNo.style.display='block';
+  showToast('👋','TikTok disconnected');
+}onnected';scVal.style.color='';}
   var scSub=document.getElementById('sc-tt-sub');if(scSub)scSub.innerHTML='<span onclick="switchTab(\'tiktok\')" class="delta-link">Connect now →</span>';
   showToast('👋','TikTok disconnected');
 }
