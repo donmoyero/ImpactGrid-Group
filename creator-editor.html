@@ -1571,21 +1571,9 @@ async function evalGetDijoIntroTikTok(profile,videos,score){
   if(videos&&videos.length){
     topVids=videos.slice(0,3).map(function(v,i){
       return(i+1)+'. "'+(v.title||v.video_description||'Video')+'" — '+Number(v.view_count||0).toLocaleString()+' views, '+Number(v.like_count||0).toLocaleString()+' likes';
-    }).join('
-');
+    }).join('\n');
   }
-  var prompt='You are evaluating a TikTok account. Real data:
-
-Account: '+name+'
-Followers: '+Number(profile.follower_count||0).toLocaleString()+'
-Total Likes: '+Number(profile.likes_count||0).toLocaleString()+'
-Total Videos: '+(profile.video_count||0)+'
-Creator Score: '+score.total+'/100 ('+score.tier+')
-
-Top 3 recent videos:
-'+(topVids||'Not available')+'
-
-Give a 3-4 sentence honest evaluation. Then give 3 specific, actionable things to do RIGHT NOW to grow on TikTok. Be direct and reference actual numbers.';
+  var prompt='You are evaluating a TikTok account. Real data:\n\nAccount: '+name+'\nFollowers: '+Number(profile.follower_count||0).toLocaleString()+'\nTotal Likes: '+Number(profile.likes_count||0).toLocaleString()+'\nTotal Videos: '+(profile.video_count||0)+'\nCreator Score: '+score.total+'/100 ('+score.tier+')\n\nTop 3 recent videos:\n'+(topVids||'Not available')+'\n\nGive a 3-4 sentence honest evaluation. Then give 3 specific, actionable things to do RIGHT NOW to grow on TikTok. Be direct and reference actual numbers.';
   try{
     var reply=await callDijo(prompt);
     addEvalMsg('dijo',reply);
