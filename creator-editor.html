@@ -1157,7 +1157,6 @@ function showTikTokConnected(session){
   document.getElementById('tt-disconnected').style.display='none';
   document.getElementById('tt-connected-view').style.display='block';
 
-  /* Sidebar / topbar / dashboard stat updates */
   var dot=document.getElementById('tt-sp-dot');
   var label=document.getElementById('tt-sp-label');
   var badge=document.getElementById('tt-sidebar-badge');
@@ -1169,31 +1168,59 @@ function showTikTokConnected(session){
   if(badge)badge.style.display='inline-flex';
   if(pill)pill.style.display='flex';
   if(label)label.innerHTML='<span style="color:var(--tt);">Connected</span>';
-
-  var profile=session.profile;
-  var displayName=(profile&&(profile.display_name||profile.username))||'TikTok Account';
-  var username=(profile&&profile.username)?'@'+profile.username:'';
-
-  if(scVal){scVal.textContent=displayName;scVal.style.color='var(--tt)';}
   if(scSub)scSub.innerHTML='';
 
-  document.getElementById('tt-display-name').textContent=displayName;
-  document.getElementById('tt-username').textContent=username;
+  // Use stored profile as placeholder while we fetch fresh data
+  var storedProfile=session.profile;
+  var placeholderName=(storedProfile&&(storedProfile.display_name||storedProfile.username))||'TikTok Account';
+  if(scVal){scVal.textContent=placeholderName;scVal.style.color='var(--tt)';}
+  document.getElementById('tt-display-name').textContent=placeholderName;
 
-  if(profile){
-    function fmt(n){return n!=null?Number(n).toLocaleString():'—';}
-    document.getElementById('tt-followers').textContent=fmt(profile.follower_count);
-    document.getElementById('tt-following').textContent=fmt(profile.following_count);
-    document.getElementById('tt-likes').textContent=fmt(profile.likes_count);
-    document.getElementById('tt-video-count').textContent=fmt(profile.video_count);
-
-    if(profile.avatar_url){
-      var av=document.getElementById('tt-avatar');
-      av.innerHTML='<img src="'+profile.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt=""/>';
-    }
-  }
-
+  // Fetch fresh profile from Dijo
+  fetchTikTokProfile(session.accessToken);
   loadTikTokVideos(session.accessToken);
+}
+
+async function fetchTikTokProfile(accessToken){
+  try{
+    var res=await fetch(DIJO+'/tiktok/profile',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({access_token:accessToken})
+    });
+    var data=await res.json();
+
+    // TikTok v2 returns data.data.user
+    var user=data&&data.data&&data.data.user?data.data.user:null;
+    if(!user){console.warn('[TikTok] No user in profile response',data);return;}
+
+    function fmt(n){return n!=null?Number(n).toLocaleString():'—';}
+    var displayName=user.display_name||'TikTok Account';
+
+    document.getElementById('tt-display-name').textContent=displayName;
+    document.getElementById('tt-username').textContent=user.bio_description?user.bio_description.slice(0,40):'';
+    document.getElementById('tt-followers').textContent=fmt(user.follower_count);
+    document.getElementById('tt-following').textContent=fmt(user.following_count);
+    document.getElementById('tt-likes').textContent=fmt(user.likes_count);
+    document.getElementById('tt-video-count').textContent=fmt(user.video_count);
+
+    var scVal=document.getElementById('sc-tt-val');
+    if(scVal){scVal.textContent=displayName;scVal.style.color='var(--tt)';}
+
+    if(user.avatar_url){
+      var av=document.getElementById('tt-avatar');
+      av.innerHTML='<img src="'+user.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt=""/>';
+    }
+
+    // Update stored session with fresh profile
+    try{
+      var stored=JSON.parse(localStorage.getItem('tt_profile')||'{}');
+      localStorage.setItem('tt_profile',JSON.stringify({...stored,...user}));
+    }catch(e){}
+
+  }catch(err){
+    console.warn('[TikTok] Profile fetch failed:',err.message);
+  }
 }
 async function loadTikTokVideos(accessToken){
   var el=document.getElementById('tt-videos-list');if(!el)return;
@@ -1334,12 +1361,20 @@ window.creatorAIAsk=function(q){document.getElementById('genTopic').value=q;swit
 var evalChannelData=null,evalVideosData=null,evalScoreData=null,evalChatHistory=[];
 function initEvaluator(){
   try{
-    if(typeof YouTubeAuth==='undefined') return;
-    var session=YouTubeAuth.getSession();
-    if(session&&session.channel){evalChannelData=session.channel;showEvalMain(session.channel);}
+    // Check YouTube first
+    if(typeof YouTubeAuth!=='undefined'){
+      var ytSession=YouTubeAuth.getSession();
+      if(ytSession&&ytSession.channel){evalChannelData=ytSession.channel;showEvalMain(ytSession.channel,'youtube');return;}
+    }
+    // Fall back to TikTok
+    if(typeof TikTokAuth!=='undefined'){
+      var ttSession=TikTokAuth.getSession();
+      if(ttSession){showEvalMainTikTok(ttSession);return;}
+    }
   }catch(e){}
 }
-function showEvalMain(channel){
+
+function showEvalMain(channel, platform){
   document.getElementById('eval-no-account').style.display='none';
   document.getElementById('eval-loading').style.display='none';
   document.getElementById('eval-main').style.display='block';
@@ -1347,8 +1382,83 @@ function showEvalMain(channel){
   var handle=(channel&&channel.snippet&&channel.snippet.customUrl)?channel.snippet.customUrl:'';
   document.getElementById('eval-channel-name').textContent=name;
   document.getElementById('eval-channel-handle').textContent=handle||'YouTube';
-  if(channel&&channel.snippet&&channel.snippet.thumbnails&&channel.snippet.thumbnails.default){var av=document.getElementById('eval-avatar');av.innerHTML='<img src="'+channel.snippet.thumbnails.default.url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt=""/>';}
-  if(channel&&channel.statistics){function fmt(n){return n?Number(n).toLocaleString():'—';}document.getElementById('eval-subs').textContent=fmt(channel.statistics.subscriberCount);document.getElementById('eval-views').textContent=fmt(channel.statistics.viewCount);document.getElementById('eval-vcount').textContent=fmt(channel.statistics.videoCount);}
+  var evalAv=document.getElementById('eval-avatar');
+  if(evalAv)evalAv.innerHTML='<span style="font-size:18px;">▶️</span>';
+  if(channel&&channel.snippet&&channel.snippet.thumbnails&&channel.snippet.thumbnails.default){
+    var av=document.getElementById('eval-avatar');
+    av.innerHTML='<img src="'+channel.snippet.thumbnails.default.url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt=""/>';
+  }
+  if(channel&&channel.statistics){
+    function fmt(n){return n?Number(n).toLocaleString():'—';}
+    document.getElementById('eval-subs').textContent=fmt(channel.statistics.subscriberCount);
+    document.getElementById('eval-views').textContent=fmt(channel.statistics.viewCount);
+    document.getElementById('eval-vcount').textContent=fmt(channel.statistics.videoCount);
+  }
+}
+
+function showEvalMainTikTok(session){
+  document.getElementById('eval-no-account').style.display='none';
+  document.getElementById('eval-loading').style.display='none';
+  document.getElementById('eval-main').style.display='block';
+
+  var profile=session.profile||{};
+  var name=profile.display_name||profile.username||'TikTok Account';
+
+  document.getElementById('eval-channel-name').textContent=name;
+  document.getElementById('eval-channel-handle').textContent='TikTok';
+  var av=document.getElementById('eval-avatar');
+  if(av){
+    if(profile.avatar_url){
+      av.innerHTML='<img src="'+profile.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt=""/>';
+    } else {
+      av.innerHTML='<span style="font-size:18px;">🎵</span>';
+    }
+  }
+
+  function fmt(n){return n!=null?Number(n).toLocaleString():'—';}
+  // For TikTok: use follower_count as "subscribers", likes_count as "views", video_count
+  var subsEl=document.getElementById('eval-subs');
+  var viewsEl=document.getElementById('eval-views');
+  var vcountEl=document.getElementById('eval-vcount');
+  var subsLabel=subsEl&&subsEl.previousElementSibling;
+  var viewsLabel=viewsEl&&viewsEl.previousElementSibling;
+
+  if(subsEl)subsEl.textContent=fmt(profile.follower_count);
+  if(subsEl)subsEl.style.color='var(--tt)';
+  if(subsLabel)subsLabel.textContent='Followers';
+  if(viewsEl)viewsEl.textContent=fmt(profile.likes_count);
+  if(viewsLabel)viewsLabel.textContent='Total Likes';
+  if(vcountEl)vcountEl.textContent=fmt(profile.video_count);
+
+  // Store TikTok data for evaluator chat context
+  evalChannelData={
+    _platform: 'tiktok',
+    snippet:   { title: name },
+    statistics:{
+      subscriberCount: profile.follower_count||0,
+      viewCount:       profile.likes_count||0,
+      videoCount:      profile.video_count||0
+    }
+  };
+
+  // Fetch fresh profile to populate stats properly
+  if(session.accessToken){
+    fetch(DIJO+'/tiktok/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:session.accessToken})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var user=data&&data.data&&data.data.user;
+      if(!user)return;
+      function fmt2(n){return n!=null?Number(n).toLocaleString():'—';}
+      if(subsEl)subsEl.textContent=fmt2(user.follower_count);
+      if(viewsEl)viewsEl.textContent=fmt2(user.likes_count);
+      if(vcountEl)vcountEl.textContent=fmt2(user.video_count);
+      if(av&&user.avatar_url)av.innerHTML='<img src="'+user.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt=""/>';
+      evalChannelData.statistics.subscriberCount=user.follower_count||0;
+      evalChannelData.statistics.viewCount=user.likes_count||0;
+      evalChannelData.statistics.videoCount=user.video_count||0;
+      evalChannelData._displayName=user.display_name||name;
+    }).catch(function(){});
+  }
 }
 function computeChannelScore(channel,videos){
   var stats=(channel&&channel.statistics)||{};
@@ -1365,18 +1475,111 @@ function computeChannelScore(channel,videos){
   return{total:total,verdict:total>=80?'🔥 Top Tier Creator':total>=65?'⚡ Established Creator':total>=50?'📈 Growing Channel':total>=35?'🌱 Early Stage':'🚀 Just Getting Started',tier:total>=80?'Elite':total>=65?'Established':total>=50?'Growth Stage':total>=35?'Emerging':'Beginner',ringColor:total>=80?'var(--green)':total>=65?'var(--gold)':total>=50?'var(--blue2)':'var(--text2)',metrics:[{label:'Audience Size',score:audienceScore,max:20},{label:'View Engagement',score:engScore,max:20},{label:'Content Volume',score:volScore,max:20},{label:'Recent Performance',score:recScore,max:20},{label:'Like Rate',score:ltvScore,max:20}],raw:{subs:subs,views:views,vcount:vcount,vpsRatio:vpsRatio.toFixed(1)}};
 }
 async function runEvaluation(){
-  var session;try{session=YouTubeAuth.getSession();}catch(e){}
-  if(!session){showToast('⚠️','Connect YouTube first');switchTab('youtube');return;}
-  document.getElementById('eval-main').style.display='none';document.getElementById('eval-no-account').style.display='none';document.getElementById('eval-loading').style.display='block';
-  document.getElementById('eval-loading-msg').textContent='Dijo is fetching your channel data…';
-  var channel=session.channel,videos=null;
-  try{document.getElementById('eval-loading-msg').textContent='Analysing your recent videos…';var vRes=await YouTubeAuth.fetchVideos(session.accessToken,10);videos=vRes&&vRes.items?vRes.items:[];evalVideosData=videos;}catch(e){}
-  var scoreData=computeChannelScore(channel,videos);evalScoreData=scoreData;evalChannelData=channel;
-  document.getElementById('eval-loading-msg').textContent='Dijo is preparing your evaluation…';
-  document.getElementById('eval-loading').style.display='none';
-  showEvalMain(channel);renderEvalScore(scoreData);
-  await evalGetDijoIntro(channel,videos,scoreData);
-  showToast('✅','Evaluation complete!');
+  document.getElementById('eval-main').style.display='none';
+  document.getElementById('eval-no-account').style.display='none';
+  document.getElementById('eval-loading').style.display='block';
+
+  // Check YouTube first, then TikTok
+  var ytSession=null,ttSession=null;
+  try{ytSession=YouTubeAuth.getSession();}catch(e){}
+  try{ttSession=TikTokAuth.getSession();}catch(e){}
+
+  if(ytSession&&ytSession.channel){
+    // YouTube evaluation
+    document.getElementById('eval-loading-msg').textContent='Dijo is fetching your channel data…';
+    var channel=ytSession.channel,videos=null;
+    try{
+      document.getElementById('eval-loading-msg').textContent='Analysing your recent videos…';
+      var vRes=await YouTubeAuth.fetchVideos(ytSession.accessToken,10);
+      videos=vRes&&vRes.items?vRes.items:[];
+      evalVideosData=videos;
+    }catch(e){}
+    var scoreData=computeChannelScore(channel,videos);
+    evalScoreData=scoreData;evalChannelData=channel;
+    document.getElementById('eval-loading-msg').textContent='Dijo is preparing your evaluation…';
+    document.getElementById('eval-loading').style.display='none';
+    showEvalMain(channel,'youtube');renderEvalScore(scoreData);
+    await evalGetDijoIntro(channel,videos,scoreData);
+    showToast('✅','Evaluation complete!');
+
+  } else if(ttSession){
+    // TikTok evaluation
+    document.getElementById('eval-loading-msg').textContent='Fetching your TikTok profile…';
+    var ttProfile=ttSession.profile||{};
+
+    // Fetch fresh TikTok profile
+    try{
+      var pRes=await fetch(DIJO+'/tiktok/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:ttSession.accessToken})});
+      var pData=await pRes.json();
+      if(pData&&pData.data&&pData.data.user) ttProfile=pData.data.user;
+    }catch(e){}
+
+    // Fetch TikTok videos
+    var ttVideos=[];
+    try{
+      document.getElementById('eval-loading-msg').textContent='Fetching your TikTok videos…';
+      var vRes2=await fetch(DIJO+'/tiktok/videos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:ttSession.accessToken,max_count:10})});
+      var vData=await vRes2.json();
+      ttVideos=(vData&&vData.data&&vData.data.videos)||[];
+    }catch(e){}
+
+    // Build fake channel object for scoring
+    var ttChannel={
+      _platform:'tiktok',
+      snippet:{title:ttProfile.display_name||'TikTok Account'},
+      statistics:{
+        subscriberCount:ttProfile.follower_count||0,
+        viewCount:ttProfile.likes_count||0,
+        videoCount:ttProfile.video_count||0
+      }
+    };
+
+    // Convert TikTok videos to YouTube-like format for scoring
+    var ttVidsForScore=ttVideos.map(function(v){return{statistics:{viewCount:v.view_count||0,likeCount:v.like_count||0,commentCount:v.comment_count||0},snippet:{title:v.title||v.video_description||''}};});
+
+    var scoreData2=computeChannelScore(ttChannel,ttVidsForScore);
+    evalScoreData=scoreData2;evalChannelData=ttChannel;
+    document.getElementById('eval-loading-msg').textContent='Dijo is preparing your evaluation…';
+    document.getElementById('eval-loading').style.display='none';
+    showEvalMainTikTok(ttSession);renderEvalScore(scoreData2);
+    await evalGetDijoIntroTikTok(ttProfile,ttVideos,scoreData2);
+    showToast('✅','TikTok evaluation complete!');
+
+  } else {
+    document.getElementById('eval-loading').style.display='none';
+    document.getElementById('eval-no-account').style.display='block';
+    showToast('⚠️','Connect YouTube or TikTok first');
+  }
+}
+
+async function evalGetDijoIntroTikTok(profile,videos,score){
+  var name=profile.display_name||'Your TikTok';
+  var topVids='';
+  if(videos&&videos.length){
+    topVids=videos.slice(0,3).map(function(v,i){
+      return(i+1)+'. "'+(v.title||v.video_description||'Video')+'" — '+Number(v.view_count||0).toLocaleString()+' views, '+Number(v.like_count||0).toLocaleString()+' likes';
+    }).join('
+');
+  }
+  var prompt='You are evaluating a TikTok account. Real data:
+
+Account: '+name+'
+Followers: '+Number(profile.follower_count||0).toLocaleString()+'
+Total Likes: '+Number(profile.likes_count||0).toLocaleString()+'
+Total Videos: '+(profile.video_count||0)+'
+Creator Score: '+score.total+'/100 ('+score.tier+')
+
+Top 3 recent videos:
+'+(topVids||'Not available')+'
+
+Give a 3-4 sentence honest evaluation. Then give 3 specific, actionable things to do RIGHT NOW to grow on TikTok. Be direct and reference actual numbers.';
+  try{
+    var reply=await callDijo(prompt);
+    addEvalMsg('dijo',reply);
+    evalChatHistory=[{role:'system',ctx:'TikTok: '+name+' | Followers: '+Number(profile.follower_count||0).toLocaleString()+' | Likes: '+Number(profile.likes_count||0).toLocaleString()+' | Videos: '+(profile.video_count||0)+' | Score: '+score.total+'/100'},{role:'dijo',content:reply}];
+  }catch(e){
+    addEvalMsg('dijo','I've scored your TikTok at <strong>'+score.total+'/100</strong> ('+score.tier+'). Ask me anything about your growth strategy.');
+  }
 }
 function renderEvalScore(s){
   var ring=document.getElementById('eval-score-ring');var circumference=339.3;var offset=circumference-(s.total/100)*circumference;
