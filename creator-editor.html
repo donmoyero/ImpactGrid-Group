@@ -1571,15 +1571,21 @@ async function evalGetDijoIntroTikTok(profile,videos,score){
   if(videos&&videos.length){
     topVids=videos.slice(0,3).map(function(v,i){
       return(i+1)+'. "'+(v.title||v.video_description||'Video')+'" — '+Number(v.view_count||0).toLocaleString()+' views, '+Number(v.like_count||0).toLocaleString()+' likes';
-    }).join('\n');
+    }).join('
+');
   }
-  var prompt='You are evaluating a TikTok account. Real data:\n\nAccount: '+name+'\nFollowers: '+Number(profile.follower_count||0).toLocaleString()+'\nTotal Likes: '+Number(profile.likes_count||0).toLocaleString()+'\nTotal Videos: '+(profile.video_count||0)+'\nCreator Score: '+score.total+'/100 ('+score.tier+')\n\nTop 3 recent videos:\n'+(topVids||'Not available')+'\n\nGive a 3-4 sentence honest evaluation. Then give 3 specific, actionable things to do RIGHT NOW to grow on TikTok. Be direct and reference actual numbers.';
+  var prompt='You are evaluating a TikTok account. Real data:
+
+Account: '+name+'\nFollowers: '+Number(profile.follower_count||0).toLocaleString()+'
+Total Likes: '+Number(profile.likes_count||0).toLocaleString()+'
+Total Videos: '+(profile.video_count||0)+'\nCreator Score: '+score.total+'/100 ('+score.tier+')\n\nTop 3 recent videos:
+'+(topVids||'Not available')+'\n\nGive a 3-4 sentence honest evaluation. Then give 3 specific, actionable things to do RIGHT NOW to grow on TikTok. Be direct and reference actual numbers.';
   try{
     var reply=await callDijo(prompt);
     addEvalMsg('dijo',reply);
     evalChatHistory=[{role:'system',ctx:'TikTok: '+name+' | Followers: '+Number(profile.follower_count||0).toLocaleString()+' | Likes: '+Number(profile.likes_count||0).toLocaleString()+' | Videos: '+(profile.video_count||0)+' | Score: '+score.total+'/100'},{role:'dijo',content:reply}];
   }catch(e){
-    addEvalMsg('dijo','I've scored your TikTok at <strong>'+score.total+'/100</strong> ('+score.tier+'). Ask me anything about your growth strategy.');
+    addEvalMsg('dijo','I\'ve scored your TikTok at <strong>'+score.total+'/100</strong> ('+score.tier+'). Ask me anything about your growth strategy.');
   }
 }
 function renderEvalScore(s){
@@ -1595,8 +1601,12 @@ function renderEvalScore(s){
 async function evalGetDijoIntro(channel,videos,score){
   var stats=(channel&&channel.statistics)||{};var name=(channel&&channel.snippet&&channel.snippet.title)||'Your Channel';
   var topVids='';
-  if(videos&&videos.length){topVids=videos.slice(0,3).map(function(v,i){var s=v.statistics||{};var t=(v.snippet&&v.snippet.title)||'Untitled';return(i+1)+'. "'+t+'" — '+Number(s.viewCount||0).toLocaleString()+' views, '+Number(s.likeCount||0).toLocaleString()+' likes';}).join('\n');}
-  var prompt='You are evaluating a YouTube channel. Here is the real data:\n\nChannel: '+name+'\nSubscribers: '+Number(stats.subscriberCount||0).toLocaleString()+'\nTotal Views: '+Number(stats.viewCount||0).toLocaleString()+'\nTotal Videos: '+(stats.videoCount||0)+'\nViews per subscriber ratio: '+score.raw.vpsRatio+'\nCreator Score: '+score.total+'/100 ('+score.tier+')\n\nTop 3 recent videos:\n'+(topVids||'Not available')+'\n\nGive a 3-4 sentence honest evaluation of this channel\'s performance. Then give 3 specific, actionable things they should do RIGHT NOW to grow. Be direct and data-specific — reference their actual numbers.';
+  if(videos&&videos.length){topVids=videos.slice(0,3).map(function(v,i){var s=v.statistics||{};var t=(v.snippet&&v.snippet.title)||'Untitled';return(i+1)+'. "'+t+'" — '+Number(s.viewCount||0).toLocaleString()+' views, '+Number(s.likeCount||0).toLocaleString()+' likes';}).join('
+');}
+  var prompt='You are evaluating a YouTube channel. Here is the real data:\n\nChannel: '+name+'\nSubscribers: '+Number(stats.subscriberCount||0).toLocaleString()+'
+Total Views: '+Number(stats.viewCount||0).toLocaleString()+'
+Total Videos: '+(stats.videoCount||0)+'\nViews per subscriber ratio: '+score.raw.vpsRatio+'\nCreator Score: '+score.total+'/100 ('+score.tier+')\n\nTop 3 recent videos:
+'+(topVids||'Not available')+'\n\nGive a 3-4 sentence honest evaluation of this channel\'s performance. Then give 3 specific, actionable things they should do RIGHT NOW to grow. Be direct and data-specific — reference their actual numbers.';
   try{var reply=await callDijo(prompt);addEvalMsg('dijo',reply);evalChatHistory=[{role:'system',ctx:'Channel: '+name+' | Subs: '+Number(stats.subscriberCount||0).toLocaleString()+' | Views: '+Number(stats.viewCount||0).toLocaleString()+' | Videos: '+(stats.videoCount||0)+' | Score: '+score.total+'/100 ('+score.tier+')'},{role:'dijo',content:reply}];}
   catch(e){addEvalMsg('dijo','I\'ve scored your channel at <strong>'+score.total+'/100</strong> ('+score.tier+'). Connect to the internet and I\'ll give you a full analysis with specific growth recommendations.');}
 }
