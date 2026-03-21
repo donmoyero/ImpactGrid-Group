@@ -6,12 +6,11 @@
 <title>ImpactGrid — Event Gallery</title>
 <link rel="icon" href="favicon.ico"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&family=Nunito:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<!-- MediaPipe Face Mesh -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="ig-supabase.js"></script>
 <style>
-/* ══════════════════════════════════════════════
-   BASE RESET
-══════════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -23,9 +22,7 @@ input,textarea{font-family:inherit;}
 .section{display:none;}
 .section.active{display:block;}
 
-/* ══════════════════════════════════════════════
-   SHARED MODAL & TOAST
-══════════════════════════════════════════════ */
+/* ══ MODAL & TOAST ══ */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease;}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
@@ -37,7 +34,7 @@ input,textarea{font-family:inherit;}
 .lightbox-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;opacity:.7;transition:opacity .2s;line-height:1;}
 .lightbox-close:hover{opacity:1;}
 .lightbox-actions{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;}
-.overlay-btn{background:rgba(255,255,255,.15);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:12px;font-weight:700;padding:8px 16px;cursor:pointer;transition:all .2s;}
+.overlay-btn{background:rgba(255,255,255,.15);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:12px;font-weight:700;padding:8px 16px;cursor:pointer;transition:all .2s;border-radius:8px;}
 .overlay-btn:hover{background:rgba(255,255,255,.28);}
 .empty-state{text-align:center;padding:64px 24px;opacity:.5;}
 .empty-state-icon{font-size:48px;margin-bottom:14px;}
@@ -47,18 +44,17 @@ input,textarea{font-family:inherit;}
 .gate-alert.show{display:block;}
 .gate-alert-error{background:#fef2f2;color:#dc2626;border:1px solid rgba(220,38,38,.2);}
 .matched-banner{display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:12px;margin-bottom:20px;font-size:13px;font-weight:600;}
-.instant-download-panel{position:fixed;bottom:80px;right:24px;background:#fff;border:2px solid #10b981;border-radius:16px;padding:20px;max-width:320px;box-shadow:0 8px 32px rgba(16,185,129,.2);z-index:500;animation:slideUp .3s ease;}
-.req-input{width:100%;padding:12px 14px;font-size:14px;border-radius:8px;outline:none;transition:all .2s;margin-bottom:12px;background:#f8f9fc;border:1.5px solid #e2e5f0;color:#0d1020;}
-.req-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08);}
+.photo-matched-badge{position:absolute;top:8px;right:8px;color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;z-index:2;}
 .face-drop{border:2px dashed;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;}
 .face-drop input{display:none;}
 .face-result-bar{height:6px;border-radius:3px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:8px;}
-.face-result-fill{height:100%;background:linear-gradient(90deg,#10b981,#3b82f6);border-radius:3px;transition:width .5s;}
-.photo-matched-badge{position:absolute;top:10px;right:10px;color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;}
+.face-result-fill{height:100%;background:linear-gradient(90deg,#10b981,#3b82f6);border-radius:3px;transition:width .4s ease;}
+.req-input{width:100%;padding:12px 14px;font-size:14px;border-radius:8px;outline:none;transition:all .2s;margin-bottom:12px;background:#f8f9fc;border:1.5px solid #e2e5f0;color:#0d1020;}
+.req-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08);}
+.instant-panel{position:fixed;bottom:80px;right:24px;background:#fff;border:2px solid #10b981;border-radius:16px;padding:20px;max-width:320px;box-shadow:0 8px 32px rgba(16,185,129,.2);z-index:500;animation:slideUp .3s ease;}
 
 /* ══════════════════════════════════════════════
    TEMPLATE 1 — PROFESSIONAL
-   Clean white, sharp editorial, confident
 ══════════════════════════════════════════════ */
 .tpl-professional{--bg:#f8f9fc;--bg2:#f0f2f8;--card:#fff;--border:#e2e5f0;--border2:#c8cde0;--text:#0d1020;--text2:#505878;--text3:#9ba3c0;--accent:#2563eb;--accent2:#3b82f6;--accent-dim:rgba(37,99,235,.08);--accent-glo:rgba(37,99,235,.2);--green:#059669;--green-dim:rgba(5,150,105,.08);--r:8px;--r2:14px;--r3:20px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-professional .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px;}
@@ -103,136 +99,118 @@ input,textarea{font-family:inherit;}
 .tpl-professional .matched-banner{background:#f0fdf4;color:#059669;border:1px solid rgba(5,150,105,.2);}
 .tpl-professional .toast{background:#fff;border:1px solid var(--border);color:var(--text);}
 .tpl-professional .modal-box{background:#fff;border:1px solid var(--border);}
-.tpl-professional .info-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:20px;}
 
 /* ══════════════════════════════════════════════
    TEMPLATE 2 — KIDS
-   Bright, confetti, playful, rounded
 ══════════════════════════════════════════════ */
-.tpl-kids{--bg:#fffbf0;--bg2:#fff3d0;--card:#fff;--border:#fde68a;--border2:#fbbf24;--text:#1c1400;--text2:#7a6000;--accent:#f97316;--pink:#ec4899;--blue:#3b82f6;--green:#10b981;--yellow:#fbbf24;--r:16px;--r2:24px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;position:relative;}
-.tpl-kids::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(circle 5px at 8% 15%,#fbbf24 1px,transparent 1px),radial-gradient(circle 4px at 25% 65%,#ec4899 1px,transparent 1px),radial-gradient(circle 5px at 45% 8%,#3b82f6 1px,transparent 1px),radial-gradient(circle 4px at 68% 82%,#10b981 1px,transparent 1px),radial-gradient(circle 5px at 88% 35%,#8b5cf6 1px,transparent 1px),radial-gradient(circle 3px at 15% 88%,#f97316 1px,transparent 1px),radial-gradient(circle 4px at 78% 12%,#fbbf24 1px,transparent 1px),radial-gradient(circle 6px at 55% 48%,#ec4899 1px,transparent 1px),radial-gradient(circle 3px at 35% 30%,#3b82f6 1px,transparent 1px);opacity:.2;}
-.tpl-kids .ev-nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:100;background:#fff;border-bottom:4px solid var(--yellow);display:flex;align-items:center;padding:0 28px;gap:16px;}
+.tpl-kids{--bg:#fffbf0;--bg2:#fff3d0;--card:#fff;--border:#fde68a;--border2:#fbbf24;--text:#1c1400;--text2:#7a6000;--accent:#f97316;--pink:#ec4899;--r:16px;--r2:24px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
+.tpl-kids .ev-nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:100;background:#fff;border-bottom:4px solid #fbbf24;display:flex;align-items:center;padding:0 28px;gap:16px;}
 .tpl-kids .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
 .tpl-kids .nav-logo-img{width:30px;height:30px;border-radius:8px;object-fit:contain;}
 .tpl-kids .nav-logo-mark{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#f97316,#ec4899);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;}
-.tpl-kids .nav-divider{width:3px;height:20px;background:var(--yellow);border-radius:2px;}
+.tpl-kids .nav-divider{width:3px;height:20px;background:#fbbf24;border-radius:2px;}
 .tpl-kids .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
-.tpl-kids .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.tpl-kids .nav-right{margin-left:auto;}
 .tpl-kids .nav-code-badge{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#f97316,#ec4899);padding:5px 12px;border-radius:100px;}
-.tpl-kids .ev-hero{padding:110px 28px 48px;text-align:center;max-width:700px;margin:0 auto;position:relative;z-index:1;}
+.tpl-kids .ev-hero{padding:110px 28px 48px;text-align:center;max-width:700px;margin:0 auto;}
 .tpl-kids .hero-emoji{font-size:56px;margin-bottom:12px;animation:bounce 2s infinite;}
 @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
 .tpl-kids .hero-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(34px,5vw,60px);line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tpl-kids .hero-sub{font-size:16px;color:var(--text2);margin-bottom:28px;font-weight:600;}
-.tpl-kids .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;position:relative;z-index:1;}
+.tpl-kids .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
 .tpl-kids .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
 .tpl-kids .gallery-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;}
 .tpl-kids .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .tpl-kids .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;}
 .tpl-kids .photo-card{position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;aspect-ratio:1;background:var(--bg2);border:3px solid transparent;transition:all .3s;box-shadow:0 4px 16px rgba(0,0,0,.08);}
 .tpl-kids .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.tpl-kids .photo-card:hover{border-color:var(--yellow);transform:rotate(2deg) scale(1.04);}
-.tpl-kids .photo-card:hover img{transform:scale(1.08);}
+.tpl-kids .photo-card:hover{border-color:#fbbf24;transform:rotate(2deg) scale(1.04);}
 .tpl-kids .photo-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
 .tpl-kids .photo-card:hover .photo-card-overlay{opacity:1;}
 .tpl-kids .btn-primary{background:linear-gradient(135deg,#f97316,#ec4899);color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;transition:all .25s;box-shadow:0 4px 16px rgba(249,115,22,.3);}
 .tpl-kids .btn-primary:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 8px 28px rgba(249,115,22,.4);}
-.tpl-kids .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
-.tpl-kids .btn-outline{background:#fff;border:2px solid var(--yellow);color:var(--text);font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
-.tpl-kids .btn-outline:hover{background:var(--yellow);}
-.tpl-kids .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;position:relative;z-index:1;}
-.tpl-kids .gate-box{background:#fff;border:4px solid var(--yellow);border-radius:var(--r3);padding:48px 40px;max-width:440px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(251,191,36,.2);}
+.tpl-kids .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.tpl-kids .btn-outline{background:#fff;border:2px solid #fbbf24;color:var(--text);font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
+.tpl-kids .btn-outline:hover{background:#fbbf24;}
+.tpl-kids .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
+.tpl-kids .gate-box{background:#fff;border:4px solid #fbbf24;border-radius:var(--r2);padding:48px 40px;max-width:440px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(251,191,36,.2);}
 .tpl-kids .gate-icon{font-size:48px;margin-bottom:14px;animation:bounce 2s infinite;}
 .tpl-kids .gate-title{font-family:'Nunito',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;}
 .tpl-kids .gate-sub{font-size:15px;color:var(--text2);margin-bottom:28px;font-weight:600;}
-.tpl-kids .gate-input{background:var(--bg2);border:3px solid var(--border2);color:var(--text);font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;letter-spacing:.2em;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
-.tpl-kids .gate-input:focus{border-color:#f97316;box-shadow:0 0 0 4px rgba(249,115,22,.15);}
-.tpl-kids .face-panel{background:#fff;border:3px solid var(--yellow);border-radius:var(--r2);padding:24px;margin-bottom:20px;}
-.tpl-kids .face-drop{border-color:var(--yellow);background:var(--bg2);}
-.tpl-kids .face-drop:hover{border-color:#f97316;background:rgba(249,115,22,.05);}
+.tpl-kids .gate-input{background:var(--bg2);border:3px solid #fbbf24;color:var(--text);font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;letter-spacing:.2em;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
+.tpl-kids .face-panel{background:#fff;border:3px solid #fbbf24;border-radius:var(--r2);padding:24px;margin-bottom:20px;}
+.tpl-kids .face-drop{border-color:#fbbf24;background:var(--bg2);}
 .tpl-kids .matched-banner{background:#f0fdf4;color:#059669;border:2px solid rgba(16,185,129,.3);}
-.tpl-kids .toast{background:#fff;border:3px solid var(--yellow);color:var(--text);}
-.tpl-kids .modal-box{background:#fff;border:3px solid var(--yellow);}
-.tpl-kids .info-card{background:#fff;border:2px solid var(--yellow);border-radius:var(--r2);padding:20px;}
+.tpl-kids .toast{background:#fff;border:3px solid #fbbf24;color:var(--text);}
+.tpl-kids .modal-box{background:#fff;border:3px solid #fbbf24;}
 
 /* ══════════════════════════════════════════════
    TEMPLATE 3 — BIRTHDAY
-   Balloons, warm, celebratory, festive
 ══════════════════════════════════════════════ */
-.tpl-birthday{--bg:#fff5f8;--bg2:#ffe4ed;--card:#fff;--border:#fecdd3;--border2:#fb7185;--text:#1a0510;--text2:#7f3045;--accent:#f43f5e;--accent2:#fb7185;--accent-dim:rgba(244,63,94,.08);--accent-glo:rgba(244,63,94,.25);--purple:#a855f7;--yellow:#f59e0b;--r:14px;--r2:22px;--r3:30px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
-.tpl-birthday::before{content:'🎂 🎈 🎁 🎊 🎉 🥳 🎂 🎈 🎁 🎊 🎉 🥳 🎂 🎈 🎁 🎊 🎉 🥳';position:fixed;top:0;left:0;right:0;font-size:18px;letter-spacing:8px;opacity:.07;white-space:nowrap;overflow:hidden;pointer-events:none;z-index:0;padding:8px 0;animation:tickerBday 30s linear infinite;}
-@keyframes tickerBday{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.tpl-birthday{--bg:#fff5f8;--bg2:#ffe4ed;--card:#fff;--border:#fecdd3;--border2:#fb7185;--text:#1a0510;--text2:#7f3045;--accent:#f43f5e;--accent-dim:rgba(244,63,94,.08);--accent-glo:rgba(244,63,94,.25);--r:14px;--r2:22px;--r3:30px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .tpl-birthday .ev-nav{position:fixed;top:0;left:0;right:0;height:66px;z-index:100;background:rgba(255,245,248,.96);backdrop-filter:blur(20px);border-bottom:2px solid var(--border2);display:flex;align-items:center;padding:0 28px;gap:16px;}
 .tpl-birthday .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
 .tpl-birthday .nav-logo-img{width:28px;height:28px;border-radius:8px;object-fit:contain;}
 .tpl-birthday .nav-logo-mark{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f43f5e,#a855f7);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;}
 .tpl-birthday .nav-divider{width:2px;height:18px;background:var(--border2);border-radius:1px;}
 .tpl-birthday .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
-.tpl-birthday .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.tpl-birthday .nav-right{margin-left:auto;}
 .tpl-birthday .nav-code-badge{font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,#f43f5e,#a855f7);padding:4px 12px;border-radius:100px;}
-.tpl-birthday .ev-hero{padding:110px 28px 56px;text-align:center;max-width:700px;margin:0 auto;position:relative;z-index:1;}
+.tpl-birthday .ev-hero{padding:110px 28px 56px;text-align:center;max-width:700px;margin:0 auto;}
 .tpl-birthday .hero-emoji{font-size:64px;margin-bottom:12px;animation:wobble 3s infinite;}
 @keyframes wobble{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}}
 .tpl-birthday .hero-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(34px,5vw,60px);line-height:1.1;margin-bottom:14px;color:var(--accent);}
 .tpl-birthday .hero-sub{font-size:16px;color:var(--text2);margin-bottom:28px;font-weight:600;line-height:1.7;}
-.tpl-birthday .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;position:relative;z-index:1;}
+.tpl-birthday .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
 .tpl-birthday .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:2px dashed var(--border2);}
 .tpl-birthday .gallery-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;color:var(--accent);}
 .tpl-birthday .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .tpl-birthday .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
-.tpl-birthday .photo-card{position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;aspect-ratio:4/3;background:var(--bg2);border:2px solid var(--border);transition:all .3s;box-shadow:0 4px 20px rgba(244,63,94,.1);}
+.tpl-birthday .photo-card{position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;aspect-ratio:4/3;background:var(--bg2);border:2px solid var(--border);transition:all .3s;}
 .tpl-birthday .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
 .tpl-birthday .photo-card:hover{border-color:var(--border2);transform:scale(1.04);box-shadow:0 12px 32px rgba(244,63,94,.2);}
-.tpl-birthday .photo-card:hover img{transform:scale(1.06);}
 .tpl-birthday .photo-card-overlay{position:absolute;inset:0;background:rgba(244,63,94,.4);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
 .tpl-birthday .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-birthday .btn-primary{background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;transition:all .25s;box-shadow:0 4px 16px rgba(244,63,94,.3);}
+.tpl-birthday .btn-primary{background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;transition:all .25s;}
 .tpl-birthday .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(244,63,94,.4);}
 .tpl-birthday .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .tpl-birthday .btn-outline{background:#fff;border:2px solid var(--border2);color:var(--accent);font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
 .tpl-birthday .btn-outline:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
 .tpl-birthday .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-birthday .gate-box{background:#fff;border:2px solid var(--border2);border-radius:var(--r3);padding:48px 40px;max-width:440px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(244,63,94,.12);}
+.tpl-birthday .gate-box{background:#fff;border:2px solid var(--border2);border-radius:var(--r3);padding:48px 40px;max-width:440px;width:100%;text-align:center;}
 .tpl-birthday .gate-icon{font-size:52px;margin-bottom:14px;animation:wobble 3s infinite;}
 .tpl-birthday .gate-title{font-family:'Nunito',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;color:var(--accent);}
 .tpl-birthday .gate-sub{font-size:15px;color:var(--text2);margin-bottom:28px;font-weight:600;}
-.tpl-birthday .gate-input{background:var(--bg2);border:2px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
-.tpl-birthday .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-dim);}
+.tpl-birthday .gate-input{background:var(--bg2);border:2px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
 .tpl-birthday .face-panel{background:#fff;border:2px solid var(--border2);border-radius:var(--r2);padding:24px;margin-bottom:20px;}
 .tpl-birthday .face-drop{border-color:var(--border2);background:var(--bg2);}
 .tpl-birthday .matched-banner{background:#f0fdf4;color:#059669;border:1px solid rgba(5,150,105,.2);}
 .tpl-birthday .toast{background:#fff;border:2px solid var(--border2);color:var(--text);}
 .tpl-birthday .modal-box{background:#fff;border:2px solid var(--border2);}
-.tpl-birthday .info-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;}
 
 /* ══════════════════════════════════════════════
    TEMPLATE 4 — WEDDING
-   Soft cream, floral, romantic, elegant
 ══════════════════════════════════════════════ */
-.tpl-wedding{--bg:#fdfaf7;--bg2:#f7f0e8;--card:#fff;--border:#e8dcc8;--border2:#c9a96e;--text:#1a1208;--text2:#6b5a3e;--text3:#a8936a;--accent:#9b7653;--accent2:#c4a46b;--accent-dim:rgba(155,118,83,.08);--accent-glo:rgba(155,118,83,.2);--rose:#be7b72;--r:6px;--r2:12px;--r3:16px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-wedding::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='1' fill='%23c9a96e' opacity='0.15'/%3E%3C/svg%3E");}
+.tpl-wedding{--bg:#fdfaf7;--bg2:#f7f0e8;--card:#fff;--border:#e8dcc8;--border2:#c9a96e;--text:#1a1208;--text2:#6b5a3e;--text3:#a8936a;--accent:#9b7653;--accent2:#c4a46b;--accent-dim:rgba(155,118,83,.08);--accent-glo:rgba(155,118,83,.2);--r:6px;--r2:12px;--r3:16px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-wedding .ev-nav{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;background:rgba(253,250,247,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 36px;gap:16px;}
 .tpl-wedding .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.04em;}
 .tpl-wedding .nav-logo-img{width:26px;height:26px;border-radius:4px;object-fit:contain;}
 .tpl-wedding .nav-logo-mark{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
 .tpl-wedding .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-wedding .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
-.tpl-wedding .nav-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.tpl-wedding .nav-right{margin-left:auto;}
 .tpl-wedding .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:4px 10px;}
-.tpl-wedding .ev-hero{padding:120px 36px 80px;text-align:center;max-width:720px;margin:0 auto;position:relative;z-index:1;}
+.tpl-wedding .ev-hero{padding:120px 36px 80px;text-align:center;max-width:720px;margin:0 auto;}
 .tpl-wedding .hero-ornament{font-size:28px;color:var(--accent2);margin-bottom:20px;letter-spacing:.3em;opacity:.7;}
 .tpl-wedding .hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.05;color:var(--text);margin-bottom:16px;}
 .tpl-wedding .hero-title em{font-style:italic;color:var(--accent);}
 .tpl-wedding .hero-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:0 auto 24px;}
 .tpl-wedding .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--text2);line-height:1.8;margin-bottom:36px;}
-.tpl-wedding .gallery-wrap{max-width:1300px;margin:0 auto;padding:0 36px 100px;position:relative;z-index:1;}
+.tpl-wedding .gallery-wrap{max-width:1300px;margin:0 auto;padding:0 36px 100px;}
 .tpl-wedding .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
 .tpl-wedding .gallery-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:28px;}
-.tpl-wedding .gallery-title em{font-style:italic;color:var(--accent);}
 .tpl-wedding .gallery-actions{display:flex;gap:10px;align-items:center;}
 .tpl-wedding .photo-grid{columns:4;column-gap:12px;}
-@media(max-width:1100px){.tpl-wedding .photo-grid{columns:3;}}
-@media(max-width:768px){.tpl-wedding .photo-grid{columns:2;}}
 .tpl-wedding .photo-card{break-inside:avoid;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;border:1px solid var(--border);transition:all .4s;display:block;}
 .tpl-wedding .photo-card img{width:100%;display:block;transition:transform .5s;}
 .tpl-wedding .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(155,118,83,.15);}
@@ -244,47 +222,41 @@ input,textarea{font-family:inherit;}
 .tpl-wedding .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .tpl-wedding .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
 .tpl-wedding .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.tpl-wedding .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;position:relative;z-index:1;}
-.tpl-wedding .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;box-shadow:0 4px 40px rgba(155,118,83,.08);}
+.tpl-wedding .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
+.tpl-wedding .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;}
 .tpl-wedding .gate-icon{font-size:36px;color:var(--accent2);margin-bottom:20px;letter-spacing:.3em;}
 .tpl-wedding .gate-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
 .tpl-wedding .gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-wedding .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
-.tpl-wedding .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.tpl-wedding .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
 .tpl-wedding .face-panel{background:var(--bg2);border:1px solid var(--border);padding:24px;margin-bottom:20px;}
 .tpl-wedding .face-drop{border-color:var(--border2);background:var(--bg);}
 .tpl-wedding .matched-banner{background:#fdfaf7;color:var(--accent);border:1px solid var(--border2);}
 .tpl-wedding .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-wedding .modal-box{background:var(--card);border:1px solid var(--border2);}
-.tpl-wedding .info-card{background:var(--bg2);border:1px solid var(--border);padding:20px;}
 
 /* ══════════════════════════════════════════════
    TEMPLATE 5 — SPORTS
-   Bold, high contrast, energetic, powerful
 ══════════════════════════════════════════════ */
-.tpl-sports{--bg:#f0f4ff;--bg2:#e0e8ff;--card:#fff;--border:#c7d2fe;--border2:#6366f1;--text:#0a0e1a;--text2:#3730a3;--accent:#4f46e5;--accent2:#6366f1;--accent-dim:rgba(79,70,229,.08);--accent-glo:rgba(79,70,229,.25);--orange:#f97316;--green:#10b981;--r:4px;--r2:8px;--r3:12px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.tpl-sports{--bg:#f0f4ff;--bg2:#e0e8ff;--card:#fff;--border:#c7d2fe;--border2:#6366f1;--text:#0a0e1a;--text2:#3730a3;--accent:#4f46e5;--accent2:#6366f1;--accent-dim:rgba(79,70,229,.08);--accent-glo:rgba(79,70,229,.25);--r:4px;--r2:8px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-sports .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:var(--accent);display:flex;align-items:center;padding:0 28px;gap:16px;}
 .tpl-sports .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Oswald',sans-serif;font-weight:700;font-size:16px;color:#fff;letter-spacing:.05em;text-transform:uppercase;}
 .tpl-sports .nav-logo-img{width:28px;height:28px;border-radius:4px;object-fit:contain;}
 .tpl-sports .nav-logo-mark{width:28px;height:28px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
 .tpl-sports .nav-divider{width:2px;height:18px;background:rgba(255,255,255,.3);}
 .tpl-sports .nav-event-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.8);}
-.tpl-sports .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.tpl-sports .nav-right{margin-left:auto;}
 .tpl-sports .nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:#fff;padding:4px 10px;}
 .tpl-sports .ev-hero{padding:80px 28px 60px;max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
-.tpl-sports .hero-label{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-.tpl-sports .hero-label::before{content:'';width:20px;height:2px;background:var(--orange);}
+.tpl-sports .hero-label{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);margin-bottom:12px;}
 .tpl-sports .hero-title{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(36px,5vw,64px);line-height:1;letter-spacing:.02em;text-transform:uppercase;color:var(--text);margin-bottom:16px;}
-.tpl-sports .hero-title span{color:var(--accent);}
 .tpl-sports .hero-sub{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:28px;}
-.tpl-sports .hero-visual{background:linear-gradient(135deg,var(--accent),var(--accent2));height:260px;display:flex;align-items:center;justify-content:center;font-size:80px;position:relative;overflow:hidden;}
-.tpl-sports .hero-visual::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 2px,transparent 2px,transparent 16px);}
+.tpl-sports .hero-visual{background:linear-gradient(135deg,var(--accent),var(--accent2));height:260px;display:flex;align-items:center;justify-content:center;font-size:80px;}
 .tpl-sports .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
 .tpl-sports .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid var(--accent);}
 .tpl-sports .gallery-title{font-family:'Oswald',sans-serif;font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
 .tpl-sports .gallery-actions{display:flex;gap:8px;}
-.tpl-sports .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:3px;background:var(--accent);border:3px solid var(--accent);}
-.tpl-sports .photo-card{position:relative;aspect-ratio:16/10;overflow:hidden;cursor:pointer;background:var(--bg2);transition:all .3s;}
+.tpl-sports .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:3px;background:var(--accent);}
+.tpl-sports .photo-card{position:relative;aspect-ratio:16/10;overflow:hidden;cursor:pointer;background:var(--bg2);}
 .tpl-sports .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
 .tpl-sports .photo-card:hover img{transform:scale(1.08);}
 .tpl-sports .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(79,70,229,.8),transparent 50%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;}
@@ -294,45 +266,41 @@ input,textarea{font-family:inherit;}
 .tpl-sports .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .tpl-sports .btn-outline{background:transparent;border:2px solid var(--border2);color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:9px 18px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
 .tpl-sports .btn-outline:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
-.tpl-sports .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:linear-gradient(135deg,var(--bg),var(--bg2));}
-.tpl-sports .gate-box{background:#fff;border:2px solid var(--border2);padding:48px 40px;max-width:420px;width:100%;text-align:center;box-shadow:0 4px 32px rgba(79,70,229,.12);}
+.tpl-sports .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
+.tpl-sports .gate-box{background:#fff;border:2px solid var(--border2);padding:48px 40px;max-width:420px;width:100%;text-align:center;}
 .tpl-sports .gate-icon{font-size:48px;margin-bottom:14px;}
 .tpl-sports .gate-title{font-family:'Oswald',sans-serif;font-size:30px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
 .tpl-sports .gate-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
-.tpl-sports .gate-input{background:var(--bg2);border:2px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
-.tpl-sports .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.tpl-sports .gate-input{background:var(--bg2);border:2px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
 .tpl-sports .face-panel{background:#fff;border:2px solid var(--border2);padding:24px;margin-bottom:20px;}
 .tpl-sports .face-drop{border-color:var(--border2);background:var(--bg2);}
 .tpl-sports .matched-banner{background:#f0fdf4;color:#059669;border:1px solid rgba(5,150,105,.2);}
 .tpl-sports .toast{background:#fff;border:2px solid var(--border2);color:var(--text);}
 .tpl-sports .modal-box{background:#fff;border:2px solid var(--border2);}
-.tpl-sports .info-card{background:var(--bg2);border:1px solid var(--border);padding:20px;}
 
 /* ══════════════════════════════════════════════
    TEMPLATE 6 — NIGHTLIFE
-   Dark, neon, electric, immersive
 ══════════════════════════════════════════════ */
-.tpl-nightlife{--bg:#080612;--bg2:#100e1e;--card:#16122a;--border:rgba(139,92,246,.15);--border2:rgba(139,92,246,.35);--text:#f0ecff;--text2:#9d8fff;--text3:#5a4f8a;--accent:#8b5cf6;--accent2:#a78bfa;--accent-dim:rgba(139,92,246,.12);--accent-glo:rgba(139,92,246,.4);--pink:#f472b6;--cyan:#22d3ee;--r:8px;--r2:14px;--r3:20px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-nightlife::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 60% 50% at 20% 30%,rgba(139,92,246,.08),transparent),radial-gradient(ellipse 50% 40% at 80% 70%,rgba(244,114,182,.06),transparent),radial-gradient(ellipse 40% 40% at 50% 50%,rgba(34,211,238,.04),transparent);}
+.tpl-nightlife{--bg:#080612;--bg2:#100e1e;--card:#16122a;--border:rgba(139,92,246,.15);--border2:rgba(139,92,246,.35);--text:#f0ecff;--text2:#9d8fff;--accent:#8b5cf6;--accent2:#a78bfa;--accent-dim:rgba(139,92,246,.12);--accent-glo:rgba(139,92,246,.4);--pink:#f472b6;--cyan:#22d3ee;--r:8px;--r2:14px;--r3:20px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-nightlife .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:rgba(8,6,18,.9);backdrop-filter:blur(24px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 28px;gap:16px;}
 .tpl-nightlife .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:var(--text);}
 .tpl-nightlife .nav-logo-img{width:26px;height:26px;border-radius:6px;object-fit:contain;}
 .tpl-nightlife .nav-logo-mark{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
 .tpl-nightlife .nav-divider{width:1px;height:18px;background:var(--border2);}
 .tpl-nightlife .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
-.tpl-nightlife .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.tpl-nightlife .nav-right{margin-left:auto;}
 .tpl-nightlife .nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);background:var(--accent-dim);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;}
-.tpl-nightlife .ev-hero{padding:100px 28px 60px;text-align:center;max-width:700px;margin:0 auto;position:relative;z-index:1;}
+.tpl-nightlife .ev-hero{padding:100px 28px 60px;text-align:center;max-width:700px;margin:0 auto;}
 .tpl-nightlife .hero-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;}
 .tpl-nightlife .hero-label::before,.tpl-nightlife .hero-label::after{content:'';width:24px;height:1px;background:var(--cyan);}
 .tpl-nightlife .hero-title{font-family:'Syne',sans-serif;font-weight:900;font-size:clamp(36px,5vw,64px);line-height:1.05;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--pink),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tpl-nightlife .hero-sub{font-size:15px;color:var(--text2);margin-bottom:32px;line-height:1.7;}
-.tpl-nightlife .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;position:relative;z-index:1;}
+.tpl-nightlife .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
 .tpl-nightlife .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
 .tpl-nightlife .gallery-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tpl-nightlife .gallery-actions{display:flex;gap:8px;}
 .tpl-nightlife .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;background:rgba(139,92,246,.2);}
-.tpl-nightlife .photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;cursor:pointer;background:var(--bg2);transition:all .3s;}
+.tpl-nightlife .photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;cursor:pointer;background:var(--bg2);}
 .tpl-nightlife .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;filter:saturate(1.2);}
 .tpl-nightlife .photo-card:hover img{transform:scale(1.06);}
 .tpl-nightlife .photo-card:hover{box-shadow:0 0 30px rgba(139,92,246,.4);}
@@ -343,49 +311,42 @@ input,textarea{font-family:inherit;}
 .tpl-nightlife .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .tpl-nightlife .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
 .tpl-nightlife .btn-outline:hover{border-color:var(--accent);color:var(--accent2);}
-.tpl-nightlife .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;position:relative;z-index:1;}
+.tpl-nightlife .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
 .tpl-nightlife .gate-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:48px 40px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 48px rgba(139,92,246,.2);}
 .tpl-nightlife .gate-icon{font-size:44px;margin-bottom:14px;}
 .tpl-nightlife .gate-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tpl-nightlife .gate-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
-.tpl-nightlife .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
-.tpl-nightlife .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.tpl-nightlife .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
 .tpl-nightlife .face-panel{background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:24px;margin-bottom:20px;}
 .tpl-nightlife .face-drop{border-color:var(--border2);background:var(--bg2);}
 .tpl-nightlife .matched-banner{background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.25);}
 .tpl-nightlife .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-nightlife .modal-box{background:var(--card);border:1px solid var(--border2);}
-.tpl-nightlife .info-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;}
 
 /* ══════════════════════════════════════════════
-   TEMPLATE 7 — PREMIUM / GALA
-   Gold, luxury, cinematic, prestigious
+   TEMPLATE 7 — GALA
 ══════════════════════════════════════════════ */
-.tpl-gala{--bg:#0a0804;--bg2:#110f07;--card:#18140a;--border:rgba(212,175,55,.12);--border2:rgba(212,175,55,.3);--text:#f5f0e8;--text2:#a09070;--text3:#504030;--accent:#d4af37;--accent2:#f0d060;--accent-dim:rgba(212,175,55,.08);--accent-glo:rgba(212,175,55,.25);--r:2px;--r2:6px;--r3:10px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-gala::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
+.tpl-gala{--bg:#0a0804;--bg2:#110f07;--card:#18140a;--border:rgba(212,175,55,.12);--border2:rgba(212,175,55,.3);--text:#f5f0e8;--text2:#a09070;--accent:#d4af37;--accent2:#f0d060;--accent-dim:rgba(212,175,55,.08);--accent-glo:rgba(212,175,55,.25);--r:2px;--r2:6px;--r3:10px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-gala .ev-nav{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;background:rgba(10,8,4,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 40px;gap:16px;}
 .tpl-gala .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;letter-spacing:.04em;}
 .tpl-gala .nav-logo-img{width:26px;height:26px;border-radius:3px;object-fit:contain;}
 .tpl-gala .nav-logo-mark{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;}
 .tpl-gala .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-gala .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
-.tpl-gala .nav-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.tpl-gala .nav-right{margin-left:auto;}
 .tpl-gala .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:5px 12px;background:var(--accent-dim);}
-.tpl-gala .ev-hero{padding:120px 40px 80px;text-align:center;max-width:800px;margin:0 auto;position:relative;z-index:1;}
+.tpl-gala .ev-hero{padding:120px 40px 80px;text-align:center;max-width:800px;margin:0 auto;}
 .tpl-gala .hero-ornament{font-size:14px;letter-spacing:.5em;color:var(--accent);margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:12px;}
 .tpl-gala .hero-ornament::before,.tpl-gala .hero-ornament::after{content:'';flex:1;max-width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
 .tpl-gala .hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.05;color:var(--text);margin-bottom:20px;}
 .tpl-gala .hero-title em{font-style:italic;color:var(--accent);}
 .tpl-gala .hero-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:0 auto 28px;}
 .tpl-gala .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--text2);line-height:1.8;margin-bottom:36px;}
-.tpl-gala .gallery-wrap{max-width:1300px;margin:0 auto;padding:0 40px 100px;position:relative;z-index:1;}
+.tpl-gala .gallery-wrap{max-width:1300px;margin:0 auto;padding:0 40px 100px;}
 .tpl-gala .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
 .tpl-gala .gallery-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:30px;}
-.tpl-gala .gallery-title em{font-style:italic;color:var(--accent);}
 .tpl-gala .gallery-actions{display:flex;gap:10px;align-items:center;}
 .tpl-gala .photo-grid{columns:4;column-gap:10px;}
-@media(max-width:1100px){.tpl-gala .photo-grid{columns:3;}}
-@media(max-width:768px){.tpl-gala .photo-grid{columns:2;}}
 .tpl-gala .photo-card{break-inside:avoid;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden;border:1px solid var(--border);transition:all .4s;display:block;}
 .tpl-gala .photo-card img{width:100%;display:block;transition:transform .5s;}
 .tpl-gala .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 40px rgba(212,175,55,.2);}
@@ -397,34 +358,31 @@ input,textarea{font-family:inherit;}
 .tpl-gala .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .tpl-gala .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:11px 20px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
 .tpl-gala .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.tpl-gala .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;position:relative;z-index:1;}
-.tpl-gala .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;box-shadow:0 4px 40px rgba(212,175,55,.1);}
+.tpl-gala .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
+.tpl-gala .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;}
 .tpl-gala .gate-icon{font-size:32px;color:var(--accent);margin-bottom:20px;letter-spacing:.4em;}
 .tpl-gala .gate-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
 .tpl-gala .gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-gala .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
-.tpl-gala .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.tpl-gala .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
 .tpl-gala .face-panel{background:var(--bg2);border:1px solid var(--border2);padding:24px;margin-bottom:20px;}
 .tpl-gala .face-drop{border-color:var(--border2);background:var(--bg);}
 .tpl-gala .matched-banner{background:rgba(212,175,55,.08);color:var(--accent);border:1px solid var(--border2);}
 .tpl-gala .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-gala .modal-box{background:var(--card);border:1px solid var(--border2);}
-.tpl-gala .info-card{background:var(--bg2);border:1px solid var(--border);padding:20px;}
 
 /* ══════════════════════════════════════════════
    TEMPLATE 8 — CEREMONY
-   Elegant, warm, traditional, dignified
 ══════════════════════════════════════════════ */
-.tpl-ceremony{--bg:#faf8f5;--bg2:#f2ede6;--card:#fff;--border:#ddd0bc;--border2:#b8a48a;--text:#1a1510;--text2:#6b5c45;--text3:#a8947a;--accent:#7c5c3a;--accent2:#a07850;--accent-dim:rgba(124,92,58,.08);--accent-glo:rgba(124,92,58,.2);--r:4px;--r2:8px;--r3:14px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.tpl-ceremony{--bg:#faf8f5;--bg2:#f2ede6;--card:#fff;--border:#ddd0bc;--border2:#b8a48a;--text:#1a1510;--text2:#6b5c45;--accent:#7c5c3a;--accent2:#a07850;--accent-dim:rgba(124,92,58,.08);--accent-glo:rgba(124,92,58,.2);--r:4px;--r2:8px;--r3:14px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-ceremony .ev-nav{position:fixed;top:0;left:0;right:0;height:62px;z-index:100;background:rgba(250,248,245,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 36px;gap:16px;}
 .tpl-ceremony .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:var(--text);}
 .tpl-ceremony .nav-logo-img{width:26px;height:26px;border-radius:4px;object-fit:contain;}
 .tpl-ceremony .nav-logo-mark{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
 .tpl-ceremony .nav-divider{width:1px;height:22px;background:var(--border2);}
 .tpl-ceremony .nav-event-name{font-family:'Playfair Display',serif;font-style:italic;font-size:15px;color:var(--text2);}
-.tpl-ceremony .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.tpl-ceremony .nav-right{margin-left:auto;}
 .tpl-ceremony .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:4px 10px;}
-.tpl-ceremony .ev-hero{padding:110px 36px 70px;text-align:center;max-width:720px;margin:0 auto;position:relative;z-index:1;}
+.tpl-ceremony .ev-hero{padding:110px 36px 70px;text-align:center;max-width:720px;margin:0 auto;}
 .tpl-ceremony .hero-ornament{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:22px;color:var(--accent2);}
 .tpl-ceremony .hero-ornament::before,.tpl-ceremony .hero-ornament::after{content:'';flex:1;max-width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);}
 .tpl-ceremony .hero-ornament span{font-size:20px;}
@@ -432,10 +390,9 @@ input,textarea{font-family:inherit;}
 .tpl-ceremony .hero-title em{font-style:italic;color:var(--accent);}
 .tpl-ceremony .hero-divider{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:0 auto 22px;}
 .tpl-ceremony .hero-sub{font-family:'Playfair Display',serif;font-style:italic;font-size:17px;color:var(--text2);line-height:1.8;margin-bottom:32px;}
-.tpl-ceremony .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 36px 90px;position:relative;z-index:1;}
+.tpl-ceremony .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 36px 90px;}
 .tpl-ceremony .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
 .tpl-ceremony .gallery-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;}
-.tpl-ceremony .gallery-title em{font-style:italic;color:var(--accent);}
 .tpl-ceremony .gallery-actions{display:flex;gap:10px;align-items:center;}
 .tpl-ceremony .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
 .tpl-ceremony .photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;cursor:pointer;background:var(--bg2);border:1px solid var(--border);transition:all .3s;}
@@ -449,29 +406,26 @@ input,textarea{font-family:inherit;}
 .tpl-ceremony .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .tpl-ceremony .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
 .tpl-ceremony .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.tpl-ceremony .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;position:relative;z-index:1;}
-.tpl-ceremony .gate-box{background:var(--card);border:1px solid var(--border2);padding:52px 44px;max-width:440px;width:100%;text-align:center;box-shadow:0 4px 32px rgba(124,92,58,.08);}
+.tpl-ceremony .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
+.tpl-ceremony .gate-box{background:var(--card);border:1px solid var(--border2);padding:52px 44px;max-width:440px;width:100%;text-align:center;}
 .tpl-ceremony .gate-icon{font-size:36px;margin-bottom:18px;color:var(--accent2);}
 .tpl-ceremony .gate-title{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;margin-bottom:8px;}
 .tpl-ceremony .gate-sub{font-family:'Playfair Display',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-ceremony .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
-.tpl-ceremony .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.tpl-ceremony .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
 .tpl-ceremony .face-panel{background:var(--bg2);border:1px solid var(--border);padding:24px;margin-bottom:20px;}
 .tpl-ceremony .face-drop{border-color:var(--border2);background:var(--bg);}
 .tpl-ceremony .matched-banner{background:rgba(124,92,58,.08);color:var(--accent);border:1px solid var(--border2);}
 .tpl-ceremony .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-ceremony .modal-box{background:var(--card);border:1px solid var(--border2);}
-.tpl-ceremony .info-card{background:var(--bg2);border:1px solid var(--border);padding:20px;}
 
-/* ══════════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════════ */
+/* ══ RESPONSIVE ══ */
 @media(max-width:768px){
   .tpl-professional .ev-hero,.tpl-sports .ev-hero{grid-template-columns:1fr;}
   .tpl-professional .hero-visual,.tpl-sports .hero-visual{display:none;}
   .tpl-professional .gallery-wrap,.tpl-kids .gallery-wrap,.tpl-birthday .gallery-wrap,
   .tpl-wedding .gallery-wrap,.tpl-sports .gallery-wrap,.tpl-nightlife .gallery-wrap,
   .tpl-gala .gallery-wrap,.tpl-ceremony .gallery-wrap{padding-left:16px;padding-right:16px;}
+  .tpl-wedding .photo-grid,.tpl-gala .photo-grid{columns:2;}
   .tpl-wedding .gate-box,.tpl-gala .gate-box,.tpl-ceremony .gate-box{padding:36px 24px;}
 }
 </style>
@@ -514,7 +468,7 @@ input,textarea{font-family:inherit;}
     </div>
   </nav>
 
-  <!-- Hero — Professional / Sports layout -->
+  <!-- Hero — grid layout (professional, sports) -->
   <div class="ev-hero" id="evHeroGrid" style="display:none;">
     <div>
       <div class="hero-label" id="heroLabel">📸 Photo Gallery</div>
@@ -524,14 +478,14 @@ input,textarea{font-family:inherit;}
     <div class="hero-visual" id="heroVisual">📷</div>
   </div>
 
-  <!-- Hero — Centered layout (kids, birthday, nightlife) -->
+  <!-- Hero — centered layout (kids, birthday, nightlife) -->
   <div class="ev-hero" id="evHeroCentered" style="display:none;">
     <div class="hero-emoji" id="heroEmoji">🎉</div>
     <h1 class="hero-title" id="heroTitleCentered">Event Gallery</h1>
     <p class="hero-sub" id="heroSubCentered">Browse your amazing photos!</p>
   </div>
 
-  <!-- Hero — Elegant layout (wedding, gala, ceremony) -->
+  <!-- Hero — elegant layout (wedding, gala, ceremony) -->
   <div class="ev-hero" id="evHeroElegant" style="display:none;">
     <div class="hero-ornament" id="heroOrnament">✦ ✦ ✦</div>
     <h1 class="hero-title" id="heroTitleElegant">Event Gallery</h1>
@@ -543,7 +497,7 @@ input,textarea{font-family:inherit;}
   <div class="gallery-wrap" id="galleryWrap">
     <div class="matched-banner hidden" id="matchedBanner">
       <span style="font-size:20px;">✅</span>
-      <span id="matchedBannerText">Found your photos! Highlighted below.</span>
+      <span id="matchedBannerText">Found your photos!</span>
     </div>
 
     <div class="gallery-header">
@@ -553,18 +507,16 @@ input,textarea{font-family:inherit;}
       </div>
       <div class="gallery-actions" id="galleryActions">
         <button class="btn-outline" onclick="openFacePanel()">🔍 Find My Photos</button>
-        <button class="btn-primary" onclick="openRequestModal(null)">📥 Request Download</button>
+        <button class="btn-primary" onclick="openRequestModal()">📥 Request Download</button>
       </div>
     </div>
 
     <!-- Face Recognition Panel -->
     <div class="face-panel hidden" id="facePanel">
-
-      <!-- Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:10px;">
         <div>
           <div style="font-size:18px;font-weight:900;margin-bottom:4px;">🔍 Find My Photos</div>
-          <div style="font-size:13px;opacity:.6;line-height:1.5;">AI scans every photo to find ones with your face — privately on your device.</div>
+          <div style="font-size:13px;opacity:.6;line-height:1.5;">Face++ AI scans the photo index to find you — privately and securely.</div>
         </div>
         <button onclick="closeFacePanel()" style="font-size:22px;opacity:.4;padding:4px;flex-shrink:0;line-height:1;background:none;border:none;cursor:pointer;">✕</button>
       </div>
@@ -574,7 +526,7 @@ input,textarea{font-family:inherit;}
         <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;opacity:.6;margin-bottom:2px;">How it works</div>
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#6366f1;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">1</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>Enter your email</strong> — download links are sent here</div>
+          <div style="font-size:13px;line-height:1.5;"><strong>Enter your email</strong> — download links sent here</div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#6366f1;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">2</div>
@@ -582,24 +534,24 @@ input,textarea{font-family:inherit;}
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#059669;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">✓</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>90%+ match</strong> → instant download link sent to you</div>
+          <div style="font-size:13px;line-height:1.5;"><strong>80%+ match</strong> → instant download link emailed to you</div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#d97706;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">~</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>Lower match</strong> → request sent to admin, email when approved</div>
+          <div style="font-size:13px;line-height:1.5;"><strong>Lower match</strong> → sent to admin, you get an email when approved</div>
         </div>
       </div>
 
-      <!-- Email -->
+      <!-- Email input -->
       <div style="margin-bottom:14px;">
         <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:6px;">Step 1 — Your Email</div>
-        <input type="email" id="guestEmailInput" class="req-input" placeholder="your@email.com" autocomplete="email" style="margin-bottom:4px;font-size:16px;"/>
-        <div style="font-size:11px;opacity:.45;">Download links sent here · No spam</div>
+        <input type="email" id="guestEmailInput" style="width:100%;padding:12px 14px;font-size:15px;border-radius:8px;outline:none;border:1.5px solid rgba(99,102,241,.2);background:rgba(99,102,241,.04);color:inherit;font-family:inherit;margin-bottom:4px;" placeholder="your@email.com" autocomplete="email"/>
+        <div style="font-size:11px;opacity:.45;">Download links sent here · No spam ever</div>
       </div>
 
-      <!-- Selfie tip -->
+      <!-- Tip -->
       <div style="font-size:12px;opacity:.65;margin-bottom:10px;padding:10px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);">
-        💡 <strong>Best selfie tips:</strong> Face camera directly · Bright light · No sunglasses · Clear face visible
+        💡 <strong>Best selfie tips:</strong> Face camera directly · Bright light · No sunglasses · Clear face
       </div>
 
       <!-- Selfie upload -->
@@ -608,8 +560,8 @@ input,textarea{font-family:inherit;}
         <div class="face-drop" id="faceDrop" onclick="document.getElementById('faceFileIn').click()">
           <div style="font-size:44px;margin-bottom:10px;">🤳</div>
           <div style="font-size:16px;font-weight:800;margin-bottom:6px;">Tap to take or choose a selfie</div>
-          <div style="font-size:12px;opacity:.55;line-height:1.6;">JPG or PNG · Processed privately on your device<br>Your face data is <strong>never</strong> stored or shared</div>
-          <input type="file" id="faceFileIn" accept="image/jpeg,image/png,image/webp" capture="user" style="display:none;" onchange="handleSelfie(event)"/>
+          <div style="font-size:12px;opacity:.55;line-height:1.6;">JPG or PNG · Processed securely<br>Your face data is <strong>never</strong> stored</div>
+          <input type="file" id="faceFileIn" accept="image/jpeg,image/png,image/webp" capture="user" onchange="handleSelfie(event)"/>
         </div>
       </div>
 
@@ -621,7 +573,7 @@ input,textarea{font-family:inherit;}
       </div>
 
       <div style="font-size:11px;opacity:.3;margin-top:16px;text-align:center;line-height:1.6;">
-        🔒 Face recognition runs entirely on your device · No data sent to servers
+        🔒 Matching runs via Face++ AI · Your selfie is deleted within 5 minutes
       </div>
     </div>
 
@@ -640,7 +592,7 @@ input,textarea{font-family:inherit;}
   <span class="lightbox-close" onclick="closeLightbox()">✕</span>
   <img id="lightboxImg" src="" alt=""/>
   <div class="lightbox-actions" onclick="event.stopPropagation()">
-    <button class="overlay-btn" onclick="openRequestModal(currentLightboxPhoto)">📥 Request Download</button>
+    <button class="overlay-btn" onclick="openRequestModal()">📥 Request Download</button>
   </div>
 </div>
 
@@ -668,45 +620,42 @@ input,textarea{font-family:inherit;}
   </div>
 </div>
 
-<script src="ig-supabase.js"></script>
 <script>
-/* ════════════ CONFIG ════════════ */
+/* ══ CONFIG ══ */
 var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
-/* ── Confidence thresholds (tuned for real-world photos) ── */
-var CONF_HIGH  = 0.62;  /* 62%+ → instant download (was 90% — too strict) */
-var CONF_MED   = 0.45;  /* 45–61% → Llama/Face++ check (was 80%) */
-var CONF_LOW   = 0.35;  /* Below 35% → ignore */
 
-/* ── Face++ routed through Render backend (keys never in browser) ── */
-var USE_FACEPP = true; /* Always on — keys live on Render server */
+/* ══ THRESHOLDS — Face++ 0-100 confidence scale ══ */
+var FACE_AUTO   = 80;  /* ≥ 80 → instant download  */
+var FACE_REVIEW = 65;  /* 65–79 → admin approval   */
+                       /* < 65  → ignore            */
 
-/* ── Debug mode — shows confidence scores on photos ── */
-var DEBUG_SCORES  = true;  /* Set to false in production */
-
-/* ════════════ STATE ════════════ */
-var eventData    = null;
-var eventSettings= null;
-var allPhotos    = [];
-var matchedIds   = new Set();
-var matchedPhotos= {};
-var guestEmail   = '';
-var faceModelsLoaded = false;
-var currentLightboxPhoto = null;
-var showingMatchedOnly   = false;
-
-/* ════════════ TEMPLATE MAP ════════════ */
+/* ══ TEMPLATE MAP ══ */
 var TPL_MAP = {
-  professional : { cls:'tpl-professional', hero:'grid',     icon:'📸', emoji:null,    ornament:null },
-  kids         : { cls:'tpl-kids',         hero:'centered', icon:'🎉', emoji:'🎉',    ornament:null },
-  birthday     : { cls:'tpl-birthday',     hero:'centered', icon:'🎂', emoji:'🎂',    ornament:null },
-  wedding      : { cls:'tpl-wedding',      hero:'elegant',  icon:'💍', emoji:null,    ornament:'❦' },
-  sports       : { cls:'tpl-sports',       hero:'grid',     icon:'🏆', emoji:null,    ornament:null },
-  nightlife    : { cls:'tpl-nightlife',    hero:'centered', icon:'🎧', emoji:'🎧',    ornament:null },
-  gala         : { cls:'tpl-gala',         hero:'elegant',  icon:'✦',  emoji:null,    ornament:'✦ ✦ ✦' },
-  ceremony     : { cls:'tpl-ceremony',     hero:'elegant',  icon:'🎓', emoji:null,    ornament:'✦' }
+  professional:{ cls:'tpl-professional', hero:'grid',     icon:'📸', emoji:null,  ornament:null },
+  kids        :{ cls:'tpl-kids',         hero:'centered', icon:'🎉', emoji:'🎉',  ornament:null },
+  birthday    :{ cls:'tpl-birthday',     hero:'centered', icon:'🎂', emoji:'🎂',  ornament:null },
+  wedding     :{ cls:'tpl-wedding',      hero:'elegant',  icon:'💍', emoji:null,  ornament:'❦'  },
+  sports      :{ cls:'tpl-sports',       hero:'grid',     icon:'🏆', emoji:null,  ornament:null },
+  nightlife   :{ cls:'tpl-nightlife',    hero:'centered', icon:'🎧', emoji:'🎧',  ornament:null },
+  gala        :{ cls:'tpl-gala',         hero:'elegant',  icon:'✦',  emoji:null,  ornament:'✦ ✦ ✦' },
+  ceremony    :{ cls:'tpl-ceremony',     hero:'elegant',  icon:'🎓', emoji:null,  ornament:'✦'  }
 };
 
-/* ════════════ BOOT ════════════ */
+/* ══ STATE ══ */
+var eventData         = null;
+var eventSettings     = null;
+var allPhotos         = [];
+var matchedIds        = new Set();
+var matchedPhotos     = {};
+var guestEmail        = '';
+var mediaPipeReady    = false;
+var faceMeshGuest     = null;
+var selfiePublicUrl   = null;
+var currentLightboxPhoto = null;
+
+/* ══════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
   var params = new URLSearchParams(window.location.search);
   var slug   = params.get('event') || params.get('slug');
@@ -726,18 +675,20 @@ document.addEventListener('DOMContentLoaded', async function(){
     if(error || !ev){ showError('This event was not found or has expired.'); return; }
 
     eventData     = ev;
-    eventSettings = Array.isArray(ev.event_settings) ? ev.event_settings[0] : (ev.event_settings || {});
+    eventSettings = Array.isArray(ev.event_settings)
+      ? ev.event_settings[0]
+      : (ev.event_settings || {});
 
     /* Apply template */
-    var type = ev.type || 'professional';
+    var type = ev.type || ev.template || 'professional';
     var tpl  = TPL_MAP[type] || TPL_MAP.professional;
     document.body.className = tpl.cls;
 
-    /* Set nav */
+    /* Nav */
     document.getElementById('navEventName').textContent = ev.name;
-    document.getElementById('navCodeBadge').textContent = 'Code: ' + ev.event_code;
+    document.getElementById('navCodeBadge').textContent = ev.event_code;
 
-    /* Check access */
+    /* Gate or direct entry */
     if(eventSettings.require_code === false){
       enterGallery();
     } else if(code && code.toUpperCase() === ev.event_code){
@@ -750,44 +701,32 @@ document.addEventListener('DOMContentLoaded', async function(){
   }catch(e){ showError('Could not load event: ' + e.message); }
 });
 
-/* ════════════ GATE STYLING ════════════ */
+/* ══════════════════════════════════════════════
+   GATE
+══════════════════════════════════════════════ */
 function styleGate(type, name){
   var tpl = TPL_MAP[type] || TPL_MAP.professional;
   document.getElementById('gateIcon').textContent  = tpl.emoji || tpl.icon;
   document.getElementById('gateTitle').textContent = name;
-
   var subMap = {
-    kids     : '🔑 Enter your magic code to see the photos!',
-    birthday : '🎉 Enter your special code to join the party!',
-    wedding  : 'Please enter your private access code to view the gallery.',
-    sports   : 'Enter your team access code to view the photos.',
-    nightlife: 'Enter your exclusive access code.',
-    gala     : 'Please present your access code to enter.',
-    ceremony : 'Enter your access code to view the ceremony gallery.',
-    professional: 'Enter your access code to view the event photos.'
+    kids        :'🔑 Enter your magic code to see the photos!',
+    birthday    :'🎉 Enter your special code to join the party!',
+    wedding     :'Please enter your private access code to view the gallery.',
+    sports      :'Enter your team access code to view the photos.',
+    nightlife   :'Enter your exclusive access code.',
+    gala        :'Please present your access code to enter.',
+    ceremony    :'Enter your access code to view the ceremony gallery.',
+    professional:'Enter your access code to view the event photos.'
   };
   document.getElementById('gateSub').textContent = subMap[type] || subMap.professional;
 }
 
-/* ════════════ SECTIONS ════════════ */
-function showSection(id){
-  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
-  var el = document.getElementById(id);
-  if(el) el.classList.add('active');
-}
-
-/* ════════════ CODE GATE ════════════ */
 async function submitCode(){
   var input = document.getElementById('gateCodeInput').value.trim().toUpperCase();
   var btn   = document.getElementById('gateSubmitBtn');
   var alert = document.getElementById('gateAlert');
-
-  if(!input || input.length < 4){
-    showGateAlert('Please enter your access code.','error'); return;
-  }
-  if(input !== eventData.event_code){
-    showGateAlert('Incorrect code. Please try again.','error'); return;
-  }
+  if(!input || input.length < 4){ showGateAlert('Please enter your access code.','error'); return; }
+  if(input !== eventData.event_code){ showGateAlert('Incorrect code. Please try again.','error'); return; }
   btn.disabled    = true;
   btn.textContent = 'Entering…';
   enterGallery();
@@ -799,21 +738,28 @@ function showGateAlert(msg, type){
   el.className   = 'gate-alert gate-alert-' + type + ' show';
 }
 
-/* ════════════ ENTER GALLERY ════════════ */
+/* ══════════════════════════════════════════════
+   GALLERY
+══════════════════════════════════════════════ */
+function showSection(id){
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById(id);
+  if(el) el.classList.add('active');
+}
+
 async function enterGallery(){
   buildHero();
   showSection('section-gallery');
   await loadPhotos();
-  loadFaceModels(); /* preload in background */
+  /* Preload MediaPipe in background */
+  ensureMediaPipe();
 }
 
-/* ════════════ BUILD HERO ════════════ */
 function buildHero(){
   var ev   = eventData;
-  var type = ev.type || 'professional';
+  var type = ev.type || ev.template || 'professional';
   var tpl  = TPL_MAP[type] || TPL_MAP.professional;
 
-  /* Hide all heroes */
   ['evHeroGrid','evHeroCentered','evHeroElegant'].forEach(function(id){
     document.getElementById(id).style.display = 'none';
   });
@@ -822,64 +768,51 @@ function buildHero(){
   var daysLeft = Math.ceil((expDate - new Date()) / (1000*60*60*24));
 
   if(tpl.hero === 'grid'){
-    document.getElementById('evHeroGrid').style.display = '';
-    document.getElementById('heroLabel').textContent    = type === 'sports' ? '🏆 Event Photos' : '📸 Photo Gallery';
-    document.getElementById('heroTitleGrid').textContent = ev.name;
-    document.getElementById('heroSubGrid').textContent   = 'Browse your photos · Use face recognition to find yourself · ' + daysLeft + ' days remaining';
-    document.getElementById('heroVisual').textContent    = tpl.icon;
+    document.getElementById('evHeroGrid').style.display   = '';
+    document.getElementById('heroLabel').textContent      = type === 'sports' ? '🏆 Event Photos' : '📸 Photo Gallery';
+    document.getElementById('heroTitleGrid').textContent  = ev.name;
+    document.getElementById('heroSubGrid').textContent    = 'Browse your photos · Use face scan to find yourself · ' + daysLeft + ' days remaining';
+    document.getElementById('heroVisual').textContent     = tpl.icon;
   } else if(tpl.hero === 'centered'){
-    document.getElementById('evHeroCentered').style.display = '';
-    document.getElementById('heroEmoji').textContent         = tpl.emoji;
-    document.getElementById('heroTitleCentered').textContent = ev.name;
-    document.getElementById('heroSubCentered').textContent   = 'Tap any photo to view it · ' + daysLeft + ' days remaining 🎉';
+    document.getElementById('evHeroCentered').style.display  = '';
+    document.getElementById('heroEmoji').textContent          = tpl.emoji;
+    document.getElementById('heroTitleCentered').textContent  = ev.name;
+    document.getElementById('heroSubCentered').textContent    = 'Tap any photo to view · ' + daysLeft + ' days remaining';
   } else {
     document.getElementById('evHeroElegant').style.display = '';
-    document.getElementById('heroOrnament').textContent     = tpl.ornament;
-    document.getElementById('heroTitleElegant').innerHTML   = '<em>' + esc(ev.name) + '</em>';
-    document.getElementById('heroSubElegant').textContent   = 'A curated collection · Available for ' + daysLeft + ' more days';
+    document.getElementById('heroOrnament').textContent    = tpl.ornament;
+    document.getElementById('heroTitleElegant').innerHTML  = '<em>' + esc(ev.name) + '</em>';
+    document.getElementById('heroSubElegant').textContent  = 'A curated collection · Available for ' + daysLeft + ' more days';
   }
 
-  /* Gallery title */
-  document.getElementById('galleryTitle').innerHTML = esc(ev.name);
+  document.getElementById('galleryTitle').textContent = ev.name;
 }
 
-/* ════════════ LOAD PHOTOS ════════════ */
 async function loadPhotos(){
   var grid = document.getElementById('photoGrid');
   grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">⏳</div><div class="empty-state-title">Loading photos…</div></div>';
-
   try{
     var { data } = await getSupabase()
       .from('photos')
       .select('*')
       .eq('event_id', eventData.id)
       .order('created_at', { ascending: true });
-
     allPhotos = data || [];
-
     if(!allPhotos.length){
       grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">📷</div><div class="empty-state-title">No photos yet</div><div class="empty-state-sub">The photographer hasn\'t uploaded photos yet. Check back soon.</div></div>';
       return;
     }
-
     renderPhotos(allPhotos);
   }catch(e){
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load photos</div><div class="empty-state-sub">' + esc(e.message) + '</div></div>';
   }
 }
 
-/* ════════════ RENDER PHOTOS ════════════ */
 function renderPhotos(photos){
-  var type = eventData ? (eventData.type || 'professional') : 'professional';
-  var grid = document.getElementById('photoGrid');
-
-  /* Masonry for wedding, gala, ceremony */
+  var type    = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
+  var grid    = document.getElementById('photoGrid');
   var masonry = ['wedding','gala','ceremony'].includes(type);
-  if(masonry){
-    grid.style.display = 'block';
-  } else {
-    grid.style.display = '';
-  }
+  grid.style.display = masonry ? 'block' : '';
 
   if(!photos.length){
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">🔍</div><div class="empty-state-title">No photos match</div></div>';
@@ -887,36 +820,31 @@ function renderPhotos(photos){
   }
 
   grid.innerHTML = photos.map(function(p){
-    var isMatched  = matchedIds.has(p.id);
-    var meta       = matchedPhotos[p.id] || {};
-    var matchClass = isMatched ? ' matched-photo' : '';
-    var confPct    = meta.confidence ? Math.round(meta.confidence * 100) : 0;
-    var badge      = '';
+    var isMatched = matchedIds.has(p.id);
+    var meta      = matchedPhotos[p.id] || {};
+    var badge     = '';
 
     if(isMatched){
-      var badgeBg  = meta.tier === 'instant' ? '#059669' : '#d97706';
-      var badgeTxt = meta.tier === 'instant' ? '⬇️ Ready' : '⏳ Pending';
-      badge = '<div class="photo-matched-badge" style="background:' + badgeBg + ';">' + badgeTxt + '</div>';
-      if(DEBUG_SCORES && confPct > 0){
-        badge += '<div style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:monospace;z-index:3;">' + confPct + '%</div>';
-      }
-    } else if(DEBUG_SCORES && meta.confidence && meta.confidence >= CONF_LOW){
-      badge = '<div style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.5);color:#ddd;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:monospace;z-index:3;">' + confPct + '%?</div>';
+      var bgColor = meta.tier === 'auto' ? '#059669' : '#d97706';
+      var label   = meta.tier === 'auto' ? '⬇️ Ready' : '⏳ Pending';
+      badge = '<div class="photo-matched-badge" style="background:'+bgColor+';">'+label+'</div>';
     }
 
-    var overlayBtn = isMatched && meta.tier === 'instant'
-      ? '<a href="' + esc(p.original_url || p.preview_url) + '" download="ImpactGrid-Photo.jpg" class="overlay-btn" onclick="event.stopPropagation()">⬇️ Download</a>'
-      : '<button class="overlay-btn" onclick="event.stopPropagation();openRequestModal(\'' + p.id + '\')">📥 Request</button>';
+    var overlayBtn = (isMatched && meta.tier === 'auto')
+      ? '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo.jpg" class="overlay-btn" onclick="event.stopPropagation()">⬇️ Download</a>'
+      : '<button class="overlay-btn" onclick="event.stopPropagation();openRequestModal()">📥 Request</button>';
 
-    return '<div class="photo-card' + matchClass + '" onclick="openLightbox(\'' + p.id + '\',\'' + esc(p.preview_url) + '\')">' +
-      '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy" onerror="this.parentElement.style.background=\'var(--bg2)\'"/>' +
+    return '<div class="photo-card" onclick="openLightbox(\''+p.id+'\',\''+esc(p.preview_url)+'\')">' +
+      '<img src="'+esc(p.preview_url)+'" alt="" loading="lazy" onerror="this.parentElement.style.background=\'rgba(255,255,255,0.05)\'"/>' +
       badge +
-      '<div class="photo-card-overlay">' + overlayBtn + '</div>' +
+      '<div class="photo-card-overlay">'+overlayBtn+'</div>' +
     '</div>';
   }).join('');
 }
 
-/* ════════════ LIGHTBOX ════════════ */
+/* ══════════════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════════════ */
 function openLightbox(id, url){
   currentLightboxPhoto = id;
   document.getElementById('lightboxImg').src = url;
@@ -932,7 +860,9 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'Escape'){ closeLightbox(); closeRequestModal(); }
 });
 
-/* ════════════ FACE RECOGNITION ════════════ */
+/* ══════════════════════════════════════════════
+   FACE PANEL UI
+══════════════════════════════════════════════ */
 function openFacePanel(){
   document.getElementById('facePanel').classList.remove('hidden');
   document.getElementById('facePanel').scrollIntoView({ behavior:'smooth', block:'start' });
@@ -940,421 +870,365 @@ function openFacePanel(){
 function closeFacePanel(){
   document.getElementById('facePanel').classList.add('hidden');
 }
-
-async function loadFaceModels(){
-  if(faceModelsLoaded) return;
-  try{
-    var MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-    await Promise.all([
-      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-    ]);
-    faceModelsLoaded = true;
-  }catch(e){ console.log('Face models:', e.message); }
-}
-
 function handleSelfie(e){
   var file = e.target.files && e.target.files[0];
   if(file) runFaceRecognition(file);
   e.target.value = '';
 }
 
-function distanceToConfidence(dist){ return Math.max(0, Math.min(1, 1 - dist)); }
+/* ══════════════════════════════════════════════
+   MEDIAPIPE — selfie face confirmation
+══════════════════════════════════════════════ */
+async function ensureMediaPipe(){
+  if(mediaPipeReady) return true;
+  try{
+    if(typeof FaceMesh === 'undefined') return true;
+    faceMeshGuest = new FaceMesh({ locateFile: function(file){
+      return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + file;
+    }});
+    faceMeshGuest.setOptions({ maxNumFaces:1, refineLandmarks:false, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+    await faceMeshGuest.initialize();
+    mediaPipeReady = true;
+    return true;
+  }catch(e){ return false; }
+}
 
+async function selfieHasFace(imgEl){
+  if(!mediaPipeReady || !faceMeshGuest) return true;
+  return new Promise(function(resolve){
+    faceMeshGuest.onResults(function(r){
+      resolve(r.multiFaceLandmarks && r.multiFaceLandmarks.length > 0);
+    });
+    faceMeshGuest.send({ image: imgEl }).catch(function(){ resolve(true); });
+  });
+}
+
+function loadImg(src){
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = function(){ resolve(img); };
+    img.onerror = reject;
+    img.src     = src;
+  });
+}
+
+/* ══════════════════════════════════════════════
+   MAIN FACE RECOGNITION FLOW
+══════════════════════════════════════════════ */
 async function runFaceRecognition(selfieFile){
-  selfieFileRef = selfieFile; /* Store for Face++ use */
-
-  if(!faceModelsLoaded){
-    toast('⏳','Loading AI models…','Takes a few seconds');
-    await loadFaceModels();
-    if(!faceModelsLoaded){ toast('⚠️','Could not load models','Check your connection'); return; }
-  }
-
   var resultText   = document.getElementById('faceResultText');
   var resultFill   = document.getElementById('faceResultFill');
   var resultDetail = document.getElementById('faceResultDetail');
   document.getElementById('faceResults').classList.remove('hidden');
-  resultText.textContent   = 'Detecting your face…';
+
+  /* Step 0 — collect email first */
+  var emailEl = document.getElementById('guestEmailInput');
+  guestEmail  = emailEl ? emailEl.value.trim() : '';
+  if(!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)){
+    resultText.textContent   = '⚠️ Please enter your email first (Step 1)';
+    resultFill.style.width   = '0%';
+    resultDetail.textContent = 'We need it to send your download links.';
+    if(emailEl) emailEl.focus();
+    return;
+  }
+
+  resultText.textContent   = 'Checking your selfie…';
   resultFill.style.width   = '8%';
   resultDetail.textContent = '';
 
   try{
-    /* Detect face in selfie */
-    var selfieUrl = URL.createObjectURL(selfieFile);
-    var selfieImg = await faceapi.fetchImage(selfieUrl);
-    var selfieDetect = await faceapi.detectSingleFace(selfieImg)
-      .withFaceLandmarks().withFaceDescriptor();
+    /* Step 1 — MediaPipe: confirm face in selfie */
+    await ensureMediaPipe();
+    var objUrl   = URL.createObjectURL(selfieFile);
+    var selfieImg= await loadImg(objUrl);
+    var faceOk   = await selfieHasFace(selfieImg);
+    URL.revokeObjectURL(objUrl);
 
-    if(!selfieDetect){
-      resultText.textContent = '⚠️ No face detected. Use a clear, well-lit selfie facing forward.';
-      resultFill.style.width = '0%';
-      URL.revokeObjectURL(selfieUrl);
+    if(!faceOk){
+      resultText.textContent   = '⚠️ No face detected in your selfie.';
+      resultFill.style.width   = '0%';
+      resultDetail.textContent = 'Use a clear, well-lit photo facing directly forward. No sunglasses.';
       return;
     }
-    URL.revokeObjectURL(selfieUrl);
 
-    var selfieArr = Array.from(selfieDetect.descriptor);
-    resultText.textContent = 'Searching face index…';
-    resultFill.style.width = '30%';
+    resultText.textContent = 'Uploading selfie securely…';
+    resultFill.style.width = '20%';
 
-    /* Load pre-indexed embeddings from Supabase */
+    /* Step 2 — Upload selfie to temp storage so Face++ can access via URL */
+    selfiePublicUrl = await uploadSelfieTemp(selfieFile);
+    if(!selfiePublicUrl){
+      resultText.textContent   = '⚠️ Could not process selfie. Please try again.';
+      resultFill.style.width   = '0%';
+      return;
+    }
+
+    resultText.textContent = 'Loading face index…';
+    resultFill.style.width = '35%';
+
+    /* Step 3 — Load pre-indexed face crops from Supabase */
     var { data: embeddings, error: embErr } = await getSupabase()
       .from('face_embeddings')
-      .select('photo_id, embedding, group_id')
-      .eq('event_id', eventData.id);
+      .select('photo_id, face_crop_url, group_id')
+      .eq('event_id', eventData.id)
+      .not('face_crop_url', 'is', null);
 
     if(embErr || !embeddings || !embeddings.length){
-      /* Fallback to full image scan if no embeddings */
-      resultText.textContent = 'No face index found — scanning photos directly…';
-      await runFullScan(selfieDetect.descriptor);
+      resultText.textContent   = '😔 Photos haven\'t been indexed yet.';
+      resultFill.style.width   = '0%';
+      resultDetail.textContent = 'Check back soon — the photographer is still processing photos.';
+      cleanupSelfie();
       return;
     }
 
-    resultText.textContent = 'Matching against ' + embeddings.length + ' indexed faces…';
-    resultFill.style.width = '50%';
-
-    /* Compare selfie against all indexed embeddings */
-    var photoScores = {};  /* photo_id -> best confidence */
-    var THRESHOLD_HIGH = CONF_HIGH;
-    var THRESHOLD_MED  = CONF_MED;
-    var THRESHOLD_LOW  = CONF_LOW;
-
-    embeddings.forEach(function(emb){
-      var embArr = Array.isArray(emb.embedding)
-        ? emb.embedding
-        : Object.values(emb.embedding);
-      var dist = euclideanDistance(selfieArr, embArr);
-      var conf = Math.max(0, Math.min(1, 1 - dist));
-
-      if(!photoScores[emb.photo_id] || conf > photoScores[emb.photo_id]){
-        photoScores[emb.photo_id] = conf;
-      }
+    /* De-duplicate by photo_id */
+    var seen       = {};
+    var uniqueFaces= embeddings.filter(function(e){
+      if(seen[e.photo_id]) return false;
+      seen[e.photo_id] = true;
+      return true;
     });
 
-    resultFill.style.width = '75%';
+    resultText.textContent = 'Matching your face against ' + uniqueFaces.length + ' indexed photos…';
+    resultFill.style.width = '45%';
 
-    /* Classify results */
-    var highConf  = [];
-    var medConf   = [];
+    /* Step 4 — Compare selfie vs each indexed face crop via Face++ */
+    var autoMatches   = [];
+    var reviewMatches = [];
 
-    /* Debug — log all scores */
-    if(DEBUG_SCORES){
-      console.log('[FaceMatch] All photo scores:');
-      Object.keys(photoScores).sort(function(a,b){ return photoScores[b]-photoScores[a]; }).forEach(function(pid){
-        console.log('  ' + Math.round(photoScores[pid]*100) + '% — photo ' + pid.substring(0,8));
-      });
-    }
+    for(var i = 0; i < uniqueFaces.length; i++){
+      var emb = uniqueFaces[i];
 
-    Object.keys(photoScores).forEach(function(photoId){
-      var conf  = photoScores[photoId];
-      var photo = allPhotos.find(function(p){ return p.id === photoId; });
-      if(!photo) return;
+      resultFill.style.width = Math.round(45 + ((i+1) / uniqueFaces.length) * 45) + '%';
+      resultText.textContent = 'Comparing ' + (i+1) + ' of ' + uniqueFaces.length + '…';
 
-      if(conf < THRESHOLD_LOW) return;  /* Too low — ignore */
+      if(!emb.face_crop_url) continue;
 
-      if(conf >= THRESHOLD_HIGH)     highConf.push({ photo:photo, confidence:conf });
-      else if(conf >= THRESHOLD_MED) medConf.push({ photo:photo, confidence:conf });
-      else                           medConf.push({ photo:photo, confidence:conf }); /* Low but possible */
-    });
+      try{
+        var matchRes = await fetch(EVENTS_API + '/api/facepp-match', {
+          method : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body   : JSON.stringify({ selfieUrl: selfiePublicUrl, photoUrl: emb.face_crop_url })
+        });
+        if(!matchRes.ok) continue;
+        var matchData = await matchRes.json();
+        var conf      = matchData.confidence || 0;
 
-    /* Layer 2 — Llama for borderline */
-    var llamaApproved = [];
-    var requestNeeded = [];
+        var photo = allPhotos.find(function(p){ return p.id === emb.photo_id; });
+        if(!photo) continue;
 
-    if(medConf.length > 0){
-      resultText.textContent = 'AI verifying ' + medConf.length + ' borderline match' + (medConf.length>1?'es':'') + '…';
-      resultFill.style.width = '85%';
-      for(var m = 0; m < medConf.length; m++){
-        var item   = medConf[m];
-        var result = await askLlama(item.photo.preview_url, item.confidence);
-        if(result === 'yes') llamaApproved.push(item);
-        else                 requestNeeded.push(item);
-      }
+        if(conf >= FACE_AUTO){
+          autoMatches.push({ photo: photo, confidence: conf });
+        } else if(conf >= FACE_REVIEW){
+          reviewMatches.push({ photo: photo, confidence: conf });
+        }
+      }catch(e){ /* network hiccup — skip this photo */ }
     }
 
     resultFill.style.width = '100%';
 
-    var instantDownload = highConf.concat(llamaApproved);
+    /* Step 5 — Build result sets */
     matchedIds    = new Set();
     matchedPhotos = {};
 
-    instantDownload.forEach(function(item){
+    autoMatches.forEach(function(item){
       matchedIds.add(item.photo.id);
-      matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'instant' };
+      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'auto' };
     });
-    requestNeeded.forEach(function(item){
+    reviewMatches.forEach(function(item){
       matchedIds.add(item.photo.id);
-      matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'request' };
+      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'review' };
     });
 
-    /* Show matched photos only */
-    var matchedPhotosArr = allPhotos.filter(function(p){ return matchedIds.has(p.id); });
-    if(matchedPhotosArr.length > 0){
-      showingMatchedOnly = true;
-      renderPhotos(matchedPhotosArr);
-      /* Update gallery header */
-      document.getElementById('galleryTitle').textContent = 'Your Photos (' + matchedPhotosArr.length + ')';
-      document.getElementById('galleryTag').textContent   = '✅ Matched to your face';
-      /* Show "show all" button */
-      showShowAllBtn();
-    } else {
-      renderPhotos(allPhotos);
-    }
-
-    var parts = [];
-    if(instantDownload.length > 0) parts.push(instantDownload.length + ' ready to download');
-    if(requestNeeded.length > 0)   parts.push(requestNeeded.length + ' pending approval');
-
-    if(matchedIds.size > 0){
-      resultText.textContent   = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!';
-      resultDetail.textContent = parts.join(' · ');
-      document.getElementById('matchedBanner').classList.remove('hidden');
-      document.getElementById('matchedBannerText').textContent =
-        'Found ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + ' — ' + parts.join(' · ');
-
-      if(instantDownload.length > 0) await processInstantDownloads(instantDownload.map(function(i){ return i.photo; }));
-      if(requestNeeded.length > 0)   await autoSubmitRequests(requestNeeded.map(function(i){ return i.photo; }));
-
-      toast('✅','Found '+matchedIds.size+' photo'+(matchedIds.size>1?'s':'')+'!', parts.join(' · '));
-    } else {
+    /* Step 6 — Show results */
+    if(matchedIds.size === 0){
       resultText.textContent   = '😔 No matches found.';
-      resultDetail.textContent = 'Try a clearer selfie in good lighting facing directly forward.';
-      toast('😔','No matches found','Try a better lit, forward-facing selfie');
+      resultDetail.textContent = 'Try a clearer selfie — face camera directly, good lighting, no sunglasses.';
+      toast('😔', 'No matches found', 'Try a clearer forward-facing selfie');
+      cleanupSelfie();
+      return;
     }
+
+    /* Show ONLY matched photos */
+    var matchedArr = allPhotos.filter(function(p){ return matchedIds.has(p.id); });
+    renderPhotos(matchedArr);
+
+    /* Update gallery header */
+    document.getElementById('galleryTitle').textContent = 'Your Photos (' + matchedArr.length + ')';
+    document.getElementById('galleryTag').textContent   = '✅ Matched to your face';
+
+    /* Show All button */
+    addShowAllBtn();
+
+    /* Banner */
+    document.getElementById('matchedBanner').classList.remove('hidden');
+    var parts = [];
+    if(autoMatches.length)   parts.push(autoMatches.length   + ' ready to download');
+    if(reviewMatches.length) parts.push(reviewMatches.length + ' sent for approval');
+    resultText.textContent   = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!';
+    resultDetail.textContent = parts.join(' · ');
+    document.getElementById('matchedBannerText').textContent =
+      'Found ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + ' — ' + parts.join(' · ');
+
+    toast('✅', 'Found ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!', parts.join(' · '));
+
+    /* Step 7 — Handle downloads and requests */
+    if(autoMatches.length > 0)   await processAutoDownloads(autoMatches.map(function(i){ return i.photo; }));
+    if(reviewMatches.length > 0) await processReviewRequests(reviewMatches.map(function(i){ return i.photo; }));
+
+    cleanupSelfie();
 
   }catch(err){
-    resultText.textContent = '⚠️ Error: ' + err.message;
-    resultFill.style.width = '0%';
+    resultText.textContent   = '⚠️ Error: ' + err.message;
+    resultFill.style.width   = '0%';
+    resultDetail.textContent = 'Please try again.';
+    cleanupSelfie();
   }
 }
 
-/* ── Euclidean distance between two descriptor arrays ── */
-function euclideanDistance(a, b){
-  var sum = 0;
-  for(var i = 0; i < a.length; i++){ var d = a[i]-b[i]; sum += d*d; }
-  return Math.sqrt(sum);
+/* ══ Show All button ══ */
+function addShowAllBtn(){
+  var actions = document.getElementById('galleryActions');
+  if(!actions || document.getElementById('showAllBtn')) return;
+  var btn       = document.createElement('button');
+  btn.id        = 'showAllBtn';
+  btn.className = 'btn-outline';
+  btn.textContent = '📷 Show All Photos';
+  btn.onclick   = function(){
+    matchedIds = new Set(); matchedPhotos = {};
+    renderPhotos(allPhotos);
+    document.getElementById('galleryTitle').textContent = eventData.name;
+    document.getElementById('galleryTag').textContent   = '📸 Gallery';
+    document.getElementById('matchedBanner').classList.add('hidden');
+    btn.remove();
+  };
+  actions.prepend(btn);
 }
 
-/* ── Fallback: scan full images if no index exists ── */
-async function runFullScan(selfieDescriptor){
-  var resultText   = document.getElementById('faceResultText');
-  var resultFill   = document.getElementById('faceResultFill');
-  var resultDetail = document.getElementById('faceResultDetail');
-  var highConf = []; var medConf = [];
+/* ══════════════════════════════════════════════
+   AUTO DOWNLOADS — confidence ≥ 80
+══════════════════════════════════════════════ */
+async function processAutoDownloads(photos){
+  if(!photos.length || !guestEmail) return;
 
-  for(var i = 0; i < allPhotos.length; i++){
-    var photo = allPhotos[i];
-    try{
-      var photoImg   = await faceapi.fetchImage(photo.preview_url);
-      var detections = await faceapi.detectAllFaces(photoImg).withFaceLandmarks().withFaceDescriptors();
-      var best = 0;
-      for(var d = 0; d < detections.length; d++){
-        var conf = Math.max(0, Math.min(1, 1 - euclideanDistance(
-          Array.from(selfieDescriptor),
-          Array.from(detections[d].descriptor)
-        )));
-        if(conf > best) best = conf;
-      }
-      if(best >= CONF_HIGH)     highConf.push({ photo:photo, confidence:best });
-      else if(best >= CONF_MED) medConf.push({ photo:photo, confidence:best });
-    }catch(e){}
-    resultFill.style.width   = Math.round(30 + ((i+1)/allPhotos.length)*60) + '%';
-    resultText.textContent   = 'Scanning ' + (i+1) + ' of ' + allPhotos.length + '…';
-    resultDetail.textContent = highConf.length + ' matches found so far';
-  }
-
-  /* Same result handling */
-  var instantDownload = highConf;
-  var requestNeeded   = medConf;
-  matchedIds = new Set(); matchedPhotos = {};
-  instantDownload.forEach(function(item){
-    matchedIds.add(item.photo.id);
-    matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'instant' };
-  });
-  requestNeeded.forEach(function(item){
-    matchedIds.add(item.photo.id);
-    matchedPhotos[item.photo.id] = { confidence:item.confidence, tier:'request' };
-  });
-  renderPhotos(allPhotos);
-  resultFill.style.width = '100%';
-
-  if(matchedIds.size > 0){
-    resultText.textContent = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!';
-    if(instantDownload.length > 0) await processInstantDownloads(instantDownload.map(function(i){ return i.photo; }));
-    if(requestNeeded.length > 0)   await autoSubmitRequests(requestNeeded.map(function(i){ return i.photo; }));
-    toast('✅','Found '+matchedIds.size+' photo'+(matchedIds.size>1?'s':'')+'!','');
-  } else {
-    resultText.textContent = '😔 No matches found. Try a clearer selfie.';
-  }
-}
-
-/* ════════════ SECOND OPINION — Face++ or Llama ════════════ */
-var selfieFileRef = null; /* Stores selfie file for Face++ */
-
-async function askLlama(imageUrl, confidence){
-  /* Use Face++ via secure backend — much more accurate than Llama */
-  if(USE_FACEPP && selfieFileRef){
-    return await askFacePP(imageUrl);
-  }
-  /* Fallback — Llama via backend */
+  /* Save to DB */
   try{
-    var res = await fetch(EVENTS_API + '/api/face-verify',{
-      method :'POST',
-      headers:{'Content-Type':'application/json'},
-      body   :JSON.stringify({ imageUrl:imageUrl, confidence:confidence })
-    });
-    if(!res.ok) return 'uncertain';
-    var data = await res.json();
-    return data.result || 'uncertain';
-  }catch(e){ return 'uncertain'; }
-}
-
-/* ════════════ FACE++ VIA RENDER BACKEND (secure) ════════════ */
-async function askFacePP(photoUrl){
-  /* selfieUrl — we need a URL not a file for the backend */
-  /* Convert selfie file to data URL first, send to backend */
-  try{
-    /* Upload selfie to Supabase temp storage to get a URL */
-    var selfieUrl = await uploadSelfieTemp(selfieFileRef);
-    if(!selfieUrl) return 'uncertain';
-
-    var res = await fetch(EVENTS_API + '/api/facepp-compare',{
-      method :'POST',
-      headers:{'Content-Type':'application/json'},
-      body   :JSON.stringify({ selfieUrl:selfieUrl, photoUrl:photoUrl })
-    });
-    if(!res.ok) return 'uncertain';
-    var data = await res.json();
-    if(DEBUG_SCORES) console.log('[Face++]', data);
-    return data.result || 'uncertain';
-  }catch(e){
-    console.log('[Face++] error:', e.message);
-    return 'uncertain';
-  }
-}
-
-/* Upload selfie temporarily for Face++ backend to access */
-async function uploadSelfieTemp(file){
-  try{
-    var ts   = Date.now();
-    var path = 'selfies/temp_' + ts + '.jpg';
-    var { error } = await getSupabase().storage
-      .from('events')
-      .upload(path, file, { contentType:'image/jpeg', upsert:true });
-    if(error) return null;
-    var { data } = getSupabase().storage.from('events').getPublicUrl(path);
-    /* Schedule deletion after 5 minutes */
-    setTimeout(async function(){
-      try{ await getSupabase().storage.from('events').remove([path]); }catch(e){}
-    }, 5 * 60 * 1000);
-    return data.publicUrl;
-  }catch(e){ return null; }
-}
-
-/* ════════════ INSTANT DOWNLOADS ════════════ */
-async function processInstantDownloads(photos){
-  if(!guestEmail || !photos.length) return;
-  try{
+    var c = getSupabase();
     for(var i = 0; i < photos.length; i++){
-      await getSupabase().from('download_requests').insert({
+      await c.from('download_requests').insert({
         event_id  : eventData.id,
         user_email: guestEmail,
         status    : 'approved'
       });
     }
-    showInstantPanel(photos);
-  }catch(e){ console.log('Instant download error:', e.message); }
-}
+  }catch(e){}
 
-function showInstantPanel(photos){
-  var existing = document.getElementById('instantPanel');
-  if(existing) existing.remove();
-
-  var emailEl    = document.getElementById('guestEmailInput');
-  var knownEmail = guestEmail || (emailEl ? emailEl.value.trim() : '');
-
-  var emailHtml = knownEmail
-    ? '<div style="font-size:12px;padding:8px 10px;background:rgba(16,185,129,.08);border-radius:8px;margin-bottom:12px;color:#059669;">📧 Links sent to <strong>'+esc(knownEmail)+'</strong></div>'
-    : '<div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.6;margin-bottom:6px;">Your Email</div><input type="email" id="instantEmailInput" placeholder="your@email.com" style="width:100%;padding:10px 12px;font-size:14px;border-radius:8px;border:1.5px solid rgba(16,185,129,.3);outline:none;font-family:inherit;" autocomplete="email"/></div>';
-
-  var panel = document.createElement('div');
-  panel.id  = 'instantPanel';
-  panel.className = 'instant-panel';
-  panel.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'+
-      '<div><div style="font-size:15px;font-weight:900;color:#059669;">✅ Your Photos Found!</div>'+
-      '<div style="font-size:12px;opacity:.6;margin-top:2px;">'+photos.length+' photo'+(photos.length>1?'s':'')+' matched</div></div>'+
-      '<button onclick="document.getElementById(\'instantPanel\').remove()" style="opacity:.4;font-size:20px;line-height:1;background:none;border:none;cursor:pointer;">✕</button>'+
-    '</div>'+
-    emailHtml+
-    photos.map(function(p,i){
-      return '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo-'+(i+1)+'.jpg" '+
-        'style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f0fdf4;border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:13px;font-weight:700;color:#059669;text-decoration:none;margin-bottom:8px;">'+
-        '<span style="font-size:20px;">⬇️</span>'+
-        '<div><div>Download Photo '+(i+1)+'</div><div style="font-size:10px;font-weight:400;opacity:.6;">Full quality original</div></div>'+
-      '</a>';
-    }).join('')+
-    '<button onclick="confirmInstantDownload()" style="width:100%;margin-top:8px;padding:12px;background:#059669;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">'+
-      (knownEmail ? '✅ Done — Close' : '📧 Save & Get Email Links')+
-    '</button>';
-
-  document.body.appendChild(panel);
-}
-
-async function confirmInstantDownload(){
-  var emailEl   = document.getElementById('guestEmailInput');
-  var instantEl = document.getElementById('instantEmailInput');
-  var email     = guestEmail
-    || (emailEl   ? emailEl.value.trim()   : '')
-    || (instantEl ? instantEl.value.trim() : '');
-
-  if(email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    guestEmail = email;
-    var matched = allPhotos.filter(function(p){
-      return matchedIds.has(p.id) && matchedPhotos[p.id] && matchedPhotos[p.id].tier === 'instant';
-    });
-    for(var i = 0; i < matched.length; i++){
-      try{
-        await getSupabase().from('download_requests').insert({
-          event_id:eventData.id, user_email:email, status:'approved'
-        });
-      }catch(e){}
-    }
-  }
-  var panel = document.getElementById('instantPanel');
-  if(panel) panel.remove();
-  toast('✅','Downloads saved!','Check your email for links');
-}
-
-/* ════════════ AUTO SUBMIT REQUESTS ════════════ */
-async function autoSubmitRequests(photos){
-  if(!photos.length) return;
-  if(!guestEmail){
-    var emailEl = document.getElementById('guestEmailInput');
-    guestEmail  = emailEl ? emailEl.value.trim() : '';
-  }
-  if(!guestEmail){
-    guestEmail = prompt('Enter your email to receive approval notifications:') || '';
-  }
-  if(!guestEmail) return;
+  /* Send email via backend */
+  var eventUrl = window.location.origin + '/event.html?event=' +
+    eventData.event_slug + '&code=' + eventData.event_code;
   try{
+    await fetch(EVENTS_API + '/api/notify-guest', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({
+        guestEmail: guestEmail,
+        eventName : eventData.name,
+        photoUrls : photos.map(function(p){ return p.original_url || p.preview_url; }),
+        eventUrl  : eventUrl
+      })
+    });
+  }catch(e){}
+
+  /* Show instant panel */
+  showInstantPanel(photos);
+}
+
+/* ══════════════════════════════════════════════
+   REVIEW REQUESTS — confidence 65–79
+══════════════════════════════════════════════ */
+async function processReviewRequests(photos){
+  if(!photos.length || !guestEmail) return;
+  try{
+    var c = getSupabase();
     for(var i = 0; i < photos.length; i++){
-      await getSupabase().from('download_requests').insert({
+      await c.from('download_requests').insert({
         event_id  : eventData.id,
         user_email: guestEmail,
         status    : 'pending'
       });
     }
-    toast('📬', photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' sent for approval', 'You\'ll get an email when approved');
-  }catch(e){ console.log('Auto request error:', e.message); }
+    toast('📬',
+      photos.length + ' photo' + (photos.length>1?'s':'') + ' sent for review',
+      'You\'ll get an email when approved');
+  }catch(e){}
 }
 
-/* ════════════ REQUEST MODAL ════════════ */
-var requestPhotoId = null;
+/* ══════════════════════════════════════════════
+   INSTANT DOWNLOAD PANEL
+══════════════════════════════════════════════ */
+function showInstantPanel(photos){
+  var existing = document.getElementById('instantPanel');
+  if(existing) existing.remove();
 
-function openRequestModal(photoId){
-  requestPhotoId = photoId;
+  var panel  = document.createElement('div');
+  panel.id   = 'instantPanel';
+  panel.className = 'instant-panel';
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'+
+      '<div>'+
+        '<div style="font-size:15px;font-weight:900;color:#059669;">✅ Your Photos Found!</div>'+
+        '<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+
+          photos.length+' photo'+(photos.length>1?'s':'')+' · links emailed to '+esc(guestEmail)+
+        '</div>'+
+      '</div>'+
+      '<button onclick="document.getElementById(\'instantPanel\').remove()" style="opacity:.4;font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:4px;">✕</button>'+
+    '</div>'+
+    photos.map(function(p, i){
+      return '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo-'+(i+1)+'.jpg" '+
+        'style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f0fdf4;'+
+        'border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:13px;font-weight:700;'+
+        'color:#059669;text-decoration:none;margin-bottom:8px;">'+
+        '<span style="font-size:20px;">⬇️</span>'+
+        '<div><div>Download Photo '+(i+1)+'</div>'+
+        '<div style="font-size:10px;font-weight:400;color:#6b7280;">Full quality original</div></div>'+
+      '</a>';
+    }).join('');
+
+  document.body.appendChild(panel);
+}
+
+/* ══════════════════════════════════════════════
+   TEMP SELFIE UPLOAD & CLEANUP
+══════════════════════════════════════════════ */
+async function uploadSelfieTemp(file){
+  try{
+    var ts   = Date.now();
+    var path = 'selfies/temp_' + ts + '_' + Math.random().toString(36).substring(2,7) + '.jpg';
+    var c    = getSupabase();
+    var { error } = await c.storage.from('events').upload(path, file, {
+      contentType: 'image/jpeg',
+      upsert     : true
+    });
+    if(error) return null;
+    var { data } = c.storage.from('events').getPublicUrl(path);
+    window._selfieCleanupPath = path;
+    setTimeout(cleanupSelfie, 5 * 60 * 1000);
+    return data.publicUrl;
+  }catch(e){ return null; }
+}
+
+async function cleanupSelfie(){
+  if(!window._selfieCleanupPath) return;
+  try{
+    await getSupabase().storage.from('events').remove([window._selfieCleanupPath]);
+    window._selfieCleanupPath = null;
+  }catch(e){}
+}
+
+/* ══════════════════════════════════════════════
+   REQUEST MODAL
+══════════════════════════════════════════════ */
+function openRequestModal(){
   document.getElementById('reqEmail').value   = guestEmail || '';
   document.getElementById('reqMessage').value = '';
   document.getElementById('requestAlert').className = 'gate-alert';
@@ -1389,9 +1263,8 @@ async function submitRequest(){
       status    : 'pending'
     });
     if(error) throw error;
-
     closeRequestModal();
-    toast('✅','Request sent!','We\'ll email you when it\'s approved');
+    toast('✅', 'Request sent!', 'We\'ll email you when it\'s approved');
   }catch(e){
     alertEl.textContent = 'Error: ' + e.message;
     alertEl.className   = 'gate-alert gate-alert-error show';
@@ -1400,20 +1273,25 @@ async function submitRequest(){
   }
 }
 
-/* ════════════ TOAST ════════════ */
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
 function toast(icon, msg, sub){
   var t = document.getElementById('toast');
   document.getElementById('toastIcon').textContent = icon;
   document.getElementById('toastMsg').textContent  = msg;
   document.getElementById('toastSub').textContent  = sub || '';
   t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 4000);
+  setTimeout(function(){ t.classList.remove('show'); }, 4500);
 }
 
-/* ════════════ ERROR ════════════ */
+/* ══════════════════════════════════════════════
+   ERROR
+══════════════════════════════════════════════ */
 function showError(msg){
-  document.body.className  = 'tpl-professional';
-  document.body.innerHTML  = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:DM Sans,sans-serif;text-align:center;padding:40px;background:#f8f9fc;">'+
+  document.body.className = 'tpl-professional';
+  document.body.innerHTML =
+    '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:DM Sans,sans-serif;text-align:center;padding:40px;background:#f8f9fc;">'+
     '<div><div style="font-size:48px;margin-bottom:16px;">🔍</div>'+
     '<div style="font-size:22px;font-weight:700;margin-bottom:8px;color:#0d1020;">Event Not Found</div>'+
     '<div style="font-size:14px;color:#505878;margin-bottom:24px;">'+esc(msg)+'</div>'+
@@ -1421,7 +1299,7 @@ function showError(msg){
     '</div></div>';
 }
 
-/* ════════════ HELPERS ════════════ */
+/* ══ HELPERS ══ */
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
