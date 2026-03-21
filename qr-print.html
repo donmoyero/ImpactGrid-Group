@@ -7,7 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&display=swap" rel="stylesheet"/>
 <!-- QR code generator -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- QR library — primary from cdnjs, fallback to jsdelivr -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 /* ══ SCREEN STYLES ══ */
 :root{
@@ -160,7 +161,7 @@ body{
 }
 .style-gold .qr-frame::before{top:-2px;left:-2px;border-width:2px 0 0 2px;border-radius:4px 0 0 0;}
 .style-gold .qr-frame::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0;border-radius:0 0 4px 0;}
-.style-gold .qr-frame canvas{width:100%!important;height:100%!important;border-radius:4px;}
+.style-gold .qr-frame canvas,.style-gold .qr-frame img{width:100%!important;height:100%!important;border-radius:4px;display:block;}
 .style-gold .qr-info{flex:1;}
 .style-gold .qr-info-label{
   font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;
@@ -232,7 +233,7 @@ body{
   border:1px solid #e2e5f0;
   box-shadow:0 4px 20px rgba(99,102,241,0.08);
 }
-.style-white .qr-frame canvas{width:100%!important;height:100%!important;border-radius:4px;}
+.style-white .qr-frame canvas,.style-white .qr-frame img{width:100%!important;height:100%!important;border-radius:4px;display:block;}
 .style-white .qr-info{flex:1;}
 .style-white .qr-info-label{
   font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;
@@ -280,7 +281,7 @@ body{
   width:176px;height:176px;flex-shrink:0;
   background:#0f0d08;border-radius:0;padding:12px;
 }
-.style-ink .qr-frame canvas{width:100%!important;height:100%!important;}
+.style-ink .qr-frame canvas,.style-ink .qr-frame img{width:100%!important;height:100%!important;display:block;}
 .style-ink .qr-info{flex:1;}
 .style-ink .qr-info-label{
   font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.2em;
@@ -379,7 +380,7 @@ body{
     </div>
     <div class="card-body">
       <div class="qr-frame">
-        <canvas id="qr-gold"></canvas>
+        <div id="qr-gold" style="width:156px;height:156px;display:flex;align-items:center;justify-content:center;"></div>
       </div>
       <div class="qr-info">
         <div class="qr-info-label">How to access</div>
@@ -415,7 +416,7 @@ body{
     </div>
     <div class="card-body">
       <div class="qr-frame">
-        <canvas id="qr-white"></canvas>
+        <div id="qr-white" style="width:156px;height:156px;display:flex;align-items:center;justify-content:center;"></div>
       </div>
       <div class="qr-info">
         <div class="qr-info-label">How to get your photos</div>
@@ -451,7 +452,7 @@ body{
     </div>
     <div class="card-body">
       <div class="qr-frame">
-        <canvas id="qr-ink"></canvas>
+        <div id="qr-ink" style="width:156px;height:156px;display:flex;align-items:center;justify-content:center;"></div>
       </div>
       <div class="qr-info">
         <div class="qr-info-label">Instructions</div>
@@ -545,18 +546,28 @@ function waitForQR(cb){
 
 function generateQR(canvasId, url, cfg, callback){
   if(qrGenerated[canvasId]){ if(callback) callback(); return; }
-  var canvas = document.getElementById(canvasId);
-  if(!canvas){ if(callback) callback(); return; }
-  QRCode.toCanvas(canvas, url, {
-    width               : 260,
-    margin              : 2,
-    color               : { dark: cfg.dark, light: cfg.light },
-    errorCorrectionLevel: 'M'
-  }, function(err){
-    if(err){ console.error('[QR]', canvasId, err); if(callback) callback(); return; }
+  var container = document.getElementById(canvasId);
+  if(!container){ if(callback) callback(); return; }
+
+  /* Clear any previous attempt */
+  container.innerHTML = '';
+
+  try{
+    new QRCode(container, {
+      text            : url,
+      width           : 260,
+      height          : 260,
+      colorDark       : cfg.dark,
+      colorLight      : cfg.light,
+      correctLevel    : QRCode.CorrectLevel.M
+    });
     qrGenerated[canvasId] = true;
+    /* qrcodejs renders async via image — wait a tick */
+    setTimeout(function(){ if(callback) callback(); }, 100);
+  }catch(err){
+    console.error('[QR]', canvasId, err);
     if(callback) callback();
-  });
+  }
 }
 
 function showCard(style){
