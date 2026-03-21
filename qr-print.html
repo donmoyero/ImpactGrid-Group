@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Print QR — ImpactGrid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&display=swap" rel="stylesheet"/>
+<!-- QR code generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+/* ══ SCREEN STYLES ══ */
+:root{
+  --ink:#0a0a0f;
+  --ink2:#3a3a4a;
+  --ink3:#8a8a9a;
+  --gold:#c9a84c;
+  --gold2:#e8c87a;
+  --gold-dim:rgba(201,168,76,0.12);
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --border:rgba(201,168,76,0.25);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;}
+body{
+  background:var(--bg);
+  font-family:'DM Mono',monospace;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:40px 24px 60px;
+  color:var(--ink);
+}
+
+/* ══ SCREEN TOP BAR ══ */
+.screen-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;max-width:680px;margin-bottom:36px;
+  padding:14px 20px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.06);
+}
+.screen-bar-logo{
+  display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-weight:900;font-size:14px;color:var(--ink);
+}
+.screen-bar-logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;
+}
+.screen-bar-actions{display:flex;gap:8px;}
+.btn-print{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:9px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;
+  border:none;cursor:pointer;letter-spacing:.01em;
+  box-shadow:0 4px 14px rgba(201,168,76,0.35);
+  transition:all .2s;
+}
+.btn-print:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,0.45);}
+.btn-back{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:9px;
+  background:none;color:var(--ink2);
+  font-family:'DM Mono',monospace;font-size:12px;
+  border:1px solid rgba(0,0,0,0.12);cursor:pointer;
+  transition:all .2s;
+}
+.btn-back:hover{background:rgba(0,0,0,0.04);}
+
+/* ══ CARD SELECTOR ══ */
+.card-selector{
+  width:100%;max-width:680px;
+  display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap;
+}
+.style-btn{
+  padding:7px 16px;border-radius:8px;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+  border:1px solid rgba(0,0,0,0.12);background:#fff;color:var(--ink2);
+  cursor:pointer;transition:all .2s;
+}
+.style-btn.active{
+  background:var(--ink);color:#fff;border-color:var(--ink);
+}
+
+/* ══ PRINT CARD WRAPPER ══ */
+.print-wrapper{
+  width:100%;max-width:680px;
+  display:flex;justify-content:center;
+}
+
+/* ══ CARD BASE ══ */
+.qr-card{
+  width:480px;
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08);
+  position:relative;
+}
+
+/* ══ STYLE 1: GOLD LUXURY ══ */
+.style-gold{
+  background:linear-gradient(160deg,#0f0d08 0%,#1a1608 50%,#0f0d08 100%);
+}
+.style-gold .card-header{
+  padding:36px 40px 28px;
+  border-bottom:1px solid rgba(201,168,76,0.2);
+  position:relative;
+}
+.style-gold .card-header::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),var(--gold2),var(--gold),transparent);
+}
+.style-gold .brand-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:24px;
+}
+.style-gold .brand-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:#0f0d08;
+  font-family:'Syne',sans-serif;
+}
+.style-gold .brand-name{
+  font-family:'Syne',sans-serif;font-weight:900;font-size:14px;
+  color:rgba(255,255,255,0.9);letter-spacing:.02em;
+}
+.style-gold .event-label{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.style-gold .event-label::before{content:'';width:20px;height:1px;background:var(--gold);}
+.style-gold .event-name{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(26px,5vw,38px);line-height:1.1;
+  color:#fff;letter-spacing:-.01em;
+}
+.style-gold .event-name em{font-style:italic;color:var(--gold2);}
+.style-gold .card-body{
+  padding:32px 40px;
+  display:flex;gap:32px;align-items:center;
+}
+.style-gold .qr-frame{
+  width:180px;height:180px;flex-shrink:0;
+  background:#fff;border-radius:12px;
+  padding:12px;
+  box-shadow:0 0 0 1px rgba(201,168,76,0.3), 0 0 32px rgba(201,168,76,0.15);
+  position:relative;
+}
+.style-gold .qr-frame::before,.style-gold .qr-frame::after{
+  content:'';position:absolute;width:18px;height:18px;
+  border-color:var(--gold);border-style:solid;
+}
+.style-gold .qr-frame::before{top:-2px;left:-2px;border-width:2px 0 0 2px;border-radius:4px 0 0 0;}
+.style-gold .qr-frame::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0;border-radius:0 0 4px 0;}
+.style-gold .qr-frame canvas{width:100%!important;height:100%!important;border-radius:4px;}
+.style-gold .qr-info{flex:1;}
+.style-gold .qr-info-label{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;
+  text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:12px;
+}
+.style-gold .qr-info-step{
+  display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;
+}
+.style-gold .qr-step-num{
+  width:20px;height:20px;min-width:20px;border-radius:50%;
+  background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:var(--gold);margin-top:1px;
+}
+.style-gold .qr-step-text{
+  font-family:'Cormorant Garamond',serif;font-size:14px;color:rgba(255,255,255,0.75);line-height:1.5;
+}
+.style-gold .qr-step-text strong{color:#fff;font-weight:600;}
+.style-gold .card-footer{
+  padding:20px 40px;
+  background:rgba(201,168,76,0.06);
+  border-top:1px solid rgba(201,168,76,0.15);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.style-gold .footer-url{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:rgba(255,255,255,0.3);letter-spacing:.08em;
+}
+.style-gold .footer-ornament{
+  font-family:'Cormorant Garamond',serif;font-size:13px;
+  color:rgba(201,168,76,0.5);letter-spacing:.3em;
+}
+
+/* ══ STYLE 2: CLEAN WHITE ══ */
+.style-white{background:#ffffff;}
+.style-white .card-header{
+  padding:36px 40px 28px;
+  background:linear-gradient(135deg,#0f1020,#1a1f3a);
+  position:relative;overflow:hidden;
+}
+.style-white .card-header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 100% at 100% 0%,rgba(99,102,241,0.3),transparent);
+}
+.style-white .brand-row{display:flex;align-items:center;gap:10px;margin-bottom:24px;position:relative;z-index:1;}
+.style-white .brand-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#6366f1,#818cf8);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:#fff;font-family:'Syne',sans-serif;
+}
+.style-white .brand-name{font-family:'Syne',sans-serif;font-weight:900;font-size:14px;color:#fff;}
+.style-white .event-label{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:rgba(99,102,241,0.8);margin-bottom:8px;position:relative;z-index:1;
+}
+.style-white .event-name{
+  font-family:'Syne',sans-serif;font-weight:900;
+  font-size:clamp(22px,4vw,32px);line-height:1.1;
+  color:#fff;position:relative;z-index:1;
+}
+.style-white .card-body{
+  padding:32px 40px;display:flex;gap:32px;align-items:center;
+  background:#ffffff;
+}
+.style-white .qr-frame{
+  width:180px;height:180px;flex-shrink:0;
+  background:#f8f9fc;border-radius:12px;padding:12px;
+  border:1px solid #e2e5f0;
+  box-shadow:0 4px 20px rgba(99,102,241,0.08);
+}
+.style-white .qr-frame canvas{width:100%!important;height:100%!important;border-radius:4px;}
+.style-white .qr-info{flex:1;}
+.style-white .qr-info-label{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;
+  text-transform:uppercase;color:#9ba3c0;margin-bottom:12px;
+}
+.style-white .qr-info-step{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
+.style-white .qr-step-num{
+  width:20px;height:20px;min-width:20px;border-radius:50%;
+  background:#f0f2ff;border:1px solid #c7d2fe;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:#6366f1;margin-top:1px;
+}
+.style-white .qr-step-text{font-family:'DM Sans',sans-serif;font-size:13px;color:#505878;line-height:1.5;}
+.style-white .qr-step-text strong{color:#0f1020;}
+.style-white .card-footer{
+  padding:18px 40px;background:#f8f9fc;
+  border-top:1px solid #e2e5f0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.style-white .footer-url{font-family:'DM Mono',monospace;font-size:9px;color:#9ba3c0;letter-spacing:.08em;}
+.style-white .footer-brand{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:#6366f1;}
+
+/* ══ STYLE 3: MINIMAL INK ══ */
+.style-ink{background:#f7f5f0;border:2px solid #0f0d08;}
+.style-ink .card-header{
+  padding:40px 44px 32px;
+  border-bottom:2px solid #0f0d08;
+  position:relative;
+}
+.style-ink .brand-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.style-ink .brand-name{font-family:'Syne',sans-serif;font-weight:900;font-size:13px;letter-spacing:.05em;color:#0f0d08;text-transform:uppercase;}
+.style-ink .brand-year{font-family:'DM Mono',monospace;font-size:11px;color:#8a8a9a;}
+.style-ink .event-label{
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.25em;
+  text-transform:uppercase;color:#8a8a9a;margin-bottom:10px;
+}
+.style-ink .event-name{
+  font-family:'Cormorant Garamond',serif;font-weight:700;
+  font-size:clamp(28px,5vw,44px);line-height:1.0;color:#0f0d08;letter-spacing:-.02em;
+}
+.style-ink .card-body{
+  padding:36px 44px;display:flex;gap:36px;align-items:center;
+}
+.style-ink .qr-frame{
+  width:176px;height:176px;flex-shrink:0;
+  background:#0f0d08;border-radius:0;padding:12px;
+}
+.style-ink .qr-frame canvas{width:100%!important;height:100%!important;}
+.style-ink .qr-info{flex:1;}
+.style-ink .qr-info-label{
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.2em;
+  text-transform:uppercase;color:#8a8a9a;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.style-ink .qr-info-label::after{content:'';flex:1;height:1px;background:#d0cec8;}
+.style-ink .qr-info-step{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;}
+.style-ink .qr-step-num{
+  font-family:'Cormorant Garamond',serif;font-weight:700;font-size:18px;
+  color:#d0cec8;line-height:1;flex-shrink:0;margin-top:-2px;
+}
+.style-ink .qr-step-text{font-family:'Cormorant Garamond',serif;font-size:15px;color:#3a3a4a;line-height:1.5;}
+.style-ink .qr-step-text strong{color:#0f0d08;font-weight:700;}
+.style-ink .card-footer{
+  padding:20px 44px;border-top:1px solid #d0cec8;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.style-ink .footer-url{font-family:'DM Mono',monospace;font-size:8px;color:#8a8a9a;letter-spacing:.1em;}
+.style-ink .footer-divider{width:1px;height:14px;background:#d0cec8;}
+.style-ink .footer-brand{font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:#8a8a9a;}
+
+/* ══ LOADING STATE ══ */
+.loading-state{
+  width:480px;height:340px;
+  background:#fff;border-radius:24px;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:14px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.1);
+  color:var(--ink3);
+  font-family:'DM Mono',monospace;font-size:12px;
+}
+.loading-spinner{
+  width:32px;height:32px;border:2px solid rgba(201,168,76,0.2);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ══ PRINT STYLES ══ */
+@media print{
+  @page{ margin:0; size:A5 landscape; }
+  body{ background:#fff; padding:0; margin:0; display:block; }
+  .screen-bar,.card-selector,.no-print{ display:none!important; }
+  .print-wrapper{ display:block; width:100%; }
+  .qr-card{
+    width:100%; max-width:none; border-radius:0;
+    box-shadow:none;
+    page-break-inside:avoid;
+  }
+  /* Force background colors to print */
+  .style-gold{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .style-white{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .style-ink{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+</style>
+</head>
+<body>
+
+<!-- SCREEN TOP BAR -->
+<div class="screen-bar no-print">
+  <div class="screen-bar-logo">
+    <div class="screen-bar-logo-mark">IG</div>
+    ImpactGrid — QR Print
+  </div>
+  <div class="screen-bar-actions">
+    <button class="btn-back" onclick="window.close()">← Back to Admin</button>
+    <button class="btn-print" onclick="window.print()">🖨 Print QR Card</button>
+  </div>
+</div>
+
+<!-- STYLE SELECTOR -->
+<div class="card-selector no-print">
+  <span style="font-size:11px;color:var(--ink3);align-self:center;margin-right:4px;">Style:</span>
+  <button class="style-btn active" onclick="switchStyle('gold',this)">✦ Gold Luxury</button>
+  <button class="style-btn" onclick="switchStyle('white',this)">◻ Clean White</button>
+  <button class="style-btn" onclick="switchStyle('ink',this)">◼ Minimal Ink</button>
+</div>
+
+<!-- QR CARD -->
+<div class="print-wrapper">
+  <div class="loading-state" id="loadingState">
+    <div class="loading-spinner"></div>
+    <span>Generating QR code…</span>
+  </div>
+
+  <!-- GOLD STYLE -->
+  <div class="qr-card style-gold" id="card-gold" style="display:none;">
+    <div class="card-header">
+      <div class="brand-row">
+        <div class="brand-mark">IG</div>
+        <div class="brand-name">ImpactGrid Events</div>
+      </div>
+      <div class="event-label">Photo Gallery</div>
+      <div class="event-name" id="gold-event-name">Event Name</div>
+    </div>
+    <div class="card-body">
+      <div class="qr-frame">
+        <canvas id="qr-gold"></canvas>
+      </div>
+      <div class="qr-info">
+        <div class="qr-info-label">How to access</div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">1</div>
+          <div class="qr-step-text"><strong>Scan</strong> the QR code with your phone camera</div>
+        </div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">2</div>
+          <div class="qr-step-text"><strong>Scan your face</strong> to find your photos</div>
+        </div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">3</div>
+          <div class="qr-step-text"><strong>Download</strong> your photos instantly</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <div class="footer-url" id="gold-url">impactgridgroup.com</div>
+      <div class="footer-ornament">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+  <!-- WHITE STYLE -->
+  <div class="qr-card style-white" id="card-white" style="display:none;">
+    <div class="card-header">
+      <div class="brand-row">
+        <div class="brand-mark">IG</div>
+        <div class="brand-name">ImpactGrid Events</div>
+      </div>
+      <div class="event-label">📸 Photo Gallery</div>
+      <div class="event-name" id="white-event-name">Event Name</div>
+    </div>
+    <div class="card-body">
+      <div class="qr-frame">
+        <canvas id="qr-white"></canvas>
+      </div>
+      <div class="qr-info">
+        <div class="qr-info-label">How to get your photos</div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">1</div>
+          <div class="qr-step-text"><strong>Scan the QR</strong> with your phone camera</div>
+        </div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">2</div>
+          <div class="qr-step-text"><strong>Scan your face</strong> — AI finds your photos</div>
+        </div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">3</div>
+          <div class="qr-step-text"><strong>Download instantly</strong> — full quality</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <div class="footer-url" id="white-url">impactgridgroup.com</div>
+      <div class="footer-brand">ImpactGrid</div>
+    </div>
+  </div>
+
+  <!-- INK STYLE -->
+  <div class="qr-card style-ink" id="card-ink" style="display:none;">
+    <div class="card-header">
+      <div class="brand-row">
+        <div class="brand-name">ImpactGrid</div>
+        <div class="brand-year" id="ink-year">2026</div>
+      </div>
+      <div class="event-label">Photo Gallery</div>
+      <div class="event-name" id="ink-event-name">Event Name</div>
+    </div>
+    <div class="card-body">
+      <div class="qr-frame">
+        <canvas id="qr-ink"></canvas>
+      </div>
+      <div class="qr-info">
+        <div class="qr-info-label">Instructions</div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">I</div>
+          <div class="qr-step-text"><strong>Scan</strong> the QR code</div>
+        </div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">II</div>
+          <div class="qr-step-text"><strong>Scan your face</strong> to find your photos</div>
+        </div>
+        <div class="qr-info-step">
+          <div class="qr-step-num">III</div>
+          <div class="qr-step-text"><strong>Download</strong> your full quality originals</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <div class="footer-url" id="ink-url">impactgridgroup.com</div>
+      <div class="footer-divider"></div>
+      <div class="footer-brand">ImpactGrid Events</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentStyle = 'gold';
+var eventUrl     = '';
+var eventName    = '';
+
+/* ── Boot: read URL params ── */
+document.addEventListener('DOMContentLoaded', function(){
+  var params   = new URLSearchParams(window.location.search);
+  var slug     = params.get('event') || '';
+  var code     = params.get('code')  || '';
+  eventName    = decodeURIComponent(params.get('name') || 'Event Gallery');
+
+  /* Build the event URL guests will scan to */
+  var base     = params.get('base') || 'https://impactgridgroup.com';
+  eventUrl     = base + '/event.html?event=' + slug + '&code=' + code;
+
+  /* Set year */
+  document.getElementById('ink-year').textContent = new Date().getFullYear();
+
+  /* Set event names */
+  document.getElementById('gold-event-name').textContent = eventName;
+  document.getElementById('white-event-name').textContent = eventName;
+  document.getElementById('ink-event-name').textContent  = eventName;
+
+  /* Set URLs */
+  var shortUrl = 'impactgridgroup.com/event/' + slug;
+  document.getElementById('gold-url').textContent  = shortUrl;
+  document.getElementById('white-url').textContent = shortUrl;
+  document.getElementById('ink-url').textContent   = shortUrl;
+
+  /* Generate QR codes for all three canvases */
+  generateQR('qr-gold',  eventUrl, '#c9a84c', '#0f0d08');
+  generateQR('qr-white', eventUrl, '#6366f1', '#ffffff');
+  generateQR('qr-ink',   eventUrl, '#f7f5f0', '#0f0d08');
+});
+
+function generateQR(canvasId, url, lightColor, darkColor){
+  var canvas = document.getElementById(canvasId);
+  QRCode.toCanvas(canvas, url, {
+    width          : 300,
+    margin         : 1,
+    color          : { dark: darkColor, light: lightColor },
+    errorCorrectionLevel: 'H'
+  }, function(err){
+    if(err){ console.error('[QR]', err); return; }
+    /* Hide loading, show default style after first QR renders */
+    document.getElementById('loadingState').style.display = 'none';
+    if(currentStyle === canvasId.replace('qr-','') || canvasId === 'qr-gold'){
+      showCard('gold');
+    }
+  });
+}
+
+function showCard(style){
+  ['gold','white','ink'].forEach(function(s){
+    document.getElementById('card-'+s).style.display = s === style ? 'block' : 'none';
+  });
+  currentStyle = style;
+}
+
+function switchStyle(style, btn){
+  document.querySelectorAll('.style-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('loadingState').style.display = 'none';
+  showCard(style);
+}
+</script>
+</body>
+</html>
