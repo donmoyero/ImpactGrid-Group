@@ -1173,31 +1173,67 @@ async function groupEventFaces(eventId){
     if(!rows||rows.length<2){ if(rows&&rows.length===1) await c.from('face_embeddings').update({group_id:0}).eq('id',rows[0].id); return; }
 
     /*
-     * GROUPING THRESHOLD = 65 (different from matching threshold of 80)
-     * Grouping compares event photos of same person at different angles/distances
-     * so Face++ scores lower than a direct selfie comparison — 65 is correct here.
-     * Matching threshold (guest selfie vs crop) stays at 80 in event.html.
+     * GROUPING THRESHOLD = 72
+     * ─────────────────────────────────────────
+     * 65 was too loose — different people were merging.
+     * 80 was too strict — same person was splitting.
+     * 72 is the sweet spot for event photos (same person,
+     * different angles, lighting, distance).
+     *
+     * KEY FIX: we now compare against ALL existing members
+     * of a group, not just the leader. A face is only merged
+     * if it passes the threshold against EVERY member.
+     * This prevents the "chain merging" bug where:
+     *   A looks like C → A joins C's group
+     *   B looks like C → B joins C's group
+     *   But A and B are actually different people.
      */
-    var SAME_PERSON=65;
-    var groups=[]; /* [{leaderCropUrl, ids:[]}] */
+    var SAME_PERSON = 72;
 
-    for(var i=0;i<rows.length;i++){
-      var row=rows[i];
-      var placed=false;
-      for(var g=0;g<groups.length;g++){
-        try{
-          var matchRes=await fetch(EVENTS_API+'/api/facepp-match',{
-            method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({ selfieUrl:row.face_crop_url, photoUrl:groups[g].leaderCropUrl })
-          });
-          var matchData=await matchRes.json();
-          if(matchData.confidence>=SAME_PERSON){ groups[g].ids.push(row.id); placed=true; break; }
-        }catch(e){}
-      }
-      if(!placed) groups.push({ leaderCropUrl:row.face_crop_url, ids:[row.id] });
+    /* Compare one face crop against another via Face++ */
+    async function compare(urlA, urlB){
+      try{
+        var res = await fetch(EVENTS_API+'/api/facepp-match',{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ selfieUrl:urlA, photoUrl:urlB })
+        });
+        if(!res.ok) return 0;
+        var d = await res.json();
+        return d.confidence || 0;
+      }catch(e){ return 0; }
     }
 
-    for(var g=0;g<groups.length;g++){
+    var groups = []; /* [ { memberUrls:[], ids:[] } ] */
+
+    for(var i = 0; i < rows.length; i++){
+      var row    = rows[i];
+      var placed = false;
+
+      for(var g = 0; g < groups.length; g++){
+        var grp = groups[g];
+
+        /* Compare against ALL members — must pass threshold for ALL */
+        var allMatch = true;
+        for(var m = 0; m < grp.memberUrls.length; m++){
+          var conf = await compare(row.face_crop_url, grp.memberUrls[m]);
+          if(conf < SAME_PERSON){ allMatch = false; break; }
+        }
+
+        if(allMatch){
+          grp.ids.push(row.id);
+          grp.memberUrls.push(row.face_crop_url);
+          placed = true;
+          break;
+        }
+      }
+
+      if(!placed){
+        groups.push({ memberUrls:[row.face_crop_url], ids:[row.id] });
+      }
+    }
+
+    /* Write group assignments back */
+    for(var g = 0; g < groups.length; g++){
       await c.from('face_embeddings').update({group_id:g}).in('id',groups[g].ids);
     }
     console.log('[FaceGroup] Grouped',rows.length,'faces into',groups.length,'people');
