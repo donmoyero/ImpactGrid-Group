@@ -505,8 +505,7 @@ input,textarea{font-family:inherit;}
         <div id="galleryTag" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.6;margin-bottom:6px;">📸 Gallery</div>
         <div class="gallery-title" id="galleryTitle">All Photos</div>
       </div>
-      <div class="gallery-actions" id="galleryActions">
-        <button class="btn-outline" onclick="openFacePanel()">🔍 Find My Photos</button>
+      <div class="gallery-actions" id="galleryActions" style="display:none;">
         <button class="btn-primary" onclick="openRequestModal()">📥 Request Download</button>
       </div>
     </div>
@@ -577,13 +576,20 @@ input,textarea{font-family:inherit;}
       </div>
     </div>
 
-    <!-- Photo Grid -->
-    <div class="photo-grid" id="photoGrid">
-      <div class="empty-state" style="grid-column:1/-1;">
-        <div class="empty-state-icon">⏳</div>
-        <div class="empty-state-title">Loading photos…</div>
+    <!-- Face scan prompt — shown before scan -->
+    <div id="faceScanPrompt" style="text-align:center;padding:64px 24px;">
+      <div style="font-size:52px;margin-bottom:16px;">🤳</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:8px;">Find Your Photos</div>
+      <div style="font-size:14px;opacity:.6;line-height:1.7;max-width:360px;margin:0 auto 24px;">
+        This is a private gallery. Use face recognition to find the photos you appear in.
       </div>
+      <button class="btn-primary" style="margin:0 auto;display:inline-flex;" onclick="openFacePanel()">
+        🔍 Scan My Face to Find My Photos
+      </button>
     </div>
+
+    <!-- Photo Grid — hidden until face scan done -->
+    <div class="photo-grid hidden" id="photoGrid"></div>
   </div>
 </div>
 
@@ -789,8 +795,8 @@ function buildHero(){
 }
 
 async function loadPhotos(){
-  var grid = document.getElementById('photoGrid');
-  grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">⏳</div><div class="empty-state-title">Loading photos…</div></div>';
+  /* Silently load photo data in background — don't show grid yet */
+  /* Guest must scan face first to see any photos */
   try{
     var { data } = await getSupabase()
       .from('photos')
@@ -799,19 +805,25 @@ async function loadPhotos(){
       .order('created_at', { ascending: true });
     allPhotos = data || [];
     if(!allPhotos.length){
-      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">📷</div><div class="empty-state-title">No photos yet</div><div class="empty-state-sub">The photographer hasn\'t uploaded photos yet. Check back soon.</div></div>';
-      return;
+      /* No photos yet — show message in prompt area */
+      var prompt = document.getElementById('faceScanPrompt');
+      if(prompt) prompt.innerHTML =
+        '<div style="font-size:48px;margin-bottom:16px;">📷</div>'+
+        '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">No Photos Yet</div>'+
+        '<div style="font-size:14px;opacity:.6;">The photographer hasn\'t uploaded photos yet. Check back soon.</div>';
     }
-    renderPhotos(allPhotos);
-  }catch(e){
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load photos</div><div class="empty-state-sub">' + esc(e.message) + '</div></div>';
-  }
+  }catch(e){}
 }
 
 function renderPhotos(photos){
   var type    = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
   var grid    = document.getElementById('photoGrid');
+  var prompt  = document.getElementById('faceScanPrompt');
   var masonry = ['wedding','gala','ceremony'].includes(type);
+
+  /* Hide the scan prompt, reveal the grid */
+  if(prompt) prompt.style.display = 'none';
+  grid.classList.remove('hidden');
   grid.style.display = masonry ? 'block' : '';
 
   if(!photos.length){
@@ -1088,7 +1100,9 @@ async function runFaceRecognition(selfieFile){
 
 /* ══ Show All button ══ */
 function addShowAllBtn(){
+  /* Reveal gallery actions */
   var actions = document.getElementById('galleryActions');
+  if(actions) actions.style.display = 'flex';
   if(!actions || document.getElementById('showAllBtn')) return;
   var btn       = document.createElement('button');
   btn.id        = 'showAllBtn';
