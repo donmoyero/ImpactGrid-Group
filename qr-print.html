@@ -274,10 +274,8 @@ function generate(){
    * Returns a PNG QR code image. Works offline once loaded.
    */
   var encoded = encodeURIComponent(url);
-  var qrSrc   = 'https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=' + encoded + '&choe=UTF-8&chld=M|2';
-
-  /* White QR on dark background for ink card */
-  var qrSrcInv = 'https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=' + encoded + '&choe=UTF-8&chld=M|2&chf=bg,s,0a0a0f&chco=ffffff';
+  var qrSrc   = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' + encoded + '&margin=10&ecc=M';
+  var qrSrcInv= 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' + encoded + '&margin=10&ecc=M&color=ffffff&bgcolor=0a0a0f';
 
   document.getElementById('qr-img-gold').src  = qrSrc;
   document.getElementById('qr-img-white').src = qrSrc;
@@ -325,9 +323,8 @@ function switchStyle(style, btn){
 
 function saveQR(){
   if(!currentUrl){ alert('Generate a QR code first.'); return; }
-  /* Open full size QR in new tab — right-click save or screenshot */
   var encoded = encodeURIComponent(currentUrl);
-  window.open('https://chart.googleapis.com/chart?cht=qr&chs=800x800&chl=' + encoded + '&choe=UTF-8&chld=M|2', '_blank');
+  window.open('https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=' + encoded + '&margin=20&ecc=M', '_blank');
 }
 
 function esc(s){
