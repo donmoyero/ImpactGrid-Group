@@ -881,6 +881,7 @@ async function loadEvents(){
           '<td><div class="td-actions">'+
             '<a class="btn btn-ghost btn-sm" href="event.html?event='+ev.event_slug+'&code='+ev.event_code+'" target="_blank">👁 View</a>'+
             '<button class="btn btn-ghost btn-sm" onclick="copyEventLink(\''+ev.event_slug+'\',\''+ev.event_code+'\')">🔗 Link</button>'+
+            '<button class="btn btn-ghost btn-sm" onclick="printQR(\''+ev.event_slug+'\',\''+ev.event_code+'\',\''+esc(ev.name)+'\')">🖨 QR</button>'+
             '<button class="btn btn-ghost btn-sm" onclick="goUploadForEvent(\''+ev.id+'\')">📤 Upload</button>'+
             '<button class="btn '+(ev.is_active?'btn-red':'btn-green')+' btn-sm" onclick="toggleEvent(\''+ev.id+'\','+ev.is_active+')">'+(ev.is_active?'Deactivate':'Activate')+'</button>'+
             '<button class="btn btn-red btn-icon btn-sm" onclick="deleteEvent(\''+ev.id+'\')">✕</button>'+
@@ -890,6 +891,11 @@ async function loadEvents(){
   }catch(e){ el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>'; }
 }
 
+function printQR(slug,code,name){
+  var base=window.location.origin;
+  var url='qr-print.html?event='+slug+'&code='+code+'&name='+encodeURIComponent(name)+'&base='+encodeURIComponent(base);
+  window.open(url,'_blank','width=740,height=620');
+}
 function copyEventLink(slug,code){
   var url=window.location.origin+'/event.html?event='+slug+'&code='+code;
   navigator.clipboard.writeText(url).then(function(){ toast('🔗','Link copied!','Share with the event owner'); }).catch(function(){ prompt('Copy this link:',url); });
