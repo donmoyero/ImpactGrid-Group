@@ -844,20 +844,18 @@ async function igCreateEvent(){
 }
 
 async function sendOwnerNotification(ownerEmail, eventName, eventCode, eventSlug){
-  if(!ownerEmail || !window.RESEND_API_KEY) return;
+  if(!ownerEmail) return;
   var eventUrl = window.location.origin + '/event.html?event=' + eventSlug + '&code=' + eventCode;
   try{
-    await fetch('https://api.resend.com/emails',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+window.RESEND_API_KEY},
-      body:JSON.stringify({
-        from:'ImpactGrid Events <events@impactgridgroup.com>',
-        to:[ownerEmail],
-        subject:'Your event gallery is ready — '+eventName,
-        html:'<p>Your event <strong>'+eventName+'</strong> is live.</p><p>Access code: <strong>'+eventCode+'</strong></p><p><a href="'+eventUrl+'">View Gallery</a></p>'
-      })
+    var res = await fetch(EVENTS_API + '/api/notify-owner', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ ownerEmail, eventName, eventCode, eventUrl })
     });
-  }catch(e){ console.log('Owner email skipped:', e.message); }
+    var data = await res.json();
+    if(data.success) toast('📧', 'Owner notified!', 'Email sent to ' + ownerEmail);
+    else console.warn('[OwnerNotify]', data.error);
+  }catch(e){ console.warn('[OwnerNotify] Failed:', e.message); }
 }
 
 async function loadEvents(){
