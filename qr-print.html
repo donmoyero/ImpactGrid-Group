@@ -481,57 +481,79 @@ body{
 var currentStyle = 'gold';
 var eventUrl     = '';
 var eventName    = '';
+var qrGenerated  = {};
 
-/* ── Boot: read URL params ── */
-document.addEventListener('DOMContentLoaded', function(){
+/*
+ * QR colour configs — dark must be very dark, light must be very light
+ * for scanners to work reliably. Gold card uses white QR on dark background.
+ */
+var QR_CONFIGS = {
+  gold : { dark: '#0f0d08', light: '#ffffff' }, /* white QR on dark card */
+  white: { dark: '#0f0d08', light: '#ffffff' }, /* standard black on white */
+  ink  : { dark: '#0f0d08', light: '#ffffff' }  /* standard black on white */
+};
+
+function boot(){
   var params   = new URLSearchParams(window.location.search);
   var slug     = params.get('event') || '';
   var code     = params.get('code')  || '';
   eventName    = decodeURIComponent(params.get('name') || 'Event Gallery');
-
-  /* Build the event URL guests will scan to */
-  var base     = params.get('base') || 'https://impactgridgroup.com';
+  var base     = params.get('base')  || 'https://impactgridgroup.com';
   eventUrl     = base + '/event.html?event=' + slug + '&code=' + code;
 
-  /* Set year */
-  document.getElementById('ink-year').textContent = new Date().getFullYear();
-
-  /* Set event names */
+  /* Fill in text */
+  document.getElementById('ink-year').textContent        = new Date().getFullYear();
   document.getElementById('gold-event-name').textContent = eventName;
-  document.getElementById('white-event-name').textContent = eventName;
+  document.getElementById('white-event-name').textContent= eventName;
   document.getElementById('ink-event-name').textContent  = eventName;
 
-  /* Set URLs */
   var shortUrl = 'impactgridgroup.com/event/' + slug;
   document.getElementById('gold-url').textContent  = shortUrl;
   document.getElementById('white-url').textContent = shortUrl;
   document.getElementById('ink-url').textContent   = shortUrl;
 
-  /* Generate gold QR first — show card immediately, others generated on demand */
-  generateQR('qr-gold', eventUrl, '#c9a84c', '#0f0d08', function(){
-    document.getElementById('loadingState').style.display = 'none';
-    showCard('gold');
-    /* Generate others in background after small delay so they're ready when switched */
-    setTimeout(function(){
-      generateQR('qr-white', eventUrl, '#6366f1', '#ffffff', null);
-      generateQR('qr-ink',   eventUrl, '#f7f5f0', '#0f0d08', null);
-    }, 400);
+  /* Wait for QRCode library to be available then generate */
+  waitForQR(function(){
+    generateQR('qr-gold', eventUrl, QR_CONFIGS.gold, function(){
+      document.getElementById('loadingState').style.display = 'none';
+      showCard('gold');
+      /* Generate others after a short delay */
+      setTimeout(function(){
+        generateQR('qr-white', eventUrl, QR_CONFIGS.white, null);
+        generateQR('qr-ink',   eventUrl, QR_CONFIGS.ink,   null);
+      }, 300);
+    });
   });
-});
+}
 
-var qrGenerated = {};
+/* Poll until QRCode library is loaded — fixes race condition */
+function waitForQR(cb){
+  if(typeof QRCode !== 'undefined'){ cb(); return; }
+  var attempts = 0;
+  var interval = setInterval(function(){
+    attempts++;
+    if(typeof QRCode !== 'undefined'){
+      clearInterval(interval);
+      cb();
+    } else if(attempts > 50){
+      clearInterval(interval);
+      document.getElementById('loadingState').innerHTML =
+        '<div style="color:#ef4444;font-size:13px;">⚠️ QR library failed to load.<br>Check your internet connection and refresh.</div>';
+    }
+  }, 100);
+}
 
-function generateQR(canvasId, url, lightColor, darkColor, callback){
+function generateQR(canvasId, url, cfg, callback){
   if(qrGenerated[canvasId]){ if(callback) callback(); return; }
   var canvas = document.getElementById(canvasId);
   if(!canvas){ if(callback) callback(); return; }
   QRCode.toCanvas(canvas, url, {
-    width               : 280,
-    margin              : 1,
-    color               : { dark: darkColor, light: lightColor },
-    errorCorrectionLevel: 'M'   /* M is faster to generate than H, still reliable */
+    width               : 260,
+    margin              : 2,
+    color               : { dark: cfg.dark, light: cfg.light },
+    errorCorrectionLevel: 'M'
   }, function(err){
-    if(err){ console.error('[QR]', err); if(callback) callback(); return; }
+    if(err){ console.error('[QR]', canvasId, err); if(callback) callback(); return; }
     qrGenerated[canvasId] = true;
     if(callback) callback();
   });
@@ -547,16 +569,16 @@ function showCard(style){
 function switchStyle(style, btn){
   document.querySelectorAll('.style-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
-  /* Generate this style's QR if not done yet */
-  var configs = {
-    gold : { light:'#c9a84c', dark:'#0f0d08' },
-    white: { light:'#ffffff', dark:'#0f0d08' },
-    ink  : { light:'#f7f5f0', dark:'#0f0d08' }
-  };
-  var cfg = configs[style];
-  generateQR('qr-'+style, eventUrl, cfg.light, cfg.dark, function(){
+  generateQR('qr-'+style, eventUrl, QR_CONFIGS[style], function(){
     showCard(style);
   });
+}
+
+/* Start as soon as DOM is ready */
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
 }
 </script>
 </body>
