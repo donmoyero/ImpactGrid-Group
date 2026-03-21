@@ -507,26 +507,33 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('white-url').textContent = shortUrl;
   document.getElementById('ink-url').textContent   = shortUrl;
 
-  /* Generate QR codes for all three canvases */
-  generateQR('qr-gold',  eventUrl, '#c9a84c', '#0f0d08');
-  generateQR('qr-white', eventUrl, '#6366f1', '#ffffff');
-  generateQR('qr-ink',   eventUrl, '#f7f5f0', '#0f0d08');
+  /* Generate gold QR first — show card immediately, others generated on demand */
+  generateQR('qr-gold', eventUrl, '#c9a84c', '#0f0d08', function(){
+    document.getElementById('loadingState').style.display = 'none';
+    showCard('gold');
+    /* Generate others in background after small delay so they're ready when switched */
+    setTimeout(function(){
+      generateQR('qr-white', eventUrl, '#6366f1', '#ffffff', null);
+      generateQR('qr-ink',   eventUrl, '#f7f5f0', '#0f0d08', null);
+    }, 400);
+  });
 });
 
-function generateQR(canvasId, url, lightColor, darkColor){
+var qrGenerated = {};
+
+function generateQR(canvasId, url, lightColor, darkColor, callback){
+  if(qrGenerated[canvasId]){ if(callback) callback(); return; }
   var canvas = document.getElementById(canvasId);
+  if(!canvas){ if(callback) callback(); return; }
   QRCode.toCanvas(canvas, url, {
-    width          : 300,
-    margin         : 1,
-    color          : { dark: darkColor, light: lightColor },
-    errorCorrectionLevel: 'H'
+    width               : 280,
+    margin              : 1,
+    color               : { dark: darkColor, light: lightColor },
+    errorCorrectionLevel: 'M'   /* M is faster to generate than H, still reliable */
   }, function(err){
-    if(err){ console.error('[QR]', err); return; }
-    /* Hide loading, show default style after first QR renders */
-    document.getElementById('loadingState').style.display = 'none';
-    if(currentStyle === canvasId.replace('qr-','') || canvasId === 'qr-gold'){
-      showCard('gold');
-    }
+    if(err){ console.error('[QR]', err); if(callback) callback(); return; }
+    qrGenerated[canvasId] = true;
+    if(callback) callback();
   });
 }
 
@@ -540,8 +547,16 @@ function showCard(style){
 function switchStyle(style, btn){
   document.querySelectorAll('.style-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
-  document.getElementById('loadingState').style.display = 'none';
-  showCard(style);
+  /* Generate this style's QR if not done yet */
+  var configs = {
+    gold : { light:'#c9a84c', dark:'#0f0d08' },
+    white: { light:'#ffffff', dark:'#0f0d08' },
+    ink  : { light:'#f7f5f0', dark:'#0f0d08' }
+  };
+  var cfg = configs[style];
+  generateQR('qr-'+style, eventUrl, cfg.light, cfg.dark, function(){
+    showCard(style);
+  });
 }
 </script>
 </body>
