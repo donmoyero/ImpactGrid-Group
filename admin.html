@@ -835,17 +835,23 @@ async function igCreateEvent(){
     await c.from('event_settings').insert({ event_id:ev.id, require_code:evRequireCode, template:template, watermark_enabled:false });
     showAlert('✅ Event created! Code: '+code, true);
     toast('✅','Event created!', name+' · Code: '+code);
+
+    /* Read values BEFORE clearing the form */
+    var ownerEmail = document.getElementById('ev-owner').value.trim();
+    var ownerName  = document.getElementById('ev-owner-name').value.trim();
+
+    /* Now clear the form */
     document.getElementById('ev-name').value='';
     document.getElementById('ev-code').value='';
-    if(document.getElementById('ev-owner')) document.getElementById('ev-owner').value='';
-    if(document.getElementById('ev-owner-name')) document.getElementById('ev-owner-name').value='';
+    document.getElementById('ev-owner').value='';
+    document.getElementById('ev-owner-name').value='';
     setDefaultExpiry();
     evRequireCode=true;
     document.getElementById('ev-code-toggle').classList.add('on');
     setTimeout(function(){ nav('events',null); }, 1500);
     loadStats();
-    var ownerEmail=document.getElementById('ev-owner').value.trim();
-    var ownerName=document.getElementById('ev-owner-name').value.trim();
+
+    /* Send notification with the values we saved above */
     if(ownerEmail) sendOwnerNotification(ownerEmail, ownerName, name, code, slug);
   }catch(err){ showAlert('Error: '+err.message, false); }
 }
