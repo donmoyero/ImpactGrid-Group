@@ -479,7 +479,10 @@ tr:hover td{background:rgba(255,255,255,.012);}
               <div id="createEventAlert" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
               <div class="field-group" style="margin-bottom:12px;"><div class="field-label">Event Name *</div><input type="text" id="ev-name" placeholder="e.g. Johnson Wedding 2026" oninput="updateTemplatePreview()"/></div>
               <div class="form-grid" style="margin-bottom:12px;">
+                <div class="field-group"><div class="field-label">Owner Name</div><input type="text" id="ev-owner-name" placeholder="e.g. Sarah Johnson"/><div class="field-hint">Personalises the welcome email</div></div>
                 <div class="field-group"><div class="field-label">Owner Email</div><input type="email" id="ev-owner" placeholder="owner@email.com"/><div class="field-hint">The person who manages this event</div></div>
+              </div>
+              <div class="form-grid" style="margin-bottom:12px;">
                 <div class="field-group"><div class="field-label">Expiry Date</div><input type="date" id="ev-expiry"/><div class="field-hint">Default is 30 days from today</div></div>
               </div>
               <div class="form-grid" style="margin-bottom:16px;">
@@ -824,6 +827,7 @@ async function igCreateEvent(){
       name:name, type:template, template:template,
       owner_id:sess.session?sess.session.user.id:null,
       owner_email:document.getElementById('ev-owner').value.trim()||null,
+      owner_name:document.getElementById('ev-owner-name').value.trim()||null,
       event_code:code, event_slug:slug,
       expiry_date:new Date(expiry).toISOString(), is_active:true
     }).select().single();
@@ -833,24 +837,27 @@ async function igCreateEvent(){
     toast('✅','Event created!', name+' · Code: '+code);
     document.getElementById('ev-name').value='';
     document.getElementById('ev-code').value='';
+    if(document.getElementById('ev-owner')) document.getElementById('ev-owner').value='';
+    if(document.getElementById('ev-owner-name')) document.getElementById('ev-owner-name').value='';
     setDefaultExpiry();
     evRequireCode=true;
     document.getElementById('ev-code-toggle').classList.add('on');
     setTimeout(function(){ nav('events',null); }, 1500);
     loadStats();
     var ownerEmail=document.getElementById('ev-owner').value.trim();
-    if(ownerEmail) sendOwnerNotification(ownerEmail, name, code, slug);
+    var ownerName=document.getElementById('ev-owner-name').value.trim();
+    if(ownerEmail) sendOwnerNotification(ownerEmail, ownerName, name, code, slug);
   }catch(err){ showAlert('Error: '+err.message, false); }
 }
 
-async function sendOwnerNotification(ownerEmail, eventName, eventCode, eventSlug){
+async function sendOwnerNotification(ownerEmail, ownerName, eventName, eventCode, eventSlug){
   if(!ownerEmail) return;
-  var eventUrl = window.location.origin + '/event.html?event=' + eventSlug + '&code=' + eventCode;
+  var eventUrl = window.location.origin + '/owner.html?code=' + eventCode;
   try{
     var res = await fetch(EVENTS_API + '/api/notify-owner', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ ownerEmail, eventName, eventCode, eventUrl })
+      body   : JSON.stringify({ ownerEmail, ownerName, eventName, eventCode, eventUrl })
     });
     var data = await res.json();
     if(data.success) toast('📧', 'Owner notified!', 'Email sent to ' + ownerEmail);
