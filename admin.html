@@ -1172,7 +1172,13 @@ async function groupEventFaces(eventId){
     var {data:rows}=await c.from('face_embeddings').select('id,face_crop_url').eq('event_id',eventId).not('face_crop_url','is',null);
     if(!rows||rows.length<2){ if(rows&&rows.length===1) await c.from('face_embeddings').update({group_id:0}).eq('id',rows[0].id); return; }
 
-    var SAME_PERSON=80; /* Raise to 80 — only merge faces Face++ is very confident are the same person */
+    /*
+     * GROUPING THRESHOLD = 65 (different from matching threshold of 80)
+     * Grouping compares event photos of same person at different angles/distances
+     * so Face++ scores lower than a direct selfie comparison — 65 is correct here.
+     * Matching threshold (guest selfie vs crop) stays at 80 in event.html.
+     */
+    var SAME_PERSON=65;
     var groups=[]; /* [{leaderCropUrl, ids:[]}] */
 
     for(var i=0;i<rows.length;i++){
