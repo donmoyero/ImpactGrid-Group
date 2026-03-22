@@ -6,149 +6,171 @@
 <title>Join ImpactGrid — Start Your Journey</title>
 <meta name="description" content="Join the ImpactGrid ecosystem — access analytics, creator tools, a professional network, and AI insights."/>
 <link rel="icon" href="favicon.ico"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared.css"/>
 <style>
-:root{
-  --bg:#07090f;--bg2:#0d1017;--bg3:#111520;
-  --card:#151a28;--card2:#1c2235;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
-  --gold:#f0b429;--gold2:#ffd166;
-  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
-  --blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);
-  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
-  --red:#f75f4f;--red-dim:rgba(247,95,79,0.10);
-  --purple:#a855f7;
-  --nav-h:64px;--max-w:1240px;--r:12px;--r2:20px;
-  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+/* ── Join page specific. Tokens → shared.css ── */
+
+/* Minimal auth nav (same as login.html) */
+.auth-nav{
+  position:fixed;top:0;left:0;right:0;
+  height:var(--nav-h);z-index:1000;
+  background:rgba(242,244,251,.95);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);transition:background .3s;
 }
-[data-theme="light"]{
-  --bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;
-  --card:#ffffff;--card2:#f5f7fc;
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
-  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
-  --gold:#c97e08;--gold2:#a86505;
-  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);
-  --blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);
-  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
-  --red:#d94f3d;--red-dim:rgba(217,79,61,0.08);
+[data-theme="dark"] .auth-nav{background:rgba(7,9,15,.92);}
+.auth-nav-in{
+  max-width:var(--max-w);margin:0 auto;padding:0 28px;
+  height:100%;display:flex;align-items:center;justify-content:space-between;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background 0.35s,color 0.35s;}
-a{color:inherit;text-decoration:none;}
-button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
-h1,h2,h3,h4{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
-input,select,textarea{font-family:var(--fb);font-size:14px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:11px 14px;width:100%;outline:none;transition:border-color 0.2s;}
-input:focus,select:focus,textarea:focus{border-color:var(--gold);}
-[data-theme="light"] input,[data-theme="light"] select,[data-theme="light"] textarea{background:var(--bg2);}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.45;}
+.auth-nav-logo{
+  display:flex;align-items:center;gap:9px;
+  font-family:var(--fd);font-weight:900;font-size:16px;letter-spacing:-.03em;
+}
+.auth-logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;color:#fff;
+}
+[data-theme="dark"] .auth-logo-mark{color:#07090f;}
+.auth-logo-img{width:30px;height:30px;object-fit:contain;border-radius:5px;}
+.auth-nav-right{display:flex;align-items:center;gap:9px;}
+.auth-theme-btn{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--card);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .2s;cursor:pointer;
+}
+.auth-theme-btn:hover{border-color:var(--gold);}
+.auth-back-link{
+  padding:7px 14px;border-radius:8px;font-size:13px;
+  font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all .2s;
+}
+.auth-back-link:hover{color:var(--text);}
 
-/* NAV BAR — minimal, fixed, matches index */
-.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;transition:background 0.35s;}
-[data-theme="light"] .nav{background:rgba(240,243,250,0.90);}
-.nav-inner{max-width:var(--max-w);margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:17px;letter-spacing:-0.03em;}
-.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;}
-.logo-img{width:32px;height:32px;object-fit:contain;border-radius:6px;}
-.nav-right{display:flex;align-items:center;gap:9px;}
-.theme-btn{width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;cursor:pointer;}
-.theme-btn:hover{border-color:var(--gold);}
-.btn-back{padding:7px 14px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all 0.2s;}
-.btn-back:hover{color:var(--text);}
+/* Two-panel layout */
+.join-wrap{
+  min-height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  padding-top:var(--nav-h);
+}
 
-/* LAYOUT */
-.join-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;padding-top:var(--nav-h);}
-
-/* LEFT PANEL */
+/* Left panel */
 .join-left{
   background:var(--bg2);border-right:1px solid var(--border);
-  padding:72px 60px;display:flex;flex-direction:column;justify-content:center;
-  position:relative;overflow:hidden;
+  padding:72px 60px;display:flex;flex-direction:column;
+  justify-content:center;position:relative;overflow:hidden;
 }
-.join-left-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 20% 60%,rgba(240,180,41,0.07),transparent);pointer-events:none;}
+.join-left-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 70% at 20% 60%,var(--gold-dim),transparent);
+}
 .join-left-content{position:relative;z-index:1;}
-.join-eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.join-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:20px;
+}
 .join-eyebrow::before{content:'';width:20px;height:1px;background:var(--gold);}
-.join-left h1{font-size:clamp(28px,3.5vw,42px);font-weight:900;letter-spacing:-0.03em;margin-bottom:16px;line-height:1.05;}
-.join-left > .join-left-content > p{font-size:16px;color:var(--text2);line-height:1.7;margin-bottom:44px;}
+.join-left h1{
+  font-size:clamp(28px,3.5vw,42px);font-weight:900;
+  letter-spacing:-.03em;margin-bottom:16px;line-height:1.05;
+}
+.join-left-sub{font-size:16px;color:var(--text2);line-height:1.7;margin-bottom:44px;}
 .join-perks{display:flex;flex-direction:column;gap:20px;}
 .join-perk{display:flex;align-items:flex-start;gap:14px;}
 .perk-icon{
   width:38px;height:38px;flex-shrink:0;
   background:var(--gold-dim);border:1px solid var(--gold-glo);
-  border-radius:10px;display:flex;align-items:center;justify-content:center;
-  font-size:17px;transition:transform 0.2s;
+  border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:17px;transition:transform .2s;
 }
 .join-perk:hover .perk-icon{transform:scale(1.08);}
-.perk-text h4{font-family:var(--fd);font-size:14px;font-weight:800;margin-bottom:3px;letter-spacing:-0.01em;}
+.perk-text h4{font-family:var(--fd);font-size:14px;font-weight:800;margin-bottom:3px;letter-spacing:-.01em;}
 .perk-text p{font-size:13px;color:var(--text2);line-height:1.55;}
 
-/* RIGHT PANEL */
+/* Right panel */
 .join-right{
   padding:72px 60px;display:flex;flex-direction:column;
   justify-content:center;overflow-y:auto;background:var(--bg);
 }
 .join-form-wrap{max-width:460px;width:100%;margin:0 auto;}
 .join-right h2{font-size:clamp(22px,2.8vw,28px);margin-bottom:8px;}
-.join-right > .join-form-wrap > p{color:var(--text2);font-size:15px;margin-bottom:32px;}
+.join-right-sub{color:var(--text2);font-size:15px;margin-bottom:32px;}
 
-/* TYPE SELECTOR */
+/* Type selector */
 .type-selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;}
 .type-card{
   background:var(--card);border:2px solid var(--border);
   border-radius:var(--r2);padding:20px;cursor:pointer;
-  transition:all 0.2s;text-align:center;position:relative;overflow:hidden;
+  transition:all .2s;text-align:center;
+  position:relative;overflow:hidden;
 }
-.type-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
+.type-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--gold);transform:scaleX(0);
+  transition:transform .3s;transform-origin:left;
+}
 .type-card:hover{border-color:var(--border2);transform:translateY(-2px);}
 .type-card.selected{border-color:var(--gold);background:var(--gold-dim);}
 .type-card.selected::before{transform:scaleX(1);}
 .type-icon{font-size:28px;margin-bottom:8px;}
-.type-label{font-family:var(--fd);font-size:14px;font-weight:800;letter-spacing:-0.01em;}
+.type-label{font-family:var(--fd);font-size:14px;font-weight:800;letter-spacing:-.01em;}
 .type-desc{font-size:12px;color:var(--text2);margin-top:4px;line-height:1.4;}
 
-/* FORM */
+/* Form sections */
 .form-section{display:none;}
-.form-section.active{display:block;animation:fadeUp 0.3s ease;}
+.form-section.active{display:block;animation:fadeUp .3s ease;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .form-label{font-size:12px;font-weight:600;color:var(--text2);}
 .form-label .opt{color:var(--text3);font-weight:400;}
+
+/* Form inputs — light-aware */
+.join-input, .join-select{
+  width:100%;padding:11px 14px;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--text);
+  font-family:var(--fb);font-size:14px;
+  outline:none;transition:border-color .2s;
+}
+.join-input:focus, .join-select:focus{border-color:var(--gold);}
+.join-input::placeholder{color:var(--text3);}
+.join-select{
+  appearance:none;cursor:pointer;padding-right:36px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239099b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
 .password-hint{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--fm);}
 
-/* SUBMIT BUTTON */
+/* Submit button */
 .submit-btn{
   width:100%;padding:14px;
   background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#07090f;font-family:var(--fd);font-weight:800;font-size:15px;
-  border-radius:var(--r);border:none;cursor:pointer;
-  transition:all 0.2s;margin-top:6px;
+  color:#fff;font-family:var(--fd);font-weight:800;
+  font-size:15px;border-radius:var(--r);border:none;
+  cursor:pointer;transition:all .2s;margin-top:6px;
 }
+[data-theme="dark"] .submit-btn{color:#07090f;}
 .submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
-.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
 
-/* ALERT */
+/* Alert */
 .alert{font-size:13.5px;padding:12px 16px;border-radius:var(--r);margin-bottom:18px;display:none;line-height:1.55;}
 .alert.show{display:block;}
-.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
-.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(247,95,79,0.25);}
+.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.25);}
+[data-theme="dark"] .alert-success{color:#2dd4a0;border-color:rgba(45,212,160,.25);}
+.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(217,79,59,.2);}
+[data-theme="dark"] .alert-error{color:#f75f4f;border-color:rgba(247,95,79,.25);}
 
-/* FOOTER LINK */
+.approval-note{font-size:12px;color:var(--text3);text-align:center;margin-top:12px;line-height:1.6;font-family:var(--fm);}
+.form-divider{height:1px;background:var(--border);margin:20px 0;}
 .already-have{text-align:center;margin-top:22px;font-size:14px;color:var(--text2);}
 .already-have a{color:var(--gold);font-weight:700;}
 .already-have a:hover{text-decoration:underline;}
 
-/* DIVIDER */
-.form-divider{height:1px;background:var(--border);margin:20px 0;}
-
-/* APPROVAL NOTE */
-.approval-note{font-size:12px;color:var(--text3);text-align:center;margin-top:12px;line-height:1.6;font-family:var(--fm);}
-
-/* RESPONSIVE */
+/* Responsive */
 @media(max-width:900px){
   .join-wrap{grid-template-columns:1fr;}
   .join-left{display:none;}
@@ -162,22 +184,21 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 </head>
 <body>
 
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo">
-      <img src="logo.png" class="logo-img" alt="ImpactGrid Creator Intelligence" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="logo-mark" style="display:none;">IG</div>
-      ImpactGrid Creator Intelligence
+<!-- Minimal auth nav -->
+<nav class="auth-nav">
+  <div class="auth-nav-in">
+    <a href="index.html" class="auth-nav-logo">
+      <img src="logo.png" class="auth-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div class="auth-logo-mark" style="display:none;">IG</div>
+      ImpactGrid
     </a>
-    <div class="nav-right">
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
-      <a href="index.html" class="btn-back">← Back to site</a>
+    <div class="auth-nav-right">
+      <button class="auth-theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+      <a href="index.html" class="auth-back-link">← Back to site</a>
     </div>
   </div>
 </nav>
 
-<!-- JOIN WRAP -->
 <div class="join-wrap">
 
   <!-- LEFT PANEL -->
@@ -186,7 +207,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
     <div class="join-left-content">
       <div class="join-eyebrow">Join ImpactGrid</div>
       <h1>Your Intelligence<br>Journey Starts Here</h1>
-      <p>Access analytics, creator tools, a professional network, and AI insights — all in one ecosystem.</p>
+      <p class="join-left-sub">Access analytics, creator tools, a professional network, and AI insights — all in one ecosystem.</p>
       <div class="join-perks">
         <div class="join-perk">
           <div class="perk-icon">⚡</div>
@@ -223,13 +244,12 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <!-- RIGHT PANEL -->
   <div class="join-right">
     <div class="join-form-wrap">
-
       <h2>Create Your Account</h2>
-      <p style="color:var(--text2);font-size:15px;margin-bottom:32px;">Choose how you want to join ImpactGrid.</p>
+      <p class="join-right-sub">Choose how you want to join ImpactGrid.</p>
 
       <div class="alert" id="alertBox"></div>
 
-      <!-- TYPE SELECTOR -->
+      <!-- Type selector -->
       <div class="type-selector">
         <div class="type-card selected" id="card-professional" onclick="selectType('professional')">
           <div class="type-icon">👤</div>
@@ -243,39 +263,39 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         </div>
       </div>
 
-      <!-- PROFESSIONAL FORM -->
+      <!-- Professional form -->
       <div class="form-section active" id="form-professional">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">First Name</label>
-            <input id="pro-fname" type="text" placeholder="Jane"/>
+            <input id="pro-fname" class="join-input" type="text" placeholder="Jane"/>
           </div>
           <div class="form-group">
             <label class="form-label">Last Name</label>
-            <input id="pro-lname" type="text" placeholder="Smith"/>
+            <input id="pro-lname" class="join-input" type="text" placeholder="Smith"/>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Email Address</label>
-          <input id="pro-email" type="email" placeholder="jane@example.com"/>
+          <input id="pro-email" class="join-input" type="email" placeholder="jane@example.com"/>
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input id="pro-password" type="password" placeholder="Minimum 8 characters"/>
+          <input id="pro-password" class="join-input" type="password" placeholder="Minimum 8 characters"/>
           <div class="password-hint">At least 8 characters with a number or symbol.</div>
         </div>
         <div class="form-group">
           <label class="form-label">Primary Skills</label>
-          <input id="pro-skills" type="text" placeholder="e.g. Data Analysis, Marketing, Content Strategy"/>
+          <input id="pro-skills" class="join-input" type="text" placeholder="e.g. Data Analysis, Marketing, Content Strategy"/>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Location</label>
-            <input id="pro-location" type="text" placeholder="London, UK"/>
+            <input id="pro-location" class="join-input" type="text" placeholder="London, UK"/>
           </div>
           <div class="form-group">
             <label class="form-label">Experience Level</label>
-            <select id="pro-experience">
+            <select id="pro-experience" class="join-select">
               <option value="">Select level</option>
               <option value="entry">Entry Level</option>
               <option value="mid">Mid Level</option>
@@ -286,37 +306,37 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         </div>
         <div class="form-group">
           <label class="form-label">Portfolio URL <span class="opt">(optional)</span></label>
-          <input id="pro-portfolio" type="url" placeholder="https://yourportfolio.com"/>
+          <input id="pro-portfolio" class="join-input" type="url" placeholder="https://yourportfolio.com"/>
         </div>
         <button class="submit-btn" id="pro-submit" onclick="joinProfessional()">
-          Create Professional Account &#8594;
+          Create Professional Account →
         </button>
         <p class="approval-note">Professional accounts require admin approval. You'll hear from us within 24 hours.</p>
       </div>
 
-      <!-- EMPLOYER FORM -->
+      <!-- Employer form -->
       <div class="form-section" id="form-employer">
         <div class="form-group">
           <label class="form-label">Company Name</label>
-          <input id="emp-company" type="text" placeholder="Acme Corp Ltd"/>
+          <input id="emp-company" class="join-input" type="text" placeholder="Acme Corp Ltd"/>
         </div>
         <div class="form-group">
           <label class="form-label">Your Name</label>
-          <input id="emp-name" type="text" placeholder="John Davies"/>
+          <input id="emp-name" class="join-input" type="text" placeholder="John Davies"/>
         </div>
         <div class="form-group">
           <label class="form-label">Work Email</label>
-          <input id="emp-email" type="email" placeholder="john@acme.com"/>
+          <input id="emp-email" class="join-input" type="email" placeholder="john@acme.com"/>
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input id="emp-password" type="password" placeholder="Minimum 8 characters"/>
+          <input id="emp-password" class="join-input" type="password" placeholder="Minimum 8 characters"/>
           <div class="password-hint">At least 8 characters with a number or symbol.</div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Industry</label>
-            <select id="emp-industry">
+            <select id="emp-industry" class="join-select">
               <option value="">Select industry</option>
               <option>Technology</option>
               <option>Finance</option>
@@ -330,7 +350,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
           </div>
           <div class="form-group">
             <label class="form-label">Company Size</label>
-            <select id="emp-size">
+            <select id="emp-size" class="join-select">
               <option value="">Select size</option>
               <option>1–10</option>
               <option>11–50</option>
@@ -341,161 +361,150 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
           </div>
         </div>
         <button class="submit-btn" id="emp-submit" onclick="joinEmployer()">
-          Create Employer Account &#8594;
+          Create Employer Account →
         </button>
         <p class="approval-note">Employer accounts are activated immediately.</p>
       </div>
 
       <div class="form-divider"></div>
-      <div class="already-have">
-        Already have an account? <a href="login.html">Sign in</a>
-      </div>
-
+      <div class="already-have">Already have an account? <a href="login.html">Sign in</a></div>
     </div>
   </div>
 
-</div><!-- end join-wrap -->
+</div>
 
 <script src="supabase-config.js"></script>
 <script src="impactgrid-chat-bubble.js"></script>
 <script>
-/* ── Theme ── */
-var dark=false;
-function toggleTheme(){
-  dark=!dark;
-  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
-  document.getElementById('themeBtn').textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';
-  try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}
+/* ── Theme — light default ── */
+var isDark = false;
+function applyTheme(dark) {
+  isDark = dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  var tb = document.getElementById('themeBtn');
+  if (tb) tb.textContent = dark ? '☀️' : '🌙';
+  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
 }
-try{
-  var saved=localStorage.getItem('igt');
-  if(saved==='d'){dark=true;document.documentElement.setAttribute('data-theme','dark');document.getElementById('themeBtn').textContent='\uD83C\uDF19';}
-  else{dark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('themeBtn').textContent='\u2600\uFE0F';}
-}catch(e){}
+function toggleTheme() { applyTheme(!isDark); }
+(function() {
+  try { if (localStorage.getItem('ig_theme') === 'dark') applyTheme(true); } catch(e) {}
+})();
+
+/* ── Pre-select type from URL param ── */
+var urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('type') === 'employer') selectType('employer');
 
 /* ── Type switcher ── */
-var currentType='professional';
-
-/* Pre-select from URL param */
-var urlParams=new URLSearchParams(window.location.search);
-if(urlParams.get('type')==='employer')selectType('employer');
-
-function selectType(type){
-  currentType=type;
-  document.querySelectorAll('.type-card').forEach(function(c){c.classList.remove('selected');});
-  document.querySelectorAll('.form-section').forEach(function(f){f.classList.remove('active');});
-  document.getElementById('card-'+type).classList.add('selected');
-  document.getElementById('form-'+type).classList.add('active');
-  /* Clear alert on switch */
-  var al=document.getElementById('alertBox');
-  al.className='alert';al.textContent='';
+var currentType = 'professional';
+function selectType(type) {
+  currentType = type;
+  document.querySelectorAll('.type-card').forEach(function(c) { c.classList.remove('selected'); });
+  document.querySelectorAll('.form-section').forEach(function(f) { f.classList.remove('active'); });
+  document.getElementById('card-' + type).classList.add('selected');
+  document.getElementById('form-' + type).classList.add('active');
+  var al = document.getElementById('alertBox');
+  al.className = 'alert'; al.textContent = '';
 }
 
 /* ── Alert helper ── */
-function showAlert(msg,type){
-  var el=document.getElementById('alertBox');
-  el.textContent=msg;
-  el.className='alert alert-'+type+' show';
-  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+function showAlert(msg, type) {
+  var el = document.getElementById('alertBox');
+  el.textContent = msg;
+  el.className = 'alert alert-' + type + ' show';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 /* ── Validate ── */
-function validateBase(email,password,requiredFields){
-  for(var i=0;i<requiredFields.length;i++){
-    if(!requiredFields[i]){showAlert('Please fill in all required fields.','error');return false;}
+function validateBase(email, password, requiredFields) {
+  for (var i = 0; i < requiredFields.length; i++) {
+    if (!requiredFields[i]) { showAlert('Please fill in all required fields.', 'error'); return false; }
   }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showAlert('Please enter a valid email address.','error');return false;}
-  if(password.length<8){showAlert('Password must be at least 8 characters.','error');return false;}
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('Please enter a valid email address.', 'error'); return false; }
+  if (password.length < 8) { showAlert('Password must be at least 8 characters.', 'error'); return false; }
   return true;
 }
 
 /* ── Join Professional ── */
-async function joinProfessional(){
-  var btn=document.getElementById('pro-submit');
-  var email=document.getElementById('pro-email').value.trim();
-  var password=document.getElementById('pro-password').value;
-  var fname=document.getElementById('pro-fname').value.trim();
-  var lname=document.getElementById('pro-lname').value.trim();
-  var skills=document.getElementById('pro-skills').value.trim();
-  var location=document.getElementById('pro-location').value.trim();
-  var experience=document.getElementById('pro-experience').value;
-  var portfolio=document.getElementById('pro-portfolio').value.trim();
-
-  if(!validateBase(email,password,[email,password,fname,lname]))return;
-
-  btn.disabled=true;btn.textContent='Creating account…';
-
-  try{
-    var client=getSupabase();
-    var res=await client.auth.signUp({
-      email:email,password:password,
-      options:{data:{
-        full_name:(fname+' '+lname).trim(),
-        first_name:fname,last_name:lname,
-        role:'professional',status:'pending',
-        skills:skills,location:location,
-        experience:experience,portfolio:portfolio
+async function joinProfessional() {
+  var btn = document.getElementById('pro-submit');
+  var email    = document.getElementById('pro-email').value.trim();
+  var password = document.getElementById('pro-password').value;
+  var fname    = document.getElementById('pro-fname').value.trim();
+  var lname    = document.getElementById('pro-lname').value.trim();
+  var skills   = document.getElementById('pro-skills').value.trim();
+  var location = document.getElementById('pro-location').value.trim();
+  var experience = document.getElementById('pro-experience').value;
+  var portfolio  = document.getElementById('pro-portfolio').value.trim();
+  if (!validateBase(email, password, [email, password, fname, lname])) return;
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    var client = getSupabase();
+    var res = await client.auth.signUp({
+      email: email, password: password,
+      options: { data: {
+        full_name: (fname + ' ' + lname).trim(),
+        first_name: fname, last_name: lname,
+        role: 'professional', status: 'pending',
+        skills: skills, location: location,
+        experience: experience, portfolio: portfolio
       }}
     });
-    if(res.error)throw res.error;
-    if(res.data.user){
+    if (res.error) throw res.error;
+    if (res.data.user) {
       await client.from('profiles').upsert({
-        id:res.data.user.id,email:email,
-        full_name:(fname+' '+lname).trim(),
-        role:'professional',status:'pending',
-        skills:skills,location:location,
-        experience:experience,portfolio_url:portfolio,
-        created_at:new Date().toISOString()
+        id: res.data.user.id, email: email,
+        full_name: (fname + ' ' + lname).trim(),
+        role: 'professional', status: 'pending',
+        skills: skills, location: location,
+        experience: experience, portfolio_url: portfolio,
+        created_at: new Date().toISOString()
       });
     }
-    showAlert('✅ Account created! We will review your profile and get back to you within 24 hours.','success');
-    btn.textContent='Application submitted ✓';
-    btn.style.background='var(--green-dim)';
-    btn.style.color='var(--green)';
-    btn.style.border='1px solid rgba(45,212,160,0.25)';
-  }catch(e){
-    showAlert(e.message||'Something went wrong. Please try again.','error');
-    btn.disabled=false;btn.textContent='Create Professional Account →';
+    showAlert('✅ Account created! We will review your profile and get back to you within 24 hours.', 'success');
+    btn.textContent = 'Application submitted ✓';
+    btn.style.background = 'var(--green-dim)';
+    btn.style.color = 'var(--green)';
+    btn.style.border = '1px solid rgba(15,168,118,.25)';
+  } catch(e) {
+    showAlert(e.message || 'Something went wrong. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Create Professional Account →';
   }
 }
 
 /* ── Join Employer ── */
-async function joinEmployer(){
-  var btn=document.getElementById('emp-submit');
-  var email=document.getElementById('emp-email').value.trim();
-  var password=document.getElementById('emp-password').value;
-  var name=document.getElementById('emp-name').value.trim();
-  var company=document.getElementById('emp-company').value.trim();
-  var industry=document.getElementById('emp-industry').value;
-  var size=document.getElementById('emp-size').value;
-
-  if(!validateBase(email,password,[email,password,name,company]))return;
-
-  btn.disabled=true;btn.textContent='Creating account…';
-
-  try{
-    var client=getSupabase();
-    var res=await client.auth.signUp({
-      email:email,password:password,
-      options:{data:{
-        full_name:name,role:'employer',status:'active',
-        company_name:company,industry:industry,company_size:size
+async function joinEmployer() {
+  var btn = document.getElementById('emp-submit');
+  var email    = document.getElementById('emp-email').value.trim();
+  var password = document.getElementById('emp-password').value;
+  var name     = document.getElementById('emp-name').value.trim();
+  var company  = document.getElementById('emp-company').value.trim();
+  var industry = document.getElementById('emp-industry').value;
+  var size     = document.getElementById('emp-size').value;
+  if (!validateBase(email, password, [email, password, name, company])) return;
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    var client = getSupabase();
+    var res = await client.auth.signUp({
+      email: email, password: password,
+      options: { data: {
+        full_name: name, role: 'employer', status: 'active',
+        company_name: company, industry: industry, company_size: size
       }}
     });
-    if(res.error)throw res.error;
-    if(res.data.user){
+    if (res.error) throw res.error;
+    if (res.data.user) {
       await client.from('profiles').upsert({
-        id:res.data.user.id,email:email,
-        full_name:name,role:'employer',status:'active',
-        company_name:company,industry:industry,company_size:size,
-        created_at:new Date().toISOString()
+        id: res.data.user.id, email: email,
+        full_name: name, role: 'employer', status: 'active',
+        company_name: company, industry: industry, company_size: size,
+        created_at: new Date().toISOString()
       });
     }
-    showAlert('✅ Account created! Redirecting to your dashboard…','success');
-    setTimeout(function(){window.location.href='employer-dashboard.html';},1500);
-  }catch(e){
-    showAlert(e.message||'Something went wrong. Please try again.','error');
-    btn.disabled=false;btn.textContent='Create Employer Account →';
+    showAlert('✅ Account created! Redirecting to your dashboard…', 'success');
+    setTimeout(function() { window.location.href = 'employer-dashboard.html'; }, 1500);
+  } catch(e) {
+    showAlert(e.message || 'Something went wrong. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Create Employer Account →';
   }
 }
 </script>
