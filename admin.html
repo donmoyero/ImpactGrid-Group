@@ -1167,19 +1167,18 @@ async function indexPhotoFaces(photoId, photoUrl, eventId){
     }
     var data=await res.json();
 
-    /* Python backend returns embedding + face_crop_b64 + groq_score */
     if(!data.faceFound){
       if(data.rejected) console.log('[FaceIndex] Groq REJECTED photo',photoId,'—',data.reason);
       else console.log('[FaceIndex] No face detected in photo',photoId);
       return;
     }
 
-    if(!data.embedding){
-      console.warn('[FaceIndex] No embedding returned for photo',photoId);
+    if(!data.face_token){
+      console.warn('[FaceIndex] No face token returned for photo',photoId);
       return;
     }
 
-    console.log('[FaceIndex] Groq ACCEPTED photo',photoId,'— score:',data.groq_score);
+    console.log('[FaceIndex] Groq ACCEPTED — face_token received for photo',photoId);
 
     /* Upload face crop to Supabase storage */
     var cropUrl = null;
@@ -1198,14 +1197,22 @@ async function indexPhotoFaces(photoId, photoUrl, eventId){
       }catch(cropErr){ console.warn('[FaceIndex] Crop upload failed:',cropErr.message); }
     }
 
-    /* Save embedding vector + crop URL to Supabase */
+    /* If no crop from server, generate locally */
+    if(!cropUrl && data.rect){
+      try{
+        var imgEl = await loadImgEl(photoUrl);
+        cropUrl   = await cropAndUploadFace(imgEl, data.rect, eventId, photoId);
+      }catch(e){}
+    }
+
+    /* Save to Supabase */
     var c=getSupabase();
     await c.from('face_embeddings').insert({
       event_id     : eventId,
       photo_id     : photoId,
       face_index   : 0,
-      face_token   : photoId,
-      embedding    : JSON.stringify(data.embedding),
+      face_token   : data.face_token,
+      embedding    : null,
       face_crop_url: cropUrl,
       group_id     : -1
     });
