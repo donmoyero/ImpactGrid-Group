@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <!-- MediaPipe Face Mesh -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <style>
 /* ══ TOKENS ══ */
 :root{
@@ -1099,30 +1098,12 @@ async function rejectRequest(id){ if(!confirm('Reject?'))return; await getSupaba
 /* ════════════════════════════════════════════════════
    FACE INDEXING — MediaPipe + Face++ via backend
 ════════════════════════════════════════════════════ */
-var mediaPipeReady = false;
+/* MediaPipe removed — Face++ handles detection directly.
+   Keeping stubs so nothing breaks if called elsewhere. */
+var mediaPipeReady = true;
 var faceMeshAdmin  = null;
-
-async function ensureMediaPipe(){
-  if(mediaPipeReady) return true;
-  try{
-    if(typeof FaceMesh === 'undefined') return true; /* skip if not loaded */
-    faceMeshAdmin = new FaceMesh({ locateFile: function(file){
-      return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/'+file;
-    }});
-    faceMeshAdmin.setOptions({ maxNumFaces:10, refineLandmarks:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
-    await faceMeshAdmin.initialize();
-    mediaPipeReady = true;
-    return true;
-  }catch(e){ return false; }
-}
-
-async function hasFaceMediaPipe(imgEl){
-  if(!mediaPipeReady || !faceMeshAdmin) return true;
-  return new Promise(function(resolve){
-    faceMeshAdmin.onResults(function(r){ resolve(r.multiFaceLandmarks && r.multiFaceLandmarks.length > 0); });
-    faceMeshAdmin.send({ image: imgEl }).catch(function(){ resolve(true); });
-  });
-}
+async function ensureMediaPipe(){ return true; }
+async function hasFaceMediaPipe(imgEl){ return true; }
 
 function loadImgEl(url){
   return new Promise(function(resolve, reject){
@@ -1153,26 +1134,62 @@ async function cropAndUploadFace(imgEl, rect, eventId, photoId){
 
 async function indexPhotoFaces(photoId, photoUrl, eventId){
   try{
-    /* Step 1 — MediaPipe pre-check */
-    await ensureMediaPipe();
-    var imgEl=await loadImgEl(photoUrl);
-    var faceExists=await hasFaceMediaPipe(imgEl);
-    if(!faceExists){ console.log('[FaceIndex] No face (MediaPipe) — skipping Face++ for photo',photoId); return; }
+    /* Step 1 — Send directly to Face++ via backend (no MediaPipe gate)
+     * Add cache buster so Face++ doesn't reject duplicate URLs
+     */
+    var urlWithCacheBust = photoUrl + (photoUrl.includes('?') ? '&' : '?') + 'cb=' + Date.now();
 
-    /* Step 2 — Face++ Detect via backend */
     var res=await fetch(EVENTS_API+'/api/facepp-embed',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ imageUrl: photoUrl })
+      body:JSON.stringify({ imageUrl: urlWithCacheBust })
     });
-    if(!res.ok) return;
+    if(!res.ok){
+      var errText = await res.text();
+      console.warn('[FaceIndex] Face++ embed failed for photo',photoId,'—',errText);
+      return;
+    }
     var data=await res.json();
-    if(!data.faceFound || !data.face_token){ console.log('[FaceIndex] Face++ found no face in photo',photoId); return; }
+    if(!data.faceFound || !data.face_token){
+      console.log('[FaceIndex] No face detected in photo',photoId);
+      return;
+    }
 
-    /* Step 3 — Crop face thumbnail */
+    /* Step 2 — Groq AI quality gate
+     * Send Face++ metadata to Groq/Llama for smart quality decision.
+     * Only ACCEPT crops go into the index. Falls back to rule-based if Groq unavailable.
+     */
+    try{
+      var groqRes = await fetch(EVENTS_API+'/api/groq-validate-face',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          photoId : photoId,
+          faceData: {
+            rect                 : data.rect,
+            detection_confidence : data.detection_confidence || 90,
+            landmarks            : data.landmarks || null
+          }
+        })
+      });
+      if(groqRes.ok){
+        var groqData = await groqRes.json();
+        if(groqData.decision === 'REJECT'){
+          console.log('[FaceIndex] Groq REJECTED photo',photoId,'—',groqData.reason);
+          return; /* Skip — poor quality crop */
+        }
+        console.log('[FaceIndex] Groq ACCEPTED photo',photoId,'— score:',groqData.score,'—',groqData.reason);
+      }
+    }catch(groqErr){
+      console.warn('[FaceIndex] Groq validation failed, continuing anyway:',groqErr.message);
+      /* Never block indexing if Groq is down */
+    }
+
+    /* Step 3 — Load image and crop face thumbnail */
+    var imgEl=await loadImgEl(photoUrl);
     var cropUrl=await cropAndUploadFace(imgEl, data.rect, eventId, photoId);
 
-    /* Step 4 — Save to Supabase */
+    /* Step 3 — Save to Supabase */
     var c=getSupabase();
     await c.from('face_embeddings').insert({
       event_id     : eventId,
