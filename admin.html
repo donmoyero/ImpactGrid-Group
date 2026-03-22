@@ -1162,57 +1162,50 @@ async function indexPhotoFaces(photoId, photoUrl, eventId){
     }
     if(!res.ok){
       var errText = await res.text();
-      console.warn('[FaceIndex] Face++ embed failed for photo',photoId,'—',errText);
+      console.warn('[FaceIndex] Embed failed for photo',photoId,'—',errText);
       return;
     }
     var data=await res.json();
-    if(!data.faceFound || !data.face_token){
-      console.log('[FaceIndex] No face detected in photo',photoId);
+
+    /* Python backend returns embedding + face_crop_b64 + groq_score */
+    if(!data.faceFound){
+      if(data.rejected) console.log('[FaceIndex] Groq REJECTED photo',photoId,'—',data.reason);
+      else console.log('[FaceIndex] No face detected in photo',photoId);
       return;
     }
 
-    /* Step 2 — Groq AI quality gate
-     * Send Face++ metadata to Groq/Llama for smart quality decision.
-     * Only ACCEPT crops go into the index. Falls back to rule-based if Groq unavailable.
-     */
-    try{
-      var groqRes = await fetch(EVENTS_API+'/api/groq-validate-face',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          photoId : photoId,
-          faceData: {
-            rect                 : data.rect,
-            detection_confidence : data.detection_confidence || 90,
-            landmarks            : data.landmarks || null
-          }
-        })
-      });
-      if(groqRes.ok){
-        var groqData = await groqRes.json();
-        if(groqData.decision === 'REJECT'){
-          console.log('[FaceIndex] Groq REJECTED photo',photoId,'—',groqData.reason);
-          return; /* Skip — poor quality crop */
-        }
-        console.log('[FaceIndex] Groq ACCEPTED photo',photoId,'— score:',groqData.score,'—',groqData.reason);
-      }
-    }catch(groqErr){
-      console.warn('[FaceIndex] Groq validation failed, continuing anyway:',groqErr.message);
-      /* Never block indexing if Groq is down */
+    if(!data.embedding){
+      console.warn('[FaceIndex] No embedding returned for photo',photoId);
+      return;
     }
 
-    /* Step 3 — Load image and crop face thumbnail */
-    var imgEl=await loadImgEl(photoUrl);
-    var cropUrl=await cropAndUploadFace(imgEl, data.rect, eventId, photoId);
+    console.log('[FaceIndex] Groq ACCEPTED photo',photoId,'— score:',data.groq_score);
 
-    /* Step 3 — Save to Supabase */
+    /* Upload face crop to Supabase storage */
+    var cropUrl = null;
+    if(data.face_crop_b64){
+      try{
+        var byteStr = atob(data.face_crop_b64);
+        var ab      = new ArrayBuffer(byteStr.length);
+        var ia      = new Uint8Array(ab);
+        for(var k=0;k<byteStr.length;k++) ia[k]=byteStr.charCodeAt(k);
+        var cropBlob = new Blob([ab],{type:'image/jpeg'});
+        var cropPath = eventId+'/faces/'+photoId+'_face0.jpg';
+        var sc       = getSupabase();
+        await sc.storage.from('events').upload(cropPath,cropBlob,{contentType:'image/jpeg',upsert:true});
+        var {data:urlData}=sc.storage.from('events').getPublicUrl(cropPath);
+        cropUrl = urlData.publicUrl;
+      }catch(cropErr){ console.warn('[FaceIndex] Crop upload failed:',cropErr.message); }
+    }
+
+    /* Save embedding vector + crop URL to Supabase */
     var c=getSupabase();
     await c.from('face_embeddings').insert({
       event_id     : eventId,
       photo_id     : photoId,
       face_index   : 0,
-      face_token   : data.face_token,
-      embedding    : null,
+      face_token   : photoId,
+      embedding    : JSON.stringify(data.embedding),
       face_crop_url: cropUrl,
       group_id     : -1
     });
