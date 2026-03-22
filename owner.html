@@ -169,21 +169,9 @@ tr:last-child td{border-bottom:none;}
         🔑 Access My Gallery
       </button>
 
-      <!-- Divider + resend section -->
-      <div class="login-divider">
-        <div class="login-footer">
-          Your access code was emailed when your event was created.<br/>
-          Can't find it? Enter your email below to resend it.
-        </div>
-        <div class="resend-row">
-          <input class="resend-input" type="email" id="resendEmailInput"
-            placeholder="your@email.com"
-            onkeydown="if(event.key==='Enter')resendEmail()"/>
-          <button class="resend-btn" id="resendBtn" onclick="resendEmail()">
-            📧 Resend
-          </button>
-        </div>
-        <div class="resend-msg" id="resendMsg"></div>
+      <div style="margin-top:20px;font-size:12px;color:#4a5068;text-align:center;line-height:1.7;">
+        Your access code was emailed when your event was created.<br/>
+        Contact your photographer if you need help.
       </div>
 
     </div>
@@ -279,12 +267,7 @@ var ownerData  = null;
 
 /* ══ BOOT ══ */
 document.addEventListener('DOMContentLoaded', function(){
-  try{
-    var saved = sessionStorage.getItem('ig-owner');
-    if(saved){ ownerData = JSON.parse(saved); showPortal(); return; }
-  }catch(e){}
-  var code = new URLSearchParams(window.location.search).get('code');
-  if(code) document.getElementById('codeInput').value = code.toUpperCase();
+  /* Always show login — owner must type their code manually */
   showSection('section-login');
 });
 
@@ -321,7 +304,6 @@ async function ownerLogin(){
     }
 
     ownerData = data;
-    try{ sessionStorage.setItem('ig-owner', JSON.stringify(data)); }catch(e){}
     showPortal();
 
   }catch(err){
@@ -477,7 +459,6 @@ async function refreshPortal(){
     var data = await res.json();
     if(data.success){
       ownerData = data;
-      try{ sessionStorage.setItem('ig-owner', JSON.stringify(data)); }catch(e){}
       showPortal();
       toast('✅','Gallery refreshed','');
     }
@@ -487,7 +468,6 @@ async function refreshPortal(){
 /* ══ SIGN OUT ══ */
 function signOut(){
   ownerData = null;
-  try{ sessionStorage.removeItem('ig-owner'); }catch(e){}
   showSection('section-login');
   document.getElementById('codeInput').value   = '';
   document.getElementById('loginBtn').disabled = false;
