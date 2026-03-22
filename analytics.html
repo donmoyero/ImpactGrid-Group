@@ -3,422 +3,201 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Analytics Platform — ImpactGrid Creator Intelligence</title>
-<meta name="description" content="AI-powered analytics that turns your financial data into clear decisions. Track performance, forecast growth, and eliminate financial risk."/>
+<title>Analytics — ImpactGrid</title>
+<meta name="description" content="AI-powered analytics that turns your financial data into clear decisions. Track performance, forecast growth, and eliminate risk."/>
 <link rel="icon" href="favicon.ico"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
 <style>
-:root{
-  --bg:#07090f;--bg2:#0d1017;--bg3:#111520;
-  --card:#151a28;--card2:#1c2235;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
-  --gold:#f0b429;--gold2:#ffd166;
-  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
-  --blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);
-  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
-  --purple:#a855f7;
-  --nav-h:64px;--tick-h:34px;--max-w:1240px;--r:12px;--r2:20px;
-  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+.page-hero{
+  padding:calc(var(--nav-h) + 80px) 28px 72px;
+  text-align:center;position:relative;overflow:hidden;
 }
-[data-theme="light"]{
-  --bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;
-  --card:#ffffff;--card2:#f5f7fc;
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
-  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
-  --gold:#c97e08;--gold2:#a86505;
-  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);
-  --blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);
-  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
+.page-hero-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 60% at 50% 20%,var(--blue-dim),transparent);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background 0.35s,color 0.35s;}
-a{color:inherit;text-decoration:none;}
-button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
-h1,h2,h3,h4{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.45;}
-
-/* TICKER */
-.ticker{position:fixed;top:var(--nav-h);left:0;right:0;height:var(--tick-h);z-index:990;background:linear-gradient(90deg,rgba(240,180,41,0.10),rgba(240,180,41,0.05),rgba(240,180,41,0.10));border-bottom:1px solid var(--gold-glo);display:flex;align-items:center;overflow:hidden;}
-.ticker-badge{flex-shrink:0;padding:0 14px;font-family:var(--fm);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);border-right:1px solid var(--gold-glo);height:100%;display:flex;align-items:center;gap:6px;background:var(--gold-dim);white-space:nowrap;}
-.t-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite;}
-.ticker-scroll{display:flex;align-items:center;animation:tickScroll 42s linear infinite;white-space:nowrap;padding-left:40px;}
-.ticker-scroll:hover{animation-play-state:paused;}
-.t-item{display:inline-flex;align-items:center;gap:8px;padding:0 36px;font-size:12px;font-weight:500;color:var(--text2);border-right:1px solid var(--border);}
-.t-tag{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:4px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;}
-.tag-new{background:rgba(240,180,41,0.14);color:var(--gold);border:1px solid var(--gold-glo);}
-.tag-live{background:rgba(45,212,160,0.12);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
-.tag-soon{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,0.2);}
-@keyframes tickScroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
-
-/* NAV */
-.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;transition:background 0.35s;}
-[data-theme="light"] .nav{background:rgba(240,243,250,0.90);}
-.nav-inner{max-width:var(--max-w);margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;gap:24px;}
-.nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:17px;letter-spacing:-0.03em;flex-shrink:0;}
-.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;}
-.logo-img{width:32px;height:32px;object-fit:contain;border-radius:6px;}
-.nav-links{display:flex;align-items:center;gap:2px;list-style:none;flex:1;}
-.nav-links a{padding:6px 11px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);transition:all 0.2s;white-space:nowrap;}
-.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(255,255,255,0.06);}
-[data-theme="light"] .nav-links a:hover,[data-theme="light"] .nav-links a.active{background:rgba(0,0,0,0.05);}
-.nav-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex-shrink:0;}
-.theme-btn{width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;}
-.theme-btn:hover{border-color:var(--gold);}
-.btn-ghost-nav{padding:7px 14px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all 0.2s;}
-.btn-ghost-nav:hover{color:var(--text);}
-.btn-gold-nav{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
-.btn-gold-nav:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo);}
-.hamburger{display:none;flex-direction:column;gap:5px;padding:8px;margin-left:6px;border-radius:9px;border:1px solid var(--border2);background:var(--card);}
-.hamburger span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s;}
-.hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
-.hamburger.active span:nth-child(2){opacity:0;}
-.hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
-.mob-nav{display:none;position:fixed;top:var(--nav-h);left:0;right:0;bottom:0;background:var(--bg2);z-index:999;padding:20px;flex-direction:column;gap:5px;overflow-y:auto;}
-.mob-nav.open{display:flex;}
-.mob-nav a{padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);transition:all 0.2s;border:1px solid transparent;}
-.mob-nav a:hover{background:var(--card);color:var(--text);border-color:var(--border);}
-.mob-nav a.active{color:var(--text);background:var(--card);border-color:var(--border);}
-.mob-cta{margin-top:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f!important;font-weight:700;text-align:center;border-radius:var(--r);}
-.mob-nav-divider{height:1px;background:var(--border);margin:8px 0;}
-.user-btn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:9px;background:var(--card);border:1px solid var(--border2);cursor:pointer;transition:all 0.2s;position:relative;}
-.user-btn:hover{border-color:var(--gold);}
-.user-avatar{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;flex-shrink:0;font-family:var(--fd);}
-.user-name{font-size:13px;font-weight:600;color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.user-chevron{font-size:10px;color:var(--text3);}
-.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:6px;min-width:180px;box-shadow:0 12px 40px rgba(0,0,0,0.4);z-index:1100;display:none;flex-direction:column;gap:2px;}
-.user-dropdown.open{display:flex;}
-.user-dropdown a,.user-dropdown button{padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-align:left;width:100%;display:block;transition:all 0.2s;background:none;border:none;cursor:pointer;font-family:var(--fb);}
-.user-dropdown a:hover,.user-dropdown button:hover{background:var(--bg2);color:var(--text);}
-.user-dropdown .dd-divider{height:1px;background:var(--border);margin:4px 0;}
-.user-dropdown .dd-email{padding:8px 12px;font-size:11px;color:var(--text3);font-family:var(--fm);}
-.mob-user-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
-.mob-user-info{flex:1;min-width:0;}
-.mob-user-name{font-size:14px;font-weight:700;color:var(--text);}
-.mob-user-email{font-size:11px;color:var(--text3);font-family:var(--fm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
-/* PAGE LAYOUT */
-.page-wrap{padding-top:calc(var(--nav-h) + var(--tick-h));}
-
-/* PAGE HERO */
-.page-hero{padding:80px 28px 72px;text-align:center;position:relative;overflow:hidden;max-width:var(--max-w);margin:0 auto;}
-.page-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 20%,rgba(79,142,247,0.08),transparent);pointer-events:none;}
-.page-hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--blue2);margin-bottom:20px;}
-.page-hero-eyebrow::before{content:'';width:20px;height:1px;background:var(--blue2);}
-.page-hero h1{font-size:clamp(36px,5.5vw,64px);font-weight:900;letter-spacing:-0.03em;margin-bottom:18px;position:relative;}
-.page-hero h1 span{color:var(--blue2);}
+.page-hero-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 75% 65% at 50% 50%,black 20%,transparent 100%);
+}
+[data-theme="dark"] .page-hero-grid{background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);}
+.label-tag-blue{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:14px;}
+.label-tag-blue::before{content:'';width:20px;height:1px;background:var(--blue);}
+.page-hero h1{font-size:clamp(36px,5.5vw,66px);font-weight:900;letter-spacing:-.03em;margin-bottom:18px;position:relative;line-height:1.05;}
+.page-hero h1 em{color:var(--blue);font-style:normal;}
 .page-hero p{font-size:17px;color:var(--text2);max-width:520px;margin:0 auto 32px;line-height:1.75;position:relative;}
-.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
-.btn-pri{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
-.btn-pri:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
-.btn-blue{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:var(--blue-dim);border:1px solid rgba(79,142,247,0.25);color:var(--blue2);transition:all 0.2s;}
-.btn-blue:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(79,142,247,0.2);border-color:rgba(79,142,247,0.4);}
-.btn-sec{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r);font-size:15px;font-weight:600;border:1px solid var(--border2);color:var(--text);transition:all 0.2s;}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-pri{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;}
+[data-theme="dark"] .btn-pri{color:#07090f;}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:var(--sh-gold);}
+.btn-blue{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;border-radius:var(--r);font-size:15px;font-weight:600;background:var(--blue-dim);border:1px solid rgba(45,110,219,.2);color:var(--blue);transition:all .2s;}
+[data-theme="dark"] .btn-blue{border-color:rgba(79,142,247,.25);color:var(--blue2);}
+.btn-blue:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(45,110,219,.2);}
+.btn-sec{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r);font-size:15px;font-weight:600;border:1px solid var(--border2);color:var(--text);transition:all .2s;}
 .btn-sec:hover{border-color:var(--gold);color:var(--gold);}
 
-/* SHARED */
-.section{padding:72px 28px;max-width:var(--max-w);margin:0 auto;}
-.label-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
-.label-tag::before{content:'';width:20px;height:1px;background:var(--gold);}
-.label-tag-blue{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--blue2);margin-bottom:16px;}
-.label-tag-blue::before{content:'';width:20px;height:1px;background:var(--blue2);}
-.sec-title{font-size:clamp(28px,4vw,46px);font-weight:900;letter-spacing:-0.025em;}
-.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:0 28px;}
-
-/* FEATURES GRID */
-.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:48px;}
-.feature-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:32px;transition:all 0.3s;position:relative;overflow:hidden;}
-.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
-.feature-card:hover{border-color:rgba(79,142,247,0.25);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,0.25);}
-.feature-card:hover::before{transform:scaleX(1);}
-.feature-icon{width:50px;height:50px;border-radius:14px;background:var(--blue-dim);border:1px solid rgba(79,142,247,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px;}
-.feature-card h3{font-family:var(--fd);font-size:17px;font-weight:800;margin-bottom:10px;letter-spacing:-0.02em;}
-.feature-card p{font-size:13.5px;color:var(--text2);line-height:1.65;}
-
-/* PREVIEW CARDS */
-.preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:48px;}
-.preview-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:28px;transition:all 0.3s;}
-.preview-card:hover{border-color:var(--border2);box-shadow:0 16px 48px rgba(0,0,0,0.2);}
-.preview-label{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;}
-.preview-val{font-family:var(--fd);font-size:30px;font-weight:900;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;}
-.preview-sub{font-size:12px;color:var(--text2);margin-bottom:18px;}
-.mock-chart{height:100px;display:flex;align-items:flex-end;gap:5px;}
-.mock-bar{flex:1;border-radius:4px 4px 0 0;background:var(--blue-dim);border:1px solid rgba(79,142,247,0.15);transition:all 0.2s;}
-.mock-bar.hi{background:linear-gradient(180deg,var(--blue),rgba(79,142,247,0.25));border-color:rgba(79,142,247,0.35);}
-.preview-card:hover .mock-bar.hi{box-shadow:0 -4px 12px rgba(79,142,247,0.3);}
-.prog-bar-track{height:8px;border-radius:4px;background:var(--bg2);overflow:hidden;margin-top:16px;}
-.prog-bar-fill{height:100%;border-radius:4px;}
-.risk-rows{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
-.risk-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;}
-.risk-row span:first-child{color:var(--text2);}
-
-/* STATS BAND */
 .stats-band{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
-.stats-inner{max-width:var(--max-w);margin:0 auto;padding:56px 28px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
+.stats-inner{max-width:var(--max-w);margin:0 auto;padding:52px 28px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
 .stat-item{text-align:center;padding:0 24px;position:relative;}
 .stat-item:not(:last-child)::after{content:'';position:absolute;top:20%;right:0;bottom:20%;width:1px;background:var(--border);}
-.stat-num{font-family:var(--fd);font-size:clamp(32px,4vw,48px);font-weight:900;letter-spacing:-0.03em;color:var(--blue2);margin-bottom:6px;line-height:1;}
-.stat-label{font-size:13.5px;color:var(--text2);}
+.stat-num{font-family:var(--fd);font-size:clamp(28px,3.5vw,44px);font-weight:900;letter-spacing:-.03em;color:var(--blue);margin-bottom:6px;line-height:1;}
+[data-theme="dark"] .stat-num{color:var(--blue2);}
+.stat-label{font-size:13px;color:var(--text2);}
 
-/* DIJO SECTION */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px;}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:30px;transition:all .3s;position:relative;overflow:hidden;}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);transform:scaleX(0);transition:transform .3s;transform-origin:left;}
+.feat-card:hover{border-color:rgba(45,110,219,.2);transform:translateY(-4px);box-shadow:var(--sh2);}
+[data-theme="dark"] .feat-card:hover{border-color:rgba(79,142,247,.25);}
+.feat-card:hover::before{transform:scaleX(1);}
+.feat-icon{width:48px;height:48px;border-radius:13px;background:var(--blue-dim);border:1px solid rgba(45,110,219,.15);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:18px;}
+.feat-card h3{font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:8px;letter-spacing:-.02em;}
+.feat-card p{font-size:13px;color:var(--text2);line-height:1.65;}
+
+.preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px;}
+.prev-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:26px;transition:all .3s;}
+.prev-card:hover{border-color:var(--border2);box-shadow:var(--sh);}
+.prev-label{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;}
+.prev-val{font-family:var(--fd);font-size:28px;font-weight:900;letter-spacing:-.03em;line-height:1;margin-bottom:4px;}
+.prev-sub{font-size:12px;color:var(--text2);margin-bottom:16px;}
+.mock-chart{height:90px;display:flex;align-items:flex-end;gap:5px;}
+.mock-bar{flex:1;border-radius:4px 4px 0 0;background:var(--blue-dim);border:1px solid rgba(45,110,219,.1);}
+[data-theme="dark"] .mock-bar{background:rgba(79,142,247,.1);border-color:rgba(79,142,247,.15);}
+.mock-bar.hi{background:linear-gradient(180deg,var(--blue),rgba(45,110,219,.2));border-color:rgba(45,110,219,.3);}
+[data-theme="dark"] .mock-bar.hi{background:linear-gradient(180deg,var(--blue2),rgba(79,142,247,.2));}
+.prog-track{height:7px;border-radius:4px;background:var(--bg2);overflow:hidden;margin-top:14px;}
+.prog-fill{height:100%;border-radius:4px;}
+.risk-rows{margin-top:12px;display:flex;flex-direction:column;gap:7px;}
+.risk-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;}
+.risk-row span:first-child{color:var(--text2);}
+
 .dijo-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
 .dijo-inner{max-width:var(--max-w);margin:0 auto;padding:80px 28px;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
 .dijo-chat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:24px;display:flex;flex-direction:column;gap:12px;}
-.dijo-chat-header{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:4px;}
-.dijo-avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:16px;}
-.dijo-chat-name{font-family:var(--fd);font-size:14px;font-weight:800;}
-.dijo-chat-status{font-family:var(--fm);font-size:9px;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;}
-.chat-bubble{padding:11px 15px;border-radius:12px;font-size:13.5px;line-height:1.6;max-width:90%;}
-.chat-user{background:var(--blue-dim);border:1px solid rgba(79,142,247,0.2);color:var(--text);align-self:flex-end;border-bottom-right-radius:4px;}
-.chat-dijo{background:var(--bg2);border:1px solid var(--border);color:var(--text2);align-self:flex-start;border-bottom-left-radius:4px;}
-.chat-dijo strong{color:var(--text);}
-.chat-highlight{background:rgba(247,95,79,0.07);border:1px solid rgba(247,95,79,0.18);border-radius:8px;padding:9px 12px;font-size:12px;color:#f75f4f;display:flex;align-items:flex-start;gap:7px;}
+.dijo-hd{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.dijo-av{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:16px;}
+[data-theme="dark"] .dijo-av{background:linear-gradient(135deg,var(--blue),var(--blue2));}
+.dijo-nm{font-family:var(--fd);font-size:14px;font-weight:800;}
+.dijo-st{font-family:var(--fm);font-size:9px;color:var(--green);letter-spacing:.1em;text-transform:uppercase;}
+.bubble{padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.6;max-width:90%;}
+.bubble-user{background:var(--blue-dim);border:1px solid rgba(45,110,219,.2);color:var(--text);align-self:flex-end;border-bottom-right-radius:4px;}
+[data-theme="dark"] .bubble-user{border-color:rgba(79,142,247,.2);}
+.bubble-dijo{background:var(--bg2);border:1px solid var(--border);color:var(--text2);align-self:flex-start;border-bottom-left-radius:4px;}
+.bubble-dijo strong{color:var(--text);}
+.bubble-alert{background:var(--red-dim);border:1px solid rgba(217,79,59,.18);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--red);display:flex;align-items:flex-start;gap:7px;}
+[data-theme="dark"] .bubble-alert{color:#f75f4f;border-color:rgba(247,95,79,.2);}
 
-/* CTA BAND */
-.cta-band{margin:0 28px 80px;background:linear-gradient(135deg,var(--blue-dim),rgba(79,142,247,0.03));border:1px solid rgba(79,142,247,0.2);border-radius:var(--r2);padding:80px 60px;text-align:center;position:relative;overflow:hidden;}
-.cta-band::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(79,142,247,0.06),transparent);pointer-events:none;}
-.cta-band h2{font-size:clamp(26px,4vw,48px);margin-bottom:14px;position:relative;}
-.cta-band p{font-size:17px;color:var(--text2);margin-bottom:36px;position:relative;max-width:480px;margin-left:auto;margin-right:auto;}
-.cta-acts{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative;}
+.cta-band{
+  margin:0 28px 80px;
+  background:linear-gradient(135deg,var(--blue-dim),rgba(45,110,219,.02));
+  border:1px solid rgba(45,110,219,.2);border-radius:var(--r2);
+  padding:72px 52px;text-align:center;position:relative;overflow:hidden;
+}
+[data-theme="dark"] .cta-band{background:linear-gradient(135deg,rgba(79,142,247,.08),rgba(79,142,247,.01));border-color:rgba(79,142,247,.2);}
+.cta-band::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 80% at 50% 50%,var(--blue-dim),transparent);}
+.cta-band h2{font-size:clamp(24px,4vw,44px);margin-bottom:12px;position:relative;}
+.cta-band p{font-size:16px;color:var(--text2);margin-bottom:32px;position:relative;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.7;}
+.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
 
-/* FOOTER */
-.footer{background:var(--bg2);border-top:1px solid var(--border);padding:60px 28px 36px;}
-.footer-inner{max-width:var(--max-w);margin:0 auto;}
-.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
-.footer-brand p{color:var(--text2);font-size:14px;line-height:1.7;margin-top:14px;max-width:260px;}
-.fc h4{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
-.fc a{display:block;font-size:14px;color:var(--text2);margin-bottom:9px;transition:color 0.2s;}
-.fc a:hover{color:var(--gold);}
-.footer-bot{display:flex;justify-content:space-between;align-items:center;padding-top:28px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text3);flex-wrap:wrap;gap:12px;}
-.footer-legal-links{display:flex;gap:18px;}
-.footer-legal-links a{font-size:12.5px;color:var(--text3);transition:color 0.2s;}
-.footer-legal-links a:hover{color:var(--gold);}
-
-/* ANIMATIONS */
-.anim{opacity:0;transform:translateY(22px);transition:opacity 0.65s ease,transform 0.65s ease;}
-.anim.visible{opacity:1;transform:none;}
-
-/* RESPONSIVE */
 @media(max-width:1000px){
   .features-grid{grid-template-columns:repeat(2,1fr);}
   .preview-grid{grid-template-columns:repeat(2,1fr);}
-  .stats-inner{grid-template-columns:repeat(2,2fr);gap:32px;}
+  .stats-inner{grid-template-columns:repeat(2,1fr);gap:32px;}
   .stat-item::after{display:none;}
   .dijo-inner{grid-template-columns:1fr;gap:40px;}
-  .footer-grid{grid-template-columns:1fr 1fr;gap:28px;}
-}
-@media(max-width:860px){
-  .nav-links,.btn-ghost-nav{display:none;}
-  .hamburger{display:flex;}
-  .user-name,.user-chevron{display:none;}
-  .user-btn{padding:5px;}
 }
 @media(max-width:640px){
   .features-grid{grid-template-columns:1fr;}
   .preview-grid{grid-template-columns:1fr;}
   .stats-inner{grid-template-columns:1fr 1fr;}
-  .cta-band{padding:52px 24px;margin:0 16px 60px;}
-  .footer-grid{grid-template-columns:1fr;}
-  .footer-bot{flex-direction:column;align-items:flex-start;}
+  .cta-band{padding:48px 20px;margin:0 12px 60px;}
 }
 </style>
 </head>
 <body>
 
-<!-- TICKER -->
-<div class="ticker">
-  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
-  <div style="overflow:hidden;flex:1;">
-    <div class="ticker-scroll">
-      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI Assistant — Your personal financial co-pilot is always on</span>
-      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
-      <span class="t-item"><span class="t-tag tag-new">New</span>Creator Intelligence Engine — AI content adviser powered by real trend data</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>YouTube integration — Connect your channel now</span>
-      <span class="t-item"><span class="t-tag tag-soon">Soon</span>TikTok &amp; Instagram — Pending API review</span>
-      <span class="t-item"><span class="t-tag tag-new">New</span>Mobile dashboard — Manage your business on any device</span>
-      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid V3.0 — Advanced analytics with AI risk scoring now live</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI Assistant — Your personal financial co-pilot is always on</span>
-      <span class="t-item"><span class="t-tag tag-new">New</span>ImpactGrid Network — Connect professionals and employers today</span>
-      <span class="t-item"><span class="t-tag tag-new">New</span>Creator Intelligence Engine — AI content adviser powered by real trend data</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>YouTube integration — Connect your channel now</span>
-      <span class="t-item"><span class="t-tag tag-soon">Soon</span>TikTok &amp; Instagram — Pending API review</span>
-      <span class="t-item"><span class="t-tag tag-new">New</span>Mobile dashboard — Manage your business on any device</span>
-    </div>
-  </div>
-</div>
+<div id="ig-nav"></div>
 
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo">
-      <img src="logo.png" class="logo-img" alt="ImpactGrid Creator Intelligence" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="logo-mark" style="display:none;">IG</div>
-      ImpactGrid Creator Intelligence
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="about.html">About</a></li>
-      <li><a href="consulting.html">Consulting</a></li>
-      <li><a href="analytics.html" class="active">Analytics</a></li>
-      <li><a href="creator-studio.html">Creator Studio</a></li>
-      <li><a href="network.html">Network</a></li>
-      <li><a href="ai.html">Dijo AI</a></li>
-      <li><a href="dashboard.html">Available Jobs</a></li>
-    </ul>
-    <div class="nav-right">
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
-      <div id="navLoggedOut" style="display:flex;align-items:center;gap:9px;">
-        <a href="login.html" class="btn-ghost-nav">Login</a>
-        <a href="join.html" class="btn-gold-nav">Join ImpactGrid</a>
-      </div>
-      <div id="navLoggedIn" style="display:none;position:relative;">
-        <button class="user-btn" id="userBtn" onclick="toggleUserMenu()">
-          <div class="user-avatar" id="userAvatar">?</div>
-          <span class="user-name" id="userName">Account</span>
-          <span class="user-chevron">▾</span>
-        </button>
-        <div class="user-dropdown" id="userDropdown">
-          <div class="dd-email" id="userEmail"></div>
-          <div class="dd-divider"></div>
-          <a href="dashboard.html">My Dashboard</a>
-          <a href="join.html">My Profile</a>
-          <div class="dd-divider"></div>
-          <button onclick="igSignOut()">Sign Out</button>
-        </div>
-      </div>
-    </div>
-    <button class="hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
-  </div>
-</nav>
-
-<div class="mob-nav" id="mobNav">
-  <div style="font-weight:800;font-size:10px;margin-bottom:10px;color:var(--text3);font-family:var(--fm);letter-spacing:0.08em;text-transform:uppercase;">ImpactGrid Creator Intelligence</div>
-  <div class="mob-user-section" id="mobUserSection" style="display:none;">
-    <div class="user-avatar" id="mobUserAvatar">?</div>
-    <div class="mob-user-info">
-      <div class="mob-user-name" id="mobUserName">My Account</div>
-      <div class="mob-user-email" id="mobUserEmail"></div>
-    </div>
-  </div>
-  <a href="index.html">Home</a>
-  <a href="about.html">About</a>
-  <a href="consulting.html">Consulting</a>
-  <a href="analytics.html" class="active">Analytics</a>
-  <a href="creator-studio.html">Creator Studio</a>
-  <a href="network.html">Network</a>
-  <a href="ai.html">Dijo AI</a>
-  <a href="dashboard.html">Available Jobs</a>
-  <div class="mob-nav-divider"></div>
-  <div id="mobAuthLinks">
-    <a href="login.html" style="margin-bottom:5px;display:block;padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);">Login</a>
-    <a href="join.html" class="mob-cta" style="display:block;padding:13px 16px;text-align:center;">Join ImpactGrid</a>
-  </div>
-  <div id="mobLoggedInLinks" style="display:none;">
-    <a href="dashboard.html" style="color:var(--gold);font-weight:700;display:block;padding:13px 16px;border-radius:var(--r);font-size:16px;">My Dashboard</a>
-    <button onclick="igSignOut()" style="width:100%;text-align:left;padding:13px 16px;border-radius:var(--r);font-size:16px;font-weight:500;color:var(--text2);background:none;border:none;cursor:pointer;font-family:var(--fb);">Sign Out</button>
-  </div>
-</div>
-
-<!-- PAGE -->
 <div class="page-wrap">
 
-  <!-- HERO -->
-  <div style="max-width:var(--max-w);margin:0 auto;">
-    <div class="page-hero">
-      <div class="page-hero-bg"></div>
-      <div class="page-hero-eyebrow">Analytics Platform</div>
-      <h1>Your Business<br><span>Intelligence Engine</span></h1>
-      <p>AI-powered analytics that turns your financial data into clear decisions. Track performance, forecast growth, and eliminate financial risk.</p>
-      <div class="hero-actions">
-        <a href="https://impactgridanalytics.com" target="_blank" class="btn-pri">Open Analytics Platform &#8594;</a>
-        <a href="join.html" class="btn-sec">Get Started Free</a>
-      </div>
+  <div class="page-hero">
+    <div class="page-hero-bg"></div>
+    <div class="page-hero-grid"></div>
+    <div class="label-tag-blue" style="justify-content:center;">Analytics Platform</div>
+    <h1>Your Business<br><em>Intelligence Engine</em></h1>
+    <p>AI-powered analytics that turns your financial data into clear decisions. Track performance, forecast growth, and surface risks before they cost you.</p>
+    <div class="hero-actions">
+      <a href="https://impactgridanalytics.com" target="_blank" class="btn-pri">Open Analytics Platform →</a>
+      <a href="join.html" class="btn-sec">Get Started Free</a>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- STATS -->
   <div class="stats-band anim">
     <div class="stats-inner">
-      <div class="stat-item">
-        <div class="stat-num">V3.0</div>
-        <div class="stat-label">Latest platform release</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">10yr</div>
-        <div class="stat-label">Revenue forecasting horizon</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">AI</div>
-        <div class="stat-label">Risk scoring built in</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">0</div>
-        <div class="stat-label">Credit card required to start</div>
-      </div>
+      <div class="stat-item"><div class="stat-num">V3.0</div><div class="stat-label">Latest release</div></div>
+      <div class="stat-item"><div class="stat-num">10yr</div><div class="stat-label">Forecasting horizon</div></div>
+      <div class="stat-item"><div class="stat-num">AI</div><div class="stat-label">Risk scoring built in</div></div>
+      <div class="stat-item"><div class="stat-num">0</div><div class="stat-label">Credit card to start</div></div>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- FEATURES -->
   <section class="section anim">
     <div style="text-align:center;">
       <div class="label-tag-blue">Features</div>
-      <h2 class="sec-title">Everything You Need to<br>Understand Your Business</h2>
+      <h2 class="sec-h">Everything you need to understand your business</h2>
     </div>
     <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
         <h3>Interactive Dashboard</h3>
-        <p>Real-time visualisation of your revenue, expenses, profit, and growth trends in one clean interface.</p>
+        <p>Real-time revenue, expenses, profit, and growth in one clean interface.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
         <h3>AI-Powered Insights</h3>
-        <p>Dijo, your AI financial adviser, analyses your data and tells you exactly what to do next.</p>
+        <p>Dijo analyses your data and tells you exactly what to do next — in plain language.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔮</div>
+      <div class="feat-card">
+        <div class="feat-icon">🔮</div>
         <h3>Revenue Forecasting</h3>
         <p>3, 5, and 10-year projections built on your actual data — not industry guesswork.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">🛡️</div>
+      <div class="feat-card">
+        <div class="feat-icon">🛡️</div>
         <h3>Risk Assessment</h3>
         <p>Multi-dimensional risk scoring so you know your vulnerabilities before they become problems.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📋</div>
+      <div class="feat-card">
+        <div class="feat-icon">📋</div>
         <h3>PDF Reports</h3>
-        <p>Professional financial reports you can share with investors, accountants, or your team.</p>
+        <p>Professional financial reports ready to share with investors, accountants, or your team.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📥</div>
+      <div class="feat-card">
+        <div class="feat-icon">📥</div>
         <h3>Data Import</h3>
-        <p>Upload Excel or CSV files, or enter data manually. Works with any business structure.</p>
+        <p>Upload Excel or CSV, or enter manually. Works with any business structure.</p>
       </div>
     </div>
   </section>
 
   <div class="divider"></div>
 
-  <!-- LIVE PREVIEW -->
   <section class="section anim">
     <div style="text-align:center;">
       <div class="label-tag-blue">Live Preview</div>
-      <h2 class="sec-title">What Your Dashboard<br>Looks Like</h2>
+      <h2 class="sec-h">What your dashboard looks like</h2>
     </div>
     <div class="preview-grid">
-      <div class="preview-card">
-        <div class="preview-label">Revenue Trend</div>
-        <div class="preview-val" style="color:var(--blue2);">£89,200</div>
-        <div class="preview-sub" style="color:var(--green);">↑ +18.3% vs last quarter</div>
+      <div class="prev-card">
+        <div class="prev-label">Revenue Trend</div>
+        <div class="prev-val" style="color:var(--blue);">£89,200</div>
+        <div class="prev-sub" style="color:var(--green);">↑ +18.3% vs last quarter</div>
         <div class="mock-chart">
           <div class="mock-bar" style="height:40%;"></div>
           <div class="mock-bar" style="height:55%;"></div>
@@ -428,19 +207,19 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
           <div class="mock-bar hi" style="height:85%;"></div>
         </div>
       </div>
-      <div class="preview-card">
-        <div class="preview-label">Profit Margin</div>
-        <div class="preview-val" style="color:var(--green);">34.2%</div>
-        <div class="preview-sub">Industry avg: 21.4%</div>
-        <div class="prog-bar-track">
-          <div class="prog-bar-fill" style="width:34%;background:var(--green);"></div>
+      <div class="prev-card">
+        <div class="prev-label">Profit Margin</div>
+        <div class="prev-val" style="color:var(--green);">34.2%</div>
+        <div class="prev-sub">Industry avg: 21.4%</div>
+        <div class="prog-track">
+          <div class="prog-fill" style="width:34%;background:var(--green);"></div>
         </div>
-        <div style="margin-top:14px;padding:10px 12px;background:var(--green-dim);border:1px solid rgba(45,212,160,0.2);border-radius:8px;font-size:12px;color:var(--green);">✓ Above industry benchmark</div>
+        <div style="margin-top:12px;padding:9px 12px;background:var(--green-dim);border:1px solid rgba(15,168,118,.2);border-radius:8px;font-size:12px;color:var(--green);">✓ Above industry benchmark</div>
       </div>
-      <div class="preview-card">
-        <div class="preview-label">Risk Score</div>
-        <div class="preview-val" style="color:var(--gold);">Low</div>
-        <div class="preview-sub">Stability index: 87/100</div>
+      <div class="prev-card">
+        <div class="prev-label">Risk Score</div>
+        <div class="prev-val" style="color:var(--gold);">Low</div>
+        <div class="prev-sub">Stability index: 87/100</div>
         <div class="risk-rows">
           <div class="risk-row"><span>Liquidity</span><span style="color:var(--green);font-weight:700;">Good</span></div>
           <div class="risk-row"><span>Revenue spread</span><span style="color:var(--gold);font-weight:700;">Stable</span></div>
@@ -453,192 +232,59 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
   <div class="divider"></div>
 
-  <!-- DIJO SECTION -->
   <div class="dijo-section anim">
     <div class="dijo-inner">
       <div>
         <div class="label-tag-blue">Dijo AI</div>
-        <h2 class="sec-title" style="margin-bottom:16px;">Your AI Financial<br>Adviser Is Always On</h2>
-        <p style="font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:28px;">Dijo lives inside your analytics dashboard. Ask it anything about your business health, risks, or growth strategy — and get direct, intelligent answers with no waffle.</p>
-        <a href="ai.html" class="btn-blue">Meet Dijo &#8594;</a>
+        <h2 class="sec-h" style="margin-bottom:14px;">Your AI adviser is always on</h2>
+        <p class="sec-p" style="margin-top:0;margin-bottom:28px;">Ask Dijo anything about your business health, risks, or growth strategy. Direct, intelligent answers — no waffle.</p>
+        <a href="ai.html" class="btn-blue">Meet Dijo →</a>
       </div>
       <div class="dijo-chat">
-        <div class="dijo-chat-header">
-          <div class="dijo-avatar">🤖</div>
+        <div class="dijo-hd">
+          <div class="dijo-av">🤖</div>
           <div>
-            <div class="dijo-chat-name">Dijo AI</div>
-            <div class="dijo-chat-status">● Online</div>
+            <div class="dijo-nm">Dijo AI</div>
+            <div class="dijo-st">● Online</div>
           </div>
         </div>
-        <div class="chat-bubble chat-user">What is my biggest risk right now?</div>
-        <div class="chat-bubble chat-dijo">Your <strong>revenue concentration risk</strong> is elevated. Client A accounts for 68% of total income, and their contract is up for review in 23 days.</div>
-        <div class="chat-highlight">⚠ Recommended action: Begin diversification outreach this week. I can model three scenarios for you.</div>
-        <div class="chat-bubble chat-user">Show me the 5-year forecast if I lose Client A.</div>
-        <div class="chat-bubble chat-dijo">Running scenario model... <strong>Year 1 impact: −42% revenue.</strong> Recovery to current levels by Year 3 assumes 2 new clients at current average contract size.</div>
+        <div class="bubble bubble-user">What is my biggest risk right now?</div>
+        <div class="bubble bubble-dijo">Your <strong>revenue concentration risk</strong> is elevated. Client A accounts for 68% of income, and their contract is up for review in 23 days.</div>
+        <div class="bubble-alert">⚠ Recommended: Begin diversification outreach this week. I can model three scenarios.</div>
+        <div class="bubble bubble-user">Show me the 5-year forecast if I lose Client A.</div>
+        <div class="bubble bubble-dijo">Running scenario model… <strong>Year 1 impact: −42% revenue.</strong> Recovery by Year 3 assumes 2 new clients at current average contract size.</div>
       </div>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- CTA -->
-  <section style="padding:60px 0 80px;">
+  <section style="padding:56px 0 80px;">
     <div class="cta-band">
       <div class="label-tag-blue" style="justify-content:center;">Get Started Today</div>
-      <h2>Start Analysing Your<br>Business Today</h2>
-      <p>Free to start. No credit card required. Connect your data and get your first insight in minutes.</p>
+      <h2>Start analysing your business today</h2>
+      <p>Free to start. No credit card required. Get your first insight in minutes.</p>
       <div class="cta-acts">
-        <a href="https://impactgridanalytics.com" target="_blank" class="btn-pri">Open Analytics Platform &#8594;</a>
+        <a href="https://impactgridanalytics.com" target="_blank" class="btn-pri">Open Analytics Platform →</a>
         <a href="join.html" class="btn-sec">Create Free Account</a>
       </div>
     </div>
   </section>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <div class="nav-logo">
-            <img src="logo.png" class="logo-img" alt="ImpactGrid Creator Intelligence" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-            <div class="logo-mark" style="display:none;">IG</div>
-            <span>ImpactGrid Creator Intelligence</span>
-          </div>
-          <p>ImpactGrid Creator Intelligence — Turning data into strategic advantage with analytics, AI, and creator tools.</p>
-        </div>
-        <div class="fc"><h4>Platform</h4><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="network.html">Network</a><a href="ai.html">Dijo AI</a></div>
-        <div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="dashboard.html">Available Jobs</a><a href="mailto:support@impactgridgroup.com">Contact</a></div>
-        <div class="fc"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>
-      </div>
-      <div class="footer-bot">
-        <span>&copy; 2026 ImpactGrid Group Ltd. All rights reserved.</span>
-        <div class="footer-legal-links">
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms of Service</a>
-        </div>
-        <button onclick="toggleTheme()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;" id="footerThemeBtn">☀️ Light Mode</button>
-      </div>
-    </div>
-  </footer>
+</div>
 
-</div><!-- end page-wrap -->
+<div id="ig-footer"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-config.js"></script>
 <script src="impactgrid-chat-bubble.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script defer src="supabase-config.js"></script>
+<script defer src="nav.js"></script>
 <script>
-var dark=false;
-function toggleTheme(){
-  dark=!dark;
-  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
-  document.getElementById('themeBtn').textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';
-  var ftb=document.getElementById('footerThemeBtn');
-  if(ftb)ftb.textContent=dark?'\uD83C\uDF19 Dark Mode':'\u2600\uFE0F Light Mode';
-  try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}
-}
-try{
-  var saved=localStorage.getItem('igt');
-  if(saved==='d'){
-    dark=true;
-    document.documentElement.setAttribute('data-theme','dark');
-    document.getElementById('themeBtn').textContent='\uD83C\uDF19';
-    var fb=document.getElementById('footerThemeBtn');
-    if(fb)fb.textContent='\uD83C\uDF19 Dark Mode';
-  } else {
-    dark=false;
-    document.documentElement.setAttribute('data-theme','light');
-    document.getElementById('themeBtn').textContent='\u2600\uFE0F';
-    var fb2=document.getElementById('footerThemeBtn');
-    if(fb2)fb2.textContent='\u2600\uFE0F Light Mode';
-  }
-}catch(e){}
-
-/* Hamburger */
-var hamburger=document.getElementById('hamburger');
-var mobNav=document.getElementById('mobNav');
-hamburger.addEventListener('click',function(){
-  var open=mobNav.classList.toggle('open');
-  hamburger.classList.toggle('active',open);
-  hamburger.setAttribute('aria-label',open?'Close menu':'Open menu');
+document.addEventListener('DOMContentLoaded', function() {
+  renderNav('analytics.html');
+  renderFooter();
 });
-mobNav.querySelectorAll('a').forEach(function(a){
-  a.addEventListener('click',function(){
-    mobNav.classList.remove('open');
-    hamburger.classList.remove('active');
-  });
-});
-
-/* User dropdown */
-function toggleUserMenu(){
-  document.getElementById('userDropdown').classList.toggle('open');
-}
-document.addEventListener('click',function(e){
-  var btn=document.getElementById('userBtn');
-  var dd=document.getElementById('userDropdown');
-  if(btn&&dd&&!btn.contains(e.target)&&!dd.contains(e.target)){
-    dd.classList.remove('open');
-  }
-});
-
-/* Auth */
-function setNavUser(user){
-  if(!user){return;}
-  var email=user.email||'';
-  var name=user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name)||email.split('@')[0]||'Account';
-  var initial=(name.charAt(0)||'?').toUpperCase();
-  document.getElementById('navLoggedOut').style.display='none';
-  document.getElementById('navLoggedIn').style.display='block';
-  document.getElementById('userAvatar').textContent=initial;
-  document.getElementById('userName').textContent=name.split(' ')[0];
-  document.getElementById('userEmail').textContent=email;
-  document.getElementById('mobUserSection').style.display='flex';
-  document.getElementById('mobUserAvatar').textContent=initial;
-  document.getElementById('mobUserName').textContent=name;
-  document.getElementById('mobUserEmail').textContent=email;
-  document.getElementById('mobAuthLinks').style.display='none';
-  document.getElementById('mobLoggedInLinks').style.display='block';
-}
-window.igSignOut=async function(){
-  try{if(window.getSupabase)await getSupabase().auth.signOut();else if(window.supabaseClient)await window.supabaseClient.auth.signOut();}catch(e){}
-  window.location.href='index.html';
-};
-function checkAuth(){
-  var client=null;
-  try{if(window.getSupabase)client=getSupabase();}catch(e){}
-  try{if(!client&&window.supabaseClient)client=window.supabaseClient;}catch(e){}
-  if(!client){
-    try{
-      for(var i=0;i<localStorage.length;i++){
-        var k=localStorage.key(i);
-        if(k&&k.indexOf('supabase')!==-1){
-          var v=JSON.parse(localStorage.getItem(k));
-          if(v&&v.user){setNavUser(v.user);return;}
-        }
-      }
-    }catch(e){}
-    return;
-  }
-  client.auth.getUser().then(function(res){if(res&&res.data&&res.data.user)setNavUser(res.data.user);}).catch(function(){});
-  client.auth.onAuthStateChange(function(event,session){
-    if(session&&session.user)setNavUser(session.user);
-    else if(event==='SIGNED_OUT'){
-      document.getElementById('navLoggedOut').style.display='flex';
-      document.getElementById('navLoggedIn').style.display='none';
-      document.getElementById('mobUserSection').style.display='none';
-      document.getElementById('mobAuthLinks').style.display='block';
-      document.getElementById('mobLoggedInLinks').style.display='none';
-    }
-  });
-}
-window.addEventListener('load',function(){setTimeout(checkAuth,300);});
-
-/* Scroll animations */
-var obs=new IntersectionObserver(function(entries){
-  entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});
-},{threshold:0.08});
-document.querySelectorAll('.anim').forEach(function(el){obs.observe(el);});
-
 setInterval(function(){fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});},600000);
 </script>
 </body>
