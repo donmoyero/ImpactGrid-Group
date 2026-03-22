@@ -1142,8 +1142,15 @@ async function indexPhotoFaces(photoId, photoUrl, eventId){
     var res=await fetch(EVENTS_API+'/api/facepp-embed',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ imageUrl: urlWithCacheBust })
+      body:JSON.stringify({ imageUrl: urlWithCacheBust, eventId: eventId })
     });
+
+    /* Handle rate limiting — wait and skip, don't crash */
+    if(res.status === 429){
+      console.warn('[FaceIndex] Rate limited — waiting 3s before next photo');
+      await new Promise(function(r){ setTimeout(r, 3000); });
+      return;
+    }
     if(!res.ok){
       var errText = await res.text();
       console.warn('[FaceIndex] Face++ embed failed for photo',photoId,'—',errText);
@@ -1338,11 +1345,13 @@ async function reindexEventFaces(){
     var c=getSupabase();
     await c.from('face_embeddings').delete().eq('event_id',eventId);
     try{ var {data:crops}=await c.storage.from('events').list(eventId+'/faces'); if(crops&&crops.length) await c.storage.from('events').remove(crops.map(function(f){return eventId+'/faces/'+f.name;})); }catch(e){}
-    var {data:photos}=await c.from('photos').select('id,preview_url').eq('event_id',eventId);
+    var {data:photos}=await c.from('photos').select('id,preview_url,original_url').eq('event_id',eventId);
     if(!photos||!photos.length){ toast('⚠️','No photos found','Upload photos first'); btn.disabled=false; btn.textContent='🔄 Re-index All'; return; }
     for(var i=0;i<photos.length;i++){
       btn.textContent='⏳ '+(i+1)+' / '+photos.length;
-      await indexPhotoFaces(photos[i].id, photos[i].preview_url, eventId);
+      await indexPhotoFaces(photos[i].id, photos[i].original_url||photos[i].preview_url, eventId);
+      /* 1.5s delay between photos — prevents Face++ rate limiting on free tier */
+      if(i < photos.length-1) await new Promise(function(r){ setTimeout(r, 1500); });
     }
     toast('✅','Re-indexing complete!',photos.length+' photos processed');
     btn.disabled=false; btn.textContent='🔄 Re-index All';
