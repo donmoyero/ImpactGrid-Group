@@ -88,15 +88,19 @@ img{display:block;max-width:100%;}
 
 /* ══ PHOTOS ══ */
 .photo-section{margin-bottom:32px;}
-.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
-.photo-card{position:relative;border-radius:10px;overflow:hidden;background:#111520;border:1px solid rgba(255,255,255,0.07);aspect-ratio:3/2;cursor:pointer;transition:all .3s;}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.photo-card{border-radius:12px;overflow:hidden;background:#111520;border:1px solid rgba(255,255,255,0.07);transition:all .3s;}
 .photo-card:hover{border-color:rgba(240,180,41,0.3);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4);}
-.photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.photo-card:hover img{transform:scale(1.05);}
-.photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(7,9,15,0.9),transparent 50%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:10px;gap:6px;}
-.photo-card:hover .photo-card-overlay{opacity:1;}
-.overlay-dl{flex:1;padding:7px 0;border-radius:6px;font-size:11px;font-weight:700;text-align:center;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px;}
-.overlay-view{width:36px;height:32px;border-radius:6px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.photo-card-img{position:relative;aspect-ratio:3/2;overflow:hidden;cursor:pointer;}
+.photo-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+.photo-card:hover .photo-card-img img{transform:scale(1.05);}
+.photo-card-img-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.3);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.photo-card:hover .photo-card-img-overlay{opacity:1;}
+.photo-zoom-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.photo-card-footer{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid rgba(255,255,255,0.06);}
+.photo-card-num{font-family:'DM Mono',monospace;font-size:10px;color:#4a5068;}
+.photo-dl-btn{padding:6px 14px;border-radius:6px;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:all .2s;}
+.photo-dl-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(240,180,41,0.35);}
 
 /* ══ REQUESTS TABLE ══ */
 .requests-section{margin-top:8px;}
@@ -217,7 +221,7 @@ tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Stats — simple 3 cards only -->
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-label">Total Photos</div>
@@ -225,19 +229,14 @@ tr:last-child td{border-bottom:none;}
         <div class="stat-sub">In your gallery</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Guest Requests</div>
-        <div class="stat-val" id="statRequests" style="color:#4f8ef7;">—</div>
-        <div class="stat-sub">Download requests</div>
+        <div class="stat-label">Guests Matched</div>
+        <div class="stat-val" id="statGuests" style="color:#2dd4a0;">—</div>
+        <div class="stat-sub">Found their photos</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Approved</div>
-        <div class="stat-val" id="statApproved" style="color:#2dd4a0;">—</div>
-        <div class="stat-sub">Sent to guests</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Access Code</div>
-        <div class="stat-val" id="statCode" style="color:#f0b429;font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.1em;">——</div>
-        <div class="stat-sub">Share with guests</div>
+        <div class="stat-label">Downloads</div>
+        <div class="stat-val" id="statDownloads" style="color:#4f8ef7;">—</div>
+        <div class="stat-sub">Photos downloaded</div>
       </div>
     </div>
 
@@ -252,17 +251,6 @@ tr:last-child td{border-bottom:none;}
       </div>
       <div class="photo-grid" id="photoGrid">
         <div class="empty" style="grid-column:1/-1;"><div class="empty-ico">⏳</div><div>Loading photos…</div></div>
-      </div>
-    </div>
-
-    <!-- Requests -->
-    <div class="requests-section">
-      <div class="section-head">
-        <div class="section-title">📥 Guest Download Requests</div>
-        <span id="reqCount" style="font-size:12px;color:#4a5068;"></span>
-      </div>
-      <div id="requestsWrap">
-        <div class="empty"><div class="empty-ico">📭</div><div>No requests yet</div></div>
       </div>
     </div>
 
@@ -392,10 +380,11 @@ function showPortal(){
   var photos   = ownerData.photos   || [];
   var requests = ownerData.requests || [];
   var approved = requests.filter(function(r){ return r.status === 'approved'; }).length;
+  var uniqueGuests = new Set(requests.map(function(r){ return r.user_email; })).size;
   var daysLeft = Math.max(0, Math.ceil((new Date(ev.expiry_date) - new Date()) / (1000*60*60*24)));
   var ownerName= ev.owner_name || '';
   var firstName= ownerName ? ownerName.split(' ')[0] : '';
-  var initial  = ownerName ? ownerName.charAt(0).toUpperCase() : '👤';
+  var initial  = ownerName ? ownerName.charAt(0).toUpperCase() : '?';
 
   /* Nav */
   document.getElementById('navEventName').textContent = ev.name;
@@ -403,18 +392,16 @@ function showPortal(){
 
   /* Welcome */
   document.getElementById('welcomeAvatar').textContent = initial;
-  document.getElementById('welcomeTitle').textContent  = firstName ? 'Welcome, ' + firstName + '! 👋' : 'Welcome to your gallery! 👋';
+  document.getElementById('welcomeTitle').textContent  = firstName ? 'Welcome, ' + firstName + '!' : 'Welcome to your gallery!';
   document.getElementById('welcomeSub').textContent    = ev.name + ' — ' + photos.length + ' photo' + (photos.length !== 1 ? 's' : '') + ' ready to view and download.';
   document.getElementById('daysLeft').textContent      = daysLeft;
 
   /* Stats */
-  document.getElementById('statPhotos').textContent   = photos.length;
-  document.getElementById('statRequests').textContent = requests.length;
-  document.getElementById('statApproved').textContent = approved;
-  document.getElementById('statCode').textContent     = ev.event_code;
+  document.getElementById('statPhotos').textContent    = photos.length;
+  document.getElementById('statGuests').textContent    = uniqueGuests;
+  document.getElementById('statDownloads').textContent = approved;
 
   renderPhotos();
-  renderRequests();
 }
 
 /* ══ RENDER PHOTOS ══ */
@@ -430,37 +417,32 @@ function renderPhotos(){
   grid.innerHTML = photos.map(function(p, i){
     var orig = p.original_url || p.preview_url;
     var prev = p.preview_url  || orig;
-    return '<div class="photo-card">'+
-      '<img src="'+esc(prev)+'" alt="" loading="lazy" onclick="openLightbox(\''+esc(orig)+'\')" onerror="this.parentElement.style.background=\'#111520\'"/>'+
-      '<div class="photo-card-overlay">'+
-        '<a href="'+esc(orig)+'" download="ImpactGrid-Photo-'+(i+1)+'.jpg" class="overlay-dl" onclick="event.stopPropagation()">⬇️ Download</a>'+
-        '<button class="overlay-view" onclick="event.stopPropagation();openLightbox(\''+esc(orig)+'\')">🔍</button>'+
-      '</div>'+
+    var num  = String(i + 1).padStart(2, '0');
+    return '<div class="photo-card">' +
+      /* image area — click to open lightbox */
+      '<div style="position:relative;aspect-ratio:3/2;overflow:hidden;cursor:pointer;" onclick="openLightbox(\''+esc(orig)+'\')">' +
+        '<img src="'+esc(prev)+'" alt="Photo '+num+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;transition:transform .4s;" onerror="this.parentElement.parentElement.style.background=\'#111520\'"/>' +
+        '<div style="position:absolute;inset:0;background:rgba(0,0,0,0.25);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;" class="photo-zoom-hover">' +
+          '<div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:16px;">&#128269;</div>' +
+        '</div>' +
+      '</div>' +
+      /* footer with number + download button */
+      '<div style="padding:9px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.06);">' +
+        '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:#4a5068;">Photo ' + num + '</span>' +
+        '<a href="'+esc(orig)+'" download="ImpactGrid-Photo-'+num+'.jpg" ' +
+          'style="padding:5px 12px;border-radius:6px;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" ' +
+          'onclick="event.stopPropagation()">&#11015; Download</a>' +
+      '</div>' +
     '</div>';
   }).join('');
+
+  /* hover effect for zoom overlay */
+  grid.querySelectorAll('.photo-zoom-hover').forEach(function(el){
+    el.parentElement.addEventListener('mouseenter', function(){ el.style.opacity='1'; });
+    el.parentElement.addEventListener('mouseleave', function(){ el.style.opacity='0'; });
+  });
 }
 
-/* ══ RENDER REQUESTS ══ */
-function renderRequests(){
-  var requests = ownerData ? (ownerData.requests || []) : [];
-  var wrap     = document.getElementById('requestsWrap');
-  var pending  = requests.filter(function(r){ return r.status === 'pending'; }).length;
-  document.getElementById('reqCount').textContent = requests.length + ' total' + (pending > 0 ? ' · ' + pending + ' pending' : '');
-
-  if(!requests.length){
-    wrap.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div>No download requests yet</div></div>';
-    return;
-  }
-
-  wrap.innerHTML = '<table><thead><tr><th>Guest Email</th><th>Status</th><th>Date</th></tr></thead><tbody>'+
-    requests.map(function(r){
-      var pc    = {approved:'pill-approved',pending:'pill-pending',rejected:'pill-rejected'}[r.status] || 'pill-pending';
-      var label = {approved:'✅ Approved',pending:'⏳ Pending',rejected:'✕ Rejected'}[r.status] || r.status;
-      return '<tr>'+
-        '<td style="font-weight:600;">'+esc(r.user_email||'—')+'</td>'+
-        '<td><span class="pill '+pc+'">'+label+'</span></td>'+
-        '<td style="color:#4a5068;">'+new Date(r.created_at).toLocaleDateString('en-GB')+'</td>'+
-      '</tr>';
     }).join('')+
   '</tbody></table>';
 }
