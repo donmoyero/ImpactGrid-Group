@@ -894,6 +894,7 @@ async function loadEvents(){
             '<button class="btn btn-ghost btn-sm" onclick="copyEventLink(\''+ev.event_slug+'\',\''+ev.event_code+'\')">🔗 Link</button>'+
             '<button class="btn btn-ghost btn-sm" onclick="printQR(\''+ev.event_slug+'\',\''+ev.event_code+'\',\''+esc(ev.name)+'\')">🖨 QR</button>'+
             '<button class="btn btn-ghost btn-sm" onclick="goUploadForEvent(\''+ev.id+'\')">📤 Upload</button>'+
+            (ev.owner_email?'<button class="btn btn-ghost btn-sm" onclick="resendOwnerEmail(\''+esc(ev.owner_email)+'\',\''+esc(ev.name)+'\')" title="Resend access email to '+esc(ev.owner_email)+'">📧 Resend</button>':'')+
             '<button class="btn '+(ev.is_active?'btn-red':'btn-green')+' btn-sm" onclick="toggleEvent(\''+ev.id+'\','+ev.is_active+')">'+(ev.is_active?'Deactivate':'Activate')+'</button>'+
             '<button class="btn btn-red btn-icon btn-sm" onclick="deleteEvent(\''+ev.id+'\')">✕</button>'+
           '</div></td>'+
@@ -906,6 +907,20 @@ function printQR(slug,code,name){
   var base=window.location.origin;
   var url='qr-print.html?event='+slug+'&code='+code+'&name='+encodeURIComponent(name)+'&base='+encodeURIComponent(base);
   window.open(url,'_blank','width=740,height=620');
+}
+
+async function resendOwnerEmail(ownerEmail, eventName){
+  if(!confirm('Resend access email to '+ownerEmail+'?')) return;
+  toast('📧','Sending…','Resending access email',true);
+  try{
+    var res  = await fetch(EVENTS_API+'/api/resend-owner-email',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ownerEmail: ownerEmail })
+    });
+    var data = await res.json();
+    if(data.success) toast('✅','Email sent!','Access code resent to '+ownerEmail);
+    else toast('⚠️','Failed',data.error||'Could not send email');
+  }catch(e){ toast('⚠️','Error',e.message); }
 }
 function copyEventLink(slug,code){
   var url=window.location.origin+'/event.html?event='+slug+'&code='+code;
