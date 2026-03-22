@@ -6,8 +6,6 @@
 <title>Event Owner Portal — ImpactGrid</title>
 <link rel="icon" href="favicon.ico"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="ig-supabase.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{min-height:100vh;}
@@ -20,108 +18,91 @@ img{display:block;max-width:100%;}
 .section.active{display:block;}
 
 /* ══ LOGIN ══ */
-.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:#07090f;position:relative;overflow:hidden;}
+.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;position:relative;overflow:hidden;}
 .login-page::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(240,180,41,0.10),transparent),radial-gradient(ellipse 50% 40% at 80% 90%,rgba(99,102,241,0.06),transparent);}
-.login-box{width:100%;max-width:420px;background:#0d1017;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:48px 40px;box-shadow:0 24px 80px rgba(0,0,0,0.5);position:relative;z-index:1;}
+.login-box{width:100%;max-width:400px;background:#0d1017;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:48px 40px;box-shadow:0 24px 80px rgba(0,0,0,0.5);position:relative;z-index:1;}
 .login-logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-weight:900;font-size:16px;margin-bottom:32px;}
 .login-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#f0b429,#ffd166);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;}
 .login-title{font-family:'Syne',sans-serif;font-weight:900;font-size:26px;letter-spacing:-.025em;margin-bottom:8px;}
 .login-sub{font-size:14px;color:#8a91a8;line-height:1.6;margin-bottom:28px;}
 .login-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#4a5068;margin-bottom:8px;display:block;}
-.login-input{width:100%;padding:14px 16px;background:#111520;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#eef0f6;font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.2em;text-transform:uppercase;text-align:center;outline:none;margin-bottom:16px;transition:border-color .2s;}
+.login-input{width:100%;padding:14px 16px;background:#111520;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#eef0f6;font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.25em;text-transform:uppercase;text-align:center;outline:none;margin-bottom:16px;transition:border-color .2s;}
 .login-input:focus{border-color:#f0b429;box-shadow:0 0 0 3px rgba(240,180,41,0.1);}
-.login-input::placeholder{color:#4a5068;letter-spacing:.05em;font-size:13px;font-family:'DM Sans',sans-serif;}
-.login-btn{width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 4px 20px rgba(240,180,41,0.3);}
+.login-input::placeholder{color:#4a5068;font-size:13px;letter-spacing:.05em;}
+.login-btn{width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 4px 20px rgba(240,180,41,0.3);border:none;cursor:pointer;}
 .login-btn:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(240,180,41,0.4);}
 .login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .login-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px;display:none;}
 .login-error.show{display:block;}
-.login-divider{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);}
-.login-footer{font-size:12px;color:#4a5068;text-align:center;line-height:1.7;margin-bottom:16px;}
-.login-footer a{color:#f0b429;}
-.resend-row{display:flex;gap:8px;}
-.resend-input{flex:1;padding:10px 12px;background:#111520;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#eef0f6;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
-.resend-input:focus{border-color:rgba(240,180,41,0.4);}
-.resend-btn{padding:10px 14px;border-radius:8px;background:rgba(240,180,41,0.12);border:1px solid rgba(240,180,41,0.25);color:#f0b429;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif;}
-.resend-btn:hover{background:rgba(240,180,41,0.2);}
-.resend-btn:disabled{opacity:.5;cursor:not-allowed;}
-.resend-msg{font-size:12px;margin-top:8px;padding:8px 12px;border-radius:6px;line-height:1.5;display:none;}
-.resend-msg.ok{display:block;background:rgba(45,212,160,0.1);border:1px solid rgba(45,212,160,0.2);color:#2dd4a0;}
-.resend-msg.err{display:block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;}
+.login-note{margin-top:20px;font-size:12px;color:#4a5068;text-align:center;line-height:1.7;}
 
 /* ══ PORTAL NAV ══ */
-.portal-nav{position:sticky;top:0;z-index:100;height:56px;background:rgba(7,9,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 28px;gap:14px;}
-.portal-nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:14px;}
-.portal-nav-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#f0b429,#ffd166);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#07090f;}
-.portal-nav-div{width:1px;height:20px;background:rgba(255,255,255,0.08);}
-.portal-nav-event{font-size:13px;color:#8a91a8;font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.portal-nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#f0b429;background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.2);padding:4px 10px;border-radius:6px;}
-.btn-signout{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;color:#8a91a8;border:1px solid rgba(255,255,255,0.1);background:none;transition:all .2s;}
+.portal-nav{position:sticky;top:0;z-index:100;height:56px;background:rgba(7,9,15,0.96);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 28px;gap:14px;}
+.nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:14px;}
+.nav-logo-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#f0b429,#ffd166);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#07090f;}
+.nav-div{width:1px;height:20px;background:rgba(255,255,255,0.08);}
+.nav-event{font-size:13px;color:#8a91a8;font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-code{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#f0b429;background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.2);padding:4px 10px;border-radius:6px;}
+.btn-signout{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;color:#8a91a8;border:1px solid rgba(255,255,255,0.1);background:none;transition:all .2s;cursor:pointer;}
 .btn-signout:hover{color:#fca5a5;border-color:rgba(239,68,68,0.3);}
 
-/* ══ PORTAL BODY ══ */
+/* ══ BODY ══ */
 .portal-body{max-width:1200px;margin:0 auto;padding:28px 28px 80px;}
 
 /* ══ WELCOME ══ */
-.welcome-banner{background:linear-gradient(135deg,rgba(240,180,41,0.12),rgba(240,180,41,0.04));border:1px solid rgba(240,180,41,0.2);border-radius:16px;padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.welcome{background:linear-gradient(135deg,rgba(240,180,41,0.12),rgba(240,180,41,0.04));border:1px solid rgba(240,180,41,0.2);border-radius:16px;padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
 .welcome-avatar{width:52px;height:52px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#f0b429,#ffd166);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:#07090f;}
-.welcome-text h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:900;letter-spacing:-.01em;margin-bottom:4px;}
-.welcome-text p{font-size:13px;color:#8a91a8;line-height:1.6;}
-.welcome-expiry{margin-left:auto;text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:#4a5068;}
-.welcome-expiry strong{display:block;font-size:22px;color:#f0b429;font-weight:900;margin-bottom:2px;}
+.welcome h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:900;letter-spacing:-.01em;margin-bottom:4px;}
+.welcome p{font-size:13px;color:#8a91a8;}
+.welcome-days{margin-left:auto;text-align:right;}
+.welcome-days strong{display:block;font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:#f0b429;}
+.welcome-days span{font-size:11px;color:#4a5068;font-family:'DM Mono',monospace;}
 
 /* ══ STATS ══ */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
-.stat-card{background:#0d1017;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.stat{background:#0d1017;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px;}
 .stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#4a5068;margin-bottom:8px;}
-.stat-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:900;letter-spacing:-.03em;}
+.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;letter-spacing:-.03em;}
 .stat-sub{font-size:11px;color:#4a5068;margin-top:4px;}
 
-/* ══ SECTION HEADS ══ */
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.07);}
-.section-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:900;letter-spacing:-.01em;}
-.btn-ghost{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;color:#8a91a8;border:1px solid rgba(255,255,255,0.1);background:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+/* ══ SECTION HEAD ══ */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.sec-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:900;}
+.btn-ghost{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;color:#8a91a8;border:1px solid rgba(255,255,255,0.1);background:none;transition:all .2s;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
 .btn-ghost:hover{color:#eef0f6;}
-.btn-gold{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;display:inline-flex;align-items:center;gap:6px;transition:all .2s;}
+.btn-gold{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;}
 .btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(240,180,41,0.3);}
 
-/* ══ PHOTOS ══ */
-.photo-section{margin-bottom:32px;}
-.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+/* ══ PHOTO GRID ══ */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:40px;}
 .photo-card{border-radius:12px;overflow:hidden;background:#111520;border:1px solid rgba(255,255,255,0.07);transition:all .3s;}
 .photo-card:hover{border-color:rgba(240,180,41,0.3);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4);}
-.photo-card-img{position:relative;aspect-ratio:3/2;overflow:hidden;cursor:pointer;}
-.photo-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.photo-card:hover .photo-card-img img{transform:scale(1.05);}
-.photo-card-img-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.3);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
-.photo-card:hover .photo-card-img-overlay{opacity:1;}
-.photo-zoom-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-.photo-card-footer{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid rgba(255,255,255,0.06);}
-.photo-card-num{font-family:'DM Mono',monospace;font-size:10px;color:#4a5068;}
-.photo-dl-btn{padding:6px 14px;border-radius:6px;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:all .2s;}
-.photo-dl-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(240,180,41,0.35);}
-
-/* ══ REQUESTS TABLE ══ */
-.requests-section{margin-top:8px;}
-table{width:100%;border-collapse:collapse;}
-th{text-align:left;font-family:'DM Mono',monospace;font-size:9px;color:#4a5068;text-transform:uppercase;letter-spacing:.1em;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.07);font-weight:700;}
-td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-.pill{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace;}
-.pill-approved{background:rgba(45,212,160,0.1);color:#2dd4a0;}
-.pill-pending{background:rgba(234,179,8,0.1);color:#eab308;}
-.pill-rejected{background:rgba(239,68,68,0.1);color:#ef4444;}
+.photo-img{position:relative;aspect-ratio:3/2;overflow:hidden;cursor:pointer;}
+.photo-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s;display:block;}
+.photo-card:hover .photo-img img{transform:scale(1.05);}
+.photo-img-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .3s;display:flex;align-items:center;justify-content:center;}
+.photo-card:hover .photo-img-overlay{background:rgba(0,0,0,0.3);}
+.photo-zoom{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:16px;opacity:0;transition:opacity .3s;}
+.photo-card:hover .photo-zoom{opacity:1;}
+.photo-footer{padding:9px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.06);}
+.photo-num{font-family:'DM Mono',monospace;font-size:10px;color:#4a5068;}
+.photo-dl{padding:5px 12px;border-radius:6px;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:all .2s;}
+.photo-dl:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(240,180,41,0.35);}
 
 /* ══ LIGHTBOX ══ */
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1000;display:flex;align-items:center;justify-content:center;}
 .lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;}
-.lightbox-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;opacity:.6;transition:opacity .2s;}
-.lightbox-close:hover{opacity:1;}
-.lightbox-actions{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;}
-.lb-btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;text-decoration:none;}
+.lb-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;opacity:.6;transition:opacity .2s;line-height:1;}
+.lb-close:hover{opacity:1;}
+.lb-actions{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;}
+.lb-btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;text-decoration:none;border:none;transition:all .2s;}
 .lb-btn-gold{background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;}
 .lb-btn-ghost{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;}
+
+/* ══ EMPTY ══ */
+.empty{text-align:center;padding:52px 24px;color:#4a5068;}
+.empty-ico{font-size:36px;margin-bottom:12px;}
 
 /* ══ TOAST ══ */
 .toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:#0d1017;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 18px;min-width:260px;box-shadow:0 8px 36px rgba(0,0,0,0.5);transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:11px;}
@@ -129,25 +110,20 @@ tr:last-child td{border-bottom:none;}
 .toast-msg{font-size:13px;font-weight:600;}
 .toast-sub{font-size:11px;color:#4a5068;margin-top:2px;}
 
-/* ══ EMPTY ══ */
-.empty{text-align:center;padding:52px 24px;color:#4a5068;}
-.empty-ico{font-size:36px;margin-bottom:12px;}
-
-/* ══ RESPONSIVE ══ */
 @media(max-width:768px){
-  .stats-row{grid-template-columns:repeat(2,1fr);}
-  .portal-body{padding:20px 16px 60px;}
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .portal-body{padding:16px 16px 60px;}
   .login-box{padding:36px 24px;}
-  .welcome-banner{flex-direction:column;align-items:flex-start;}
-  .welcome-expiry{margin-left:0;}
   .photo-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+  .welcome{flex-direction:column;align-items:flex-start;}
+  .welcome-days{margin-left:0;}
 }
 </style>
 </head>
 <body>
 
 <!-- ══ LOGIN ══ -->
-<div class="section active" id="section-login">
+<div class="section active" id="sLogin">
   <div class="login-page">
     <div class="login-box">
       <div class="login-logo">
@@ -155,90 +131,91 @@ tr:last-child td{border-bottom:none;}
         ImpactGrid Events
       </div>
       <div class="login-title">Owner Portal</div>
-      <div class="login-sub">Enter your event access code to view and download all your photos in full quality.</div>
+      <div class="login-sub">Enter your access code to view all your event photos in full quality.</div>
 
       <div class="login-error" id="loginError"></div>
 
-      <label class="login-label">Your Access Code</label>
-      <input class="login-input" type="text" id="codeInput" maxlength="6"
-        placeholder="e.g. AB12CD" autocomplete="off"
-        oninput="this.value=this.value.toUpperCase()"
-        onkeydown="if(event.key==='Enter')ownerLogin()"/>
+      <label class="login-label">Access Code</label>
+      <input
+        class="login-input" id="codeInput" type="text"
+        maxlength="6" placeholder="XXXXXX"
+        autocomplete="off"
+        oninput="this.value=this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()"
+        onkeydown="if(event.key==='Enter')doLogin()"
+      />
 
-      <button class="login-btn" id="loginBtn" onclick="ownerLogin()">
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">
         🔑 Access My Gallery
       </button>
 
-      <div style="margin-top:20px;font-size:12px;color:#4a5068;text-align:center;line-height:1.7;">
+      <div class="login-note">
         Your access code was emailed when your event was created.<br/>
         Contact your photographer if you need help.
       </div>
-
     </div>
   </div>
 </div>
 
 <!-- ══ PORTAL ══ -->
-<div class="section" id="section-portal">
-
+<div class="section" id="sPortal">
   <nav class="portal-nav">
-    <div class="portal-nav-logo">
-      <div class="portal-nav-mark">IG</div>
+    <div class="nav-logo">
+      <div class="nav-logo-mark">IG</div>
       ImpactGrid
     </div>
-    <div class="portal-nav-div"></div>
-    <span class="portal-nav-event" id="navEventName">My Event</span>
-    <div class="portal-nav-right">
-      <span class="nav-code-badge" id="navCode">——</span>
-      <button class="btn-signout" onclick="signOut()">⎋ Sign Out</button>
+    <div class="nav-div"></div>
+    <span class="nav-event" id="navEvent">My Event</span>
+    <div class="nav-right">
+      <span class="nav-code" id="navCode">——</span>
+      <button class="btn-signout" onclick="doSignOut()">⎋ Sign Out</button>
     </div>
   </nav>
 
   <div class="portal-body">
 
     <!-- Welcome -->
-    <div class="welcome-banner">
-      <div class="welcome-avatar" id="welcomeAvatar">👤</div>
-      <div class="welcome-text">
-        <h2 id="welcomeTitle">Welcome back!</h2>
-        <p id="welcomeSub">Here are all your event photos in full quality.</p>
+    <div class="welcome">
+      <div class="welcome-avatar" id="wAvatar">?</div>
+      <div>
+        <h2 id="wTitle">Welcome!</h2>
+        <p id="wSub">Your event photos are ready.</p>
       </div>
-      <div class="welcome-expiry">
-        <strong id="daysLeft">—</strong>
-        days remaining
+      <div class="welcome-days">
+        <strong id="wDays">—</strong>
+        <span>days remaining</span>
       </div>
     </div>
 
-    <!-- Stats — simple 3 cards only -->
-    <div class="stats-row">
-      <div class="stat-card">
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
         <div class="stat-label">Total Photos</div>
-        <div class="stat-val" id="statPhotos" style="color:#f0b429;">—</div>
+        <div class="stat-val" id="sPhotos" style="color:#f0b429;">—</div>
         <div class="stat-sub">In your gallery</div>
       </div>
-      <div class="stat-card">
+      <div class="stat">
         <div class="stat-label">Guests Matched</div>
-        <div class="stat-val" id="statGuests" style="color:#2dd4a0;">—</div>
+        <div class="stat-val" id="sGuests" style="color:#2dd4a0;">—</div>
         <div class="stat-sub">Found their photos</div>
       </div>
-      <div class="stat-card">
+      <div class="stat">
         <div class="stat-label">Downloads</div>
-        <div class="stat-val" id="statDownloads" style="color:#4f8ef7;">—</div>
-        <div class="stat-sub">Photos downloaded</div>
+        <div class="stat-val" id="sDownloads" style="color:#4f8ef7;">—</div>
+        <div class="stat-sub">Approved downloads</div>
       </div>
     </div>
 
     <!-- Photos -->
-    <div class="photo-section">
-      <div class="section-head">
-        <div class="section-title">📸 All Event Photos</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-ghost" onclick="refreshPortal()">↻ Refresh</button>
-          <button class="btn-gold" onclick="downloadAll()">⬇️ Download All</button>
-        </div>
+    <div class="sec-head">
+      <div class="sec-title">📸 All Event Photos</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="doRefresh()">↻ Refresh</button>
+        <button class="btn-gold" onclick="doDownloadAll()">⬇️ Download All</button>
       </div>
-      <div class="photo-grid" id="photoGrid">
-        <div class="empty" style="grid-column:1/-1;"><div class="empty-ico">⏳</div><div>Loading photos…</div></div>
+    </div>
+    <div class="photo-grid" id="photoGrid">
+      <div class="empty" style="grid-column:1/-1;">
+        <div class="empty-ico">⏳</div><div>Loading…</div>
       </div>
     </div>
 
@@ -246,199 +223,156 @@ tr:last-child td{border-bottom:none;}
 </div>
 
 <!-- ══ LIGHTBOX ══ -->
-<div class="lightbox hidden" id="lightbox" onclick="closeLightbox()">
-  <span class="lightbox-close" onclick="closeLightbox()">✕</span>
-  <img id="lightboxImg" src="" alt=""/>
-  <div class="lightbox-actions" onclick="event.stopPropagation()">
-    <a id="lightboxDl" href="" download class="lb-btn lb-btn-gold">⬇️ Download Original</a>
-    <button class="lb-btn lb-btn-ghost" onclick="closeLightbox()">✕ Close</button>
+<div class="lightbox hidden" id="lightbox" onclick="closeLb()">
+  <span class="lb-close" onclick="closeLb()">✕</span>
+  <img id="lbImg" src="" alt=""/>
+  <div class="lb-actions" onclick="event.stopPropagation()">
+    <a id="lbDl" href="" download class="lb-btn lb-btn-gold">⬇️ Download</a>
+    <button class="lb-btn lb-btn-ghost" onclick="closeLb()">✕ Close</button>
   </div>
 </div>
 
 <!-- ══ TOAST ══ -->
 <div class="toast" id="toast">
-  <span id="toastIcon" style="font-size:18px;">✅</span>
-  <div><div class="toast-msg" id="toastMsg"></div><div class="toast-sub" id="toastSub"></div></div>
+  <span id="tIcon" style="font-size:18px;">✅</span>
+  <div>
+    <div class="toast-msg" id="tMsg"></div>
+    <div class="toast-sub" id="tSub"></div>
+  </div>
 </div>
 
 <script>
-var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
-var ownerData  = null;
+var API      = 'https://impactgrid-events-api.onrender.com';
+var state    = null; /* holds { event, photos, requests } after login */
 
-/* ══ BOOT ══ */
-document.addEventListener('DOMContentLoaded', function(){
-  /* Always show login — owner must type their code manually */
-  showSection('section-login');
+/* ── boot ── */
+window.addEventListener('DOMContentLoaded', function(){
+  show('sLogin');
 });
 
-/* ══ LOGIN ══ */
-async function ownerLogin(){
+/* ── show section ── */
+function show(id){
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+/* ── login ── */
+async function doLogin(){
   var code  = document.getElementById('codeInput').value.trim().toUpperCase();
   var btn   = document.getElementById('loginBtn');
-  var errEl = document.getElementById('loginError');
-  errEl.classList.remove('show');
+  var err   = document.getElementById('loginError');
+  err.classList.remove('show');
+  err.textContent = '';
 
-  if(!code || code.length < 4){
-    errEl.textContent = 'Please enter your access code.';
-    errEl.classList.add('show');
+  if(code.length < 4){
+    err.textContent = 'Please enter your access code.';
+    err.classList.add('show');
     return;
   }
 
   btn.disabled    = true;
-  btn.innerHTML   = '⏳ Checking…';
+  btn.textContent = 'Checking…';
 
   try{
-    var res  = await fetch(EVENTS_API + '/api/owner-login', {
+    var r = await fetch(API + '/api/owner-login', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body   : JSON.stringify({ eventCode: code })
     });
-    var data = await res.json();
+    var d = await r.json();
 
-    if(!res.ok || !data.success){
-      errEl.textContent = data.error || 'Invalid code. Please try again.';
-      errEl.classList.add('show');
-      btn.disabled  = false;
-      btn.innerHTML = '🔑 Access My Gallery';
+    if(!r.ok || !d.success){
+      err.textContent = d.error || 'Invalid code. Please try again.';
+      err.classList.add('show');
+      btn.disabled    = false;
+      btn.textContent = '🔑 Access My Gallery';
       return;
     }
 
-    ownerData = data;
-    showPortal();
+    state = d;
+    buildPortal();
+    show('sPortal');
 
-  }catch(err){
-    errEl.textContent = 'Could not connect. Check your internet and try again.';
-    errEl.classList.add('show');
-    btn.disabled  = false;
-    btn.innerHTML = '🔑 Access My Gallery';
-  }
-}
-
-/* ══ RESEND EMAIL ══ */
-async function resendEmail(){
-  var email  = document.getElementById('resendEmailInput').value.trim();
-  var btn    = document.getElementById('resendBtn');
-  var msgEl  = document.getElementById('resendMsg');
-  msgEl.className = 'resend-msg';
-
-  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    msgEl.textContent = 'Please enter a valid email address.';
-    msgEl.classList.add('err');
-    return;
-  }
-
-  btn.disabled    = true;
-  btn.textContent = '⏳ Sending…';
-
-  try{
-    var res  = await fetch(EVENTS_API + '/api/resend-owner-email', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ ownerEmail: email })
-    });
-    var data = await res.json();
-
-    if(data.success){
-      msgEl.textContent = '✅ Email sent! Check your inbox (and spam folder).';
-      msgEl.classList.add('ok');
-    } else {
-      msgEl.textContent = data.error || 'No event found for that email. Contact your photographer.';
-      msgEl.classList.add('err');
-    }
   }catch(e){
-    msgEl.textContent = 'Could not send. Try again or contact events@impactgridgroup.com';
-    msgEl.classList.add('err');
+    err.textContent = 'Could not connect. Check your internet and try again.';
+    err.classList.add('show');
+    btn.disabled    = false;
+    btn.textContent = '🔑 Access My Gallery';
   }
-
-  btn.disabled    = false;
-  btn.textContent = '📧 Resend';
 }
 
-/* ══ SHOW PORTAL ══ */
-function showPortal(){
-  showSection('section-portal');
-
-  var ev       = ownerData.event;
-  var photos   = ownerData.photos   || [];
-  var requests = ownerData.requests || [];
+/* ── build portal ── */
+function buildPortal(){
+  var ev       = state.event;
+  var photos   = state.photos   || [];
+  var requests = state.requests || [];
   var approved = requests.filter(function(r){ return r.status === 'approved'; }).length;
-  var uniqueGuests = new Set(requests.map(function(r){ return r.user_email; })).size;
-  var daysLeft = Math.max(0, Math.ceil((new Date(ev.expiry_date) - new Date()) / (1000*60*60*24)));
-  var ownerName= ev.owner_name || '';
-  var firstName= ownerName ? ownerName.split(' ')[0] : '';
-  var initial  = ownerName ? ownerName.charAt(0).toUpperCase() : '?';
+  var guests   = new Set(requests.map(function(r){ return r.user_email; })).size;
+  var days     = Math.max(0, Math.ceil((new Date(ev.expiry_date) - Date.now()) / 86400000));
+  var name     = ev.owner_name || '';
+  var first    = name ? name.split(' ')[0] : '';
+  var init     = name ? name.charAt(0).toUpperCase() : 'O';
 
-  /* Nav */
-  document.getElementById('navEventName').textContent = ev.name;
-  document.getElementById('navCode').textContent      = ev.event_code;
+  document.getElementById('navEvent').textContent  = ev.name;
+  document.getElementById('navCode').textContent   = ev.event_code;
+  document.getElementById('wAvatar').textContent   = init;
+  document.getElementById('wTitle').textContent    = first ? 'Welcome, ' + first + '!' : 'Welcome!';
+  document.getElementById('wSub').textContent      = ev.name + ' — ' + photos.length + ' photo' + (photos.length !== 1 ? 's' : '') + ' ready.';
+  document.getElementById('wDays').textContent     = days;
+  document.getElementById('sPhotos').textContent   = photos.length;
+  document.getElementById('sGuests').textContent   = guests;
+  document.getElementById('sDownloads').textContent= approved;
 
-  /* Welcome */
-  document.getElementById('welcomeAvatar').textContent = initial;
-  document.getElementById('welcomeTitle').textContent  = firstName ? 'Welcome, ' + firstName + '!' : 'Welcome to your gallery!';
-  document.getElementById('welcomeSub').textContent    = ev.name + ' — ' + photos.length + ' photo' + (photos.length !== 1 ? 's' : '') + ' ready to view and download.';
-  document.getElementById('daysLeft').textContent      = daysLeft;
-
-  /* Stats */
-  document.getElementById('statPhotos').textContent    = photos.length;
-  document.getElementById('statGuests').textContent    = uniqueGuests;
-  document.getElementById('statDownloads').textContent = approved;
-
-  renderPhotos();
+  renderPhotos(photos);
 }
 
-/* ══ RENDER PHOTOS ══ */
-function renderPhotos(){
-  var photos = ownerData ? (ownerData.photos || []) : [];
-  var grid   = document.getElementById('photoGrid');
-
-  if(!photos.length){
-    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;"><div class="empty-ico">📷</div><div>No photos yet.<br><span style="font-size:12px;">Your photographer will upload photos soon.</span></div></div>';
+/* ── render photos ── */
+function renderPhotos(photos){
+  var grid = document.getElementById('photoGrid');
+  if(!photos || !photos.length){
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;"><div class="empty-ico">📷</div><div>No photos yet. Your photographer will upload soon.</div></div>';
     return;
   }
-
   grid.innerHTML = photos.map(function(p, i){
     var orig = p.original_url || p.preview_url;
     var prev = p.preview_url  || orig;
-    var num  = String(i + 1).padStart(2, '0');
+    var n    = String(i + 1).padStart(2, '0');
     return '<div class="photo-card">' +
-      /* image area — click to open lightbox */
-      '<div style="position:relative;aspect-ratio:3/2;overflow:hidden;cursor:pointer;" onclick="openLightbox(\''+esc(orig)+'\')">' +
-        '<img src="'+esc(prev)+'" alt="Photo '+num+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;transition:transform .4s;" onerror="this.parentElement.parentElement.style.background=\'#111520\'"/>' +
-        '<div style="position:absolute;inset:0;background:rgba(0,0,0,0.25);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;" class="photo-zoom-hover">' +
-          '<div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:16px;">&#128269;</div>' +
-        '</div>' +
+      '<div class="photo-img" onclick="openLb(\'' + esc(orig) + '\')">' +
+        '<img src="' + esc(prev) + '" alt="Photo ' + n + '" loading="lazy"/>' +
+        '<div class="photo-img-overlay"><div class="photo-zoom">&#128269;</div></div>' +
       '</div>' +
-      /* footer with number + download button */
-      '<div style="padding:9px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.06);">' +
-        '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:#4a5068;">Photo ' + num + '</span>' +
-        '<a href="'+esc(orig)+'" download="ImpactGrid-Photo-'+num+'.jpg" ' +
-          'style="padding:5px 12px;border-radius:6px;background:linear-gradient(135deg,#f0b429,#ffd166);color:#07090f;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" ' +
-          'onclick="event.stopPropagation()">&#11015; Download</a>' +
+      '<div class="photo-footer">' +
+        '<span class="photo-num">Photo ' + n + '</span>' +
+        '<a href="' + esc(orig) + '" download="ImpactGrid-Photo-' + n + '.jpg" class="photo-dl" onclick="event.stopPropagation()">&#11015; Download</a>' +
       '</div>' +
     '</div>';
   }).join('');
-
-  /* hover effect for zoom overlay */
-  grid.querySelectorAll('.photo-zoom-hover').forEach(function(el){
-    el.parentElement.addEventListener('mouseenter', function(){ el.style.opacity='1'; });
-    el.parentElement.addEventListener('mouseleave', function(){ el.style.opacity='0'; });
-  });
 }
 
-    }).join('')+
-  '</tbody></table>';
+/* ── lightbox ── */
+function openLb(src){
+  document.getElementById('lbImg').src = src;
+  document.getElementById('lbDl').href = src;
+  document.getElementById('lightbox').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
 }
+function closeLb(){
+  document.getElementById('lightbox').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLb(); });
 
-/* ══ DOWNLOAD ALL ══ */
-function downloadAll(){
-  var photos = ownerData ? (ownerData.photos || []) : [];
-  if(!photos.length){ toast('⚠️','No photos to download',''); return; }
-  toast('📥','Downloading '+photos.length+' photos…','Your browser will save each one');
+/* ── download all ── */
+function doDownloadAll(){
+  var photos = state ? (state.photos || []) : [];
+  if(!photos.length){ showToast('⚠️', 'No photos', ''); return; }
+  showToast('📥', 'Downloading ' + photos.length + ' photos…', 'Your browser will save each one');
   photos.forEach(function(p, i){
     setTimeout(function(){
       var a = document.createElement('a');
       a.href = p.original_url || p.preview_url;
-      a.download = 'ImpactGrid-Photo-' + (i+1) + '.jpg';
+      a.download = 'ImpactGrid-Photo-' + String(i+1).padStart(2,'0') + '.jpg';
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -447,65 +381,42 @@ function downloadAll(){
   });
 }
 
-/* ══ REFRESH ══ */
-async function refreshPortal(){
-  if(!ownerData) return;
+/* ── refresh ── */
+async function doRefresh(){
+  if(!state) return;
   try{
-    var res  = await fetch(EVENTS_API + '/api/owner-login', {
+    var r = await fetch(API + '/api/owner-login', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ eventCode: ownerData.event.event_code })
+      body   : JSON.stringify({ eventCode: state.event.event_code })
     });
-    var data = await res.json();
-    if(data.success){
-      ownerData = data;
-      showPortal();
-      toast('✅','Gallery refreshed','');
-    }
-  }catch(e){ toast('⚠️','Could not refresh',''); }
+    var d = await r.json();
+    if(d.success){ state = d; buildPortal(); showToast('✅', 'Refreshed', ''); }
+  }catch(e){ showToast('⚠️', 'Could not refresh', ''); }
 }
 
-/* ══ SIGN OUT ══ */
-function signOut(){
-  ownerData = null;
-  showSection('section-login');
+/* ── sign out ── */
+function doSignOut(){
+  state = null;
   document.getElementById('codeInput').value   = '';
   document.getElementById('loginBtn').disabled = false;
-  document.getElementById('loginBtn').innerHTML= '🔑 Access My Gallery';
+  document.getElementById('loginBtn').textContent = '🔑 Access My Gallery';
+  document.getElementById('loginError').classList.remove('show');
+  show('sLogin');
 }
 
-/* ══ LIGHTBOX ══ */
-function openLightbox(src){
-  document.getElementById('lightboxImg').src = src;
-  document.getElementById('lightboxDl').href = src;
-  document.getElementById('lightbox').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-function closeLightbox(){
-  document.getElementById('lightbox').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeLightbox(); });
-
-/* ══ SECTIONS ══ */
-function showSection(id){
-  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
-  var el = document.getElementById(id);
-  if(el) el.classList.add('active');
-}
-
-/* ══ TOAST ══ */
-function toast(icon, msg, sub){
+/* ── toast ── */
+function showToast(icon, msg, sub){
   var t = document.getElementById('toast');
-  document.getElementById('toastIcon').textContent = icon;
-  document.getElementById('toastMsg').textContent  = msg;
-  document.getElementById('toastSub').textContent  = sub || '';
+  document.getElementById('tIcon').textContent = icon;
+  document.getElementById('tMsg').textContent  = msg;
+  document.getElementById('tSub').textContent  = sub || '';
   t.classList.add('show');
   setTimeout(function(){ t.classList.remove('show'); }, 4000);
 }
 
-/* ══ HELPERS ══ */
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+/* ── helper ── */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 </script>
 </body>
 </html>
