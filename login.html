@@ -3,95 +3,168 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Login — ImpactGrid Creator Intelligence</title>
+<title>Login — ImpactGrid</title>
 <meta name="description" content="Sign in to your ImpactGrid account."/>
 <link rel="icon" href="favicon.ico"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared.css"/>
 <style>
-:root{
-  --bg:#07090f;--bg2:#0d1017;--bg3:#111520;
-  --card:#151a28;--card2:#1c2235;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
-  --gold:#f0b429;--gold2:#ffd166;
-  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
-  --blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);
-  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
-  --red:#f75f4f;--red-dim:rgba(247,95,79,0.10);
-  --nav-h:64px;--max-w:1240px;--r:12px;--r2:20px;
-  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+/* ── Login page specific. Tokens → shared.css ── */
+
+/* Minimal nav for auth pages — no full sidebar needed */
+.auth-nav{
+  position:fixed;top:0;left:0;right:0;
+  height:var(--nav-h);z-index:1000;
+  background:rgba(242,244,251,.95);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+  transition:background .3s;
 }
-[data-theme="light"]{
-  --bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;
-  --card:#ffffff;--card2:#f5f7fc;
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
-  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
-  --gold:#c97e08;--gold2:#a86505;
-  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);
-  --blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);
-  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
-  --red:#d94f3d;--red-dim:rgba(217,79,61,0.08);
+[data-theme="dark"] .auth-nav{background:rgba(7,9,15,.92);}
+.auth-nav-in{
+  max-width:var(--max-w);margin:0 auto;
+  padding:0 28px;height:100%;
+  display:flex;align-items:center;justify-content:space-between;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background 0.35s,color 0.35s;}
-a{color:inherit;text-decoration:none;}
-button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
-h1,h2,h3{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
-input{font-family:var(--fb);font-size:14px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;width:100%;outline:none;transition:border-color 0.2s;}
-input:focus{border-color:var(--gold);}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.45;}
-.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;transition:background 0.35s;}
-[data-theme="light"] .nav{background:rgba(240,243,250,0.90);}
-.nav-inner{max-width:var(--max-w);margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:17px;letter-spacing:-0.03em;}
-.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#07090f;}
-.logo-img{width:32px;height:32px;object-fit:contain;border-radius:6px;}
-.nav-right{display:flex;align-items:center;gap:9px;}
-.theme-btn{width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;cursor:pointer;}
-.theme-btn:hover{border-color:var(--gold);}
-.btn-nav-ghost{padding:7px 14px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all 0.2s;}
-.btn-nav-ghost:hover{color:var(--text);}
-.btn-nav-gold{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
-.btn-nav-gold:hover{transform:translateY(-1px);box-shadow:0 4px 14px var(--gold-glo);}
-.login-bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 60% at 30% 40%,rgba(240,180,41,0.06),transparent),radial-gradient(ellipse 40% 40% at 70% 70%,rgba(79,142,247,0.04),transparent);}
-[data-theme="light"] .login-bg{background:radial-gradient(ellipse 60% 60% at 30% 40%,rgba(201,126,8,0.05),transparent),radial-gradient(ellipse 40% 40% at 70% 70%,rgba(45,110,219,0.04),transparent);}
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:calc(var(--nav-h) + 40px) 24px 60px;position:relative;z-index:1;}
-.login-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:48px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,0.15);animation:fadeUp 0.45s ease;}
-[data-theme="dark"] .login-box{box-shadow:0 24px 64px rgba(0,0,0,0.5);}
+.auth-nav-logo{
+  display:flex;align-items:center;gap:9px;
+  font-family:var(--fd);font-weight:900;font-size:16px;
+  letter-spacing:-.03em;
+}
+.auth-logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;color:#fff;
+}
+[data-theme="dark"] .auth-logo-mark{color:#07090f;}
+.auth-logo-img{width:30px;height:30px;object-fit:contain;border-radius:5px;}
+.auth-nav-right{display:flex;align-items:center;gap:9px;}
+.auth-theme-btn{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--card);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .2s;cursor:pointer;
+}
+.auth-theme-btn:hover{border-color:var(--gold);}
+.auth-nav-link{
+  padding:7px 14px;border-radius:8px;
+  font-size:13px;font-weight:500;
+  color:var(--text2);border:1px solid var(--border2);
+  transition:all .2s;
+}
+.auth-nav-link:hover{color:var(--text);}
+.auth-nav-cta{
+  padding:8px 16px;border-radius:8px;
+  font-size:13px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff;transition:all .2s;
+}
+[data-theme="dark"] .auth-nav-cta{color:#07090f;}
+.auth-nav-cta:hover{transform:translateY(-1px);box-shadow:0 5px 18px var(--gold-glo);}
+
+/* Ambient background */
+.login-bg{
+  position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 60% at 30% 40%,rgba(201,126,8,.05),transparent),
+    radial-gradient(ellipse 40% 40% at 70% 70%,rgba(45,110,219,.04),transparent);
+}
+[data-theme="dark"] .login-bg{
+  background:
+    radial-gradient(ellipse 60% 60% at 30% 40%,rgba(240,180,41,.06),transparent),
+    radial-gradient(ellipse 40% 40% at 70% 70%,rgba(79,142,247,.04),transparent);
+}
+
+/* Login card */
+.login-wrap{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:calc(var(--nav-h) + 40px) 24px 60px;
+  position:relative;z-index:1;
+}
+.login-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);padding:48px;
+  width:100%;max-width:440px;
+  box-shadow:0 24px 64px rgba(0,0,0,.08);
+  animation:fadeUp .45s ease;
+}
+[data-theme="dark"] .login-box{box-shadow:0 24px 64px rgba(0,0,0,.5);}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-.box-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px;}
-.box-logo-text{font-family:var(--fd);font-weight:900;font-size:18px;letter-spacing:-0.03em;}
+
+.box-logo{
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;margin-bottom:28px;
+}
+.box-logo-text{font-family:var(--fd);font-weight:900;font-size:18px;letter-spacing:-.03em;}
+
 .login-box h1{font-size:26px;text-align:center;margin-bottom:8px;}
 .login-box .sub{font-size:15px;color:var(--text2);text-align:center;margin-bottom:30px;line-height:1.6;}
+
+/* Form elements */
 .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
 .form-label{font-size:12px;font-weight:600;color:var(--text2);}
+.form-input-field{
+  width:100%;padding:12px 14px;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--text);
+  font-family:var(--fb);font-size:14px;
+  outline:none;transition:border-color .2s;
+}
+.form-input-field:focus{border-color:var(--gold);}
+.form-input-field::placeholder{color:var(--text3);}
+
 .forgot{text-align:right;margin-top:-8px;margin-bottom:20px;font-size:13px;}
-.forgot a{color:var(--gold);font-weight:600;transition:opacity 0.2s;}
-.forgot a:hover{opacity:0.8;}
-.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;font-family:var(--fd);font-weight:800;font-size:15px;border-radius:var(--r);border:none;cursor:pointer;transition:all 0.2s;margin-top:6px;}
+.forgot a{color:var(--gold);font-weight:600;transition:opacity .2s;}
+.forgot a:hover{opacity:.8;}
+
+.login-btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff;font-family:var(--fd);font-weight:800;
+  font-size:15px;border-radius:var(--r);border:none;
+  cursor:pointer;transition:all .2s;margin-top:6px;
+}
+[data-theme="dark"] .login-btn{color:#07090f;}
 .login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
-.login-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
-.divider-or{display:flex;align-items:center;gap:12px;margin:22px 0;font-family:var(--fm);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.divider-or{
+  display:flex;align-items:center;gap:12px;margin:22px 0;
+  font-family:var(--fm);font-size:11px;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.12em;
+}
 .divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border);}
+
 .alert{font-size:13.5px;padding:12px 16px;border-radius:var(--r);margin-bottom:18px;display:none;line-height:1.55;}
 .alert.show{display:block;}
-.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
-.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(247,95,79,0.25);}
+.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.25);}
+[data-theme="dark"] .alert-success{color:#2dd4a0;border-color:rgba(45,212,160,.25);}
+.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(217,79,59,.2);}
+[data-theme="dark"] .alert-error{color:#f75f4f;border-color:rgba(247,95,79,.25);}
+
 .no-account{text-align:center;margin-top:22px;font-size:14px;color:var(--text2);}
 .no-account a{color:var(--gold);font-weight:700;}
 .no-account a:hover{text-decoration:underline;}
+
+/* Password show/hide */
 .input-wrap{position:relative;}
-.input-wrap input{padding-right:44px;}
-.show-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text3);cursor:pointer;background:none;border:none;padding:4px;transition:color 0.2s;font-family:var(--fm);font-size:11px;letter-spacing:0.06em;}
+.input-wrap .form-input-field{padding-right:52px;}
+.show-pw{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  font-family:var(--fm);font-size:11px;letter-spacing:.06em;
+  color:var(--text3);cursor:pointer;background:none;border:none;
+  padding:4px;transition:color .2s;
+}
 .show-pw:hover{color:var(--text);}
+
+/* Loading dots */
 .btn-dots{display:inline-flex;gap:4px;align-items:center;margin-left:6px;}
-.btn-dot{width:4px;height:4px;border-radius:50%;background:#07090f;opacity:0.5;animation:dotPulse 1.2s infinite;}
-.btn-dot:nth-child(2){animation-delay:0.2s;}
-.btn-dot:nth-child(3){animation-delay:0.4s;}
-@keyframes dotPulse{0%,80%,100%{opacity:0.3;}40%{opacity:1;}}
+.btn-dot{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.5;animation:dotPulse 1.2s infinite;}
+.btn-dot:nth-child(2){animation-delay:.2s;}
+.btn-dot:nth-child(3){animation-delay:.4s;}
+@keyframes dotPulse{0%,80%,100%{opacity:.3;}40%{opacity:1;}}
+
 @media(max-width:480px){.login-box{padding:32px 24px;}}
 </style>
 </head>
@@ -99,17 +172,18 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
 <div class="login-bg"></div>
 
-<nav class="nav">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo">
-      <img src="logo.png" class="logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="logo-mark" style="display:none;">IG</div>
-      ImpactGrid Creator Intelligence
+<!-- Minimal auth nav — no full sidebar on auth pages -->
+<nav class="auth-nav">
+  <div class="auth-nav-in">
+    <a href="index.html" class="auth-nav-logo">
+      <img src="logo.png" class="auth-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div class="auth-logo-mark" style="display:none;">IG</div>
+      ImpactGrid
     </a>
-    <div class="nav-right">
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
-      <a href="join.html" class="btn-nav-ghost">Create Account</a>
-      <a href="join.html" class="btn-nav-gold">Join ImpactGrid</a>
+    <div class="auth-nav-right">
+      <button class="auth-theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+      <a href="join.html" class="auth-nav-link">Create Account</a>
+      <a href="join.html" class="auth-nav-cta">Join ImpactGrid</a>
     </div>
   </div>
 </nav>
@@ -118,25 +192,28 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <div class="login-box">
     <div class="box-logo">
       <img src="logo.png" style="width:28px;height:28px;object-fit:contain;border-radius:6px;" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="logo-mark" style="display:none;">IG</div>
+      <div class="auth-logo-mark" style="display:none;">IG</div>
       <span class="box-logo-text">ImpactGrid</span>
     </div>
     <h1>Welcome Back</h1>
     <p class="sub">Sign in to your ImpactGrid account to continue.</p>
+
     <div class="alert" id="alertBox"></div>
+
     <div class="form-group">
       <label class="form-label">Email Address</label>
-      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')login()"/>
+      <input id="email" class="form-input-field" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')login()"/>
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
       <div class="input-wrap">
-        <input id="password" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/>
+        <input id="password" class="form-input-field" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/>
         <button class="show-pw" onclick="togglePw()" id="showPwBtn">SHOW</button>
       </div>
     </div>
     <div class="forgot"><a href="reset-password.html">Forgot password?</a></div>
-    <button class="login-btn" id="loginBtn" onclick="login()">Sign In &#8594;</button>
+
+    <button class="login-btn" id="loginBtn" onclick="login()">Sign In →</button>
     <div class="divider-or">or</div>
     <div class="no-account">Don't have an account? <a href="join.html">Join ImpactGrid</a></div>
   </div>
@@ -144,76 +221,82 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
 <script src="ig-supabase.js"></script>
 <script>
-var dark=false;
-function toggleTheme(){
-  dark=!dark;
-  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
-  document.getElementById('themeBtn').textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';
-  try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}
+/* ── Theme — light default ── */
+var isDark = false;
+function applyTheme(dark) {
+  isDark = dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  var tb = document.getElementById('themeBtn');
+  if (tb) tb.textContent = dark ? '☀️' : '🌙';
+  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
 }
-try{
-  var saved=localStorage.getItem('igt');
-  if(saved==='d'){dark=true;document.documentElement.setAttribute('data-theme','dark');document.getElementById('themeBtn').textContent='\uD83C\uDF19';}
-  else{dark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('themeBtn').textContent='\u2600\uFE0F';}
-}catch(e){}
+function toggleTheme() { applyTheme(!isDark); }
+(function() {
+  try { if (localStorage.getItem('ig_theme') === 'dark') applyTheme(true); } catch(e) {}
+})();
 
-function togglePw(){
-  var inp=document.getElementById('password');
-  var btn=document.getElementById('showPwBtn');
-  if(inp.type==='password'){inp.type='text';btn.textContent='HIDE';}
-  else{inp.type='password';btn.textContent='SHOW';}
-}
-
-function showAlert(msg,type){
-  var el=document.getElementById('alertBox');
-  el.textContent=msg;
-  el.className='alert alert-'+type+' show';
+/* ── Password toggle ── */
+function togglePw() {
+  var inp = document.getElementById('password');
+  var btn = document.getElementById('showPwBtn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'HIDE'; }
+  else { inp.type = 'password'; btn.textContent = 'SHOW'; }
 }
 
-async function login(){
-  var btn=document.getElementById('loginBtn');
-  var email=document.getElementById('email').value.trim();
-  var password=document.getElementById('password').value;
-  if(!email||!password){showAlert('Please enter your email and password.','error');return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showAlert('Please enter a valid email address.','error');return;}
-  btn.disabled=true;
-  btn.innerHTML='Signing in <span class="btn-dots"><span class="btn-dot"></span><span class="btn-dot"></span><span class="btn-dot"></span></span>';
-  try{
-    var client=getSupabase();
-    var res=await client.auth.signInWithPassword({email:email,password:password});
-    if(res.error)throw res.error;
-    var profRes=await client.from('profiles').select('role,status').eq('id',res.data.user.id).single();
-    var role=(profRes.data&&profRes.data.role)||'professional';
-    if(role==='admin'||res.data.user.email==='admin@impactgridgroup.com'){
-      window.location.href='admin.html';
-    } else if(role==='employer'){
-      window.location.href='employer-dashboard.html';
+/* ── Alert ── */
+function showAlert(msg, type) {
+  var el = document.getElementById('alertBox');
+  el.textContent = msg;
+  el.className = 'alert alert-' + type + ' show';
+}
+
+/* ── Login ── */
+async function login() {
+  var btn = document.getElementById('loginBtn');
+  var email = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+  if (!email || !password) { showAlert('Please enter your email and password.', 'error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('Please enter a valid email address.', 'error'); return; }
+  btn.disabled = true;
+  btn.innerHTML = 'Signing in <span class="btn-dots"><span class="btn-dot"></span><span class="btn-dot"></span><span class="btn-dot"></span></span>';
+  try {
+    var client = getSupabase();
+    var res = await client.auth.signInWithPassword({ email: email, password: password });
+    if (res.error) throw res.error;
+    var profRes = await client.from('profiles').select('role,status').eq('id', res.data.user.id).single();
+    var role = (profRes.data && profRes.data.role) || 'professional';
+    if (role === 'admin' || res.data.user.email === 'admin@impactgridgroup.com') {
+      window.location.href = 'admin.html';
+    } else if (role === 'employer') {
+      window.location.href = 'employer-dashboard.html';
     } else {
-      window.location.href='dashboard.html';
+      window.location.href = 'dashboard.html';
     }
-  }catch(e){
-    var msg=e.message||'Login failed. Please check your details.';
-    if(msg.toLowerCase().includes('invalid login')||msg.toLowerCase().includes('invalid credentials')){
-      msg='Incorrect email or password. Please try again.';
+  } catch(e) {
+    var msg = e.message || 'Login failed. Please check your details.';
+    if (msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')) {
+      msg = 'Incorrect email or password. Please try again.';
     }
-    showAlert(msg,'error');
-    btn.disabled=false;btn.innerHTML='Sign In &#8594;';
+    showAlert(msg, 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Sign In →';
   }
 }
 
-document.addEventListener('DOMContentLoaded',async function(){
-  try{
-    var client=getSupabase();
-    var res=await client.auth.getSession();
-    if(res.data&&res.data.session){
-      var user=res.data.session.user;
-      var profRes=await client.from('profiles').select('role').eq('id',user.id).single();
-      var role=(profRes.data&&profRes.data.role)||'professional';
-      if(role==='admin'||user.email==='admin@impactgridgroup.com')window.location.href='admin.html';
-      else if(role==='employer')window.location.href='employer-dashboard.html';
-      else window.location.href='dashboard.html';
+/* ── Auto-redirect if already logged in ── */
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    var client = getSupabase();
+    var res = await client.auth.getSession();
+    if (res.data && res.data.session) {
+      var user = res.data.session.user;
+      var profRes = await client.from('profiles').select('role').eq('id', user.id).single();
+      var role = (profRes.data && profRes.data.role) || 'professional';
+      if (role === 'admin' || user.email === 'admin@impactgridgroup.com') window.location.href = 'admin.html';
+      else if (role === 'employer') window.location.href = 'employer-dashboard.html';
+      else window.location.href = 'dashboard.html';
     }
-  }catch(e){}
+  } catch(e) {}
 });
 </script>
 </body>
