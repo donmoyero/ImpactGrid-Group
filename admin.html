@@ -1145,11 +1145,20 @@ async function indexPhotoFaces(photoId, photoUrl, eventId){
       body:JSON.stringify({ imageUrl: urlWithCacheBust, eventId: eventId })
     });
 
-    /* Handle rate limiting — wait and skip, don't crash */
+    /* Handle rate limiting — wait and retry once with longer delay */
     if(res.status === 429){
-      console.warn('[FaceIndex] Rate limited — waiting 3s before next photo');
-      await new Promise(function(r){ setTimeout(r, 3000); });
-      return;
+      console.warn('[FaceIndex] Rate limited — waiting 5s then retrying');
+      await new Promise(function(r){ setTimeout(r, 5000); });
+      /* Retry once */
+      res = await fetch(EVENTS_API+'/api/facepp-embed',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ imageUrl: urlWithCacheBust, eventId: eventId })
+      });
+      if(res.status === 429){
+        console.warn('[FaceIndex] Still rate limited after retry — skipping photo',photoId);
+        return;
+      }
     }
     if(!res.ok){
       var errText = await res.text();
@@ -1337,7 +1346,7 @@ async function reindexEventFaces(){
   var sel=document.getElementById('faces-event-select');
   var eventId=sel?sel.value:'';
   if(!eventId){ toast('⚠️','No event selected',''); return; }
-  if(!confirm('Re-index all faces? This deletes existing face data and rebuilds. Each photo takes ~1-2 seconds.')) return;
+  if(!confirm('Re-index all faces? This deletes existing face data and rebuilds from scratch.\n\nNote: Face++ free tier = 1 photo every 3 seconds. For 30 photos this takes ~90 seconds. Do not close this tab.')) return;
   var btn=document.getElementById('reindexBtn');
   btn.disabled=true; btn.textContent='⏳ Indexing…';
   toast('🔄','Re-indexing…','Face++ scanning every photo',true);
@@ -1350,8 +1359,8 @@ async function reindexEventFaces(){
     for(var i=0;i<photos.length;i++){
       btn.textContent='⏳ '+(i+1)+' / '+photos.length;
       await indexPhotoFaces(photos[i].id, photos[i].original_url||photos[i].preview_url, eventId);
-      /* 1.5s delay between photos — prevents Face++ rate limiting on free tier */
-      if(i < photos.length-1) await new Promise(function(r){ setTimeout(r, 1500); });
+      /* 3 second delay between photos — Face++ free tier = 1 req/sec */
+      if(i < photos.length-1) await new Promise(function(r){ setTimeout(r, 3000); });
     }
     toast('✅','Re-indexing complete!',photos.length+' photos processed');
     btn.disabled=false; btn.textContent='🔄 Re-index All';
