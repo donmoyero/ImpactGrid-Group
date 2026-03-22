@@ -945,7 +945,7 @@ async function runFaceRecognition(selfieFile){
     /* Step 3 — Load pre-indexed face crops from Supabase */
     var { data: embeddings, error: embErr } = await getSupabase()
       .from('face_embeddings')
-      .select('photo_id, face_crop_url, group_id')
+      .select('photo_id, face_crop_url, face_token, group_id')
       .eq('event_id', eventData.id)
       .not('face_crop_url', 'is', null);
 
@@ -965,47 +965,76 @@ async function runFaceRecognition(selfieFile){
       return true;
     });
 
-    resultText.textContent = 'Matching your face against ' + uniqueFaces.length + ' indexed photos…';
+    resultText.textContent = 'Searching face index…';
     resultFill.style.width = '45%';
 
-    /* Step 4 — Compare selfie vs ALL indexed face crops in PARALLEL
-     * Batch into groups of 8 to avoid overwhelming the API.
-     * 50 photos: sequential = ~50s, parallel batches = ~3s
+    /* Step 4 — ONE FaceSet search call instead of N compare calls
+     * This is the professional approach — searches entire event FaceSet
+     * in a single API call regardless of how many photos are indexed.
      */
     var autoMatches   = [];
     var reviewMatches = [];
-    var BATCH_SIZE    = 8;
 
-    async function compareFace(emb){
-      if(!emb.face_crop_url) return null;
-      try{
-        var res = await fetch(EVENTS_API + '/api/facepp-match', {
-          method : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body   : JSON.stringify({ selfieUrl: selfiePublicUrl, photoUrl: emb.face_crop_url })
-        });
-        if(!res.ok) return null;
-        var data = await res.json();
-        return { emb: emb, confidence: data.confidence || 0 };
-      }catch(e){ return null; }
-    }
-
-    var completed = 0;
-    for(var b = 0; b < uniqueFaces.length; b += BATCH_SIZE){
-      var batch   = uniqueFaces.slice(b, b + BATCH_SIZE);
-      var results = await Promise.all(batch.map(compareFace));
-
-      results.forEach(function(r){
-        if(!r) return;
-        var photo = allPhotos.find(function(p){ return p.id === r.emb.photo_id; });
-        if(!photo) return;
-        if(r.confidence >= FACE_AUTO)        autoMatches.push({ photo: photo, confidence: r.confidence });
-        else if(r.confidence >= FACE_REVIEW) reviewMatches.push({ photo: photo, confidence: r.confidence });
+    try{
+      var searchRes = await fetch(EVENTS_API + '/api/facepp-search', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ selfieUrl: selfiePublicUrl, eventId: eventData.id })
       });
 
-      completed += batch.length;
-      resultFill.style.width  = Math.round(45 + (completed / uniqueFaces.length) * 50) + '%';
-      resultText.textContent  = 'Scanned ' + completed + ' of ' + uniqueFaces.length + '…';
+      resultFill.style.width = '80%';
+
+      if(searchRes.ok){
+        var searchData = await searchRes.json();
+        var matches    = searchData.results || [];
+
+        /* Map face tokens back to photos via embeddings */
+        var faceTokenMap = {};
+        embeddings.forEach(function(e){ if(e.face_token) faceTokenMap[e.face_token] = e.photo_id; });
+
+        matches.forEach(function(m){
+          var photoId = faceTokenMap[m.face_token];
+          if(!photoId) return;
+          var photo = allPhotos.find(function(p){ return p.id === photoId; });
+          if(!photo) return;
+          if(m.tier === 'auto')   autoMatches.push({ photo: photo, confidence: m.confidence });
+          if(m.tier === 'review') reviewMatches.push({ photo: photo, confidence: m.confidence });
+        });
+
+        console.log('[FaceScan] Search complete — auto:', autoMatches.length, 'review:', reviewMatches.length);
+      } else {
+        /* Fallback to compare method if search fails */
+        console.warn('[FaceScan] FaceSet search failed, falling back to compare');
+        var BATCH_SIZE = 8;
+        async function compareFace(emb){
+          if(!emb.face_crop_url) return null;
+          try{
+            var r = await fetch(EVENTS_API + '/api/facepp-match', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ selfieUrl: selfiePublicUrl, photoUrl: emb.face_crop_url })
+            });
+            if(!r.ok) return null;
+            var d = await r.json();
+            return { emb: emb, confidence: d.confidence || 0 };
+          }catch(e){ return null; }
+        }
+        var completed = 0;
+        for(var b = 0; b < uniqueFaces.length; b += BATCH_SIZE){
+          var batch   = uniqueFaces.slice(b, b + BATCH_SIZE);
+          var results = await Promise.all(batch.map(compareFace));
+          results.forEach(function(r){
+            if(!r) return;
+            var photo = allPhotos.find(function(p){ return p.id === r.emb.photo_id; });
+            if(!photo) return;
+            if(r.confidence >= FACE_AUTO)        autoMatches.push({ photo: photo, confidence: r.confidence });
+            else if(r.confidence >= FACE_REVIEW) reviewMatches.push({ photo: photo, confidence: r.confidence });
+          });
+          completed += batch.length;
+          resultFill.style.width = Math.round(45 + (completed / uniqueFaces.length) * 50) + '%';
+        }
+      }
+    }catch(searchErr){
+      console.warn('[FaceScan] Search error:', searchErr.message);
     }
 
     resultFill.style.width = '100%';
