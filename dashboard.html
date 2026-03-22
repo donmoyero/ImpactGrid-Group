@@ -3,339 +3,303 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>My Dashboard — ImpactGrid Creator Intelligence</title>
-<meta name="description" content="Your ImpactGrid professional dashboard — jobs, bookings, and profile."/>
+<title>Available Jobs — ImpactGrid</title>
+<meta name="description" content="Live opportunities posted by employers on the ImpactGrid Network."/>
 <link rel="icon" href="favicon.ico"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared.css"/>
 <style>
-:root{--bg:#07090f;--bg2:#0d1017;--bg3:#111520;--card:#151a28;--card2:#1c2235;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;--gold:#f0b429;--gold2:#ffd166;--gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);--blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);--green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);--red:#f75f4f;--red-dim:rgba(247,95,79,0.10);--nav-h:64px;--max-w:1240px;--r:12px;--r2:20px;--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;}
-[data-theme="light"]{--bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;--card:#ffffff;--card2:#f5f7fc;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--text:#0d1017;--text2:#4a5068;--text3:#9099b8;--gold:#c97e08;--gold2:#a86505;--gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);--blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);--green:#0fa876;--green-dim:rgba(15,168,118,0.10);--red:#d94f3d;--red-dim:rgba(217,79,61,0.08);}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background 0.35s,color 0.35s;}
-a{color:inherit;text-decoration:none;}
-button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
-h1,h2,h3,h4{font-family:var(--fd);font-weight:800;line-height:1.1;letter-spacing:-0.02em;}
-input,textarea,select{font-family:var(--fb);font-size:14px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;width:100%;outline:none;transition:border-color 0.2s;}
-input:focus,textarea:focus,select:focus{border-color:var(--gold);}
-.topbar{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(7,9,15,0.90);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);z-index:1000;display:flex;align-items:center;gap:16px;padding:0 24px;transition:background 0.35s;}
-[data-theme="light"] .topbar{background:rgba(240,243,250,0.95);}
-.topbar-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:16px;letter-spacing:-0.03em;flex-shrink:0;}
-.logo-mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#07090f;}
-.logo-img{width:30px;height:30px;object-fit:contain;border-radius:5px;}
-.topbar-divider{width:1px;height:26px;background:var(--border2);margin:0 4px;}
-.topbar-breadcrumb{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;}
-.topbar-breadcrumb a{color:var(--text3);}
-.topbar-breadcrumb strong{color:var(--text);}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.theme-btn{width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;cursor:pointer;}
-.topbar-user{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:8px;background:var(--card);border:1px solid var(--border2);}
-.user-avatar-sm{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#07090f;flex-shrink:0;font-family:var(--fd);}
-.user-name-sm{font-size:12px;font-weight:600;color:var(--text);}
-.topbar-back{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);padding:6px 12px;border-radius:8px;border:1px solid var(--border2);}
-.dash-layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;padding-top:var(--nav-h);}
-.dash-sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;display:flex;flex-direction:column;}
-.sidebar-profile{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:24px;}
-.sidebar-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:16px;color:#07090f;flex-shrink:0;}
-.sidebar-profile-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
-.sidebar-profile-role{font-size:11px;color:var(--text3);}
-.sidebar-status{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;padding:2px 8px;border-radius:20px;font-weight:600;margin-top:5px;text-transform:uppercase;letter-spacing:0.08em;}
-.status-active{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
-.status-pending{background:rgba(234,179,8,0.10);color:#d4a30a;border:1px solid rgba(234,179,8,0.25);}
-.status-rejected{background:var(--red-dim);color:var(--red);border:1px solid rgba(247,95,79,0.25);}
-.sidebar-label{font-family:var(--fm);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);padding:0 6px;margin-bottom:8px;margin-top:4px;}
-.sidebar-nav a,.sidebar-nav button{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);transition:all 0.2s;cursor:pointer;border:1px solid transparent;width:100%;text-align:left;background:none;font-family:var(--fb);}
-.sidebar-nav a:hover,.sidebar-nav button:hover{background:var(--card);color:var(--text);}
-.sidebar-nav a.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-glo);}
-.nav-ico{font-size:15px;flex-shrink:0;width:20px;text-align:center;}
-.sidebar-spacer{flex:1;}
-.sidebar-logout:hover{background:var(--red-dim)!important;color:var(--red)!important;}
-.dash-main{padding:36px 40px;background:var(--bg);}
-.pending-banner{background:linear-gradient(135deg,rgba(234,179,8,0.08),rgba(234,179,8,0.03));border:1px solid rgba(234,179,8,0.25);border-radius:var(--r);padding:14px 18px;margin-bottom:28px;display:none;align-items:center;gap:12px;}
-.pending-banner.show{display:flex;}
-.pending-banner p{font-size:13.5px;color:#fde68a;line-height:1.55;}
-.dash-section{display:none;}
-.dash-section.active{display:block;}
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:22px;}
-.stat-label{font-family:var(--fm);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
-.stat-value{font-family:var(--fd);font-size:30px;font-weight:900;letter-spacing:-0.03em;line-height:1;}
-.stat-sub{font-size:12px;color:var(--text2);margin-top:5px;}
-.content-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:28px;margin-bottom:20px;}
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:12px;}
-.section-head h2{font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.02em;}
-.btn-ghost{padding:7px 14px;border-radius:9px;font-size:12px;font-weight:600;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);transition:all 0.2s;cursor:pointer;}
-.btn-save{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;border:none;cursor:pointer;}
-.job-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:12px;}
-.job-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;}
-.job-title{font-family:var(--fd);font-size:15px;font-weight:800;}
-.job-budget{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-glo);padding:2px 8px;border-radius:5px;white-space:nowrap;flex-shrink:0;}
-.job-company{font-size:12.5px;color:var(--text2);margin-bottom:10px;}
-.job-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px;}
-.job-tags{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
-.job-tag{font-family:var(--fm);font-size:10px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;}
-.job-tag-deadline{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-glo);}
-.apply-btn{padding:8px 18px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:var(--r);color:#07090f;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--fb);}
-.apply-btn:disabled{opacity:0.55;cursor:not-allowed;background:var(--bg3);color:var(--text3);border:1px solid var(--border2);}
-.booking-card{background:var(--bg2);border:1px solid rgba(45,212,160,0.2);border-radius:var(--r);padding:20px;margin-bottom:12px;position:relative;}
-.booking-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);}
-.booking-badge{position:absolute;top:14px;right:14px;font-family:var(--fm);font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);text-transform:uppercase;letter-spacing:0.08em;}
-.booking-title{font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:5px;padding-right:100px;}
-.booking-company{font-size:12.5px;color:var(--text2);margin-bottom:8px;}
-.booking-budget{font-family:var(--fm);font-size:14px;font-weight:700;color:var(--green);margin-bottom:10px;}
-.booking-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:8px;}
-.booking-date{font-family:var(--fm);font-size:10px;color:var(--text3);}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-.form-label{font-size:12px;font-weight:600;color:var(--text2);}
-.profile-avatar-lg{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:24px;color:#07090f;flex-shrink:0;}
-.alert{font-size:13px;padding:10px 14px;border-radius:var(--r);margin-bottom:14px;display:none;}
-.alert.show{display:block;}
-.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
-.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(247,95,79,0.25);}
-.empty-state{text-align:center;padding:48px 24px;color:var(--text3);}
-.empty-icon{font-size:36px;margin-bottom:12px;opacity:0.5;}
-.empty-title{font-family:var(--fd);font-size:16px;font-weight:800;color:var(--text2);margin-bottom:6px;}
-.empty-sub{font-size:13px;line-height:1.65;}
-@media(max-width:960px){.dash-layout{grid-template-columns:1fr;}.dash-sidebar{display:none;}.dash-main{padding:24px 16px;}.stats-row{grid-template-columns:1fr 1fr;}.form-grid{grid-template-columns:1fr;}}
-@media(max-width:560px){.stats-row{grid-template-columns:1fr;}}
+.page-hero{
+  padding:calc(var(--nav-h) + 72px) 28px 56px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.page-hero-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 55% at 50% 20%,var(--gold-dim),transparent);
+}
+.page-hero h1{font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:-.03em;margin-bottom:14px;position:relative;}
+.page-hero h1 em{color:var(--gold);font-style:normal;}
+.page-hero p{font-size:17px;color:var(--text2);max-width:460px;margin:0 auto;line-height:1.72;position:relative;}
+
+.stats-band{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);margin-bottom:36px;overflow:hidden;
+}
+.stats-band-item{
+  text-align:center;padding:22px 16px;position:relative;
+}
+.stats-band-item:not(:last-child)::after{
+  content:'';position:absolute;top:20%;right:0;bottom:20%;
+  width:1px;background:var(--border);
+}
+.stats-num{
+  font-family:var(--fd);font-size:clamp(26px,3vw,38px);
+  font-weight:900;color:var(--gold);letter-spacing:-.03em;line-height:1;margin-bottom:4px;
+}
+.stats-lbl{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;}
+
+.filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px;}
+.filter-input{
+  flex:1;min-width:200px;padding:11px 16px;
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--r);font-size:14px;color:var(--text);
+  font-family:var(--fb);outline:none;transition:border-color .2s;
+}
+.filter-input:focus{border-color:var(--gold);}
+.filter-input::placeholder{color:var(--text3);}
+.filter-select{
+  padding:11px 14px;background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--r);font-size:14px;color:var(--text);
+  font-family:var(--fb);cursor:pointer;outline:none;transition:border-color .2s;
+}
+.filter-select:focus{border-color:var(--gold);}
+.filter-count{
+  font-family:var(--fm);font-size:11px;color:var(--text3);
+  padding:6px 12px;border-radius:8px;
+  background:var(--bg2);border:1px solid var(--border);white-space:nowrap;
+}
+
+.jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;}
+.job-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);padding:26px;
+  transition:all .25s;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+}
+.job-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--gold);transform:scaleX(0);
+  transition:transform .3s;transform-origin:left;
+}
+.job-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--sh2);}
+.job-card:hover::before{transform:scaleX(1);}
+.job-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.job-title{font-family:var(--fd);font-size:16px;font-weight:800;letter-spacing:-.02em;line-height:1.2;}
+.job-budget{
+  font-family:var(--fm);font-size:12px;font-weight:700;
+  color:var(--gold);white-space:nowrap;
+  background:var(--gold-dim);border:1px solid var(--gold-glo);
+  padding:3px 9px;border-radius:6px;flex-shrink:0;
+}
+.job-company{font-size:13px;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.job-dot{width:3px;height:3px;border-radius:50%;background:var(--border2);}
+.job-desc{font-size:13px;color:var(--text2);line-height:1.68;flex:1;margin-bottom:16px;}
+.job-tags{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;}
+.job-tag{
+  font-family:var(--fm);font-size:10px;color:var(--text2);
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:6px;padding:3px 9px;letter-spacing:.04em;
+}
+.job-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.job-badge{font-family:var(--fm);font-size:9px;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.1em;}
+.badge-remote{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);}
+[data-theme="dark"] .badge-remote{background:rgba(45,212,160,.10);color:#2dd4a0;border-color:rgba(45,212,160,.25);}
+.badge-hybrid{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(45,110,219,.2);}
+[data-theme="dark"] .badge-hybrid{color:var(--blue2);}
+.badge-onsite{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.2);}
+.job-posted{font-family:var(--fm);font-size:10px;color:var(--text3);}
+.job-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:12px;text-align:center;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff;font-weight:700;font-size:14px;
+  border-radius:var(--r);transition:all .2s;
+  border:none;cursor:pointer;font-family:var(--fb);margin-top:auto;
+}
+[data-theme="dark"] .job-btn{color:#07090f;}
+.job-btn:hover{transform:translateY(-1px);box-shadow:var(--sh-gold);}
+
+.empty-state{text-align:center;padding:72px 24px;color:var(--text3);}
+.empty-icon{font-size:44px;margin-bottom:16px;opacity:.5;}
+.empty-title{font-family:var(--fd);font-size:18px;font-weight:800;color:var(--text2);margin-bottom:8px;}
+.empty-sub{font-size:14px;line-height:1.65;max-width:300px;margin:0 auto;}
+
+.jobs-cta{
+  background:linear-gradient(135deg,var(--gold-dim),rgba(201,126,8,.01));
+  border:1px solid var(--gold-glo);border-radius:var(--r2);
+  padding:56px 44px;text-align:center;margin-top:48px;
+  position:relative;overflow:hidden;
+}
+[data-theme="dark"] .jobs-cta{background:linear-gradient(135deg,rgba(240,180,41,.08),rgba(240,180,41,.01));}
+.jobs-cta::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 80% at 50% 50%,var(--gold-dim),transparent);}
+.jobs-cta h3{font-family:var(--fd);font-size:clamp(20px,3vw,26px);font-weight:900;margin-bottom:10px;letter-spacing:-.02em;position:relative;}
+.jobs-cta p{font-size:15px;color:var(--text2);margin-bottom:26px;position:relative;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.7;}
+.jobs-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
+.btn-pri{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;}
+[data-theme="dark"] .btn-pri{color:#07090f;}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:var(--sh-gold);}
+.btn-sec{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r);font-size:15px;font-weight:600;border:1px solid var(--border2);color:var(--text);transition:all .2s;}
+.btn-sec:hover{border-color:var(--gold);color:var(--gold);}
+
+@media(max-width:860px){
+  .stats-band{grid-template-columns:1fr;}
+  .stats-band-item::after{display:none;}
+  .stats-band-item:not(:last-child){border-bottom:1px solid var(--border);}
+}
+@media(max-width:640px){
+  .jobs-grid{grid-template-columns:1fr;}
+  .filter-bar{flex-direction:column;}
+  .filter-input,.filter-select{width:100%;}
+  .jobs-cta{padding:40px 20px;}
+}
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <a href="index.html" class="topbar-logo">
-    <img src="logo.png" class="logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-    <div class="logo-mark" style="display:none;">IG</div>
-    ImpactGrid
-  </a>
-  <div class="topbar-divider"></div>
-  <div class="topbar-breadcrumb"><a href="index.html">Home</a><span>&rsaquo;</span><strong>My Dashboard</strong></div>
-  <div class="topbar-right">
-    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
-    <div class="topbar-user"><div class="user-avatar-sm" id="topbarAvatar">?</div><span class="user-name-sm" id="topbarName">Account</span></div>
-    <a href="index.html" class="topbar-back">← Back to Site</a>
+<div id="ig-nav"></div>
+
+<div class="page-wrap">
+  <div class="page-hero">
+    <div class="page-hero-bg"></div>
+    <div class="label-tag" style="justify-content:center;">ImpactGrid Network</div>
+    <h1>Available <em>Jobs</em></h1>
+    <p>Live opportunities posted by employers on the ImpactGrid Network. Join as a professional to apply.</p>
   </div>
+
+  <div class="divider"></div>
+
+  <section class="section anim">
+    <div class="stats-band" id="statsBand">
+      <div class="stats-band-item"><div class="stats-num" id="sTotal">—</div><div class="stats-lbl">Live Jobs</div></div>
+      <div class="stats-band-item"><div class="stats-num" id="sCompanies">—</div><div class="stats-lbl">Companies Hiring</div></div>
+      <div class="stats-band-item"><div class="stats-num" id="sNew">—</div><div class="stats-lbl">Added This Week</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <input class="filter-input" id="searchInput" type="text" placeholder="Search by title, skill, or company…" oninput="filterJobs()"/>
+      <select class="filter-select" id="locationFilter" onchange="filterJobs()">
+        <option value="">All Locations</option>
+        <option value="remote">Remote</option>
+        <option value="london">London</option>
+        <option value="hybrid">Hybrid</option>
+        <option value="uk">UK</option>
+      </select>
+      <select class="filter-select" id="typeFilter" onchange="filterJobs()">
+        <option value="">All Types</option>
+        <option value="contract">Contract</option>
+        <option value="freelance">Freelance</option>
+        <option value="full-time">Full-time</option>
+        <option value="part-time">Part-time</option>
+      </select>
+      <div class="filter-count" id="filterCount">Loading…</div>
+    </div>
+
+    <div id="jobsGrid">
+      <div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <div class="empty-title">Loading opportunities…</div>
+        <div class="empty-sub">Fetching live jobs from the ImpactGrid Network.</div>
+      </div>
+    </div>
+
+    <div class="jobs-cta">
+      <h3>Ready to join the Network?</h3>
+      <p>Create your profile, get verified, and start applying — no recruiter fees.</p>
+      <div class="jobs-cta-btns">
+        <a href="join.html?type=professional" class="btn-pri">Join as Professional →</a>
+        <a href="join.html?type=employer" class="btn-sec">Post a Job</a>
+      </div>
+    </div>
+  </section>
 </div>
 
-<div class="dash-layout">
-  <aside class="dash-sidebar">
-    <div class="sidebar-profile">
-      <div class="sidebar-avatar" id="avatarMini">?</div>
-      <div>
-        <div class="sidebar-profile-name" id="nameMini">Loading…</div>
-        <div class="sidebar-profile-role">Professional</div>
-        <div class="sidebar-status status-pending" id="statusBadge">Pending</div>
-      </div>
-    </div>
-    <div class="sidebar-label">Menu</div>
-    <nav class="sidebar-nav">
-      <a href="#" class="active" onclick="return showSection('overview',this)"><span class="nav-ico">◈</span> Dashboard</a>
-      <a href="#" onclick="return showSection('jobs',this)"><span class="nav-ico">📋</span> Available Jobs</a>
-      <a href="#" onclick="return showSection('bookings',this)"><span class="nav-ico">✅</span> My Bookings</a>
-      <a href="#" onclick="return showSection('profile',this)"><span class="nav-ico">👤</span> My Profile</a>
-      <a href="creator-studio.html"><span class="nav-ico">🎬</span> Creator Studio</a>
-      <a href="https://impactgridanalytics.com" target="_blank"><span class="nav-ico">⚡</span> Analytics ↗</a>
-      <a href="ai.html"><span class="nav-ico">🤖</span> Dijo AI</a>
-    </nav>
-    <div class="sidebar-spacer"></div>
-    <nav class="sidebar-nav" style="margin-top:8px;">
-      <button class="sidebar-logout" onclick="igLogout()"><span class="nav-ico">⎋</span> Sign Out</button>
-    </nav>
-  </aside>
+<div id="ig-footer"></div>
 
-  <main class="dash-main">
-    <div class="pending-banner" id="pendingBanner">
-      <span style="font-size:22px;flex-shrink:0;">⏳</span>
-      <p><strong>Account under review.</strong> Your profile is being reviewed by our team. Usually within 24 hours.</p>
-    </div>
-
-    <div class="dash-section active" id="section-overview">
-      <div style="margin-bottom:28px;">
-        <h1 style="font-size:clamp(22px,3vw,28px);margin-bottom:6px;">Welcome back, <span id="welcomeName" style="color:var(--gold);">…</span> 👋</h1>
-        <p style="font-size:13px;color:var(--text3);font-family:var(--fm);" id="welcomeDate"></p>
-      </div>
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-label">Applications Sent</div><div class="stat-value" id="statApps" style="color:var(--blue2);">—</div><div class="stat-sub">Jobs applied to</div></div>
-        <div class="stat-card"><div class="stat-label">My Bookings</div><div class="stat-value" id="statBookings" style="color:var(--green);">—</div><div class="stat-sub">Confirmed gigs</div></div>
-        <div class="stat-card"><div class="stat-label">Available Jobs</div><div class="stat-value" id="statJobs" style="color:var(--gold);">—</div><div class="stat-sub">Open right now</div></div>
-      </div>
-      <div class="content-card">
-        <div class="section-head"><h2>Latest Opportunities</h2><a href="#" onclick="return showSection('jobs',document.querySelectorAll('.sidebar-nav a')[1])" style="font-size:13px;font-weight:700;color:var(--gold);">View all &#8594;</a></div>
-        <div id="recentJobsPreview"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-sub">Loading jobs…</div></div></div>
-      </div>
-    </div>
-
-    <div class="dash-section" id="section-jobs">
-      <div class="content-card">
-        <div class="section-head"><h2>📋 Available Jobs</h2><button class="btn-ghost" onclick="loadJobs()">↻ Refresh</button></div>
-        <div id="jobsList"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-sub">Loading…</div></div></div>
-      </div>
-    </div>
-
-    <div class="dash-section" id="section-bookings">
-      <div class="content-card">
-        <div class="section-head"><h2>✅ My Bookings</h2><button class="btn-ghost" onclick="loadBookings()">↻ Refresh</button></div>
-        <div id="bookingsList"><div class="empty-state"><div class="empty-icon">✅</div><div class="empty-sub">Loading…</div></div></div>
-      </div>
-    </div>
-
-    <div class="dash-section" id="section-profile">
-      <div class="content-card">
-        <div class="section-head"><h2>👤 My Profile</h2><button class="btn-save" onclick="saveProfile()">Save Changes</button></div>
-        <div style="display:flex;align-items:center;gap:18px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border);">
-          <div class="profile-avatar-lg" id="avatarLg">?</div>
-          <div><div style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:4px;" id="profileName">—</div><div style="font-size:14px;color:var(--text2);font-family:var(--fm);" id="profileEmail">—</div></div>
-        </div>
-        <div class="alert" id="alertProfile"></div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">First Name</label><input id="p-fname" type="text" placeholder="First name"/></div>
-          <div class="form-group"><label class="form-label">Last Name</label><input id="p-lname" type="text" placeholder="Last name"/></div>
-        </div>
-        <div class="form-group"><label class="form-label">Bio</label><textarea id="p-bio" rows="3" placeholder="Tell employers about yourself…"></textarea></div>
-        <div class="form-group"><label class="form-label">Skills</label><input id="p-skills" type="text" placeholder="e.g. Data Analysis, Python, Marketing"/></div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">Location</label><input id="p-location" type="text" placeholder="e.g. London, UK or Remote"/></div>
-          <div class="form-group"><label class="form-label">Availability</label><select id="p-availability"><option value="available">Available now</option><option value="open">Open to offers</option><option value="unavailable">Not currently available</option></select></div>
-        </div>
-        <div class="form-group"><label class="form-label">Portfolio URL</label><input id="p-portfolio" type="url" placeholder="https://yourportfolio.com"/></div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<script src="ig-supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script src="impactgrid-chat-bubble.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script defer src="nav.js"></script>
 <script>
-var dark=false;
-function toggleTheme(){dark=!dark;document.documentElement.setAttribute('data-theme',dark?'dark':'light');document.getElementById('themeBtn').textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';try{localStorage.setItem('igt',dark?'d':'l');}catch(e){}}
-try{var saved=localStorage.getItem('igt');if(saved==='d'){dark=true;document.documentElement.setAttribute('data-theme','dark');document.getElementById('themeBtn').textContent='\uD83C\uDF19';}else{dark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('themeBtn').textContent='\u2600\uFE0F';}}catch(e){}
-
-var currentUser=null;
-
-document.addEventListener('DOMContentLoaded',async function(){
-  var c=getSupabase();
-  var res=await c.auth.getSession();
-  if(!res.data.session){window.location.href='login.html';return;}
-  currentUser=res.data.session.user;
-  if(currentUser.email==='admin@impactgridgroup.com'){window.location.href='admin.html';return;}
-  var pCheck=await c.from('profiles').select('role').eq('id',currentUser.id).single();
-  if(pCheck.data&&pCheck.data.role==='admin'){window.location.href='admin.html';return;}
-  if(pCheck.data&&pCheck.data.role==='employer'){window.location.href='employer-dashboard.html';return;}
-  var meta=currentUser.user_metadata||{};
-  var name=meta.first_name||(meta.full_name||'').split(' ')[0]||'Professional';
-  var initial=(name[0]||'?').toUpperCase();
-  ['avatarMini','avatarLg','topbarAvatar'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=initial;});
-  document.getElementById('nameMini').textContent=meta.full_name||name;
-  document.getElementById('topbarName').textContent=name;
-  document.getElementById('welcomeName').textContent=name;
-  document.getElementById('profileName').textContent=meta.full_name||name;
-  document.getElementById('profileEmail').textContent=currentUser.email;
-  document.getElementById('welcomeDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  var parts=(meta.full_name||'').split(' ');
-  document.getElementById('p-fname').value=parts[0]||'';
-  document.getElementById('p-lname').value=parts.slice(1).join(' ')||'';
-  document.getElementById('p-skills').value=meta.skills||'';
-  document.getElementById('p-location').value=meta.location||'';
-  document.getElementById('p-portfolio').value=meta.portfolio||'';
-  var prof=await c.from('profiles').select('*').eq('id',currentUser.id).single();
-  var status=(prof.data&&prof.data.status)||'pending';
-  var badge=document.getElementById('statusBadge');
-  badge.textContent=status.charAt(0).toUpperCase()+status.slice(1);
-  badge.className='sidebar-status status-'+status;
-  if(status==='pending')document.getElementById('pendingBanner').classList.add('show');
-  if(prof.data&&prof.data.bio)document.getElementById('p-bio').value=prof.data.bio;
-  if(prof.data&&prof.data.availability)document.getElementById('p-availability').value=prof.data.availability;
-  loadStats();loadJobs();
+document.addEventListener('DOMContentLoaded', function() {
+  renderNav('dashboard.html');
+  renderFooter();
 });
 
-function showSection(id,el){
-  document.querySelectorAll('.dash-section').forEach(function(s){s.classList.remove('active');});
-  document.querySelectorAll('.sidebar-nav a').forEach(function(a){a.classList.remove('active');});
-  document.getElementById('section-'+id).classList.add('active');
-  if(el)el.classList.add('active');
-  if(id==='jobs')loadJobs();
-  if(id==='bookings')loadBookings();
-  return false;
+var allJobs = [];
+
+function timeAgo(d) {
+  if (!d) return '';
+  var diff = Date.now() - new Date(d).getTime();
+  var days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return days + 'd ago';
+  if (days < 30) return Math.floor(days/7) + 'w ago';
+  return Math.floor(days/30) + 'mo ago';
 }
 
-async function loadStats(){
-  try{
-    var c=getSupabase();
-    var results=await Promise.all([
-      c.from('applications').select('id').eq('professional_id',currentUser.id),
-      c.from('applications').select('id').eq('professional_id',currentUser.id).eq('status','booked'),
-      c.from('jobs').select('id').eq('status','active')
-    ]);
-    document.getElementById('statApps').textContent=(results[0].data||[]).length;
-    document.getElementById('statBookings').textContent=(results[1].data||[]).length;
-    document.getElementById('statJobs').textContent=(results[2].data||[]).length;
-  }catch(e){}
+function locBadge(loc) {
+  if (!loc) return '';
+  var l = loc.toLowerCase();
+  if (l.includes('remote')) return '<span class="job-badge badge-remote">Remote</span>';
+  if (l.includes('hybrid')) return '<span class="job-badge badge-hybrid">Hybrid</span>';
+  return '<span class="job-badge badge-onsite">On-site</span>';
 }
 
-async function loadJobs(){
-  var el=document.getElementById('jobsList');var elPrev=document.getElementById('recentJobsPreview');
-  try{
-    var c=getSupabase();
-    var jobsRes=await c.from('jobs').select('*').eq('status','active').order('created_at',{ascending:false});
-    var appsRes=await c.from('applications').select('job_id,status').eq('professional_id',currentUser.id);
-    var appMap={};(appsRes.data||[]).forEach(function(a){appMap[a.job_id]=a.status;});
-    var jobs=jobsRes.data||[];
-    if(!jobs.length){var empty='<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No jobs posted yet</div><div class="empty-sub">Check back soon.</div></div>';if(el)el.innerHTML=empty;if(elPrev)elPrev.innerHTML=empty;return;}
-    function jobCard(j,preview){
-      var appStatus=appMap[j.id];
-      var skills=(j.skills||'').split(',').map(function(s){return s.trim();}).filter(Boolean).slice(0,4);
-      var btnHtml=appStatus?'<button class="apply-btn" disabled>'+(appStatus==='booked'?'✅ Booked':appStatus==='rejected'?'✕ Not selected':'✓ Applied')+'</button>':'<button class="apply-btn" onclick="applyJob(\''+j.id+'\',this)">Apply Now &#8594;</button>';
-      if(preview)return'<div class="job-card"><div class="job-card-head"><div class="job-title">'+esc(j.title||'Opportunity')+'</div>'+(j.budget?'<div class="job-budget">'+esc(j.budget)+'</div>':'')+' </div><div class="job-company">🏢 '+esc(j.company_name||'ImpactGrid')+(j.location?' · 📍 '+esc(j.location):'')+' </div><a href="#" onclick="return showSection(\'jobs\',document.querySelectorAll(\'.sidebar-nav a\')[1])" style="font-size:13px;font-weight:700;color:var(--gold);">View &amp; Apply &#8594;</a></div>';
-      return'<div class="job-card"><div class="job-card-head"><div class="job-title">'+esc(j.title||'Opportunity')+'</div>'+(j.budget?'<div class="job-budget">'+esc(j.budget)+'</div>':'')+' </div><div class="job-company">🏢 '+esc(j.company_name||'ImpactGrid')+(j.location?' · 📍 '+esc(j.location):'')+' </div>'+(j.description?'<div class="job-desc">'+esc(j.description.substring(0,200))+(j.description.length>200?'…':'')+'</div>':'')+(skills.length?'<div class="job-tags">'+skills.map(function(s){return'<span class="job-tag">'+esc(s)+'</span>';}).join('')+(j.deadline?'<span class="job-tag job-tag-deadline">📅 '+esc(j.deadline)+'</span>':'')+'</div>':'')+btnHtml+'</div>';
-    }
-    if(el)el.innerHTML=jobs.map(function(j){return jobCard(j,false);}).join('');
-    if(elPrev)elPrev.innerHTML=jobs.slice(0,2).map(function(j){return jobCard(j,true);}).join('');
-  }catch(e){if(el)el.innerHTML='<div class="empty-state"><div class="empty-title">Error</div><div class="empty-sub">'+esc(e.message)+'</div></div>';}
+function renderStats() {
+  document.getElementById('sTotal').textContent = allJobs.length || '0';
+  var co = new Set(allJobs.map(function(j) { return j.company_name; }).filter(Boolean));
+  document.getElementById('sCompanies').textContent = co.size || '0';
+  var week = Date.now() - 7*86400000;
+  document.getElementById('sNew').textContent = allJobs.filter(function(j) { return new Date(j.created_at).getTime() > week; }).length || '0';
 }
 
-async function applyJob(jobId,btn){
-  if(!currentUser)return;
-  btn.disabled=true;btn.textContent='Applying…';
-  try{
-    var c=getSupabase();
-    var res=await c.from('applications').insert({job_id:jobId,professional_id:currentUser.id,status:'applied',applied_at:new Date().toISOString()});
-    if(res.error)throw res.error;
-    btn.textContent='✓ Applied';btn.style.background='var(--green-dim)';btn.style.color='var(--green)';btn.style.border='1px solid rgba(45,212,160,0.25)';
-    loadStats();
-  }catch(e){btn.disabled=false;btn.textContent='Apply Now →';alert('Could not apply: '+e.message);}
+function filterJobs() {
+  var q = document.getElementById('searchInput').value.toLowerCase().trim();
+  var loc = document.getElementById('locationFilter').value.toLowerCase();
+  var type = document.getElementById('typeFilter').value.toLowerCase();
+  var filtered = allJobs.filter(function(j) {
+    var mq = !q || [(j.title||''),(j.company_name||''),(j.skills||''),(j.description||'')].some(function(s){ return s.toLowerCase().includes(q); });
+    var ml = !loc || (j.location||'').toLowerCase().includes(loc);
+    var mt = !type || (j.job_type||j.type||'').toLowerCase().includes(type);
+    return mq && ml && mt;
+  });
+  var fc = document.getElementById('filterCount');
+  if (fc) fc.textContent = filtered.length + ' result' + (filtered.length !== 1 ? 's' : '');
+  renderJobs(filtered);
 }
 
-async function loadBookings(){
-  var el=document.getElementById('bookingsList');
-  el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-sub">Loading…</div></div>';
-  try{
-    var c=getSupabase();
-    var appsRes=await c.from('applications').select('*').eq('professional_id',currentUser.id).eq('status','booked');
-    var apps=appsRes.data||[];
-    if(!apps.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No bookings yet</div><div class="empty-sub">Apply to jobs and wait for admin confirmation.</div></div>';return;}
-    var jobIds=apps.map(function(a){return a.job_id;}).filter(Boolean);
-    var jobsRes=await c.from('jobs').select('*').in('id',jobIds);
-    var jm={};(jobsRes.data||[]).forEach(function(j){jm[j.id]=j;});
-    el.innerHTML=apps.map(function(a){var j=jm[a.job_id]||{};return'<div class="booking-card"><div class="booking-badge">✅ Confirmed</div><div class="booking-title">'+esc(j.title||'Job')+'</div><div class="booking-company">🏢 '+esc(j.company_name||'ImpactGrid')+(j.location?' · 📍 '+esc(j.location):'')+' </div>'+(j.budget?'<div class="booking-budget">'+esc(j.budget)+'</div>':'')+(j.description?'<div class="booking-desc">'+esc(j.description.substring(0,200))+(j.description.length>200?'…':'')+'</div>':'')+'<div class="booking-date">Booked '+new Date(a.applied_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div></div>';}).join('');
-  }catch(e){el.innerHTML='<div class="empty-state"><div class="empty-title">Error</div><div class="empty-sub">'+esc(e.message)+'</div></div>';}
+function renderJobs(jobs) {
+  var el = document.getElementById('jobsGrid');
+  if (!jobs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No jobs found</div><div class="empty-sub">Try adjusting your filters or check back soon.</div></div>';
+    return;
+  }
+  el.innerHTML = '<div class="jobs-grid">' + jobs.map(function(j) {
+    var skills = (j.skills||'').split(',').map(function(s){return s.trim();}).filter(Boolean).slice(0,4);
+    return '<div class="job-card">' +
+      '<div class="job-top"><div class="job-title">' + esc(j.title||'Opportunity') + '</div>' +
+      (j.budget ? '<div class="job-budget">' + esc(j.budget) + '</div>' : '') + '</div>' +
+      '<div class="job-company"><span>' + esc(j.company_name||'ImpactGrid Employer') + '</span>' +
+      (j.location ? '<span class="job-dot"></span><span>' + esc(j.location) + '</span>' : '') + '</div>' +
+      (j.description ? '<div class="job-desc">' + esc(j.description.substring(0,160)) + (j.description.length>160?'…':'') + '</div>' : '') +
+      (skills.length ? '<div class="job-tags">' + skills.map(function(s){return '<span class="job-tag">'+esc(s)+'</span>';}).join('') + '</div>' : '') +
+      '<div class="job-meta">' + locBadge(j.location) + '<span class="job-posted">' + timeAgo(j.created_at) + '</span></div>' +
+      '<a href="join.html?type=professional" class="job-btn">Apply Now →</a>' +
+    '</div>';
+  }).join('') + '</div>';
 }
 
-async function saveProfile(){
-  if(!currentUser)return;
-  var c=getSupabase();
-  var fname=document.getElementById('p-fname').value.trim();
-  var lname=document.getElementById('p-lname').value.trim();
-  try{
-    await c.from('profiles').upsert({id:currentUser.id,email:currentUser.email,full_name:(fname+' '+lname).trim(),bio:document.getElementById('p-bio').value.trim(),skills:document.getElementById('p-skills').value.trim(),location:document.getElementById('p-location').value.trim(),availability:document.getElementById('p-availability').value,portfolio_url:document.getElementById('p-portfolio').value.trim(),role:'professional',updated_at:new Date().toISOString()});
-    var el=document.getElementById('alertProfile');el.textContent='✅ Profile saved.';el.className='alert alert-success show';setTimeout(function(){el.classList.remove('show');},3500);
-  }catch(e){var el=document.getElementById('alertProfile');el.textContent='❌ Failed: '+e.message;el.className='alert alert-error show';}
-}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-async function igLogout(){await getSupabase().auth.signOut();window.location.href='index.html';}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    var c = getSupabase();
+    var res = await c.from('jobs').select('*').eq('status','active').order('created_at',{ascending:false});
+    allJobs = res.data || [];
+    renderStats();
+    var fc = document.getElementById('filterCount');
+    if (fc) fc.textContent = allJobs.length + ' result' + (allJobs.length !== 1 ? 's' : '');
+    renderJobs(allJobs);
+  } catch(e) {
+    document.getElementById('jobsGrid').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-title">Could not load jobs</div><div class="empty-sub">' + esc(e.message||'Check your connection and try again.') + '</div></div>';
+    var fc = document.getElementById('filterCount'); if (fc) fc.textContent = '0 results';
+    ['sTotal','sCompanies','sNew'].forEach(function(id){document.getElementById(id).textContent='—';});
+  }
+});
+
+setInterval(function(){fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});},600000);
 </script>
 </body>
 </html>
