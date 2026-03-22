@@ -548,17 +548,49 @@ input,textarea{font-family:inherit;}
 
       <!-- Tip -->
       <div style="font-size:12px;opacity:.65;margin-bottom:10px;padding:10px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);">
-        💡 <strong>Best selfie tips:</strong> Face camera directly · Bright light · No sunglasses · Clear face
+        💡 <strong>Tips:</strong> Face camera directly · Good lighting · No sunglasses · Stay still
       </div>
 
-      <!-- Selfie upload -->
+      <!-- Live Camera Capture -->
       <div style="margin-bottom:4px;">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:8px;">Step 2 — Upload Your Selfie</div>
-        <div class="face-drop" id="faceDrop" onclick="document.getElementById('faceFileIn').click()">
-          <div style="font-size:44px;margin-bottom:10px;">🤳</div>
-          <div style="font-size:16px;font-weight:800;margin-bottom:6px;">Tap to take or choose a selfie</div>
-          <div style="font-size:12px;opacity:.55;line-height:1.6;">JPG or PNG · Processed securely<br>Your face data is <strong>never</strong> stored</div>
-          <input type="file" id="faceFileIn" accept="image/jpeg,image/png,image/webp" capture="user" onchange="handleSelfie(event)"/>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:8px;">Step 2 — Scan Your Face</div>
+
+        <!-- Camera view -->
+        <div id="cameraContainer" style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;display:none;">
+          <video id="cameraVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+          <!-- Face guide overlay -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="width:55%;aspect-ratio:3/4;border:2px solid rgba(99,102,241,0.7);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,0.35);"></div>
+          </div>
+          <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;">Position your face inside the oval</div>
+        </div>
+
+        <!-- Canvas (hidden — used to capture frame) -->
+        <canvas id="cameraCanvas" style="display:none;"></canvas>
+
+        <!-- Captured preview -->
+        <div id="capturedPreview" style="display:none;border-radius:12px;overflow:hidden;aspect-ratio:4/3;background:#000;">
+          <img id="capturedImg" style="width:100%;height:100%;object-fit:cover;" alt="Captured"/>
+        </div>
+
+        <!-- Camera controls -->
+        <div id="cameraControls" style="margin-top:12px;display:flex;gap:8px;flex-direction:column;">
+          <button id="startCameraBtn" onclick="startCamera()" style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            📷 Open Camera
+          </button>
+          <button id="captureBtn" onclick="capturePhoto()" style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;">
+            ✅ Take Photo &amp; Scan
+          </button>
+          <button id="retakeBtn" onclick="retakePhoto()" style="width:100%;padding:10px;border-radius:10px;background:none;border:1.5px solid rgba(99,102,241,.3);color:inherit;font-size:13px;font-weight:600;cursor:pointer;display:none;">
+            🔄 Retake
+          </button>
+          <!-- Fallback: upload from gallery -->
+          <div style="text-align:center;margin-top:4px;">
+            <label style="font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline;">
+              Can't use camera? Upload a photo instead
+              <input type="file" id="faceFileIn" accept="image/jpeg,image/png,image/webp" capture="user" onchange="handleSelfie(event)" style="display:none;"/>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -570,7 +602,7 @@ input,textarea{font-family:inherit;}
       </div>
 
       <div style="font-size:11px;opacity:.3;margin-top:16px;text-align:center;line-height:1.6;">
-        🔒 Matching runs via Face++ AI · Your selfie is deleted within 5 minutes
+        🔒 Face scan runs via AI · Your photo is deleted within 5 minutes
       </div>
     </div>
 
@@ -879,11 +911,98 @@ function openFacePanel(){
 }
 function closeFacePanel(){
   document.getElementById('facePanel').classList.add('hidden');
+  stopCamera();
 }
 function handleSelfie(e){
   var file = e.target.files && e.target.files[0];
   if(file) runFaceRecognition(file);
   e.target.value = '';
+}
+
+/* ══════════════════════════════════════════════
+   LIVE CAMERA CAPTURE
+══════════════════════════════════════════════ */
+var cameraStream = null;
+
+async function startCamera(){
+  try{
+    var btn = document.getElementById('startCameraBtn');
+    btn.textContent = '⏳ Starting camera…';
+    btn.disabled = true;
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+      audio: false
+    });
+
+    var video = document.getElementById('cameraVideo');
+    video.srcObject = cameraStream;
+    await video.play();
+
+    /* Show camera, hide preview */
+    document.getElementById('cameraContainer').style.display = 'block';
+    document.getElementById('capturedPreview').style.display  = 'none';
+    document.getElementById('startCameraBtn').style.display   = 'none';
+    document.getElementById('captureBtn').style.display       = 'flex';
+    document.getElementById('retakeBtn').style.display        = 'none';
+
+  }catch(err){
+    var btn2 = document.getElementById('startCameraBtn');
+    btn2.textContent = '📷 Open Camera';
+    btn2.disabled = false;
+    if(err.name === 'NotAllowedError'){
+      toast('⚠️','Camera access denied','Please allow camera access and try again');
+    } else {
+      toast('⚠️','Camera error',err.message);
+    }
+  }
+}
+
+function capturePhoto(){
+  var video  = document.getElementById('cameraVideo');
+  var canvas = document.getElementById('cameraCanvas');
+  canvas.width  = video.videoWidth  || 1280;
+  canvas.height = video.videoHeight || 960;
+
+  /* Draw mirrored frame (since video is CSS mirrored) */
+  var ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  /* Show captured preview */
+  var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  document.getElementById('capturedImg').src = dataUrl;
+  document.getElementById('cameraContainer').style.display = 'none';
+  document.getElementById('capturedPreview').style.display = 'block';
+  document.getElementById('captureBtn').style.display      = 'none';
+  document.getElementById('retakeBtn').style.display       = 'block';
+
+  /* Stop camera stream */
+  stopCamera();
+
+  /* Convert to blob and run recognition */
+  canvas.toBlob(function(blob){
+    if(blob) runFaceRecognition(blob);
+  }, 'image/jpeg', 0.92);
+}
+
+function retakePhoto(){
+  document.getElementById('capturedPreview').style.display = 'none';
+  document.getElementById('retakeBtn').style.display       = 'none';
+  document.getElementById('startCameraBtn').style.display  = 'block';
+  document.getElementById('startCameraBtn').textContent    = '📷 Open Camera';
+  document.getElementById('startCameraBtn').disabled       = false;
+  document.getElementById('faceResults').classList.add('hidden');
+  startCamera();
+}
+
+function stopCamera(){
+  if(cameraStream){
+    cameraStream.getTracks().forEach(function(t){ t.stop(); });
+    cameraStream = null;
+  }
 }
 
 /* ══════════════════════════════════════════════
