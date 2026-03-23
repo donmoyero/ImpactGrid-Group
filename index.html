@@ -16,8 +16,7 @@
 
 <style>
 /* ════════════════════════════════════════
-   DESIGN TOKENS — Light is the default.
-   Dark mode available via toggle.
+   DESIGN TOKENS
 ════════════════════════════════════════ */
 :root {
   --bg:#f2f4fb; --bg2:#e6eaf5; --bg3:#d9dff0;
@@ -128,8 +127,6 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
 .hero-slideshow{position:relative;width:100%;height:100vh;min-height:560px;margin-top:var(--nav-h);background:var(--bg);overflow:hidden;}
 .hero-slides-track{display:flex;height:100%;transition:transform .7s cubic-bezier(.4,0,.2,1);}
 .hero-slide{min-width:100%;height:100%;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);}
-
-/* Placeholder — professional fallback when no slides uploaded yet */
 .hero-slide-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:0;background:radial-gradient(ellipse 90% 60% at 50% 0%,rgba(201,126,8,.07) 0%,transparent 65%),var(--bg);}
 [data-theme="dark"] .hero-slide-placeholder{background:radial-gradient(ellipse 90% 60% at 50% 0%,rgba(240,180,41,.06) 0%,transparent 65%),var(--bg);}
 .hero-ph-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 75% 65% at 50% 40%,black 20%,transparent 100%);}
@@ -150,15 +147,11 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
 .ph-stat{text-align:center;}
 .ph-stat-n{font-family:var(--fd);font-size:clamp(26px,3.5vw,38px);font-weight:900;color:var(--text);line-height:1;}
 .ph-stat-l{font-size:11px;color:var(--text3);margin-top:5px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;}
-
-/* Live badge in hero corner */
 .hero-live-badge{position:absolute;top:clamp(14px,2.5vw,24px);left:clamp(20px,4vw,52px);z-index:3;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border:1px solid var(--border2);border-radius:8px;padding:6px 13px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);}
 [data-theme="dark"] .hero-live-badge{background:rgba(7,9,15,.72);}
 .hlb-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.6s infinite;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 .hlb-gold{color:var(--gold);font-weight:700;}
-
-/* Uploaded slide media */
 .hero-slide-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .hero-slide-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.2) 50%,transparent 100%);pointer-events:none;}
 .hero-slide-caption{position:absolute;bottom:0;left:0;right:0;padding:clamp(28px,5vw,56px) clamp(20px,6vw,72px);z-index:2;}
@@ -333,14 +326,12 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   .hero-ph-stats{gap:28px;}
   .av-mrow{flex-direction:column;}
 }
-@media(max-width:480px){
-  .aud-grid{grid-template-columns:1fr;}
-}
+@media(max-width:480px){.aud-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 
-<!-- NAV — inline, single source of truth. nav.js not used on this page. -->
+<!-- ════ NAV — inline (nav.js not used on index.html) ════ -->
 <nav class="nav" id="mainNav">
   <div class="nav-in">
     <a href="index.html" class="logo" id="navLogo">
@@ -360,10 +351,12 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
     </ul>
     <div class="nav-right">
       <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+      <!-- Logged out -->
       <div id="navOut" style="display:flex;align-items:center;gap:7px;">
         <a href="login.html" class="btn-ghost-sm">Login</a>
         <a href="join.html" class="btn-gold-sm">Join ImpactGrid</a>
       </div>
+      <!-- Logged in — updated dropdown with Settings -->
       <div id="navIn" style="display:none;position:relative;">
         <button class="user-btn" id="uBtn" onclick="toggleDD()">
           <div class="u-av" id="uAv">?</div>
@@ -373,10 +366,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
         <div class="u-drop" id="uDrop">
           <div class="dd-email" id="uEmail"></div>
           <div class="dd-div"></div>
-          <a href="dashboard.html">My Dashboard</a>
-          <a href="join.html">My Profile</a>
+          <a href="dashboard.html">⚡ My Dashboard</a>
+          <a href="settings.html">⚙️ Settings</a>
           <div class="dd-div"></div>
-          <button onclick="igOut()">Sign Out</button>
+          <button onclick="igOut()">↩ Sign Out</button>
         </div>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Open menu">
@@ -386,7 +379,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </nav>
 
-<!-- MOBILE SIDEBAR -->
+<!-- ════ MOBILE SIDEBAR — updated with Settings ════ -->
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 <div class="mob-sidebar" id="mobSidebar">
   <div class="mob-head">
@@ -420,8 +413,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
       <a href="login.html" class="mob-alink" onclick="closeSidebar()">Login</a>
       <a href="join.html" class="mob-acta" onclick="closeSidebar()">Join ImpactGrid →</a>
     </div>
+    <!-- Logged-in: Dashboard + Settings + Sign Out -->
     <div class="mob-in" id="mobIn">
-      <a href="dashboard.html" class="mob-adash" onclick="closeSidebar()">My Dashboard →</a>
+      <a href="dashboard.html" class="mob-adash" onclick="closeSidebar()">⚡ My Dashboard →</a>
+      <a href="settings.html" class="mob-alink" onclick="closeSidebar()" style="text-align:center;font-weight:600;">⚙️ Settings</a>
       <button class="mob-asignout" onclick="igOut()">Sign Out</button>
     </div>
   </div>
@@ -431,10 +426,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </div>
 
-<!-- HERO SLIDESHOW
-     Admin uploads images/video via admin.html → Supabase site_slides table
-     Captions, tags, CTAs written on the slide surface by admin
-     Falls back to a professional in-page hero when no slides are uploaded -->
+<!-- ════ HERO SLIDESHOW ════ -->
 <section class="hero-slideshow" id="heroSlideshow">
   <div class="hero-live-badge">
     <span class="hlb-dot"></span>
@@ -450,7 +442,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   <div class="hero-progress"><div class="hero-progress-fill" id="heroProgBar"></div></div>
 </section>
 
-<!-- ECOSYSTEM -->
+<!-- ════ ECOSYSTEM ════ -->
 <section class="section anim">
   <div style="text-align:center;">
     <div class="label-tag">The ImpactGrid Ecosystem</div>
@@ -495,7 +487,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
 
 <div class="divider"></div>
 
-<!-- USE CASES -->
+<!-- ════ USE CASES ════ -->
 <section class="uc-section anim">
   <div class="uc-in">
     <div class="uc-head">
@@ -568,7 +560,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
 
 <div class="divider"></div>
 
-<!-- AUDIENCE -->
+<!-- ════ AUDIENCE ════ -->
 <section class="section anim">
   <div style="text-align:center;">
     <div class="label-tag">Who It's For</div>
@@ -576,30 +568,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
     <p class="sec-p" style="margin:14px auto 0;">Whether you're a business, creator, or professional — there's a place for you in ImpactGrid.</p>
   </div>
   <div class="aud-grid">
-    <div class="aud-card">
-      <div class="aud-tag" style="background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);">Startups</div>
-      <h3>Founders &amp; startups</h3>
-      <p>Enterprise-level intelligence from day one. Make faster, smarter decisions before your competitors even see the data.</p>
-    </div>
-    <div class="aud-card">
-      <div class="aud-tag" style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(45,110,219,.2);">Business</div>
-      <h3>Growing businesses</h3>
-      <p>Consolidate analytics, reduce operational risk, and build with a clear strategic picture — without hiring a data team.</p>
-    </div>
-    <div class="aud-card">
-      <div class="aud-tag" style="background:rgba(124,58,237,.08);color:#7c3aed;border:1px solid rgba(124,58,237,.18);">Creators</div>
-      <h3>Content creators</h3>
-      <p>Real trend signals and AI content tools to scale your brand intelligently across YouTube, TikTok, and Instagram.</p>
-    </div>
-    <div class="aud-card">
-      <div class="aud-tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);">Professionals</div>
-      <h3>Professionals</h3>
-      <p>Deploy your expertise, find the right opportunities, and grow through the ImpactGrid Network — no recruiters needed.</p>
-    </div>
+    <div class="aud-card"><div class="aud-tag" style="background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);">Startups</div><h3>Founders &amp; startups</h3><p>Enterprise-level intelligence from day one. Make faster, smarter decisions before your competitors even see the data.</p></div>
+    <div class="aud-card"><div class="aud-tag" style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(45,110,219,.2);">Business</div><h3>Growing businesses</h3><p>Consolidate analytics, reduce operational risk, and build with a clear strategic picture — without hiring a data team.</p></div>
+    <div class="aud-card"><div class="aud-tag" style="background:rgba(124,58,237,.08);color:#7c3aed;border:1px solid rgba(124,58,237,.18);">Creators</div><h3>Content creators</h3><p>Real trend signals and AI content tools to scale your brand intelligently across YouTube, TikTok, and Instagram.</p></div>
+    <div class="aud-card"><div class="aud-tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);">Professionals</div><h3>Professionals</h3><p>Deploy your expertise, find the right opportunities, and grow through the ImpactGrid Network — no recruiters needed.</p></div>
   </div>
 </section>
 
-<!-- TESTIMONIALS -->
+<!-- ════ TESTIMONIALS ════ -->
 <div class="trust-section anim">
   <div class="trust-in">
     <div style="text-align:center;">
@@ -610,7 +586,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </div>
 
-<!-- CTA -->
+<!-- ════ CTA ════ -->
 <div class="cta-wrap">
   <div class="cta-band">
     <div class="label-tag" style="justify-content:center;">Get Started Today</div>
@@ -623,7 +599,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </div>
 
-<!-- FOOTER -->
+<!-- ════ FOOTER ════ -->
 <footer class="footer">
   <div class="footer-in">
     <div class="footer-grid">
@@ -647,23 +623,32 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </footer>
 
+<!--
+  SCRIPT ORDER:
+  1. Supabase CDN
+  2. ig-supabase.js   → auth project → getSupabase()   → user sessions
+  3. supabase-config.js → content project → getContentClient() → slides/content
+  No collision: different function names, different variables.
+-->
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="ig-supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script>
-/* ── THEME — light default, dark optional, preference persisted ── */
+
+/* ── THEME ── */
 var isDark = false;
 function applyTheme(dark){
   isDark = dark;
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   var ico = dark ? '☀️' : '🌙';
-  var tb = document.getElementById('themeBtn'); if(tb) tb.textContent = ico;
+  var tb = document.getElementById('themeBtn');    if(tb) tb.textContent = ico;
   var fb = document.getElementById('footerTBtn'); if(fb) fb.textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
-  var mb = document.getElementById('mobTBtn'); if(mb) mb.textContent = dark ? '☀️ Light' : '🌙 Dark';
+  var mb = document.getElementById('mobTBtn');    if(mb) mb.textContent = dark ? '☀️ Light' : '🌙 Dark';
   try{ localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); }catch(e){}
 }
 function toggleTheme(){ applyTheme(!isDark); }
-(function(){
-  try{ if(localStorage.getItem('ig_theme') === 'dark') applyTheme(true); }catch(e){}
-})();
+(function(){ try{ if(localStorage.getItem('ig_theme') === 'dark') applyTheme(true); }catch(e){} })();
 
 /* ── SIDEBAR ── */
 function openSidebar(){ document.getElementById('mobSidebar').classList.add('open'); document.getElementById('mobOverlay').classList.add('open'); document.body.style.overflow='hidden'; }
@@ -679,12 +664,12 @@ document.addEventListener('click', function(e){
   if(b&&d&&!b.contains(e.target)&&!d.contains(e.target)) d.classList.remove('open');
 });
 
-/* ── AUTH ── */
+/* ── AUTH — uses ig-supabase.js (auth project) ── */
 function setUser(user){
   if(!user) return;
-  var email=user.email||'';
-  var name=(user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||email.split('@')[0]||'Account';
-  var init=(name.charAt(0)||'?').toUpperCase();
+  var email = user.email||'';
+  var name  = (user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||email.split('@')[0]||'Account';
+  var init  = (name.charAt(0)||'?').toUpperCase();
   document.getElementById('navOut').style.display='none';
   document.getElementById('navIn').style.display='block';
   document.getElementById('uAv').textContent=init;
@@ -705,24 +690,22 @@ function clearUser(){
   var mi=document.getElementById('mobIn');   if(mi) mi.classList.remove('show');
 }
 window.igOut = async function(){
-  try{ var c=(window.getSupabase&&getSupabase())||window.supabaseClient; if(c) await c.auth.signOut(); }catch(e){}
+  try{ var c = getSupabase(); if(c) await c.auth.signOut(); }catch(e){}
   window.location.href='index.html';
 };
 function checkAuth(){
-  var c=null;
-  try{ if(window.getSupabase) c=getSupabase(); }catch(e){}
-  try{ if(!c&&window.supabaseClient) c=window.supabaseClient; }catch(e){}
-  if(!c){
-    try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('supabase')!==-1){ var v=JSON.parse(localStorage.getItem(k)||'{}'); if(v&&v.user){ setUser(v.user); return; } } } }catch(e){}
-    return;
-  }
-  c.auth.getUser().then(function(r){ if(r&&r.data&&r.data.user) setUser(r.data.user); }).catch(function(){});
-  c.auth.onAuthStateChange(function(ev,s){ if(s&&s.user) setUser(s.user); else if(ev==='SIGNED_OUT') clearUser(); });
+  var c = getSupabase(); /* ig-supabase.js — auth project */
+  if(!c) return;
+  c.auth.getUser()
+    .then(function(r){ if(r&&r.data&&r.data.user) setUser(r.data.user); })
+    .catch(function(){});
+  c.auth.onAuthStateChange(function(ev,s){
+    if(s&&s.user) setUser(s.user);
+    else if(ev==='SIGNED_OUT') clearUser();
+  });
 }
 
-/* ── HERO SLIDESHOW ──
-   Loads from Supabase site_slides (type=image|video)
-   Falls back to a full-page placeholder hero with CTAs and stats */
+/* ── HERO SLIDESHOW — uses getContentClient() (content project) ── */
 var heroCur=0, heroTotal=0, heroTimer;
 
 function buildPlaceholderSlide(){
@@ -795,17 +778,19 @@ function heroStart(){ clearInterval(heroTimer); if(heroTotal>1) heroTimer=setInt
 function heroStop(){ clearInterval(heroTimer); }
 document.getElementById('heroSlideshow').addEventListener('mouseenter',heroStop);
 document.getElementById('heroSlideshow').addEventListener('mouseleave',heroStart);
+
 async function loadHeroSlides(){
   try{
-    var c=(window.getSupabase&&getSupabase())||window.supabaseClient;
+    /* Content project — slides are not user data */
+    var c = getContentClient();
     if(!c){ heroRender([]); heroStart(); return; }
-    var {data}=await c.from('site_slides').select('*').eq('active',true).order('sort_order',{ascending:true});
-    heroRender((data||[]).filter(function(s){ return s.type==='video'||s.type==='image'; }));
+    var res = await c.from('site_slides').select('*').eq('active',true).order('sort_order',{ascending:true});
+    heroRender((res.data||[]).filter(function(s){ return s.type==='video'||s.type==='image'; }));
     heroStart();
   }catch(e){ heroRender([]); heroStart(); }
 }
 
-/* ── SUPABASE CONTENT (testimonials, ecosystem text, CTA) ── */
+/* ── SITE CONTENT + TESTIMONIALS — uses getContentClient() ── */
 var DEFAULT_TESTIMONIALS=[
   {quote:"The risk scoring caught a client concentration problem we hadn't noticed. That early warning saved us weeks of reactive firefighting.",name:'Sarah K.',role:'Founder, Strategy Consultancy',initial:'S'},
   {quote:"Dijo gives me the kind of honest, direct analysis I'd get from a senior adviser — without the hourly rate. It's always on when I need it.",name:'Marcus T.',role:'Director, Growth Agency',initial:'M'},
@@ -822,10 +807,11 @@ function renderTestimonials(items){
 }
 async function loadSiteContent(){
   try{
-    var c=(window.getSupabase&&getSupabase())||window.supabaseClient;
+    /* Content project — public site copy */
+    var c = getContentClient();
     if(!c){ renderTestimonials(DEFAULT_TESTIMONIALS); return; }
-    var {data:kvData}=await c.from('site_content').select('*');
-    var kv={}; (kvData||[]).forEach(function(r){ kv[r.key]=r.value; });
+    var kvRes = await c.from('site_content').select('*');
+    var kv={}; (kvRes.data||[]).forEach(function(r){ kv[r.key]=r.value; });
     function applyKv(id,key){ var el=document.getElementById(id); if(el&&kv[key]) el.textContent=kv[key]; }
     applyKv('eco-title','ecosystem_title'); applyKv('eco-sub','ecosystem_sub');
     applyKv('uc-title','usecases_title');   applyKv('uc-sub','usecases_sub');
@@ -839,28 +825,29 @@ async function loadSiteContent(){
       if(te&&kv[m[0]+'_title']) te.textContent=kv[m[0]+'_title'];
       if(de&&kv[m[0]+'_desc'])  de.textContent=kv[m[0]+'_desc'];
     });
-    var {data:testData}=await c.from('site_testimonials').select('*').eq('active',true).order('sort_order',{ascending:true});
-    renderTestimonials(testData&&testData.length?testData:DEFAULT_TESTIMONIALS);
+    var testRes = await c.from('site_testimonials').select('*').eq('active',true).order('sort_order',{ascending:true});
+    renderTestimonials(testRes.data&&testRes.data.length ? testRes.data : DEFAULT_TESTIMONIALS);
   }catch(e){ renderTestimonials(DEFAULT_TESTIMONIALS); }
 }
 
 /* ── SCROLL ANIMATIONS ── */
-var io=new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); }); },{threshold:0.07});
+var io=new IntersectionObserver(function(entries){
+  entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:0.07});
 document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
 
 /* ── HELPERS ── */
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ── INIT ── */
-window.addEventListener('load',function(){
-  setTimeout(checkAuth,350);
+window.addEventListener('load', function(){
+  setTimeout(checkAuth, 350);
   loadHeroSlides();
   loadSiteContent();
-  setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); },600000);
+  /* Keep Dijo warm */
+  setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); }, 600000);
 });
-</script>
 
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script defer src="supabase-config.js"></script>
+</script>
 </body>
 </html>
