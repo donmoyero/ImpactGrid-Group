@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    ImpactGrid Group — nav.js
    Shared nav + footer + auth + theme toggle
-   Version: 4.0 — matches shared.css token system
+   Version: 4.1 — Settings added to user dropdown + mobile sidebar
 
    HOW TO USE ON ANY PAGE (except index.html which is inline):
    ─────────────────────────────────────────────────────────
@@ -74,10 +74,12 @@
           '<ul class="nav-links">' + desktopLinks + '</ul>' +
           '<div class="nav-right">' +
             '<button class="theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>' +
+            /* Logged-out buttons */
             '<div id="navOut" style="display:flex;align-items:center;gap:7px;">' +
               '<a href="login.html" class="btn-ghost-sm">Login</a>' +
               '<a href="join.html" class="btn-gold-sm">Join ImpactGrid</a>' +
             '</div>' +
+            /* Logged-in user button + dropdown */
             '<div id="navIn" style="display:none;position:relative;">' +
               '<button class="user-btn" id="uBtn" onclick="toggleDD()">' +
                 '<div class="u-av" id="uAv">?</div>' +
@@ -87,10 +89,10 @@
               '<div class="u-drop" id="uDrop">' +
                 '<div class="dd-email" id="uEmail"></div>' +
                 '<div class="dd-div"></div>' +
-                '<a href="dashboard.html">My Dashboard</a>' +
-                '<a href="join.html">My Profile</a>' +
+                '<a href="dashboard.html">⚡ My Dashboard</a>' +
+                '<a href="settings.html">⚙️ Settings</a>' +
                 '<div class="dd-div"></div>' +
-                '<button onclick="igOut()">Sign Out</button>' +
+                '<button onclick="igOut()">↩ Sign Out</button>' +
               '</div>' +
             '</div>' +
             '<button class="hamburger" id="hamburger" aria-label="Open menu" onclick="openSidebar()">' +
@@ -112,6 +114,7 @@
           '</div>' +
           '<button class="mob-close" onclick="closeSidebar()">✕</button>' +
         '</div>' +
+        /* Mobile user info card — shown when logged in */
         '<div class="mob-user" id="mobUser">' +
           '<div class="u-av" id="mobAv" style="width:34px;height:34px;border-radius:8px;font-size:14px;">?</div>' +
           '<div class="mob-u-info">' +
@@ -119,15 +122,20 @@
             '<div class="mob-u-email" id="mobEmail"></div>' +
           '</div>' +
         '</div>' +
+        /* Main nav links */
         '<div class="mob-nav">' + mobileLinks + '</div>' +
         '<div class="mob-div"></div>' +
+        /* Auth section */
         '<div class="mob-auth">' +
+          /* Logged-out state */
           '<div class="mob-out" id="mobOut">' +
             '<a href="login.html" class="mob-alink" onclick="closeSidebar()">Login</a>' +
             '<a href="join.html" class="mob-acta" onclick="closeSidebar()">Join ImpactGrid →</a>' +
           '</div>' +
+          /* Logged-in state — Dashboard + Settings + Sign Out */
           '<div class="mob-in" id="mobIn">' +
-            '<a href="dashboard.html" class="mob-adash" onclick="closeSidebar()">My Dashboard →</a>' +
+            '<a href="dashboard.html" class="mob-adash" onclick="closeSidebar()">⚡ My Dashboard →</a>' +
+            '<a href="settings.html" class="mob-alink" onclick="closeSidebar()" style="text-align:center;font-weight:600;">⚙️ Settings</a>' +
             '<button class="mob-asignout" onclick="igOut()">Sign Out</button>' +
           '</div>' +
         '</div>' +
@@ -221,7 +229,7 @@
     var ico    = dark ? '☀️' : '🌙';
     var fLabel = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
     var mLabel = dark ? '☀️ Light' : '🌙 Dark';
-    var tb = document.getElementById('themeBtn');    if (tb) tb.textContent = ico;
+    var tb = document.getElementById('themeBtn');   if (tb) tb.textContent = ico;
     var fb = document.getElementById('footerTBtn'); if (fb) fb.textContent = fLabel;
     var mb = document.getElementById('mobTBtn');    if (mb) mb.textContent = mLabel;
     try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
