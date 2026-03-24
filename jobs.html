@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Available Jobs — ImpactGrid Creator Intelligence</title>
+<meta name="description" content="Live opportunities posted by employers on the ImpactGrid Network. Join as a professional to apply."/>
+<link rel="icon" href="favicon.ico"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.page-wrap{padding-top:calc(var(--nav-h) + 24px);}
+
+/* PAGE HERO */
+.page-hero{padding:72px 28px 60px;text-align:center;position:relative;overflow:hidden;max-width:var(--max-w);margin:0 auto;}
+.page-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 20%,var(--gold-dim),transparent);pointer-events:none;}
+.page-hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.page-hero-eyebrow::before{content:'';width:20px;height:1px;background:var(--gold);}
+.page-hero h1{font-size:clamp(36px,5.5vw,60px);font-family:var(--fd);font-weight:900;letter-spacing:-0.03em;margin-bottom:16px;position:relative;}
+.page-hero h1 span{color:var(--gold);}
+.page-hero p{font-size:17px;color:var(--text2);max-width:500px;margin:0 auto;line-height:1.75;position:relative;}
+
+/* SHARED */
+.section{padding:40px 28px 80px;max-width:var(--max-w);margin:0 auto;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:0 28px;}
+
+/* STATS BAND */
+.stats-band{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:36px;overflow:hidden;}
+.stats-band-item{text-align:center;padding:24px 20px;position:relative;}
+.stats-band-item:not(:last-child)::after{content:'';position:absolute;top:20%;right:0;bottom:20%;width:1px;background:var(--border);}
+.stats-band-value{font-family:var(--fd);font-size:clamp(28px,3vw,40px);font-weight:900;color:var(--gold);letter-spacing:-0.03em;line-height:1;margin-bottom:4px;}
+.stats-band-label{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;}
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px;}
+.filter-input{flex:1;min-width:200px;padding:11px 16px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);font-size:14px;color:var(--text);font-family:var(--fb);outline:none;transition:border-color 0.2s;}
+.filter-input:focus{border-color:var(--gold);}
+.filter-input::placeholder{color:var(--text3);}
+.filter-select{padding:11px 14px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);font-size:14px;color:var(--text);font-family:var(--fb);cursor:pointer;outline:none;transition:border-color 0.2s;}
+.filter-select:focus{border-color:var(--gold);}
+.filter-count{font-family:var(--fm);font-size:11px;color:var(--text3);padding:6px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);white-space:nowrap;}
+
+/* JOB CARDS */
+.jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;}
+.job-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:26px;transition:all 0.25s;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+.job-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
+.job-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,0.12);}
+.job-card:hover::before{transform:scaleX(1);}
+.job-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.job-title{font-family:var(--fd);font-size:17px;font-weight:800;letter-spacing:-0.02em;line-height:1.2;}
+.job-budget{font-family:var(--fm);font-size:13px;font-weight:700;color:var(--gold);white-space:nowrap;background:var(--gold-dim);border:1px solid var(--gold-glo);padding:3px 9px;border-radius:6px;flex-shrink:0;}
+.job-company{font-size:13px;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.job-company-dot{width:3px;height:3px;border-radius:50%;background:var(--border2);}
+.job-desc{font-size:13.5px;color:var(--text2);line-height:1.7;flex:1;margin-bottom:16px;}
+.job-tags{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;}
+.job-tag{font-family:var(--fm);font-size:10px;color:var(--text2);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;letter-spacing:0.04em;}
+.job-tag-deadline{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-glo);}
+.job-meta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.job-type-badge{font-family:var(--fm);font-size:9px;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.1em;}
+.badge-remote{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,0.25);}
+.badge-hybrid{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,0.2);}
+.badge-onsite{background:rgba(168,85,247,0.10);color:#a855f7;border:1px solid rgba(168,85,247,0.2);}
+.job-posted{font-family:var(--fm);font-size:10px;color:var(--text3);}
+.job-apply-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;text-align:center;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;font-weight:700;font-size:14px;border-radius:var(--r);transition:all 0.2s;border:none;cursor:pointer;font-family:var(--fb);margin-top:auto;}
+.job-apply-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo);}
+
+/* EMPTY / LOADING */
+.empty-state{text-align:center;padding:72px 24px;color:var(--text3);}
+.empty-icon{font-size:48px;margin-bottom:16px;opacity:0.5;}
+.empty-title{font-family:var(--fd);font-size:18px;font-weight:800;color:var(--text2);margin-bottom:8px;letter-spacing:-0.01em;}
+.empty-sub{font-size:14px;line-height:1.65;color:var(--text3);max-width:320px;margin:0 auto;}
+
+/* CTA BAND */
+.jobs-cta{background:linear-gradient(135deg,var(--gold-dim),rgba(240,180,41,0.03));border:1px solid var(--gold-glo);border-radius:var(--r2);padding:64px 48px;text-align:center;margin-top:48px;position:relative;overflow:hidden;}
+.jobs-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(240,180,41,0.05),transparent);pointer-events:none;}
+.jobs-cta h3{font-family:var(--fd);font-size:clamp(20px,3vw,28px);font-weight:900;margin-bottom:12px;letter-spacing:-0.02em;position:relative;}
+.jobs-cta p{font-size:15px;color:var(--text2);margin-bottom:28px;position:relative;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.7;}
+.jobs-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
+.btn-pri{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all 0.2s;}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
+.btn-sec{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r);font-size:15px;font-weight:600;border:1px solid var(--border2);color:var(--text);transition:all 0.2s;}
+.btn-sec:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ANIMATIONS */
+.anim{opacity:0;transform:translateY(22px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.anim.visible{opacity:1;transform:none;}
+
+@media(max-width:860px){
+  .stats-band{grid-template-columns:1fr;}
+  .stats-band-item::after{display:none;}
+  .stats-band-item:not(:last-child){border-bottom:1px solid var(--border);}
+}
+@media(max-width:640px){
+  .jobs-grid{grid-template-columns:1fr;}
+  .filter-bar{flex-direction:column;}
+  .filter-input,.filter-select{width:100%;}
+  .jobs-cta{padding:40px 24px;}
+}
+</style>
+</head>
+<body>
+
+<div id="ig-nav"></div>
+
+<div class="page-wrap">
+
+  <div style="max-width:var(--max-w);margin:0 auto;">
+    <div class="page-hero">
+      <div class="page-hero-bg"></div>
+      <div class="page-hero-eyebrow">ImpactGrid Network</div>
+      <h1>Available <span>Jobs</span></h1>
+      <p>Live opportunities posted by employers on the ImpactGrid Network. Join as a professional to apply.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <section class="section anim">
+
+    <div class="stats-band" id="statsBand">
+      <div class="stats-band-item">
+        <div class="stats-band-value" id="sTotal">—</div>
+        <div class="stats-band-label">Live Jobs</div>
+      </div>
+      <div class="stats-band-item">
+        <div class="stats-band-value" id="sCompanies">—</div>
+        <div class="stats-band-label">Companies Hiring</div>
+      </div>
+      <div class="stats-band-item">
+        <div class="stats-band-value" id="sNew">—</div>
+        <div class="stats-band-label">Added This Week</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input class="filter-input" id="searchInput" type="text"
+        placeholder="🔍  Search by title, skill, or company…"
+        oninput="filterJobs()"/>
+      <select class="filter-select" id="locationFilter" onchange="filterJobs()">
+        <option value="">All Locations</option>
+        <option value="remote">Remote</option>
+        <option value="london">London</option>
+        <option value="hybrid">Hybrid</option>
+        <option value="uk">UK</option>
+      </select>
+      <select class="filter-select" id="typeFilter" onchange="filterJobs()">
+        <option value="">All Types</option>
+        <option value="contract">Contract</option>
+        <option value="freelance">Freelance</option>
+        <option value="full-time">Full-time</option>
+        <option value="part-time">Part-time</option>
+      </select>
+      <div class="filter-count" id="filterCount">Loading…</div>
+    </div>
+
+    <div id="jobsGrid">
+      <div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <div class="empty-title">Loading opportunities…</div>
+        <div class="empty-sub">Fetching live jobs from the ImpactGrid Network.</div>
+      </div>
+    </div>
+
+    <div class="jobs-cta">
+      <h3>Ready to Join the Network?</h3>
+      <p>Create your professional profile, get verified by ImpactGrid, and start applying to live opportunities — no recruiter fees, no noise.</p>
+      <div class="jobs-cta-btns">
+        <a href="join.html?type=professional" class="btn-pri">Join as Professional →</a>
+        <a href="join.html?type=employer" class="btn-sec">Post a Job as Employer</a>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="divider"></div>
+
+</div>
+
+<div id="ig-footer"></div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script defer src="ig-supabase.js"></script>
+<script defer src="nav.js"></script>
+<script defer src="impactgrid-chat-bubble.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  renderNav('jobs.html');
+  renderFooter();
+
+  /* Scroll animations */
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.05 });
+  document.querySelectorAll('.anim').forEach(function(el) { obs.observe(el); });
+
+  /* Load jobs */
+  loadJobs();
+});
+
+var allJobs = [];
+
+function timeAgo(dateStr) {
+  if(!dateStr) return '';
+  var diff = Date.now() - new Date(dateStr).getTime();
+  var days = Math.floor(diff / (1000*60*60*24));
+  if(days === 0) return 'Today';
+  if(days === 1) return 'Yesterday';
+  if(days < 7)  return days + 'd ago';
+  if(days < 30) return Math.floor(days/7) + 'w ago';
+  return Math.floor(days/30) + 'mo ago';
+}
+
+function getLocationBadge(loc) {
+  if(!loc) return '';
+  var l = loc.toLowerCase();
+  if(l.includes('remote')) return '<span class="job-type-badge badge-remote">Remote</span>';
+  if(l.includes('hybrid')) return '<span class="job-type-badge badge-hybrid">Hybrid</span>';
+  return '<span class="job-type-badge badge-onsite">On-site</span>';
+}
+
+function renderStats() {
+  document.getElementById('sTotal').textContent = allJobs.length || '0';
+  var companies = new Set(allJobs.map(function(j) { return j.company_name; }).filter(Boolean));
+  document.getElementById('sCompanies').textContent = companies.size || '0';
+  var week = Date.now() - 7*24*60*60*1000;
+  var recent = allJobs.filter(function(j) { return new Date(j.created_at).getTime() > week; });
+  document.getElementById('sNew').textContent = recent.length || '0';
+}
+
+function filterJobs() {
+  var q   = document.getElementById('searchInput').value.toLowerCase().trim();
+  var loc = document.getElementById('locationFilter').value.toLowerCase();
+  var type= document.getElementById('typeFilter').value.toLowerCase();
+  var filtered = allJobs.filter(function(j) {
+    var matchQ = !q || (j.title||'').toLowerCase().includes(q) || (j.company_name||'').toLowerCase().includes(q) || (j.skills||'').toLowerCase().includes(q) || (j.description||'').toLowerCase().includes(q);
+    var matchL = !loc  || (j.location||'').toLowerCase().includes(loc);
+    var matchT = !type || (j.job_type||j.type||'').toLowerCase().includes(type);
+    return matchQ && matchL && matchT;
+  });
+  var fc = document.getElementById('filterCount');
+  if(fc) fc.textContent = filtered.length + ' result' + (filtered.length !== 1 ? 's' : '');
+  renderJobs(filtered);
+}
+
+function renderJobs(jobs) {
+  var el = document.getElementById('jobsGrid');
+  if(!jobs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No jobs found</div><div class="empty-sub">Try adjusting your filters, or check back soon — new roles are posted regularly.</div></div>';
+    return;
+  }
+  el.innerHTML = '<div class="jobs-grid">' + jobs.map(function(j) {
+    var skills = (j.skills||'').split(',').map(function(s){return s.trim();}).filter(Boolean).slice(0,4);
+    return '<div class="job-card">' +
+      '<div class="job-card-top">' +
+        '<div class="job-title">' + esc(j.title||'Opportunity') + '</div>' +
+        (j.budget ? '<div class="job-budget">' + esc(j.budget) + '</div>' : '') +
+      '</div>' +
+      '<div class="job-company">' +
+        '<span>🏢 ' + esc(j.company_name||'ImpactGrid Employer') + '</span>' +
+        (j.location ? '<span class="job-company-dot"></span><span>📍 ' + esc(j.location) + '</span>' : '') +
+      '</div>' +
+      (j.description ? '<div class="job-desc">' + esc(j.description.substring(0,170)) + (j.description.length>170?'…':'') + '</div>' : '') +
+      (skills.length ? '<div class="job-tags">' + skills.map(function(s){return '<span class="job-tag">'+esc(s)+'</span>';}).join('') + (j.deadline?'<span class="job-tag job-tag-deadline">📅 '+esc(j.deadline)+'</span>':'') + '</div>' : '') +
+      '<div class="job-meta-row">' +
+        getLocationBadge(j.location) +
+        '<span class="job-posted">' + timeAgo(j.created_at) + '</span>' +
+      '</div>' +
+      '<a href="join.html?type=professional" class="job-apply-btn">Apply Now →</a>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function loadJobs() {
+  try {
+    var c = getSupabase();
+    var res = await c.from('jobs').select('*').eq('status','active').order('created_at',{ascending:false});
+    allJobs = res.data || [];
+    renderStats();
+    var fc = document.getElementById('filterCount');
+    if(fc) fc.textContent = allJobs.length + ' result' + (allJobs.length !== 1 ? 's' : '');
+    renderJobs(allJobs);
+  } catch(e) {
+    document.getElementById('jobsGrid').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-title">Could not load jobs</div><div class="empty-sub">' + esc(e.message||'Please check your connection and try again.') + '</div></div>';
+    var fc = document.getElementById('filterCount'); if(fc) fc.textContent = '0 results';
+    document.getElementById('sTotal').textContent = '—';
+    document.getElementById('sCompanies').textContent = '—';
+    document.getElementById('sNew').textContent = '—';
+  }
+}
+
+setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); }, 600000);
+</script>
+</body>
+</html>
