@@ -8,29 +8,10 @@
 <link rel="icon" href="favicon.ico"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
 <style>
 :root{
-  --bg:#07090f;--bg2:#0d1017;
-  --card:#151a28;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
-  --gold:#f0b429;--gold2:#ffd166;
-  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
-  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
-  --red:#f75f4f;--red-dim:rgba(247,95,79,0.10);
   --tt:#ff2d55;
-  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
-  --r:12px;--r2:20px;
-}
-[data-theme="light"]{
-  --bg:#f0f3fa;--bg2:#e4e8f4;
-  --card:#ffffff;
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
-  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
-  --gold:#c97e08;--gold2:#a86505;
-  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.20);
-  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
-  --red:#d94f3d;--red-dim:rgba(217,79,61,0.08);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
@@ -153,11 +134,8 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 
 try{
-  if(localStorage.getItem('igt')==='d'){
-    document.documentElement.setAttribute('data-theme','dark');
-  } else {
-    document.documentElement.setAttribute('data-theme','light');
-  }
+  var _t=localStorage.getItem('ig_theme');
+  document.documentElement.setAttribute('data-theme',_t==='dark'?'dark':'light');
 }catch(e){}
 
 (async function(){
@@ -253,7 +231,6 @@ try{
   TikTokAuth.saveSession(tokenData,profile);
 
   /* ── Save token to Supabase via Dijo ── */
-  /* This lets the ingestion engine fetch this user's videos automatically */
   document.getElementById('loading-title').textContent='Syncing with Dijo…';
   document.getElementById('loading-sub').textContent='Registering your account with the intelligence engine.';
   try{
