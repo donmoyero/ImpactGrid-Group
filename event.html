@@ -51,6 +51,11 @@ input,textarea{font-family:inherit;}
 .req-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08);}
 .instant-panel{position:fixed;bottom:80px;right:24px;background:#fff;border:2px solid #10b981;border-radius:16px;padding:20px;max-width:320px;box-shadow:0 8px 32px rgba(16,185,129,.2);z-index:500;animation:slideUp .3s ease;}
 
+/* ══ QUALITY DOTS ══ */
+.q-dot{width:9px;height:9px;min-width:9px;border-radius:50%;background:#6b7280;transition:background .3s;}
+.q-dot.pass{background:#10b981;}
+.q-dot.fail{background:#ef4444;}
+
 /* ══════════════════════════════════════════════
    TEMPLATE 1 — PROFESSIONAL
 ══════════════════════════════════════════════ */
@@ -508,12 +513,12 @@ input,textarea{font-family:inherit;}
       </div>
     </div>
 
-    <!-- Face Recognition Panel -->
+    <!-- ══ FACE RECOGNITION PANEL ══ -->
     <div class="face-panel hidden" id="facePanel">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:10px;">
         <div>
           <div style="font-size:18px;font-weight:900;margin-bottom:4px;">🔍 Find My Photos</div>
-          <div style="font-size:13px;opacity:.6;line-height:1.5;">Face++ AI scans the photo index to find you — privately and securely.</div>
+          <div style="font-size:13px;opacity:.6;line-height:1.5;">AI scans the photo index to find you — privately and securely.</div>
         </div>
         <button onclick="closeFacePanel()" style="font-size:22px;opacity:.4;padding:4px;flex-shrink:0;line-height:1;background:none;border:none;cursor:pointer;">✕</button>
       </div>
@@ -527,7 +532,7 @@ input,textarea{font-family:inherit;}
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#6366f1;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">2</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>Upload a clear selfie</strong> — face camera, good light, no sunglasses</div>
+          <div style="font-size:13px;line-height:1.5;"><strong>Let the AI guide you</strong> — hold still until the oval turns green</div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#059669;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">✓</div>
@@ -547,54 +552,89 @@ input,textarea{font-family:inherit;}
       </div>
 
       <!-- Tip -->
-      <div style="font-size:12px;opacity:.65;margin-bottom:10px;padding:10px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);">
-        💡 <strong>Tips:</strong> Face camera directly · Good lighting · No sunglasses · Stay still
+      <div style="font-size:12px;opacity:.65;margin-bottom:14px;padding:10px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);">
+        💡 <strong>Tips:</strong> Face camera directly · Good lighting · No sunglasses · Hold still until oval turns green
       </div>
 
-      <!-- Live Camera Capture -->
+      <!-- ══ SMART CAMERA SECTION ══ -->
       <div style="margin-bottom:4px;">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:8px;">Step 2 — Scan Your Face</div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:10px;">Step 2 — Scan Your Face</div>
 
-        <!-- Camera view -->
-        <div id="cameraContainer" style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;display:none;">
-          <video id="cameraVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
-          <!-- Face guide overlay -->
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-            <div style="width:55%;aspect-ratio:3/4;border:2px solid rgba(99,102,241,0.7);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,0.35);"></div>
-          </div>
-          <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;">Position your face inside the oval</div>
+        <!-- Placeholder shown before camera opens -->
+        <div id="camPlaceholder" style="border-radius:12px;overflow:hidden;background:#111;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+          <div style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;">📷<br>Camera will appear here</div>
         </div>
 
-        <!-- Canvas (hidden — used to capture frame) -->
+        <!-- Live camera with oval guide -->
+        <div id="cameraContainer" style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;display:none;margin-bottom:10px;">
+          <video id="cameraVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;"></video>
+          <!-- Oval guide — colour feedback -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <svg id="ovalGuideSvg" style="width:55%;" viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <ellipse id="ovalRing" cx="60" cy="80" rx="55" ry="75"
+                stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-dasharray="6 4"/>
+            </svg>
+          </div>
+          <!-- Status text overlay -->
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);">
+            <div id="camStatusText" style="font-size:12px;font-weight:700;color:#fff;text-align:center;">Starting camera…</div>
+          </div>
+        </div>
+
+        <!-- Quality check indicators -->
+        <div id="qualityRow" style="display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+          <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:7px;">
+            <div class="q-dot" id="qCentered"></div><span style="font-size:11px;opacity:.7;">Centered</span>
+          </div>
+          <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:7px;">
+            <div class="q-dot" id="qLit"></div><span style="font-size:11px;opacity:.7;">Lighting</span>
+          </div>
+          <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:7px;">
+            <div class="q-dot" id="qStill"></div><span style="font-size:11px;opacity:.7;">Still</span>
+          </div>
+        </div>
+
+        <!-- Confidence bar -->
+        <div id="confBarWrap" style="display:none;margin-bottom:12px;">
+          <div style="height:5px;border-radius:3px;background:rgba(0,0,0,.08);overflow:hidden;">
+            <div id="camConfFill" style="height:100%;width:0%;border-radius:3px;background:#ef4444;transition:width .2s,background .2s;"></div>
+          </div>
+          <div id="camConfLabel" style="font-size:11px;opacity:.5;text-align:right;margin-top:4px;">Waiting…</div>
+        </div>
+
+        <!-- Captured preview (after snap) -->
+        <div id="capturedPreview" style="display:none;border-radius:12px;overflow:hidden;aspect-ratio:4/3;background:#000;margin-bottom:10px;">
+          <img id="capturedImg" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Captured selfie"/>
+        </div>
+
+        <!-- Canvas used to grab frame (never shown) -->
         <canvas id="cameraCanvas" style="display:none;"></canvas>
 
-        <!-- Captured preview -->
-        <div id="capturedPreview" style="display:none;border-radius:12px;overflow:hidden;aspect-ratio:4/3;background:#000;">
-          <img id="capturedImg" style="width:100%;height:100%;object-fit:cover;" alt="Captured"/>
-        </div>
-
         <!-- Camera controls -->
-        <div id="cameraControls" style="margin-top:12px;display:flex;gap:8px;flex-direction:column;">
-          <button id="startCameraBtn" onclick="startCamera()" style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <div id="cameraControls" style="display:flex;gap:8px;flex-direction:column;">
+          <button id="startCameraBtn" onclick="startCamera()"
+            style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
             📷 Open Camera
           </button>
-          <button id="captureBtn" onclick="capturePhoto()" style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;">
+          <button id="captureBtn" onclick="capturePhoto()"
+            style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;opacity:.5;"
+            disabled>
             ✅ Take Photo &amp; Scan
           </button>
-          <button id="retakeBtn" onclick="retakePhoto()" style="width:100%;padding:10px;border-radius:10px;background:none;border:1.5px solid rgba(99,102,241,.3);color:inherit;font-size:13px;font-weight:600;cursor:pointer;display:none;">
+          <button id="retakeBtn" onclick="retakePhoto()"
+            style="width:100%;padding:10px;border-radius:10px;background:none;border:1.5px solid rgba(99,102,241,.3);color:inherit;font-size:13px;font-weight:600;cursor:pointer;display:none;">
             🔄 Retake
           </button>
-          <!-- Fallback: upload from gallery -->
           <div style="text-align:center;margin-top:4px;">
             <label style="font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline;">
               Can't use camera? Upload a photo instead
-              <input type="file" id="faceFileIn" accept="image/jpeg,image/png,image/webp" capture="user" onchange="handleSelfie(event)" style="display:none;"/>
+              <input type="file" id="faceFileIn" accept="image/jpeg,image/png,image/webp" onchange="handleSelfie(event)" style="display:none;"/>
             </label>
           </div>
         </div>
       </div>
 
-      <!-- Results -->
+      <!-- Results area -->
       <div class="hidden" id="faceResults" style="margin-top:16px;padding:14px;border-radius:10px;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.1);">
         <div style="font-size:14px;font-weight:700;margin-bottom:8px;" id="faceResultText">Scanning…</div>
         <div class="face-result-bar"><div class="face-result-fill" id="faceResultFill" style="width:0%"></div></div>
@@ -606,7 +646,7 @@ input,textarea{font-family:inherit;}
       </div>
     </div>
 
-    <!-- Face scan prompt — shown before scan -->
+    <!-- Face scan prompt — shown before panel opens -->
     <div id="faceScanPrompt" style="text-align:center;padding:64px 24px;">
       <div style="font-size:52px;margin-bottom:16px;">🤳</div>
       <div style="font-size:20px;font-weight:800;margin-bottom:8px;">Find Your Photos</div>
@@ -618,7 +658,7 @@ input,textarea{font-family:inherit;}
       </button>
     </div>
 
-    <!-- Photo Grid — hidden until face scan done -->
+    <!-- Photo grid — hidden until scan complete -->
     <div class="photo-grid hidden" id="photoGrid"></div>
   </div>
 </div>
@@ -639,7 +679,7 @@ input,textarea{font-family:inherit;}
     <div style="font-size:14px;opacity:.6;margin-bottom:20px;line-height:1.6;">Enter your email and we'll notify you when your download is approved.</div>
     <div id="requestAlert" class="gate-alert"></div>
     <input class="req-input" id="reqEmail" type="email" placeholder="your@email.com" autocomplete="email"/>
-    <textarea class="req-input" id="reqMessage" rows="3" placeholder="Optional note (e.g. 'I'm in the red dress on the left')…" style="resize:none;"></textarea>
+    <textarea class="req-input" id="reqMessage" rows="3" placeholder="Optional note…" style="resize:none;"></textarea>
     <div style="display:flex;gap:10px;margin-top:4px;">
       <button class="btn-outline" style="flex:1;justify-content:center;padding:12px;" onclick="closeRequestModal()">Cancel</button>
       <button class="btn-primary" style="flex:2;justify-content:center;padding:12px;" id="reqSubmitBtn" onclick="submitRequest()">Send Request →</button>
@@ -658,12 +698,9 @@ input,textarea{font-family:inherit;}
 
 <script>
 /* ══ CONFIG ══ */
-var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
-
-/* ══ THRESHOLDS — Face++ 0-100 confidence scale ══ */
-var FACE_AUTO   = 80;  /* ≥ 80 → instant download  */
-var FACE_REVIEW = 65;  /* 65–79 → admin approval   */
-                       /* < 65  → ignore            */
+var EVENTS_API  = 'https://impactgrid-events-api.onrender.com';
+var FACE_AUTO   = 80;
+var FACE_REVIEW = 65;
 
 /* ══ TEMPLATE MAP ══ */
 var TPL_MAP = {
@@ -678,16 +715,22 @@ var TPL_MAP = {
 };
 
 /* ══ STATE ══ */
-var eventData         = null;
-var eventSettings     = null;
-var allPhotos         = [];
-var matchedIds        = new Set();
-var matchedPhotos     = {};
-var guestEmail        = '';
-var mediaPipeReady    = false;
-var faceMeshGuest     = null;
-var selfiePublicUrl   = null;
+var eventData            = null;
+var eventSettings        = null;
+var allPhotos            = [];
+var matchedIds           = new Set();
+var matchedPhotos        = {};
+var guestEmail           = '';
+var selfiePublicUrl      = null;
 var currentLightboxPhoto = null;
+
+/* ══ SMART CAMERA STATE ══ */
+var cameraStream     = null;
+var qualityInterval  = null;
+var prevFrameData    = null;
+var readyFrames      = 0;
+var motionBuf        = document.createElement('canvas');
+var autoCaptured     = false;
 
 /* ══════════════════════════════════════════════
    BOOT
@@ -715,16 +758,13 @@ document.addEventListener('DOMContentLoaded', async function(){
       ? ev.event_settings[0]
       : (ev.event_settings || {});
 
-    /* Apply template */
     var type = ev.type || ev.template || 'professional';
     var tpl  = TPL_MAP[type] || TPL_MAP.professional;
     document.body.className = tpl.cls;
 
-    /* Nav */
     document.getElementById('navEventName').textContent = ev.name;
     document.getElementById('navCodeBadge').textContent = ev.event_code;
 
-    /* Gate or direct entry */
     if(eventSettings.require_code === false){
       enterGallery();
     } else if(code && code.toUpperCase() === ev.event_code){
@@ -760,7 +800,6 @@ function styleGate(type, name){
 async function submitCode(){
   var input = document.getElementById('gateCodeInput').value.trim().toUpperCase();
   var btn   = document.getElementById('gateSubmitBtn');
-  var alert = document.getElementById('gateAlert');
   if(!input || input.length < 4){ showGateAlert('Please enter your access code.','error'); return; }
   if(input !== eventData.event_code){ showGateAlert('Incorrect code. Please try again.','error'); return; }
   btn.disabled    = true;
@@ -787,8 +826,6 @@ async function enterGallery(){
   buildHero();
   showSection('section-gallery');
   await loadPhotos();
-  /* Preload MediaPipe in background */
-  ensureMediaPipe();
 }
 
 function buildHero(){
@@ -825,8 +862,6 @@ function buildHero(){
 }
 
 async function loadPhotos(){
-  /* Silently load photo data in background — don't show grid yet */
-  /* Guest must scan face first to see any photos */
   try{
     var { data } = await getSupabase()
       .from('photos')
@@ -835,7 +870,6 @@ async function loadPhotos(){
       .order('created_at', { ascending: true });
     allPhotos = data || [];
     if(!allPhotos.length){
-      /* No photos yet — show message in prompt area */
       var prompt = document.getElementById('faceScanPrompt');
       if(prompt) prompt.innerHTML =
         '<div style="font-size:48px;margin-bottom:16px;">📷</div>'+
@@ -846,12 +880,11 @@ async function loadPhotos(){
 }
 
 function renderPhotos(photos){
-  var type    = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
-  var grid    = document.getElementById('photoGrid');
-  var prompt  = document.getElementById('faceScanPrompt');
-  var masonry = ['wedding','gala','ceremony'].includes(type);
+  var type   = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
+  var grid   = document.getElementById('photoGrid');
+  var prompt = document.getElementById('faceScanPrompt');
+  var masonry= ['wedding','gala','ceremony'].includes(type);
 
-  /* Hide the scan prompt, reveal the grid */
   if(prompt) prompt.style.display = 'none';
   grid.classList.remove('hidden');
   grid.style.display = masonry ? 'block' : '';
@@ -865,13 +898,11 @@ function renderPhotos(photos){
     var isMatched = matchedIds.has(p.id);
     var meta      = matchedPhotos[p.id] || {};
     var badge     = '';
-
     if(isMatched){
       var bgColor = meta.tier === 'auto' ? '#059669' : '#d97706';
       var label   = meta.tier === 'auto' ? '⬇️ Ready' : '⏳ Pending';
       badge = '<div class="photo-matched-badge" style="background:'+bgColor+';">'+label+'</div>';
     }
-
     var overlayBtn = (isMatched && meta.tier === 'auto')
       ? '<a href="'+esc(p.original_url||p.preview_url)+'" download="ImpactGrid-Photo.jpg" class="overlay-btn" onclick="event.stopPropagation()">⬇️ Download</a>'
       : '<button class="overlay-btn" onclick="event.stopPropagation();openRequestModal()">📥 Request</button>';
@@ -920,82 +951,206 @@ function handleSelfie(e){
 }
 
 /* ══════════════════════════════════════════════
-   LIVE CAMERA CAPTURE
+   SMART CAMERA — AI quality-gated capture
 ══════════════════════════════════════════════ */
-var cameraStream = null;
-
 async function startCamera(){
-  try{
-    var btn = document.getElementById('startCameraBtn');
-    btn.textContent = '⏳ Starting camera…';
-    btn.disabled = true;
+  var btn = document.getElementById('startCameraBtn');
+  btn.textContent = '⏳ Starting…';
+  btn.disabled    = true;
+  autoCaptured    = false;
 
+  try{
     cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+      video: { facingMode:'user', width:{ ideal:1280 }, height:{ ideal:960 } },
       audio: false
     });
+    var vid = document.getElementById('cameraVideo');
+    vid.srcObject = cameraStream;
+    await vid.play();
 
-    var video = document.getElementById('cameraVideo');
-    video.srcObject = cameraStream;
-    await video.play();
+    /* Show live camera, hide placeholder */
+    document.getElementById('camPlaceholder').style.display     = 'none';
+    document.getElementById('cameraContainer').style.display    = 'block';
+    document.getElementById('qualityRow').style.display         = 'grid';
+    document.getElementById('confBarWrap').style.display        = 'block';
+    document.getElementById('startCameraBtn').style.display     = 'none';
+    document.getElementById('captureBtn').style.display         = 'flex';
+    document.getElementById('captureBtn').disabled              = true;
+    document.getElementById('captureBtn').style.opacity         = '0.5';
+    document.getElementById('retakeBtn').style.display          = 'none';
 
-    /* Show camera, hide preview */
-    document.getElementById('cameraContainer').style.display = 'block';
-    document.getElementById('capturedPreview').style.display  = 'none';
-    document.getElementById('startCameraBtn').style.display   = 'none';
-    document.getElementById('captureBtn').style.display       = 'flex';
-    document.getElementById('retakeBtn').style.display        = 'none';
+    prevFrameData = null;
+    readyFrames   = 0;
+    qualityInterval = setInterval(runQualityCheck, 180);
 
   }catch(err){
-    var btn2 = document.getElementById('startCameraBtn');
-    btn2.textContent = '📷 Open Camera';
-    btn2.disabled = false;
+    btn.textContent = '📷 Open Camera';
+    btn.disabled    = false;
     if(err.name === 'NotAllowedError'){
-      toast('⚠️','Camera access denied','Please allow camera access and try again');
+      toast('⚠️','Camera access denied','Please allow camera access or upload a photo instead');
     } else {
-      toast('⚠️','Camera error',err.message);
+      toast('⚠️','Camera error', err.message);
     }
   }
 }
 
-function capturePhoto(){
-  var video  = document.getElementById('cameraVideo');
-  var canvas = document.getElementById('cameraCanvas');
-  canvas.width  = video.videoWidth  || 1280;
-  canvas.height = video.videoHeight || 960;
+function runQualityCheck(){
+  var vid = document.getElementById('cameraVideo');
+  if(!vid || !vid.videoWidth) return;
 
-  /* Draw mirrored frame (since video is CSS mirrored) */
+  var w = vid.videoWidth, h = vid.videoHeight;
+  motionBuf.width  = w;
+  motionBuf.height = h;
+  var ctx = motionBuf.getContext('2d');
+
+  /* Draw mirrored frame */
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(vid, -w, 0, w, h);
+  ctx.restore();
+
+  var frame = ctx.getImageData(0, 0, w, h);
+  var d     = frame.data;
+
+  /* ── Lighting & centering (pixel luminance) ── */
+  var totalLum = 0, centerLum = 0;
+  var cx = w/2, cy = h/2;
+  var zW = w * 0.4, zH = h * 0.55;
+  var x0 = cx - zW/2, y0 = cy - zH/2;
+  var x1 = cx + zW/2, y1 = cy + zH/2;
+  var samples = 0, centerSamples = 0;
+  var step = 8;
+
+  for(var y = 0; y < h; y += step){
+    for(var x = 0; x < w; x += step){
+      var i   = (y * w + x) * 4;
+      var lum = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      totalLum += lum; samples++;
+      if(x >= x0 && x <= x1 && y >= y0 && y <= y1){
+        centerLum += lum; centerSamples++;
+      }
+    }
+  }
+
+  var avgLum    = totalLum / samples;
+  var avgCenter = centerSamples ? centerLum / centerSamples : 0;
+  var litPass   = avgLum > 55 && avgLum < 235;
+  /* Face zone brighter than average → face is centred */
+  var centeredPass = avgCenter > avgLum * 1.02;
+
+  /* ── Motion (frame diff) ── */
+  var stillPass = true;
+  if(prevFrameData){
+    var prev    = prevFrameData;
+    var diffSum = 0, diffCount = 0;
+    for(var j = 0; j < d.length; j += 4 * 12){
+      diffSum += Math.abs(d[j]-prev[j]) + Math.abs(d[j+1]-prev[j+1]) + Math.abs(d[j+2]-prev[j+2]);
+      diffCount++;
+    }
+    stillPass = (diffSum / diffCount) < 20;
+  }
+  prevFrameData = d.slice();
+
+  /* ── Update dots ── */
+  setQDot('qCentered', centeredPass);
+  setQDot('qLit',      litPass);
+  setQDot('qStill',    stillPass);
+
+  /* ── Overall score ── */
+  var score = (litPass?33:0) + (centeredPass?34:0) + (stillPass?33:0);
+  var fill  = document.getElementById('camConfFill');
+  if(fill){
+    fill.style.width      = score + '%';
+    fill.style.background = score >= 100 ? '#10b981' : score >= 66 ? '#f59e0b' : '#ef4444';
+  }
+
+  var hints = [];
+  if(!litPass)      hints.push(avgLum < 55 ? 'need more light' : 'too bright');
+  if(!centeredPass) hints.push('center your face in the oval');
+  if(!stillPass)    hints.push('hold still');
+  var confLabel = document.getElementById('camConfLabel');
+  if(confLabel) confLabel.textContent = score >= 100 ? 'Ready!' : (score + '% — ' + (hints.join(' · ') || 'checking…'));
+
+  /* ── Oval colour feedback ── */
+  var oval = document.getElementById('ovalRing');
+  if(oval){
+    oval.setAttribute('stroke', score >= 100 ? '#10b981' : score >= 66 ? '#f59e0b' : 'rgba(255,255,255,0.55)');
+    oval.setAttribute('stroke-width', score >= 100 ? '3' : '2');
+    oval.setAttribute('stroke-dasharray', score >= 100 ? '' : '6 4');
+  }
+
+  /* ── Status text & capture button ── */
+  var captBtn    = document.getElementById('captureBtn');
+  var statusText = document.getElementById('camStatusText');
+
+  if(score >= 100){
+    readyFrames++;
+    if(captBtn){ captBtn.disabled = false; captBtn.style.opacity = '1'; }
+    if(statusText) statusText.textContent = readyFrames > 15 ? 'Auto-capturing…' : '✅ Perfect — tap Take Photo & Scan';
+    /* Auto-capture after ~3.5 seconds of solid green (~20 frames at 180ms) */
+    if(readyFrames > 20 && !autoCaptured){
+      autoCaptured = true;
+      capturePhoto();
+    }
+  } else {
+    readyFrames = 0;
+    if(captBtn){ captBtn.disabled = true; captBtn.style.opacity = '0.5'; }
+    if(statusText) statusText.textContent = hints.length ? hints.join(' · ') : 'Checking…';
+  }
+}
+
+function setQDot(id, pass){
+  var el = document.getElementById(id);
+  if(el) el.className = 'q-dot ' + (pass ? 'pass' : 'fail');
+}
+
+function capturePhoto(){
+  /* Stop quality loop first */
+  if(qualityInterval){ clearInterval(qualityInterval); qualityInterval = null; }
+
+  var vid    = document.getElementById('cameraVideo');
+  var canvas = document.getElementById('cameraCanvas');
+  canvas.width  = vid.videoWidth  || 1280;
+  canvas.height = vid.videoHeight || 960;
+
+  /* Draw mirrored — matches what the user sees */
   var ctx = canvas.getContext('2d');
   ctx.save();
   ctx.scale(-1, 1);
-  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+  ctx.drawImage(vid, -canvas.width, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  /* Show captured preview */
-  var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  /* Show preview */
+  var dataUrl = canvas.toDataURL('image/jpeg', 0.93);
   document.getElementById('capturedImg').src = dataUrl;
-  document.getElementById('cameraContainer').style.display = 'none';
-  document.getElementById('capturedPreview').style.display = 'block';
-  document.getElementById('captureBtn').style.display      = 'none';
-  document.getElementById('retakeBtn').style.display       = 'block';
 
-  /* Stop camera stream */
+  /* Hide camera, show preview */
+  document.getElementById('cameraContainer').style.display  = 'none';
+  document.getElementById('qualityRow').style.display       = 'none';
+  document.getElementById('confBarWrap').style.display      = 'none';
+  document.getElementById('capturedPreview').style.display  = 'block';
+  document.getElementById('captureBtn').style.display       = 'none';
+  document.getElementById('retakeBtn').style.display        = 'block';
+
   stopCamera();
 
-  /* Convert to blob and run recognition */
+  /* Send captured blob to Face++ flow */
   canvas.toBlob(function(blob){
     if(blob) runFaceRecognition(blob);
-  }, 'image/jpeg', 0.92);
+  }, 'image/jpeg', 0.93);
 }
 
 function retakePhoto(){
-  document.getElementById('capturedPreview').style.display = 'none';
-  document.getElementById('retakeBtn').style.display       = 'none';
-  document.getElementById('startCameraBtn').style.display  = 'block';
-  document.getElementById('startCameraBtn').textContent    = '📷 Open Camera';
-  document.getElementById('startCameraBtn').disabled       = false;
+  document.getElementById('capturedPreview').style.display   = 'none';
+  document.getElementById('camPlaceholder').style.display    = 'flex';
+  document.getElementById('retakeBtn').style.display         = 'none';
+  document.getElementById('startCameraBtn').style.display    = 'block';
+  document.getElementById('startCameraBtn').textContent      = '📷 Open Camera';
+  document.getElementById('startCameraBtn').disabled         = false;
   document.getElementById('faceResults').classList.add('hidden');
-  startCamera();
+  prevFrameData = null;
+  readyFrames   = 0;
+  autoCaptured  = false;
 }
 
 function stopCamera(){
@@ -1003,24 +1158,7 @@ function stopCamera(){
     cameraStream.getTracks().forEach(function(t){ t.stop(); });
     cameraStream = null;
   }
-}
-
-/* ══════════════════════════════════════════════
-   MEDIAPIPE — selfie face confirmation
-══════════════════════════════════════════════ */
-/* MediaPipe removed — Face++ handles face detection server-side.
-   These stubs keep the flow intact without loading heavy models. */
-async function ensureMediaPipe(){ return true; }
-async function selfieHasFace(imgEl){ return true; }
-
-function loadImg(src){
-  return new Promise(function(resolve, reject){
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload  = function(){ resolve(img); };
-    img.onerror = reject;
-    img.src     = src;
-  });
+  if(qualityInterval){ clearInterval(qualityInterval); qualityInterval = null; }
 }
 
 /* ══════════════════════════════════════════════
@@ -1032,7 +1170,7 @@ async function runFaceRecognition(selfieFile){
   var resultDetail = document.getElementById('faceResultDetail');
   document.getElementById('faceResults').classList.remove('hidden');
 
-  /* Step 0 — collect email first */
+  /* Validate email first */
   var emailEl = document.getElementById('guestEmailInput');
   guestEmail  = emailEl ? emailEl.value.trim() : '';
   if(!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)){
@@ -1043,25 +1181,23 @@ async function runFaceRecognition(selfieFile){
     return;
   }
 
-  resultText.textContent   = 'Checking your selfie…';
-  resultFill.style.width   = '8%';
+  resultText.textContent   = 'Uploading selfie securely…';
+  resultFill.style.width   = '15%';
   resultDetail.textContent = '';
 
   try{
-    /* Step 1 — Upload selfie to temp storage so Face++ can access via URL */
-    resultText.textContent = 'Uploading selfie securely…';
-    resultFill.style.width = '20%';
+    /* Step 1 — Upload selfie to temp storage */
     selfiePublicUrl = await uploadSelfieTemp(selfieFile);
     if(!selfiePublicUrl){
-      resultText.textContent   = '⚠️ Could not process selfie. Please try again.';
-      resultFill.style.width   = '0%';
+      resultText.textContent = '⚠️ Could not upload selfie. Please try again.';
+      resultFill.style.width = '0%';
       return;
     }
 
     resultText.textContent = 'Loading face index…';
-    resultFill.style.width = '35%';
+    resultFill.style.width = '30%';
 
-    /* Step 3 — Load pre-indexed face crops from Supabase */
+    /* Step 2 — Load face embeddings for this event */
     var { data: embeddings, error: embErr } = await getSupabase()
       .from('face_embeddings')
       .select('photo_id, face_crop_url, face_token, group_id')
@@ -1076,21 +1212,14 @@ async function runFaceRecognition(selfieFile){
       return;
     }
 
-    /* De-duplicate by photo_id */
-    var seen       = {};
-    var uniqueFaces= embeddings.filter(function(e){
-      if(seen[e.photo_id]) return false;
-      seen[e.photo_id] = true;
-      return true;
-    });
-
     resultText.textContent = 'Searching face index…';
     resultFill.style.width = '45%';
 
-    /* Step 4 — ONE FaceSet search call instead of N compare calls */
     var autoMatches   = [];
     var reviewMatches = [];
 
+    /* Step 3a — Try FaceSet search (fast, one API call) */
+    var searchOk = false;
     try{
       var searchRes = await fetch(EVENTS_API + '/api/facepp-search', {
         method : 'POST',
@@ -1098,13 +1227,11 @@ async function runFaceRecognition(selfieFile){
         body   : JSON.stringify({ selfieUrl: selfiePublicUrl, eventId: eventData.id })
       });
 
-      resultFill.style.width = '80%';
-
       if(searchRes.ok){
         var searchData = await searchRes.json();
         var matches    = searchData.results || [];
 
-        /* Map face tokens back to photos via embeddings */
+        /* Map face tokens → photo IDs */
         var faceTokenMap = {};
         embeddings.forEach(function(e){ if(e.face_token) faceTokenMap[e.face_token] = e.photo_id; });
 
@@ -1117,45 +1244,64 @@ async function runFaceRecognition(selfieFile){
           if(m.tier === 'review') reviewMatches.push({ photo: photo, confidence: m.confidence });
         });
 
-        console.log('[FaceScan] Search complete — auto:', autoMatches.length, 'review:', reviewMatches.length);
-      } else {
-        /* Fallback to compare method if search fails */
-        console.warn('[FaceScan] FaceSet search failed, falling back to compare');
-        var BATCH_SIZE = 8;
-        async function compareFace(emb){
+        searchOk = true;
+        console.log('[FaceScan] FaceSet search — auto:', autoMatches.length, 'review:', reviewMatches.length);
+      }
+    }catch(searchErr){
+      console.warn('[FaceScan] FaceSet search failed, using compare fallback:', searchErr.message);
+    }
+
+    /* Step 3b — Fallback: compare individual crops in small batches */
+    if(!searchOk){
+      resultText.textContent = 'Searching (compare mode)…';
+
+      /* De-duplicate by photo_id */
+      var seen       = {};
+      var uniqueFaces = embeddings.filter(function(e){
+        if(seen[e.photo_id]) return false;
+        seen[e.photo_id] = true;
+        return true;
+      });
+
+      var BATCH = 5; /* Smaller batches to avoid rate limits */
+      var done  = 0;
+
+      for(var b = 0; b < uniqueFaces.length; b += BATCH){
+        var batch = uniqueFaces.slice(b, b + BATCH);
+
+        var batchResults = await Promise.all(batch.map(async function(emb){
           if(!emb.face_crop_url) return null;
           try{
             var r = await fetch(EVENTS_API + '/api/facepp-match', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ selfieUrl: selfiePublicUrl, photoUrl: emb.face_crop_url })
+              method : 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body   : JSON.stringify({ selfieUrl: selfiePublicUrl, photoUrl: emb.face_crop_url })
             });
             if(!r.ok) return null;
             var d = await r.json();
             return { emb: emb, confidence: d.confidence || 0 };
           }catch(e){ return null; }
-        }
-        var completed = 0;
-        for(var b = 0; b < uniqueFaces.length; b += BATCH_SIZE){
-          var batch   = uniqueFaces.slice(b, b + BATCH_SIZE);
-          var results = await Promise.all(batch.map(compareFace));
-          results.forEach(function(r){
-            if(!r) return;
-            var photo = allPhotos.find(function(p){ return p.id === r.emb.photo_id; });
-            if(!photo) return;
-            if(r.confidence >= FACE_AUTO)        autoMatches.push({ photo: photo, confidence: r.confidence });
-            else if(r.confidence >= FACE_REVIEW) reviewMatches.push({ photo: photo, confidence: r.confidence });
-          });
-          completed += batch.length;
-          resultFill.style.width = Math.round(45 + (completed / uniqueFaces.length) * 50) + '%';
-        }
+        }));
+
+        batchResults.forEach(function(r){
+          if(!r) return;
+          var photo = allPhotos.find(function(p){ return p.id === r.emb.photo_id; });
+          if(!photo) return;
+          if(r.confidence >= FACE_AUTO)        autoMatches.push({ photo: photo, confidence: r.confidence });
+          else if(r.confidence >= FACE_REVIEW) reviewMatches.push({ photo: photo, confidence: r.confidence });
+        });
+
+        done += batch.length;
+        resultFill.style.width = Math.round(45 + (done / uniqueFaces.length) * 45) + '%';
+
+        /* Small pause between batches to respect rate limits */
+        if(b + BATCH < uniqueFaces.length) await sleep(350);
       }
-    }catch(searchErr){
-      console.warn('[FaceScan] Search error:', searchErr.message);
     }
 
     resultFill.style.width = '100%';
 
-    /* Step 5 — Build result sets */
+    /* Step 4 — Build result set */
     matchedIds    = new Set();
     matchedPhotos = {};
 
@@ -1168,7 +1314,7 @@ async function runFaceRecognition(selfieFile){
       matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'review' };
     });
 
-    /* Step 6 — Show results */
+    /* Step 5 — No matches */
     if(matchedIds.size === 0){
       resultText.textContent   = '😔 No matches found.';
       resultDetail.textContent = 'Try a clearer selfie — face camera directly, good lighting, no sunglasses.';
@@ -1177,30 +1323,27 @@ async function runFaceRecognition(selfieFile){
       return;
     }
 
-    /* Show ONLY matched photos */
+    /* Step 6 — Render matched photos */
     var matchedArr = allPhotos.filter(function(p){ return matchedIds.has(p.id); });
     renderPhotos(matchedArr);
 
-    /* Update gallery header */
     document.getElementById('galleryTitle').textContent = 'Your Photos (' + matchedArr.length + ')';
     document.getElementById('galleryTag').textContent   = '✅ Matched to your face';
 
-    /* Show All button */
     addShowAllBtn();
 
-    /* Banner */
     document.getElementById('matchedBanner').classList.remove('hidden');
     var parts = [];
     if(autoMatches.length)   parts.push(autoMatches.length   + ' ready to download');
     if(reviewMatches.length) parts.push(reviewMatches.length + ' sent for approval');
-    resultText.textContent   = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!';
+    resultText.textContent   = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!';
     resultDetail.textContent = parts.join(' · ');
     document.getElementById('matchedBannerText').textContent =
-      'Found ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + ' — ' + parts.join(' · ');
+      'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + ' — ' + parts.join(' · ');
 
-    toast('✅', 'Found ' + matchedIds.size + ' photo' + (matchedIds.size>1?'s':'') + '!', parts.join(' · '));
+    toast('✅', 'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!', parts.join(' · '));
 
-    /* Step 7 — Handle downloads and requests */
+    /* Step 7 — Handle downloads and review requests */
     if(autoMatches.length > 0)   await processAutoDownloads(autoMatches.map(function(i){ return i.photo; }));
     if(reviewMatches.length > 0) await processReviewRequests(reviewMatches.map(function(i){ return i.photo; }));
 
@@ -1214,9 +1357,10 @@ async function runFaceRecognition(selfieFile){
   }
 }
 
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
 /* ══ Show All button ══ */
 function addShowAllBtn(){
-  /* Reveal gallery actions */
   var actions = document.getElementById('galleryActions');
   if(actions) actions.style.display = 'flex';
   if(!actions || document.getElementById('showAllBtn')) return;
@@ -1240,8 +1384,6 @@ function addShowAllBtn(){
 ══════════════════════════════════════════════ */
 async function processAutoDownloads(photos){
   if(!photos.length || !guestEmail) return;
-
-  /* Save to DB */
   try{
     var c = getSupabase();
     for(var i = 0; i < photos.length; i++){
@@ -1253,7 +1395,6 @@ async function processAutoDownloads(photos){
     }
   }catch(e){}
 
-  /* Send email via backend */
   var eventUrl = window.location.origin + '/event.html?event=' +
     eventData.event_slug + '&code=' + eventData.event_code;
   try{
@@ -1269,7 +1410,6 @@ async function processAutoDownloads(photos){
     });
   }catch(e){}
 
-  /* Show instant panel */
   showInstantPanel(photos);
 }
 
@@ -1288,7 +1428,7 @@ async function processReviewRequests(photos){
       });
     }
     toast('📬',
-      photos.length + ' photo' + (photos.length>1?'s':'') + ' sent for review',
+      photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' sent for review',
       'You\'ll get an email when approved');
   }catch(e){}
 }
@@ -1300,15 +1440,15 @@ function showInstantPanel(photos){
   var existing = document.getElementById('instantPanel');
   if(existing) existing.remove();
 
-  var panel  = document.createElement('div');
-  panel.id   = 'instantPanel';
+  var panel = document.createElement('div');
+  panel.id  = 'instantPanel';
   panel.className = 'instant-panel';
   panel.innerHTML =
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'+
       '<div>'+
         '<div style="font-size:15px;font-weight:900;color:#059669;">✅ Your Photos Found!</div>'+
         '<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+
-          photos.length+' photo'+(photos.length>1?'s':'')+' · links emailed to '+esc(guestEmail)+
+          photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' · links emailed to ' + esc(guestEmail) +
         '</div>'+
       '</div>'+
       '<button onclick="document.getElementById(\'instantPanel\').remove()" style="opacity:.4;font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:4px;">✕</button>'+
@@ -1329,6 +1469,7 @@ function showInstantPanel(photos){
 
 /* ══════════════════════════════════════════════
    TEMP SELFIE UPLOAD & CLEANUP
+   Fixed: cleanup delayed until AFTER Face++ has used the URL
 ══════════════════════════════════════════════ */
 async function uploadSelfieTemp(file){
   try{
@@ -1342,16 +1483,18 @@ async function uploadSelfieTemp(file){
     if(error) return null;
     var { data } = c.storage.from('events').getPublicUrl(path);
     window._selfieCleanupPath = path;
-    setTimeout(cleanupSelfie, 5 * 60 * 1000);
+    /* Cleanup after 6 minutes — enough time for Face++ to finish */
+    setTimeout(cleanupSelfie, 6 * 60 * 1000);
     return data.publicUrl;
   }catch(e){ return null; }
 }
 
 async function cleanupSelfie(){
   if(!window._selfieCleanupPath) return;
+  var pathToDelete = window._selfieCleanupPath;
+  window._selfieCleanupPath = null; /* Clear immediately so double-calls are safe */
   try{
-    await getSupabase().storage.from('events').remove([window._selfieCleanupPath]);
-    window._selfieCleanupPath = null;
+    await getSupabase().storage.from('events').remove([pathToDelete]);
   }catch(e){}
 }
 
@@ -1416,7 +1559,7 @@ function toast(icon, msg, sub){
 }
 
 /* ══════════════════════════════════════════════
-   ERROR
+   ERROR PAGE
 ══════════════════════════════════════════════ */
 function showError(msg){
   document.body.className = 'tpl-professional';
