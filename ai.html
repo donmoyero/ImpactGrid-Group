@@ -5,1340 +5,980 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Dijo AI · Carousel Builder · ImpactGrid</title>
 
-<!-- Google Fonts: distinctive pairing -->
+<!-- BRAIN: must load before anything else -->
+<script src="creator-ai.js"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 
 <style>
-/* ══════════════════════════════════════════
-   TOKENS & THEME
-══════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
 :root {
-  --font-display: 'Syne', sans-serif;
+  --font-head: 'Syne', sans-serif;
   --font-body: 'DM Sans', sans-serif;
   --font-mono: 'Space Mono', monospace;
 
-  /* USER-EDITABLE PALETTE (only these should be changed by users) */
-  --brand-primary:   #6C63FF;
-  --brand-accent:    #FF6B6B;
-  --brand-highlight: #00E5B0;
+  /* USER-EDITABLE colours only */
+  --brand:  #6C63FF;
+  --accent: #FF6B6B;
+  --pop:    #00E5B0;
 
-  /* Light mode */
-  --bg:         #F7F7F5;
-  --bg-surface: #FFFFFF;
-  --bg-raised:  #F0EFF8;
-  --border:     #E2E1EF;
-  --text:       #1A1825;
-  --text-muted: #6B6880;
-  --text-faint: #AEACBF;
-  --nav-bg:     #FFFFFF;
-  --shadow:     0 2px 16px rgba(108,99,255,.08);
-  --shadow-lg:  0 8px 40px rgba(108,99,255,.14);
-  --scrollbar:  #C8C5E8;
-  --scrollbar-hover: #6C63FF;
+  /* light theme */
+  --bg:      #F5F4F2;
+  --surface: #FFFFFF;
+  --raised:  #EDECF5;
+  --border:  #E0DFF0;
+  --text:    #16141F;
+  --muted:   #69677E;
+  --faint:   #AEACBF;
+  --nav:     #FFFFFF;
+  --sh:      0 2px 14px rgba(108,99,255,.08);
+  --sh-lg:   0 8px 40px rgba(108,99,255,.14);
 }
 [data-theme="dark"] {
-  --bg:         #0F0E17;
-  --bg-surface: #1A1825;
-  --bg-raised:  #24223A;
-  --border:     #2E2C45;
-  --text:       #F0EFF8;
-  --text-muted: #9B98B8;
-  --text-faint: #5C5A78;
-  --nav-bg:     #13121E;
-  --shadow:     0 2px 16px rgba(0,0,0,.35);
-  --shadow-lg:  0 8px 40px rgba(0,0,0,.5);
-  --scrollbar:  #3A3858;
-  --scrollbar-hover: #6C63FF;
+  --bg:      #0E0D17;
+  --surface: #18162A;
+  --raised:  #22203A;
+  --border:  #2C2A45;
+  --text:    #EEECf8;
+  --muted:   #9896B5;
+  --faint:   #585672;
+  --nav:     #12101E;
+  --sh:      0 2px 16px rgba(0,0,0,.4);
+  --sh-lg:   0 8px 40px rgba(0,0,0,.55);
 }
 
-/* ══════════════════════════════════════════
-   RESET & BASE
-══════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   RESET
+═══════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
   font-family:var(--font-body);
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
   transition:background .25s,color .25s;
-  overflow-x:hidden;
 }
-
-/* Custom scrollbar — thick and visible */
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{
-  background:var(--scrollbar);
-  border-radius:8px;
-  border:2px solid var(--bg);
-  transition:background .2s;
-}
-::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-hover)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:var(--brand)}
 
-/* ══════════════════════════════════════════
+/* ═══════════════════════════════════════
    NAV
-══════════════════════════════════════════ */
+═══════════════════════════════════════ */
 nav{
-  position:sticky;top:0;z-index:100;
-  background:var(--nav-bg);
-  border-bottom:1px solid var(--border);
-  padding:0 24px;
+  position:sticky;top:0;z-index:200;
+  background:var(--nav);border-bottom:1px solid var(--border);
+  height:58px;padding:0 22px;
   display:flex;align-items:center;justify-content:space-between;
-  height:60px;
-  box-shadow:var(--shadow);
+  box-shadow:var(--sh);
 }
-.nav-brand{
-  font-family:var(--font-display);
-  font-weight:800;font-size:1.25rem;
-  background:linear-gradient(135deg,var(--brand-primary),var(--brand-accent));
+.nav-logo{
+  font-family:var(--font-head);font-weight:800;font-size:1.18rem;
+  background:linear-gradient(120deg,var(--brand),var(--accent));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   letter-spacing:-.02em;
 }
-.nav-right{display:flex;align-items:center;gap:10px}
-.nav-btn{
-  background:var(--bg-raised);border:1px solid var(--border);
-  color:var(--text);cursor:pointer;
-  padding:6px 14px;border-radius:20px;
+.nav-r{display:flex;align-items:center;gap:8px}
+.nbtn{
+  background:var(--raised);border:1px solid var(--border);color:var(--text);
+  cursor:pointer;padding:6px 14px;border-radius:20px;
   font-family:var(--font-body);font-size:.8rem;font-weight:500;
-  transition:all .2s;display:flex;align-items:center;gap:6px;
+  transition:all .18s;display:flex;align-items:center;gap:6px;
 }
-.nav-btn:hover{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
-#theme-toggle{font-size:1rem;padding:6px 10px}
+.nbtn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
 
-/* ══════════════════════════════════════════
+/* ═══════════════════════════════════════
    LAYOUT
-══════════════════════════════════════════ */
-.app{display:grid;grid-template-columns:1fr 560px;gap:0;height:calc(100vh - 60px)}
+═══════════════════════════════════════ */
+.app{
+  display:grid;grid-template-columns:1fr 560px;
+  height:calc(100vh - 58px);
+}
 
-/* ── LEFT: Chat panel ── */
+/* LEFT */
 .chat-panel{
   display:flex;flex-direction:column;
   border-right:1px solid var(--border);
-  overflow:hidden;
-  background:var(--bg-surface);
+  background:var(--surface);overflow:hidden;
 }
-.chat-header{
-  padding:20px 24px 14px;
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
+.chat-top{
+  padding:18px 22px 12px;border-bottom:1px solid var(--border);flex-shrink:0;
 }
-.chat-header h2{
-  font-family:var(--font-display);font-size:1.05rem;font-weight:700;
-  color:var(--text);margin-bottom:4px;
-}
-.chat-header p{font-size:.8rem;color:var(--text-muted)}
+.chat-top h2{font-family:var(--font-head);font-size:1rem;font-weight:700;margin-bottom:3px}
+.chat-top p{font-size:.79rem;color:var(--muted);line-height:1.5}
 
-/* Trend chips */
-.trend-row{
-  padding:12px 24px;
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
-  overflow-x:auto;
-  display:flex;gap:8px;align-items:center;
-  scrollbar-width:thin;
+/* Trend bar */
+.tbar{
+  padding:10px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;overflow-x:auto;flex-shrink:0;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
-.trend-label{
-  font-size:.7rem;font-weight:700;color:var(--text-faint);
-  text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;
-  font-family:var(--font-mono);
+.tbar::-webkit-scrollbar{height:4px}
+.tbar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.tlbl{
+  font-size:.68rem;font-weight:700;color:var(--faint);
+  text-transform:uppercase;letter-spacing:.09em;white-space:nowrap;font-family:var(--font-mono);
 }
-.trend-chip{
-  background:var(--bg-raised);border:1px solid var(--border);
-  border-radius:20px;padding:4px 12px;
-  font-size:.75rem;font-weight:500;color:var(--brand-primary);
-  cursor:pointer;white-space:nowrap;transition:all .18s;
-  display:flex;align-items:center;gap:5px;
+.chip{
+  background:var(--raised);border:1px solid var(--border);border-radius:20px;
+  padding:4px 11px;font-size:.73rem;font-weight:500;color:var(--brand);
+  cursor:pointer;white-space:nowrap;transition:all .16s;
+  display:flex;align-items:center;gap:5px;flex-shrink:0;
 }
-.trend-chip:hover{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
-.trend-score{
-  font-size:.65rem;font-family:var(--font-mono);
-  background:rgba(108,99,255,.15);color:var(--brand-primary);
+.chip:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.cscore{
+  font-size:.62rem;font-family:var(--font-mono);
+  background:rgba(108,99,255,.14);color:var(--brand);
   padding:1px 5px;border-radius:4px;
 }
+.chip:hover .cscore{background:rgba(255,255,255,.25);color:#fff}
 
-/* Messages area */
-.messages{
-  flex:1;overflow-y:auto;padding:20px 24px;
-  display:flex;flex-direction:column;gap:14px;
-  scroll-behavior:smooth;
+/* Messages */
+.msgs{
+  flex:1;overflow-y:auto;padding:18px 22px;
+  display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;
 }
 .msg{
-  max-width:88%;padding:12px 16px;border-radius:14px;
-  font-size:.88rem;line-height:1.55;
-  animation:msgIn .2s ease;
+  max-width:88%;padding:11px 15px;border-radius:13px;
+  font-size:.87rem;line-height:1.58;animation:pop .2s ease;
 }
-@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .msg.user{
-  align-self:flex-end;
-  background:var(--brand-primary);color:#fff;
-  border-bottom-right-radius:4px;
+  align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:3px;
 }
 .msg.bot{
-  align-self:flex-start;
-  background:var(--bg-raised);color:var(--text);
-  border-bottom-left-radius:4px;border:1px solid var(--border);
+  align-self:flex-start;background:var(--raised);color:var(--text);
+  border:1px solid var(--border);border-bottom-left-radius:3px;
 }
-.msg.bot strong{color:var(--brand-primary)}
+.msg.bot strong{color:var(--brand)}
 
-/* Input area */
-.input-area{
-  padding:16px 24px;border-top:1px solid var(--border);
-  flex-shrink:0;background:var(--bg-surface);
+/* Input */
+.inp-wrap{
+  padding:14px 22px;border-top:1px solid var(--border);
+  flex-shrink:0;background:var(--surface);
 }
-.input-row{
-  display:flex;gap:10px;align-items:flex-end;
-}
-.input-row textarea{
+.inp-row{display:flex;gap:9px;align-items:flex-end}
+#chat-input{
   flex:1;resize:none;
-  background:var(--bg-raised);border:1.5px solid var(--border);
-  color:var(--text);border-radius:12px;
-  padding:12px 16px;font-family:var(--font-body);font-size:.88rem;
-  line-height:1.5;outline:none;min-height:46px;max-height:130px;
-  transition:border-color .2s;
+  background:var(--raised);border:1.5px solid var(--border);color:var(--text);
+  border-radius:11px;padding:11px 15px;
+  font-family:var(--font-body);font-size:.87rem;line-height:1.5;
+  outline:none;min-height:44px;max-height:120px;transition:border-color .2s;
   scrollbar-width:thin;
 }
-.input-row textarea:focus{border-color:var(--brand-primary)}
-.input-row textarea::placeholder{color:var(--text-faint)}
-.send-btn{
-  background:var(--brand-primary);color:#fff;border:none;
-  border-radius:12px;padding:12px 18px;cursor:pointer;
-  font-size:1.1rem;transition:all .2s;flex-shrink:0;
+#chat-input:focus{border-color:var(--brand)}
+#chat-input::placeholder{color:var(--faint)}
+#send-btn{
+  background:var(--brand);color:#fff;border:none;
+  border-radius:11px;padding:11px 17px;cursor:pointer;
+  font-size:1.05rem;transition:all .18s;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
+  min-width:46px;min-height:44px;
 }
-.send-btn:hover{background:#5753d4;transform:translateY(-1px)}
-.send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+#send-btn:hover:not(:disabled){background:#5651d4;transform:translateY(-1px)}
+#send-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 
-/* ── RIGHT: Preview panel ── */
-.preview-panel{
-  display:flex;flex-direction:column;
-  background:var(--bg);
-  overflow:hidden;
+/* RIGHT */
+.prev-panel{
+  display:flex;flex-direction:column;background:var(--bg);overflow:hidden;
 }
-.preview-header{
-  padding:16px 20px;border-bottom:1px solid var(--border);
+.prev-top{
+  padding:14px 18px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;background:var(--bg-surface);
+  flex-shrink:0;background:var(--surface);
 }
-.preview-header h3{
-  font-family:var(--font-display);font-size:.95rem;font-weight:700;
+.prev-top h3{
+  font-family:var(--font-head);font-size:.92rem;font-weight:700;
+  max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.preview-actions{display:flex;gap:8px;align-items:center}
-.preview-btn{
-  background:var(--bg-raised);border:1px solid var(--border);
-  color:var(--text);cursor:pointer;
-  padding:6px 12px;border-radius:8px;
-  font-size:.75rem;font-weight:500;font-family:var(--font-body);
-  transition:all .18s;
+.pbtns{display:flex;gap:7px}
+.pbtn{
+  background:var(--raised);border:1px solid var(--border);color:var(--text);
+  cursor:pointer;padding:5px 12px;border-radius:8px;
+  font-size:.74rem;font-weight:500;font-family:var(--font-body);transition:all .16s;
 }
-.preview-btn:hover{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
-.preview-btn.primary{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
-.preview-btn.primary:hover{background:#5753d4}
+.pbtn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pbtn:disabled{opacity:.35;cursor:not-allowed}
+.pbtn.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pbtn.pri:hover{background:#5651d4}
 
 /* SEO strip */
-.seo-strip{
-  padding:8px 20px;
-  background:var(--bg-raised);
-  border-bottom:1px solid var(--border);
-  display:none;flex-wrap:wrap;gap:8px;align-items:center;
-  font-size:.73rem;font-family:var(--font-mono);
+.seo{
+  display:none;flex-wrap:wrap;gap:7px;align-items:center;
+  padding:7px 18px;background:var(--raised);border-bottom:1px solid var(--border);
+  font-size:.7rem;font-family:var(--font-mono);
 }
-.seo-strip.visible{display:flex}
-.seo-badge{
+.seo.on{display:flex}
+.sbadge{
   display:flex;align-items:center;gap:5px;
-  background:var(--bg-surface);border:1px solid var(--border);
-  border-radius:6px;padding:3px 9px;color:var(--text-muted);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;padding:2px 8px;color:var(--muted);
 }
-.seo-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
-/* Customise bar — FONT + COLOUR ONLY */
-.customise-bar{
-  padding:12px 20px;
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  flex-shrink:0;background:var(--bg-surface);
+/* Custom bar — FONT + COLOUR only */
+.cbar{
+  padding:10px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  flex-shrink:0;background:var(--surface);
 }
-.customise-bar label{
-  font-size:.72rem;font-weight:600;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:.06em;
-  font-family:var(--font-mono);
+.cbar label{
+  font-size:.68rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-mono);white-space:nowrap;
 }
-.customise-bar select{
-  background:var(--bg-raised);border:1px solid var(--border);
-  color:var(--text);border-radius:8px;
-  padding:5px 10px;font-size:.78rem;outline:none;cursor:pointer;
-  font-family:var(--font-body);transition:border-color .2s;
+.cbar select{
+  background:var(--raised);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:4px 9px;font-size:.76rem;outline:none;
+  cursor:pointer;font-family:var(--font-body);transition:border-color .2s;
 }
-.customise-bar select:focus{border-color:var(--brand-primary)}
-.colour-swatch{
-  width:26px;height:26px;border-radius:50%;cursor:pointer;
-  border:2px solid var(--border);transition:transform .15s;
-  overflow:hidden;position:relative;flex-shrink:0;
+.cbar select:focus{border-color:var(--brand)}
+.csep{color:var(--border);user-select:none}
+.swatch{
+  width:24px;height:24px;border-radius:50%;cursor:pointer;
+  border:2px solid var(--border);overflow:hidden;position:relative;
+  flex-shrink:0;transition:transform .14s;
 }
-.colour-swatch:hover{transform:scale(1.15)}
-.colour-swatch input[type=color]{
-  position:absolute;inset:0;width:200%;height:200%;
-  top:-50%;left:-50%;opacity:0;cursor:pointer;
-}
-.customise-sep{color:var(--border);font-size:.9rem}
-
-/* Slide stage */
-.slide-stage{
-  flex:1;overflow-y:auto;overflow-x:hidden;
-  display:flex;flex-direction:column;align-items:center;
-  padding:24px 20px;gap:16px;
-
-  /* Very visible scrollbar */
-  scrollbar-width:auto;
-  scrollbar-color:var(--brand-primary) var(--bg-raised);
-}
-.slide-stage::-webkit-scrollbar{width:10px}
-.slide-stage::-webkit-scrollbar-track{
-  background:var(--bg-raised);
-  border-radius:6px;
-  margin:8px;
-}
-.slide-stage::-webkit-scrollbar-thumb{
-  background:var(--brand-primary);
-  border-radius:6px;
-  border:2px solid var(--bg-raised);
-}
-.slide-stage::-webkit-scrollbar-thumb:hover{
-  background:var(--brand-accent);
+.swatch:hover{transform:scale(1.15)}
+.swatch input[type=color]{
+  position:absolute;inset:-50%;width:200%;height:200%;opacity:0;cursor:pointer;
 }
 
 /* Slide nav */
-.slide-nav{
-  display:flex;align-items:center;gap:12px;
-  flex-shrink:0;
+.snav{
+  padding:8px 18px 0;
+  display:flex;justify-content:center;align-items:center;gap:10px;flex-shrink:0;
 }
-.slide-nav-btn{
-  background:var(--bg-raised);border:1.5px solid var(--border);
-  color:var(--text);width:36px;height:36px;border-radius:50%;
-  cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;
-  transition:all .18s;
+.sarr{
+  background:var(--raised);border:1.5px solid var(--border);color:var(--text);
+  width:34px;height:34px;border-radius:50%;cursor:pointer;
+  font-size:1rem;display:flex;align-items:center;justify-content:center;
+  transition:all .16s;flex-shrink:0;
 }
-.slide-nav-btn:hover{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
-.slide-nav-btn:disabled{opacity:.3;cursor:not-allowed}
-.slide-counter{
-  font-family:var(--font-mono);font-size:.78rem;color:var(--text-muted);
-  min-width:60px;text-align:center;
-}
-.dot-row{display:flex;gap:6px;align-items:center}
+.sarr:hover:not(:disabled){background:var(--brand);color:#fff;border-color:var(--brand)}
+.sarr:disabled{opacity:.3;cursor:not-allowed}
+.dots{display:flex;gap:5px;align-items:center}
 .dot{
   width:7px;height:7px;border-radius:50%;
   background:var(--border);cursor:pointer;transition:all .2s;
 }
-.dot.active{background:var(--brand-primary);width:18px;border-radius:4px}
+.dot.on{background:var(--brand);width:17px;border-radius:4px}
+.sctr{font-family:var(--font-mono);font-size:.74rem;color:var(--muted);min-width:52px;text-align:center}
 
-/* Carousel slide wrapper */
-.carousel-wrapper{
-  width:100%;max-width:500px;
-  position:relative;
+/* ═══════════════════════════════════════
+   SLIDE STAGE — very visible scrollbar
+═══════════════════════════════════════ */
+.stage{
+  flex:1;overflow-y:scroll;overflow-x:hidden;
+  display:flex;flex-direction:column;align-items:center;
+  padding:18px 16px 28px;gap:14px;
+  scrollbar-width:auto;
+  scrollbar-color:var(--brand) var(--raised);
 }
+.stage::-webkit-scrollbar{width:11px}
+.stage::-webkit-scrollbar-track{background:var(--raised);border-radius:6px;margin:6px}
+.stage::-webkit-scrollbar-thumb{background:var(--brand);border-radius:6px;border:2px solid var(--raised)}
+.stage::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 
-/* ══════════════════════════════════════════
-   THE 10 SLIDE BACKGROUNDS
-   Each is a self-contained visual world
-══════════════════════════════════════════ */
+/* Empty */
+.empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:50px 24px;text-align:center;width:100%;min-height:340px;
+}
+.ei{font-size:2.8rem;opacity:.25}
+.et{font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--muted)}
+.es{font-size:.79rem;color:var(--faint);max-width:240px;line-height:1.6}
 
-/* 1. GRADIENT MESH — flowing aurora */
-.slide.bg-gradient-mesh{
-  background:linear-gradient(135deg,#667eea 0%,#764ba2 40%,#f093fb 100%);
-  color:#fff;
+/* Caption box */
+.capbox{
+  background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  padding:13px 15px;width:100%;max-width:500px;font-size:.8rem;line-height:1.6;
 }
-.slide.bg-gradient-mesh::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.15) 0%,transparent 50%),
-             radial-gradient(circle at 80% 20%,rgba(255,200,100,.2) 0%,transparent 50%);
+.capbox h4{
+  font-family:var(--font-head);font-size:.7rem;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;
 }
+.cap-text{color:var(--text);margin-bottom:8px}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:.7rem;font-family:var(--font-mono);color:var(--brand);font-weight:500}
 
-/* 2. DARK NEON — cyberpunk glow */
-.slide.bg-dark-neon{
-  background:#0a0a14;color:#fff;
-}
-.slide.bg-dark-neon::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(108,99,255,.4) 0%,transparent 65%),
-             radial-gradient(ellipse at 100% 100%,rgba(0,229,176,.25) 0%,transparent 55%);
-}
-.slide.bg-dark-neon::after{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(108,99,255,.07) 60px);
-}
-
-/* 3. EDITORIAL WHITE — clean magazine */
-.slide.bg-editorial-white{
-  background:#ffffff;color:#0F0E17;
-  border:3px solid #0F0E17;
-}
-.slide.bg-editorial-white::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:8px;
-  background:linear-gradient(90deg,#6C63FF,#FF6B6B,#00E5B0);
-}
-
-/* 4. GEOMETRIC BOLD — hard angles */
-.slide.bg-geometric-bold{
-  background:#1A1A2E;color:#fff;
-  overflow:hidden;
-}
-.slide.bg-geometric-bold::before{
-  content:'';position:absolute;
-  width:300px;height:300px;
-  background:linear-gradient(135deg,#6C63FF,#FF6B6B);
-  border-radius:50%;
-  top:-100px;right:-80px;opacity:.6;
-}
-.slide.bg-geometric-bold::after{
-  content:'';position:absolute;
-  width:200px;height:200px;
-  background:linear-gradient(135deg,#00E5B0,#6C63FF);
-  bottom:-80px;left:-60px;opacity:.4;
-  transform:rotate(45deg);
-}
-
-/* 5. MINIMAL SAGE — nature calm */
-.slide.bg-minimal-sage{
-  background:linear-gradient(160deg,#E8F5E9,#F1F8E9);
-  color:#1B3A2D;
-}
-.slide.bg-minimal-sage::before{
-  content:'';position:absolute;
-  width:180px;height:180px;border-radius:50%;
-  background:rgba(76,175,80,.1);
-  bottom:-40px;right:-40px;
-}
-
-/* 6. DATA GRID — finance / stats */
-.slide.bg-data-grid{
-  background:#0D1117;color:#E6EDF3;
-}
-.slide.bg-data-grid::before{
-  content:'';position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(56,189,248,.12) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(56,189,248,.12) 1px,transparent 1px);
-  background-size:40px 40px;
-}
-.slide.bg-data-grid::after{
-  content:'';position:absolute;
-  top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,#38bdf8,#818cf8,#34d399);
-}
-
-/* 7. LUXURY CREAM — premium editorial */
-.slide.bg-luxury-cream{
-  background:linear-gradient(150deg,#FDF8F0,#FAF0E6);
-  color:#2C1810;
-}
-.slide.bg-luxury-cream::before{
-  content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle,rgba(180,130,80,.08) 1px,transparent 1px);
-  background-size:20px 20px;
-}
-.slide.bg-luxury-cream::after{
-  content:'';position:absolute;
-  top:16px;left:16px;right:16px;bottom:16px;
-  border:1px solid rgba(180,130,80,.3);
-  border-radius:2px;pointer-events:none;
-}
-
-/* 8. NEON PURPLE — viral / Gen-Z */
-.slide.bg-neon-purple{
-  background:linear-gradient(145deg,#13001E,#2D0057);color:#fff;
-}
-.slide.bg-neon-purple::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 30% 50%,rgba(180,0,255,.35) 0%,transparent 60%),
-             radial-gradient(ellipse at 75% 30%,rgba(255,0,150,.25) 0%,transparent 55%);
-}
-.slide.bg-neon-purple::after{
-  content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='.5' fill='rgba(255,255,255,.08)'/%3E%3C/svg%3E");
-}
-
-/* 9. BRUTALIST YELLOW — loud, editorial */
-.slide.bg-brutalist-yellow{
-  background:#FFE500;color:#000;
-  border:4px solid #000;
-}
-.slide.bg-brutalist-yellow::before{
-  content:'';position:absolute;
-  bottom:-6px;right:-6px;
-  width:100%;height:100%;
-  background:#000;z-index:-1;border-radius:inherit;
-}
-
-/* 10. FROSTED GLASS — modern iOS style */
-.slide.bg-frosted-glass{
-  background:linear-gradient(135deg,#4facfe,#00f2fe,#43e97b);
-  color:#fff;
-}
-.slide.bg-frosted-glass::before{
-  content:'';position:absolute;inset:8px;
-  background:rgba(255,255,255,.18);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.35);
-}
-
-/* ══════════════════════════════════════════
-   BASE SLIDE
-══════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   10 SLIDE BACKGROUNDS
+═══════════════════════════════════════ */
 .slide{
-  width:100%;aspect-ratio:1/1;
-  position:relative;
-  border-radius:16px;
-  overflow:hidden;
+  width:100%;max-width:500px;aspect-ratio:1/1;
+  position:relative;border-radius:16px;overflow:hidden;
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  padding:40px 36px;
-  text-align:center;
-  box-shadow:var(--shadow-lg);
-  transition:transform .25s;
-  cursor:default;
+  padding:38px 34px;text-align:center;
+  box-shadow:var(--sh-lg);transition:transform .22s;cursor:default;
 }
 .slide:hover{transform:translateY(-2px)}
-.slide-inner{position:relative;z-index:2;width:100%;display:flex;flex-direction:column;gap:10px}
+.slide-in{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:9px}
 
-.slide-number{
-  font-family:var(--font-mono);font-size:.65rem;font-weight:700;
-  opacity:.55;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
+/* 1 Gradient Mesh */
+.bg-gm{background:linear-gradient(135deg,#667eea,#764ba2 45%,#f093fb);color:#fff}
+.bg-gm::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.18),transparent 50%),
+             radial-gradient(circle at 80% 20%,rgba(255,200,100,.22),transparent 50%)}
+/* 2 Dark Neon */
+.bg-dn{background:#070712;color:#fff}
+.bg-dn::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(108,99,255,.45),transparent 65%),
+             radial-gradient(ellipse at 100% 100%,rgba(0,229,176,.28),transparent 55%)}
+.bg-dn::after{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(108,99,255,.06) 60px)}
+/* 3 Editorial White */
+.bg-ew{background:#fff;color:#0F0E17;border:3px solid #0F0E17}
+.bg-ew::before{content:'';position:absolute;top:0;left:0;right:0;height:7px;
+  background:linear-gradient(90deg,#6C63FF,#FF6B6B,#00E5B0)}
+/* 4 Geometric Bold */
+.bg-gb{background:#16142A;color:#fff;overflow:hidden}
+.bg-gb::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;
+  background:linear-gradient(135deg,#6C63FF,#FF6B6B);top:-90px;right:-70px;opacity:.6}
+.bg-gb::after{content:'';position:absolute;width:180px;height:180px;
+  background:linear-gradient(135deg,#00E5B0,#6C63FF);bottom:-70px;left:-50px;opacity:.4;transform:rotate(45deg)}
+/* 5 Minimal Sage */
+.bg-ms{background:linear-gradient(155deg,#E8F5E9,#F1F8E9);color:#1B3A2D}
+.bg-ms::before{content:'';position:absolute;width:160px;height:160px;border-radius:50%;
+  background:rgba(76,175,80,.1);bottom:-36px;right:-36px}
+/* 6 Data Grid */
+.bg-dg{background:#0B1017;color:#E6EDF3}
+.bg-dg::before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(56,189,248,.13) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(56,189,248,.13) 1px,transparent 1px);background-size:40px 40px}
+.bg-dg::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#38bdf8,#818cf8,#34d399)}
+/* 7 Luxury Cream */
+.bg-lc{background:linear-gradient(150deg,#FDF8F0,#FAF0E6);color:#2C1810}
+.bg-lc::before{content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(180,130,80,.07) 1px,transparent 1px);background-size:20px 20px}
+.bg-lc::after{content:'';position:absolute;top:14px;left:14px;right:14px;bottom:14px;
+  border:1px solid rgba(180,130,80,.28);border-radius:2px;pointer-events:none}
+/* 8 Neon Purple */
+.bg-np{background:linear-gradient(145deg,#13001E,#2D0057);color:#fff}
+.bg-np::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 50%,rgba(180,0,255,.38),transparent 60%),
+             radial-gradient(ellipse at 75% 30%,rgba(255,0,150,.26),transparent 55%)}
+/* 9 Brutalist Yellow */
+.bg-by{background:#FFE500;color:#000;border:4px solid #000}
+.bg-by::before{content:'';position:absolute;bottom:-6px;right:-6px;width:100%;height:100%;
+  background:#000;z-index:0;border-radius:inherit}
+/* 10 Frosted Glass */
+.bg-fg{background:linear-gradient(135deg,#4facfe,#00f2fe 50%,#43e97b);color:#fff}
+.bg-fg::before{content:'';position:absolute;inset:8px;
+  background:rgba(255,255,255,.2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-radius:10px;border:1px solid rgba(255,255,255,.38)}
+
+/* Light bg overrides for child elements */
+.bg-ew .stag,.bg-ms .stag,.bg-lc .stag{background:rgba(0,0,0,.07);border-color:rgba(0,0,0,.14)}
+.bg-by .stag{background:#000;color:#FFE500;border-color:#000}
+.bg-ew .pstep,.bg-ms .pstep,.bg-lc .pstep{background:rgba(0,0,0,.14)}
+.bg-ew .pstep.done,.bg-ms .pstep.done,.bg-lc .pstep.done{background:rgba(0,0,0,.55)}
+.bg-by .pstep{background:rgba(0,0,0,.2)}
+.bg-by .pstep.done{background:rgba(0,0,0,.8)}
+.bg-ew .cta-pill,.bg-ms .cta-pill,.bg-lc .cta-pill{background:#0F0E17;color:#fff}
+.bg-by .cta-pill{background:#000;color:#FFE500}
+
+/* Slide content */
+.snum{
+  font-family:var(--font-mono);font-size:.62rem;font-weight:700;
+  opacity:.5;letter-spacing:.1em;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;
 }
-.slide-tag{
-  display:inline-block;
-  font-family:var(--font-mono);font-size:.6rem;font-weight:700;
+.stag{
+  display:inline-block;font-family:var(--font-mono);font-size:.58rem;font-weight:700;
   letter-spacing:.1em;text-transform:uppercase;
-  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);
-  padding:3px 10px;border-radius:20px;
-  backdrop-filter:blur(4px);
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+  padding:2px 9px;border-radius:20px;
 }
-/* Dark bg slides need white tag, light bg slides need dark */
-.slide.bg-editorial-white .slide-tag,
-.slide.bg-minimal-sage .slide-tag,
-.slide.bg-luxury-cream .slide-tag{
-  background:rgba(0,0,0,.07);border-color:rgba(0,0,0,.15);
-  color:inherit;
+.prog{display:flex;justify-content:center;gap:5px;margin-bottom:4px}
+.pstep{height:3px;border-radius:2px;background:rgba(255,255,255,.25);transition:all .3s}
+.pstep.done{background:rgba(255,255,255,.8)}
+.pstep.now{background:var(--accent)}
+.shead{
+  font-family:var(--font-head);
+  font-size:clamp(1.25rem,4.8vw,1.95rem);
+  font-weight:800;line-height:1.14;letter-spacing:-.025em;
 }
-.slide.bg-brutalist-yellow .slide-tag{
-  background:#000;color:#FFE500;border-color:#000;
-}
-
-.slide-headline{
-  font-family:var(--font-display);
-  font-size:clamp(1.3rem,5vw,2rem);
-  font-weight:800;
-  line-height:1.15;
-  letter-spacing:-.02em;
-}
-.slide-sub{
-  font-size:clamp(.78rem,2vw,.95rem);
-  line-height:1.6;
-  opacity:.88;
-  max-width:88%;
-  margin:0 auto;
+.ssub{font-size:clamp(.76rem,2vw,.93rem);line-height:1.62;opacity:.88;max-width:90%;margin:0 auto}
+.sstat{font-family:var(--font-head);font-size:clamp(2.4rem,9vw,3.8rem);font-weight:800;line-height:1;letter-spacing:-.03em}
+.sstat-lbl{font-size:.72rem;opacity:.58;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+.squote{font-size:clamp(.95rem,3.2vw,1.35rem);font-style:italic;line-height:1.48;opacity:.92}
+.sqmark{font-family:var(--font-head);font-size:3.6rem;line-height:.55;opacity:.15}
+.cta-pill{
+  display:inline-block;margin-top:8px;padding:9px 26px;border-radius:7px;
+  font-family:var(--font-head);font-size:.84rem;font-weight:700;
+  letter-spacing:.02em;text-transform:uppercase;cursor:default;
+  background:rgba(255,255,255,.94);color:#0F0E17;
 }
 
-/* Stat display */
-.slide-stat{
-  font-family:var(--font-display);
-  font-size:clamp(2.5rem,10vw,4rem);
-  font-weight:800;
-  line-height:1;
-  letter-spacing:-.03em;
-}
-.slide-stat-label{
-  font-size:.75rem;opacity:.6;
-  font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;
-}
-
-/* Quote style */
-.slide-quote{
-  font-size:clamp(1rem,3.5vw,1.4rem);
-  font-style:italic;line-height:1.45;
-  opacity:.92;
-}
-.slide-quote-mark{
-  font-family:var(--font-display);font-size:4rem;line-height:.6;
-  opacity:.18;
-}
-
-/* CTA */
-.slide-cta-btn{
-  display:inline-block;margin-top:8px;
-  padding:10px 28px;border-radius:8px;
-  font-family:var(--font-display);font-size:.88rem;font-weight:700;
-  letter-spacing:.02em;text-transform:uppercase;
-  transition:transform .18s;
-  cursor:default;
-}
-.slide.bg-editorial-white .slide-cta-btn,
-.slide.bg-minimal-sage .slide-cta-btn,
-.slide.bg-luxury-cream .slide-cta-btn,
-.slide.bg-brutalist-yellow .slide-cta-btn{
-  background:#0F0E17;color:#fff;
-}
-.slide.bg-brutalist-yellow .slide-cta-btn{
-  background:#000;color:#FFE500;
-}
-
-/* Default (dark bg) CTA */
-.slide-cta-btn:not(.dark-cta){
-  background:rgba(255,255,255,.95);
-  color:#0F0E17;
-}
-
-/* Story step indicators */
-.story-steps{
-  display:flex;justify-content:center;gap:6px;margin-bottom:6px;
-}
-.story-step{
-  width:24px;height:3px;border-radius:2px;
-  background:rgba(255,255,255,.3);
-}
-.story-step.done{background:rgba(255,255,255,.9)}
-.story-step.current{background:var(--brand-accent);width:36px}
-.slide.bg-editorial-white .story-step,
-.slide.bg-minimal-sage .story-step,
-.slide.bg-luxury-cream .story-step{
-  background:rgba(0,0,0,.15);
-}
-.slide.bg-editorial-white .story-step.done,
-.slide.bg-minimal-sage .story-step.done,
-.slide.bg-luxury-cream .story-step.done{
-  background:rgba(0,0,0,.6);
-}
-
-/* ══════════════════════════════════════════
-   EMPTY / LOADING STATE
-══════════════════════════════════════════ */
-.empty-state{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:14px;padding:40px 24px;text-align:center;
-  width:100%;min-height:360px;
-}
-.empty-icon{font-size:3rem;opacity:.3}
-.empty-title{
-  font-family:var(--font-display);font-size:1.05rem;font-weight:700;
-  color:var(--text-muted);
-}
-.empty-sub{font-size:.82rem;color:var(--text-faint);max-width:260px;line-height:1.6}
-
-.spinner{
-  width:36px;height:36px;
-  border:3px solid var(--border);
-  border-top-color:var(--brand-primary);
-  border-radius:50%;
-  animation:spin .7s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ══════════════════════════════════════════
-   CAPTION + HASHTAGS
-══════════════════════════════════════════ */
-.caption-box{
-  background:var(--bg-surface);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:14px 16px;
-  width:100%;max-width:500px;
-  font-size:.82rem;line-height:1.6;color:var(--text);
-}
-.caption-box h4{
-  font-family:var(--font-display);font-size:.75rem;font-weight:700;
-  color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;
-  margin-bottom:8px;font-style:normal;
-}
-.caption-text{color:var(--text);margin-bottom:8px}
-.hashtag-row{display:flex;flex-wrap:wrap;gap:5px}
-.hashtag{
-  font-size:.72rem;font-family:var(--font-mono);
-  color:var(--brand-primary);font-weight:500;
-}
-
-/* ══════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════ */
-.toast{
-  position:fixed;bottom:24px;right:24px;z-index:999;
+/* Toast */
+#toast{
+  position:fixed;bottom:22px;right:22px;z-index:999;
   background:var(--text);color:var(--bg);
-  padding:10px 20px;border-radius:10px;
-  font-size:.82rem;font-weight:500;
-  opacity:0;transform:translateY(10px);
-  transition:all .3s;pointer-events:none;
-  box-shadow:var(--shadow-lg);
+  padding:9px 18px;border-radius:9px;font-size:.8rem;font-weight:500;
+  opacity:0;transform:translateY(8px);transition:all .28s;pointer-events:none;
+  box-shadow:var(--sh-lg);
 }
-.toast.show{opacity:1;transform:none}
+#toast.show{opacity:1;transform:none}
 
-/* ══════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════ */
-@media(max-width:900px){
-  .app{grid-template-columns:1fr;grid-template-rows:50vh 1fr}
+@media(max-width:880px){
+  .app{grid-template-columns:1fr;grid-template-rows:52vh 1fr}
   .chat-panel{border-right:none;border-bottom:1px solid var(--border)}
 }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
-  <span class="nav-brand">⚡ Dijo × ImpactGrid</span>
-  <div class="nav-right">
-    <button class="nav-btn" onclick="downloadSlides()">⬇ Export</button>
-    <button class="nav-btn" id="theme-toggle" onclick="toggleTheme()">🌙</button>
+  <span class="nav-logo">⚡ Dijo × ImpactGrid</span>
+  <div class="nav-r">
+    <button class="nbtn" id="export-btn">⬇ Export</button>
+    <button class="nbtn" id="theme-btn">🌙</button>
   </div>
 </nav>
 
-<!-- APP LAYOUT -->
 <div class="app">
 
-  <!-- ── LEFT: Chat panel ── -->
+  <!-- LEFT: CHAT -->
   <div class="chat-panel">
-    <div class="chat-header">
+    <div class="chat-top">
       <h2>Carousel Content Engine</h2>
-      <p>Tell Dijo what your carousel is about — your audience, your message, your goal. The more context, the better the result.</p>
+      <p>Tell Dijo what your carousel is about — your audience, your message, your goal. The more real detail you give, the better the result.</p>
     </div>
-    <div class="trend-row" id="trend-row">
-      <span class="trend-label">🔥 Trending</span>
-      <span style="font-size:.75rem;color:var(--text-faint)">Loading live data…</span>
+    <div class="tbar" id="tbar">
+      <span class="tlbl">🔥 Live</span>
+      <span style="font-size:.73rem;color:var(--faint)">Loading trends…</span>
     </div>
-    <div class="messages" id="messages">
+    <div class="msgs" id="msgs">
       <div class="msg bot">
-        👋 Hey, I'm Dijo. Tell me what you want your carousel to say — your topic, who it's for, and what you want them to feel or do after seeing it. I'll pick the best style and write real content, not filler.
+        Hey — I'm Dijo. Tell me what your carousel is about, who it's for, and what you want them to feel or do after seeing it. I'll pick the right style and write real content, not filler.
       </div>
     </div>
-    <div class="input-area">
-      <div class="input-row">
-        <textarea id="user-input" placeholder="e.g. I want to teach my audience why most people fail to build consistent habits — aimed at busy professionals…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="generate()">➤</button>
+    <div class="inp-wrap">
+      <div class="inp-row">
+        <textarea id="chat-input"
+          placeholder="e.g. I want to teach busy professionals why most habit-building advice fails — and what actually works long-term…"
+          rows="1"></textarea>
+        <button id="send-btn" title="Send">➤</button>
       </div>
     </div>
   </div>
 
-  <!-- ── RIGHT: Preview panel ── -->
-  <div class="preview-panel">
-    <div class="preview-header">
-      <h3 id="preview-title">Preview</h3>
-      <div class="preview-actions">
-        <button class="preview-btn" onclick="prevSlide()">‹ Prev</button>
-        <button class="preview-btn" onclick="nextSlide()">Next ›</button>
-        <button class="preview-btn primary" onclick="downloadSlides()">Export</button>
+  <!-- RIGHT: PREVIEW -->
+  <div class="prev-panel">
+    <div class="prev-top">
+      <h3 id="prev-title">Preview</h3>
+      <div class="pbtns">
+        <button class="pbtn" id="prev-btn" disabled>‹ Prev</button>
+        <button class="pbtn" id="next-btn" disabled>Next ›</button>
+        <button class="pbtn pri" id="dl-btn">Export</button>
       </div>
     </div>
 
-    <!-- SEO strip -->
-    <div class="seo-strip" id="seo-strip"></div>
+    <div class="seo" id="seo"></div>
 
-    <!-- FONT + COLOUR controls (user-editable) -->
-    <div class="customise-bar">
+    <!-- FONT + COLOUR only -->
+    <div class="cbar">
       <label>Font</label>
-      <select id="font-pick" onchange="applyFont(this.value)">
-        <option value="'Syne', sans-serif">Syne (Bold)</option>
-        <option value="'DM Sans', sans-serif">DM Sans (Clean)</option>
-        <option value="'Space Mono', monospace">Space Mono (Tech)</option>
-        <option value="'Georgia', serif">Georgia (Editorial)</option>
-        <option value="'Impact', sans-serif">Impact (Heavy)</option>
+      <select id="font-sel">
+        <option value="'Syne',sans-serif">Syne (Bold)</option>
+        <option value="'DM Sans',sans-serif">DM Sans (Clean)</option>
+        <option value="'Space Mono',monospace">Space Mono (Tech)</option>
+        <option value="Georgia,serif">Georgia (Editorial)</option>
+        <option value="Impact,sans-serif">Impact (Heavy)</option>
       </select>
-      <span class="customise-sep">|</span>
+      <span class="csep">|</span>
       <label>Primary</label>
-      <div class="colour-swatch" title="Primary colour" style="background:#6C63FF">
-        <input type="color" id="col-primary" value="#6C63FF" oninput="applyColour('primary',this.value)"/>
-      </div>
+      <div class="swatch" id="sw1" style="background:#6C63FF"><input type="color" id="c1" value="#6C63FF"/></div>
       <label>Accent</label>
-      <div class="colour-swatch" title="Accent colour" style="background:#FF6B6B">
-        <input type="color" id="col-accent" value="#FF6B6B" oninput="applyColour('accent',this.value)"/>
-      </div>
+      <div class="swatch" id="sw2" style="background:#FF6B6B"><input type="color" id="c2" value="#FF6B6B"/></div>
       <label>Highlight</label>
-      <div class="colour-swatch" title="Highlight colour" style="background:#00E5B0">
-        <input type="color" id="col-highlight" value="#00E5B0" oninput="applyColour('highlight',this.value)"/>
-      </div>
+      <div class="swatch" id="sw3" style="background:#00E5B0"><input type="color" id="c3" value="#00E5B0"/></div>
     </div>
 
-    <!-- Slide nav row -->
-    <div style="padding:10px 20px 0;display:flex;justify-content:center;align-items:center;gap:10px;flex-shrink:0">
-      <button class="slide-nav-btn" id="prev-nav" onclick="prevSlide()" disabled>‹</button>
-      <div class="dot-row" id="dot-row"></div>
-      <button class="slide-nav-btn" id="next-nav" onclick="nextSlide()" disabled>›</button>
-      <span class="slide-counter" id="slide-counter">0 / 0</span>
+    <div class="snav">
+      <button class="sarr" id="pn" disabled>‹</button>
+      <div class="dots" id="dots"></div>
+      <button class="sarr" id="nn" disabled>›</button>
+      <span class="sctr" id="sctr">0 / 0</span>
     </div>
 
-    <!-- Slide stage with visible scrollbar -->
-    <div class="slide-stage" id="slide-stage">
-      <div class="empty-state" id="empty-state">
-        <div class="empty-icon">🎞️</div>
-        <div class="empty-title">No slides yet</div>
-        <div class="empty-sub">Describe your carousel topic in the chat and Dijo will generate scroll-stopping slides with real trend data.</div>
+    <div class="stage" id="stage">
+      <div class="empty" id="empty">
+        <div class="ei">🎞️</div>
+        <div class="et">No slides yet</div>
+        <div class="es">Describe your carousel in the chat and Dijo will generate scroll-stopping slides with live trend data.</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+<div id="toast"></div>
 
 <script>
-/* ══════════════════════════════════════════
-   CONFIG
-══════════════════════════════════════════ */
-const API = 'https://impactgrid-dijo.onrender.com';
+/* ═══════════════════════════════════════════════════════════
+   ALL WIRING HAPPENS AFTER DOM IS READY
+═══════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
 
-/* ══════════════════════════════════════════
-   10 BACKGROUND STYLES — AI picks from these
-   Each has: id, class, label, mood tags
-══════════════════════════════════════════ */
-const BG_STYLES = [
-  {
-    id:'gradient-mesh', cls:'bg-gradient-mesh',
-    label:'Gradient Mesh',
-    moods:['lifestyle','wellness','creative','personal','story','motivational','inspiration','mindset','growth']
-  },
-  {
-    id:'dark-neon', cls:'bg-dark-neon',
-    label:'Dark Neon',
-    moods:['tech','crypto','gaming','innovation','startup','ai','digital','futuristic','web3','code']
-  },
-  {
-    id:'editorial-white', cls:'bg-editorial-white',
-    label:'Editorial White',
-    moods:['business','professional','tips','strategy','marketing','branding','linkedin','leadership','advice']
-  },
-  {
-    id:'geometric-bold', cls:'bg-geometric-bold',
-    label:'Geometric Bold',
-    moods:['fitness','sport','energy','bold','action','hustle','entrepreneurship','challenge','strong']
-  },
-  {
-    id:'minimal-sage', cls:'bg-minimal-sage',
-    label:'Minimal Sage',
-    moods:['nature','sustainability','health','calm','wellbeing','eco','mindfulness','food','organic','yoga']
-  },
-  {
-    id:'data-grid', cls:'bg-data-grid',
-    label:'Data Grid',
-    moods:['data','statistics','finance','science','research','analytics','numbers','facts','report','roi','study']
-  },
-  {
-    id:'luxury-cream', cls:'bg-luxury-cream',
-    label:'Luxury Cream',
-    moods:['fashion','luxury','travel','beauty','aesthetic','lifestyle premium','interior','design','high-end']
-  },
-  {
-    id:'neon-purple', cls:'bg-neon-purple',
-    label:'Neon Purple',
-    moods:['viral','trending','gen-z','music','entertainment','social media','culture','pop','night','party']
-  },
-  {
-    id:'brutalist-yellow', cls:'bg-brutalist-yellow',
-    label:'Brutalist Yellow',
-    moods:['controversial','opinion','hot take','attention','debate','warning','mistake','myth','wrong','stop']
-  },
-  {
-    id:'frosted-glass', cls:'bg-frosted-glass',
-    label:'Frosted Glass',
-    moods:['product','saas','app','launch','announcement','new','feature','update','ios','modern','clean tech']
+  /* ── Verify CreatorAI loaded ── */
+  if (typeof CreatorAI === 'undefined') {
+    console.error('[Dijo] creator-ai.js not found. Make sure it is in the same folder as ai.html.');
+    appendMsg('⚠️ creator-ai.js failed to load — make sure the file is in the same directory as ai.html and the path in the &lt;script src&gt; tag is correct.', 'bot');
   }
-];
 
-/* ══════════════════════════════════════════
-   SLIDE FORMATS — storytelling-first
-══════════════════════════════════════════ */
-const FORMATS = {
-  hook_story: {
-    label:'Story Arc',
-    slides:['hook','problem','turning-point','insight','insight','lesson','cta']
-  },
-  listicle: {
-    label:'Listicle',
-    slides:['hook','list','list','list','list','list','cta']
-  },
-  before_after: {
-    label:'Before / After',
-    slides:['hook','before','before','after','after','proof','cta']
-  },
-  quote_thought: {
-    label:'Thought Leadership',
-    slides:['hook','quote','context','insight','insight','perspective','cta']
-  },
-  stats_data: {
-    label:'Data / Stats',
-    slides:['hook','stat','stat','stat','stat','takeaway','cta']
-  }
-};
+  /* ═══════ STATE ═══════ */
+  const S = { slides: [], idx: 0, trendData: {} };
 
-/* ══════════════════════════════════════════
-   STATE
-══════════════════════════════════════════ */
-let currentSlide = 0;
-let slides = [];
-let trendData = {};
-let currentFont = "'Syne', sans-serif";
+  /* ═══════ THEME ═══════ */
+  const themeBtn = document.getElementById('theme-btn');
+  const root     = document.documentElement;
+  const saved    = localStorage.getItem('dijo-theme') || 'light';
+  root.setAttribute('data-theme', saved);
+  themeBtn.textContent = saved === 'dark' ? '☀️' : '🌙';
 
-/* ══════════════════════════════════════════
-   THEME
-══════════════════════════════════════════ */
-function toggleTheme(){
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.getElementById('theme-toggle').textContent = isDark ? '🌙' : '☀️';
-  localStorage.setItem('dijo-theme', isDark ? 'light' : 'dark');
-}
-(function initTheme(){
-  const saved = localStorage.getItem('dijo-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
-})();
-
-/* ══════════════════════════════════════════
-   COLOUR / FONT CUSTOMISER
-══════════════════════════════════════════ */
-function applyColour(name, val){
-  const map = {primary:'--brand-primary', accent:'--brand-accent', highlight:'--brand-highlight'};
-  document.documentElement.style.setProperty(map[name], val);
-  // Update swatch bg
-  const id = {primary:'col-primary',accent:'col-accent',highlight:'col-highlight'}[name];
-  document.getElementById(id).parentElement.style.background = val;
-}
-function applyFont(val){
-  currentFont = val;
-  document.querySelectorAll('.slide-headline').forEach(el => el.style.fontFamily = val);
-}
-
-/* ══════════════════════════════════════════
-   LIVE TREND DATA
-══════════════════════════════════════════ */
-async function loadTrends(){
-  const row = document.getElementById('trend-row');
-  try {
-    // Try recommendations endpoint first
-    const r = await fetch(`${API}/ai/recommendations`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({platform:'all', limit:8})
-    });
-    const d = await r.json();
-    const items = d.recommendations || d.trends || d.data || [];
-    trendData = {};
-    if(items.length){
-      row.innerHTML = '<span class="trend-label">🔥 Trending</span>';
-      items.slice(0,8).forEach(item => {
-        const kw = item.keyword || item.topic || item.title || '';
-        const score = item.score || item.trendScore || item.volume || 80;
-        if(!kw) return;
-        trendData[kw] = score;
-        const chip = document.createElement('span');
-        chip.className = 'trend-chip';
-        chip.innerHTML = `${kw} <span class="trend-score">${Math.round(score)}</span>`;
-        chip.onclick = () => {
-          document.getElementById('user-input').value = kw;
-          generate();
-        };
-        row.appendChild(chip);
-      });
-    } else { fallbackTrends(row); }
-  } catch(e){ fallbackTrends(row); }
-}
-async function fallbackTrends(row){
-  try {
-    const r = await fetch(`${API}/trends/google`, {
-      method:'GET', headers:{'Content-Type':'application/json'}
-    });
-    const d = await r.json();
-    const items = d.trends || d.data || [];
-    trendData = {};
-    if(items.length){
-      row.innerHTML = '<span class="trend-label">🔥 Trending</span>';
-      items.slice(0,8).forEach(item => {
-        const kw = item.keyword || item.query || item.title || '';
-        const score = item.score || item.volume || 75;
-        if(!kw) return;
-        trendData[kw] = score;
-        const chip = document.createElement('span');
-        chip.className = 'trend-chip';
-        chip.innerHTML = `${kw} <span class="trend-score">${Math.round(score)}</span>`;
-        chip.onclick = () => {
-          document.getElementById('user-input').value = kw;
-          generate();
-        };
-        row.appendChild(chip);
-      });
-    } else { row.innerHTML = '<span class="trend-label">🔥 Trending</span><span style="font-size:.75rem;color:var(--text-faint)">Connect API to see live trends</span>'; }
-  } catch(e){
-    row.innerHTML = '<span class="trend-label">🔥 Trending</span><span style="font-size:.75rem;color:var(--text-faint)">Live trends unavailable</span>';
-  }
-}
-
-/* ══════════════════════════════════════════
-   AI STYLE PICKER
-   Scores each bg style against topic keywords
-   and picks the best fit automatically
-══════════════════════════════════════════ */
-function pickStyle(topic){
-  const lower = topic.toLowerCase();
-  let best = BG_STYLES[0], bestScore = 0;
-  BG_STYLES.forEach(style => {
-    let score = 0;
-    style.moods.forEach(mood => {
-      if(lower.includes(mood)) score += 3;
-      // Partial match
-      const words = mood.split(' ');
-      words.forEach(w => { if(lower.includes(w) && w.length > 3) score += 1; });
-    });
-    if(score > bestScore){ bestScore = score; best = style; }
+  themeBtn.addEventListener('click', function () {
+    const now  = root.getAttribute('data-theme');
+    const next = now === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+    localStorage.setItem('dijo-theme', next);
   });
-  return best;
-}
 
-/* ══════════════════════════════════════════
-   DETECT FORMAT from prompt
-══════════════════════════════════════════ */
-function detectFormat(prompt){
-  const p = prompt.toLowerCase();
-  if(p.match(/stat|number|data|research|study|percent|figure|roi/)) return 'stats_data';
-  if(p.match(/before.*after|transform|journey|change|result/)) return 'before_after';
-  if(p.match(/quote|thought|perspective|opinion|believe|insight/)) return 'quote_thought';
-  if(p.match(/\d+ ?(tip|step|reason|way|mistake|thing|secret|hack|lesson)|list/)) return 'listicle';
-  return 'hook_story'; // default: narrative arc
-}
+  /* ═══════ COLOUR PICKERS ═══════ */
+  document.getElementById('c1').addEventListener('input', function () {
+    root.style.setProperty('--brand', this.value);
+    document.getElementById('sw1').style.background = this.value;
+  });
+  document.getElementById('c2').addEventListener('input', function () {
+    root.style.setProperty('--accent', this.value);
+    document.getElementById('sw2').style.background = this.value;
+  });
+  document.getElementById('c3').addEventListener('input', function () {
+    root.style.setProperty('--pop', this.value);
+    document.getElementById('sw3').style.background = this.value;
+  });
 
-/* ══════════════════════════════════════════
-   GET REAL HASHTAGS + CAPTION from API
-══════════════════════════════════════════ */
-async function getContentBrief(topic, platform='instagram'){
-  try {
-    const r = await fetch(`${API}/ai/content-brief`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({topic, platform, format:'carousel'})
-    });
-    const d = await r.json();
-    return {
-      caption: d.caption || d.description || null,
-      hashtags: d.hashtags || d.tags || [],
-      trendScore: d.trendScore || d.score || null,
-      status: d.status || 'Trending',
-      platform: d.platform || platform
-    };
-  } catch(e){ return {caption:null, hashtags:[], trendScore:null} }
-}
+  /* ═══════ FONT PICKER ═══════ */
+  document.getElementById('font-sel').addEventListener('change', function () {
+    document.querySelectorAll('.shead').forEach(function (el) {
+      el.style.fontFamily = this.value;
+    }.bind(this));
+  });
 
-/* ══════════════════════════════════════════
-   GENERATE CAROUSEL via Dijo /chat
-══════════════════════════════════════════ */
-async function generate(){
-  const input = document.getElementById('user-input');
-  const prompt = input.value.trim();
-  if(!prompt) return;
+  /* ═══════ SEND BUTTON ═══════ */
+  document.getElementById('send-btn').addEventListener('click', generate);
 
-  input.value = '';
-  input.style.height = 'auto';
-  document.getElementById('send-btn').disabled = true;
+  /* ═══════ NAV BUTTONS ═══════ */
+  document.getElementById('prev-btn').addEventListener('click', function () { goTo(S.idx - 1); });
+  document.getElementById('next-btn').addEventListener('click', function () { goTo(S.idx + 1); });
+  document.getElementById('pn').addEventListener('click',       function () { goTo(S.idx - 1); });
+  document.getElementById('nn').addEventListener('click',       function () { goTo(S.idx + 1); });
 
-  addMsg(prompt, 'user');
-  const thinking = addMsg('⏳ Analysing your topic, pulling trend data, and writing your carousel…', 'bot');
+  /* ═══════ EXPORT BUTTONS ═══════ */
+  document.getElementById('export-btn').addEventListener('click', exportNow);
+  document.getElementById('dl-btn').addEventListener('click',     exportNow);
 
-  // Pick style + format
-  const style = pickStyle(prompt);
-  const format = detectFormat(prompt);
-  const fmt = FORMATS[format];
-
-  // Fetch content brief (hashtags, caption, score)
-  const brief = await getContentBrief(prompt);
-
-  // Match trend score from live data
-  let tScore = brief.trendScore;
-  if(!tScore){
-    const words = prompt.toLowerCase().split(/\s+/);
-    words.forEach(w => { if(trendData[w]) tScore = trendData[w]; });
+  function exportNow () {
+    if (!S.slides.length) { toast('Generate a carousel first.'); return; }
+    toast('Screenshot to save slides — full export coming soon.');
   }
 
-  // Build system-aware prompt with storytelling guidance
-  const slideCount = fmt.slides.length;
-  const trendContext = Object.keys(trendData).length
-    ? `Current trending keywords with scores: ${Object.entries(trendData).slice(0,6).map(([k,v])=>k+':'+Math.round(v)).join(', ')}.`
-    : '';
+  /* ═══════ KEYBOARD ═══════ */
+  document.addEventListener('keydown', function (e) {
+    if (e.target.id === 'chat-input') return;
+    if (e.key === 'ArrowRight') goTo(S.idx + 1);
+    if (e.key === 'ArrowLeft')  goTo(S.idx - 1);
+  });
 
-  const systemContext = `You are Dijo, ImpactGrid's carousel content engine. You write like a world-class content creator — someone who has studied what actually stops the scroll, what makes someone feel seen, and what makes them share.
+  /* ═══════ TEXTAREA ═══════ */
+  var inp = document.getElementById('chat-input');
+  inp.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+  inp.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generate(); }
+  });
 
-FORMAT: ${fmt.label} (${slideCount} slides)
-BACKGROUND STYLE CHOSEN: ${style.label} — write content that fits this visual mood.
-${trendContext}
+  /* ═══════════════════════════════════════
+     10 STYLES — AI auto-picks
+  ═══════════════════════════════════════ */
+  var STYLES = [
+    { id:'gm', cls:'bg-gm', label:'Gradient Mesh',
+      moods:['lifestyle','wellness','creative','personal','story','motivational','inspiration','mindset','growth','feelings','journey'] },
+    { id:'dn', cls:'bg-dn', label:'Dark Neon',
+      moods:['tech','crypto','gaming','innovation','startup','ai','digital','futuristic','web3','code','developer','blockchain','software'] },
+    { id:'ew', cls:'bg-ew', label:'Editorial White',
+      moods:['business','professional','tips','strategy','marketing','branding','linkedin','leadership','advice','corporate','career','b2b'] },
+    { id:'gb', cls:'bg-gb', label:'Geometric Bold',
+      moods:['fitness','sport','energy','bold','action','hustle','entrepreneurship','challenge','strong','gym','workout','athlete'] },
+    { id:'ms', cls:'bg-ms', label:'Minimal Sage',
+      moods:['nature','sustainability','health','calm','wellbeing','eco','mindfulness','food','organic','yoga','meditation','plant','clean'] },
+    { id:'dg', cls:'bg-dg', label:'Data Grid',
+      moods:['data','statistics','finance','science','research','analytics','numbers','facts','report','roi','study','economics','money','investment'] },
+    { id:'lc', cls:'bg-lc', label:'Luxury Cream',
+      moods:['fashion','luxury','travel','beauty','aesthetic','premium','interior','design','high-end','elegance','style','brand','boutique'] },
+    { id:'np', cls:'bg-np', label:'Neon Purple',
+      moods:['viral','trending','gen-z','music','entertainment','social','culture','pop','night','party','hype','streetwear','tiktok'] },
+    { id:'by', cls:'bg-by', label:'Brutalist Yellow',
+      moods:['controversial','opinion','hot take','attention','debate','warning','mistake','myth','wrong','stop','truth','unpopular','reality check'] },
+    { id:'fg', cls:'bg-fg', label:'Frosted Glass',
+      moods:['product','saas','app','launch','announcement','new','feature','update','ios','modern','clean','software','tool','release'] },
+  ];
 
-RULES:
-- Slide 1 is always the HOOK. It must be so good that someone stops mid-scroll. Use pattern interrupt, bold claim, or emotional truth.
-- Write like a human storyteller, not a copywriter. Real sentences, real emotion, real insight.
-- Each slide builds on the previous one — this is a narrative, not a list of disconnected ideas.
-- Sub-text (under each headline) can be 2–3 real sentences. Not bullet points. Not filler. Actual substance.
-- The last slide is the CTA — specific action, not vague "follow for more."
-- NEVER use generic phrases: "game-changer", "level up", "unlock your potential", "crush it".
-- Adapt tone to the topic. Finance = sharp and credible. Wellness = warm and grounded. Tech = confident and precise.
+  function pickStyle (topic) {
+    var lower = topic.toLowerCase();
+    var best = STYLES[0], top = 0;
+    STYLES.forEach(function (s) {
+      var score = 0;
+      s.moods.forEach(function (m) {
+        if (lower.indexOf(m) !== -1) score += 3;
+        m.split(' ').forEach(function (w) { if (w.length > 3 && lower.indexOf(w) !== -1) score += 1; });
+      });
+      if (score > top) { top = score; best = s; }
+    });
+    return best;
+  }
 
-OUTPUT FORMAT (strict JSON — no extra commentary):
-{
-  "topic": "...",
-  "slides": [
-    {
-      "type": "hook|list|stat|quote|before|after|turning-point|insight|lesson|context|perspective|takeaway|proof|cta",
-      "headline": "...",
-      "sub": "...",
-      "stat": "..." (only if type is stat),
-      "statLabel": "..." (only if type is stat),
-      "quote": "..." (only if type is quote),
-      "ctaText": "..." (only if type is cta)
+  /* ═══════════════════════════════════════
+     FORMATS
+  ═══════════════════════════════════════ */
+  var FORMATS = {
+    stats:    { label:'Data & Stats',       types:['hook','stat','stat','stat','stat','takeaway','cta'] },
+    before:   { label:'Before / After',     types:['hook','before','before','after','after','proof','cta'] },
+    quote:    { label:'Thought Leadership', types:['hook','quote','context','insight','insight','perspective','cta'] },
+    listicle: { label:'Listicle',           types:['hook','list','list','list','list','list','cta'] },
+    story:    { label:'Story Arc',          types:['hook','problem','twist','insight','insight','lesson','cta'] },
+  };
+
+  function detectFormat (p) {
+    var t = p.toLowerCase();
+    if (/stat|number|data|research|study|percent|figure|roi|metric/.test(t))        return 'stats';
+    if (/before.*after|transform|journey|went from|result|case study/.test(t))       return 'before';
+    if (/quote|thought|perspective|opinion|believe|philosophy|mindset/.test(t))      return 'quote';
+    if (/\d+\s*(tip|step|reason|way|mistake|thing|hack|lesson|secret)|list/.test(t)) return 'listicle';
+    return 'story';
+  }
+
+  /* ═══════════════════════════════════════
+     LIVE TRENDS
+  ═══════════════════════════════════════ */
+  function loadTrends () {
+    var bar = document.getElementById('tbar');
+    fetch('https://impactgrid-dijo.onrender.com/ai/recommendations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platform: 'all', limit: 8 })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { renderChips(bar, d.recommendations || d.trends || d.data || []); })
+    .catch(function () {
+      fetch('https://impactgrid-dijo.onrender.com/trends/google')
+        .then(function (r) { return r.json(); })
+        .then(function (d) { renderChips(bar, d.trends || d.data || []); })
+        .catch(function () {
+          bar.innerHTML = '<span class="tlbl">🔥 Live</span><span style="font-size:.72rem;color:var(--faint)">API not connected</span>';
+        });
+    });
+  }
+
+  function renderChips (bar, items) {
+    bar.innerHTML = '<span class="tlbl">🔥 Live</span>';
+    if (!items || !items.length) {
+      bar.innerHTML += '<span style="font-size:.72rem;color:var(--faint)">No trend data yet</span>';
+      return;
     }
-  ],
-  "caption": "...",
-  "hashtags": ["...", "...", "..."]
-}`;
+    items.slice(0, 8).forEach(function (item) {
+      var kw = item.keyword || item.topic || item.title || item.query || '';
+      var sc = item.score || item.trendScore || item.volume || 80;
+      if (!kw) return;
+      S.trendData[kw.toLowerCase()] = sc;
+      var c = document.createElement('span');
+      c.className = 'chip';
+      c.innerHTML = kw + ' <span class="cscore">' + Math.round(sc) + '</span>';
+      c.addEventListener('click', function () {
+        document.getElementById('chat-input').value = kw;
+        generate();
+      });
+      bar.appendChild(c);
+    });
+  }
 
-  try {
-    const res = await fetch(`${API}/chat`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        message: `Create a ${fmt.label} carousel about: ${prompt}. Write ${slideCount} slides that tell a complete, compelling story. Make every word count. Real insight, real value, no filler.`,
-        mode: 'carousel',
-        systemOverride: systemContext
+  /* ═══════════════════════════════════════
+     GENERATE — uses CreatorAI.generateCarousel()
+  ═══════════════════════════════════════ */
+  function generate () {
+    var input   = document.getElementById('chat-input');
+    var prompt  = input.value.trim();
+    if (!prompt) return;
+
+    var sendBtn = document.getElementById('send-btn');
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    appendMsg(prompt, 'user');
+    var thinkEl = appendMsg('⏳ Picking style, pulling trend data, writing your carousel…', 'bot');
+
+    /* Pick style + format */
+    var style   = pickStyle(prompt);
+    var fmtKey  = detectFormat(prompt);
+    var fmt     = FORMATS[fmtKey];
+
+    /* Match trend score */
+    var tScore = null;
+    prompt.toLowerCase().split(/\s+/).forEach(function (w) {
+      if (S.trendData[w]) tScore = S.trendData[w];
+    });
+
+    var trendCtx = Object.keys(S.trendData).length
+      ? 'Trending keywords right now: ' + Object.entries(S.trendData).slice(0,6).map(function(e){ return e[0]+':'+Math.round(e[1]); }).join(', ') + '.'
+      : '';
+
+    var fullPrompt =
+      'Create a ' + fmt.label + ' carousel (' + fmt.types.length + ' slides) about: "' + prompt + '"\n\n' +
+      trendCtx + '\n\n' +
+      'You are writing for a real audience. Write like a world-class content creator — someone who studies what stops the scroll, what makes someone feel seen, and what makes them share.\n\n' +
+      'SLIDE TYPES IN ORDER: ' + fmt.types.join(' → ') + '\n' +
+      'VISUAL STYLE: ' + style.label + '\n\n' +
+      'RULES:\n' +
+      '- Slide 1 (hook) must stop mid-scroll. Bold specific claim, emotional truth, or pattern interrupt. NOT a generic question.\n' +
+      '- Each slide builds on the previous — this is a narrative, not isolated tips. Pull the reader forward.\n' +
+      '- Sub-text is 2–3 real sentences of substance per slide. No filler, no bullet points inside the sub.\n' +
+      '- Match tone: finance = sharp + credible, wellness = warm + grounded, tech = confident + precise.\n' +
+      '- Last slide CTA: specific action, specific reason. Not vague "follow for more."\n' +
+      '- NEVER use: game-changer, level up, unlock, crush it.\n\n' +
+      'RESPOND ONLY WITH THIS JSON (no extra text, no markdown fences, no code blocks):\n' +
+      '{"topic":"short label","slides":[{"type":"hook|problem|twist|insight|lesson|list|stat|quote|context|perspective|before|after|proof|takeaway|cta","headline":"max 9 words","sub":"2-3 real sentences","stat":"number if stat type","statLabel":"what it measures","quote":"full quote if quote type","ctaText":"button label if cta"}],"caption":"under 30 words","hashtags":["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5"]}';
+
+    /* Call the brain */
+    CreatorAI.generateCarousel(fullPrompt, 'instagram', 'sharp', fmt.types.length)
+      .then(function (raw) {
+        var parsed = null;
+
+        /* Try JSON parse */
+        if (raw) {
+          try {
+            var match = raw.match(/\{[\s\S]*\}/);
+            parsed = JSON.parse(match ? match[0] : raw);
+          } catch (_) {
+            parsed = null;
+          }
+        }
+
+        /* Fallback if JSON failed or backend was null */
+        if (!parsed || !parsed.slides || !parsed.slides.length) {
+          parsed = buildFallback(prompt, fmt, style);
+        }
+
+        /* Hashtag enrichment */
+        var niche = CreatorAI.detectNiche(prompt);
+        var nicheHT = (CreatorAI.nicheData[niche] || {}).hashtags || [];
+        var finalTags = (parsed.hashtags && parsed.hashtags.length >= 4)
+          ? parsed.hashtags
+          : nicheHT.slice(0, 5).concat(['#ImpactGrid','#DijoAI']);
+
+        var finalCaption = parsed.caption || buildCaption(prompt, parsed.slides);
+
+        thinkEl.innerHTML = '✅ <strong>' + style.label + '</strong> carousel ready — ' + parsed.slides.length + ' slides, ' + fmt.label + ' format.';
+
+        renderCarousel(parsed.slides, style, finalCaption, finalTags);
+        updateSEO(tScore, style);
+        document.getElementById('prev-title').textContent = (parsed.topic || prompt).slice(0, 42);
+        var em = document.getElementById('empty');
+        if (em) em.remove();
       })
-    });
-    const data = await res.json();
-    const raw = data.response || data.content || data.message || '';
+      .catch(function (err) {
+        console.error('[Dijo] generate error:', err);
+        thinkEl.innerHTML = '❌ Something went wrong — check the browser console and your API connection.';
+      })
+      .finally(function () {
+        sendBtn.disabled = false;
+      });
+  }
 
-    // Parse JSON from response
-    let parsed;
-    try {
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
-    } catch(e){
-      // Fallback: construct from plain text
-      parsed = buildFallback(prompt, fmt, style, brief);
+  /* ═══════════════════════════════════════
+     FALLBACK — uses nicheData from creator-ai.js
+  ═══════════════════════════════════════ */
+  function buildFallback (prompt, fmt, style) {
+    var niche = CreatorAI.detectNiche(prompt);
+    var nd    = CreatorAI.nicheData[niche] || {};
+    var hooks = nd.hooks || ['The truth nobody told you about this.'];
+    var hook  = hooks[Math.floor(Math.random() * hooks.length)].replace(/\[X\]/g,'').trim();
+
+    var slides = fmt.types.map(function (type, i) {
+      if (type === 'hook')   return { type:type, headline:hook, sub:'Most people get this completely wrong. Here\'s the part they always skip — and why it costs them everything.' };
+      if (type === 'cta')    return { type:type, headline:'Ready to do this differently?', sub:'Follow for insight that cuts through the noise every week. No generic advice. No fluff.', ctaText:'Follow for more' };
+      if (type === 'stat')   return { type:type, headline:'The number that changes everything', stat:'73%', statLabel:'of people make this mistake without knowing it', sub:'This single stat explains why most people plateau — and exactly where to look first.' };
+      if (type === 'quote')  return { type:type, headline:'The mindset shift', quote:'The system you have is perfectly designed to give you the results you\'re getting.', sub:'If the results aren\'t there, the system needs to change — not just the effort level.' };
+      if (type === 'before') return { type:type, headline:'Where most people start', sub:'Frustrated, stuck in the same cycle. Working hard but moving sideways. Sound familiar? This is the starting point — not the permanent address.' };
+      if (type === 'after')  return { type:type, headline:'Where you could be in 90 days', sub:'A clear system. Consistent results. The kind of confidence that comes from knowing exactly what to do next. This is real and it\'s closer than you think.' };
+      if (type === 'proof')  return { type:type, headline:'The evidence is already there', sub:'The people who see results have one thing in common — they stopped doing what felt right and started doing what the data shows actually works.' };
+      return { type:type, headline:'The thing about ' + prompt.split(' ').slice(0,3).join(' '), sub:'This is the part most people skip. Sit with this for a moment — the ones who understand it early always end up ahead.' };
+    });
+
+    return {
+      topic:    prompt.slice(0, 40),
+      slides:   slides,
+      caption:  hook.slice(0, 70) + '… Save this.',
+      hashtags: (nd.hashtags || []).slice(0, 5)
+    };
+  }
+
+  function buildCaption (prompt, slides) {
+    var first = slides && slides[0];
+    return first
+      ? (first.sub || first.headline).slice(0, 80) + '… Save this.'
+      : 'Everything you need to know about ' + prompt + '.';
+  }
+
+  /* ═══════════════════════════════════════
+     RENDER
+  ═══════════════════════════════════════ */
+  function renderCarousel (slideData, style, caption, hashtags) {
+    S.slides = slideData;
+    S.idx    = 0;
+
+    var stage = document.getElementById('stage');
+    stage.innerHTML = '';
+
+    slideData.forEach(function (s, i) {
+      var wrap = document.createElement('div');
+      wrap.id = 'sw-' + i;
+      wrap.style.cssText = 'width:100%;max-width:500px;';
+      wrap.innerHTML = buildSlideHTML(s, i, slideData.length, style);
+      stage.appendChild(wrap);
+    });
+
+    var cb = document.createElement('div');
+    cb.className = 'capbox';
+    cb.innerHTML =
+      '<h4>Caption + Hashtags</h4>' +
+      '<div class="cap-text">' + caption + '</div>' +
+      '<div class="tags">' + hashtags.map(function (h) {
+        return '<span class="tag">' + (h.startsWith('#') ? h : '#' + h) + '</span>';
+      }).join('') + '</div>';
+    stage.appendChild(cb);
+
+    stage.scrollTop = 0;
+    updateNav();
+
+    /* Apply current font */
+    var fv = document.getElementById('font-sel').value;
+    document.querySelectorAll('.shead').forEach(function (el) { el.style.fontFamily = fv; });
+  }
+
+  function buildSlideHTML (s, i, total, style) {
+    var prog = '';
+    for (var pi = 0; pi < total; pi++) {
+      var w = Math.max(12, Math.floor(56 / total));
+      var cls = pi < i ? 'pstep done' : pi === i ? 'pstep now' : 'pstep';
+      prog += '<div class="' + cls + '" style="width:' + w + 'px"></div>';
     }
 
-    // Use real hashtags from brief if AI didn't return good ones
-    const hashtags = (parsed.hashtags && parsed.hashtags.length > 2)
-      ? parsed.hashtags
-      : (brief.hashtags.length ? brief.hashtags : generateFallbackTags(prompt));
+    var num = '<div class="snum">' + (i+1) + ' / ' + total + ' <span class="stag">' + s.type.toUpperCase() + '</span></div>';
 
-    const caption = parsed.caption || brief.caption || buildCaption(prompt, parsed.slides);
+    var body = '';
+    if (s.type === 'stat') {
+      body =
+        '<div class="sstat">' + (s.stat || '—') + '</div>' +
+        '<div class="sstat-lbl">' + (s.statLabel || '') + '</div>' +
+        '<div class="shead" style="font-size:1.2rem;margin-top:8px">' + s.headline + '</div>' +
+        '<div class="ssub">' + (s.sub || '') + '</div>';
+    } else if (s.type === 'quote') {
+      body =
+        '<div class="sqmark">"</div>' +
+        '<div class="squote">' + (s.quote || s.headline) + '</div>' +
+        '<div class="ssub" style="margin-top:8px;opacity:.55">' + (s.sub || '') + '</div>';
+    } else if (s.type === 'cta') {
+      body =
+        '<div class="shead">' + s.headline + '</div>' +
+        '<div class="ssub">' + (s.sub || '') + '</div>' +
+        '<div class="cta-pill">' + (s.ctaText || 'Follow for more') + '</div>';
+    } else {
+      body =
+        '<div class="shead">' + s.headline + '</div>' +
+        '<div class="ssub">' + (s.sub || '') + '</div>';
+    }
 
-    thinking.innerHTML = `✅ <strong>${style.label}</strong> carousel created — ${parsed.slides.length} slides, ${fmt.label} format. Scroll through below.`;
-
-    renderSlides(parsed.slides, style, caption, hashtags);
-    updateSEOStrip(tScore, brief.status, brief.platform, style);
-    document.getElementById('preview-title').textContent = parsed.topic || prompt.slice(0,40);
-    document.getElementById('empty-state')?.remove();
-
-  } catch(err){
-    console.error(err);
-    thinking.textContent = '❌ Something went wrong. Check your API connection and try again.';
-  }
-  document.getElementById('send-btn').disabled = false;
-}
-
-/* ══════════════════════════════════════════
-   BUILD FALLBACK SLIDES if JSON fails
-══════════════════════════════════════════ */
-function buildFallback(prompt, fmt, style, brief){
-  const topic = prompt;
-  const slides = fmt.slides.map((type, i) => ({
-    type,
-    headline: i === 0
-      ? `The truth about ${topic} nobody tells you`
-      : i === fmt.slides.length - 1
-      ? `Ready to change that?`
-      : `Slide ${i+1}: ${type.charAt(0).toUpperCase()+type.slice(1)}`,
-    sub: i === 0
-      ? `Most people think they know what it takes. They're missing the one thing that actually matters.`
-      : i === fmt.slides.length - 1
-      ? `Follow for weekly insights that cut through the noise.`
-      : `This is something worth sitting with for a moment. The people who understand this early always end up ahead.`,
-    ctaText: type === 'cta' ? 'Follow for more' : undefined
-  }));
-  return {topic, slides, caption: brief.caption || '', hashtags: brief.hashtags || []};
-}
-
-/* ══════════════════════════════════════════
-   RENDER SLIDES
-══════════════════════════════════════════ */
-function renderSlides(slideData, style, caption, hashtags){
-  slides = slideData;
-  currentSlide = 0;
-
-  const stage = document.getElementById('slide-stage');
-  stage.innerHTML = '';
-
-  // Render all slides (for scrolling through)
-  slideData.forEach((s, i) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'carousel-wrapper';
-    wrapper.id = `wrapper-${i}`;
-    wrapper.innerHTML = buildSlideHTML(s, i, slideData.length, style);
-    stage.appendChild(wrapper);
-  });
-
-  // Caption box
-  const captionBox = document.createElement('div');
-  captionBox.className = 'caption-box';
-  captionBox.innerHTML = `
-    <h4>Caption + Hashtags</h4>
-    <div class="caption-text">${caption}</div>
-    <div class="hashtag-row">${hashtags.map(h => `<span class="hashtag">${h.startsWith('#') ? h : '#'+h}</span>`).join('')}</div>
-  `;
-  stage.appendChild(captionBox);
-
-  // Update nav
-  updateNav();
-  // Scroll to top of stage
-  stage.scrollTop = 0;
-
-  // Apply current font to headlines
-  document.querySelectorAll('.slide-headline').forEach(el => el.style.fontFamily = currentFont);
-}
-
-function buildSlideHTML(s, idx, total, style){
-  const isLight = ['editorial-white','minimal-sage','luxury-cream','brutalist-yellow'].includes(style.id);
-  const storySteps = Array.from({length:total}, (_,i) =>
-    `<div class="story-step ${i < idx ? 'done' : i === idx ? 'current' : ''}"></div>`
-  ).join('');
-
-  let inner = '';
-
-  if(s.type === 'stat'){
-    inner = `
-      <div class="slide-number">${idx+1} / ${total} <span class="slide-tag">${s.type.toUpperCase()}</span></div>
-      <div class="story-steps">${storySteps}</div>
-      <div class="slide-stat">${s.stat || '—'}</div>
-      <div class="slide-stat-label">${s.statLabel || ''}</div>
-      <div class="slide-headline" style="font-size:1.2rem;margin-top:10px">${s.headline}</div>
-      <div class="slide-sub">${s.sub || ''}</div>
-    `;
-  } else if(s.type === 'quote'){
-    inner = `
-      <div class="slide-number">${idx+1} / ${total} <span class="slide-tag">QUOTE</span></div>
-      <div class="story-steps">${storySteps}</div>
-      <div class="slide-quote-mark">"</div>
-      <div class="slide-quote">${s.quote || s.headline}</div>
-      <div class="slide-sub" style="margin-top:10px;opacity:.6">— ${s.sub || ''}</div>
-    `;
-  } else if(s.type === 'cta'){
-    const btnClass = isLight ? 'slide-cta-btn dark-cta' : 'slide-cta-btn';
-    inner = `
-      <div class="slide-number">${idx+1} / ${total} <span class="slide-tag">CTA</span></div>
-      <div class="story-steps">${storySteps}</div>
-      <div class="slide-headline">${s.headline}</div>
-      <div class="slide-sub">${s.sub || ''}</div>
-      <div class="${btnClass}">${s.ctaText || 'Follow for more'}</div>
-    `;
-  } else {
-    inner = `
-      <div class="slide-number">${idx+1} / ${total} <span class="slide-tag">${s.type.toUpperCase()}</span></div>
-      <div class="story-steps">${storySteps}</div>
-      <div class="slide-headline">${s.headline}</div>
-      <div class="slide-sub">${s.sub || ''}</div>
-    `;
+    return '<div class="slide ' + style.cls + '"><div class="slide-in">' + num + '<div class="prog">' + prog + '</div>' + body + '</div></div>';
   }
 
-  return `<div class="slide ${style.cls}"><div class="slide-inner">${inner}</div></div>`;
-}
+  /* ═══════════════════════════════════════
+     NAV
+  ═══════════════════════════════════════ */
+  function goTo (idx) {
+    if (idx < 0 || idx >= S.slides.length) return;
+    S.idx = idx;
+    var wrap = document.getElementById('sw-' + idx);
+    if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    updateNav();
+  }
 
-/* ══════════════════════════════════════════
-   NAVIGATION
-══════════════════════════════════════════ */
-function updateNav(){
-  const total = slides.length;
-  document.getElementById('slide-counter').textContent = total ? `${currentSlide+1} / ${total}` : '0 / 0';
-  document.getElementById('prev-nav').disabled = currentSlide === 0;
-  document.getElementById('next-nav').disabled = currentSlide >= total - 1;
+  function updateNav () {
+    var total = S.slides.length;
+    document.getElementById('sctr').textContent = total ? (S.idx + 1) + ' / ' + total : '0 / 0';
 
-  // Dots
-  const dotRow = document.getElementById('dot-row');
-  dotRow.innerHTML = '';
-  slides.forEach((_,i) => {
-    const d = document.createElement('div');
-    d.className = 'dot' + (i === currentSlide ? ' active' : '');
-    d.onclick = () => goToSlide(i);
-    dotRow.appendChild(d);
-  });
-}
-function goToSlide(idx){
-  if(idx < 0 || idx >= slides.length) return;
-  currentSlide = idx;
-  const wrapper = document.getElementById(`wrapper-${idx}`);
-  if(wrapper) wrapper.scrollIntoView({behavior:'smooth', block:'nearest'});
-  updateNav();
-}
-function prevSlide(){ goToSlide(currentSlide - 1) }
-function nextSlide(){ goToSlide(currentSlide + 1) }
+    var pd = S.idx === 0;
+    var nd = S.idx >= total - 1;
+    document.getElementById('prev-btn').disabled = pd;
+    document.getElementById('next-btn').disabled = nd;
+    document.getElementById('pn').disabled = pd;
+    document.getElementById('nn').disabled = nd;
 
-// Keyboard nav
-document.addEventListener('keydown', e => {
-  if(e.target.tagName === 'TEXTAREA') return;
-  if(e.key === 'ArrowRight') nextSlide();
-  if(e.key === 'ArrowLeft') prevSlide();
-});
+    var dots = document.getElementById('dots');
+    dots.innerHTML = '';
+    S.slides.forEach(function (_, i) {
+      var d = document.createElement('div');
+      d.className = 'dot' + (i === S.idx ? ' on' : '');
+      (function(idx){ d.addEventListener('click', function () { goTo(idx); }); })(i);
+      dots.appendChild(d);
+    });
+  }
 
-/* ══════════════════════════════════════════
-   SEO STRIP
-══════════════════════════════════════════ */
-function updateSEOStrip(score, status, platform, style){
-  const strip = document.getElementById('seo-strip');
-  if(!score && !status) return;
-  const scoreColor = !score ? '#888' : score >= 85 ? '#00E5B0' : score >= 65 ? '#FFB347' : '#FF6B6B';
-  strip.innerHTML = `
-    <div class="seo-badge"><div class="seo-dot" style="background:${scoreColor}"></div>Trend Score: ${score ? Math.round(score) : 'N/A'}</div>
-    <div class="seo-badge"><div class="seo-dot" style="background:#6C63FF"></div>${status || 'Trending'}</div>
-    <div class="seo-badge"><div class="seo-dot" style="background:#FF6B6B"></div>${platform || 'All platforms'}</div>
-    <div class="seo-badge"><div class="seo-dot" style="background:#FFE500"></div>Style: ${style.label}</div>
-  `;
-  strip.classList.add('visible');
-}
+  /* ═══════════════════════════════════════
+     SEO STRIP
+  ═══════════════════════════════════════ */
+  function updateSEO (score, style) {
+    var el  = document.getElementById('seo');
+    var col = !score ? '#888' : score >= 85 ? '#00E5B0' : score >= 65 ? '#FFB347' : '#FF6B6B';
+    el.innerHTML =
+      '<div class="sbadge"><div class="sdot" style="background:' + col + '"></div>Trend ' + (score ? Math.round(score) : 'N/A') + '</div>' +
+      '<div class="sbadge"><div class="sdot" style="background:var(--brand)"></div>Style: ' + style.label + '</div>' +
+      '<div class="sbadge"><div class="sdot" style="background:var(--accent)"></div>All platforms</div>';
+    el.classList.add('on');
+  }
 
-/* ══════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════ */
-function addMsg(text, role){
-  const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.innerHTML = text;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-  return div;
-}
-function handleKey(e){
-  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); generate(); }
-}
-function autoResize(el){
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
-}
-function buildCaption(topic, slideList){
-  if(!slideList || !slideList.length) return '';
-  return slideList[0]?.sub || `Everything you need to know about ${topic}.`;
-}
-function generateFallbackTags(topic){
-  const words = topic.split(' ').filter(w => w.length > 3);
-  const base = ['#ContentMarketing','#CarouselPost','#SocialMediaTips','#ImpactGrid'];
-  return [...words.slice(0,3).map(w => '#' + w.charAt(0).toUpperCase() + w.slice(1)), ...base].slice(0,7);
-}
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-function downloadSlides(){
-  if(!slides.length){ showToast('Generate a carousel first.'); return; }
-  showToast('Export coming soon — screenshot or use your platform's native save.');
-}
+  /* ═══════════════════════════════════════
+     HELPERS
+  ═══════════════════════════════════════ */
+  function appendMsg (html, role) {
+    var msgs = document.getElementById('msgs');
+    var d = document.createElement('div');
+    d.className = 'msg ' + role;
+    d.innerHTML = html;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+    return d;
+  }
 
-/* ══════════════════════════════════════════
-   INIT
-══════════════════════════════════════════ */
-loadTrends();
+  function toast (msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function () { t.classList.remove('show'); }, 2800);
+  }
+
+  /* INIT */
+  loadTrends();
+
+}); /* end DOMContentLoaded */
 </script>
 </body>
 </html>
