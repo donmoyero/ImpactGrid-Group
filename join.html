@@ -373,9 +373,15 @@
 
 </div>
 
-<script src="supabase-config.js"></script>
+<!--
+  FIX 1: Load ig-supabase.js (the AUTH client that exposes getSupabase())
+          instead of supabase-config.js (content-only client, no getSupabase()).
+-->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="ig-supabase.js"></script>
 <script src="impactgrid-chat-bubble.js"></script>
 <script>
+
 /* ── Theme — light default ── */
 var isDark = false;
 function applyTheme(dark) {
@@ -390,10 +396,6 @@ function toggleTheme() { applyTheme(!isDark); }
   try { if (localStorage.getItem('ig_theme') === 'dark') applyTheme(true); } catch(e) {}
 })();
 
-/* ── Pre-select type from URL param ── */
-var urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('type') === 'employer') selectType('employer');
-
 /* ── Type switcher ── */
 var currentType = 'professional';
 function selectType(type) {
@@ -405,6 +407,15 @@ function selectType(type) {
   var al = document.getElementById('alertBox');
   al.className = 'alert'; al.textContent = '';
 }
+
+/*
+  FIX 2: URL param check moved to AFTER selectType() is defined,
+          so it no longer throws a ReferenceError that kills the whole script.
+*/
+(function() {
+  var urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('type') === 'employer') selectType('employer');
+})();
 
 /* ── Alert helper ── */
 function showAlert(msg, type) {
@@ -427,18 +438,20 @@ function validateBase(email, password, requiredFields) {
 /* ── Join Professional ── */
 async function joinProfessional() {
   var btn = document.getElementById('pro-submit');
-  var email    = document.getElementById('pro-email').value.trim();
-  var password = document.getElementById('pro-password').value;
-  var fname    = document.getElementById('pro-fname').value.trim();
-  var lname    = document.getElementById('pro-lname').value.trim();
-  var skills   = document.getElementById('pro-skills').value.trim();
-  var location = document.getElementById('pro-location').value.trim();
+  var email      = document.getElementById('pro-email').value.trim();
+  var password   = document.getElementById('pro-password').value;
+  var fname      = document.getElementById('pro-fname').value.trim();
+  var lname      = document.getElementById('pro-lname').value.trim();
+  var skills     = document.getElementById('pro-skills').value.trim();
+  var location   = document.getElementById('pro-location').value.trim();
   var experience = document.getElementById('pro-experience').value;
   var portfolio  = document.getElementById('pro-portfolio').value.trim();
+
   if (!validateBase(email, password, [email, password, fname, lname])) return;
+
   btn.disabled = true; btn.textContent = 'Creating account…';
   try {
-    var client = getSupabase();
+    var client = getSupabase(); /* ig-supabase.js — auth project */
     var res = await client.auth.signUp({
       email: email, password: password,
       options: { data: {
@@ -480,10 +493,12 @@ async function joinEmployer() {
   var company  = document.getElementById('emp-company').value.trim();
   var industry = document.getElementById('emp-industry').value;
   var size     = document.getElementById('emp-size').value;
+
   if (!validateBase(email, password, [email, password, name, company])) return;
+
   btn.disabled = true; btn.textContent = 'Creating account…';
   try {
-    var client = getSupabase();
+    var client = getSupabase(); /* ig-supabase.js — auth project */
     var res = await client.auth.signUp({
       email: email, password: password,
       options: { data: {
