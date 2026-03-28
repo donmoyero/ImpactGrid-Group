@@ -1,16 +1,17 @@
 /* ================================================================
    creator-ai.js — Dijo Content Creation Intelligence Engine
-   ImpactGrid Creator Intelligence · v4.0
+   ImpactGrid Creator Intelligence · v5.0
    ================================================================
-   Dijo is a specialist content creation AI. She knows:
-   — Platform algorithms & optimal posting windows
-   — Hook psychology & caption architecture
-   — Niche-specific audience behaviour
-   — Brand deal strategy & media kit positioning
-   — Content repurposing & compound content systems
+   v5.0 adds:
+   — generateCarousel() — calls Render/Groq backend directly
+   — Carousel-specific prompt building
+   — Backend URL constant
    ================================================================ */
 
 const CreatorAI = (function () {
+
+  /* ── BACKEND ─────────────────────────────────────────────────── */
+  const BACKEND_URL = 'https://impactgrid-dijo.onrender.com';
 
   /* ── NICHE DATA ENGINE ──────────────────────────────────────── */
   const nicheData = {
@@ -322,7 +323,7 @@ const CreatorAI = (function () {
       secondarySignal: 'Shares within professional networks',
       optimalLength: 'Text posts: 150–300 words · Video: 1–3 minutes',
       firstHook: 'First line must stand alone — only 2 lines show before "see more"',
-      distribution: 'Network-first. Connections' engagement pushes to 2nd-degree network',
+      distribution: 'Network-first. Connections\' engagement pushes to 2nd-degree network',
       growthTip: 'Comment on 3 creator posts in your niche before posting. Boosts distribution on your own post.',
       avoidList: ['Excessive hashtags (max 3)', 'Promotional tone', 'Cross-posting identical content from other platforms'],
     },
@@ -366,19 +367,19 @@ const CreatorAI = (function () {
 
   /* ── MONETISATION INTELLIGENCE ──────────────────────────────── */
   const monetisationPaths = {
-    earlyStage: { // Under 10K followers
+    earlyStage: {
       primary: 'UGC (User Generated Content) — brands pay for content creation rights, not posting reach',
       secondary: 'Affiliate marketing — start before you have an audience. Seed the links now.',
       rates: 'UGC rates: £150–600 per video. Platform following is irrelevant at this stage.',
       advice: 'Don\'t wait for a large audience. Pitch UGC deals from day 1. You\'re selling content creation skills, not reach.',
     },
-    growingStage: { // 10K–100K
+    growingStage: {
       primary: 'Sponsored integrations — you now have a monetisable audience',
       secondary: 'Digital products — templates, guides, presets, mini-courses',
       rates: 'Sponsored video: £800–4,000 depending on niche and engagement. Engagement rate > follower count.',
       advice: 'Your engagement rate is your negotiating power. A 12% engaged 20K audience outperforms a 1% 200K.',
     },
-    establishedStage: { // 100K+
+    establishedStage: {
       primary: 'Long-term brand partnerships and category exclusivity deals',
       secondary: 'Owned products, community, or paid membership',
       rates: 'Long-term partnerships: £2,000–15,000/month retainer. Category exclusivity commands 30–50% premium.',
@@ -386,56 +387,46 @@ const CreatorAI = (function () {
     },
   };
 
-  /* ── CLAUDE API CHAT (Content-Specialist Mode) ──────────────── */
-  async function askDijoAI(userMessage, conversationHistory) {
-    const systemPrompt = `You are Dijo — ImpactGrid's specialist content creation AI adviser. You are not a general assistant. You are a sharp, direct, experienced content strategist who has worked with creators across fitness, finance, business, AI, lifestyle, and photography niches.
-
-Your personality:
-— Direct and honest. You don't sugarcoat. If someone's idea is weak, you say so — then fix it.
-— Deeply knowledgeable. You know TikTok's algorithm, Instagram's Explore logic, YouTube's CTR mechanics, brand deal rates, hook psychology, and content repurposing strategy.
-— Results-focused. Every answer should move the creator closer to growth, monetisation, or a better piece of content.
-— Specific, not vague. You never say "post consistently" without explaining exactly what consistency looks like, at what time, in what format, and why.
-— You know the ImpactGrid Creator Studio — templates for Pitch Decks, Content Plans, Brand Proposals, and Media Kits. Refer creators there when relevant.
-
-What you know deeply:
-1. Platform algorithms: TikTok (watch time → shares → comments), Instagram (saves + shares → Explore), YouTube (CTR × watch time → suggested), LinkedIn (dwell time → 2nd degree reach)
-2. Hook architecture: The first 1.5 seconds on TikTok/Reels must create a pattern interrupt or open a curiosity loop. Hooks are questions, contrarian statements, or specific numbers.
-3. Content formats by niche: Health = transformation B-roll. Finance = talking head + text overlay. Business = educational carousel or long-form. AI/Tech = screen recording. Creator = behind-the-scenes.
-4. Monetisation stages: Under 10K → UGC deals (not sponsored posts). 10K–100K → sponsored integrations + digital products. 100K+ → retainers + owned products.
-5. Brand deals: Engagement rate matters more than follower count. Benchmark: £50–150 per 1K engaged followers per video. Never discount without justification.
-6. Content systems: The Hero-Hub-Help framework, PAS (Problem-Agitate-Solve), AIDA, and Document-Don't-Create methodology.
-7. Repurposing: One piece of content should live in at least 3 formats and 2 platforms.
-
-Rules:
-— Never be vague. If you say "post at peak times," you must name the exact time and day for their niche.
-— Always ask for niche if it's not clear — the advice changes completely.
-— If someone asks about financial advice, analytics, or investment, redirect them to the ImpactGrid Analytics platform.
-— Keep responses conversational and under 200 words in chat. Use bold for key terms. Be punchy.
-— You speak like a real content strategist, not a corporate assistant. No fluff.`;
-
-    const messages = [
-      ...(conversationHistory || []),
-      { role: 'user', content: userMessage }
-    ];
-
+  /* ══════════════════════════════════════════════════════════════
+     CAROUSEL AI — calls Render/Groq backend
+     Primary function for the carousel builder in ai.html
+  ══════════════════════════════════════════════════════════════ */
+  async function generateCarousel(prompt, platform, tone, slideCount) {
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch(BACKEND_URL + '/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: messages,
-        }),
+          message: prompt,
+          mode: 'carousel'
+        })
       });
-
-      if (!response.ok) throw new Error('API error: ' + response.status);
+      if (!response.ok) throw new Error('Backend returned ' + response.status);
       const data = await response.json();
-      return data.content?.[0]?.text || 'I couldn\'t generate a response. Try again in a moment.';
+      return data.reply || '';
+    } catch (err) {
+      console.error('[CreatorAI] generateCarousel error:', err);
+      return null;
+    }
+  }
+
+  /* ── LEGACY CHAT — now rerouted to Render backend ───────────── */
+  async function askDijoAI(userMessage, conversationHistory) {
+    try {
+      const response = await fetch(BACKEND_URL + '/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          mode: 'creator'
+        })
+      });
+      if (!response.ok) throw new Error('Backend error ' + response.status);
+      const data = await response.json();
+      return data.reply || null;
     } catch (err) {
       console.error('[Dijo AI]', err);
-      return null; // Let caller fall back to offline logic
+      return null;
     }
   }
 
@@ -443,67 +434,44 @@ Rules:
   function offlineReply(message) {
     const m = message.toLowerCase();
 
-    // Hook help
     if (m.match(/hook|opening|first line|intro|start my/)) {
       return 'A strong hook does one of three things: <strong>states a specific contrarian fact</strong>, <strong>opens a curiosity loop</strong>, or <strong>names a painful problem instantly</strong>.<br><br>The golden rule: your first 1.5 seconds must make someone stop, or nothing else matters. Tell me your niche and I\'ll write you 5 hooks right now.';
     }
-
-    // Hashtag questions
     if (m.match(/hashtag|#|tags/)) {
       return 'Hashtags are platform-specific. On <strong>TikTok</strong>, 3–5 niche-specific tags — avoid generic ones like #fyp (too competitive). On <strong>Instagram</strong>, 5–10 medium-volume tags (50K–500K posts). On <strong>YouTube</strong>, hashtags barely matter — optimise your title and description instead.<br><br>What platform and niche are you on? I\'ll give you the exact list.';
     }
-
-    // Posting frequency
     if (m.match(/how often|post|frequency|schedule|times? (?:a |per )?week/)) {
       return 'The rule: <strong>consistency beats frequency every time</strong>. A creator posting 3× a week for 6 months outperforms someone who posts daily for 3 weeks then burns out.<br><br>Minimum viable cadence by platform:<br>— TikTok: 3–5×/week<br>— Instagram Reels: 3–4×/week<br>— YouTube: 1–2×/week<br>— LinkedIn: 3×/week';
     }
-
-    // Algorithm questions
     if (m.match(/algorithm|reach|views|viral|fyp|explore/)) {
       return 'Every platform has a different primary signal. <strong>TikTok</strong> cares most about watch time and completion rate — shares second. <strong>Instagram Reels</strong>: saves and shares push you to Explore. <strong>YouTube</strong>: it\'s CTR × watch time — a bad thumbnail kills everything else.<br><br>Which platform are you struggling with? I\'ll give you the exact fix.';
     }
-
-    // Brand deals / rates
     if (m.match(/brand deal|sponsor|rate|charge|how much|partnership|collab/)) {
       return 'Your rate should be based on <strong>engagement, not just follower count</strong>. Rough benchmark: £50–150 per 1,000 engaged followers per video integration.<br><br>Stages:<br>— Under 10K: pitch <strong>UGC deals</strong> (content rights, not posts). £150–600/video.<br>— 10K–100K: sponsored integrations. £800–4,000/video.<br>— 100K+: retainer deals. £2K–15K/month.<br><br>Never discount without justification. Engagement rate is your leverage.';
     }
-
-    // Media kit
     if (m.match(/media kit|press kit/)) {
-      return 'A media kit needs exactly 6 things: <strong>your niche in one sentence</strong>, audience size + engagement rate, top content format, peak performance stats, partnership packages with rates, and contact details. One page. PDF or clean HTML.<br><br>Use the <strong>Creator Media Kit template</strong> in the panel on the left — brief Dijo your details and it builds it for you.';
+      return 'A media kit needs exactly 6 things: <strong>your niche in one sentence</strong>, audience size + engagement rate, top content format, peak performance stats, partnership packages with rates, and contact details. One page. PDF or clean HTML.';
     }
-
-    // Caption advice
     if (m.match(/caption|copy|writing/)) {
-      return 'Captions that work have a clear structure: <strong>hook line</strong> (first 2 words must earn the "see more" tap) → <strong>core value</strong> (what are they actually getting?) → <strong>CTA</strong> (be direct — "save this," "comment X," or "follow for more of this").<br><br>The biggest mistake: writing captions about yourself instead of for your audience. "I did X" → "Here\'s how you can do X."';
+      return 'Captions that work have a clear structure: <strong>hook line</strong> (first 2 words must earn the "see more" tap) → <strong>core value</strong> → <strong>CTA</strong> (be direct — "save this," "comment X," or "follow for more of this").<br><br>The biggest mistake: writing captions about yourself instead of for your audience.';
     }
-
-    // Content pillars
     if (m.match(/pillar|content plan|strategy|what to post/)) {
       return 'Every channel needs 3–5 content pillars — topics you own and return to. A good mix: <strong>1 education pillar</strong> (authority), <strong>1 story pillar</strong> (trust), <strong>1 opinion pillar</strong> (engagement), <strong>1 format pillar</strong> (your signature style).<br><br>Tell me your niche and I\'ll map your exact pillars with hook examples for each.';
     }
-
-    // Repurposing
     if (m.match(/repurpos|cross.?post|reuse|recycle/)) {
-      return 'One idea should live in at least 3 formats across 2 platforms. The system: <strong>long-form anchor</strong> (YouTube/podcast) → <strong>clip extraction</strong> (TikTok/Reels) → <strong>text adaptation</strong> (LinkedIn/Twitter) → <strong>visual summary</strong> (carousel/infographic) → <strong>email version</strong>.<br><br>Don\'t create more — extract more from what you\'ve already made.';
+      return 'One idea should live in at least 3 formats across 2 platforms. The system: <strong>long-form anchor</strong> → <strong>clip extraction</strong> → <strong>text adaptation</strong> → <strong>visual summary</strong> → <strong>email version</strong>.<br><br>Don\'t create more — extract more from what you\'ve already made.';
     }
-
-    // Growth questions
     if (m.match(/grow|follower|subscriber|audience|not growing/)) {
-      return 'Growth stalls for 3 reasons: <strong>weak hooks</strong> (people leave in the first 2 seconds), <strong>no clear niche</strong> (the algorithm can\'t categorise you), or <strong>no CTA system</strong> (people watch but don\'t follow).<br><br>Run this audit: check your average watch time. If it\'s under 30% of your video length, it\'s a hook problem. If watch time is fine but follows are low, it\'s a CTA problem. Tell me your numbers and I\'ll diagnose it.';
+      return 'Growth stalls for 3 reasons: <strong>weak hooks</strong>, <strong>no clear niche</strong>, or <strong>no CTA system</strong>.<br><br>Run this audit: check your average watch time. If it\'s under 30% of your video length, it\'s a hook problem. If watch time is fine but follows are low, it\'s a CTA problem. Tell me your numbers and I\'ll diagnose it.';
     }
-
-    // Monetisation
     if (m.match(/monetis|monetiz|income|earn|make money/)) {
-      return 'Monetisation isn\'t about follower count — it\'s about <strong>audience intent and trust</strong>. You can earn from content at 1,000 followers if you\'re solving a specific problem for a specific person.<br><br>Start with UGC (content creation for brands — no posting required), then affiliate links in your niche, then sponsored integrations as your audience grows.<br><br>What stage are you at? I\'ll give you the exact monetisation path for where you are now.';
+      return 'Monetisation isn\'t about follower count — it\'s about <strong>audience intent and trust</strong>. You can earn from content at 1,000 followers if you\'re solving a specific problem for a specific person.<br><br>Start with UGC, then affiliate links, then sponsored integrations as your audience grows.<br><br>What stage are you at? I\'ll give you the exact monetisation path.';
     }
-
-    // Greeting
     if (m.match(/^(hi|hello|hey|morning|afternoon|evening|what'?s up|sup)\b/)) {
-      return 'Hey — I\'m Dijo, your content creation adviser. I know platforms, hooks, brand deals, content strategy, and what actually drives growth.<br><br>Tell me: what\'s your niche, what platform are you on, and what\'s the one thing you\'re trying to fix right now?';
+      return 'Hey — I\'m Dijo. Tell me your niche, platform, and what you want to make — I\'ll generate your carousel instantly.';
     }
 
-    return null; // Signal to caller: no offline match, use AI
+    return null;
   }
 
   /* ── PUBLIC API ─────────────────────────────────────────────── */
@@ -512,10 +480,10 @@ Rules:
     platformAlgorithms,
     strategyFrameworks,
     monetisationPaths,
+    generateCarousel,
     askDijoAI,
     offlineReply,
 
-    /* Utility: detect niche from free text */
     detectNiche(text) {
       const t = text.toLowerCase();
       if (t.match(/fitness|gym|workout|health|wellness|supplement|nutrition|body|weight/)) return 'health';
@@ -525,20 +493,18 @@ Rules:
       if (t.match(/productiv|notion|habit|routine|focus|deep work|system|time management/)) return 'productivity';
       if (t.match(/photo|camera|edit|lightroom|shoot|portrait|brand photo|visual/)) return 'photography';
       if (t.match(/lifestyle|travel|vlog|personal brand|day in my life|authentic/)) return 'lifestyle';
-      return 'creator'; // default
+      return 'creator';
     },
 
-    /* Utility: detect platform from text */
     detectPlatform(text) {
       const t = text.toLowerCase();
       if (t.match(/youtube|yt|shorts/)) return 'YouTube';
       if (t.match(/instagram|ig|reels/)) return 'Instagram';
       if (t.match(/linkedin/)) return 'LinkedIn';
       if (t.match(/twitter|x\.com|tweets?/)) return 'Twitter/X';
-      return 'TikTok'; // default
+      return 'TikTok';
     },
 
-    /* Utility: parse follower count from text */
     parseFollowers(text) {
       const m = text.match(/(\d+(?:\.\d+)?)\s*([km]?)\s*(followers?|subscribers?|audience|community|subs)/i);
       if (!m) return null;
@@ -548,7 +514,6 @@ Rules:
       return n;
     },
 
-    /* Utility: follower count stage */
     getMonetisationStage(followers) {
       if (!followers || followers < 10000) return monetisationPaths.earlyStage;
       if (followers < 100000) return monetisationPaths.growingStage;
@@ -558,5 +523,4 @@ Rules:
 
 })();
 
-/* Make globally accessible */
 window.CreatorAI = CreatorAI;
