@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-/* ══ TOKENS — matches shared.css exactly, light default ══ */
+/* ══ TOKENS ══ */
 :root {
   --bg:#f2f4fb; --bg2:#e6eaf5; --bg3:#d9dff0;
   --card:#ffffff; --card2:#f4f6fc;
@@ -136,6 +136,8 @@ img{display:block;max-width:100%;}
 .btn-red:hover{background:var(--red);color:#fff;}
 .btn-ghost{background:none;border:1px solid var(--border2);color:var(--text2);}
 .btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(45,110,219,.2);}
+.btn-blue:hover{background:var(--blue);color:#fff;}
 .btn-sm{padding:5px 10px;font-size:11px;}
 .btn-icon{width:30px;height:30px;padding:0;justify-content:center;font-size:14px;}
 
@@ -270,6 +272,14 @@ tr:hover td{background:var(--bg2);}
 .toast-icon{font-size:18px;flex-shrink:0;}
 .toast-msg{font-size:13px;font-weight:600;}
 .toast-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* ══ PROFILE PREVIEW CARD ══ */
+.profile-preview{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:10px;}
+.profile-preview-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.profile-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:900;color:#fff;flex-shrink:0;}
+[data-theme="dark"] .profile-avatar{color:#07090f;}
+.profile-name{font-size:14px;font-weight:700;margin-bottom:2px;}
+.profile-meta{font-size:11px;color:var(--text3);}
 
 /* ══ MOBILE ══ */
 .mobile-menu-btn{display:none;width:36px;height:36px;border-radius:8px;background:var(--card);border:1px solid var(--border2);align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all .2s;}
@@ -675,16 +685,104 @@ tr:hover td{background:var(--bg2);}
       </div>
     </div>
 
-    <!-- NETWORK PAGES -->
-    <div class="page" id="page-pending"><div class="card"><div class="card-head"><h2>⏳ Pending Approval</h2><button class="btn btn-ghost btn-sm" onclick="loadPending()">↻</button></div><div class="card-body table-wrap" id="pendingList"><div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div></div></div></div>
-    <div class="page" id="page-applications"><div class="card"><div class="card-head"><h2>📥 Applications</h2><button class="btn btn-ghost btn-sm" onclick="loadApplications()">↻</button></div><div class="card-body table-wrap" id="applicationsList"><div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">Loading…</div></div></div></div></div>
-    <div class="page" id="page-professionals"><div class="card"><div class="card-head"><h2>👤 Professionals</h2><button class="btn btn-ghost btn-sm" onclick="loadProfessionals()">↻</button></div><div class="card-body table-wrap" id="prosList"><div class="empty"><div class="empty-txt">Loading…</div></div></div></div></div>
-    <div class="page" id="page-employers"><div class="card"><div class="card-head"><h2>🏢 Employers</h2><button class="btn btn-ghost btn-sm" onclick="loadEmployers()">↻</button></div><div class="card-body table-wrap" id="empsList"><div class="empty"><div class="empty-txt">Loading…</div></div></div></div></div>
-    <div class="page" id="page-jobs"><div class="card"><div class="card-head"><h2>📋 Jobs</h2><button class="btn btn-ghost btn-sm" onclick="loadJobs()">↻</button></div><div class="card-body table-wrap" id="jobsList"><div class="empty"><div class="empty-txt">Loading…</div></div></div></div></div>
+    <!-- ═══ NETWORK PAGES ═══ -->
 
-    <div class="page" id="page-postjob">
+    <!-- PENDING -->
+    <div class="page" id="page-pending">
+      <div class="page-header">
+        <div class="page-title">⏳ Pending Approvals</div>
+        <div class="page-sub">Professionals waiting for account approval. Approving sends them a welcome email.</div>
+      </div>
       <div class="card">
-        <div class="card-head"><h2>➕ Post a Job</h2></div>
+        <div class="card-head">
+          <h2>⏳ Pending Applications</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadPending()">↻ Refresh</button>
+        </div>
+        <div class="card-body table-wrap" id="pendingList">
+          <div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPLICATIONS -->
+    <div class="page" id="page-applications">
+      <div class="page-header">
+        <div class="page-title">📥 Applications</div>
+        <div class="page-sub">Job applications submitted by professionals.</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>📥 All Applications</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadApplications()">↻ Refresh</button>
+        </div>
+        <div class="card-body table-wrap" id="applicationsList">
+          <div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFESSIONALS -->
+    <div class="page" id="page-professionals">
+      <div class="page-header">
+        <div class="page-title">👤 Professionals</div>
+        <div class="page-sub">All professionals on the ImpactGrid network.</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>👤 All Professionals</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadProfessionals()">↻ Refresh</button>
+        </div>
+        <div class="card-body table-wrap" id="prosList">
+          <div class="empty"><div class="empty-txt">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYERS -->
+    <div class="page" id="page-employers">
+      <div class="page-header">
+        <div class="page-title">🏢 Employers</div>
+        <div class="page-sub">All employers registered on the network.</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>🏢 All Employers</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadEmployers()">↻ Refresh</button>
+        </div>
+        <div class="card-body table-wrap" id="empsList">
+          <div class="empty"><div class="empty-txt">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOBS -->
+    <div class="page" id="page-jobs">
+      <div class="page-header">
+        <div class="page-title">📋 Jobs</div>
+        <div class="page-sub">All job listings on the ImpactGrid network.</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>📋 All Jobs</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="loadJobs()">↻ Refresh</button>
+            <button class="btn btn-gold btn-sm" onclick="nav('postjob',null)">➕ Post a Job</button>
+          </div>
+        </div>
+        <div class="card-body table-wrap" id="jobsList">
+          <div class="empty"><div class="empty-txt">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POST A JOB -->
+    <div class="page" id="page-postjob">
+      <div class="page-header">
+        <div class="page-title">➕ Post a Job</div>
+        <div class="page-sub">Add a new listing to the public job board.</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>➕ New Job Listing</h2></div>
         <div class="card-body">
           <div id="jobAlert" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
           <div class="form-grid" style="margin-bottom:12px;">
@@ -703,7 +801,10 @@ tr:hover td{background:var(--bg2);}
           <button class="btn btn-gold" onclick="postJob()">Post Job →</button>
         </div>
       </div>
-      <div class="card"><div class="card-head"><h2>✏️ Existing Jobs</h2><button class="btn btn-ghost btn-sm" onclick="loadEditJobs()">↻</button></div><div class="card-body" id="editJobsList"><div class="empty"><div class="empty-txt">Loading…</div></div></div></div>
+      <div class="card">
+        <div class="card-head"><h2>✏️ Existing Jobs</h2><button class="btn btn-ghost btn-sm" onclick="loadEditJobs()">↻ Refresh</button></div>
+        <div class="card-body" id="editJobsList"><div class="empty"><div class="empty-txt">Loading…</div></div></div>
+      </div>
     </div>
 
   </div><!-- /main -->
@@ -819,6 +920,7 @@ async function loadStats(){
     set('stat-events',(evts.data||[]).length);
     var badge = document.getElementById('pendingBadge');
     if(pc>0){ badge.textContent=pc; badge.style.display='inline-flex'; }
+    else { badge.style.display='none'; }
   }catch(e){}
 }
 
@@ -1398,7 +1500,6 @@ async function uploadPhotos(files){
       var {data:photoRow,error:dbErr}=await c.from('photos').insert({event_id:selectedEventId,preview_url:origUrlData.publicUrl,original_url:origUrlData.publicUrl}).select().single();
       if(dbErr) throw dbErr;
       setStatus('Indexing face…',80,'');
-      /* ══ FIXED: indexPhotoFaces now uses backend dedup + crop ══ */
       indexPhotoFaces(photoRow.id,origUrlData.publicUrl,selectedEventId).then(function(){
         setStatus('✅ Done',100,'var(--green)');
       }).catch(function(){
@@ -1410,14 +1511,6 @@ async function uploadPhotos(files){
   loadEventPhotos();
 }
 
-/* ══ FACE INDEXING — FIXED VERSION ══
-   Backend now handles:
-   - Server-side face crop with sharp (no CORS issue)
-   - Search-before-index dedup (same person reuses group_id)
-   - group_id returned in response
-   Frontend just saves the result to face_embeddings.
-   groupEventFaces() call removed entirely.
-══ */
 async function indexPhotoFaces(photoId,photoUrl,eventId){
   try{
     var urlWithCacheBust=photoUrl+(photoUrl.includes('?')?'&':'?')+'cb='+Date.now();
@@ -1428,15 +1521,11 @@ async function indexPhotoFaces(photoId,photoUrl,eventId){
     if(!data.faceFound||!data.face_token) return;
     var c=getSupabase();
     await c.from('face_embeddings').insert({
-      event_id     :eventId,
-      photo_id     :photoId,
-      face_index   :0,
-      face_token   :data.face_token,
-      embedding    :null,
+      event_id:eventId, photo_id:photoId, face_index:0,
+      face_token:data.face_token, embedding:null,
       face_crop_url:data.face_crop_url||null,
-      group_id     :(data.group_id!==undefined&&data.group_id!==null)?data.group_id:-1
+      group_id:(data.group_id!==undefined&&data.group_id!==null)?data.group_id:-1
     });
-    console.log('[indexPhotoFaces] Saved — photo:',photoId,'| group:',data.group_id,'| crop:',data.face_crop_url?'yes':'no');
   }catch(e){ console.warn('[indexPhotoFaces] Error:',e.message); }
 }
 
@@ -1583,154 +1672,386 @@ async function reindexEventFaces(){
   }catch(e){ toast('⚠️','Re-index failed',e.message); btn.disabled=false; btn.textContent='🔄 Re-index All'; }
 }
 
-/* ══ NETWORK MANAGEMENT ══ */
-async function loadPending(){
-  var el=document.getElementById('pendingList');
-  el.innerHTML='<div class="empty"><div class="empty-ico">⏳</div></div>';
-  try{
-    var {data}=await getSupabase().from('profiles').select('*').eq('status','pending').eq('role','professional').order('created_at',{ascending:false});
-    if(!data||!data.length){ el.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">No pending applications.</div></div>'; return; }
-    el.innerHTML='<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Applied</th><th>Actions</th></tr></thead><tbody>'+
-      data.map(function(p){
-        return'<tr><td style="font-weight:700;">'+esc(p.full_name||'—')+'</td><td>'+esc(p.email||'—')+'</td><td>'+esc((p.skills||'—').substring(0,35))+'</td><td>'+esc(p.location||'—')+'</td>'+
-          '<td style="color:var(--text3);">'+new Date(p.created_at).toLocaleDateString('en-GB')+'</td>'+
-          '<td><div class="td-actions"><button class="btn btn-green btn-sm" onclick="approveUser(\''+p.id+'\',\''+esc(p.full_name||'')+'\')">✓ Approve</button><button class="btn btn-red btn-sm" onclick="rejectUser(\''+p.id+'\')">✕ Reject</button></div></td></tr>';
-      }).join('')+'</tbody></table>';
-  }catch(e){ el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>'; }
-}
-async function approveUser(id,name){ if(!confirm('Approve '+(name||'this professional')+'?')) return; await getSupabase().from('profiles').update({status:'active'}).eq('id',id); loadPending(); loadStats(); }
-async function rejectUser(id){ if(!confirm('Reject?')) return; await getSupabase().from('profiles').update({status:'rejected'}).eq('id',id); loadPending(); loadStats(); }
+/* ══════════════════════════════════════════════════════════
+   NETWORK MANAGEMENT — uses ig-supabase.js (auth Supabase)
+   ══════════════════════════════════════════════════════════ */
 
-async function loadApplications(){
-  var el=document.getElementById('applicationsList');
-  el.innerHTML='<div class="empty"><div class="empty-ico">📥</div></div>';
-  try{
-    var c=getSupabase();
-    var {data:apps}=await c.from('applications').select('*').order('applied_at',{ascending:false});
-    if(!apps||!apps.length){ el.innerHTML='<div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">No applications yet.</div></div>'; return; }
-    var jIds=[...new Set(apps.map(function(a){ return a.job_id; }).filter(Boolean))];
-    var pIds=[...new Set(apps.map(function(a){ return a.professional_id; }).filter(Boolean))];
-    var {data:jobs}=await c.from('jobs').select('id,title,company_name').in('id',jIds);
-    var {data:pros}=await c.from('profiles').select('id,full_name,email').in('id',pIds);
-    var jm={};(jobs||[]).forEach(function(j){jm[j.id]=j;});
-    var pm={};(pros||[]).forEach(function(p){pm[p.id]=p;});
-    el.innerHTML='<table><thead><tr><th>Professional</th><th>Job</th><th>Company</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>'+
-      apps.map(function(a){
-        var job=jm[a.job_id]||{}; var pro=pm[a.professional_id]||{};
-        var pc={applied:'pill-applied',booked:'pill-booked',rejected:'pill-rejected'}[a.status]||'pill-applied';
-        return'<tr><td style="font-weight:700;">'+esc(pro.full_name||'Unknown')+'<br><span style="font-size:11px;color:var(--text3);">'+esc(pro.email||'')+'</span></td>'+
-          '<td>'+esc(job.title||'—')+'</td><td>'+esc(job.company_name||'—')+'</td>'+
-          '<td><span class="pill '+pc+'">'+(a.status||'applied')+'</span></td>'+
-          '<td style="color:var(--text3);">'+new Date(a.applied_at).toLocaleDateString('en-GB')+'</td>'+
-          '<td><div class="td-actions">'+
-            (a.status!=='booked'?'<button class="btn btn-green btn-sm" onclick="bookApp(\''+a.id+'\')">✓ Book</button>':'')+
-            (a.status!=='rejected'?'<button class="btn btn-red btn-sm" onclick="rejectApp(\''+a.id+'\')">✕</button>':'')+
-          '</div></td></tr>';
-      }).join('')+'</tbody></table>';
-  }catch(e){ el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>'; }
-}
-async function bookApp(id){ if(!confirm('Book?')) return; await getSupabase().from('applications').update({status:'booked'}).eq('id',id); loadApplications(); }
-async function rejectApp(id){ if(!confirm('Reject?')) return; await getSupabase().from('applications').update({status:'rejected'}).eq('id',id); loadApplications(); }
+/*
+  sendWelcomeNotification()
+  Saves a notification to the DB so the user sees a welcome
+  banner on their next login. Also triggers a Supabase
+  password-reset email as the delivery vehicle.
 
-async function loadProfessionals(){
-  var el=document.getElementById('prosList'); el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
-  try{
-    var {data}=await getSupabase().from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
-    if(!data||!data.length){ el.innerHTML='<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">No professionals yet.</div></div>'; return; }
-    el.innerHTML='<table><thead><tr><th>Name</th><th>Email</th><th>Skills</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
-      data.map(function(p){
-        var pc={active:'pill-active',pending:'pill-pending',rejected:'pill-rejected'}[p.status]||'pill-pending';
-        return'<tr><td style="font-weight:700;">'+esc(p.full_name||'—')+'</td><td>'+esc(p.email||'—')+'</td><td>'+esc((p.skills||'—').substring(0,35))+'</td><td>'+esc(p.location||'—')+'</td>'+
-          '<td><span class="pill '+pc+'">'+(p.status||'—')+'</span></td>'+
-          '<td><div class="td-actions">'+(p.status!=='active'?'<button class="btn btn-green btn-sm" onclick="approveUser(\''+p.id+'\',\''+esc(p.full_name||'')+'\')">✓</button>':'')+
-          '<button class="btn btn-red btn-sm" onclick="removeProfile(\''+p.id+'\')">✕</button></div></td></tr>';
-      }).join('')+'</tbody></table>';
-  }catch(e){}
+  To customise the email subject/body:
+  Supabase Dashboard → Authentication → Email Templates
+  → Reset Password → change subject & body to your welcome copy.
+*/
+async function sendWelcomeNotification(userId, email, name, role, company) {
+  var c = getSupabase();
+
+  // 1. Write in-app notification — shown as banner on next login
+  try {
+    await c.from('notifications').insert({
+      user_id: userId,
+      type: 'account_approved',
+      title: role === 'professional'
+        ? '✅ Your account has been approved!'
+        : '🚀 Your employer account is ready!',
+      body: role === 'professional'
+        ? 'Welcome to ImpactGrid! You now have free access to Analytics, the Professional Network, Dijo AI, and Creator Studio. Sign in to get started.'
+        : 'Welcome to ImpactGrid, ' + (company || name) + '! You can now post jobs, browse professionals, and manage applications from your employer dashboard.',
+      read: false,
+      created_at: new Date().toISOString()
+    });
+  } catch(e) {
+    // notifications table may not exist yet — non-critical
+    console.warn('[sendWelcomeNotification] notifications insert skipped:', e.message);
+  }
+
+  // 2. Trigger Supabase email (uses the Reset Password template as delivery)
+  //    Customise in: Auth → Email Templates → Reset Password
+  try {
+    var { error } = await c.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/login.html?welcome=1'
+    });
+    if (error) throw error;
+    return { ok: true };
+  } catch(e) {
+    console.warn('[sendWelcomeNotification] email error:', e.message);
+    return { ok: false, error: e.message };
+  }
 }
 
-async function loadEmployers(){
-  var el=document.getElementById('empsList'); el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
-  try{
-    var {data}=await getSupabase().from('profiles').select('*').eq('role','employer').order('created_at',{ascending:false});
-    if(!data||!data.length){ el.innerHTML='<div class="empty"><div class="empty-ico">🏢</div><div class="empty-txt">No employers yet.</div></div>'; return; }
-    el.innerHTML='<table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Industry</th><th>Joined</th></tr></thead><tbody>'+
-      data.map(function(p){
-        return'<tr><td style="font-weight:700;">'+esc(p.full_name||'—')+'</td><td>'+esc(p.company_name||'—')+'</td><td>'+esc(p.email||'—')+'</td><td>'+esc(p.industry||'—')+'</td>'+
-          '<td style="color:var(--text3);">'+new Date(p.created_at).toLocaleDateString('en-GB')+'</td></tr>';
-      }).join('')+'</tbody></table>';
-  }catch(e){}
+/* ── Pending ── */
+async function loadPending() {
+  var el = document.getElementById('pendingList');
+  el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
+  try {
+    var { data } = await getSupabase()
+      .from('profiles')
+      .select('*')
+      .eq('status', 'pending')
+      .eq('role', 'professional')
+      .order('created_at', { ascending: false });
+
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">No pending applications. You\'re all caught up!</div></div>';
+      return;
+    }
+
+    // Update sidebar badge
+    var badge = document.getElementById('pendingBadge');
+    if (badge) { badge.textContent = data.length; badge.style.display = 'inline-flex'; }
+
+    el.innerHTML = '<table><thead><tr>' +
+      '<th>Applicant</th><th>Email</th><th>Title &amp; Skills</th>' +
+      '<th>Location</th><th>Applied</th><th>Actions</th>' +
+      '</tr></thead><tbody>' +
+      data.map(function(p) {
+        var initials = (p.full_name || 'U').split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+        var titleSkills = [p.title, p.skills].filter(Boolean).join(' · ').substring(0, 45) || '—';
+        var linkedinBtn = p.linkedin_url
+          ? '<a class="btn btn-ghost btn-sm" href="' + esc(p.linkedin_url) + '" target="_blank" style="font-size:10px;">🔗</a>'
+          : '';
+        return '<tr>' +
+          '<td>' +
+            '<div style="display:flex;align-items:center;gap:10px;">' +
+              '<div class="profile-avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0;">' + esc(initials) + '</div>' +
+              '<div style="font-weight:700;font-size:13px;">' + esc(p.full_name || '—') + '</div>' +
+            '</div>' +
+          '</td>' +
+          '<td style="font-size:12px;color:var(--text2);">' + esc(p.email || '—') + '</td>' +
+          '<td style="font-size:12px;color:var(--text2);max-width:160px;">' + esc(titleSkills) + '</td>' +
+          '<td style="font-size:12px;">' + esc(p.location || '—') + '</td>' +
+          '<td style="color:var(--text3);font-size:11px;white-space:nowrap;">' + new Date(p.created_at).toLocaleDateString('en-GB') + '</td>' +
+          '<td>' +
+            '<div class="td-actions">' +
+              linkedinBtn +
+              '<button class="btn btn-green btn-sm" onclick="approveUser(\'' + p.id + '\',\'' + esc(p.full_name || '') + '\',\'' + esc(p.email || '') + '\',\'professional\',null)">✓ Approve</button>' +
+              '<button class="btn btn-red btn-sm" onclick="rejectUser(\'' + p.id + '\',\'' + esc(p.email || '') + '\')">✕ Reject</button>' +
+            '</div>' +
+          '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table>';
+
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+  }
 }
 
-async function loadJobs(){
-  var el=document.getElementById('jobsList'); el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
-  try{
-    var {data}=await getSupabase().from('jobs').select('*').order('created_at',{ascending:false});
-    if(!data||!data.length){ el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No jobs yet.</div></div>'; return; }
-    el.innerHTML='<table><thead><tr><th>Title</th><th>Company</th><th>Budget</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
-      data.map(function(j){
-        var pc={active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
-        return'<tr><td style="font-weight:700;">'+esc(j.title||'—')+'</td><td>'+esc(j.company_name||'—')+'</td><td style="color:var(--gold);">'+esc(j.budget||'—')+'</td><td>'+esc(j.location||'—')+'</td>'+
-          '<td><span class="pill '+pc+'">'+(j.status||'active')+'</span></td>'+
-          '<td><div class="td-actions">'+
-            (j.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="toggleJob(\''+j.id+'\',\'paused\')">⏸</button>':'<button class="btn btn-green btn-sm" onclick="toggleJob(\''+j.id+'\',\'active\')">▶</button>')+
-            '<button class="btn btn-red btn-sm" onclick="removeJob(\''+j.id+'\')">✕</button>'+
-          '</div></td></tr>';
-      }).join('')+'</tbody></table>';
-  }catch(e){}
-}
-async function toggleJob(id,s){ await getSupabase().from('jobs').update({status:s}).eq('id',id); loadJobs(); loadStats(); }
-async function removeJob(id){ if(!confirm('Remove job?')) return; await getSupabase().from('jobs').update({status:'removed'}).eq('id',id); loadJobs(); loadStats(); }
-async function removeProfile(id){ if(!confirm('Remove profile?')) return; await getSupabase().from('profiles').delete().eq('id',id); loadProfessionals(); loadStats(); }
+/* ── Approve user ── */
+async function approveUser(id, name, email, role, company) {
+  var label = name || email || 'this user';
+  if (!confirm('Approve ' + label + '?\n\nThis will activate their account and send them a welcome email.')) return;
 
-async function postJob(){
-  var title=document.getElementById('j-title').value.trim();
-  var company=document.getElementById('j-company').value.trim();
-  var desc=document.getElementById('j-desc').value.trim();
-  var alertEl=document.getElementById('jobAlert');
-  if(!title||!company||!desc){
-    alertEl.textContent='Please fill in Title, Company, and Description.';
-    alertEl.style.cssText='display:block;background:var(--red-dim);border:1px solid var(--red-glo);border-radius:8px;color:var(--red);padding:10px 14px;font-size:13px;margin-bottom:14px;';
+  toast('⏳', 'Approving…', 'Updating account & sending email', true);
+
+  try {
+    var c = getSupabase();
+
+    // Update profile status → active
+    var { error: updateErr } = await c
+      .from('profiles')
+      .update({
+        status: 'active',
+        approved_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updateErr) throw updateErr;
+
+    // Send welcome email + in-app notification
+    var result = await sendWelcomeNotification(id, email, name, role, company);
+
+    if (result.ok) {
+      toast('✅', 'Approved!', name + ' has been notified by email');
+    } else {
+      toast('✅', 'Approved!', 'Account active — email delivery skipped (' + (result.error || 'unknown') + ')');
+    }
+
+    loadPending();
+    loadStats();
+
+  } catch(e) {
+    toast('⚠️', 'Approval failed', e.message);
+  }
+}
+
+/* ── Reject user ── */
+async function rejectUser(id, email) {
+  if (!confirm('Reject this application?' + (email ? '\n\n' + email : ''))) return;
+  try {
+    await getSupabase().from('profiles').update({ status: 'rejected' }).eq('id', id);
+    toast('🗑️', 'Application rejected', email || '');
+    loadPending();
+    loadStats();
+  } catch(e) {
+    toast('⚠️', 'Error', e.message);
+  }
+}
+
+/* ── Applications ── */
+async function loadApplications() {
+  var el = document.getElementById('applicationsList');
+  el.innerHTML = '<div class="empty"><div class="empty-ico">📥</div></div>';
+  try {
+    var c = getSupabase();
+    var { data: apps } = await c.from('applications').select('*').order('applied_at', { ascending: false });
+    if (!apps || !apps.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">No applications yet.</div></div>';
+      return;
+    }
+    var jIds = [...new Set(apps.map(function(a){ return a.job_id; }).filter(Boolean))];
+    var pIds = [...new Set(apps.map(function(a){ return a.professional_id; }).filter(Boolean))];
+    var { data: jobs } = await c.from('jobs').select('id,title,company_name').in('id', jIds);
+    var { data: pros } = await c.from('profiles').select('id,full_name,email').in('id', pIds);
+    var jm = {}; (jobs||[]).forEach(function(j){ jm[j.id]=j; });
+    var pm = {}; (pros||[]).forEach(function(p){ pm[p.id]=p; });
+    el.innerHTML = '<table><thead><tr><th>Professional</th><th>Job</th><th>Company</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>' +
+      apps.map(function(a) {
+        var job = jm[a.job_id] || {}; var pro = pm[a.professional_id] || {};
+        var pc = { applied:'pill-applied', booked:'pill-booked', rejected:'pill-rejected' }[a.status] || 'pill-applied';
+        return '<tr>' +
+          '<td style="font-weight:700;">' + esc(pro.full_name || 'Unknown') + '<br><span style="font-size:11px;color:var(--text3);">' + esc(pro.email || '') + '</span></td>' +
+          '<td>' + esc(job.title || '—') + '</td>' +
+          '<td>' + esc(job.company_name || '—') + '</td>' +
+          '<td><span class="pill ' + pc + '">' + (a.status || 'applied') + '</span></td>' +
+          '<td style="color:var(--text3);">' + new Date(a.applied_at).toLocaleDateString('en-GB') + '</td>' +
+          '<td><div class="td-actions">' +
+            (a.status !== 'booked'   ? '<button class="btn btn-green btn-sm" onclick="bookApp(\'' + a.id + '\')">✓ Book</button>' : '') +
+            (a.status !== 'rejected' ? '<button class="btn btn-red btn-sm" onclick="rejectApp(\'' + a.id + '\')">✕</button>' : '') +
+          '</div></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+  }
+}
+async function bookApp(id){ if(!confirm('Book this application?')) return; await getSupabase().from('applications').update({status:'booked'}).eq('id',id); loadApplications(); }
+async function rejectApp(id){ if(!confirm('Reject this application?')) return; await getSupabase().from('applications').update({status:'rejected'}).eq('id',id); loadApplications(); }
+
+/* ── Professionals ── */
+async function loadProfessionals() {
+  var el = document.getElementById('prosList');
+  el.innerHTML = '<div class="empty"><div class="empty-txt">Loading…</div></div>';
+  try {
+    var { data } = await getSupabase().from('profiles').select('*').eq('role', 'professional').order('created_at', { ascending: false });
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">No professionals yet.</div></div>';
+      return;
+    }
+    el.innerHTML = '<table><thead><tr><th>Name</th><th>Email</th><th>Title / Skills</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+      data.map(function(p) {
+        var pc = { active:'pill-active', pending:'pill-pending', rejected:'pill-rejected' }[p.status] || 'pill-pending';
+        var titleSkills = [p.title, p.skills].filter(Boolean).join(' · ').substring(0, 40) || '—';
+        return '<tr>' +
+          '<td style="font-weight:700;">' + esc(p.full_name || '—') + '</td>' +
+          '<td style="font-size:12px;">' + esc(p.email || '—') + '</td>' +
+          '<td style="font-size:12px;color:var(--text2);">' + esc(titleSkills) + '</td>' +
+          '<td style="font-size:12px;">' + esc(p.location || '—') + '</td>' +
+          '<td><span class="pill ' + pc + '">' + (p.status || '—') + '</span></td>' +
+          '<td><div class="td-actions">' +
+            (p.status !== 'active' ? '<button class="btn btn-green btn-sm" onclick="approveUser(\'' + p.id + '\',\'' + esc(p.full_name || '') + '\',\'' + esc(p.email || '') + '\',\'professional\',null)">✓ Approve</button>' : '') +
+            (p.status === 'active' ? '<button class="btn btn-ghost btn-sm" onclick="suspendUser(\'' + p.id + '\')">⏸ Suspend</button>' : '') +
+            '<button class="btn btn-red btn-sm" onclick="removeProfile(\'' + p.id + '\')">✕ Remove</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+  }
+}
+
+/* ── Employers ── */
+async function loadEmployers() {
+  var el = document.getElementById('empsList');
+  el.innerHTML = '<div class="empty"><div class="empty-txt">Loading…</div></div>';
+  try {
+    var { data } = await getSupabase().from('profiles').select('*').eq('role', 'employer').order('created_at', { ascending: false });
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">🏢</div><div class="empty-txt">No employers yet.</div></div>';
+      return;
+    }
+    el.innerHTML = '<table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Industry</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' +
+      data.map(function(p) {
+        var pc = { active:'pill-active', pending:'pill-pending', rejected:'pill-rejected' }[p.status] || 'pill-active';
+        return '<tr>' +
+          '<td style="font-weight:700;">' + esc(p.full_name || '—') + '</td>' +
+          '<td>' + esc(p.company_name || '—') + '</td>' +
+          '<td style="font-size:12px;">' + esc(p.email || '—') + '</td>' +
+          '<td style="font-size:12px;">' + esc(p.industry || '—') + '</td>' +
+          '<td><span class="pill ' + pc + '">' + (p.status || 'active') + '</span></td>' +
+          '<td style="color:var(--text3);font-size:12px;">' + new Date(p.created_at).toLocaleDateString('en-GB') + '</td>' +
+          '<td><div class="td-actions">' +
+            '<button class="btn btn-red btn-sm" onclick="removeProfile(\'' + p.id + '\')">✕ Remove</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+  }
+}
+
+/* ── Jobs ── */
+async function loadJobs() {
+  var el = document.getElementById('jobsList');
+  el.innerHTML = '<div class="empty"><div class="empty-txt">Loading…</div></div>';
+  try {
+    var { data } = await getSupabase().from('jobs').select('*').order('created_at', { ascending: false });
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No jobs yet.</div></div>';
+      return;
+    }
+    el.innerHTML = '<table><thead><tr><th>Title</th><th>Company</th><th>Budget</th><th>Location</th><th>Skills</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+      data.map(function(j) {
+        var pc = { active:'pill-active', paused:'pill-paused', removed:'pill-rejected' }[j.status] || 'pill-active';
+        return '<tr>' +
+          '<td style="font-weight:700;">' + esc(j.title || '—') + '</td>' +
+          '<td>' + esc(j.company_name || '—') + '</td>' +
+          '<td style="color:var(--gold);font-weight:600;">' + esc(j.budget || '—') + '</td>' +
+          '<td style="font-size:12px;">' + esc(j.location || '—') + '</td>' +
+          '<td style="font-size:11px;color:var(--text2);">' + esc((j.skills || '').substring(0, 30)) + '</td>' +
+          '<td><span class="pill ' + pc + '">' + (j.status || 'active') + '</span></td>' +
+          '<td><div class="td-actions">' +
+            (j.status === 'active' ? '<button class="btn btn-ghost btn-sm" onclick="toggleJob(\'' + j.id + '\',\'paused\')">⏸</button>' : '<button class="btn btn-green btn-sm" onclick="toggleJob(\'' + j.id + '\',\'active\')">▶</button>') +
+            '<button class="btn btn-red btn-sm" onclick="removeJob(\'' + j.id + '\')">✕</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+  }
+}
+
+/* ── Profile / job actions ── */
+async function suspendUser(id){ if(!confirm('Suspend this user?')) return; await getSupabase().from('profiles').update({status:'pending'}).eq('id',id); loadProfessionals(); }
+async function removeProfile(id){ if(!confirm('Permanently remove this profile?')) return; await getSupabase().from('profiles').delete().eq('id',id); loadProfessionals(); loadEmployers(); loadStats(); }
+async function toggleJob(id, s){ await getSupabase().from('jobs').update({status:s}).eq('id',id); loadJobs(); loadStats(); }
+async function removeJob(id){ if(!confirm('Remove this job?')) return; await getSupabase().from('jobs').update({status:'removed'}).eq('id',id); loadJobs(); loadStats(); }
+
+/* ── Post a job ── */
+async function postJob() {
+  var title   = document.getElementById('j-title').value.trim();
+  var company = document.getElementById('j-company').value.trim();
+  var desc    = document.getElementById('j-desc').value.trim();
+  var alertEl = document.getElementById('jobAlert');
+
+  function showJobAlert(msg, ok) {
+    alertEl.textContent = msg;
+    alertEl.style.cssText = 'display:block;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;' +
+      (ok ? 'background:var(--green-dim);border:1px solid rgba(15,168,118,.25);color:var(--green);'
+          : 'background:var(--red-dim);border:1px solid var(--red-glo);color:var(--red);');
+  }
+
+  if (!title || !company || !desc) {
+    showJobAlert('Please fill in Title, Company, and Description.', false);
     return;
   }
-  try{
-    var c=getSupabase(); var {data:sess}=await c.auth.getSession();
-    var {error}=await c.from('jobs').insert({
-      employer_id:sess.session.user.id,company_name:company,title:title,description:desc,
-      budget:document.getElementById('j-budget').value.trim(),location:document.getElementById('j-location').value.trim(),
-      skills:document.getElementById('j-skills').value.trim(),deadline:document.getElementById('j-deadline').value.trim(),
-      status:'active',created_at:new Date().toISOString()
+  try {
+    var c = getSupabase();
+    var { data: sess } = await c.auth.getSession();
+    var { error } = await c.from('jobs').insert({
+      employer_id:  sess.session.user.id,
+      company_name: company,
+      title:        title,
+      description:  desc,
+      budget:       document.getElementById('j-budget').value.trim(),
+      location:     document.getElementById('j-location').value.trim(),
+      skills:       document.getElementById('j-skills').value.trim(),
+      deadline:     document.getElementById('j-deadline').value.trim(),
+      status:       'active',
+      created_at:   new Date().toISOString()
     });
-    if(error) throw error;
-    alertEl.textContent='✅ Job posted successfully!';
-    alertEl.style.cssText='display:block;background:var(--green-dim);border:1px solid rgba(15,168,118,.25);border-radius:8px;color:var(--green);padding:10px 14px;font-size:13px;margin-bottom:14px;';
-    ['j-title','j-company','j-desc','j-budget','j-location','j-skills','j-deadline'].forEach(function(id){ document.getElementById(id).value=''; });
-    loadStats(); loadEditJobs();
-    setTimeout(function(){ alertEl.style.display='none'; },4000);
-  }catch(e){
-    alertEl.textContent='Error: '+e.message;
-    alertEl.style.cssText='display:block;background:var(--red-dim);border:1px solid var(--red-glo);border-radius:8px;color:var(--red);padding:10px 14px;font-size:13px;margin-bottom:14px;';
+    if (error) throw error;
+    showJobAlert('✅ Job posted successfully!', true);
+    ['j-title','j-company','j-desc','j-budget','j-location','j-skills','j-deadline'].forEach(function(id){
+      document.getElementById(id).value = '';
+    });
+    loadStats();
+    loadEditJobs();
+    setTimeout(function(){ alertEl.style.display = 'none'; }, 4000);
+  } catch(e) {
+    showJobAlert('Error: ' + e.message, false);
   }
 }
 
-async function loadEditJobs(){
-  var el=document.getElementById('editJobsList'); if(!el) return;
-  el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
-  try{
-    var {data}=await getSupabase().from('jobs').select('*').order('created_at',{ascending:false});
-    if(!data||!data.length){ el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No jobs yet.</div></div>'; return; }
-    el.innerHTML=data.map(function(j){
-      var pc={active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
-      return'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">'+
-        '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;margin-bottom:3px;">'+esc(j.title||'—')+'</div>'+
-        '<div style="font-size:12px;color:var(--text2);">🏢 '+esc(j.company_name||'—')+(j.location?' · 📍 '+esc(j.location):'')+(j.budget?' · <span style="color:var(--gold);">'+esc(j.budget)+'</span>':'')+'</div></div>'+
-        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="pill '+pc+'">'+(j.status||'active')+'</span>'+
-        (j.status==='active'?'<button class="btn btn-ghost btn-icon btn-sm" onclick="toggleJob(\''+j.id+'\',\'paused\')">⏸</button>':'<button class="btn btn-green btn-icon btn-sm" onclick="toggleJob(\''+j.id+'\',\'active\')">▶</button>')+
-        '<button class="btn btn-red btn-icon btn-sm" onclick="removeJob(\''+j.id+'\')">✕</button></div></div>';
+async function loadEditJobs() {
+  var el = document.getElementById('editJobsList'); if (!el) return;
+  el.innerHTML = '<div class="empty"><div class="empty-txt">Loading…</div></div>';
+  try {
+    var { data } = await getSupabase().from('jobs').select('*').order('created_at', { ascending: false });
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No jobs yet.</div></div>';
+      return;
+    }
+    el.innerHTML = data.map(function(j) {
+      var pc = { active:'pill-active', paused:'pill-paused', removed:'pill-rejected' }[j.status] || 'pill-active';
+      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:13px;font-weight:700;margin-bottom:3px;">' + esc(j.title || '—') + '</div>' +
+          '<div style="font-size:12px;color:var(--text2);">🏢 ' + esc(j.company_name || '—') +
+            (j.location ? ' · 📍 ' + esc(j.location) : '') +
+            (j.budget   ? ' · <span style="color:var(--gold);">' + esc(j.budget) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+          '<span class="pill ' + pc + '">' + (j.status || 'active') + '</span>' +
+          (j.status === 'active' ? '<button class="btn btn-ghost btn-icon btn-sm" onclick="toggleJob(\'' + j.id + '\',\'paused\')">⏸</button>' : '<button class="btn btn-green btn-icon btn-sm" onclick="toggleJob(\'' + j.id + '\',\'active\')">▶</button>') +
+          '<button class="btn btn-red btn-icon btn-sm" onclick="removeJob(\'' + j.id + '\')">✕</button>' +
+        '</div>' +
+      '</div>';
     }).join('');
-  }catch(e){ el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>'; }
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+  }
 }
 
-async function igLogout(){ await getSupabase().auth.signOut(); window.location.href='index.html'; }
+/* ══ LOGOUT ══ */
+async function igLogout(){
+  await getSupabase().auth.signOut();
+  window.location.href = 'index.html';
+}
 </script>
 </body>
 </html>
