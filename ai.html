@@ -4,14 +4,12 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Dijo AI · Carousel Builder · ImpactGrid</title>
-
-<!-- BRAIN: must load before anything else -->
 <script src="creator-ai.js"></script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-
+<!-- html2canvas for PNG export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ═══════════════════════════════════════
    TOKENS
@@ -20,13 +18,9 @@
   --font-head: 'Syne', sans-serif;
   --font-body: 'DM Sans', sans-serif;
   --font-mono: 'Space Mono', monospace;
-
-  /* USER-EDITABLE colours only */
   --brand:  #6C63FF;
   --accent: #FF6B6B;
   --pop:    #00E5B0;
-
-  /* light theme */
   --bg:      #F5F4F2;
   --surface: #FFFFFF;
   --raised:  #EDECF5;
@@ -51,9 +45,6 @@
   --sh-lg:   0 8px 40px rgba(0,0,0,.55);
 }
 
-/* ═══════════════════════════════════════
-   RESET
-═══════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
@@ -67,9 +58,7 @@ body{
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;border:2px solid var(--bg)}
 ::-webkit-scrollbar-thumb:hover{background:var(--brand)}
 
-/* ═══════════════════════════════════════
-   NAV
-═══════════════════════════════════════ */
+/* ── NAV ── */
 nav{
   position:sticky;top:0;z-index:200;
   background:var(--nav);border-bottom:1px solid var(--border);
@@ -92,9 +81,7 @@ nav{
 }
 .nbtn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
 
-/* ═══════════════════════════════════════
-   LAYOUT
-═══════════════════════════════════════ */
+/* ── LAYOUT ── */
 .app{
   display:grid;grid-template-columns:1fr 560px;
   height:calc(100vh - 58px);
@@ -221,7 +208,7 @@ nav{
 }
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
-/* Custom bar — FONT + COLOUR only */
+/* Custom bar */
 .cbar{
   padding:10px 18px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
@@ -269,9 +256,7 @@ nav{
 .dot.on{background:var(--brand);width:17px;border-radius:4px}
 .sctr{font-family:var(--font-mono);font-size:.74rem;color:var(--muted);min-width:52px;text-align:center}
 
-/* ═══════════════════════════════════════
-   SLIDE STAGE — very visible scrollbar
-═══════════════════════════════════════ */
+/* Stage */
 .stage{
   flex:1;overflow-y:scroll;overflow-x:hidden;
   display:flex;flex-direction:column;align-items:center;
@@ -313,11 +298,11 @@ nav{
   width:100%;max-width:500px;aspect-ratio:1/1;
   position:relative;border-radius:16px;overflow:hidden;
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  padding:38px 34px;text-align:center;
+  padding:44px 40px;text-align:center;
   box-shadow:var(--sh-lg);transition:transform .22s;cursor:default;
 }
 .slide:hover{transform:translateY(-2px)}
-.slide-in{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:9px}
+.slide-in{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:10px;align-items:center}
 
 /* 1 Gradient Mesh */
 .bg-gm{background:linear-gradient(135deg,#667eea,#764ba2 45%,#f093fb);color:#fff}
@@ -373,48 +358,134 @@ nav{
   background:rgba(255,255,255,.2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   border-radius:10px;border:1px solid rgba(255,255,255,.38)}
 
-/* Light bg overrides for child elements */
-.bg-ew .stag,.bg-ms .stag,.bg-lc .stag{background:rgba(0,0,0,.07);border-color:rgba(0,0,0,.14)}
-.bg-by .stag{background:#000;color:#FFE500;border-color:#000}
-.bg-ew .pstep,.bg-ms .pstep,.bg-lc .pstep{background:rgba(0,0,0,.14)}
-.bg-ew .pstep.done,.bg-ms .pstep.done,.bg-lc .pstep.done{background:rgba(0,0,0,.55)}
-.bg-by .pstep{background:rgba(0,0,0,.2)}
-.bg-by .pstep.done{background:rgba(0,0,0,.8)}
+/* Light bg overrides */
 .bg-ew .cta-pill,.bg-ms .cta-pill,.bg-lc .cta-pill{background:#0F0E17;color:#fff}
 .bg-by .cta-pill{background:#000;color:#FFE500}
 
-/* Slide content */
-.snum{
-  font-family:var(--font-mono);font-size:.62rem;font-weight:700;
-  opacity:.5;letter-spacing:.1em;text-transform:uppercase;
-  display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;
-}
-.stag{
-  display:inline-block;font-family:var(--font-mono);font-size:.58rem;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
-  padding:2px 9px;border-radius:20px;
-}
-.prog{display:flex;justify-content:center;gap:5px;margin-bottom:4px}
+/* Slide content — NO numbering, NO type labels */
+.prog{display:flex;justify-content:center;gap:5px;margin-bottom:2px}
 .pstep{height:3px;border-radius:2px;background:rgba(255,255,255,.25);transition:all .3s}
 .pstep.done{background:rgba(255,255,255,.8)}
 .pstep.now{background:var(--accent)}
+
+/* Light bg progress overrides */
+.bg-ew .pstep,.bg-ms .pstep,.bg-lc .pstep{background:rgba(0,0,0,.14)}
+.bg-ew .pstep.done,.bg-ms .pstep.done,.bg-lc .pstep.done{background:rgba(0,0,0,.55)}
+.bg-ew .pstep.now,.bg-ms .pstep.now,.bg-lc .pstep.now{background:var(--brand)}
+.bg-by .pstep{background:rgba(0,0,0,.2)}
+.bg-by .pstep.done{background:rgba(0,0,0,.8)}
+.bg-by .pstep.now{background:#6C63FF}
+
 .shead{
   font-family:var(--font-head);
-  font-size:clamp(1.25rem,4.8vw,1.95rem);
+  font-size:clamp(1.3rem,4.8vw,2rem);
   font-weight:800;line-height:1.14;letter-spacing:-.025em;
 }
-.ssub{font-size:clamp(.76rem,2vw,.93rem);line-height:1.62;opacity:.88;max-width:90%;margin:0 auto}
-.sstat{font-family:var(--font-head);font-size:clamp(2.4rem,9vw,3.8rem);font-weight:800;line-height:1;letter-spacing:-.03em}
+.ssub{font-size:clamp(.8rem,2vw,.95rem);line-height:1.65;opacity:.88;max-width:88%;margin:0 auto}
+.sstat{font-family:var(--font-head);font-size:clamp(2.6rem,9vw,4rem);font-weight:800;line-height:1;letter-spacing:-.03em}
 .sstat-lbl{font-size:.72rem;opacity:.58;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
-.squote{font-size:clamp(.95rem,3.2vw,1.35rem);font-style:italic;line-height:1.48;opacity:.92}
+.squote{font-size:clamp(1rem,3.2vw,1.4rem);font-style:italic;line-height:1.48;opacity:.92}
 .sqmark{font-family:var(--font-head);font-size:3.6rem;line-height:.55;opacity:.15}
 .cta-pill{
-  display:inline-block;margin-top:8px;padding:9px 26px;border-radius:7px;
+  display:inline-block;margin-top:10px;padding:10px 28px;border-radius:7px;
   font-family:var(--font-head);font-size:.84rem;font-weight:700;
   letter-spacing:.02em;text-transform:uppercase;cursor:default;
   background:rgba(255,255,255,.94);color:#0F0E17;
 }
+
+/* ═══════════════════════════════════════
+   EXPORT MODAL
+═══════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;padding:28px;width:90%;max-width:520px;
+  box-shadow:var(--sh-lg);transform:translateY(14px);transition:transform .28s;
+  max-height:90vh;overflow-y:auto;
+}
+.modal-overlay.open .modal{transform:none}
+.modal-head{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;
+}
+.modal-head h3{font-family:var(--font-head);font-size:1.08rem;font-weight:800}
+.modal-close{
+  background:var(--raised);border:1px solid var(--border);color:var(--text);
+  width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;transition:all .16s;
+}
+.modal-close:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Slide grid in modal */
+.modal-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;
+}
+.mslide-wrap{
+  position:relative;border-radius:10px;overflow:hidden;
+  aspect-ratio:1/1;cursor:pointer;border:2px solid transparent;
+  transition:all .18s;
+}
+.mslide-wrap:hover{border-color:var(--brand);transform:scale(1.03)}
+.mslide-wrap.selected{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand)}
+.mslide-wrap .mslide-num{
+  position:absolute;top:6px;left:6px;z-index:10;
+  background:rgba(0,0,0,.55);color:#fff;
+  font-size:.6rem;font-family:var(--font-mono);font-weight:700;
+  padding:2px 7px;border-radius:4px;
+}
+.mslide-wrap .mslide-check{
+  position:absolute;top:6px;right:6px;z-index:10;
+  width:20px;height:20px;border-radius:50%;
+  background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;opacity:0;transition:opacity .16s;
+}
+.mslide-wrap.selected .mslide-check{opacity:1}
+.mslide-preview{
+  width:100%;height:100%;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;padding:10px;text-align:center;
+  border-radius:8px;
+}
+.mslide-preview .mp-head{
+  font-family:var(--font-head);font-weight:800;font-size:.58rem;
+  line-height:1.2;margin-bottom:4px;
+}
+.mslide-preview .mp-sub{font-size:.46rem;opacity:.8;line-height:1.4}
+
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap}
+.mact-btn{
+  flex:1;padding:10px 16px;border-radius:9px;cursor:pointer;
+  font-family:var(--font-body);font-size:.82rem;font-weight:600;
+  border:1px solid var(--border);background:var(--raised);color:var(--text);
+  transition:all .18s;display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.mact-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.mact-btn.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
+.mact-btn.pri:hover{background:#5651d4}
+.sel-info{
+  font-size:.74rem;color:var(--muted);margin-bottom:12px;
+  font-family:var(--font-mono);
+}
+
+/* Export progress */
+.exp-progress{
+  display:none;margin-top:14px;
+}
+.exp-progress.on{display:block}
+.exp-bar-wrap{
+  background:var(--raised);border-radius:6px;height:6px;overflow:hidden;
+  margin-bottom:8px;
+}
+.exp-bar{
+  height:100%;background:linear-gradient(90deg,var(--brand),var(--accent));
+  border-radius:6px;width:0%;transition:width .3s;
+}
+.exp-label{font-size:.74rem;color:var(--muted);font-family:var(--font-mono)}
 
 /* Toast */
 #toast{
@@ -425,6 +496,11 @@ nav{
   box-shadow:var(--sh-lg);
 }
 #toast.show{opacity:1;transform:none}
+
+/* Hidden render area for export */
+#export-render{
+  position:fixed;left:-9999px;top:0;z-index:-1;pointer-events:none;
+}
 
 @media(max-width:880px){
   .app{grid-template-columns:1fr;grid-template-rows:52vh 1fr}
@@ -437,7 +513,7 @@ nav{
 <nav>
   <span class="nav-logo">⚡ Dijo × ImpactGrid</span>
   <div class="nav-r">
-    <button class="nbtn" id="export-btn">⬇ Export</button>
+    <button class="nbtn" id="export-btn">⬇ Export Slides</button>
     <button class="nbtn" id="theme-btn">🌙</button>
   </div>
 </nav>
@@ -448,11 +524,11 @@ nav{
   <div class="chat-panel">
     <div class="chat-top">
       <h2>Carousel Content Engine</h2>
-      <p>Tell Dijo what your carousel is about — your audience, your message, your goal. The more real detail you give, the better the result.</p>
+      <p>Tell Dijo what your carousel is about — your audience, your message, your goal.</p>
     </div>
     <div class="tbar" id="tbar">
-      <span class="tlbl">🔥 Live</span>
-      <span style="font-size:.73rem;color:var(--faint)">Loading trends…</span>
+      <span class="tlbl">What's Trending</span>
+      <span style="font-size:.73rem;color:var(--faint)">Loading…</span>
     </div>
     <div class="msgs" id="msgs">
       <div class="msg bot">
@@ -476,13 +552,12 @@ nav{
       <div class="pbtns">
         <button class="pbtn" id="prev-btn" disabled>‹ Prev</button>
         <button class="pbtn" id="next-btn" disabled>Next ›</button>
-        <button class="pbtn pri" id="dl-btn">Export</button>
+        <button class="pbtn pri" id="dl-btn" disabled>⬇ Export</button>
       </div>
     </div>
 
     <div class="seo" id="seo"></div>
 
-    <!-- FONT + COLOUR only -->
     <div class="cbar">
       <label>Font</label>
       <select id="font-sel">
@@ -518,39 +593,59 @@ nav{
   </div>
 </div>
 
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Export Slides</h3>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="sel-info" id="sel-info">Select slides to export — or export all at once</div>
+    <div class="modal-grid" id="modal-grid"></div>
+    <div class="modal-actions">
+      <button class="mact-btn" id="sel-all-btn">✓ Select All</button>
+      <button class="mact-btn" id="desel-btn">✕ Deselect All</button>
+      <button class="mact-btn pri" id="do-export-btn">⬇ Download Selected</button>
+    </div>
+    <div class="exp-progress" id="exp-progress">
+      <div class="exp-bar-wrap"><div class="exp-bar" id="exp-bar"></div></div>
+      <div class="exp-label" id="exp-label">Preparing…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden render area -->
+<div id="export-render"></div>
+
 <div id="toast"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   ALL WIRING HAPPENS AFTER DOM IS READY
-═══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function () {
 
-  /* ── Verify CreatorAI loaded ── */
   if (typeof CreatorAI === 'undefined') {
-    console.error('[Dijo] creator-ai.js not found. Make sure it is in the same folder as ai.html.');
-    appendMsg('⚠️ creator-ai.js failed to load — make sure the file is in the same directory as ai.html and the path in the &lt;script src&gt; tag is correct.', 'bot');
+    console.warn('[Dijo] creator-ai.js not found.');
+    appendMsg('⚠️ creator-ai.js failed to load. Make sure it is in the same folder as this HTML file.', 'bot');
   }
 
-  /* ═══════ STATE ═══════ */
-  const S = { slides: [], idx: 0, trendData: {} };
+  /* ═══ STATE ═══ */
+  var S = { slides: [], idx: 0, trendData: {}, style: null, currentTopic: '' };
+  var selectedSlides = new Set();
 
-  /* ═══════ THEME ═══════ */
-  const themeBtn = document.getElementById('theme-btn');
-  const root     = document.documentElement;
-  const saved    = localStorage.getItem('dijo-theme') || 'light';
+  /* ═══ THEME ═══ */
+  var themeBtn = document.getElementById('theme-btn');
+  var root = document.documentElement;
+  var saved = localStorage.getItem('dijo-theme') || 'light';
   root.setAttribute('data-theme', saved);
   themeBtn.textContent = saved === 'dark' ? '☀️' : '🌙';
-
   themeBtn.addEventListener('click', function () {
-    const now  = root.getAttribute('data-theme');
-    const next = now === 'dark' ? 'light' : 'dark';
+    var now = root.getAttribute('data-theme');
+    var next = now === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
     localStorage.setItem('dijo-theme', next);
   });
 
-  /* ═══════ COLOUR PICKERS ═══════ */
+  /* ═══ COLOUR PICKERS ═══ */
   document.getElementById('c1').addEventListener('input', function () {
     root.style.setProperty('--brand', this.value);
     document.getElementById('sw1').style.background = this.value;
@@ -564,39 +659,50 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('sw3').style.background = this.value;
   });
 
-  /* ═══════ FONT PICKER ═══════ */
+  /* ═══ FONT PICKER ═══ */
   document.getElementById('font-sel').addEventListener('change', function () {
     document.querySelectorAll('.shead').forEach(function (el) {
       el.style.fontFamily = this.value;
     }.bind(this));
   });
 
-  /* ═══════ SEND BUTTON ═══════ */
+  /* ═══ SEND ═══ */
   document.getElementById('send-btn').addEventListener('click', generate);
 
-  /* ═══════ NAV BUTTONS ═══════ */
+  /* ═══ NAV ═══ */
   document.getElementById('prev-btn').addEventListener('click', function () { goTo(S.idx - 1); });
   document.getElementById('next-btn').addEventListener('click', function () { goTo(S.idx + 1); });
-  document.getElementById('pn').addEventListener('click',       function () { goTo(S.idx - 1); });
-  document.getElementById('nn').addEventListener('click',       function () { goTo(S.idx + 1); });
+  document.getElementById('pn').addEventListener('click', function () { goTo(S.idx - 1); });
+  document.getElementById('nn').addEventListener('click', function () { goTo(S.idx + 1); });
 
-  /* ═══════ EXPORT BUTTONS ═══════ */
-  document.getElementById('export-btn').addEventListener('click', exportNow);
-  document.getElementById('dl-btn').addEventListener('click',     exportNow);
+  /* ═══ EXPORT BUTTONS ═══ */
+  document.getElementById('export-btn').addEventListener('click', openExportModal);
+  document.getElementById('dl-btn').addEventListener('click', openExportModal);
 
-  function exportNow () {
-    if (!S.slides.length) { toast('Generate a carousel first.'); return; }
-    toast('Screenshot to save slides — full export coming soon.');
-  }
+  /* ═══ MODAL ═══ */
+  document.getElementById('modal-close').addEventListener('click', closeExportModal);
+  document.getElementById('export-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeExportModal();
+  });
+  document.getElementById('sel-all-btn').addEventListener('click', function () {
+    S.slides.forEach(function (_, i) { selectedSlides.add(i); });
+    refreshModalGrid();
+  });
+  document.getElementById('desel-btn').addEventListener('click', function () {
+    selectedSlides.clear();
+    refreshModalGrid();
+  });
+  document.getElementById('do-export-btn').addEventListener('click', doExport);
 
-  /* ═══════ KEYBOARD ═══════ */
+  /* ═══ KEYBOARD ═══ */
   document.addEventListener('keydown', function (e) {
     if (e.target.id === 'chat-input') return;
+    if (e.key === 'Escape') closeExportModal();
     if (e.key === 'ArrowRight') goTo(S.idx + 1);
-    if (e.key === 'ArrowLeft')  goTo(S.idx - 1);
+    if (e.key === 'ArrowLeft') goTo(S.idx - 1);
   });
 
-  /* ═══════ TEXTAREA ═══════ */
+  /* ═══ TEXTAREA ═══ */
   var inp = document.getElementById('chat-input');
   inp.addEventListener('input', function () {
     this.style.height = 'auto';
@@ -607,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   /* ═══════════════════════════════════════
-     10 STYLES — AI auto-picks
+     10 STYLES
   ═══════════════════════════════════════ */
   var STYLES = [
     { id:'gm', cls:'bg-gm', label:'Gradient Mesh',
@@ -632,7 +738,7 @@ document.addEventListener('DOMContentLoaded', function () {
       moods:['product','saas','app','launch','announcement','new','feature','update','ios','modern','clean','software','tool','release'] },
   ];
 
-  function pickStyle (topic) {
+  function pickStyle(topic) {
     var lower = topic.toLowerCase();
     var best = STYLES[0], top = 0;
     STYLES.forEach(function (s) {
@@ -657,7 +763,7 @@ document.addEventListener('DOMContentLoaded', function () {
     story:    { label:'Story Arc',          types:['hook','problem','twist','insight','insight','lesson','cta'] },
   };
 
-  function detectFormat (p) {
+  function detectFormat(p) {
     var t = p.toLowerCase();
     if (/stat|number|data|research|study|percent|figure|roi|metric/.test(t))        return 'stats';
     if (/before.*after|transform|journey|went from|result|case study/.test(t))       return 'before';
@@ -667,9 +773,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ═══════════════════════════════════════
-     LIVE TRENDS
+     TRENDS
   ═══════════════════════════════════════ */
-  function loadTrends () {
+  function loadTrends() {
     var bar = document.getElementById('tbar');
     fetch('https://impactgrid-dijo.onrender.com/ai/recommendations', {
       method: 'POST',
@@ -683,13 +789,13 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (r) { return r.json(); })
         .then(function (d) { renderChips(bar, d.trends || d.data || []); })
         .catch(function () {
-          bar.innerHTML = '<span class="tlbl">🔥 Live</span><span style="font-size:.72rem;color:var(--faint)">API not connected</span>';
+          bar.innerHTML = '<span class="tlbl">What\'s Trending</span><span style="font-size:.72rem;color:var(--faint)">API not connected</span>';
         });
     });
   }
 
-  function renderChips (bar, items) {
-    bar.innerHTML = '<span class="tlbl">🔥 Live</span>';
+  function renderChips(bar, items) {
+    bar.innerHTML = '<span class="tlbl">What\'s Trending</span>';
     if (!items || !items.length) {
       bar.innerHTML += '<span style="font-size:.72rem;color:var(--faint)">No trend data yet</span>';
       return;
@@ -711,11 +817,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ═══════════════════════════════════════
-     GENERATE — uses CreatorAI.generateCarousel()
+     GENERATE
   ═══════════════════════════════════════ */
-  function generate () {
-    var input   = document.getElementById('chat-input');
-    var prompt  = input.value.trim();
+  function generate() {
+    var input = document.getElementById('chat-input');
+    var prompt = input.value.trim();
     if (!prompt) return;
 
     var sendBtn = document.getElementById('send-btn');
@@ -726,12 +832,12 @@ document.addEventListener('DOMContentLoaded', function () {
     appendMsg(prompt, 'user');
     var thinkEl = appendMsg('⏳ Picking style, pulling trend data, writing your carousel…', 'bot');
 
-    /* Pick style + format */
-    var style   = pickStyle(prompt);
-    var fmtKey  = detectFormat(prompt);
-    var fmt     = FORMATS[fmtKey];
+    S.currentTopic = prompt;
+    var style = pickStyle(prompt);
+    S.style = style;
+    var fmtKey = detectFormat(prompt);
+    var fmt = FORMATS[fmtKey];
 
-    /* Match trend score */
     var tScore = null;
     prompt.toLowerCase().split(/\s+/).forEach(function (w) {
       if (S.trendData[w]) tScore = S.trendData[w];
@@ -744,50 +850,51 @@ document.addEventListener('DOMContentLoaded', function () {
     var fullPrompt =
       'Create a ' + fmt.label + ' carousel (' + fmt.types.length + ' slides) about: "' + prompt + '"\n\n' +
       trendCtx + '\n\n' +
-      'You are writing for a real audience. Write like a world-class content creator — someone who studies what stops the scroll, what makes someone feel seen, and what makes them share.\n\n' +
+      'You are writing for a real audience. Write like a world-class content creator.\n\n' +
       'SLIDE TYPES IN ORDER: ' + fmt.types.join(' → ') + '\n' +
       'VISUAL STYLE: ' + style.label + '\n\n' +
       'RULES:\n' +
-      '- Slide 1 (hook) must stop mid-scroll. Bold specific claim, emotional truth, or pattern interrupt. NOT a generic question.\n' +
-      '- Each slide builds on the previous — this is a narrative, not isolated tips. Pull the reader forward.\n' +
-      '- Sub-text is 2–3 real sentences of substance per slide. No filler, no bullet points inside the sub.\n' +
-      '- Match tone: finance = sharp + credible, wellness = warm + grounded, tech = confident + precise.\n' +
-      '- Last slide CTA: specific action, specific reason. Not vague "follow for more."\n' +
+      '- Slide 1 (hook) must stop mid-scroll. Bold specific claim, emotional truth, or pattern interrupt.\n' +
+      '- Each slide builds on the previous — narrative not isolated tips.\n' +
+      '- Sub-text is 2–3 real sentences per slide. No filler.\n' +
+      '- Last slide CTA: specific action, specific reason.\n' +
       '- NEVER use: game-changer, level up, unlock, crush it.\n\n' +
-      'RESPOND ONLY WITH THIS JSON (no extra text, no markdown fences, no code blocks):\n' +
+      'RESPOND ONLY WITH THIS JSON (no markdown, no fences):\n' +
       '{"topic":"short label","slides":[{"type":"hook|problem|twist|insight|lesson|list|stat|quote|context|perspective|before|after|proof|takeaway|cta","headline":"max 9 words","sub":"2-3 real sentences","stat":"number if stat type","statLabel":"what it measures","quote":"full quote if quote type","ctaText":"button label if cta"}],"caption":"under 30 words","hashtags":["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5"]}';
 
-    /* Call the brain */
+    if (typeof CreatorAI === 'undefined') {
+      var fallback = buildFallback(prompt, fmt, style);
+      var nicheHT = [];
+      thinkEl.innerHTML = '✅ <strong>' + style.label + '</strong> carousel ready — ' + fallback.slides.length + ' slides.';
+      renderCarousel(fallback.slides, style, fallback.caption, fallback.hashtags);
+      updateSEO(tScore, style);
+      document.getElementById('prev-title').textContent = (fallback.topic || prompt).slice(0, 42);
+      var em = document.getElementById('empty');
+      if (em) em.remove();
+      sendBtn.disabled = false;
+      return;
+    }
+
     CreatorAI.generateCarousel(fullPrompt, 'instagram', 'sharp', fmt.types.length)
       .then(function (raw) {
         var parsed = null;
-
-        /* Try JSON parse */
         if (raw) {
           try {
             var match = raw.match(/\{[\s\S]*\}/);
             parsed = JSON.parse(match ? match[0] : raw);
-          } catch (_) {
-            parsed = null;
-          }
+          } catch (_) { parsed = null; }
         }
-
-        /* Fallback if JSON failed or backend was null */
         if (!parsed || !parsed.slides || !parsed.slides.length) {
           parsed = buildFallback(prompt, fmt, style);
         }
-
-        /* Hashtag enrichment */
         var niche = CreatorAI.detectNiche(prompt);
         var nicheHT = (CreatorAI.nicheData[niche] || {}).hashtags || [];
         var finalTags = (parsed.hashtags && parsed.hashtags.length >= 4)
           ? parsed.hashtags
           : nicheHT.slice(0, 5).concat(['#ImpactGrid','#DijoAI']);
-
         var finalCaption = parsed.caption || buildCaption(prompt, parsed.slides);
 
         thinkEl.innerHTML = '✅ <strong>' + style.label + '</strong> carousel ready — ' + parsed.slides.length + ' slides, ' + fmt.label + ' format.';
-
         renderCarousel(parsed.slides, style, finalCaption, finalTags);
         updateSEO(tScore, style);
         document.getElementById('prev-title').textContent = (parsed.topic || prompt).slice(0, 42);
@@ -796,54 +903,49 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .catch(function (err) {
         console.error('[Dijo] generate error:', err);
-        thinkEl.innerHTML = '❌ Something went wrong — check the browser console and your API connection.';
+        thinkEl.innerHTML = '❌ Something went wrong — check browser console.';
       })
-      .finally(function () {
-        sendBtn.disabled = false;
-      });
+      .finally(function () { sendBtn.disabled = false; });
   }
 
   /* ═══════════════════════════════════════
-     FALLBACK — uses nicheData from creator-ai.js
+     FALLBACK
   ═══════════════════════════════════════ */
-  function buildFallback (prompt, fmt, style) {
-    var niche = CreatorAI.detectNiche(prompt);
-    var nd    = CreatorAI.nicheData[niche] || {};
+  function buildFallback(prompt, fmt, style) {
+    var niche = (typeof CreatorAI !== 'undefined') ? CreatorAI.detectNiche(prompt) : 'general';
+    var nd = (typeof CreatorAI !== 'undefined') ? (CreatorAI.nicheData[niche] || {}) : {};
     var hooks = nd.hooks || ['The truth nobody told you about this.'];
-    var hook  = hooks[Math.floor(Math.random() * hooks.length)].replace(/\[X\]/g,'').trim();
+    var hook = hooks[Math.floor(Math.random() * hooks.length)].replace(/\[X\]/g,'').trim();
 
-    var slides = fmt.types.map(function (type, i) {
+    var slides = fmt.types.map(function (type) {
       if (type === 'hook')   return { type:type, headline:hook, sub:'Most people get this completely wrong. Here\'s the part they always skip — and why it costs them everything.' };
       if (type === 'cta')    return { type:type, headline:'Ready to do this differently?', sub:'Follow for insight that cuts through the noise every week. No generic advice. No fluff.', ctaText:'Follow for more' };
-      if (type === 'stat')   return { type:type, headline:'The number that changes everything', stat:'73%', statLabel:'of people make this mistake without knowing it', sub:'This single stat explains why most people plateau — and exactly where to look first.' };
-      if (type === 'quote')  return { type:type, headline:'The mindset shift', quote:'The system you have is perfectly designed to give you the results you\'re getting.', sub:'If the results aren\'t there, the system needs to change — not just the effort level.' };
-      if (type === 'before') return { type:type, headline:'Where most people start', sub:'Frustrated, stuck in the same cycle. Working hard but moving sideways. Sound familiar? This is the starting point — not the permanent address.' };
-      if (type === 'after')  return { type:type, headline:'Where you could be in 90 days', sub:'A clear system. Consistent results. The kind of confidence that comes from knowing exactly what to do next. This is real and it\'s closer than you think.' };
+      if (type === 'stat')   return { type:type, headline:'The number that changes everything', stat:'73%', statLabel:'of people make this mistake', sub:'This single stat explains why most people plateau.' };
+      if (type === 'quote')  return { type:type, headline:'The mindset shift', quote:'The system you have is perfectly designed to give you the results you\'re getting.', sub:'If the results aren\'t there, the system needs to change — not just the effort.' };
+      if (type === 'before') return { type:type, headline:'Where most people start', sub:'Frustrated, stuck in the same cycle. Working hard but moving sideways. This is the starting point — not the permanent address.' };
+      if (type === 'after')  return { type:type, headline:'Where you could be in 90 days', sub:'A clear system. Consistent results. The kind of confidence that comes from knowing exactly what to do next.' };
       if (type === 'proof')  return { type:type, headline:'The evidence is already there', sub:'The people who see results have one thing in common — they stopped doing what felt right and started doing what the data shows actually works.' };
-      return { type:type, headline:'The thing about ' + prompt.split(' ').slice(0,3).join(' '), sub:'This is the part most people skip. Sit with this for a moment — the ones who understand it early always end up ahead.' };
+      return { type:type, headline:'The thing about ' + prompt.split(' ').slice(0,3).join(' '), sub:'This is the part most people skip. The ones who understand it early always end up ahead.' };
     });
 
     return {
-      topic:    prompt.slice(0, 40),
-      slides:   slides,
-      caption:  hook.slice(0, 70) + '… Save this.',
+      topic: prompt.slice(0, 40), slides: slides,
+      caption: hook.slice(0, 70) + '… Save this.',
       hashtags: (nd.hashtags || []).slice(0, 5)
     };
   }
 
-  function buildCaption (prompt, slides) {
+  function buildCaption(prompt, slides) {
     var first = slides && slides[0];
-    return first
-      ? (first.sub || first.headline).slice(0, 80) + '… Save this.'
-      : 'Everything you need to know about ' + prompt + '.';
+    return first ? (first.sub || first.headline).slice(0, 80) + '… Save this.' : 'Everything you need to know about ' + prompt + '.';
   }
 
   /* ═══════════════════════════════════════
      RENDER
   ═══════════════════════════════════════ */
-  function renderCarousel (slideData, style, caption, hashtags) {
+  function renderCarousel(slideData, style, caption, hashtags) {
     S.slides = slideData;
-    S.idx    = 0;
+    S.idx = 0;
 
     var stage = document.getElementById('stage');
     stage.innerHTML = '';
@@ -869,20 +971,20 @@ document.addEventListener('DOMContentLoaded', function () {
     stage.scrollTop = 0;
     updateNav();
 
-    /* Apply current font */
+    document.getElementById('dl-btn').disabled = false;
+
     var fv = document.getElementById('font-sel').value;
     document.querySelectorAll('.shead').forEach(function (el) { el.style.fontFamily = fv; });
   }
 
-  function buildSlideHTML (s, i, total, style) {
+  function buildSlideHTML(s, i, total, style) {
+    /* Progress bar only — NO numbering, NO type label */
     var prog = '';
     for (var pi = 0; pi < total; pi++) {
-      var w = Math.max(12, Math.floor(56 / total));
+      var w = Math.max(10, Math.floor(52 / total));
       var cls = pi < i ? 'pstep done' : pi === i ? 'pstep now' : 'pstep';
       prog += '<div class="' + cls + '" style="width:' + w + 'px"></div>';
     }
-
-    var num = '<div class="snum">' + (i+1) + ' / ' + total + ' <span class="stag">' + s.type.toUpperCase() + '</span></div>';
 
     var body = '';
     if (s.type === 'stat') {
@@ -907,13 +1009,13 @@ document.addEventListener('DOMContentLoaded', function () {
         '<div class="ssub">' + (s.sub || '') + '</div>';
     }
 
-    return '<div class="slide ' + style.cls + '"><div class="slide-in">' + num + '<div class="prog">' + prog + '</div>' + body + '</div></div>';
+    return '<div class="slide ' + style.cls + '"><div class="slide-in"><div class="prog">' + prog + '</div>' + body + '</div></div>';
   }
 
   /* ═══════════════════════════════════════
      NAV
   ═══════════════════════════════════════ */
-  function goTo (idx) {
+  function goTo(idx) {
     if (idx < 0 || idx >= S.slides.length) return;
     S.idx = idx;
     var wrap = document.getElementById('sw-' + idx);
@@ -921,10 +1023,9 @@ document.addEventListener('DOMContentLoaded', function () {
     updateNav();
   }
 
-  function updateNav () {
+  function updateNav() {
     var total = S.slides.length;
     document.getElementById('sctr').textContent = total ? (S.idx + 1) + ' / ' + total : '0 / 0';
-
     var pd = S.idx === 0;
     var nd = S.idx >= total - 1;
     document.getElementById('prev-btn').disabled = pd;
@@ -945,8 +1046,8 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ═══════════════════════════════════════
      SEO STRIP
   ═══════════════════════════════════════ */
-  function updateSEO (score, style) {
-    var el  = document.getElementById('seo');
+  function updateSEO(score, style) {
+    var el = document.getElementById('seo');
     var col = !score ? '#888' : score >= 85 ? '#00E5B0' : score >= 65 ? '#FFB347' : '#FF6B6B';
     el.innerHTML =
       '<div class="sbadge"><div class="sdot" style="background:' + col + '"></div>Trend ' + (score ? Math.round(score) : 'N/A') + '</div>' +
@@ -956,9 +1057,191 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ═══════════════════════════════════════
+     EXPORT MODAL
+  ═══════════════════════════════════════ */
+  function openExportModal() {
+    if (!S.slides.length) { toast('Generate a carousel first.'); return; }
+    selectedSlides.clear();
+    S.slides.forEach(function (_, i) { selectedSlides.add(i); }); // default all selected
+    refreshModalGrid();
+    document.getElementById('export-modal').classList.add('open');
+    document.getElementById('exp-progress').classList.remove('on');
+  }
+
+  function closeExportModal() {
+    document.getElementById('export-modal').classList.remove('open');
+  }
+
+  function refreshModalGrid() {
+    var grid = document.getElementById('modal-grid');
+    var info = document.getElementById('sel-info');
+    grid.innerHTML = '';
+
+    S.slides.forEach(function (s, i) {
+      var wrap = document.createElement('div');
+      wrap.className = 'mslide-wrap' + (selectedSlides.has(i) ? ' selected' : '');
+      wrap.innerHTML =
+        '<div class="mslide-num">Slide ' + (i+1) + '</div>' +
+        '<div class="mslide-check">✓</div>' +
+        '<div class="mslide-preview ' + S.style.cls + '">' +
+          '<div class="mp-head">' + (s.headline || '').slice(0, 40) + '</div>' +
+          '<div class="mp-sub">' + (s.sub || '').slice(0, 60) + '</div>' +
+        '</div>';
+
+      wrap.addEventListener('click', function () {
+        if (selectedSlides.has(i)) selectedSlides.delete(i);
+        else selectedSlides.add(i);
+        refreshModalGrid();
+      });
+      grid.appendChild(wrap);
+    });
+
+    var cnt = selectedSlides.size;
+    info.textContent = cnt === 0
+      ? 'No slides selected — click to select'
+      : cnt + ' of ' + S.slides.length + ' slides selected';
+  }
+
+  /* ── ACTUAL EXPORT (html2canvas, one PNG per slide) ── */
+  function doExport() {
+    if (selectedSlides.size === 0) { toast('Select at least one slide first.'); return; }
+
+    var indices = Array.from(selectedSlides).sort(function(a,b){return a-b;});
+    var progress = document.getElementById('exp-progress');
+    var bar = document.getElementById('exp-bar');
+    var label = document.getElementById('exp-label');
+    var doBtn = document.getElementById('do-export-btn');
+
+    progress.classList.add('on');
+    doBtn.disabled = true;
+
+    var topic = (S.currentTopic || 'slide').replace(/[^a-z0-9]/gi,'_').slice(0,30).toLowerCase();
+    var done = 0;
+    var total = indices.length;
+
+    /* Build a render container with the slide at full 1:1 size */
+    var renderArea = document.getElementById('export-render');
+    renderArea.innerHTML = '';
+    renderArea.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+
+    function exportNext() {
+      if (done >= total) {
+        bar.style.width = '100%';
+        label.textContent = '✅ ' + total + ' slide' + (total > 1 ? 's' : '') + ' downloaded!';
+        doBtn.disabled = false;
+        toast(total + ' slide' + (total > 1 ? 's' : '') + ' saved to your downloads.');
+        return;
+      }
+
+      var i = indices[done];
+      var s = S.slides[i];
+
+      /* Render slide at 1080×1080 */
+      var container = document.createElement('div');
+      container.style.cssText = 'width:1080px;height:1080px;position:absolute;top:0;left:0;';
+      container.innerHTML = buildExportSlideHTML(s, i, S.slides.length, S.style);
+      renderArea.appendChild(container);
+
+      /* Apply current font to rendered slide */
+      var fv = document.getElementById('font-sel').value;
+      container.querySelectorAll('.shead').forEach(function(el){ el.style.fontFamily = fv; });
+
+      setTimeout(function() {
+        html2canvas(container, {
+          width: 1080, height: 1080,
+          scale: 1,
+          useCORS: true,
+          logging: false,
+          backgroundColor: null
+        }).then(function (canvas) {
+          var link = document.createElement('a');
+          link.download = topic + '_slide_' + String(i + 1).padStart(2,'0') + '.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+
+          renderArea.innerHTML = '';
+          done++;
+          var pct = Math.round((done / total) * 100);
+          bar.style.width = pct + '%';
+          label.textContent = 'Exporting slide ' + done + ' of ' + total + '…';
+
+          /* Small delay so browser can process the download */
+          setTimeout(exportNext, 400);
+        }).catch(function(err) {
+          console.error('Export error:', err);
+          done++;
+          setTimeout(exportNext, 200);
+        });
+      }, 120);
+    }
+
+    exportNext();
+  }
+
+  /* Export-quality slide HTML (no hover, clean sizing) */
+  function buildExportSlideHTML(s, i, total, style) {
+    var prog = '';
+    for (var pi = 0; pi < total; pi++) {
+      var w = Math.max(14, Math.floor(340 / total));
+      var cls = pi < i ? 'pstep done' : pi === i ? 'pstep now' : 'pstep';
+      prog += '<div class="' + cls + '" style="width:' + w + 'px;height:5px;border-radius:3px;display:inline-block;margin:0 2px;background:' +
+        (pi < i ? 'rgba(255,255,255,0.8)' : pi === i ? '#FF6B6B' : 'rgba(255,255,255,0.25)') + '"></div>';
+    }
+
+    var headStyle = 'font-family:\'Syne\',sans-serif;font-size:72px;font-weight:800;line-height:1.12;letter-spacing:-.025em;margin:0;';
+    var subStyle = 'font-size:36px;line-height:1.65;opacity:.88;max-width:88%;margin:0 auto;';
+    var statStyle = 'font-family:\'Syne\',sans-serif;font-size:160px;font-weight:800;line-height:1;letter-spacing:-.03em;';
+    var statLblStyle = 'font-size:28px;opacity:.58;letter-spacing:.08em;text-transform:uppercase;';
+
+    var body = '';
+    if (s.type === 'stat') {
+      body = '<div style="' + statStyle + '">' + (s.stat||'—') + '</div>' +
+             '<div style="' + statLblStyle + '">' + (s.statLabel||'') + '</div>' +
+             '<div style="' + headStyle + 'font-size:48px;margin-top:20px;">' + s.headline + '</div>' +
+             '<div style="' + subStyle + '">' + (s.sub||'') + '</div>';
+    } else if (s.type === 'quote') {
+      body = '<div style="font-size:144px;line-height:.55;opacity:.15;font-family:\'Syne\',sans-serif;font-weight:800;">"</div>' +
+             '<div style="font-size:52px;font-style:italic;line-height:1.48;opacity:.92;">' + (s.quote||s.headline) + '</div>' +
+             '<div style="' + subStyle + 'margin-top:24px;opacity:.55;">' + (s.sub||'') + '</div>';
+    } else if (s.type === 'cta') {
+      body = '<div style="' + headStyle + '">' + s.headline + '</div>' +
+             '<div style="' + subStyle + '">' + (s.sub||'') + '</div>' +
+             '<div style="display:inline-block;margin-top:32px;padding:22px 64px;border-radius:12px;font-family:\'Syne\',sans-serif;font-size:30px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;background:rgba(255,255,255,.94);color:#0F0E17;">' + (s.ctaText||'Follow for more') + '</div>';
+    } else {
+      body = '<div style="' + headStyle + '">' + s.headline + '</div>' +
+             '<div style="' + subStyle + '">' + (s.sub||'') + '</div>';
+    }
+
+    /* Inline the CSS class styles for the backgrounds since html2canvas can't always read external sheet */
+    var bgInline = getBgInline(style.cls);
+
+    return '<div style="width:1080px;height:1080px;' + bgInline + 'border-radius:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:100px;text-align:center;position:relative;overflow:hidden;">' +
+      '<div style="position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:20px;align-items:center;">' +
+      '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:8px;">' + prog + '</div>' +
+      body +
+      '</div></div>';
+  }
+
+  function getBgInline(cls) {
+    var map = {
+      'bg-gm': 'background:linear-gradient(135deg,#667eea,#764ba2 45%,#f093fb);color:#fff;',
+      'bg-dn': 'background:#070712;color:#fff;',
+      'bg-ew': 'background:#fff;color:#0F0E17;border:8px solid #0F0E17;',
+      'bg-gb': 'background:#16142A;color:#fff;',
+      'bg-ms': 'background:linear-gradient(155deg,#E8F5E9,#F1F8E9);color:#1B3A2D;',
+      'bg-dg': 'background:#0B1017;color:#E6EDF3;',
+      'bg-lc': 'background:linear-gradient(150deg,#FDF8F0,#FAF0E6);color:#2C1810;',
+      'bg-np': 'background:linear-gradient(145deg,#13001E,#2D0057);color:#fff;',
+      'bg-by': 'background:#FFE500;color:#000;border:8px solid #000;',
+      'bg-fg': 'background:linear-gradient(135deg,#4facfe,#00f2fe 50%,#43e97b);color:#fff;',
+    };
+    return map[cls] || 'background:#6C63FF;color:#fff;';
+  }
+
+  /* ═══════════════════════════════════════
      HELPERS
   ═══════════════════════════════════════ */
-  function appendMsg (html, role) {
+  function appendMsg(html, role) {
     var msgs = document.getElementById('msgs');
     var d = document.createElement('div');
     d.className = 'msg ' + role;
@@ -968,7 +1251,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return d;
   }
 
-  function toast (msg) {
+  function toast(msg) {
     var t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
