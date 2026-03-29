@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    ImpactGrid Group — nav.js
-   Version: 4.3
+   Version: 4.4  (auth fix: uses getSupabase() singleton,
+                  retry loop, getSession + onAuthStateChange)
 
    BEFORE LOGIN:  Home | About | Services ▼ | Platform ▼  [Login] [Join]
    AFTER LOGIN:   Home | About | Services ▼ | Platform ▼  [Profile ▼]
@@ -26,7 +27,7 @@
 
   var PLATFORM_LINKS = [
     { href: 'network.html',    label: 'Network',    icon: '🌐', desc: 'Professional talent ecosystem' },
-    { href: 'dashboard.html',  label: 'Jobs',       icon: '💼', desc: 'Browse open opportunities' },
+    { href: 'jobs.html',       label: 'Jobs',       icon: '💼', desc: 'Browse open opportunities' },
     { href: 'pricing.html',    label: 'Pricing',    icon: '💳', desc: 'Plans for every stage' },
     { href: 'about.html',      label: 'About',      icon: 'ℹ️',  desc: 'Our story and mission' },
   ];
@@ -73,7 +74,7 @@
       { href:'creator-studio.html', label:'Creator Studio' },
       { href:'ai.html',             label:'Dijo AI' },
       { href:'network.html',        label:'Network' },
-      { href:'dashboard.html',      label:'Jobs' },
+      { href:'jobs.html',           label:'Jobs' },
       { href:'pricing.html',        label:'Pricing' },
     ].map(function(l) {
       var cls = l.href === activePage ? ' class="active"' : '';
@@ -99,7 +100,6 @@
       '.nav-mega-text{display:flex;flex-direction:column;}' +
       '.nav-mega-label{font-size:13px;font-weight:600;color:var(--text);}' +
       '.nav-mega-desc{font-size:11px;color:var(--text3);margin-top:1px;}' +
-      /* Logo: desktop = link, mobile = sidebar trigger */
       '.logo{cursor:pointer;}' +
       '@media(max-width:768px){' +
         '.logo{cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
@@ -110,7 +110,6 @@
       '<nav class="nav" id="mainNav">' +
         '<div class="nav-in">' +
 
-          /* Logo: on mobile taps open sidebar; on desktop navigates home */
           '<a href="index.html" class="logo" id="navLogo">' +
             '<img src="logo.png" class="logo-img" alt="ImpactGrid" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"/>' +
             '<div class="logo-mark" style="display:none;">IG</div>' +
@@ -119,14 +118,12 @@
 
           '<ul class="nav-links">' +
             desktopLinks +
-            /* Services dropdown */
             '<li class="nav-dd-wrap" id="dd-services">' +
               '<button class="nav-dd-btn" onclick="toggleNavDrop(\'nav-mega-services\')">' +
                 'Services <span class="nav-dd-chev">▾</span>' +
               '</button>' +
               buildMegaDrop('nav-mega-services', SERVICES_LINKS, activePage) +
             '</li>' +
-            /* Platform dropdown */
             '<li class="nav-dd-wrap" id="dd-platform">' +
               '<button class="nav-dd-btn" onclick="toggleNavDrop(\'nav-mega-platform\')">' +
                 'Platform <span class="nav-dd-chev">▾</span>' +
@@ -190,7 +187,6 @@
         '</div>' +
         '<div class="mob-nav">' + mobileLinks + '</div>' +
         '<div class="mob-div"></div>' +
-        /* Back to site — always visible in sidebar */
         '<a href="index.html" onclick="closeSidebar()" style="display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:13px;font-weight:600;color:var(--text2);border-radius:var(--r);transition:background .2s;" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'\'">← Back to Site</a>' +
         '<div class="mob-div"></div>' +
         '<div class="mob-auth">' +
@@ -215,16 +211,13 @@
 
     _initNavInteractions();
 
-    /* ── Logo: mobile tap opens sidebar, desktop navigates home ── */
     var logo = document.getElementById('navLogo');
     if (logo) {
       logo.addEventListener('click', function(e) {
-        /* Only intercept on mobile breakpoint */
         if (window.innerWidth <= 768) {
           e.preventDefault();
           openSidebar();
         }
-        /* Desktop: let the <a href> navigate normally */
       });
     }
   }
@@ -236,17 +229,14 @@
     var el = document.getElementById(id);
     if (!el) return;
     var isOpen = el.classList.contains('open');
-    /* Close all first */
     document.querySelectorAll('.nav-mega').forEach(function(m) { m.classList.remove('open'); });
     if (!isOpen) el.classList.add('open');
   };
 
-  /* Close mega dropdowns on outside click */
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.nav-dd-wrap')) {
       document.querySelectorAll('.nav-mega').forEach(function(m) { m.classList.remove('open'); });
     }
-    /* Also close profile dropdown */
     var btn  = document.getElementById('uBtn');
     var drop = document.getElementById('uDrop');
     if (btn && drop && !btn.contains(e.target) && !drop.contains(e.target)) {
@@ -271,7 +261,7 @@
               '<p>Turning data into strategic advantage with analytics, AI, creator tools, and professional networking.</p>' +
             '</div>' +
             '<div class="fc"><h4>Services</h4><a href="consulting.html">Consulting</a><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="ai.html">Dijo AI</a></div>' +
-            '<div class="fc"><h4>Platform</h4><a href="network.html">Network</a><a href="dashboard.html">Jobs</a><a href="pricing.html">Pricing</a><a href="about.html">About</a><a href="mailto:support@impactgridgroup.com">Contact</a></div>' +
+            '<div class="fc"><h4>Platform</h4><a href="network.html">Network</a><a href="jobs.html">Jobs</a><a href="pricing.html">Pricing</a><a href="about.html">About</a><a href="mailto:support@impactgridgroup.com">Contact</a></div>' +
             '<div class="fc"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>' +
           '</div>' +
           '<div class="footer-bot">' +
@@ -331,8 +321,75 @@
   };
 
   /* ─────────────────────────────────────────
-     AUTH
+     AUTH — fixed v4.4
+     Uses getSupabase() singleton. Retries every
+     100ms until the client is ready (max 3s),
+     then attaches onAuthStateChange + getSession.
   ───────────────────────────────────────── */
+  function _getClient() {
+    try { if (window.getSupabase) return window.getSupabase(); } catch(e) {}
+    try { if (window.supabaseClient) return window.supabaseClient; } catch(e) {}
+    return null;
+  }
+
+  function _attachAuth(c) {
+    /* 1. React to every future auth change (login, logout, token refresh) */
+    c.auth.onAuthStateChange(function(event, session) {
+      if (session && session.user) {
+        _setUser(session.user);
+      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        _clearUser();
+      }
+    });
+
+    /* 2. Immediately read the current session from local storage — no network needed */
+    c.auth.getSession()
+      .then(function(r) {
+        if (r && r.data && r.data.session && r.data.session.user) {
+          _setUser(r.data.session.user);
+        }
+      })
+      .catch(function() {});
+  }
+
+  function _checkAuth() {
+    var c = _getClient();
+
+    if (c) {
+      _attachAuth(c);
+      return;
+    }
+
+    /* Supabase not ready yet — retry every 100ms, up to 30× (3 seconds) */
+    var attempts = 0;
+    var timer = setInterval(function() {
+      attempts++;
+      c = _getClient();
+      if (c) {
+        clearInterval(timer);
+        _attachAuth(c);
+      } else if (attempts >= 30) {
+        clearInterval(timer);
+        /* Last resort: read raw session from localStorage */
+        _tryLocalStorage();
+      }
+    }, 100);
+  }
+
+  function _tryLocalStorage() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('ig-auth-token') !== -1) {
+          var v = JSON.parse(localStorage.getItem(k) || '{}');
+          /* Supabase v2 stores { session: { user: {...} } } */
+          if (v && v.user)                      { _setUser(v.user); return; }
+          if (v && v.session && v.session.user) { _setUser(v.session.user); return; }
+        }
+      }
+    } catch(e) {}
+  }
+
   function _setUser(user) {
     if (!user) return;
     var email = user.email || '';
@@ -379,37 +436,9 @@
     if (mobIn)   mobIn.classList.remove('show');
   }
 
-  function _checkAuth() {
-    var c = null;
-    try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
-    try { if (!c && window.supabaseClient) c = window.supabaseClient; } catch(e) {}
-
-    if (!c) {
-      try {
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf('supabase') !== -1) {
-            var v = JSON.parse(localStorage.getItem(k) || '{}');
-            if (v && v.user) { _setUser(v.user); return; }
-          }
-        }
-      } catch(e) {}
-      return;
-    }
-
-    c.auth.getUser()
-      .then(function(r) { if (r && r.data && r.data.user) _setUser(r.data.user); })
-      .catch(function() {});
-
-    c.auth.onAuthStateChange(function(ev, s) {
-      if (s && s.user) _setUser(s.user);
-      else if (ev === 'SIGNED_OUT') _clearUser();
-    });
-  }
-
   window.igOut = async function() {
     try {
-      var c = (window.getSupabase && getSupabase()) || window.supabaseClient;
+      var c = _getClient();
       if (c) await c.auth.signOut();
     } catch(e) {}
     window.location.href = 'index.html';
@@ -428,11 +457,11 @@
   });
 
   /* ─────────────────────────────────────────
-     INIT
+     INIT — no delay, auth runs immediately
   ───────────────────────────────────────── */
   function _initNavInteractions() {
     try { if (localStorage.getItem('ig_theme') === 'dark') _applyTheme(true); } catch(e) {}
-    setTimeout(_checkAuth, 350);
+    _checkAuth();
   }
 
   /* ─────────────────────────────────────────
