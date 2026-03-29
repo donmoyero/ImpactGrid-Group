@@ -66,7 +66,7 @@ img{display:block;max-width:100%;}
 .card-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .card-head h2{font-size:14px;font-weight:800;letter-spacing:-.01em;}
 .card-body{padding:20px;}
-.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px;box-shadow:var(--sh);}
 .stat-label{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;}
 .stat-val{font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-.03em;}
@@ -264,7 +264,6 @@ tr:hover td{background:var(--bg2);}
     <div class="sb-section">
       <div class="sb-section-label">Network</div>
       <nav class="sb-nav">
-        <a href="#" onclick="return nav('pending',this)"><span class="sb-ico">⏳</span>Pending<span class="sb-badge" id="pendingBadge" style="display:none;">0</span></a>
         <a href="#" onclick="return nav('applications',this)"><span class="sb-ico">📥</span>Applications</a>
         <a href="#" onclick="return nav('professionals',this)"><span class="sb-ico">👤</span>Professionals</a>
         <a href="#" onclick="return nav('employers',this)"><span class="sb-ico">🏢</span>Employers</a>
@@ -283,8 +282,7 @@ tr:hover td{background:var(--bg2);}
     <div class="page active" id="page-overview">
       <div class="page-header"><div class="page-title">Overview</div><div class="page-sub">Full control of the ImpactGrid site content, events, and network.</div></div>
       <div class="stats-row">
-        <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-val" id="stat-pending" style="color:var(--gold);">—</div><div class="stat-sub">Awaiting review</div></div>
-        <div class="stat-card"><div class="stat-label">Professionals</div><div class="stat-val" id="stat-pros">—</div><div class="stat-sub">Active</div></div>
+        <div class="stat-card"><div class="stat-label">Professionals</div><div class="stat-val" id="stat-pros">—</div><div class="stat-sub">Active members</div></div>
         <div class="stat-card"><div class="stat-label">Employers</div><div class="stat-val" id="stat-emps">—</div><div class="stat-sub">On network</div></div>
         <div class="stat-card"><div class="stat-label">Active Jobs</div><div class="stat-val" id="stat-jobs" style="color:var(--gold);">—</div><div class="stat-sub">Live listings</div></div>
         <div class="stat-card"><div class="stat-label">Events</div><div class="stat-val" id="stat-events" style="color:var(--blue);">—</div><div class="stat-sub">Active</div></div>
@@ -293,7 +291,7 @@ tr:hover td{background:var(--bg2);}
         <div class="quick-card" onclick="nav('hero',null)" style="border-color:var(--gold-glo);background:var(--gold-dim);"><div class="quick-ico">🎞️</div><div class="quick-title" style="color:var(--gold);">Homepage Slideshow</div><div class="quick-desc">Upload images &amp; videos, edit captions and CTAs for the hero</div></div>
         <div class="quick-card" onclick="nav('homepage',null)"><div class="quick-ico">🏠</div><div class="quick-title">Homepage Content</div><div class="quick-desc">Edit section text, ecosystem cards, CTAs and copy</div></div>
         <div class="quick-card" onclick="nav('postjob',null)"><div class="quick-ico">📋</div><div class="quick-title">Post a Job</div><div class="quick-desc">Add a new job listing to the public network</div></div>
-        <div class="quick-card" onclick="nav('pending',null)"><div class="quick-ico">⏳</div><div class="quick-title">Review Pending</div><div class="quick-desc">Approve or reject professionals waiting for access</div></div>
+        <div class="quick-card" onclick="nav('professionals',null)"><div class="quick-ico">👤</div><div class="quick-title">View Professionals</div><div class="quick-desc">Browse and manage all active professionals on the network</div></div>
         <div class="quick-card" onclick="nav('createevent',null)"><div class="quick-ico">📅</div><div class="quick-title">Create Event</div><div class="quick-desc">Set up a new photo event with access code and expiry</div></div>
         <div class="quick-card" onclick="nav('uploadphotos',null)"><div class="quick-ico">🖼️</div><div class="quick-title">Upload Photos</div><div class="quick-desc">Add photos to an existing event gallery</div></div>
         <div class="quick-card" onclick="nav('downloadrequests',null)"><div class="quick-ico">📥</div><div class="quick-title">Download Requests</div><div class="quick-desc">Approve or reject guest photo download requests</div></div>
@@ -456,11 +454,6 @@ tr:hover td{background:var(--bg2);}
       <div id="facesStatsBar" style="display:none;margin-bottom:16px;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"><div class="stat-card"><div class="stat-label">Total Faces</div><div class="stat-val" id="stat-total-faces" style="color:var(--gold);">—</div><div class="stat-sub">Indexed by Face++</div></div><div class="stat-card"><div class="stat-label">Face Groups</div><div class="stat-val" id="stat-face-groups" style="color:var(--blue);">—</div><div class="stat-sub">Unique people</div></div><div class="stat-card"><div class="stat-label">Photos Indexed</div><div class="stat-val" id="stat-indexed-photos" style="color:var(--green);">—</div><div class="stat-sub">With detected faces</div></div></div></div>
       <div class="card"><div class="card-head"><h2>👥 Detected Face Groups</h2><div style="font-size:12px;color:var(--text3);">Each group = one person across multiple photos</div></div><div class="card-body" id="facesGroupGrid"><div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Select an event to view face groups</div></div></div></div>
     </div>
-    <!-- PENDING -->
-    <div class="page" id="page-pending">
-      <div class="page-header"><div class="page-title">⏳ Pending Approvals</div><div class="page-sub">Professionals waiting for account approval.</div></div>
-      <div class="card"><div class="card-head"><h2>⏳ Pending Applications</h2><button class="btn btn-ghost btn-sm" onclick="loadPending()">↻ Refresh</button></div><div class="card-body table-wrap" id="pendingList"><div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div></div></div>
-    </div>
     <!-- APPLICATIONS -->
     <div class="page" id="page-applications">
       <div class="page-header"><div class="page-title">📥 Applications</div><div class="page-sub">Job applications submitted by professionals.</div></div>
@@ -500,10 +493,8 @@ tr:hover td{background:var(--bg2);}
 </div>
 <div class="toast" id="toast"><div class="toast-icon" id="toastIco">✅</div><div><div class="toast-msg" id="toastMsg"></div><div class="toast-sub" id="toastSub"></div></div></div>
 
-<!-- ═══ SCRIPTS — supabase-config.js intentionally excluded ═══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
-<!-- supabase-config.js is NOT loaded here — admin uses ig-supabase.js only -->
 
 <script>
 /* ══ CONFIG ══ */
@@ -562,7 +553,7 @@ function nav(id,el){
   var loaders={
     homepage:'loadHomepageEditor',hero:'loadHeroSlides',
     updates:'loadUpdateCards',testimonials:'loadTestimonials',ticker:'loadTicker',
-    pending:'loadPending',applications:'loadApplications',
+    applications:'loadApplications',
     professionals:'loadProfessionals',employers:'loadEmployers',
     jobs:'loadJobs',postjob:'loadEditJobs',
     events:'loadEvents',createevent:'setDefaultExpiry',
@@ -587,21 +578,17 @@ function toast(icon,msg,sub,persist){
 async function loadStats(){
   try{
     var c=getSupabase();
-    var [pend,pros,emps,jobs,evts]=await Promise.all([
-      c.from('profiles').select('id').eq('status','pending'),
+    var [pros,emps,jobs,evts]=await Promise.all([
       c.from('profiles').select('id').eq('role','professional').eq('status','active'),
-      c.from('profiles').select('id').eq('role','employer'),
+      c.from('profiles').select('id').eq('role','employer').eq('status','active'),
       c.from('jobs').select('id').eq('status','active'),
       c.from('events').select('id').eq('is_active',true)
     ]);
-    var pc=(pend.data||[]).length;
     function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
-    set('stat-pending',pc);set('stat-pros',(pros.data||[]).length);
-    set('stat-emps',(emps.data||[]).length);set('stat-jobs',(jobs.data||[]).length);
+    set('stat-pros',(pros.data||[]).length);
+    set('stat-emps',(emps.data||[]).length);
+    set('stat-jobs',(jobs.data||[]).length);
     set('stat-events',(evts.data||[]).length);
-    var badge=document.getElementById('pendingBadge');
-    if(pc>0){badge.textContent=pc;badge.style.display='inline-flex';}
-    else{badge.style.display='none';}
   }catch(e){}
 }
 
@@ -1295,80 +1282,6 @@ async function reindexEventFaces(){
 }
 
 /* ══ NETWORK ══ */
-async function sendWelcomeNotification(userId, email, name, role, company) {
-  var c = getSupabase();
-  try {
-    await c.from('notifications').insert({
-      user_id: userId,
-      type: 'account_approved',
-      title: role === 'professional' ? '✅ Your account has been approved!' : '🚀 Your employer account is ready!',
-      body: role === 'professional'
-        ? 'Welcome to ImpactGrid! You now have free access to Analytics, the Professional Network, Dijo AI, and Creator Studio.'
-        : 'Welcome to ImpactGrid, '+(company||name)+'! You can now post jobs and manage applications.',
-      read: false,
-      created_at: new Date().toISOString()
-    });
-  } catch(e) { console.warn('[sendWelcomeNotification] notifications insert skipped:', e.message); }
-  try {
-    var { error } = await c.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/login.html?welcome=1'
-    });
-    if (error) throw error;
-    return { ok: true };
-  } catch(e) {
-    return { ok: false, error: e.message };
-  }
-}
-
-async function loadPending() {
-  var el = document.getElementById('pendingList');
-  el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
-  try {
-    var { data } = await getSupabase().from('profiles').select('*').eq('status','pending').eq('role','professional').order('created_at',{ascending:false});
-    if (!data||!data.length) { el.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">No pending applications.</div></div>'; return; }
-    var badge=document.getElementById('pendingBadge');
-    if(badge){badge.textContent=data.length;badge.style.display='inline-flex';}
-    el.innerHTML='<table><thead><tr><th>Applicant</th><th>Email</th><th>Title &amp; Skills</th><th>Location</th><th>Applied</th><th>Actions</th></tr></thead><tbody>'+
-      data.map(function(p){
-        var initials=(p.full_name||'U').split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
-        var titleSkills=[p.title,p.skills].filter(Boolean).join(' · ').substring(0,45)||'—';
-        var linkedinBtn=p.linkedin_url?'<a class="btn btn-ghost btn-sm" href="'+esc(p.linkedin_url)+'" target="_blank" style="font-size:10px;">🔗</a>':'';
-        return'<tr>'+
-          '<td><div style="display:flex;align-items:center;gap:10px;"><div class="profile-avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0;">'+esc(initials)+'</div><div style="font-weight:700;font-size:13px;">'+esc(p.full_name||'—')+'</div></div></td>'+
-          '<td style="font-size:12px;color:var(--text2);">'+esc(p.email||'—')+'</td>'+
-          '<td style="font-size:12px;color:var(--text2);max-width:160px;">'+esc(titleSkills)+'</td>'+
-          '<td style="font-size:12px;">'+esc(p.location||'—')+'</td>'+
-          '<td style="color:var(--text3);font-size:11px;white-space:nowrap;">'+new Date(p.created_at).toLocaleDateString('en-GB')+'</td>'+
-          '<td><div class="td-actions">'+linkedinBtn+
-            '<button class="btn btn-green btn-sm" onclick="approveUser(\''+p.id+'\',\''+esc(p.full_name||'')+'\',\''+esc(p.email||'')+'\',\'professional\',null)">✓ Approve</button>'+
-            '<button class="btn btn-red btn-sm" onclick="rejectUser(\''+p.id+'\',\''+esc(p.email||'')+'\')">✕ Reject</button>'+
-          '</div></td></tr>';
-      }).join('')+'</tbody></table>';
-  } catch(e) { el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>'; }
-}
-
-async function approveUser(id, name, email, role, company) {
-  if (!confirm('Approve '+(name||email||'this user')+'?')) return;
-  toast('⏳','Approving…','Updating account & sending email',true);
-  try {
-    var { error: updateErr } = await getSupabase().from('profiles').update({status:'active',approved_at:new Date().toISOString()}).eq('id',id);
-    if (updateErr) throw updateErr;
-    var result = await sendWelcomeNotification(id, email, name, role, company);
-    if (result.ok) toast('✅','Approved!',name+' has been notified by email');
-    else toast('✅','Approved!','Account active — email skipped ('+(result.error||'unknown')+')');
-    loadPending(); loadStats();
-  } catch(e) { toast('⚠️','Approval failed',e.message); }
-}
-
-async function rejectUser(id, email) {
-  if (!confirm('Reject this application?')) return;
-  try {
-    await getSupabase().from('profiles').update({status:'rejected'}).eq('id',id);
-    toast('🗑️','Application rejected',email||'');
-    loadPending(); loadStats();
-  } catch(e) { toast('⚠️','Error',e.message); }
-}
-
 async function loadApplications() {
   var el = document.getElementById('applicationsList');
   el.innerHTML='<div class="empty"><div class="empty-ico">📥</div></div>';
@@ -1407,19 +1320,20 @@ async function loadProfessionals() {
   try {
     var { data } = await getSupabase().from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
     if (!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">No professionals yet.</div></div>';return;}
-    el.innerHTML='<table><thead><tr><th>Name</th><th>Email</th><th>Title / Skills</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+    el.innerHTML='<table><thead><tr><th>Name</th><th>Email</th><th>Title / Skills</th><th>Location</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody>'+
       data.map(function(p){
-        var pc={active:'pill-active',pending:'pill-pending',rejected:'pill-rejected'}[p.status]||'pill-pending';
+        var pc={active:'pill-active',pending:'pill-pending',rejected:'pill-rejected'}[p.status]||'pill-active';
         var titleSkills=[p.title,p.skills].filter(Boolean).join(' · ').substring(0,40)||'—';
         return'<tr>'+
           '<td style="font-weight:700;">'+esc(p.full_name||'—')+'</td>'+
           '<td style="font-size:12px;">'+esc(p.email||'—')+'</td>'+
           '<td style="font-size:12px;color:var(--text2);">'+esc(titleSkills)+'</td>'+
           '<td style="font-size:12px;">'+esc(p.location||'—')+'</td>'+
-          '<td><span class="pill '+pc+'">'+(p.status||'—')+'</span></td>'+
+          '<td><span class="pill '+pc+'">'+(p.status||'active')+'</span></td>'+
+          '<td style="color:var(--text3);font-size:12px;">'+new Date(p.created_at).toLocaleDateString('en-GB')+'</td>'+
           '<td><div class="td-actions">'+
-            (p.status!=='active'?'<button class="btn btn-green btn-sm" onclick="approveUser(\''+p.id+'\',\''+esc(p.full_name||'')+'\',\''+esc(p.email||'')+'\',\'professional\',null)">✓ Approve</button>':'')+
-            (p.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="suspendUser(\''+p.id+'\')">⏸ Suspend</button>':'')+
+            (p.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="suspendUser(\''+p.id+'\')">⏸ Suspend</button>':
+             '<button class="btn btn-green btn-sm" onclick="reinstateUser(\''+p.id+'\')">✓ Reinstate</button>')+
             '<button class="btn btn-red btn-sm" onclick="removeProfile(\''+p.id+'\')">✕ Remove</button>'+
           '</div></td></tr>';
       }).join('')+'</tbody></table>';
@@ -1471,7 +1385,8 @@ async function loadJobs() {
   } catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
 }
 
-async function suspendUser(id){if(!confirm('Suspend this user?'))return;await getSupabase().from('profiles').update({status:'pending'}).eq('id',id);loadProfessionals();}
+async function suspendUser(id){if(!confirm('Suspend this user?'))return;await getSupabase().from('profiles').update({status:'suspended'}).eq('id',id);loadProfessionals();loadStats();}
+async function reinstateUser(id){if(!confirm('Reinstate this user?'))return;await getSupabase().from('profiles').update({status:'active'}).eq('id',id);loadProfessionals();loadStats();}
 async function removeProfile(id){if(!confirm('Permanently remove this profile?'))return;await getSupabase().from('profiles').delete().eq('id',id);loadProfessionals();loadEmployers();loadStats();}
 async function toggleJob(id,s){await getSupabase().from('jobs').update({status:s}).eq('id',id);loadJobs();loadStats();}
 async function removeJob(id){if(!confirm('Remove this job?'))return;await getSupabase().from('jobs').update({status:'removed'}).eq('id',id);loadJobs();loadStats();}
