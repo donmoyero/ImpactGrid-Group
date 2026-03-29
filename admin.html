@@ -458,7 +458,7 @@ tr:hover td{background:var(--bg2);}
     </div>
     <!-- PENDING -->
     <div class="page" id="page-pending">
-      <div class="page-header"><div class="page-title">⏳ Pending Approvals</div><div class="page-sub">Professionals waiting for account approval. Approving sends them a welcome email.</div></div>
+      <div class="page-header"><div class="page-title">⏳ Pending Approvals</div><div class="page-sub">Professionals waiting for account approval.</div></div>
       <div class="card"><div class="card-head"><h2>⏳ Pending Applications</h2><button class="btn btn-ghost btn-sm" onclick="loadPending()">↻ Refresh</button></div><div class="card-body table-wrap" id="pendingList"><div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div></div></div>
     </div>
     <!-- APPLICATIONS -->
@@ -499,9 +499,12 @@ tr:hover td{background:var(--bg2);}
   </div>
 </div>
 <div class="toast" id="toast"><div class="toast-icon" id="toastIco">✅</div><div><div class="toast-msg" id="toastMsg"></div><div class="toast-sub" id="toastSub"></div></div></div>
+
+<!-- ═══ SCRIPTS — supabase-config.js intentionally excluded ═══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
-<script src="supabase-config.js"></script>
+<!-- supabase-config.js is NOT loaded here — admin uses ig-supabase.js only -->
+
 <script>
 /* ══ CONFIG ══ */
 var ADMIN_EMAIL = 'admin@impactgridgroup.com';
@@ -580,17 +583,16 @@ function toast(icon,msg,sub,persist){
   if(!persist) setTimeout(function(){t.classList.remove('show');},3500);
 }
 
-/* ══ STATS — profiles/jobs → contentClient, events → getSupabase() ══ */
+/* ══ STATS ══ */
 async function loadStats(){
   try{
-    var cc=getContentClient();
-    var ec=getSupabase();
+    var c=getSupabase();
     var [pend,pros,emps,jobs,evts]=await Promise.all([
-      cc.from('profiles').select('id').eq('status','pending'),
-      cc.from('profiles').select('id').eq('role','professional').eq('status','active'),
-      cc.from('profiles').select('id').eq('role','employer'),
-      cc.from('jobs').select('id').eq('status','active'),
-      ec.from('events').select('id').eq('is_active',true)
+      c.from('profiles').select('id').eq('status','pending'),
+      c.from('profiles').select('id').eq('role','professional').eq('status','active'),
+      c.from('profiles').select('id').eq('role','employer'),
+      c.from('jobs').select('id').eq('status','active'),
+      c.from('events').select('id').eq('is_active',true)
     ]);
     var pc=(pend.data||[]).length;
     function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
@@ -628,8 +630,7 @@ var _kvCache={};
 async function loadHomepageEditor(){
   var el=document.getElementById('contentSections');
   try{
-    var cc=getContentClient();
-    var {data}=await cc.from('site_content').select('*');
+    var {data}=await getSupabase().from('site_content').select('*');
     _kvCache={};(data||[]).forEach(function(r){_kvCache[r.key]=r.value;});
     el.innerHTML=CONTENT_DEFS.map(function(section,si){
       var fieldsHtml=section.fields.map(function(f){
@@ -646,7 +647,7 @@ function toggleCs(idx){var el=document.getElementById('cs-'+idx);if(el)el.classL
 async function saveHomepageContent(){
   var upserts=[];
   CONTENT_DEFS.forEach(function(section){section.fields.forEach(function(f){var el=document.getElementById('kv-'+f.key);if(el)upserts.push({key:f.key,value:el.value});});});
-  var {error}=await getContentClient().from('site_content').upsert(upserts,{onConflict:'key'});
+  var {error}=await getSupabase().from('site_content').upsert(upserts,{onConflict:'key'});
   if(error){toast('⚠️','Save failed',error.message);return;}
   toast('✅','Content saved!','Changes live on homepage');
 }
@@ -668,7 +669,7 @@ async function saveEcoCards(){
     if(te)upserts.push({key:c.prefix+'_title',value:te.value});
     if(de)upserts.push({key:c.prefix+'_desc',value:de.value});
   });
-  var {error}=await getContentClient().from('site_content').upsert(upserts,{onConflict:'key'});
+  var {error}=await getSupabase().from('site_content').upsert(upserts,{onConflict:'key'});
   if(error){toast('⚠️','Save failed',error.message);return;}
   toast('✅','Ecosystem cards saved!','');
 }
@@ -690,13 +691,13 @@ async function uploadHeroFile(file){
   setProgress(0);
   toast('📤','Uploading '+file.name,'Please wait…',true);
   try{
-    var cc=getContentClient();
-    var {error:upErr}=await cc.storage.from(BUCKET).upload(fname,file,{contentType:file.type,upsert:false});
+    var c=getSupabase();
+    var {error:upErr}=await c.storage.from(BUCKET).upload(fname,file,{contentType:file.type,upsert:false});
     if(upErr) throw upErr;
     for(var p=10;p<=90;p+=15){await sleep(60);setProgress(p);}
-    var {data:urlData}=cc.storage.from(BUCKET).getPublicUrl(fname);
+    var {data:urlData}=c.storage.from(BUCKET).getPublicUrl(fname);
     var maxOrder=heroSlides.length?Math.max.apply(null,heroSlides.map(function(s){return s.sort_order||0;})):0;
-    var {data:row,error:insErr}=await cc.from('site_slides').insert({
+    var {data:row,error:insErr}=await c.from('site_slides').insert({
       url:urlData.publicUrl,type:isVideo?'video':'image',
       title:file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' '),
       subtitle:'',caption:'',tag_text:'New',tag_type:'new',
@@ -715,7 +716,7 @@ async function loadHeroSlides(){
   var el=document.getElementById('heroSlideList');
   el.innerHTML='<div class="empty"><div class="empty-ico">🎞️</div><div class="empty-txt">Loading…</div></div>';
   try{
-    var {data}=await getContentClient().from('site_slides').select('*').order('sort_order',{ascending:true});
+    var {data}=await getSupabase().from('site_slides').select('*').order('sort_order',{ascending:true});
     heroSlides=data||[];
     if(!heroSlides.length){el.innerHTML='<div class="empty"><div class="empty-ico">🖼️</div><div class="empty-txt">No slides yet. Upload one above.</div></div>';return;}
     el.innerHTML=heroSlides.map(function(s){
@@ -733,12 +734,12 @@ async function loadHeroSlides(){
   }catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
 }
 
-async function toggleSlide(id,cur){await getContentClient().from('site_slides').update({active:!cur}).eq('id',id);loadHeroSlides();}
+async function toggleSlide(id,cur){await getSupabase().from('site_slides').update({active:!cur}).eq('id',id);loadHeroSlides();}
 async function deleteSlide(id,path){
   if(!confirm('Delete this slide?')) return;
-  var cc=getContentClient();
-  if(path){try{await cc.storage.from(BUCKET).remove([path]);}catch(e){}}
-  await cc.from('site_slides').delete().eq('id',id);
+  var c=getSupabase();
+  if(path){try{await c.storage.from(BUCKET).remove([path]);}catch(e){}}
+  await c.from('site_slides').delete().eq('id',id);
   if(heroEditId===id){heroEditId=null;resetCaptionPanel();}
   loadHeroSlides();toast('🗑️','Slide deleted','');
 }
@@ -785,7 +786,7 @@ function buildCapPreview(d){
 function updateCapPreview(){var el=document.getElementById('capPreviewBox');if(!el)return;el.innerHTML=buildCapPreview({tag_text:g('cap-tag-text'),tag_type:g('cap-tag-type'),title:g('cap-title'),caption:g('cap-caption'),cta_text:g('cap-cta-text'),overlay_color:g('cap-color')});}
 async function saveCaption(id){
   var payload={title:g('cap-title').trim(),caption:g('cap-caption').trim(),tag_text:g('cap-tag-text').trim()||'New',tag_type:g('cap-tag-type')||'new',cta_text:g('cap-cta-text').trim(),cta_url:g('cap-cta-url').trim(),overlay_color:g('cap-color')||'#c97e08'};
-  var {error}=await getContentClient().from('site_slides').update(payload).eq('id',id);
+  var {error}=await getSupabase().from('site_slides').update(payload).eq('id',id);
   if(error){toast('⚠️','Save failed',error.message);return;}
   toast('✅','Caption saved!','Live on homepage');loadHeroSlides();
 }
@@ -800,7 +801,7 @@ var DEFAULT_UPDATES=[
 async function loadUpdateCards(){
   var el=document.getElementById('updateCardsEditor');
   try{
-    var {data}=await getContentClient().from('site_updates').select('*').order('sort_order',{ascending:true});
+    var {data}=await getSupabase().from('site_updates').select('*').order('sort_order',{ascending:true});
     updateCards=data&&data.length?data:DEFAULT_UPDATES.map(function(d,i){return Object.assign({},d,{id:null,sort_order:i+1,active:true});});
   }catch(e){updateCards=DEFAULT_UPDATES.map(function(d,i){return Object.assign({},d,{id:null,sort_order:i+1,active:true});});}
   renderUpdateCards();
@@ -829,12 +830,12 @@ function addUpdateCard(){updateCards.push({icon:'✨',color:'#c97e08',badge:'New
 function removeUpdateCard(i){updateCards.splice(i,1);renderUpdateCards();}
 async function saveUpdateCards(){
   try{
-    var cc=getContentClient();
-    await cc.from('site_updates').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    var c=getSupabase();
+    await c.from('site_updates').delete().neq('id','00000000-0000-0000-0000-000000000000');
     var rows=updateCards.filter(function(u){return u.title&&u.title.trim();}).map(function(u,i){
       return{icon:u.icon||'✨',color:u.color||'#c97e08',badge:u.badge||'New',badge_style:'',ico_style:'',title:u.title.trim(),desc:u.desc||'',cta:u.cta||'',cta_url:u.cta_url||'',num:u.num||String(i+1).padStart(2,'0'),ver:u.ver||'2026',sort_order:i+1,active:true};
     });
-    var {error}=await cc.from('site_updates').insert(rows);
+    var {error}=await c.from('site_updates').insert(rows);
     if(error) throw error;
     toast('✅','Updates saved!',rows.length+' cards live');loadUpdateCards();
   }catch(e){toast('⚠️','Save failed',e.message);}
@@ -848,10 +849,10 @@ var DEFAULT_TESTS=[
 ];
 async function loadTestimonials(){
   try{
-    var cc=getContentClient();
-    var {data}=await cc.from('site_testimonials').select('*').order('sort_order',{ascending:true});
+    var c=getSupabase();
+    var {data}=await c.from('site_testimonials').select('*').order('sort_order',{ascending:true});
     testimonials=data&&data.length?data:DEFAULT_TESTS.map(function(d,i){return Object.assign({},d,{id:null,sort_order:i+1});});
-    var {data:kv}=await cc.from('site_content').select('*').in('key',['trust_title','trust_label']);
+    var {data:kv}=await c.from('site_content').select('*').in('key',['trust_title','trust_label']);
     (kv||[]).forEach(function(r){
       if(r.key==='trust_title'){var el=document.getElementById('trust-title-input');if(el)el.value=r.value;}
       if(r.key==='trust_label'){var el=document.getElementById('trust-label-input');if(el)el.value=r.value;}
@@ -884,17 +885,17 @@ function renderTestimonials(){
 function addTestimonial(){testimonials.push({quote:'',name:'',role:'',initial:'?',active:true,id:null,sort_order:testimonials.length+1});renderTestimonials();}
 async function saveTestimonials(){
   try{
-    var cc=getContentClient();
+    var c=getSupabase();
     var kvUps=[];
     var ttEl=document.getElementById('trust-title-input'),tlEl=document.getElementById('trust-label-input');
     if(ttEl)kvUps.push({key:'trust_title',value:ttEl.value});
     if(tlEl)kvUps.push({key:'trust_label',value:tlEl.value});
-    if(kvUps.length) await cc.from('site_content').upsert(kvUps,{onConflict:'key'});
-    await cc.from('site_testimonials').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    if(kvUps.length) await c.from('site_content').upsert(kvUps,{onConflict:'key'});
+    await c.from('site_testimonials').delete().neq('id','00000000-0000-0000-0000-000000000000');
     var rows=testimonials.filter(function(t){return t.name||t.quote;}).map(function(t,i){
       return{quote:t.quote||'',name:t.name||'',role:t.role||'',initial:t.initial||(t.name&&t.name.charAt(0))||'?',active:t.active!==false,sort_order:i+1};
     });
-    var {error}=await cc.from('site_testimonials').insert(rows);
+    var {error}=await c.from('site_testimonials').insert(rows);
     if(error) throw error;
     toast('✅','Testimonials saved!',rows.length+' quotes live');loadTestimonials();
   }catch(e){toast('⚠️','Save failed',e.message);}
@@ -910,7 +911,7 @@ var DEFAULT_TICKER=[
 ];
 async function loadTicker(){
   try{
-    var {data}=await getContentClient().from('site_ticker').select('*').order('sort_order',{ascending:true});
+    var {data}=await getSupabase().from('site_ticker').select('*').order('sort_order',{ascending:true});
     tickerItems=data&&data.length?data:DEFAULT_TICKER.map(function(d,i){return Object.assign({},d,{id:null,sort_order:i+1,active:true});});
   }catch(e){tickerItems=DEFAULT_TICKER.map(function(d,i){return Object.assign({},d,{id:null,sort_order:i+1,active:true});});}
   renderTicker();
@@ -936,9 +937,9 @@ async function saveTicker(){
   rows.forEach(function(row,i){var inp=row.querySelector('input[type=text]');if(inp&&tickerItems[i])tickerItems[i].text=inp.value;if(tickerItems[i])tickerItems[i].sort_order=i+1;});
   var toSave=tickerItems.filter(function(t){return t.text&&t.text.trim();});
   try{
-    var cc=getContentClient();
-    await cc.from('site_ticker').delete().neq('id','00000000-0000-0000-0000-000000000000');
-    var {error}=await cc.from('site_ticker').insert(toSave.map(function(t,i){return{text:t.text.trim(),type:t.type||'new',sort_order:i+1,active:true};}));
+    var c=getSupabase();
+    await c.from('site_ticker').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    var {error}=await c.from('site_ticker').insert(toSave.map(function(t,i){return{text:t.text.trim(),type:t.type||'new',sort_order:i+1,active:true};}));
     if(error) throw error;
     toast('✅','Ticker saved!',toSave.length+' items live');loadTicker();
   }catch(e){toast('⚠️','Save failed',e.message);}
@@ -1293,54 +1294,38 @@ async function reindexEventFaces(){
   }catch(e){toast('⚠️','Re-index failed',e.message);btn.disabled=false;btn.textContent='🔄 Re-index All';}
 }
 
-/* ══════════════════════════════════════════════════════════════
-   NETWORK MANAGEMENT — ALL use getContentClient()
-   profiles, jobs, applications, notifications → content Supabase
-   (exeiojgldxqaakkybdij)
-══════════════════════════════════════════════════════════════ */
-
+/* ══ NETWORK ══ */
 async function sendWelcomeNotification(userId, email, name, role, company) {
-  // Write in-app notification to content Supabase
-  var c = getContentClient();
+  var c = getSupabase();
   try {
     await c.from('notifications').insert({
       user_id: userId,
       type: 'account_approved',
       title: role === 'professional' ? '✅ Your account has been approved!' : '🚀 Your employer account is ready!',
       body: role === 'professional'
-        ? 'Welcome to ImpactGrid! You now have free access to Analytics, the Professional Network, Dijo AI, and Creator Studio. Sign in to get started.'
-        : 'Welcome to ImpactGrid, '+(company||name)+'! You can now post jobs, browse professionals, and manage applications from your employer dashboard.',
+        ? 'Welcome to ImpactGrid! You now have free access to Analytics, the Professional Network, Dijo AI, and Creator Studio.'
+        : 'Welcome to ImpactGrid, '+(company||name)+'! You can now post jobs and manage applications.',
       read: false,
       created_at: new Date().toISOString()
     });
   } catch(e) { console.warn('[sendWelcomeNotification] notifications insert skipped:', e.message); }
-
-  // Send password-reset email as delivery vehicle (auth Supabase)
   try {
-    var { error } = await getSupabase().auth.resetPasswordForEmail(email, {
+    var { error } = await c.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + '/login.html?welcome=1'
     });
     if (error) throw error;
     return { ok: true };
   } catch(e) {
-    console.warn('[sendWelcomeNotification] email error:', e.message);
     return { ok: false, error: e.message };
   }
 }
 
-/* ── Pending ── */
 async function loadPending() {
   var el = document.getElementById('pendingList');
   el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
   try {
-    var { data } = await getContentClient()
-      .from('profiles').select('*')
-      .eq('status','pending').eq('role','professional')
-      .order('created_at',{ascending:false});
-    if (!data||!data.length) {
-      el.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">No pending applications. You\'re all caught up!</div></div>';
-      return;
-    }
+    var { data } = await getSupabase().from('profiles').select('*').eq('status','pending').eq('role','professional').order('created_at',{ascending:false});
+    if (!data||!data.length) { el.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">No pending applications.</div></div>'; return; }
     var badge=document.getElementById('pendingBadge');
     if(badge){badge.textContent=data.length;badge.style.display='inline-flex';}
     el.innerHTML='<table><thead><tr><th>Applicant</th><th>Email</th><th>Title &amp; Skills</th><th>Location</th><th>Applied</th><th>Actions</th></tr></thead><tbody>'+
@@ -1359,42 +1344,36 @@ async function loadPending() {
             '<button class="btn btn-red btn-sm" onclick="rejectUser(\''+p.id+'\',\''+esc(p.email||'')+'\')">✕ Reject</button>'+
           '</div></td></tr>';
       }).join('')+'</tbody></table>';
-  } catch(e) {
-    el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';
-  }
+  } catch(e) { el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>'; }
 }
 
-/* ── Approve ── */
 async function approveUser(id, name, email, role, company) {
-  if (!confirm('Approve '+(name||email||'this user')+'?\n\nThis will activate their account and send them a welcome email.')) return;
+  if (!confirm('Approve '+(name||email||'this user')+'?')) return;
   toast('⏳','Approving…','Updating account & sending email',true);
   try {
-    var c = getContentClient();
-    var { error: updateErr } = await c.from('profiles').update({status:'active',approved_at:new Date().toISOString()}).eq('id',id);
+    var { error: updateErr } = await getSupabase().from('profiles').update({status:'active',approved_at:new Date().toISOString()}).eq('id',id);
     if (updateErr) throw updateErr;
     var result = await sendWelcomeNotification(id, email, name, role, company);
     if (result.ok) toast('✅','Approved!',name+' has been notified by email');
-    else toast('✅','Approved!','Account active — email delivery skipped ('+(result.error||'unknown')+')');
+    else toast('✅','Approved!','Account active — email skipped ('+(result.error||'unknown')+')');
     loadPending(); loadStats();
   } catch(e) { toast('⚠️','Approval failed',e.message); }
 }
 
-/* ── Reject ── */
 async function rejectUser(id, email) {
-  if (!confirm('Reject this application?'+(email?'\n\n'+email:''))) return;
+  if (!confirm('Reject this application?')) return;
   try {
-    await getContentClient().from('profiles').update({status:'rejected'}).eq('id',id);
+    await getSupabase().from('profiles').update({status:'rejected'}).eq('id',id);
     toast('🗑️','Application rejected',email||'');
     loadPending(); loadStats();
   } catch(e) { toast('⚠️','Error',e.message); }
 }
 
-/* ── Applications ── */
 async function loadApplications() {
   var el = document.getElementById('applicationsList');
   el.innerHTML='<div class="empty"><div class="empty-ico">📥</div></div>';
   try {
-    var c = getContentClient();
+    var c = getSupabase();
     var { data: apps } = await c.from('applications').select('*').order('applied_at',{ascending:false});
     if (!apps||!apps.length) { el.innerHTML='<div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">No applications yet.</div></div>'; return; }
     var jIds=[...new Set(apps.map(function(a){return a.job_id;}).filter(Boolean))];
@@ -1419,15 +1398,14 @@ async function loadApplications() {
       }).join('')+'</tbody></table>';
   } catch(e) { el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>'; }
 }
-async function bookApp(id){if(!confirm('Book this application?'))return;await getContentClient().from('applications').update({status:'booked'}).eq('id',id);loadApplications();}
-async function rejectApp(id){if(!confirm('Reject this application?'))return;await getContentClient().from('applications').update({status:'rejected'}).eq('id',id);loadApplications();}
+async function bookApp(id){if(!confirm('Book this application?'))return;await getSupabase().from('applications').update({status:'booked'}).eq('id',id);loadApplications();}
+async function rejectApp(id){if(!confirm('Reject this application?'))return;await getSupabase().from('applications').update({status:'rejected'}).eq('id',id);loadApplications();}
 
-/* ── Professionals ── */
 async function loadProfessionals() {
   var el=document.getElementById('prosList');
   el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
   try {
-    var { data } = await getContentClient().from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
+    var { data } = await getSupabase().from('profiles').select('*').eq('role','professional').order('created_at',{ascending:false});
     if (!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">No professionals yet.</div></div>';return;}
     el.innerHTML='<table><thead><tr><th>Name</th><th>Email</th><th>Title / Skills</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
       data.map(function(p){
@@ -1448,12 +1426,11 @@ async function loadProfessionals() {
   } catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
 }
 
-/* ── Employers ── */
 async function loadEmployers() {
   var el=document.getElementById('empsList');
   el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
   try {
-    var { data } = await getContentClient().from('profiles').select('*').eq('role','employer').order('created_at',{ascending:false});
+    var { data } = await getSupabase().from('profiles').select('*').eq('role','employer').order('created_at',{ascending:false});
     if (!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">🏢</div><div class="empty-txt">No employers yet.</div></div>';return;}
     el.innerHTML='<table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Industry</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody>'+
       data.map(function(p){
@@ -1470,12 +1447,11 @@ async function loadEmployers() {
   } catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
 }
 
-/* ── Jobs ── */
 async function loadJobs() {
   var el=document.getElementById('jobsList');
   el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
   try {
-    var { data } = await getContentClient().from('jobs').select('*').order('created_at',{ascending:false});
+    var { data } = await getSupabase().from('jobs').select('*').order('created_at',{ascending:false});
     if (!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No jobs yet.</div></div>';return;}
     el.innerHTML='<table><thead><tr><th>Title</th><th>Company</th><th>Budget</th><th>Location</th><th>Skills</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
       data.map(function(j){
@@ -1495,13 +1471,11 @@ async function loadJobs() {
   } catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
 }
 
-/* ── Profile / job actions ── */
-async function suspendUser(id){if(!confirm('Suspend this user?'))return;await getContentClient().from('profiles').update({status:'pending'}).eq('id',id);loadProfessionals();}
-async function removeProfile(id){if(!confirm('Permanently remove this profile?'))return;await getContentClient().from('profiles').delete().eq('id',id);loadProfessionals();loadEmployers();loadStats();}
-async function toggleJob(id,s){await getContentClient().from('jobs').update({status:s}).eq('id',id);loadJobs();loadStats();}
-async function removeJob(id){if(!confirm('Remove this job?'))return;await getContentClient().from('jobs').update({status:'removed'}).eq('id',id);loadJobs();loadStats();}
+async function suspendUser(id){if(!confirm('Suspend this user?'))return;await getSupabase().from('profiles').update({status:'pending'}).eq('id',id);loadProfessionals();}
+async function removeProfile(id){if(!confirm('Permanently remove this profile?'))return;await getSupabase().from('profiles').delete().eq('id',id);loadProfessionals();loadEmployers();loadStats();}
+async function toggleJob(id,s){await getSupabase().from('jobs').update({status:s}).eq('id',id);loadJobs();loadStats();}
+async function removeJob(id){if(!confirm('Remove this job?'))return;await getSupabase().from('jobs').update({status:'removed'}).eq('id',id);loadJobs();loadStats();}
 
-/* ── Post a job ── */
 async function postJob() {
   var title=document.getElementById('j-title').value.trim();
   var company=document.getElementById('j-company').value.trim();
@@ -1510,8 +1484,8 @@ async function postJob() {
   function showJobAlert(msg,ok){alertEl.textContent=msg;alertEl.style.cssText='display:block;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;'+(ok?'background:var(--green-dim);border:1px solid rgba(15,168,118,.25);color:var(--green);':'background:var(--red-dim);border:1px solid var(--red-glo);color:var(--red);');}
   if (!title||!company||!desc){showJobAlert('Please fill in Title, Company, and Description.',false);return;}
   try {
-    var c = getContentClient();
-    var { data: sess } = await getSupabase().auth.getSession(); // auth from ig-supabase
+    var c = getSupabase();
+    var { data: sess } = await c.auth.getSession();
     var { error } = await c.from('jobs').insert({
       employer_id:  sess.session ? sess.session.user.id : null,
       company_name: company, title: title, description: desc,
@@ -1533,7 +1507,7 @@ async function loadEditJobs() {
   var el=document.getElementById('editJobsList');if(!el)return;
   el.innerHTML='<div class="empty"><div class="empty-txt">Loading…</div></div>';
   try {
-    var { data } = await getContentClient().from('jobs').select('*').order('created_at',{ascending:false});
+    var { data } = await getSupabase().from('jobs').select('*').order('created_at',{ascending:false});
     if (!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No jobs yet.</div></div>';return;}
     el.innerHTML=data.map(function(j){
       var pc={active:'pill-active',paused:'pill-paused',removed:'pill-rejected'}[j.status]||'pill-active';
