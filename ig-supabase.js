@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════
    ImpactGrid — Supabase Client (Singleton)
-   Used by all pages. Returns one shared instance
-   to avoid multiple GoTrueClient warnings.
+   Single project — all reads/writes use one instance.
+   getContentClient() is an alias for getSupabase() so
+   admin.html works without any code changes.
 ═══════════════════════════════════════════════════════ */
 
 var SUPABASE_URL  = 'https://wedjsnizcvtgptobwugc.supabase.co';
@@ -22,4 +23,10 @@ function getSupabase() {
     });
   }
   return _supabaseClient;
+}
+
+/* Alias — admin.html uses getContentClient() for content
+   tables and storage. Points to the same single project. */
+function getContentClient() {
+  return getSupabase();
 }
