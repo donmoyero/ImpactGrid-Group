@@ -385,7 +385,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
         </div>
       </li>
 
-      <!-- Platform ▼ — FIX: Jobs → jobs.html, Pricing removed -->
+      <!-- Platform ▼ — no Pricing -->
       <li class="nav-dd-wrap">
         <button class="nav-dd-btn" onclick="toggleNavDrop('mega-platform')">
           Platform <span class="nav-dd-chev">▾</span>
@@ -435,7 +435,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </nav>
 
-<!-- ════ MOBILE SIDEBAR — FIX: Jobs → jobs.html, Pricing removed ════ -->
+<!-- ════ MOBILE SIDEBAR ════ -->
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 <div class="mob-sidebar" id="mobSidebar">
   <div class="mob-head">
@@ -654,7 +654,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </div>
 
-<!-- ════ FOOTER — FIX: Jobs → jobs.html, Pricing removed ════ -->
+<!-- ════ FOOTER ════ -->
 <footer class="footer">
   <div class="footer-in">
     <div class="footer-grid">
@@ -730,7 +730,7 @@ document.addEventListener('keydown', function(e){
 /* ── PROFILE DROPDOWN ── */
 function toggleDD(){ document.getElementById('uDrop').classList.toggle('open'); }
 
-/* ── AUTH ── */
+/* ── AUTH — fixed: getSession + onAuthStateChange, no setTimeout ── */
 function setUser(user){
   if(!user) return;
   var email = user.email||'';
@@ -759,11 +759,28 @@ window.igOut = async function(){
   try{ var c = getSupabase(); if(c) await c.auth.signOut(); }catch(e){}
   window.location.href='index.html';
 };
+function attachAuth(c){
+  /* Listen for all future auth changes */
+  c.auth.onAuthStateChange(function(ev, session){
+    if(session && session.user) setUser(session.user);
+    else if(ev==='SIGNED_OUT' || ev==='USER_DELETED') clearUser();
+  });
+  /* Read current session immediately from local storage */
+  c.auth.getSession().then(function(r){
+    if(r && r.data && r.data.session && r.data.session.user) setUser(r.data.session.user);
+  }).catch(function(){});
+}
 function checkAuth(){
-  var c = getSupabase();
-  if(!c) return;
-  c.auth.getUser().then(function(r){ if(r&&r.data&&r.data.user) setUser(r.data.user); }).catch(function(){});
-  c.auth.onAuthStateChange(function(ev,s){ if(s&&s.user) setUser(s.user); else if(ev==='SIGNED_OUT') clearUser(); });
+  var c = null;
+  try{ if(window.getSupabase) c = getSupabase(); }catch(e){}
+  if(c){ attachAuth(c); return; }
+  /* Retry until Supabase is ready */
+  var tries=0, t=setInterval(function(){
+    tries++;
+    try{ if(window.getSupabase) c = getSupabase(); }catch(e){}
+    if(c){ clearInterval(t); attachAuth(c); }
+    else if(tries>=30) clearInterval(t);
+  },100);
 }
 
 /* ── HERO SLIDESHOW ── */
@@ -839,7 +856,7 @@ document.getElementById('heroSlideshow').addEventListener('mouseenter',heroStop)
 document.getElementById('heroSlideshow').addEventListener('mouseleave',heroStart);
 async function loadHeroSlides(){
   try{
-    var c = getContentClient();
+    var c = getContentClient ? getContentClient() : getSupabase();
     if(!c){ heroRender([]); heroStart(); return; }
     var res = await c.from('site_slides').select('*').eq('active',true).order('sort_order',{ascending:true});
     heroRender((res.data||[]).filter(function(s){ return s.type==='video'||s.type==='image'; }));
@@ -864,7 +881,7 @@ function renderTestimonials(items){
 }
 async function loadSiteContent(){
   try{
-    var c = getContentClient();
+    var c = getContentClient ? getContentClient() : getSupabase();
     if(!c){ renderTestimonials(DEFAULT_TESTIMONIALS); return; }
     var kvRes = await c.from('site_content').select('*');
     var kv={}; (kvRes.data||[]).forEach(function(r){ kv[r.key]=r.value; });
@@ -896,8 +913,8 @@ document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ── INIT ── */
-window.addEventListener('load',function(){
-  setTimeout(checkAuth,350);
+window.addEventListener('load', function(){
+  checkAuth();        /* fixed: no setTimeout, uses getSession + retry loop */
   loadHeroSlides();
   loadSiteContent();
   setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); },600000);
