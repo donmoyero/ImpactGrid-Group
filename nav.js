@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    ImpactGrid Group — nav.js
-   Version: 4.2
+   Version: 4.3
 
    BEFORE LOGIN:  Home | About | Services ▼ | Platform ▼  [Login] [Join]
    AFTER LOGIN:   Home | About | Services ▼ | Platform ▼  [Profile ▼]
@@ -99,11 +99,18 @@
       '.nav-mega-text{display:flex;flex-direction:column;}' +
       '.nav-mega-label{font-size:13px;font-weight:600;color:var(--text);}' +
       '.nav-mega-desc{font-size:11px;color:var(--text3);margin-top:1px;}' +
+      /* Logo: desktop = link, mobile = sidebar trigger */
+      '.logo{cursor:pointer;}' +
+      '@media(max-width:768px){' +
+        '.logo{cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
+      '}' +
       '</style>' +
 
       /* ── Nav ── */
       '<nav class="nav" id="mainNav">' +
         '<div class="nav-in">' +
+
+          /* Logo: on mobile taps open sidebar; on desktop navigates home */
           '<a href="index.html" class="logo" id="navLogo">' +
             '<img src="logo.png" class="logo-img" alt="ImpactGrid" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"/>' +
             '<div class="logo-mark" style="display:none;">IG</div>' +
@@ -150,6 +157,8 @@
                 '<a href="dashboard.html">⚡ Dashboard</a>' +
                 '<a href="settings.html">⚙️ Settings</a>' +
                 '<div class="dd-div"></div>' +
+                '<a href="index.html">← Back to Site</a>' +
+                '<div class="dd-div"></div>' +
                 '<button onclick="igOut()">↩ Sign Out</button>' +
               '</div>' +
             '</div>' +
@@ -181,6 +190,9 @@
         '</div>' +
         '<div class="mob-nav">' + mobileLinks + '</div>' +
         '<div class="mob-div"></div>' +
+        /* Back to site — always visible in sidebar */
+        '<a href="index.html" onclick="closeSidebar()" style="display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:13px;font-weight:600;color:var(--text2);border-radius:var(--r);transition:background .2s;" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'\'">← Back to Site</a>' +
+        '<div class="mob-div"></div>' +
         '<div class="mob-auth">' +
           '<div class="mob-out" id="mobOut">' +
             '<a href="login.html" class="mob-alink" onclick="closeSidebar()">Login</a>' +
@@ -202,6 +214,19 @@
     if (container) container.innerHTML = html;
 
     _initNavInteractions();
+
+    /* ── Logo: mobile tap opens sidebar, desktop navigates home ── */
+    var logo = document.getElementById('navLogo');
+    if (logo) {
+      logo.addEventListener('click', function(e) {
+        /* Only intercept on mobile breakpoint */
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          openSidebar();
+        }
+        /* Desktop: let the <a href> navigate normally */
+      });
+    }
   }
 
   /* ─────────────────────────────────────────
