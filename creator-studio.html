@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Creator Intelligence Engine — ImpactGrid</title>
-<meta name="description" content="ImpactGrid Creator Intelligence Engine — AI-powered content advice, trend scoring, and content generation built on real data."/>
-<link rel="icon" href="favicon.ico"/>
-<link rel="stylesheet" href="shared.css"/>
-<link rel="stylesheet" href="creator-studio.css"/>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Creator Intelligence Engine — ImpactGrid</title>
+  <meta name="description" content="ImpactGrid Creator Intelligence Engine — AI-powered content advice, trend scoring, and content generation built on real data."/>
+  <link rel="icon" href="favicon.ico"/>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="creator-studio.css"/>
 </head>
 <body>
 
@@ -55,15 +55,14 @@
     <div class="connect-grid">
 
       <!-- TikTok -->
-      <div class="connect-card" style="--cc-accent:#ff2d55;">
+      <div class="connect-card" id="tt-connect-card" style="--cc-accent:#ff2d55;">
         <div class="cc-icon" style="background:rgba(255,45,85,0.12);color:#ff2d55;">
           <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.73a4.85 4.85 0 01-1.01-.04z"/></svg>
         </div>
         <div class="cc-name">TikTok</div>
         <div class="cc-desc">Follower analytics · Hashtag velocity · Content publishing · Share Kit</div>
-        <div class="cc-status soon"><span class="cc-spinner"></span>Coming Soon</div>
-        <button class="cc-btn cc-btn-soon" disabled>Pending API Approval</button>
-        <div class="coming-soon-note">TikTok developer review in progress. Connection will activate automatically once approved.</div>
+        <div class="cc-status live" id="tt-status"><span class="cc-status-dot"></span><span id="tt-status-text">Ready to Connect</span></div>
+        <button class="cc-btn cc-btn-tt" id="tt-connect-btn" onclick="TikTokAuth.connect(this)">Connect TikTok →</button>
       </div>
 
       <!-- Instagram -->
@@ -204,6 +203,28 @@ document.addEventListener('DOMContentLoaded', function(){
       if(status) status.className = 'cc-status live';
       var ch   = session.channel;
       var name = (ch && ch.snippet && ch.snippet.title) ? ch.snippet.title : 'YouTube';
+      if(stText) stText.textContent = 'Connected · ' + name;
+      if(btn){
+        btn.className   = 'cc-btn cc-btn-connected';
+        btn.textContent = 'Open Dashboard →';
+        btn.onclick     = function(){ window.location.href = 'creator-editor.html'; };
+      }
+    } catch(e){}
+  })();
+
+  /* TikTok session check */
+  (function(){
+    try {
+      if(typeof TikTokAuth === 'undefined') return;
+      var session = TikTokAuth.getSession();
+      if(!session) return;
+      var card   = document.getElementById('tt-connect-card');
+      var btn    = document.getElementById('tt-connect-btn');
+      var status = document.getElementById('tt-status');
+      var stText = document.getElementById('tt-status-text');
+      if(card)   card.classList.add('connected');
+      if(status) status.className = 'cc-status live';
+      var name = (session.user && session.user.display_name) ? session.user.display_name : 'TikTok';
       if(stText) stText.textContent = 'Connected · ' + name;
       if(btn){
         btn.className   = 'cc-btn cc-btn-connected';
