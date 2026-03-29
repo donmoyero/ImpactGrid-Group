@@ -164,6 +164,54 @@
 .tl-title{font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:8px;letter-spacing:-.02em;}
 .tl-desc{font-size:14px;color:var(--text2);line-height:1.7;}
 
+/* FOUNDERS */
+.founders-grid{
+  display:flex;gap:56px;justify-content:center;
+  flex-wrap:wrap;margin-top:52px;
+}
+.founder-card{
+  text-align:center;max-width:240px;
+}
+.founder-img-wrap{
+  position:relative;width:172px;height:172px;
+  margin:0 auto 20px;
+}
+.founder-img-wrap::before{
+  content:'';position:absolute;inset:-4px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  z-index:0;
+}
+.founder-img-wrap::after{
+  content:'';position:absolute;inset:-8px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-dim),transparent);
+  z-index:-1;
+  animation:founder-pulse 3s ease-in-out infinite;
+}
+@keyframes founder-pulse{
+  0%,100%{opacity:.4;transform:scale(1);}
+  50%{opacity:.8;transform:scale(1.04);}
+}
+.founder-img{
+  width:164px;height:164px;
+  border-radius:50%;object-fit:cover;
+  position:absolute;top:4px;left:4px;
+  border:3px solid var(--bg);
+  z-index:1;display:block;
+  transition:transform .3s;
+}
+.founder-card:hover .founder-img{transform:scale(1.03);}
+.founder-name{
+  font-family:var(--fd);font-size:18px;font-weight:900;
+  letter-spacing:-.02em;color:var(--text);
+}
+.founder-role{
+  font-family:var(--fm);font-size:10px;
+  color:var(--gold);letter-spacing:.12em;
+  text-transform:uppercase;margin-top:5px;font-weight:600;
+}
+
 /* CTA BAND */
 .cta-band{
   margin:0 28px 80px;
@@ -205,6 +253,9 @@
   .timeline::before{left:19px;}
   .tl-item{grid-template-columns:40px 1fr;gap:16px;}
   .tl-dot{width:40px;height:40px;}
+  .founders-grid{gap:36px;}
+  .founder-img-wrap{width:148px;height:148px;}
+  .founder-img{width:140px;height:140px;}
 }
 </style>
 </head>
@@ -284,7 +335,7 @@
         <h3>Connected Ecosystem</h3>
         <p>Our products work better together. Analytics informs consulting. Creator Studio feeds from trend data. Network surfaces the right people at the right time.</p>
       </div>
-      <div class="value-card anim" style="--va:var(--purple);">
+      <div class="value-card anim" style="--va:var(--gold);">
         <div class="value-ico">🎯</div>
         <h3>Clarity Over Complexity</h3>
         <p>We remove noise, not add to it. Every insight is specific, actionable, and designed to help you make a decision — not drown in dashboards.</p>
@@ -385,6 +436,60 @@
 
   <div class="divider"></div>
 
+  <!-- FOUNDERS -->
+  <section class="section">
+    <div style="text-align:center;">
+      <div class="label-tag">The People Behind It</div>
+      <h2 class="sec-h">Meet the Founders</h2>
+      <p class="sec-p" style="margin:12px auto 0;">ImpactGrid was built by two people who believe intelligence should be accessible to everyone — not just the enterprise.</p>
+    </div>
+    <div class="founders-grid">
+
+      <!-- Dara -->
+      <div class="founder-card anim">
+        <div class="founder-img-wrap">
+          <img
+            src="dara.jpg"
+            alt="Dara Ogunmoyero"
+            class="founder-img"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+          />
+          <!-- Fallback avatar if image missing -->
+          <div style="display:none;width:164px;height:164px;border-radius:50%;
+                      background:linear-gradient(135deg,var(--gold),var(--gold2));
+                      align-items:center;justify-content:center;
+                      font-family:var(--fd);font-size:40px;font-weight:900;
+                      color:#fff;position:absolute;top:4px;left:4px;z-index:1;">D</div>
+        </div>
+        <div class="founder-name">Dara Ogunmoyero</div>
+        <div class="founder-role">Co-Founder</div>
+      </div>
+
+      <!-- Joy -->
+      <div class="founder-card anim anim-d2">
+        <div class="founder-img-wrap">
+          <img
+            src="joy.jpg"
+            alt="Joy Idjave"
+            class="founder-img"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+          />
+          <!-- Fallback avatar if image missing -->
+          <div style="display:none;width:164px;height:164px;border-radius:50%;
+                      background:linear-gradient(135deg,var(--gold),var(--gold2));
+                      align-items:center;justify-content:center;
+                      font-family:var(--fd);font-size:40px;font-weight:900;
+                      color:#fff;position:absolute;top:4px;left:4px;z-index:1;">J</div>
+        </div>
+        <div class="founder-name">Joy Idjave</div>
+        <div class="founder-role">Co-Founder</div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
   <!-- CTA -->
   <section style="padding:60px 0 80px;">
     <div class="cta-band">
@@ -405,12 +510,18 @@
 
 <script src="impactgrid-chat-bubble.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script defer src="supabase-config.js"></script>
+<script defer src="ig-supabase.js"></script>
 <script defer src="nav.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   renderNav('about.html');
   renderFooter();
+
+  /* Scroll animations */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
+  },{threshold:0.07});
+  document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
 });
 </script>
 </body>
