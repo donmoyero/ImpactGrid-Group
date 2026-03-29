@@ -678,10 +678,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;o
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<!-- ════ SCRIPTS ════ -->
+<!-- supabase-config.js intentionally NOT loaded here — index uses ig-supabase.js only -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
-<script src="supabase-config.js"></script>
 <script>
 
 /* ── THEME ── */
@@ -730,7 +730,7 @@ document.addEventListener('keydown', function(e){
 /* ── PROFILE DROPDOWN ── */
 function toggleDD(){ document.getElementById('uDrop').classList.toggle('open'); }
 
-/* ── AUTH — fixed: getSession + onAuthStateChange, no setTimeout ── */
+/* ── AUTH ── */
 function setUser(user){
   if(!user) return;
   var email = user.email||'';
@@ -760,12 +760,10 @@ window.igOut = async function(){
   window.location.href='index.html';
 };
 function attachAuth(c){
-  /* Listen for all future auth changes */
   c.auth.onAuthStateChange(function(ev, session){
     if(session && session.user) setUser(session.user);
     else if(ev==='SIGNED_OUT' || ev==='USER_DELETED') clearUser();
   });
-  /* Read current session immediately from local storage */
   c.auth.getSession().then(function(r){
     if(r && r.data && r.data.session && r.data.session.user) setUser(r.data.session.user);
   }).catch(function(){});
@@ -774,7 +772,6 @@ function checkAuth(){
   var c = null;
   try{ if(window.getSupabase) c = getSupabase(); }catch(e){}
   if(c){ attachAuth(c); return; }
-  /* Retry until Supabase is ready */
   var tries=0, t=setInterval(function(){
     tries++;
     try{ if(window.getSupabase) c = getSupabase(); }catch(e){}
@@ -854,14 +851,36 @@ function heroStart(){ clearInterval(heroTimer); if(heroTotal>1) heroTimer=setInt
 function heroStop(){ clearInterval(heroTimer); }
 document.getElementById('heroSlideshow').addEventListener('mouseenter',heroStop);
 document.getElementById('heroSlideshow').addEventListener('mouseleave',heroStart);
+
 async function loadHeroSlides(){
   try{
-    var c = getContentClient ? getContentClient() : getSupabase();
+    /* Wait for getSupabase to be ready — same retry pattern as auth */
+    var c = null;
+    var tries = 0;
+    while(!c && tries < 30){
+      try{ if(window.getSupabase) c = getSupabase(); }catch(e){}
+      if(!c){ await new Promise(function(r){ setTimeout(r,100); }); tries++; }
+    }
     if(!c){ heroRender([]); heroStart(); return; }
-    var res = await c.from('site_slides').select('*').eq('active',true).order('sort_order',{ascending:true});
-    heroRender((res.data||[]).filter(function(s){ return s.type==='video'||s.type==='image'; }));
+
+    var res = await c.from('site_slides')
+      .select('id, type, url, title, caption, tag_text, tag_type, cta_text, cta_url, sort_order')
+      .eq('active', true)
+      .order('sort_order', {ascending: true});
+
+    if(res.error) throw res.error;
+
+    var slides = (res.data || []).filter(function(s){
+      return (s.type === 'image' || s.type === 'video') && s.url;
+    });
+
+    heroRender(slides);
     heroStart();
-  }catch(e){ heroRender([]); heroStart(); }
+  }catch(e){
+    console.warn('Slides load error:', e);
+    heroRender([]);
+    heroStart();
+  }
 }
 
 /* ── SITE CONTENT + TESTIMONIALS ── */
@@ -881,8 +900,10 @@ function renderTestimonials(items){
 }
 async function loadSiteContent(){
   try{
-    var c = getContentClient ? getContentClient() : getSupabase();
+    var c = null;
+    try{ if(window.getSupabase) c = getSupabase(); }catch(e){}
     if(!c){ renderTestimonials(DEFAULT_TESTIMONIALS); return; }
+
     var kvRes = await c.from('site_content').select('*');
     var kv={}; (kvRes.data||[]).forEach(function(r){ kv[r.key]=r.value; });
     function applyKv(id,key){ var el=document.getElementById(id); if(el&&kv[key]) el.textContent=kv[key]; }
@@ -914,7 +935,7 @@ function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&l
 
 /* ── INIT ── */
 window.addEventListener('load', function(){
-  checkAuth();        /* fixed: no setTimeout, uses getSession + retry loop */
+  checkAuth();
   loadHeroSlides();
   loadSiteContent();
   setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); },600000);
