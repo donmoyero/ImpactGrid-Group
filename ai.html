@@ -70,6 +70,26 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
 #send-btn:hover:not(:disabled){background:#5651d4;transform:translateY(-1px)}
 #send-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 
+/* ══════════════ IMAGE UPLOAD PANEL ══════════════ */
+.img-panel{padding:10px 22px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.img-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.img-panel-head span{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono)}
+.img-panel-head small{font-size:.64rem;color:var(--faint)}
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--raised)}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--brand);background:rgba(108,99,255,.06)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone-icon{font-size:1.4rem;margin-bottom:4px;display:block}
+.drop-zone-txt{font-size:.74rem;color:var(--muted);line-height:1.5}
+.drop-zone-txt strong{color:var(--brand)}
+.img-thumbs{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.img-thumb-wrap{position:relative;width:58px;height:58px;border-radius:8px;overflow:hidden;border:2px solid var(--border);flex-shrink:0;cursor:pointer;transition:all .18s;group:true}
+.img-thumb-wrap:hover{border-color:var(--accent);transform:scale(1.05)}
+.img-thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.img-thumb-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:.55rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.img-thumb-wrap:hover .img-thumb-del{opacity:1}
+.img-assign-badge{position:absolute;bottom:2px;left:2px;background:var(--brand);color:#fff;font-size:.48rem;font-family:var(--font-mono);font-weight:700;padding:1px 4px;border-radius:3px;line-height:1.4}
+.img-ai-tag{position:absolute;bottom:2px;right:2px;background:rgba(0,229,176,.9);color:#000;font-size:.45rem;font-family:var(--font-mono);font-weight:700;padding:1px 3px;border-radius:3px;line-height:1.4}
+
 /* PREVIEW PANEL */
 .prev-panel{display:flex;flex-direction:column;background:var(--bg);overflow:hidden;min-height:0}
 .prev-top{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface)}
@@ -131,6 +151,28 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
 .slide:hover{transform:translateY(-3px);box-shadow:0 12px 48px rgba(108,99,255,.22)}
 .slide-in{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:10px;align-items:center}
 
+/* IMAGE OVERLAY STYLES */
+.slide-img-bg{position:absolute;inset:0;z-index:1;background-size:cover;background-position:center;background-repeat:no-repeat}
+.slide-img-overlay{position:absolute;inset:0;z-index:2}
+
+/* Image placement modes */
+.img-mode-hero .slide-img-bg{opacity:.35}
+.img-mode-hero .slide-img-overlay{background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,.55) 100%)}
+.img-mode-top .slide-img-bg{top:0;bottom:50%;opacity:.9;border-radius:0}
+.img-mode-top .slide-img-overlay{top:0;bottom:50%;background:linear-gradient(to bottom,transparent,rgba(0,0,0,.3))}
+.img-mode-side .slide-img-bg{left:0;width:42%;opacity:.85}
+.img-mode-side .slide-img-overlay{left:0;width:42%;background:linear-gradient(to right,transparent,rgba(0,0,0,.2))}
+.img-mode-accent .slide-img-bg{opacity:.18}
+.img-mode-accent .slide-img-overlay{background:rgba(0,0,0,.08)}
+.img-mode-bg .slide-img-bg{opacity:.25}
+.img-mode-bg .slide-img-overlay{background:linear-gradient(135deg,rgba(0,0,0,.3),rgba(0,0,0,.1))}
+
+/* Drop target on slide */
+.slide-drop-hint{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(108,99,255,.18);border:3px dashed var(--brand);border-radius:16px;font-size:.8rem;font-family:var(--font-mono);color:var(--brand);font-weight:700;pointer-events:none}
+.slide.drop-target .slide-drop-hint{display:flex}
+.slide-img-remove{position:absolute;top:10px;left:10px;z-index:15;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:.6rem;cursor:pointer;font-family:var(--font-mono);opacity:0;transition:opacity .2s}
+.slide:hover .slide-img-remove{opacity:1}
+
 /* Edit mode hint */
 .slide.edit-mode{cursor:default}
 .slide.edit-mode:hover{transform:none}
@@ -157,217 +199,115 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
 /* ════════════════════
    50 BACKGROUND STYLES
 ════════════════════ */
-
-/* 1 Gradient Mesh */
 .bg-gm{background:linear-gradient(135deg,#667eea,#764ba2 45%,#f093fb)}
 .bg-gm::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.18),transparent 50%),radial-gradient(circle at 80% 20%,rgba(255,200,100,.22),transparent 50%)}
-
-/* 2 Dark Neon */
 .bg-dn{background:#070712}
 .bg-dn::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(108,99,255,.45),transparent 65%),radial-gradient(ellipse at 100% 100%,rgba(0,229,176,.28),transparent 55%)}
 .bg-dn::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(108,99,255,.06) 60px)}
-
-/* 3 Editorial White */
 .bg-ew{background:#fff;border:3px solid #0F0E17}
 .bg-ew::before{content:'';position:absolute;top:0;left:0;right:0;height:7px;background:linear-gradient(90deg,#6C63FF,#FF6B6B,#00E5B0)}
-
-/* 4 Geometric Bold */
 .bg-gb{background:#16142A;overflow:hidden}
 .bg-gb::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:linear-gradient(135deg,#6C63FF,#FF6B6B);top:-90px;right:-70px;opacity:.6}
 .bg-gb::after{content:'';position:absolute;width:180px;height:180px;background:linear-gradient(135deg,#00E5B0,#6C63FF);bottom:-70px;left:-50px;opacity:.4;transform:rotate(45deg)}
-
-/* 5 Minimal Sage */
 .bg-ms{background:linear-gradient(155deg,#E8F5E9,#F1F8E9)}
 .bg-ms::before{content:'';position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(76,175,80,.1);bottom:-36px;right:-36px}
-
-/* 6 Data Grid */
 .bg-dg{background:#0B1017}
 .bg-dg::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(56,189,248,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.13) 1px,transparent 1px);background-size:40px 40px}
 .bg-dg::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#818cf8,#34d399)}
-
-/* 7 Luxury Cream */
 .bg-lc{background:linear-gradient(150deg,#FDF8F0,#FAF0E6)}
 .bg-lc::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(180,130,80,.07) 1px,transparent 1px);background-size:20px 20px}
 .bg-lc::after{content:'';position:absolute;top:14px;left:14px;right:14px;bottom:14px;border:1px solid rgba(180,130,80,.28);border-radius:2px;pointer-events:none}
-
-/* 8 Neon Purple */
 .bg-np{background:linear-gradient(145deg,#13001E,#2D0057)}
 .bg-np::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(180,0,255,.38),transparent 60%),radial-gradient(ellipse at 75% 30%,rgba(255,0,150,.26),transparent 55%)}
-
-/* 9 Brutalist Yellow */
 .bg-by{background:#FFE500;border:4px solid #000}
 .bg-by::before{content:'';position:absolute;bottom:-6px;right:-6px;width:100%;height:100%;background:#000;z-index:0;border-radius:inherit}
-
-/* 10 Frosted Glass */
 .bg-fg{background:linear-gradient(135deg,#4facfe,#00f2fe 50%,#43e97b)}
 .bg-fg::before{content:'';position:absolute;inset:8px;background:rgba(255,255,255,.2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:10px;border:1px solid rgba(255,255,255,.38)}
-
-/* 11 Sunset Coral */
 .bg-sc{background:linear-gradient(160deg,#FF9A6C,#FF6B6B,#C0392B)}
 .bg-sc::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 90%,rgba(255,220,100,.35),transparent 55%)}
-
-/* 12 Ocean Depth */
 .bg-od{background:linear-gradient(180deg,#0F2027,#203A43,#2C5364)}
 .bg-od::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(0,220,255,.25),transparent 60%)}
-
-/* 13 Rose Gold */
 .bg-rg{background:linear-gradient(135deg,#F3E0DC,#FFB6C1,#E8A598)}
 .bg-rg::after{content:'';position:absolute;top:20px;left:20px;right:20px;bottom:20px;border:1.5px solid rgba(180,100,90,.22);border-radius:4px;pointer-events:none}
-
-/* 14 Mint Fresh */
 .bg-mf{background:linear-gradient(135deg,#00b09b,#96c93d)}
 .bg-mf::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 0% 0%,rgba(255,255,255,.2),transparent 50%)}
-
-/* 15 Midnight Blue */
 .bg-mb{background:#0A0E27}
 .bg-mb::before{content:'';position:absolute;inset:0;background-image:radial-gradient(1px 1px at 25% 20%,rgba(255,255,255,.6) 0,transparent 0),radial-gradient(1px 1px at 60% 80%,rgba(255,255,255,.5) 0,transparent 0),radial-gradient(1px 1px at 85% 35%,rgba(255,255,255,.7) 0,transparent 0),radial-gradient(1px 1px at 15% 65%,rgba(255,255,255,.4) 0,transparent 0),radial-gradient(2px 2px at 70% 15%,rgba(255,255,255,.8) 0,transparent 0);background-size:200px 200px}
 .bg-mb::after{content:'';position:absolute;bottom:0;left:0;right:0;height:160px;background:linear-gradient(0deg,rgba(41,98,255,.3),transparent)}
-
-/* 16 Paper Texture */
 .bg-pt{background:#F5F0E8}
-.bg-pt::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23f5f0e8'/%3E%3Crect x='0' y='0' width='1' height='1' fill='%23d4c9a8' opacity='.3'/%3E%3C/svg%3E")}
 .bg-pt::after{content:'';position:absolute;top:18px;left:18px;right:18px;bottom:18px;border:2px solid rgba(100,80,40,.15);pointer-events:none}
-
-/* 17 Electric Orange */
 .bg-eo{background:#FF4500}
 .bg-eo::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(255,200,0,.4),transparent 55%),radial-gradient(circle at 80% 80%,rgba(200,0,0,.3),transparent 50%)}
-
-/* 18 Forest Night */
 .bg-fn{background:linear-gradient(145deg,#0D1F0D,#1A3A1A)}
 .bg-fn::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(50,200,80,.2),transparent 60%)}
 .bg-fn::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(50,200,80,.04) 1px,transparent 1px);background-size:24px 24px}
-
-/* 19 Candy Pop */
 .bg-cp{background:linear-gradient(135deg,#FF9DE2,#A3D8FF,#FFE599)}
 .bg-cp::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.1) 0,rgba(255,255,255,.1) 2px,transparent 2px,transparent 16px)}
-
-/* 20 Charcoal Ink */
 .bg-ci{background:#1C1C1E;border:3px solid #3A3A3C}
 .bg-ci::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#FF6B6B,#FF9A00,#FFE500,#6C63FF)}
-
-/* 21 Purple Haze */
 .bg-ph{background:linear-gradient(135deg,#360033,#0b8793)}
 .bg-ph::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 60% 40%,rgba(150,0,255,.4),transparent 60%)}
-
-/* 22 Tangerine Dream */
 .bg-td{background:linear-gradient(135deg,#f7971e,#ffd200)}
 .bg-td::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 70%,rgba(255,100,0,.3),transparent 50%)}
-
-/* 23 Arctic Blue */
 .bg-ab{background:linear-gradient(155deg,#E8F4F8,#D1EAF6,#B8D9EF)}
 .bg-ab::before{content:'';position:absolute;top:20px;left:20px;right:20px;bottom:20px;border:1px solid rgba(100,160,220,.3);border-radius:4px;pointer-events:none}
-
-/* 24 Hot Pink */
 .bg-hp{background:linear-gradient(135deg,#f953c6,#b91d73)}
 .bg-hp::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,200,230,.2),transparent 50%)}
-
-/* 25 Slate Wave */
 .bg-sw{background:#2D3748}
 .bg-sw::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 100%,rgba(99,179,237,.25),transparent 60%),radial-gradient(ellipse at 100% 0%,rgba(154,230,180,.15),transparent 60%)}
-
-/* 26 Gold Foil */
 .bg-gf{background:linear-gradient(135deg,#1A1200,#3D2B00)}
 .bg-gf::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(212,175,55,.06) 0,rgba(212,175,55,.06) 1px,transparent 1px,transparent 12px)}
 .bg-gf::after{content:'';position:absolute;top:16px;left:16px;right:16px;bottom:16px;border:1px solid rgba(212,175,55,.4);pointer-events:none}
-
-/* 27 Pastel Rainbow */
 .bg-pr{background:linear-gradient(120deg,#FFD6E0,#FFE8CC,#D6EEFF,#E0D6FF)}
-
-/* 28 Tech Blueprint */
 .bg-tb{background:#001F3F}
 .bg-tb::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,120,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(0,120,255,.12) 1px,transparent 1px),linear-gradient(rgba(0,120,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,120,255,.05) 1px,transparent 1px);background-size:80px 80px,80px 80px,20px 20px,20px 20px}
-
-/* 29 Warm Sunset */
 .bg-ws{background:linear-gradient(180deg,#3F2B96,#A8C0FF 50%,#FF9A6C)}
-
-/* 30 Dark Matter */
 .bg-dm{background:#000}
 .bg-dm::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(108,99,255,.15),transparent 70%)}
 .bg-dm::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.5) 1px,transparent 1px);background-size:30px 30px;opacity:.12}
-
-/* 31 Neon Green */
 .bg-ng{background:#0A0A0A}
 .bg-ng::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,255,100,.15),transparent 70%)}
 .bg-ng::after{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,100,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,100,.06) 1px,transparent 1px);background-size:30px 30px}
-
-/* 32 Blush Marble */
 .bg-bm{background:linear-gradient(135deg,#fdfbfb,#ebedee)}
 .bg-bm::before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,rgba(255,182,193,.2) 0%,transparent 40%,rgba(173,216,230,.15) 60%,transparent 100%)}
 .bg-bm::after{content:'';position:absolute;top:20px;left:20px;right:20px;bottom:20px;border:1px solid rgba(180,150,160,.2);pointer-events:none}
-
-/* 33 Terracotta */
 .bg-tc{background:linear-gradient(135deg,#C1440E,#E8875A)}
 .bg-tc::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,220,180,.2),transparent 50%)}
-
-/* 34 Night Sky */
 .bg-ns{background:linear-gradient(180deg,#090C1A 0%,#1A1035 50%,#0D1F3C 100%)}
 .bg-ns::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(255,200,100,.08),transparent 50%),radial-gradient(ellipse at 80% 60%,rgba(180,100,255,.12),transparent 50%)}
-
-/* 35 Acid Lime */
 .bg-al{background:#C6F135;border:3px solid #2D3000}
 .bg-al::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:#2D3000}
-
-/* 36 Deep Sea */
 .bg-ds{background:linear-gradient(180deg,#005C97,#363795)}
 .bg-ds::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 120%,rgba(0,220,255,.3),transparent 60%)}
-
-/* 37 Vintage Sepia */
 .bg-vs{background:#D4B483}
 .bg-vs::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(180,120,60,.15),rgba(100,60,20,.12))}
 .bg-vs::after{content:'';position:absolute;top:16px;left:16px;right:16px;bottom:16px;border:2px solid rgba(100,60,20,.2);pointer-events:none}
-
-/* 38 Miami Vice */
 .bg-mv{background:linear-gradient(135deg,#0D0221,#1A0533)}
 .bg-mv::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,rgba(255,0,128,.3),transparent 55%),radial-gradient(ellipse at 30% 70%,rgba(0,230,255,.2),transparent 55%)}
 .bg-mv::after{content:'';position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(0deg,rgba(255,0,128,.06),transparent)}
-
-/* 39 Concrete */
 .bg-co{background:linear-gradient(135deg,#8E9EAB,#EEF2F3)}
-.bg-co::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='none'/%3E%3Ccircle cx='1' cy='1' r='.5' fill='%23999' opacity='.1'/%3E%3C/svg%3E")}
-
-/* 40 Comic Pop */
 .bg-cx{background:#FFF176;border:4px solid #212121}
 .bg-cx::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(0,0,0,.08) 1px,transparent 1px);background-size:16px 16px}
-
-/* 41 Twilight */
 .bg-tw{background:linear-gradient(160deg,#0F0C29,#302B63,#24243E)}
 .bg-tw::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(180,140,255,.25),transparent 60%)}
-
-/* 42 Infrared */
 .bg-ir{background:linear-gradient(135deg,#200122,#6f0000)}
 .bg-ir::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,80,0,.4),transparent 55%)}
-
-/* 43 Ice Crystal */
 .bg-ic{background:linear-gradient(135deg,#E3F2FD,#FFFFFF,#E8EAF6)}
 .bg-ic::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(60deg,rgba(100,180,255,.04) 0,rgba(100,180,255,.04) 1px,transparent 1px,transparent 20px)}
-
-/* 44 Earth Tones */
 .bg-et{background:linear-gradient(145deg,#5D4037,#795548)}
 .bg-et::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 80%,rgba(255,200,100,.15),transparent 50%)}
-
-/* 45 Neon Cyberpunk */
 .bg-nc{background:#08001A}
 .bg-nc::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,200,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,.08) 1px,transparent 1px);background-size:28px 28px}
 .bg-nc::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(255,0,255,.12),transparent 70%)}
-
-/* 46 Dusty Rose */
 .bg-dr{background:linear-gradient(135deg,#D4A5A5,#EDCECE)}
 .bg-dr::after{content:'';position:absolute;top:18px;left:18px;right:18px;bottom:18px;border:1px solid rgba(160,80,80,.2);border-radius:2px;pointer-events:none}
-
-/* 47 Space Station */
 .bg-ss{background:#111216}
 .bg-ss::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 29px,rgba(80,100,120,.08) 30px),repeating-linear-gradient(90deg,transparent,transparent 29px,rgba(80,100,120,.08) 30px)}
 .bg-ss::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#00BFFF,transparent)}
-
-/* 48 Watercolor */
 .bg-wc{background:linear-gradient(135deg,#E3E9FF,#FFE8F0,#E8FFF3)}
 .bg-wc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(150,170,255,.2),transparent 50%),radial-gradient(ellipse at 70% 60%,rgba(255,150,180,.18),transparent 50%)}
-
-/* 49 Metallic Silver */
 .bg-ms2{background:linear-gradient(135deg,#BDC3C7,#2C3E50)}
 .bg-ms2::before{content:'';position:absolute;inset:0;background:linear-gradient(45deg,rgba(255,255,255,.08) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.08) 75%,transparent 75%);background-size:8px 8px}
-
-/* 50 Holographic */
 .bg-hg{background:linear-gradient(135deg,#a18cd1,#fbc2eb 25%,#a1c4fd 50%,#c2e9fb 75%,#a18cd1)}
 .bg-hg::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0,rgba(255,255,255,.06) 1px,transparent 1px,transparent 4px);mix-blend-mode:overlay}
 
@@ -407,9 +347,10 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
 .mslide-num{position:absolute;top:6px;left:6px;z-index:10;background:rgba(0,0,0,.55);color:#fff;font-size:.6rem;font-family:var(--font-mono);font-weight:700;padding:2px 7px;border-radius:4px}
 .mslide-check{position:absolute;top:6px;right:6px;z-index:10;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.7rem;opacity:0;transition:opacity .16s}
 .mslide-wrap.selected .mslide-check{opacity:1}
-.mslide-preview{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px;text-align:center;border-radius:8px}
-.mp-head{font-weight:800;font-size:.58rem;line-height:1.2;margin-bottom:4px}
-.mp-sub{font-size:.46rem;opacity:.8;line-height:1.4}
+.mslide-preview{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px;text-align:center;border-radius:8px;position:relative;overflow:hidden}
+.mp-head{font-weight:800;font-size:.58rem;line-height:1.2;margin-bottom:4px;position:relative;z-index:2}
+.mp-sub{font-size:.46rem;opacity:.8;line-height:1.4;position:relative;z-index:2}
+.mp-img{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.3}
 .modal-actions{display:flex;gap:10px;flex-wrap:wrap}
 .mact-btn{flex:1;padding:10px 16px;border-radius:9px;cursor:pointer;font-family:var(--font-body);font-size:.82rem;font-weight:600;border:1px solid var(--border);background:var(--raised);color:var(--text);transition:all .18s;display:flex;align-items:center;justify-content:center;gap:7px;min-width:120px}
 .mact-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
@@ -423,9 +364,19 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
 .exp-label{font-size:.74rem;color:var(--muted);font-family:var(--font-mono)}
 .mobile-note{display:none;font-size:.72rem;color:var(--muted);font-family:var(--font-mono);margin-top:10px;padding:8px 12px;background:var(--raised);border-radius:8px;border:1px solid var(--border);line-height:1.6}
 
+/* Safari download links */
+.safari-dl-links{display:none;margin-top:12px;flex-direction:column;gap:8px}
+.safari-dl-links.on{display:flex}
+.sdl-link{display:flex;align-items:center;gap:9px;background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:8px 12px;text-decoration:none;color:var(--text);font-size:.76rem;font-family:var(--font-mono);transition:all .16s}
+.sdl-link:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.sdl-thumb{width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0}
+.sdl-info{display:flex;flex-direction:column;gap:2px}
+.sdl-name{font-weight:700;font-size:.72rem}
+.sdl-hint{font-size:.62rem;opacity:.6}
+
 #toast{position:fixed;bottom:22px;right:22px;z-index:999;background:var(--text);color:var(--bg);padding:9px 18px;border-radius:9px;font-size:.8rem;font-weight:500;opacity:0;transform:translateY(8px);transition:all .28s;pointer-events:none;box-shadow:var(--sh-lg);max-width:280px;text-align:center}
 #toast.show{opacity:1;transform:none}
-#export-render{position:fixed;left:-9999px;top:0;z-index:-1;pointer-events:none;width:1px;height:1px;overflow:hidden}
+#export-render{position:fixed;left:-9999px;top:0;z-index:-1;pointer-events:none;width:1080px;overflow:hidden}
 
 /* Edit toolbar */
 .edit-toolbar{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:400;background:var(--surface);border:1.5px solid var(--brand);border-radius:50px;padding:8px 18px;gap:12px;align-items:center;box-shadow:var(--sh-lg);white-space:nowrap}
@@ -437,10 +388,10 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
 .etbtn.danger{border-color:var(--accent);color:var(--accent)}
 .etbtn.danger:hover{background:var(--accent);color:#fff}
 
-/* Style style picker (compact pill list in cbar) */
+/* Style picker */
 .style-picker-wrap{display:flex;align-items:center;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none;min-width:0}
 .style-picker-wrap::-webkit-scrollbar{display:none}
-.style-pill{background:var(--raised);border:1px solid var(--border);border-radius:16px;padding:3px 10px;font-size:.68rem;color:var(--text);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .16s;font-family:var(--font-body)}
+.style-pill{background:var(--raised);border:1px solid var(--border);border-radius:16px;padding:3px 10px;font-size:.68rem;color:var(--text);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .16px;font-family:var(--font-body)}
 .style-pill:hover,.style-pill.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 
 @media(max-width:900px){
@@ -487,8 +438,23 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
       <span class="tlbl">What's Trending</span>
       <span style="font-size:.73rem;color:var(--faint)">Loading…</span>
     </div>
+
+    <!-- ══ IMAGE UPLOAD PANEL ══ -->
+    <div class="img-panel" id="img-panel">
+      <div class="img-panel-head">
+        <span>📸 Images</span>
+        <small id="img-ai-status" style="color:var(--pop);font-family:var(--font-mono);font-size:.62rem"></small>
+      </div>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="img-file-input" accept="image/*" multiple/>
+        <span class="drop-zone-icon">🖼️</span>
+        <div class="drop-zone-txt"><strong>Drop images here</strong> or click to browse<br><span style="font-size:.66rem;opacity:.7">AI auto-places images on matching slides</span></div>
+      </div>
+      <div class="img-thumbs" id="img-thumbs"></div>
+    </div>
+
     <div class="msgs" id="msgs">
-      <div class="msg bot">Hey — I'm Dijo. Tell me what your carousel is about, who it's for, and what you want them to feel or do after seeing it. I'll build it with real content, not filler. You can edit any text on slides after I generate them!</div>
+      <div class="msg bot">Hey — I'm Dijo. Tell me what your carousel is about, who it's for, and what you want them to feel or do after seeing it. I'll build it with real content, not filler. You can edit any text on slides after I generate them! <br><br>📸 <strong>Got images?</strong> Upload them above — I'll automatically place them on the right slides.</div>
     </div>
     <div class="inp-wrap">
       <div class="inp-row">
@@ -548,7 +514,6 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
         </select>
       </div>
       <div class="cbar-sep"></div>
-      <!-- TWO colour pickers: text colour + bg colour -->
       <div class="cbar-group" style="gap:10px">
         <div class="swatch-wrap">
           <span class="swatch-lbl">Text</span>
@@ -560,16 +525,13 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
         </div>
       </div>
       <div class="cbar-sep"></div>
-      <!-- Edit mode toggle -->
       <button class="nbtn" id="edit-toggle-btn" style="font-size:.72rem;padding:5px 12px;border-radius:8px;gap:5px" disabled>✏️ Edit Text</button>
     </div>
 
-    <!-- CONTROL BAR ROW 2: 50 Style Picker -->
+    <!-- CONTROL BAR ROW 2: Style Picker -->
     <div class="cbar" style="padding:6px 14px;gap:4px">
       <label style="flex-shrink:0">Style</label>
-      <div class="style-picker-wrap" id="style-picker-wrap">
-        <!-- Populated by JS -->
-      </div>
+      <div class="style-picker-wrap" id="style-picker-wrap"></div>
     </div>
 
     <div class="snav">
@@ -613,13 +575,15 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
     <div class="modal-actions">
       <button class="mact-btn" id="sel-all-btn">✓ All</button>
       <button class="mact-btn" id="desel-btn">✕ None</button>
-      <button class="mact-btn pri" id="do-export-btn">⬇ Download</button>
+      <button class="mact-btn pri" id="do-export-btn">⬇ Download PNG</button>
     </div>
-    <div class="mobile-note" id="mobile-note">📱 <strong>iPhone/Android:</strong> Images will open in a new tab — press &amp; hold to save each one.</div>
+    <div class="mobile-note" id="mobile-note"></div>
     <div class="exp-progress" id="exp-progress">
       <div class="exp-bar-wrap"><div class="exp-bar" id="exp-bar"></div></div>
       <div class="exp-label" id="exp-label">Preparing…</div>
     </div>
+    <!-- Safari / iPad: tap-to-save links appear here -->
+    <div class="safari-dl-links" id="safari-dl-links"></div>
   </div>
 </div>
 
@@ -632,12 +596,30 @@ nav{position:sticky;top:0;z-index:200;background:var(--nav);border-bottom:1px so
   <span style="font-size:.7rem;color:var(--muted)">Click any text on a slide to edit it</span>
 </div>
 
-<div id="export-render"></div>
+<div id="export-render" style="position:fixed;left:-9999px;top:0;z-index:-1;pointer-events:none;width:1080px;"></div>
 <div id="toast"></div>
 
 <script src="creator-ai.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+/* ══════════════ DEVICE / BROWSER DETECTION ══════════════ */
+var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+var isIOS    = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+// iPad on iOS13+ reports as MacOS with touch
+var isIPad   = /iPad/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+var needsSafariFlow = isIOS || isIPad || (isSafari && isMobile);
+
+/* Show appropriate mobile note */
+var mobileNote = document.getElementById('mobile-note');
+if (needsSafariFlow) {
+  mobileNote.style.display = 'block';
+  mobileNote.innerHTML = '📱 <strong>iPhone / iPad Safari:</strong> After clicking Download, tap each image link below &amp; use <em>long-press → Save Image</em> to save to Photos.';
+} else if (isMobile) {
+  mobileNote.style.display = 'block';
+  mobileNote.innerHTML = '📱 <strong>Android:</strong> Images will download automatically to your Downloads folder.';
+}
 
 /* ══════════════ STATE ══════════════ */
 var S = {
@@ -645,13 +627,12 @@ var S = {
   style: null, currentTopic: '', pendingPrompt: '', slideCount: 7,
   editMode: false,
   textColor: '#ffffff',
-  bgColor: '#6C63FF'
+  bgColor: '#6C63FF',
+  images: []   // [{dataUrl, name, assignedSlide, placement}]
 };
 var selectedSlides = new Set();
 var fsIdx = 0;
 var CONV = { waitingForCount: false };
-var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-if (isMobile) document.getElementById('mobile-note').style.display = 'block';
 
 /* ══════════════ 50 STYLES ══════════════ */
 var STYLES = [
@@ -729,7 +710,6 @@ function setActivePill(id){
     p.classList.toggle('active', p.getAttribute('data-id') === id);
   });
 }
-
 function pickStyle(topic){
   var lower = topic.toLowerCase(), best = STYLES[0], top = 0;
   STYLES.forEach(function(s){
@@ -741,6 +721,164 @@ function pickStyle(topic){
     if (sc > top){ top = sc; best = s; }
   });
   return best;
+}
+
+/* ══════════════ IMAGE UPLOAD ══════════════ */
+var dropZone  = document.getElementById('drop-zone');
+var fileInput = document.getElementById('img-file-input');
+
+dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', function(){ dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('drop', function(e){
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  handleImageFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', function(){ handleImageFiles(this.files); this.value=''; });
+
+function handleImageFiles(files){
+  Array.from(files).forEach(function(file){
+    if (!file.type.startsWith('image/')) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = { dataUrl: e.target.result, name: file.name, assignedSlide: null, placement: 'hero' };
+      S.images.push(img);
+      renderImageThumbs();
+      if (S.slides.length) {
+        autoAssignImages();
+        reRenderSlides();
+        toast('📸 Image added — AI auto-assigned it to a slide!');
+      } else {
+        document.getElementById('img-ai-status').textContent = S.images.length + ' image' + (S.images.length>1?'s':'') + ' ready';
+        toast('📸 Image uploaded! Generate your carousel to auto-place it.');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderImageThumbs(){
+  var wrap = document.getElementById('img-thumbs');
+  wrap.innerHTML = '';
+  S.images.forEach(function(img, i){
+    var w = document.createElement('div');
+    w.className = 'img-thumb-wrap';
+    w.title = img.name;
+    var im = document.createElement('img');
+    im.src = img.dataUrl;
+    var del = document.createElement('button');
+    del.className = 'img-thumb-del';
+    del.textContent = '✕';
+    del.addEventListener('click', function(e){
+      e.stopPropagation();
+      S.images.splice(i, 1);
+      renderImageThumbs();
+      autoAssignImages();
+      if (S.slides.length) reRenderSlides();
+    });
+    w.appendChild(im);
+    w.appendChild(del);
+    if (img.assignedSlide !== null) {
+      var badge = document.createElement('div');
+      badge.className = 'img-assign-badge';
+      badge.textContent = 'S' + (img.assignedSlide + 1);
+      w.appendChild(badge);
+      var aiTag = document.createElement('div');
+      aiTag.className = 'img-ai-tag';
+      aiTag.textContent = img.placement;
+      w.appendChild(aiTag);
+    }
+    wrap.appendChild(w);
+  });
+}
+
+/* ══════════════ AI IMAGE AUTO-ASSIGNMENT ══════════════ */
+/*
+  Strategy: match images to slides based on type priority
+  hook  → placement: hero   (full bleed dramatic)
+  stat  → placement: accent (subtle, don't obscure numbers)
+  quote → placement: bg     (soft background wash)
+  cta   → placement: hero   (strong closing image)
+  list/insight/lesson → placement: side OR top
+  before/after → consecutive pair → side placement
+  default → bg
+*/
+function autoAssignImages(){
+  if (!S.images.length || !S.slides.length) return;
+  // Reset all assignments
+  S.images.forEach(function(img){ img.assignedSlide = null; });
+
+  var priority = ['hook','cta','before','after','story','stat','quote','insight','lesson','list','problem','twist','proof','perspective','context','takeaway'];
+  var slidesByType = {};
+  S.slides.forEach(function(s, i){
+    var t = s.type || 'default';
+    if (!slidesByType[t]) slidesByType[t] = [];
+    slidesByType[t].push(i);
+  });
+
+  // Build ordered list of slide indices by priority
+  var orderedSlides = [];
+  priority.forEach(function(type){
+    if (slidesByType[type]) slidesByType[type].forEach(function(idx){ orderedSlides.push({idx:idx, type:type}); });
+  });
+  // Add any remaining slides not in priority list
+  S.slides.forEach(function(s, i){
+    var found = orderedSlides.some(function(o){ return o.idx===i; });
+    if (!found) orderedSlides.push({idx:i, type:s.type||'default'});
+  });
+
+  // Assign each image to a slide
+  S.images.forEach(function(img, imgIdx){
+    if (imgIdx >= orderedSlides.length) return;
+    var target = orderedSlides[imgIdx];
+    img.assignedSlide = target.idx;
+    img.placement = getPlacement(target.type);
+  });
+
+  var assigned = S.images.filter(function(img){ return img.assignedSlide !== null; }).length;
+  document.getElementById('img-ai-status').textContent = assigned > 0 ? '✨ AI assigned ' + assigned + ' image' + (assigned>1?'s':'') : '';
+  renderImageThumbs();
+}
+
+function getPlacement(type){
+  if (type === 'hook' || type === 'cta') return 'hero';
+  if (type === 'stat') return 'accent';
+  if (type === 'quote') return 'bg';
+  if (type === 'before' || type === 'after') return 'side';
+  if (type === 'list' || type === 'insight' || type === 'lesson') return 'top';
+  return 'bg';
+}
+
+function getImageForSlide(slideIdx){
+  for (var i = 0; i < S.images.length; i++){
+    if (S.images[i].assignedSlide === slideIdx) return S.images[i];
+  }
+  return null;
+}
+
+function reRenderSlides(){
+  S.slides.forEach(function(s, i){
+    var wrap = document.getElementById('sw-' + i);
+    if (!wrap) return;
+    var inner = wrap.querySelector('.slide');
+    if (!inner) return;
+    // Update image layer only
+    var oldBg = inner.querySelector('.slide-img-bg');
+    var oldOv = inner.querySelector('.slide-img-overlay');
+    if (oldBg) oldBg.remove();
+    if (oldOv) oldOv.remove();
+    inner.className = inner.className.replace(/img-mode-\w+/g, '').trim();
+    var img = getImageForSlide(i);
+    if (img) {
+      inner.classList.add('img-mode-' + img.placement);
+      var bg = document.createElement('div');
+      bg.className = 'slide-img-bg';
+      bg.style.backgroundImage = 'url(' + img.dataUrl + ')';
+      var ov = document.createElement('div');
+      ov.className = 'slide-img-overlay';
+      inner.insertBefore(ov, inner.firstChild);
+      inner.insertBefore(bg, inner.firstChild);
+    }
+  });
 }
 
 /* ══════════════ THEME ══════════════ */
@@ -769,7 +907,7 @@ document.getElementById('c-bg').addEventListener('input', function(){
 function applyColorOverrides(){
   document.querySelectorAll('.slide').forEach(function(sl){
     sl.style.backgroundColor = S.bgColor;
-    sl.querySelectorAll('.shead,.ssub,.sstat,.sstat-lbl,.squote,.sqmark,.scta-hint,.sslide-text').forEach(function(el){
+    sl.querySelectorAll('.shead,.ssub,.sstat,.sstat-lbl,.squote,.sqmark,.scta-hint').forEach(function(el){
       el.style.color = S.textColor;
     });
   });
@@ -790,10 +928,7 @@ var editBtn = document.getElementById('edit-toggle-btn');
 var editToolbar = document.getElementById('edit-toolbar');
 document.getElementById('etbtn-on').addEventListener('click', function(){ setEditMode(true); });
 document.getElementById('etbtn-off').addEventListener('click', function(){ setEditMode(false); });
-
-editBtn.addEventListener('click', function(){
-  setEditMode(!S.editMode);
-});
+editBtn.addEventListener('click', function(){ setEditMode(!S.editMode); });
 
 function setEditMode(on){
   S.editMode = on;
@@ -825,7 +960,6 @@ document.getElementById('prev-btn').addEventListener('click', function(){ goTo(S
 document.getElementById('next-btn').addEventListener('click', function(){ goTo(S.idx+1); });
 document.getElementById('pn').addEventListener('click', function(){ goTo(S.idx-1); });
 document.getElementById('nn').addEventListener('click', function(){ goTo(S.idx+1); });
-
 document.getElementById('fs-open-btn').addEventListener('click', function(){ openFullscreen(S.idx); });
 document.getElementById('fs-close').addEventListener('click', closeFullscreen);
 document.getElementById('fs-prev').addEventListener('click', function(){ fsGoTo(fsIdx-1); });
@@ -973,9 +1107,10 @@ function generate(prompt,slideCount){
   var tScore=null;
   prompt.toLowerCase().split(/\s+/).forEach(function(w){if(S.trendData[w])tScore=S.trendData[w];});
   var trendCtx=Object.keys(S.trendData).length?'Trending topics: '+Object.entries(S.trendData).slice(0,6).map(function(e){return e[0]+':'+Math.round(e[1]);}).join(', ')+'.':'';
+  var imgCtx = S.images.length ? '\nUser has '+S.images.length+' image(s) uploaded that will be auto-placed on slides.' : '';
 
   var fullPrompt='Create a '+fmt.label+' Instagram carousel (EXACTLY '+slideCount+' slides) about: "'+prompt+'"\n\n'+
-    trendCtx+'\n\n'+
+    trendCtx+imgCtx+'\n\n'+
     'SLIDE TYPES IN ORDER: '+fmt.types.join(' → ')+'\n'+
     'VISUAL STYLE: '+style.label+'\n\n'+
     'RULES:\n'+
@@ -1010,7 +1145,8 @@ function generate(prompt,slideCount){
 }
 
 function finishRender(parsed,style,tScore,thinkEl){
-  thinkEl.innerHTML='✅ <strong>'+style.label+'</strong> — '+parsed.slides.length+' slides ready. <em>Click a slide to fullscreen preview, or hit ✏️ Edit Text to modify any text.</em>';
+  var imgMsg = S.images.length ? ' 📸 ' + S.images.length + ' image(s) auto-placed.' : '';
+  thinkEl.innerHTML='✅ <strong>'+style.label+'</strong> — '+parsed.slides.length+' slides ready.'+imgMsg+' <em>Click a slide to fullscreen preview, or hit ✏️ Edit Text to modify any text.</em>';
   renderCarousel(parsed.slides,style,parsed.caption,parsed.hashtags,false);
   updateSEO(tScore,style);
   document.getElementById('prev-title').textContent=(parsed.topic||S.currentTopic).slice(0,42);
@@ -1042,6 +1178,10 @@ function renderCarousel(slideData,style,caption,hashtags,keepCaption){
   var stage=document.getElementById('stage');
   var oldCap=stage.querySelector('.capbox');
   stage.innerHTML='';
+
+  // Auto-assign images whenever we render fresh
+  if (S.images.length) autoAssignImages();
+
   slideData.forEach(function(s,i){
     var w=document.createElement('div');
     w.id='sw-'+i;w.style.cssText='width:100%;max-width:520px;';
@@ -1071,12 +1211,22 @@ function buildSlideHTML(s,i,total,style){
   var prog='';
   for(var pi=0;pi<total;pi++){
     var w=Math.max(10,Math.floor(52/total));
-    var cls=pi<i?'pstep done':pi===i?'pstep now':'pstep';
-    prog+='<div class="'+cls+'" style="width:'+w+'px;background:'+(pi<i?'rgba(255,255,255,.75)':pi===i?'#FF6B6B':'rgba(255,255,255,.22)')+'"></div>';
+    prog+='<div class="pstep" style="width:'+w+'px;background:'+(pi<i?'rgba(255,255,255,.75)':pi===i?'#FF6B6B':'rgba(255,255,255,.22)')+'"></div>';
   }
   var hf=document.getElementById('head-font-sel').value;
   var bf=document.getElementById('body-font-sel').value;
   var ecAttr=S.editMode?'contenteditable="true"':'contenteditable="false"';
+
+  // Image layer
+  var imgLayer='';
+  var imgMode='';
+  var imgData=getImageForSlide(i);
+  if(imgData){
+    imgMode=' img-mode-'+imgData.placement;
+    imgLayer='<div class="slide-img-bg" style="background-image:url('+imgData.dataUrl+')"></div>'+
+             '<div class="slide-img-overlay"></div>';
+  }
+
   var body='';
   if(s.type==='stat'){
     body='<div class="sstat" style="font-family:'+hf+'" data-editable '+ecAttr+'>'+(s.stat||'—')+'</div>'+
@@ -1095,7 +1245,9 @@ function buildSlideHTML(s,i,total,style){
     body='<div class="shead" style="font-family:'+hf+'" data-editable '+ecAttr+'>'+s.headline+'</div>'+
          '<div class="ssub" style="font-family:'+bf+'" data-editable '+ecAttr+'>'+(s.sub||'')+'</div>';
   }
-  return '<div class="slide '+style.cls+(S.editMode?' edit-mode':'')+'">'+
+
+  return '<div class="slide '+style.cls+imgMode+(S.editMode?' edit-mode':'')+'">'+
+    imgLayer+
     '<div class="edit-hint" style="display:'+(S.editMode?'block':'none')+'">✏️ click to edit</div>'+
     '<div class="slide-in"><div class="prog">'+prog+'</div>'+body+'</div></div>';
 }
@@ -1167,6 +1319,16 @@ function fsRender(){
   } else {
     body='<div style="'+hs+'">'+s.headline+'</div><div style="'+ss+'">'+(s.sub||'')+'</div>';
   }
+
+  // Image in fullscreen
+  var imgData=getImageForSlide(fsIdx);
+  var imgBg='';
+  if(imgData){
+    var opac = imgData.placement==='hero'?'.35' : imgData.placement==='accent'?'.18' : '.25';
+    imgBg='<div style="position:absolute;inset:0;z-index:1;background-image:url('+imgData.dataUrl+');background-size:cover;background-position:center;opacity:'+opac+'"></div>'+
+          '<div style="position:absolute;inset:0;z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.5))"></div>';
+  }
+
   card.className='fs-card anim';
   ['bg-gm','bg-dn','bg-ew','bg-gb','bg-ms','bg-dg','bg-lc','bg-np','bg-by','bg-fg',
    'bg-sc','bg-od','bg-rg','bg-mf','bg-mb','bg-pt','bg-eo','bg-fn','bg-cp','bg-ci',
@@ -1176,7 +1338,8 @@ function fsRender(){
   ].forEach(function(c){card.classList.remove(c);});
   card.classList.add(S.style.cls);
   card.style.backgroundColor=S.bgColor;
-  card.innerHTML='<div style="position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;">'+
+  card.innerHTML=imgBg+
+    '<div style="position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;">'+
     '<div style="display:flex;gap:4px;justify-content:center;margin-bottom:6px">'+prog+'</div>'+body+'</div>';
   void card.offsetWidth;card.classList.add('anim');
   document.getElementById('fs-ctr').textContent=(fsIdx+1)+' of '+total;
@@ -1227,6 +1390,8 @@ function openExportModal(){
   document.getElementById('export-modal').classList.add('open');
   document.getElementById('exp-progress').classList.remove('on');
   document.getElementById('exp-bar').style.width='0%';
+  document.getElementById('safari-dl-links').innerHTML='';
+  document.getElementById('safari-dl-links').classList.remove('on');
 }
 function closeExportModal(){document.getElementById('export-modal').classList.remove('open');}
 function refreshModalGrid(){
@@ -1235,8 +1400,10 @@ function refreshModalGrid(){
   S.slides.forEach(function(s,i){
     var wrap=document.createElement('div');
     wrap.className='mslide-wrap'+(selectedSlides.has(i)?' selected':'');
+    var imgData=getImageForSlide(i);
+    var imgEl=imgData?'<div class="mp-img" style="background-image:url('+imgData.dataUrl+')"></div>':'';
     wrap.innerHTML='<div class="mslide-num">Slide '+(i+1)+'</div><div class="mslide-check">✓</div>'+
-      '<div class="mslide-preview '+S.style.cls+'" style="background-color:'+S.bgColor+'">'+
+      '<div class="mslide-preview '+S.style.cls+'" style="background-color:'+S.bgColor+'">'+imgEl+
       '<div class="mp-head" style="font-family:'+document.getElementById('head-font-sel').value+';color:'+S.textColor+'">'+(s.headline||'').slice(0,40)+'</div>'+
       '<div class="mp-sub" style="font-family:'+document.getElementById('body-font-sel').value+';color:'+S.textColor+'">'+(s.sub||'').slice(0,60)+'</div></div>';
     wrap.addEventListener('click',function(){
@@ -1249,7 +1416,9 @@ function refreshModalGrid(){
   info.textContent=cnt===0?'No slides selected — click to select':cnt+' of '+S.slides.length+' slides selected';
 }
 
-/* ══════════════ EXPORT ══════════════ */
+/* ══════════════════════════════════════════════════════
+   EXPORT — Cross-device (Desktop, Android, iPad/Safari)
+══════════════════════════════════════════════════════ */
 function doExport(){
   if(selectedSlides.size===0){toast('Select at least one slide first.');return;}
   var liveSlides=readLiveSlides();
@@ -1258,54 +1427,178 @@ function doExport(){
   var bar=document.getElementById('exp-bar');
   var label=document.getElementById('exp-label');
   var doBtn=document.getElementById('do-export-btn');
-  progress.classList.add('on');doBtn.disabled=true;
+  progress.classList.add('on');
+  doBtn.disabled=true;
+  bar.style.width='0%';
+  label.textContent='Preparing slides…';
+
   var topic=(S.currentTopic||'slide').replace(/[^a-z0-9]/gi,'_').slice(0,30).toLowerCase();
-  var done=0,total=indices.length;
   var renderArea=document.getElementById('export-render');
   renderArea.innerHTML='';
-  renderArea.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;width:1px;height:1px;overflow:hidden;';
 
-  function exportNext(){
+  var done=0;
+  var total=indices.length;
+  var safariLinks=document.getElementById('safari-dl-links');
+  safariLinks.innerHTML='';
+  safariLinks.classList.remove('on');
+
+  // We collect all canvases then decide how to deliver
+  var results=[]; // {idx, dataUrl, filename}
+
+  function renderNext(){
     if(done>=total){
-      bar.style.width='100%';
-      label.textContent='✅ '+total+' slide'+(total>1?'s':'')+' saved!';
-      doBtn.disabled=false;
-      if(isMobile)toast('📱 Press & hold each image to save to camera roll.');
-      else toast(total+' slide'+(total>1?'s':'')+' downloaded!');
+      deliverExport(results,topic,bar,label,doBtn,safariLinks);
       return;
     }
-    var i=indices[done],s=liveSlides[i];
+    var i=indices[done];
+    var s=liveSlides[i];
     var container=document.createElement('div');
-    container.style.cssText='width:1080px;height:1080px;position:absolute;top:0;left:0;';
+    container.style.cssText='width:1080px;height:1080px;position:relative;flex-shrink:0;';
     container.innerHTML=buildExportHTML(s,i,liveSlides.length,S.style);
-    renderArea.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;pointer-events:none;';
-    renderArea.innerHTML='';renderArea.appendChild(container);
+    renderArea.innerHTML='';
+    renderArea.appendChild(container);
+
+    // Allow layout to settle
     setTimeout(function(){
-      html2canvas(container,{width:1080,height:1080,scale:1,useCORS:true,logging:false,backgroundColor:null,windowWidth:1080,windowHeight:1080})
-      .then(function(canvas){
-        var filename=topic+'_slide_'+String(i+1).padStart(2,'0')+'.png';
-        if(isMobile){
-          canvas.toBlob(function(blob){
-            var url=URL.createObjectURL(blob);
-            var win=window.open(url,'_blank');
-            if(!win){var a=document.createElement('a');a.href=url;a.target='_blank';a.textContent='Tap to open Slide '+(i+1);a.style.cssText='display:block;color:var(--brand);margin:6px 0;font-size:.8rem;';document.getElementById('exp-label').parentNode.appendChild(a);}
-            done++;bar.style.width=Math.round((done/total)*100)+'%';label.textContent=done<total?'Opening slide '+done+' of '+total+'…':'✅ Done — save each image';
-            setTimeout(exportNext,600);
-          },'image/png');
-        } else {
-          canvas.toBlob(function(blob){
-            var url=URL.createObjectURL(blob);
-            var a=document.createElement('a');a.href=url;a.download=filename;
-            document.body.appendChild(a);a.click();
-            setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
-            done++;bar.style.width=Math.round((done/total)*100)+'%';label.textContent='Exporting slide '+done+' of '+total+'…';
-            setTimeout(exportNext,400);
-          },'image/png');
+      html2canvas(container,{
+        width:1080,height:1080,scale:1,useCORS:true,
+        allowTaint:true,logging:false,backgroundColor:null,
+        windowWidth:1080,windowHeight:1080,
+        onclone:function(clonedDoc){
+          // Ensure images are visible in clone
+          clonedDoc.querySelectorAll('img').forEach(function(im){im.crossOrigin='anonymous';});
         }
-      }).catch(function(err){console.error('Export error:',err);done++;setTimeout(exportNext,200);});
-    },150);
+      }).then(function(canvas){
+        var filename=topic+'_slide_'+String(i+1).padStart(2,'0')+'.png';
+        var dataUrl=canvas.toDataURL('image/png');
+        results.push({idx:i, dataUrl:dataUrl, filename:filename});
+        done++;
+        bar.style.width=Math.round((done/total)*85)+'%';
+        label.textContent='Rendering slide '+done+' of '+total+'…';
+        setTimeout(renderNext,200);
+      }).catch(function(err){
+        console.error('Export error slide',i,err);
+        done++;
+        setTimeout(renderNext,200);
+      });
+    },200);
   }
-  exportNext();
+
+  renderNext();
+}
+
+function deliverExport(results,topic,bar,label,doBtn,safariLinks){
+  if(!results.length){
+    label.textContent='Nothing to export.';
+    doBtn.disabled=false;
+    return;
+  }
+
+  bar.style.width='90%';
+  label.textContent='Delivering files…';
+
+  if(needsSafariFlow){
+    /* ── iPad / iPhone Safari ──
+       Safari cannot trigger programmatic downloads. Instead we render
+       image links the user taps, then long-presses to "Save to Photos". */
+    safariLinks.classList.add('on');
+    results.forEach(function(r){
+      var a=document.createElement('a');
+      a.className='sdl-link';
+      a.href=r.dataUrl;
+      a.target='_blank';
+      // Create thumb
+      var thumb=document.createElement('img');
+      thumb.className='sdl-thumb';
+      thumb.src=r.dataUrl;
+      var info=document.createElement('div');
+      info.className='sdl-info';
+      var name=document.createElement('div');
+      name.className='sdl-name';
+      name.textContent='Slide '+(r.idx+1);
+      var hint=document.createElement('div');
+      hint.className='sdl-hint';
+      hint.textContent='Tap → long-press → Save to Photos';
+      info.appendChild(name);
+      info.appendChild(hint);
+      a.appendChild(thumb);
+      a.appendChild(info);
+      safariLinks.appendChild(a);
+    });
+    bar.style.width='100%';
+    label.textContent='✅ Tap each image below to save to your Photos!';
+    doBtn.disabled=false;
+    toast('📱 Tap each image → long-press → Save to Photos');
+
+  } else if(isMobile){
+    /* ── Android / other mobile ──
+       Open each image in a new tab. User saves from browser. */
+    var i=0;
+    function openNext(){
+      if(i>=results.length){
+        bar.style.width='100%';
+        label.textContent='✅ '+results.length+' slide(s) opened — save from your browser';
+        doBtn.disabled=false;
+        toast('Tap each tab and save the image');
+        return;
+      }
+      var r=results[i];
+      var win=window.open('','_blank');
+      if(win){
+        win.document.write('<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh">'+
+          '<img src="'+r.dataUrl+'" style="max-width:100%;max-height:100vh" download="'+r.filename+'"/></body></html>');
+        win.document.close();
+      }
+      i++;
+      bar.style.width=Math.round(90+(i/results.length)*10)+'%';
+      setTimeout(openNext,500);
+    }
+    openNext();
+
+  } else {
+    /* ── Desktop (Chrome, Firefox, Edge, desktop Safari) ──
+       Trigger sequential anchor downloads. */
+    var i=0;
+    function dlNext(){
+      if(i>=results.length){
+        bar.style.width='100%';
+        label.textContent='✅ '+results.length+' slide(s) downloaded!';
+        doBtn.disabled=false;
+        toast(results.length+' slide'+(results.length>1?'s':'')+' downloaded!');
+        return;
+      }
+      var r=results[i];
+      // Convert dataUrl → blob for cleaner desktop download
+      try{
+        var arr=r.dataUrl.split(',');
+        var mime=arr[0].match(/:(.*?);/)[1];
+        var bstr=atob(arr[1]);
+        var n=bstr.length;
+        var u8=new Uint8Array(n);
+        while(n--) u8[n]=bstr.charCodeAt(n);
+        var blob=new Blob([u8],{type:mime});
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement('a');
+        a.href=url;
+        a.download=r.filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+      }catch(e){
+        // Fallback: dataUrl direct
+        var a2=document.createElement('a');
+        a2.href=r.dataUrl;
+        a2.download=r.filename;
+        document.body.appendChild(a2);
+        a2.click();
+        document.body.removeChild(a2);
+      }
+      i++;
+      bar.style.width=Math.round(90+(i/results.length)*10)+'%';
+      setTimeout(dlNext,350);
+    }
+    dlNext();
+  }
 }
 
 /* ══════════════ BUILD EXPORT HTML ══════════════ */
@@ -1337,13 +1630,26 @@ function buildExportHTML(s,i,total,style){
   } else {
     body='<div style="'+hs+'">'+s.headline+'</div><div style="'+ss+'">'+(s.sub||'')+'</div>';
   }
+
+  // Image layer for export
+  var imgData=getImageForSlide(i);
+  var imgLayer='';
+  if(imgData){
+    var opac=imgData.placement==='hero'?'.35':imgData.placement==='accent'?'.18':'.25';
+    var overlayGrad='linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.5))';
+    imgLayer='<div style="position:absolute;inset:0;z-index:1;background-image:url('+imgData.dataUrl+');background-size:cover;background-position:center;opacity:'+opac+'"></div>'+
+             '<div style="position:absolute;inset:0;z-index:2;background:'+overlayGrad+'"></div>';
+  }
+
   var bg=getBgInline(style.cls);
-  return '<div style="width:1080px;height:1080px;'+bg+'background-color:'+S.bgColor+';border-radius:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:100px;text-align:center;position:relative;overflow:hidden;">'+
+  return '<div style="width:1080px;height:1080px;'+bg+'background-color:'+S.bgColor+';display:flex;flex-direction:column;justify-content:center;align-items:center;padding:100px;text-align:center;position:relative;overflow:hidden;">'+
+    imgLayer+
     '<div style="position:relative;z-index:3;width:100%;display:flex;flex-direction:column;gap:20px;align-items:center;">'+
     '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:8px">'+prog+'</div>'+body+'</div></div>';
 }
+
 function getBgInline(cls){
-  return ({
+  var map={
     'bg-gm':'background:linear-gradient(135deg,#667eea,#764ba2 45%,#f093fb);',
     'bg-dn':'background:#070712;','bg-ew':'background:#fff;border:8px solid #0F0E17;',
     'bg-gb':'background:#16142A;','bg-ms':'background:linear-gradient(155deg,#E8F5E9,#F1F8E9);',
@@ -1386,7 +1692,8 @@ function getBgInline(cls){
     'bg-wc':'background:linear-gradient(135deg,#E3E9FF,#FFE8F0,#E8FFF3);',
     'bg-ms2':'background:linear-gradient(135deg,#BDC3C7,#2C3E50);',
     'bg-hg':'background:linear-gradient(135deg,#a18cd1,#fbc2eb 25%,#a1c4fd 50%,#c2e9fb 75%,#a18cd1);'
-  }[cls]||'background:#6C63FF;');
+  };
+  return map[cls]||'background:#6C63FF;';
 }
 
 /* ══════════════ HELPERS ══════════════ */
@@ -1397,7 +1704,7 @@ function appendMsg(html,role){
 }
 function toast(msg){
   var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},3200);
+  setTimeout(function(){t.classList.remove('show');},3500);
 }
 
 loadTrends();
