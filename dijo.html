@@ -506,7 +506,6 @@ async function readFile(f) {
 
   try {
     var text = '';
-
     if (f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) {
       var arrayBuffer = await f.arrayBuffer();
       var pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -563,7 +562,6 @@ async function autoFillFromCV(cvText) {
   setTag('roleTag', '⏳ Detecting…', 'blue');
   setTag('locTag', '⏳ Detecting…', 'blue');
   setTag('lvlTag', '⏳ Detecting…', 'blue');
-
   try {
     var res = await fetch(DIJO_API + '/ai/extract-profile', {
       method: 'POST',
@@ -571,7 +569,6 @@ async function autoFillFromCV(cvText) {
       body: JSON.stringify({ cv_text: cvText.substring(0, 3000) })
     });
     var data = await res.json();
-
     if (data.job_role) { document.getElementById('jobRole').value = data.job_role; setTag('roleTag', '✨ AI filled', 'green'); } else { hideTag('roleTag'); }
     if (data.location)  { document.getElementById('jobLoc').value = data.location;   setTag('locTag',  '✨ AI filled', 'green'); } else { hideTag('locTag'); }
     if (data.experience_level) {
@@ -581,65 +578,100 @@ async function autoFillFromCV(cvText) {
       for(var i=0;i<opts.length;i++){ if(lvl.includes(opts[i])){ sel.value=opts[i]; break; } }
       if(sel.value) setTag('lvlTag','✨ AI filled','green'); else hideTag('lvlTag');
     } else { hideTag('lvlTag'); }
-
   } catch(err) {
     hideTag('roleTag'); hideTag('locTag'); hideTag('lvlTag');
     console.warn('Auto-fill error:', err.message);
   }
 }
 
+// ── WAIT FOR SUPABASE TO BE READY ────────────────────────────────────────────
+function waitForSupabase(maxWait) {
+  return new Promise(function(resolve) {
+    var waited = 0;
+    var interval = 100;
+    function check() {
+      if (typeof getSupabase === 'function' && getSupabase()) {
+        resolve(true);
+      } else if (waited >= maxWait) {
+        resolve(false);
+      } else {
+        waited += interval;
+        setTimeout(check, interval);
+      }
+    }
+    check();
+  });
+}
+
 // ── SMART JOB FETCHING ──────────────────────────────────────────────────────
 async function fetchRelevantJobs(role, loc, visa, cvText) {
-  if (typeof getSupabase !== 'function') return [];
+  // Wait up to 5 seconds for Supabase to load — fixes 401 errors
+  var ready = await waitForSupabase(5000);
+  if (!ready) { console.warn('Supabase not ready'); return []; }
+
   var db = getSupabase();
+  if (!db) { console.warn('Supabase client is null'); return []; }
+
   var jobs = [];
   var seen = {};
 
   function dedup(arr) {
     return (arr || []).filter(function(j) {
+      if (!j || !j.id) return false;
       if (seen[j.id]) return false;
       seen[j.id] = true;
       return true;
     });
   }
 
-  // Step 1: exact role title match
-  if (role) {
-    var q1 = db.from('jobs').select('*').eq('status', 'active').ilike('title', '%' + role + '%');
-    if (visa) q1 = q1.eq('visa_sponsorship', true);
-    if (loc)  q1 = q1.ilike('location', '%' + loc + '%');
-    var r1 = await q1.limit(10);
-    jobs = dedup(r1.data);
-  }
-
-  // Step 2: skills column match using first word of role
-  if (jobs.length < 4 && role) {
-    var roleWord = role.split(' ')[0];
-    var q2 = db.from('jobs').select('*').eq('status', 'active').ilike('skills', '%' + roleWord + '%');
-    if (visa) q2 = q2.eq('visa_sponsorship', true);
-    var r2 = await q2.limit(10);
-    jobs = jobs.concat(dedup(r2.data));
-  }
-
-  // Step 3: extract keywords from CV text and search by title
-  if (jobs.length < 4) {
-    var cvLower = cvText.toLowerCase();
-    var cvKeywords = cvLower.match(/\b(developer|engineer|manager|designer|analyst|marketing|sales|finance|nurse|doctor|teacher|accountant|lawyer|consultant|react|python|javascript|java|php|node|aws|product|data|devops|hr|recruiter|support|admin|director|lead|senior|junior|writer|editor|photographer|architect|electrician|pharmacist|physiotherapist)\b/g) || [];
-    var uniqueKw = Array.from(new Set(cvKeywords)).slice(0, 3);
-    for (var k = 0; k < uniqueKw.length; k++) {
-      var q3 = db.from('jobs').select('*').eq('status', 'active').ilike('title', '%' + uniqueKw[k] + '%');
-      if (visa) q3 = q3.eq('visa_sponsorship', true);
-      var r3 = await q3.limit(6);
-      jobs = jobs.concat(dedup(r3.data));
+  try {
+    // Step 1: exact role title match
+    if (role) {
+      var q1 = db.from('jobs').select('*').eq('status', 'active').ilike('title', '%' + role + '%');
+      if (visa) q1 = q1.eq('visa_sponsorship', true);
+      if (loc)  q1 = q1.ilike('location', '%' + loc + '%');
+      var r1 = await q1.limit(10);
+      if (!r1.error) jobs = dedup(r1.data);
     }
-  }
 
-  // Step 4: fallback — most recent jobs
-  if (jobs.length < 4) {
-    var q4 = db.from('jobs').select('*').eq('status', 'active').order('created_at', { ascending: false });
-    if (visa) q4 = q4.eq('visa_sponsorship', true);
-    var r4 = await q4.limit(15);
-    jobs = jobs.concat(dedup(r4.data));
+    // Step 2: skills column match using first word of role
+    if (jobs.length < 4 && role) {
+      var roleWord = role.split(' ')[0];
+      var q2 = db.from('jobs').select('*').eq('status', 'active').ilike('skills', '%' + roleWord + '%');
+      if (visa) q2 = q2.eq('visa_sponsorship', true);
+      var r2 = await q2.limit(10);
+      if (!r2.error) jobs = jobs.concat(dedup(r2.data));
+    }
+
+    // Step 3: extract keywords from CV — expanded to cover healthcare/social care
+    if (jobs.length < 4) {
+      var cvLower = cvText.toLowerCase();
+      var cvKeywords = cvLower.match(/\b(developer|engineer|manager|designer|analyst|marketing|sales|finance|nurse|doctor|teacher|accountant|lawyer|consultant|react|python|javascript|java|php|node|aws|product|data|devops|hr|recruiter|support worker|care worker|care assistant|healthcare assistant|social worker|support|admin|director|lead|senior|junior|writer|editor|photographer|architect|electrician|pharmacist|physiotherapist|mental health|community support|residential care|domiciliary|carer|care|healthcare)\b/g) || [];
+      var uniqueKw = Array.from(new Set(cvKeywords)).slice(0, 4);
+      for (var k = 0; k < uniqueKw.length; k++) {
+        var q3 = db.from('jobs').select('*').eq('status', 'active').ilike('title', '%' + uniqueKw[k] + '%');
+        if (visa) q3 = q3.eq('visa_sponsorship', true);
+        var r3 = await q3.limit(6);
+        if (!r3.error) jobs = jobs.concat(dedup(r3.data));
+
+        // Also search skills column for same keyword
+        var q3b = db.from('jobs').select('*').eq('status', 'active').ilike('skills', '%' + uniqueKw[k] + '%');
+        if (visa) q3b = q3b.eq('visa_sponsorship', true);
+        var r3b = await q3b.limit(6);
+        if (!r3b.error) jobs = jobs.concat(dedup(r3b.data));
+      }
+    }
+
+    // Step 4: fallback — most recent jobs
+    if (jobs.length < 4) {
+      var q4 = db.from('jobs').select('*').eq('status', 'active').order('created_at', { ascending: false });
+      if (visa) q4 = q4.eq('visa_sponsorship', true);
+      var r4 = await q4.limit(15);
+      if (!r4.error) jobs = jobs.concat(dedup(r4.data));
+    }
+
+  } catch(e) {
+    console.warn('fetchRelevantJobs error:', e.message);
   }
 
   return jobs;
@@ -657,10 +689,8 @@ async function doAnalyse() {
   animLoad();
 
   try {
-    // Smart pre-filter: find relevant jobs before AI scoring
     var jobs = await fetchRelevantJobs(S.role, S.loc, S.visa, S.cv);
 
-    // Fallback to demo data if nothing found at all
     if (!jobs.length) {
       S.matches = demoData();
       renderMatches(S.matches);
@@ -677,7 +707,7 @@ async function doAnalyse() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            cv_text: S.cv,
+            cv_text: S.cv.substring(0, 4000),
             job_description: (job.title || '') + '. ' + (job.description || '')
           })
         });
@@ -688,9 +718,7 @@ async function doAnalyse() {
       } catch(e) {}
     }
 
-    // Sort by score descending
     matches.sort(function(a, b) { return b.match.score - a.match.score; });
-
     S.matches = matches;
     renderMatches(matches);
     goStep(4);
@@ -716,9 +744,9 @@ function animLoad() {
 
 function demoData() {
   return [
-    { job:{id:'d1',title:'Marketing Manager',company_name:'TechCorp UK',location:'London (Hybrid)',budget:'£45,000–£55,000',visa_sponsorship:false,description:'Marketing manager role.'}, match:{score:87,reasons:['Strong marketing background','London location aligns','Leadership experience matches'],gaps:['Paid ads not mentioned'],summary:'Excellent fit — your experience directly aligns with this role.'} },
-    { job:{id:'d2',title:'Content Strategist',company_name:'Digital Agency Ltd',location:'Remote',budget:'£35,000–£42,000',visa_sponsorship:true,description:'Content strategy role.'}, match:{score:74,reasons:['Content creation skills match','Remote role available','Visa sponsorship offered'],gaps:['SEO tools not mentioned'],summary:'Good match — your content skills are well aligned.'} },
-    { job:{id:'d3',title:'Brand Manager',company_name:'ImpactGrid Partner',location:'Manchester',budget:'£40,000–£50,000',visa_sponsorship:false,description:'Brand manager role.'}, match:{score:68,reasons:['Brand strategy experience','Team leadership background','Industry knowledge relevant'],gaps:['Budget management','Brand tools'],summary:'Solid match — a strong application could get you through.'} }
+    { job:{id:'d1',title:'Support Worker',company_name:'Care First UK',location:'Manchester',budget:'£22,000–£26,000',visa_sponsorship:false,description:'Support worker role helping vulnerable adults.'}, match:{score:85,reasons:['Direct support work experience','Manchester location matches','Care experience aligns'],gaps:['NVQ Level 3 not mentioned'],summary:'Strong fit — your support work background directly matches this role.'} },
+    { job:{id:'d2',title:'Care Assistant',company_name:'Helping Hands',location:'Manchester (Various)',budget:'£20,000–£24,000',visa_sponsorship:true,description:'Care assistant role in residential settings.'}, match:{score:74,reasons:['Care experience relevant','Visa sponsorship available','Flexible hours suit background'],gaps:['Driving licence not mentioned'],summary:'Good match — your care skills are well aligned.'} },
+    { job:{id:'d3',title:'Healthcare Assistant',company_name:'NHS Trust Manchester',location:'Manchester',budget:'£21,000–£25,000',visa_sponsorship:false,description:'Healthcare assistant role in NHS.'}, match:{score:68,reasons:['Healthcare background relevant','NHS experience valued','Team working skills match'],gaps:['Clinical skills training','DBS check required'],summary:'Solid match — worth a strong application.'} }
   ];
 }
 
