@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dijo — AI Job Consultant | ImpactGrid</title>
+<meta name="description" content="Dijo finds the right jobs, explains why they fit, and applies with precision. Your AI job consultant by ImpactGrid."/>
+<link rel="icon" href="favicon.ico"/>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+/* ── LANDING HERO ── */
+.dijo-landing { padding: calc(var(--nav-h) + 80px) 20px 80px; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; overflow: hidden; }
+.landing-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 0%, var(--blue-dim), transparent), radial-gradient(ellipse 40% 30% at 80% 80%, var(--gold-dim), transparent); pointer-events: none; }
+.landing-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, black, transparent); pointer-events: none; }
+.landing-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: var(--fm); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--blue); background: var(--blue-dim); border: 1px solid rgba(45,110,219,0.18); border-radius: 20px; padding: 5px 14px; margin-bottom: 36px; position: relative; }
+.eyebrow-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--blue); animation: edot 2s infinite; }
+@keyframes edot { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)} }
+.mascot-wrap { position: relative; display: inline-block; margin-bottom: 40px; }
+.mascot-img { width: 160px; height: 160px; border-radius: 50%; object-fit: cover; object-position: top; display: block; border: 3px solid rgba(45,110,219,0.22); box-shadow: 0 0 0 10px var(--blue-dim), var(--sh2); animation: mfloat 4s ease-in-out infinite; }
+@keyframes mfloat { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
+.mascot-ring { position: absolute; inset: -14px; border-radius: 50%; border: 1px solid rgba(45,110,219,0.12); animation: rspin 10s linear infinite; pointer-events: none; }
+.mascot-ring::before { content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+@keyframes rspin { from{transform:rotate(0deg)}to{transform:rotate(360deg)} }
+.mascot-sm { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid rgba(45,110,219,0.18); flex-shrink: 0; }
+.landing-h1 { font-family: var(--fd); font-size: clamp(48px,9vw,88px); font-weight: 900; letter-spacing: -0.04em; line-height: 1; margin-bottom: 10px; position: relative; }
+.h1-name { color: var(--blue); }
+.landing-tagline { font-family: var(--fd); font-size: clamp(11px,1.6vw,14px); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 22px; }
+.landing-tagline em { color: var(--gold); font-style: normal; }
+.landing-desc { font-size: clamp(15px,2vw,18px); color: var(--text2); max-width: 520px; line-height: 1.75; margin: 0 auto 44px; }
+.landing-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 52px; }
+.btn-dijo { display: inline-flex; align-items: center; gap: 10px; padding: 15px 36px; border-radius: var(--r); font-size: 16px; font-weight: 700; font-family: var(--fb); background: linear-gradient(135deg, var(--blue), var(--blue2)); color: #fff; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(45,110,219,0.25); }
+.btn-dijo:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(45,110,219,0.38); }
+.btn-dijo .arr { transition: transform 0.2s; }
+.btn-dijo:hover .arr { transform: translateX(4px); }
+.pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.pill { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-family: var(--fm); font-size: 10px; color: var(--text3); background: var(--card); border: 1px solid var(--border); letter-spacing: 0.04em; }
+.pill-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--green); }
+
+/* HOW IT WORKS */
+.how-section { padding: 80px 20px; max-width: var(--max-w); margin: 0 auto; }
+.sec-ctr { text-align: center; margin-bottom: 52px; }
+.steps-tl { display: flex; flex-direction: column; max-width: 660px; margin: 0 auto; position: relative; }
+.steps-tl::before { content: ''; position: absolute; left: 25px; top: 44px; bottom: 44px; width: 1px; background: linear-gradient(to bottom, var(--blue), var(--gold), var(--green)); opacity: 0.18; }
+.srow { display: flex; gap: 22px; align-items: flex-start; padding: 18px 0; }
+.snum { width: 50px; height: 50px; border-radius: 50%; background: var(--card); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 17px; font-weight: 900; flex-shrink: 0; position: relative; z-index: 1; }
+.snum.blue { border-color: rgba(45,110,219,0.3); color: var(--blue); }
+.snum.gold { border-color: var(--gold-glo); color: var(--gold); }
+.snum.green { border-color: rgba(15,168,118,0.3); color: var(--green); }
+.scontent { flex: 1; padding-top: 6px; }
+.scontent h3 { font-family: var(--fd); font-size: 17px; font-weight: 800; margin-bottom: 5px; letter-spacing: -0.01em; }
+.scontent p { font-size: 14px; color: var(--text2); line-height: 1.7; margin: 0; }
+
+/* PRICING */
+.pricing-section { padding: 80px 20px; max-width: var(--max-w); margin: 0 auto; }
+.pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; max-width: 860px; margin: 0 auto; }
+.pc { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 28px 24px; position: relative; transition: all 0.25s; }
+.pc:hover { border-color: var(--border2); transform: translateY(-3px); box-shadow: var(--sh2); }
+.pc.featured { border-color: var(--blue); background: linear-gradient(160deg, var(--card), var(--blue-dim)); }
+.pc-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--blue); color: #fff; font-family: var(--fm); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 14px; border-radius: 10px; white-space: nowrap; }
+.pc-plan { font-family: var(--fm); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text3); margin-bottom: 10px; }
+.pc-amount { font-family: var(--fd); font-size: 38px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 4px; }
+.pc-amount span { font-size: 16px; font-weight: 600; color: var(--text3); }
+.pc-sub { font-size: 12px; color: var(--text3); margin-bottom: 20px; font-family: var(--fm); }
+.pc-feats { list-style: none; padding: 0; margin: 0; }
+.pc-feats li { font-size: 13px; color: var(--text2); padding: 6px 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.pc-feats li:last-child { border-bottom: none; }
+.pcheck { color: var(--green); }
+
+/* DIJO APP */
+.dijo-app { display: none; padding: calc(var(--nav-h) + 32px) 20px 80px; }
+.dijo-app.active { display: block; }
+.app-inner { max-width: 660px; margin: 0 auto; }
+.prog-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 40px; }
+.prog-seg { flex: 1; height: 3px; border-radius: 2px; background: var(--border2); transition: background 0.4s; }
+.prog-seg.done { background: var(--blue); }
+.prog-seg.active { background: linear-gradient(90deg, var(--blue), var(--gold)); }
+.prog-lbl { font-family: var(--fm); font-size: 10px; color: var(--text3); white-space: nowrap; }
+.step-panel { display: none; animation: sfadeup 0.35s ease; }
+.step-panel.active { display: block; }
+@keyframes sfadeup { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+.step-hdr { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+.step-hdr-t h2 { font-family: var(--fd); font-size: 22px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 3px; }
+.step-hdr-t p { font-size: 14px; color: var(--text2); line-height: 1.6; margin: 0; }
+.bubble { background: var(--card); border: 1px solid var(--border2); border-radius: var(--r2); border-bottom-left-radius: 4px; padding: 18px 22px; font-size: 15px; color: var(--text); line-height: 1.75; margin-bottom: 22px; position: relative; }
+.bubble::after { content: ''; position: absolute; bottom: -8px; left: 22px; width: 14px; height: 8px; background: var(--card); border-left: 1px solid var(--border2); border-bottom: 1px solid var(--border2); clip-path: polygon(0 0,100% 0,40% 100%); }
+.free-banner { display: flex; align-items: center; gap: 8px; padding: 11px 16px; background: var(--gold-dim); border: 1px solid var(--gold-glo); border-radius: var(--r); font-size: 13px; font-weight: 600; color: var(--gold); margin-bottom: 22px; }
+.flabel { display: block; font-family: var(--fm); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text3); margin-bottom: 8px; }
+.freq { color: var(--red); margin-left: 3px; }
+.dinput { width: 100%; padding: 13px 16px; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r); font-size: 14px; color: var(--text); font-family: var(--fb); outline: none; transition: border-color 0.2s, box-shadow 0.2s; margin-bottom: 16px; box-sizing: border-box; }
+.dinput:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-dim); }
+.dinput::placeholder { color: var(--text3); }
+.dtextarea { min-height: 180px; resize: vertical; line-height: 1.65; }
+.dselect { cursor: pointer; }
+
+/* CV DROP ZONE */
+.cv-zone { border: 2px dashed var(--border2); border-radius: var(--r2); padding: 36px 20px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 14px; position: relative; }
+.cv-zone:hover, .cv-zone.dragover { border-color: var(--blue); background: var(--blue-dim); }
+.cv-zone-file { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.cv-zone-icon { font-size: 30px; margin-bottom: 9px; }
+.cv-zone-ttl { font-family: var(--fd); font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.cv-zone-sub { font-size: 12px; color: var(--text3); }
+.cv-or { text-align: center; font-family: var(--fm); font-size: 10px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+
+/* AI AUTOFILL BADGE */
+.autofill-badge { display: none; align-items: center; gap: 5px; font-family: var(--fm); font-size: 10px; border-radius: 8px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; }
+
+/* VISA TOGGLE */
+.visa-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); margin-bottom: 20px; cursor: pointer; }
+.visa-row input { width: 16px; height: 16px; accent-color: var(--green); cursor: pointer; }
+.visa-row strong { color: var(--green); }
+
+/* BUTTONS */
+.btn-app { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; border-radius: var(--r); font-size: 16px; font-weight: 700; font-family: var(--fb); background: linear-gradient(135deg, var(--blue), var(--blue2)); color: #fff; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(45,110,219,0.22); margin-top: 6px; }
+.btn-app:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(45,110,219,0.36); }
+.btn-app:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-app-sec { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; border-radius: var(--r); font-size: 14px; font-weight: 600; font-family: var(--fb); background: transparent; color: var(--text2); border: 1px solid var(--border2); cursor: pointer; transition: all 0.2s; margin-top: 10px; }
+.btn-app-sec:hover { border-color: var(--blue); color: var(--blue); }
+
+/* LOADING */
+.loading-panel { text-align: center; padding: 56px 20px; }
+.loading-mascot { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; object-position: top; margin: 0 auto 22px; border: 2px solid rgba(45,110,219,0.22); animation: lpulse 1.5s ease-in-out infinite; display: block; }
+@keyframes lpulse { 0%,100%{box-shadow:0 0 0 0 rgba(45,110,219,0.28)}50%{box-shadow:0 0 0 14px rgba(45,110,219,0)} }
+.loading-ttl { font-family: var(--fd); font-size: 20px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 5px; }
+.loading-sub { font-size: 13px; color: var(--text2); margin-bottom: 30px; }
+.load-steps { display: flex; flex-direction: column; gap: 8px; max-width: 280px; margin: 0 auto 28px; }
+.lst { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; color: var(--text3); transition: all 0.35s; }
+.lst.active { color: var(--text); border-color: var(--border2); }
+.lst.done { color: var(--green); border-color: rgba(15,168,118,0.22); background: var(--green-dim); }
+.ldots { display: flex; gap: 6px; justify-content: center; }
+.ldot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); opacity: 0.3; animation: ldot 1.4s infinite; }
+.ldot:nth-child(2){animation-delay:0.2s}.ldot:nth-child(3){animation-delay:0.4s}
+@keyframes ldot { 0%,80%,100%{opacity:0.3;transform:scale(0.85)}40%{opacity:1;transform:scale(1.2)} }
+
+/* MATCH CARDS */
+.matches-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.matches-hdr h3 { font-family: var(--fd); font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+.matches-ct { font-family: var(--fm); font-size: 10px; color: var(--text3); }
+.match-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 12px; transition: all 0.25s; position: relative; overflow: hidden; }
+.match-card::before { content: ''; position: absolute; top:0;left:0;right:0;height:2px; background: linear-gradient(90deg,var(--blue),var(--gold)); transform: scaleX(0); transition: transform 0.3s; transform-origin: left; }
+.match-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--sh); }
+.match-card:hover::before { transform: scaleX(1); }
+.mc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.mc-title { font-family: var(--fd); font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.sbadge { font-family: var(--fd); font-size: 13px; font-weight: 900; padding: 3px 11px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.s-hi { background: var(--green-dim); color: var(--green); border: 1px solid rgba(15,168,118,0.22); }
+.s-mid { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
+.s-lo { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(45,110,219,0.18); }
+.mc-co { font-size: 13px; color: var(--text2); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.mc-tag { font-family: var(--fm); font-size: 10px; color: var(--text3); background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; }
+.mc-tag.visa { color: var(--green); background: var(--green-dim); border-color: rgba(15,168,118,0.18); }
+.mc-reason { font-size: 13px; color: var(--text2); line-height: 1.6; padding: 10px 14px; background: var(--bg2); border-radius: var(--r); border-left: 2px solid var(--blue); margin-bottom: 14px; }
+.btn-aply { width: 100%; padding: 11px; border-radius: var(--r); font-size: 14px; font-weight: 700; font-family: var(--fb); background: linear-gradient(135deg,var(--blue),var(--blue2)); color: #fff; border: none; cursor: pointer; transition: all 0.2s; }
+.btn-aply:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(45,110,219,0.28); }
+.btn-aply.locked { background: var(--bg2); color: var(--text3); border: 1px solid var(--border2); }
+.btn-aply.locked:hover { background: var(--gold-dim); color: var(--gold); border-color: var(--gold-glo); transform:none; box-shadow:none; }
+
+/* APPLY CHECKLIST */
+.aply-list { list-style: none; padding: 0; margin: 0 0 24px; }
+.aply-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text3); transition: all 0.4s; }
+.aply-item:last-child { border-bottom: none; }
+.aply-item.done { color: var(--text); }
+.chk-circ { width: 28px; height: 28px; border-radius: 50%; background: var(--bg2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; transition: all 0.4s; }
+.chk-circ.done { background: var(--green-dim); border-color: rgba(15,168,118,0.28); color: var(--green); }
+.chk-circ.spin { animation: cspin 1s linear infinite; border-top-color: var(--blue) !important; }
+@keyframes cspin { to{transform:rotate(360deg)} }
+
+/* RESULT */
+.score-ring-wrap { text-align: center; margin-bottom: 28px; }
+.score-ring { width: 110px; height: 110px; border-radius: 50%; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: conic-gradient(var(--green) var(--rp,0%), var(--border2) 0); }
+.score-ring::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg); }
+.score-ring-n { font-family: var(--fd); font-size: 26px; font-weight: 900; position: relative; z-index: 1; }
+.score-ring-l { font-family: var(--fm); font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); position: relative; z-index: 1; }
+.res-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 12px; }
+.res-lbl { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text3); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.copy-btn { background: none; border: 1px solid var(--border2); color: var(--text3); font-size: 10px; font-family: var(--fm); padding: 2px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+.reason-list { list-style: none; padding: 0; margin: 0; }
+.reason-item { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: var(--text2); padding: 7px 0; border-bottom: 1px solid var(--border); line-height: 1.55; }
+.reason-item:last-child { border-bottom: none; }
+.rcheck { color: var(--green); flex-shrink: 0; margin-top: 1px; }
+.cover-text { font-size: 13px; color: var(--text2); line-height: 1.8; max-height: 200px; overflow-y: auto; padding-right: 6px; }
+
+/* UPSELL */
+.upsell-box { background: linear-gradient(160deg,var(--blue-dim),transparent); border: 1px solid rgba(45,110,219,0.18); border-radius: var(--r2); padding: 28px; text-align: center; margin-top: 20px; }
+.upsell-mascot { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: top; margin: 0 auto 14px; border: 2px solid rgba(45,110,219,0.18); display: block; }
+.upsell-ttl { font-family: var(--fd); font-size: 18px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 8px; }
+.upsell-sub { font-size: 14px; color: var(--text2); line-height: 1.65; margin-bottom: 20px; }
+.upsell-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.upsell-plan { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.upsell-plan:hover { border-color: var(--blue); transform: translateY(-1px); }
+.up-price { font-family: var(--fd); font-size: 22px; font-weight: 900; color: var(--gold); margin-bottom: 2px; }
+.up-name { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); margin-bottom: 5px; }
+.up-desc { font-size: 11px; color: var(--text2); }
+.btn-upgrade { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; border-radius: var(--r); font-size: 15px; font-weight: 700; font-family: var(--fb); background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #07090f; border: none; cursor: pointer; transition: all 0.2s; }
+.btn-upgrade:hover { transform: translateY(-2px); box-shadow: var(--sh-gold); }
+
+/* ANIMATIONS */
+.anim { opacity:0; transform:translateY(22px); transition:opacity 0.65s ease,transform 0.65s ease; }
+.anim.visible { opacity:1; transform:none; }
+
+@media(max-width:768px){ .pricing-grid{grid-template-columns:1fr;max-width:400px} .upsell-plans{grid-template-columns:1fr} .steps-tl::before{display:none} }
+@media(max-width:540px){ .landing-h1{font-size:44px} .mascot-img{width:120px;height:120px} .mascot-ring{inset:-10px} .landing-btns{flex-direction:column;align-items:center} }
+</style>
+</head>
+<body>
+
+<div id="ig-nav"></div>
+
+<!-- ═══════════ LANDING ═══════════ -->
+<div id="landingPage">
+  <section class="dijo-landing">
+    <div class="landing-bg"></div>
+    <div class="landing-grid"></div>
+    <div class="landing-eyebrow"><span class="eyebrow-dot"></span>ImpactGrid AI · Now Live</div>
+    <div class="mascot-wrap">
+      <div class="mascot-ring"></div>
+      <img class="mascot-img" src="dijo-mascot.png" alt="Dijo — AI Job Consultant"/>
+    </div>
+    <h1 class="landing-h1">Meet <span class="h1-name">Dijo</span></h1>
+    <p class="landing-tagline">Apply smarter, not harder. <em>Powered by ImpactGrid AI.</em></p>
+    <p class="landing-desc">I find jobs that actually match your CV, explain exactly why they fit, and apply with a precision-tailored cover letter and optimised CV — in minutes, not hours.</p>
+    <div class="landing-btns">
+      <button class="btn-dijo" onclick="startDijo()">Start for Free <span class="arr">→</span></button>
+      <a href="jobs.html" class="btn btn-outline">Browse all jobs</a>
+    </div>
+    <div class="pills">
+      <div class="pill"><span class="pill-dot"></span>1 Free Application</div>
+      <div class="pill"><span class="pill-dot"></span>AI Match Scoring</div>
+      <div class="pill"><span class="pill-dot"></span>Tailored Cover Letter</div>
+      <div class="pill"><span class="pill-dot"></span>CV Optimisation</div>
+      <div class="pill"><span class="pill-dot"></span>Visa Sponsorship Filter</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-section">
+    <div class="sec-ctr">
+      <div class="label-tag">The Process</div>
+      <h2 class="sec-h">How <span style="color:var(--blue);">Dijo</span> Works</h2>
+      <p class="sec-p" style="margin:14px auto 0;text-align:center;">No spray-and-pray. Dijo only applies to jobs that genuinely fit — and tells you exactly why.</p>
+    </div>
+    <div class="steps-tl">
+      <div class="srow anim"><div class="snum blue">1</div><div class="scontent"><h3>Upload your CV</h3><p>Upload your PDF or paste your CV. Dijo reads it and auto-fills your job role, location and experience level instantly.</p></div></div>
+      <div class="srow anim"><div class="snum gold">2</div><div class="scontent"><h3>AI finds your best matches</h3><p>Dijo scans live jobs and scores each one against your profile. Only 70%+ matches are shown — no noise, no irrelevant roles.</p></div></div>
+      <div class="srow anim"><div class="snum blue">3</div><div class="scontent"><h3>See exactly why each job fits</h3><p>Every match comes with a clear explanation — aligned skills, experience, salary fit — so you apply with confidence.</p></div></div>
+      <div class="srow anim"><div class="snum green">4</div><div class="scontent"><h3>Apply with precision</h3><p>One click. Dijo writes a tailored cover letter and optimises your CV for that specific role — ATS-friendly and genuinely compelling.</p></div></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- PRICING -->
+  <section class="pricing-section">
+    <div class="sec-ctr" style="text-align:center;margin-bottom:48px;">
+      <div class="label-tag">Pricing</div>
+      <h2 class="sec-h">Start Free. <span style="color:var(--gold);">Scale When Ready.</span></h2>
+    </div>
+    <div class="pricing-grid">
+      <div class="pc anim">
+        <div class="pc-plan">Free</div><div class="pc-amount">£0</div><div class="pc-sub">No card required</div>
+        <ul class="pc-feats"><li><span class="pcheck">✓</span>1 full AI application</li><li><span class="pcheck">✓</span>Full match scoring</li><li><span class="pcheck">✓</span>Cover letter included</li><li><span class="pcheck">✓</span>See why jobs fit you</li></ul>
+      </div>
+      <div class="pc featured anim">
+        <div class="pc-badge">Most Popular</div>
+        <div class="pc-plan">Pro</div><div class="pc-amount">£16<span>/mo</span></div><div class="pc-sub">Billed monthly</div>
+        <ul class="pc-feats"><li><span class="pcheck">✓</span>10 applications/day</li><li><span class="pcheck">✓</span>Human-like timing</li><li><span class="pcheck">✓</span>Priority matching</li><li><span class="pcheck">✓</span>Visa filter included</li></ul>
+      </div>
+      <div class="pc anim">
+        <div class="pc-plan">Elite</div><div class="pc-amount">£25<span>/mo</span></div><div class="pc-sub">Billed monthly</div>
+        <ul class="pc-feats"><li><span class="pcheck">✓</span>20 applications/day</li><li><span class="pcheck">✓</span>First-access to jobs</li><li><span class="pcheck">✓</span>Advanced AI profile</li><li><span class="pcheck">✓</span>Application tracking</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <div id="ig-footer"></div>
+</div><!-- /landingPage -->
+
+
+<!-- ═══════════ DIJO APP ═══════════ -->
+<div class="dijo-app" id="dijoApp">
+  <div class="app-inner">
+
+    <div class="prog-wrap" id="progWrap">
+      <div class="prog-seg" id="p1"></div><div class="prog-seg" id="p2"></div><div class="prog-seg" id="p3"></div>
+      <div class="prog-seg" id="p4"></div><div class="prog-seg" id="p5"></div><div class="prog-seg" id="p6"></div>
+      <span class="prog-lbl" id="pLbl">Step 1 of 6</span>
+    </div>
+
+    <!-- STEP 1: WELCOME -->
+    <div class="step-panel active" id="s1">
+      <div style="text-align:center;padding:16px 0 36px;">
+        <div class="mascot-wrap" style="display:inline-block;">
+          <div class="mascot-ring"></div>
+          <img class="mascot-img" src="dijo-mascot.png" alt="Dijo"/>
+        </div>
+      </div>
+      <div class="bubble">
+        Hi, I'm <strong>Dijo</strong> 👋 — your AI job consultant from ImpactGrid.<br><br>
+        I'll scan your CV, find jobs that <em>actually</em> match your profile, and apply with a tailored cover letter and optimised CV — all in minutes.<br><br>
+        Your first application is completely <strong>free</strong>. No account needed to start.
+      </div>
+      <div class="free-banner">🎁 Free Plan — 1 full AI application included. No card required.</div>
+      <button class="btn-app" onclick="goStep(2)">Let's Start →</button>
+      <a href="jobs.html" class="btn-app-sec">Browse jobs manually instead</a>
+    </div>
+
+    <!-- STEP 2: PROFILE -->
+    <div class="step-panel" id="s2">
+      <div class="step-hdr">
+        <img class="mascot-sm" src="dijo-mascot.png" alt="Dijo"/>
+        <div class="step-hdr-t">
+          <h2>Tell me about yourself</h2>
+          <p>Upload your CV — I'll read it and auto-fill your details instantly.</p>
+        </div>
+      </div>
+
+      <label class="flabel">Your CV <span class="freq">*</span></label>
+      <div class="cv-zone" id="cvZone" ondragover="doDrag(event)" ondrop="doDrop(event)" onclick="document.getElementById('cvfi').click()">
+        <input type="file" id="cvfi" class="cv-zone-file" accept=".pdf,.doc,.docx,.txt" onchange="doFile(event)"/>
+        <div class="cv-zone-icon">📄</div>
+        <div class="cv-zone-ttl" id="czTtl">Drop your CV here</div>
+        <div class="cv-zone-sub" id="czSub">PDF, Word or TXT · Click or drag to upload</div>
+      </div>
+      <div class="cv-or">— or paste below —</div>
+      <textarea class="dinput dtextarea" id="cvText" placeholder="Paste your CV — work experience, skills, education, achievements…" oninput="chkReady()"></textarea>
+
+      <label class="flabel">
+        Target Job Role <span style="color:var(--text3);font-size:9px;">(optional)</span>
+        <span class="autofill-badge" id="roleTag"></span>
+      </label>
+      <input class="dinput" id="jobRole" type="text" placeholder="e.g. Marketing Manager, Software Developer…"/>
+
+      <label class="flabel">
+        Preferred Location <span style="color:var(--text3);font-size:9px;">(optional)</span>
+        <span class="autofill-badge" id="locTag"></span>
+      </label>
+      <input class="dinput" id="jobLoc" type="text" placeholder="e.g. London, Remote, Manchester…"/>
+
+      <label class="flabel">
+        Experience Level <span style="color:var(--text3);font-size:9px;">(optional)</span>
+        <span class="autofill-badge" id="lvlTag"></span>
+      </label>
+      <select class="dinput dselect" id="expLvl">
+        <option value="">Select level…</option>
+        <option value="junior">Junior (0–2 years)</option>
+        <option value="mid">Mid-level (2–5 years)</option>
+        <option value="senior">Senior (5+ years)</option>
+        <option value="lead">Lead / Manager</option>
+        <option value="director">Director / Executive</option>
+      </select>
+
+      <label class="visa-row">
+        <input type="checkbox" id="visaChk"/>
+        Only show jobs with <strong>Visa Sponsorship</strong>
+      </label>
+
+      <button class="btn-app" id="analyseBtn" onclick="doAnalyse()" disabled>Analyse My CV →</button>
+      <button class="btn-app-sec" onclick="goStep(1)">← Back</button>
+    </div>
+
+    <!-- STEP 3: LOADING -->
+    <div class="step-panel" id="s3">
+      <div class="loading-panel">
+        <img class="loading-mascot" src="dijo-mascot.png" alt="Dijo"/>
+        <div class="loading-ttl" id="ldTtl">Reading your CV…</div>
+        <div class="loading-sub">This takes about 20 seconds</div>
+        <div class="load-steps">
+          <div class="lst" id="ls1">📄 Parsing your CV</div>
+          <div class="lst" id="ls2">🔍 Scanning live jobs</div>
+          <div class="lst" id="ls3">🧠 Scoring your matches</div>
+          <div class="lst" id="ls4">✨ Preparing results</div>
+        </div>
+        <div class="ldots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div>
+      </div>
+    </div>
+
+    <!-- STEP 4: MATCHES -->
+    <div class="step-panel" id="s4">
+      <div class="step-hdr">
+        <img class="mascot-sm" src="dijo-mascot.png" alt="Dijo"/>
+        <div class="step-hdr-t"><h2>Your Best Matches</h2><p>Ranked by how well they match your profile. Free plan: 1 application.</p></div>
+      </div>
+      <div class="free-banner">🎁 Free Plan — 1 application remaining. <a href="#" onclick="goStep(6);return false;" style="color:var(--gold);margin-left:4px;font-size:12px;">Upgrade →</a></div>
+      <div class="matches-hdr"><h3 id="mTitle">Top matches found</h3><span class="matches-ct" id="mCount"></span></div>
+      <div id="mList"></div>
+      <button class="btn-app-sec" onclick="goStep(2)">← Refine my CV</button>
+    </div>
+
+    <!-- STEP 5: APPLYING -->
+    <div class="step-panel" id="s5">
+      <div class="step-hdr">
+        <img class="mascot-sm" src="dijo-mascot.png" alt="Dijo"/>
+        <div class="step-hdr-t"><h2 id="apTtl">Preparing your application…</h2><p id="apSub"></p></div>
+      </div>
+      <ul class="aply-list">
+        <li class="aply-item" id="ai1"><div class="chk-circ" id="cc1">📝</div>Analysing role requirements</li>
+        <li class="aply-item" id="ai2"><div class="chk-circ" id="cc2">🎯</div>Optimising CV for this role</li>
+        <li class="aply-item" id="ai3"><div class="chk-circ" id="cc3">✍️</div>Writing your cover letter</li>
+        <li class="aply-item" id="ai4"><div class="chk-circ" id="cc4">🔍</div>Final review by Dijo</li>
+      </ul>
+      <div class="ldots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div>
+    </div>
+
+    <!-- STEP 6: RESULT -->
+    <div class="step-panel" id="s6">
+      <div class="step-hdr">
+        <img class="mascot-sm" src="dijo-mascot.png" alt="Dijo"/>
+        <div class="step-hdr-t"><h2>Application Ready! 🎉</h2><p>Here's what Dijo prepared for you.</p></div>
+      </div>
+      <div class="score-ring-wrap">
+        <div class="score-ring" id="scoreRing" style="--rp:0%">
+          <div class="score-ring-n" id="scoreN">—</div>
+          <div class="score-ring-l">Match</div>
+        </div>
+      </div>
+      <div class="bubble" id="resSummary" style="margin-bottom:16px;"></div>
+      <div class="res-box" id="resReasons" style="display:none;"><div class="res-lbl">Why This Job Fits You</div><ul class="reason-list" id="rList"></ul></div>
+      <div class="res-box" id="resAdvice" style="display:none;"><div class="res-lbl">Dijo's Advice</div><p class="cover-text" id="advTxt"></p></div>
+      <div class="res-box" id="resCover" style="display:none;">
+        <div class="res-lbl">Cover Letter<button class="copy-btn" id="cpyBtn" onclick="doCopy()">Copy</button></div>
+        <div class="cover-text" id="coverTxt"></div>
+      </div>
+      <div class="upsell-box">
+        <img class="upsell-mascot" src="dijo-mascot.png" alt="Dijo"/>
+        <div class="upsell-ttl">Want me to apply to more jobs?</div>
+        <div class="upsell-sub">Upgrade and I'll apply every day, automatically — a tailored application for each job.</div>
+        <div class="upsell-plans">
+          <div class="upsell-plan"><div class="up-price">£16</div><div class="up-name">Pro</div><div class="up-desc">10 applications/day</div></div>
+          <div class="upsell-plan"><div class="up-price">£25</div><div class="up-name">Elite</div><div class="up-desc">20 applications/day</div></div>
+        </div>
+        <button class="btn-upgrade">⚡ Upgrade — Start Applying Daily</button>
+        <button class="btn-app-sec" onclick="goStep(4)" style="margin-top:10px;">← Back to Matches</button>
+      </div>
+    </div>
+
+  </div><!-- /app-inner -->
+</div><!-- /dijoApp -->
+
+
+<!-- PDF.js for proper PDF reading -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script defer src="ig-supabase.js"></script>
+<script defer src="nav.js"></script>
+<script defer src="impactgrid-chat-bubble.js"></script>
+
+<script>
+// Set PDF.js worker
+window.addEventListener('load', function() {
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+});
+
+var DIJO_API = 'https://impactgrid-dijo-api.onrender.com';
+var S = { cv:'', role:'', loc:'', lvl:'', visa:false, jobs:[], matches:[], job:null, result:null, step:1 };
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof renderNav === 'function') renderNav('dijo.html');
+  if (typeof renderFooter === 'function') renderFooter();
+  var obs = new IntersectionObserver(function(en) {
+    en.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.anim').forEach(function(el){ obs.observe(el); });
+  loadJobs();
+  setInterval(function(){ fetch(DIJO_API+'/ping').catch(function(){}); }, 600000);
+});
+
+function startDijo() {
+  document.getElementById('landingPage').style.display = 'none';
+  document.getElementById('dijoApp').classList.add('active');
+  goStep(1);
+  window.scrollTo(0,0);
+}
+
+function goStep(n) {
+  S.step = n;
+  document.querySelectorAll('.step-panel').forEach(function(p){ p.classList.remove('active'); });
+  var el = document.getElementById('s'+n); if(el) el.classList.add('active');
+  for(var i=1;i<=6;i++){
+    var seg=document.getElementById('p'+i); if(!seg) continue;
+    seg.classList.remove('done','active');
+    if(i<n) seg.classList.add('done');
+    else if(i===n) seg.classList.add('active');
+  }
+  var lbl=document.getElementById('pLbl'); if(lbl) lbl.textContent='Step '+n+' of 6';
+  window.scrollTo(0,0);
+}
+
+function chkReady() {
+  var cv=document.getElementById('cvText').value.trim();
+  var btn=document.getElementById('analyseBtn');
+  if(btn) btn.disabled = cv.length < 50;
+}
+
+function doDrag(e){ e.preventDefault(); document.getElementById('cvZone').classList.add('dragover'); }
+function doDrop(e){ e.preventDefault(); document.getElementById('cvZone').classList.remove('dragover'); var f=e.dataTransfer.files[0]; if(f) readFile(f); }
+function doFile(e){ var f=e.target.files[0]; if(f) readFile(f); }
+
+async function readFile(f) {
+  document.getElementById('czTtl').textContent = '⏳ Reading ' + f.name + '…';
+  document.getElementById('czSub').textContent = 'Extracting text from your CV…';
+  document.getElementById('cvZone').style.borderColor = 'var(--blue)';
+
+  try {
+    var text = '';
+
+    if (f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) {
+      // Properly extract text from PDF using PDF.js
+      var arrayBuffer = await f.arrayBuffer();
+      var pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      var pages = [];
+      for (var i = 1; i <= pdf.numPages; i++) {
+        var page = await pdf.getPage(i);
+        var content = await page.getTextContent();
+        var pageText = content.items.map(function(item){ return item.str; }).join(' ');
+        pages.push(pageText);
+      }
+      text = pages.join('\n\n');
+    } else {
+      // Plain text or Word doc fallback
+      text = await f.text();
+    }
+
+    if (!text || text.trim().length < 30) {
+      document.getElementById('czTtl').textContent = '⚠️ Could not read ' + f.name;
+      document.getElementById('czSub').textContent = 'Please paste your CV text in the box below';
+      document.getElementById('cvZone').style.borderColor = 'var(--gold)';
+      return;
+    }
+
+    document.getElementById('cvText').value = text;
+    document.getElementById('czTtl').textContent = '✅ ' + f.name + ' read successfully!';
+    document.getElementById('czSub').textContent = 'CV extracted · Auto-filling your details…';
+    document.getElementById('cvZone').style.borderColor = 'var(--green)';
+    chkReady();
+
+    // Auto-fill fields using AI
+    autoFillFromCV(text);
+
+  } catch(err) {
+    document.getElementById('czTtl').textContent = '⚠️ Could not read this file';
+    document.getElementById('czSub').textContent = 'Please paste your CV text in the box below';
+    document.getElementById('cvZone').style.borderColor = 'var(--gold)';
+    console.warn('File read error:', err.message);
+  }
+}
+
+function setTag(id, text, color) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'inline-flex';
+  el.style.background = color === 'green' ? 'var(--green-dim)' : 'var(--blue-dim)';
+  el.style.color = color === 'green' ? 'var(--green)' : 'var(--blue)';
+  el.style.border = color === 'green' ? '1px solid rgba(15,168,118,0.22)' : '1px solid rgba(45,110,219,0.18)';
+  el.style.padding = '2px 8px';
+  el.style.borderRadius = '8px';
+  el.style.fontFamily = 'var(--fm)';
+  el.style.fontSize = '10px';
+}
+function hideTag(id) { var el=document.getElementById(id); if(el) el.style.display='none'; }
+
+async function autoFillFromCV(cvText) {
+  setTag('roleTag', '⏳ Detecting…', 'blue');
+  setTag('locTag', '⏳ Detecting…', 'blue');
+  setTag('lvlTag', '⏳ Detecting…', 'blue');
+
+  try {
+    var res = await fetch(DIJO_API + '/ai/extract-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv_text: cvText.substring(0, 3000) })
+    });
+    var data = await res.json();
+
+    if (data.job_role) { document.getElementById('jobRole').value = data.job_role; setTag('roleTag', '✨ AI filled', 'green'); } else { hideTag('roleTag'); }
+    if (data.location)  { document.getElementById('jobLoc').value = data.location;   setTag('locTag',  '✨ AI filled', 'green'); } else { hideTag('locTag'); }
+    if (data.experience_level) {
+      var sel = document.getElementById('expLvl');
+      var lvl = data.experience_level.toLowerCase();
+      var opts = ['junior','mid','senior','lead','director'];
+      for(var i=0;i<opts.length;i++){ if(lvl.includes(opts[i])){ sel.value=opts[i]; break; } }
+      if(sel.value) setTag('lvlTag','✨ AI filled','green'); else hideTag('lvlTag');
+    } else { hideTag('lvlTag'); }
+
+  } catch(err) {
+    hideTag('roleTag'); hideTag('locTag'); hideTag('lvlTag');
+    console.warn('Auto-fill error:', err.message);
+  }
+}
+
+async function loadJobs() {
+  try {
+    if(typeof getSupabase!=='function') return;
+    var res=await getSupabase().from('jobs').select('*').eq('status','active').order('created_at',{ascending:false});
+    S.jobs=res.data||[];
+  } catch(e){ console.warn(e.message); }
+}
+
+async function doAnalyse() {
+  S.cv=document.getElementById('cvText').value.trim();
+  S.role=document.getElementById('jobRole').value.trim();
+  S.loc=document.getElementById('jobLoc').value.trim();
+  S.lvl=document.getElementById('expLvl').value;
+  S.visa=document.getElementById('visaChk').checked;
+  if(!S.cv||S.cv.length<50){ alert('Please add your CV first.'); return; }
+  goStep(3);
+  animLoad();
+  try {
+    var jobs=S.jobs.slice(0,8);
+    if(!jobs.length && typeof getSupabase==='function'){
+      var r=await getSupabase().from('jobs').select('*').eq('status','active').limit(8);
+      jobs=r.data||[];
+    }
+    var matches=[];
+    if(!jobs.length){
+      matches=demoData();
+    } else {
+      for(var i=0;i<jobs.length;i++){
+        var job=jobs[i];
+        if(S.visa && !job.visa_sponsorship) continue;
+        try {
+          var res=await fetch(DIJO_API+'/ai/match',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cv_text:S.cv,job_description:job.description||job.title||''}) });
+          var d=await res.json();
+          if(d.result && d.result.score>=60) matches.push({job:job,match:d.result});
+        } catch(e){}
+      }
+      matches.sort(function(a,b){ return b.match.score-a.match.score; });
+    }
+    S.matches=matches;
+    renderMatches(matches);
+    goStep(4);
+  } catch(err){ alert('Something went wrong. Please try again.'); goStep(2); }
+}
+
+function animLoad() {
+  var ids=['ls1','ls2','ls3','ls4'];
+  var titles=['Reading your CV…','Scanning live jobs…','Scoring your matches…','Almost done…'];
+  ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.remove('done','active'); });
+  ids.forEach(function(id,i){
+    setTimeout(function(){
+      if(i>0){ var prev=document.getElementById(ids[i-1]); if(prev){ prev.classList.remove('active'); prev.classList.add('done'); } }
+      var el=document.getElementById(id); if(el) el.classList.add('active');
+      var t=document.getElementById('ldTtl'); if(t) t.textContent=titles[i];
+    }, i*4000);
+  });
+}
+
+function demoData() {
+  return [
+    { job:{id:'d1',title:'Marketing Manager',company_name:'TechCorp UK',location:'London (Hybrid)',budget:'£45,000–£55,000',visa_sponsorship:false,description:'Marketing manager role.'}, match:{score:87,reasons:['Strong marketing background','London location aligns','Leadership experience matches'],gaps:['Paid ads not mentioned'],summary:'Excellent fit — your experience directly aligns with this role.'} },
+    { job:{id:'d2',title:'Content Strategist',company_name:'Digital Agency Ltd',location:'Remote',budget:'£35,000–£42,000',visa_sponsorship:true,description:'Content strategy role.'}, match:{score:74,reasons:['Content creation skills match','Remote role available','Visa sponsorship offered'],gaps:['SEO tools not mentioned'],summary:'Good match — your content skills are well aligned.'} },
+    { job:{id:'d3',title:'Brand Manager',company_name:'ImpactGrid Partner',location:'Manchester',budget:'£40,000–£50,000',visa_sponsorship:false,description:'Brand manager role.'}, match:{score:68,reasons:['Brand strategy experience','Team leadership background','Industry knowledge relevant'],gaps:['Budget management','Brand tools'],summary:'Solid match — a strong application could get you through.'} }
+  ];
+}
+
+function renderMatches(matches) {
+  var list=document.getElementById('mList');
+  var cnt=document.getElementById('mCount');
+  var ttl=document.getElementById('mTitle');
+  if(cnt) cnt.textContent=matches.length+' match'+(matches.length!==1?'es':'')+' found';
+  if(ttl) ttl.textContent=matches.length?'Your top matches':'No strong matches found';
+  if(!matches.length){ list.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3);"><div style="font-size:40px;margin-bottom:12px;">🔍</div><div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--text2);margin-bottom:8px;">No strong matches right now</div><div style="font-size:13px;line-height:1.65;">Try updating your CV with more skills, or check back when new jobs are posted.</div></div>'; return; }
+  list.innerHTML=matches.map(function(m,idx){
+    var sc=m.match.score;
+    var cls=sc>=80?'s-hi':sc>=70?'s-mid':'s-lo';
+    var reason=m.match.reasons&&m.match.reasons[0]?m.match.reasons[0]:'';
+    var locked=idx>0;
+    return '<div class="match-card">'+
+      '<div class="mc-top"><div class="mc-title">'+esc(m.job.title||'Opportunity')+(locked?' 🔒':'')+'</div><span class="sbadge '+cls+'">'+sc+'% match</span></div>'+
+      '<div class="mc-co">🏢 '+esc(m.job.company_name||'ImpactGrid Employer')+(m.job.location?' · 📍 '+esc(m.job.location):'')+(m.job.budget?' · 💰 '+esc(m.job.budget):'')+  '</div>'+
+      '<div class="mc-tags">'+(m.job.visa_sponsorship?'<span class="mc-tag visa">✓ Visa Sponsorship</span>':'')+(m.job.job_type?'<span class="mc-tag">'+esc(m.job.job_type)+'</span>':'')+'</div>'+
+      (reason?'<div class="mc-reason">💡 '+esc(reason)+'</div>':'')+
+      (locked?'<button class="btn-aply locked" onclick="promptUp()">🔒 Upgrade to Apply</button>':'<button class="btn-aply" onclick="doApply('+idx+')">Apply with Dijo →</button>')+
+    '</div>';
+  }).join('');
+}
+
+async function doApply(idx) {
+  var m=S.matches[idx]; if(!m) return;
+  S.job=m.job;
+  var at=document.getElementById('apTtl'); if(at) at.textContent='Preparing your application…';
+  var as=document.getElementById('apSub'); if(as) as.textContent=m.job.title+' at '+(m.job.company_name||'this company');
+  goStep(5);
+  await animChecklist();
+  try {
+    var res=await fetch(DIJO_API+'/ai/apply',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cv_text:S.cv,job_description:m.job.description||m.job.title,job_title:m.job.title,company_name:m.job.company_name}) });
+    S.result=await res.json();
+    tick('cc4');
+    setTimeout(function(){ showResult(S.result,m); },800);
+  } catch(err){ tick('cc4'); setTimeout(function(){ showResult(null,m); },800); }
+}
+
+async function animChecklist() {
+  var cs=['cc1','cc2','cc3'];
+  for(var i=0;i<cs.length;i++){ spin(cs[i]); await wait(2000); tick(cs[i]); }
+}
+function spin(id){ var c=document.getElementById(id); if(c){ c.classList.add('spin'); c.textContent=''; } }
+function tick(id){ var c=document.getElementById(id); var item=c&&c.closest('.aply-item'); if(c){ c.classList.remove('spin'); c.classList.add('done'); c.textContent='✓'; } if(item) item.classList.add('done'); }
+function wait(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+function showResult(data,m) {
+  var score=(data&&data.match_score)?data.match_score:m.match.score;
+  var reasons=(data&&data.reasons)?data.reasons:m.match.reasons;
+  var summary=(data&&data.summary)?data.summary:m.match.summary;
+  var cover=data&&data.cover_letter;
+  var ring=document.getElementById('scoreRing'); var num=document.getElementById('scoreN');
+  if(ring){ var col=score>=80?'var(--green)':score>=65?'var(--gold)':'var(--blue)'; ring.style.background='conic-gradient('+col+' '+score+'%, var(--border2) 0)'; }
+  if(num){ num.textContent=score+'%'; num.style.color=score>=80?'var(--green)':score>=65?'var(--gold)':'var(--blue)'; }
+  var sum=document.getElementById('resSummary'); if(sum) sum.textContent=summary||'Your application has been prepared by Dijo.';
+  if(reasons&&reasons.length){ var rb=document.getElementById('resReasons'); if(rb) rb.style.display='block'; var rl=document.getElementById('rList'); if(rl) rl.innerHTML=reasons.map(function(r){ return '<li class="reason-item"><span class="rcheck">✓</span>'+esc(r)+'</li>'; }).join(''); }
+  var ab=document.getElementById('resAdvice'); var at=document.getElementById('advTxt');
+  if(ab&&at){ at.textContent="You're well-positioned for roles in "+(S.role||m.job.title||'your field')+". Your application has been tailored to highlight your most relevant experience and optimised to pass ATS screening."; ab.style.display='block'; }
+  if(cover){ var cb=document.getElementById('resCover'); if(cb) cb.style.display='block'; var ct=document.getElementById('coverTxt'); if(ct) ct.textContent=cover; }
+  goStep(6);
+}
+
+function doCopy() {
+  var t=document.getElementById('coverTxt'); var b=document.getElementById('cpyBtn');
+  if(!t) return;
+  navigator.clipboard.writeText(t.textContent).then(function(){ if(b){ b.textContent='Copied!'; setTimeout(function(){ b.textContent='Copy'; },2000); } });
+}
+
+function promptUp(){ alert('Upgrade to Dijo Pro to apply to more than 1 job per day!'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
