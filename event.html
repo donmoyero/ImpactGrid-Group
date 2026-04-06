@@ -1,418 +1,848 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>ImpactGrid — Event Gallery</title>
 <link rel="icon" href="favicon.ico"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&family=Nunito:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&family=Italiana&family=Syne:wght@700;800;900&family=Nunito:wght@400;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="ig-supabase.js"></script>
 <style>
+/* ══════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 a{color:inherit;text-decoration:none;}
 button{cursor:pointer;border:none;font-family:inherit;}
 img{display:block;max-width:100%;}
-input,textarea{font-family:inherit;}
+input,textarea,select{font-family:inherit;}
 .hidden{display:none!important;}
 .section{display:none;}
 .section.active{display:block;}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease;}
+
+/* ══════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════ */
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-@keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
-.modal-box{animation:slideUp .3s ease;width:100%;max-width:480px;border-radius:20px;padding:36px;}
-.toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:14px 20px;border-radius:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;min-width:260px;transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(0,0,0,.15);}
+@keyframes slideUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+@keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+@keyframes kenBurns{0%{transform:scale(1) translate(0,0);}50%{transform:scale(1.08) translate(-1%,-1%);}100%{transform:scale(1.04) translate(1%,0);}  }
+@keyframes slideNext{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
+@keyframes slidePrev{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:translateX(0);}}
+@keyframes checkPop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:14px 20px;border-radius:16px;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:10px;min-width:260px;
+  transform:translateY(80px);opacity:0;
+  transition:all .4s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 12px 40px rgba(0,0,0,.2);
+}
 .toast.show{transform:translateY(0);opacity:1;}
-.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;}
-.lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;}
-.lightbox-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;opacity:.7;transition:opacity .2s;line-height:1;}
-.lightbox-close:hover{opacity:1;}
-.lightbox-actions{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;}
-.overlay-btn{background:rgba(255,255,255,.15);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:12px;font-weight:700;padding:8px 16px;cursor:pointer;transition:all .2s;border-radius:8px;}
-.overlay-btn:hover{background:rgba(255,255,255,.28);}
+
+/* ══════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════ */
+.lightbox{
+  position:fixed;inset:0;background:rgba(0,0,0,.97);
+  z-index:1000;display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .2s ease;
+}
+.lightbox-img-wrap{position:relative;max-width:90vw;max-height:88vh;}
+.lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;border-radius:4px;}
+.lightbox-close{
+  position:absolute;top:20px;right:24px;
+  color:#fff;font-size:26px;cursor:pointer;opacity:.6;
+  transition:opacity .2s,transform .2s;line-height:1;background:none;border:none;
+}
+.lightbox-close:hover{opacity:1;transform:scale(1.1);}
+.lightbox-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.12);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.2);color:#fff;
+  width:44px;height:44px;border-radius:50%;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;
+}
+.lightbox-nav:hover{background:rgba(255,255,255,.25);}
+.lightbox-prev{left:-60px;}
+.lightbox-next{right:-60px;}
+.lightbox-actions{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  display:flex;gap:10px;
+}
+.lb-btn{
+  padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;
+  cursor:pointer;border:none;display:inline-flex;align-items:center;gap:7px;
+  transition:all .2s;text-decoration:none;
+}
+.lb-btn-dl{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;}
+.lb-btn-ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;}
+.lb-counter{
+  position:absolute;top:20px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.5);font-size:12px;font-family:'DM Mono',monospace;
+  letter-spacing:.1em;
+}
+
+/* ══════════════════════════════════════
+   MODAL
+══════════════════════════════════════ */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(10px);z-index:999;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;animation:fadeIn .2s ease;
+}
+.modal-box{
+  animation:slideUp .3s ease;width:100%;max-width:480px;
+  border-radius:24px;padding:36px;
+}
+
+/* ══════════════════════════════════════
+   FLOATING DOWNLOAD BAR
+══════════════════════════════════════ */
+.dl-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:500;
+  padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+  backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.dl-bar.visible{transform:translateY(0);}
+.dl-bar-info{font-size:14px;font-weight:700;}
+.dl-bar-sub{font-size:11px;opacity:.6;margin-top:2px;}
+.dl-bar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+
+/* ══════════════════════════════════════
+   SLIDESHOW HERO
+══════════════════════════════════════ */
+.slideshow{
+  position:relative;overflow:hidden;
+  width:100%;
+}
+.slideshow-track{
+  position:relative;width:100%;height:100%;
+}
+.slide{
+  position:absolute;inset:0;
+  opacity:0;transition:opacity .8s ease;
+}
+.slide.active{opacity:1;z-index:2;}
+.slide img{
+  width:100%;height:100%;object-fit:cover;
+  animation:kenBurns 12s ease-in-out infinite;
+}
+.slide-overlay{
+  position:absolute;inset:0;
+  pointer-events:none;
+}
+.slideshow-dots{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;z-index:10;
+}
+.dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.4);cursor:pointer;
+  transition:all .3s;
+}
+.dot.active{background:#fff;width:22px;border-radius:3px;}
+.slide-counter{
+  position:absolute;bottom:20px;right:24px;
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:rgba(255,255,255,.6);z-index:10;
+  letter-spacing:.08em;
+}
+.slideshow-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,.25);backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.2);color:#fff;
+  width:40px;height:40px;border-radius:50%;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:10;transition:all .2s;
+}
+.slideshow-nav:hover{background:rgba(255,255,255,.2);}
+.slideshow-prev{left:16px;}
+.slideshow-next{right:16px;}
+
+/* ══════════════════════════════════════
+   CELEBRANT HERO PHOTO
+══════════════════════════════════════ */
+.celebrant-photo{
+  position:absolute;
+  bottom:-1px;
+  z-index:5;
+  pointer-events:none;
+}
+.celebrant-photo img{
+  width:100%;height:auto;
+  object-fit:contain;
+  object-position:bottom;
+  filter:drop-shadow(0 -20px 40px rgba(0,0,0,.3));
+  animation:fadeSlideIn .8s ease .3s both;
+}
+
+/* ══════════════════════════════════════
+   GATE
+══════════════════════════════════════ */
+.gate-alert{
+  font-size:13px;padding:10px 14px;
+  margin-bottom:14px;display:none;border-radius:8px;
+}
+.gate-alert.show{display:block;}
+.gate-alert-error{background:#fef2f2;color:#dc2626;border:1px solid rgba(220,38,38,.2);}
+
+/* ══════════════════════════════════════
+   SELECT OVERLAY
+══════════════════════════════════════ */
+.select-overlay{
+  position:absolute;inset:0;z-index:5;
+  cursor:pointer;
+}
+.select-checkbox{
+  position:absolute;top:10px;left:10px;z-index:6;
+  width:24px;height:24px;border-radius:6px;
+  border:2px solid rgba(255,255,255,.7);
+  background:rgba(0,0,0,.3);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;pointer-events:none;
+}
+.photo-card.selected .select-checkbox{
+  background:var(--accent);border-color:var(--accent);
+}
+.photo-card.selected .select-checkbox::after{
+  content:'✓';color:#fff;font-size:13px;font-weight:900;
+  animation:checkPop .2s ease;
+}
+.photo-card.selected::after{
+  content:'';position:absolute;inset:0;
+  border:3px solid var(--accent);border-radius:inherit;
+  pointer-events:none;z-index:4;
+}
+
+/* ══════════════════════════════════════
+   EMPTY STATE
+══════════════════════════════════════ */
 .empty-state{text-align:center;padding:64px 24px;opacity:.5;}
 .empty-state-icon{font-size:48px;margin-bottom:14px;}
 .empty-state-title{font-size:18px;font-weight:700;margin-bottom:6px;}
-.empty-state-sub{font-size:14px;}
-.gate-alert{font-size:13px;padding:10px 14px;margin-bottom:14px;display:none;border-radius:8px;}
-.gate-alert.show{display:block;}
-.gate-alert-error{background:#fef2f2;color:#dc2626;border:1px solid rgba(220,38,38,.2);}
-.matched-banner{display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:12px;margin-bottom:20px;font-size:13px;font-weight:600;}
-.photo-matched-badge{position:absolute;top:8px;right:8px;color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;z-index:2;}
-.face-drop{border:2px dashed;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;}
-.face-drop input{display:none;}
-.face-result-bar{height:6px;border-radius:3px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:8px;}
-.face-result-fill{height:100%;background:linear-gradient(90deg,#10b981,#3b82f6);border-radius:3px;transition:width .4s ease;}
-.req-input{width:100%;padding:12px 14px;font-size:14px;border-radius:8px;outline:none;transition:all .2s;margin-bottom:12px;background:#f8f9fc;border:1.5px solid #e2e5f0;color:#0d1020;}
-.req-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08);}
-.instant-panel{position:fixed;bottom:80px;right:24px;background:#fff;border:2px solid #10b981;border-radius:16px;padding:20px;max-width:320px;box-shadow:0 8px 32px rgba(16,185,129,.2);z-index:500;animation:slideUp .3s ease;}
-.q-dot{width:9px;height:9px;min-width:9px;border-radius:50%;background:#6b7280;transition:background .3s;}
-.q-dot.pass{background:#10b981;}
-.q-dot.fail{background:#ef4444;}
 
-/* ══ TEMPLATES ══ */
-.tpl-professional{--bg:#f8f9fc;--bg2:#f0f2f8;--card:#fff;--border:#e2e5f0;--border2:#c8cde0;--text:#0d1020;--text2:#505878;--text3:#9ba3c0;--accent:#2563eb;--accent2:#3b82f6;--accent-dim:rgba(37,99,235,.08);--accent-glo:rgba(37,99,235,.2);--green:#059669;--r:8px;--r2:14px;--r3:20px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-professional .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px;}
-.tpl-professional .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;}
-.tpl-professional .nav-logo-img{width:26px;height:26px;border-radius:5px;object-fit:contain;}
-.tpl-professional .nav-logo-mark{width:26px;height:26px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+/* ══════════════════════════════════════
+   ████  PROFESSIONAL TEMPLATE  ████
+══════════════════════════════════════ */
+.tpl-professional{
+  --bg:#f6f7fb;--bg2:#eceef6;--card:#fff;
+  --border:#dde1f0;--border2:#b8bdd8;
+  --text:#0c0e1a;--text2:#4a5068;--text3:#8890b0;
+  --accent:#3b4eff;--accent2:#6370ff;
+  --accent-dim:rgba(59,78,255,.08);--accent-glo:rgba(59,78,255,.2);
+  --r:10px;--r2:16px;--r3:24px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
+.tpl-professional .ev-nav{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:100;
+  background:rgba(246,247,251,.94);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 28px;gap:14px;
+}
+.tpl-professional .nav-logo{
+  display:flex;align-items:center;gap:8px;
+  font-family:'Syne',sans-serif;font-weight:900;font-size:15px;
+}
+.tpl-professional .nav-logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:var(--accent);display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:900;color:#fff;
+}
 .tpl-professional .nav-divider{width:1px;height:18px;background:var(--border2);}
 .tpl-professional .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
 .tpl-professional .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.tpl-professional .nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(37,99,235,.15);padding:4px 10px;border-radius:6px;}
-.tpl-professional .ev-hero{padding:100px 32px 60px;max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
-.tpl-professional .hero-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-.tpl-professional .hero-label::before{content:'';width:24px;height:1px;background:var(--accent);}
-.tpl-professional .hero-title{font-family:'Syne',sans-serif;font-weight:900;font-size:clamp(32px,4vw,52px);line-height:1.05;letter-spacing:-.02em;margin-bottom:16px;}
-.tpl-professional .hero-sub{font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:28px;}
-.tpl-professional .hero-visual{background:linear-gradient(135deg,var(--bg2),var(--border));border-radius:var(--r3);height:280px;display:flex;align-items:center;justify-content:center;font-size:56px;border:1px solid var(--border);}
-.tpl-professional .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 32px 80px;}
-.tpl-professional .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
-.tpl-professional .gallery-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:900;}
-.tpl-professional .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.tpl-professional .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;background:var(--border);border-radius:var(--r2);overflow:hidden;}
-.tpl-professional .photo-card{position:relative;aspect-ratio:3/2;overflow:hidden;cursor:pointer;background:var(--bg2);transition:all .3s;}
-.tpl-professional .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.tpl-professional .photo-card:hover img{transform:scale(1.06);}
-.tpl-professional .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(13,16,32,.7),transparent 55%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;}
+.tpl-professional .nav-code-badge{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent);background:var(--accent-dim);border:1px solid rgba(59,78,255,.15);
+  padding:4px 10px;border-radius:6px;
+}
+
+.tpl-professional .slideshow{height:65vh;min-height:400px;max-height:680px;}
+.tpl-professional .slide-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 40%,rgba(6,8,26,.55) 100%);
+}
+.tpl-professional .hero-text-layer{
+  position:absolute;bottom:0;left:0;right:0;z-index:4;
+  padding:40px 40px 36px;
+  background:linear-gradient(to top,rgba(6,8,26,.9) 0%,transparent);
+}
+.tpl-professional .hero-label{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:10px;
+}
+.tpl-professional .hero-title{
+  font-family:'Syne',sans-serif;font-weight:900;
+  font-size:clamp(28px,4vw,52px);line-height:1.05;
+  letter-spacing:-.02em;color:#fff;margin-bottom:8px;
+}
+.tpl-professional .hero-sub{font-size:14px;color:rgba(255,255,255,.6);}
+
+.tpl-professional .gallery-wrap{max-width:1300px;margin:0 auto;padding:40px 28px 140px;}
+.tpl-professional .gallery-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;margin-bottom:24px;
+  padding-bottom:18px;border-bottom:1px solid var(--border);
+}
+.tpl-professional .gallery-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:900;}
+.tpl-professional .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.tpl-professional .photo-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:3px;
+  background:var(--border);border-radius:var(--r2);overflow:hidden;
+}
+.tpl-professional .photo-card{
+  position:relative;aspect-ratio:3/2;overflow:hidden;
+  cursor:pointer;background:var(--bg2);transition:all .3s;
+}
+.tpl-professional .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .5s;}
+.tpl-professional .photo-card:hover img{transform:scale(1.07);}
+.tpl-professional .photo-card-overlay{
+  position:absolute;inset:0;background:rgba(6,8,26,.45);
+  opacity:0;transition:opacity .3s;
+  display:flex;align-items:flex-end;padding:14px;
+}
 .tpl-professional .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-professional .btn-primary{background:var(--accent);color:#fff;font-weight:700;font-size:13px;padding:10px 20px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
+.tpl-professional .btn-primary{
+  background:var(--accent);color:#fff;font-weight:700;font-size:13px;
+  padding:10px 20px;border-radius:var(--r);display:inline-flex;
+  align-items:center;gap:7px;transition:all .2s;
+}
 .tpl-professional .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 16px var(--accent-glo);}
-.tpl-professional .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-professional .btn-outline{background:#fff;border:1px solid var(--border2);color:var(--text2);font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
+.tpl-professional .btn-outline{
+  background:#fff;border:1px solid var(--border2);color:var(--text2);
+  font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);
+  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
+}
 .tpl-professional .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.tpl-professional .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-professional .gate-box{background:#fff;border:1px solid var(--border);border-radius:var(--r3);padding:48px 40px;max-width:420px;width:100%;box-shadow:0 4px 32px rgba(13,16,32,.08);}
+.tpl-professional .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
+.tpl-professional .gate-box{
+  background:#fff;border:1px solid var(--border);border-radius:var(--r3);
+  padding:48px 40px;max-width:420px;width:100%;
+  box-shadow:0 4px 32px rgba(13,16,32,.08);
+}
 .tpl-professional .gate-icon{font-size:40px;text-align:center;margin-bottom:16px;}
-.tpl-professional .gate-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:900;margin-bottom:8px;text-align:center;}
+.tpl-professional .gate-title{
+  font-family:'Syne',sans-serif;font-size:26px;font-weight:900;
+  margin-bottom:8px;text-align:center;
+}
 .tpl-professional .gate-sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:28px;line-height:1.6;}
-.tpl-professional .gate-input{background:var(--bg2);border:1.5px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
+.tpl-professional .gate-input{
+  background:var(--bg2);border:1.5px solid var(--border2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;
+  text-transform:uppercase;text-align:center;padding:14px;
+  border-radius:var(--r);width:100%;outline:none;transition:all .2s;margin-bottom:14px;
+}
 .tpl-professional .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
-.tpl-professional .face-panel{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:24px;margin-bottom:20px;}
-.tpl-professional .face-drop{border-color:var(--border2);background:var(--bg2);}
-.tpl-professional .face-drop:hover{border-color:var(--accent);background:var(--accent-dim);}
-.tpl-professional .matched-banner{background:#f0fdf4;color:#059669;border:1px solid rgba(5,150,105,.2);}
 .tpl-professional .toast{background:#fff;border:1px solid var(--border);color:var(--text);}
 .tpl-professional .modal-box{background:#fff;border:1px solid var(--border);}
+.tpl-professional .dl-bar{background:rgba(246,247,251,.96);border-color:var(--border);}
 
-.tpl-kids{--bg:#fffbf0;--bg2:#fff3d0;--card:#fff;--border:#fde68a;--border2:#fbbf24;--text:#1c1400;--text2:#7a6000;--accent:#f97316;--pink:#ec4899;--r:16px;--r2:24px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
-.tpl-kids .ev-nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:100;background:#fff;border-bottom:4px solid #fbbf24;display:flex;align-items:center;padding:0 28px;gap:16px;}
-.tpl-kids .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
-.tpl-kids .nav-logo-img{width:30px;height:30px;border-radius:8px;object-fit:contain;}
-.tpl-kids .nav-logo-mark{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#f97316,#ec4899);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;}
-.tpl-kids .nav-divider{width:3px;height:20px;background:#fbbf24;border-radius:2px;}
-.tpl-kids .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
-.tpl-kids .nav-right{margin-left:auto;}
-.tpl-kids .nav-code-badge{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#f97316,#ec4899);padding:5px 12px;border-radius:100px;}
-.tpl-kids .ev-hero{padding:110px 28px 48px;text-align:center;max-width:700px;margin:0 auto;}
-.tpl-kids .hero-emoji{font-size:56px;margin-bottom:12px;animation:bounce 2s infinite;}
-@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
-.tpl-kids .hero-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(34px,5vw,60px);line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.tpl-kids .hero-sub{font-size:16px;color:var(--text2);margin-bottom:28px;font-weight:600;}
-.tpl-kids .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
-.tpl-kids .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
-.tpl-kids .gallery-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;}
-.tpl-kids .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.tpl-kids .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;}
-.tpl-kids .photo-card{position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;aspect-ratio:1;background:var(--bg2);border:3px solid transparent;transition:all .3s;box-shadow:0 4px 16px rgba(0,0,0,.08);}
-.tpl-kids .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.tpl-kids .photo-card:hover{border-color:#fbbf24;transform:rotate(2deg) scale(1.04);}
-.tpl-kids .photo-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
-.tpl-kids .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-kids .btn-primary{background:linear-gradient(135deg,#f97316,#ec4899);color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;transition:all .25s;box-shadow:0 4px 16px rgba(249,115,22,.3);}
-.tpl-kids .btn-primary:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 8px 28px rgba(249,115,22,.4);}
-.tpl-kids .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-kids .btn-outline{background:#fff;border:2px solid #fbbf24;color:var(--text);font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
-.tpl-kids .btn-outline:hover{background:#fbbf24;}
-.tpl-kids .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-kids .gate-box{background:#fff;border:4px solid #fbbf24;border-radius:var(--r2);padding:48px 40px;max-width:440px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(251,191,36,.2);}
-.tpl-kids .gate-icon{font-size:48px;margin-bottom:14px;animation:bounce 2s infinite;}
-.tpl-kids .gate-title{font-family:'Nunito',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;}
-.tpl-kids .gate-sub{font-size:15px;color:var(--text2);margin-bottom:28px;font-weight:600;}
-.tpl-kids .gate-input{background:var(--bg2);border:3px solid #fbbf24;color:var(--text);font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;letter-spacing:.2em;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
-.tpl-kids .face-panel{background:#fff;border:3px solid #fbbf24;border-radius:var(--r2);padding:24px;margin-bottom:20px;}
-.tpl-kids .face-drop{border-color:#fbbf24;background:var(--bg2);}
-.tpl-kids .matched-banner{background:#f0fdf4;color:#059669;border:2px solid rgba(16,185,129,.3);}
-.tpl-kids .toast{background:#fff;border:3px solid #fbbf24;color:var(--text);}
-.tpl-kids .modal-box{background:#fff;border:3px solid #fbbf24;}
-
-.tpl-birthday{--bg:#fff5f8;--bg2:#ffe4ed;--card:#fff;--border:#fecdd3;--border2:#fb7185;--text:#1a0510;--text2:#7f3045;--accent:#f43f5e;--accent-dim:rgba(244,63,94,.08);--accent-glo:rgba(244,63,94,.25);--r:14px;--r2:22px;--r3:30px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
-.tpl-birthday .ev-nav{position:fixed;top:0;left:0;right:0;height:66px;z-index:100;background:rgba(255,245,248,.96);backdrop-filter:blur(20px);border-bottom:2px solid var(--border2);display:flex;align-items:center;padding:0 28px;gap:16px;}
-.tpl-birthday .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
-.tpl-birthday .nav-logo-img{width:28px;height:28px;border-radius:8px;object-fit:contain;}
-.tpl-birthday .nav-logo-mark{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f43f5e,#a855f7);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;}
-.tpl-birthday .nav-divider{width:2px;height:18px;background:var(--border2);border-radius:1px;}
-.tpl-birthday .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
-.tpl-birthday .nav-right{margin-left:auto;}
-.tpl-birthday .nav-code-badge{font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,#f43f5e,#a855f7);padding:4px 12px;border-radius:100px;}
-.tpl-birthday .ev-hero{padding:110px 28px 56px;text-align:center;max-width:700px;margin:0 auto;}
-.tpl-birthday .hero-emoji{font-size:64px;margin-bottom:12px;animation:wobble 3s infinite;}
-@keyframes wobble{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}}
-.tpl-birthday .hero-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(34px,5vw,60px);line-height:1.1;margin-bottom:14px;color:var(--accent);}
-.tpl-birthday .hero-sub{font-size:16px;color:var(--text2);margin-bottom:28px;font-weight:600;line-height:1.7;}
-.tpl-birthday .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
-.tpl-birthday .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:2px dashed var(--border2);}
-.tpl-birthday .gallery-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;color:var(--accent);}
-.tpl-birthday .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.tpl-birthday .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
-.tpl-birthday .photo-card{position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;aspect-ratio:4/3;background:var(--bg2);border:2px solid var(--border);transition:all .3s;}
-.tpl-birthday .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.tpl-birthday .photo-card:hover{border-color:var(--border2);transform:scale(1.04);box-shadow:0 12px 32px rgba(244,63,94,.2);}
-.tpl-birthday .photo-card-overlay{position:absolute;inset:0;background:rgba(244,63,94,.4);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
-.tpl-birthday .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-birthday .btn-primary{background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;transition:all .25s;}
-.tpl-birthday .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(244,63,94,.4);}
-.tpl-birthday .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-birthday .btn-outline{background:#fff;border:2px solid var(--border2);color:var(--accent);font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
-.tpl-birthday .btn-outline:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
-.tpl-birthday .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-birthday .gate-box{background:#fff;border:2px solid var(--border2);border-radius:var(--r3);padding:48px 40px;max-width:440px;width:100%;text-align:center;}
-.tpl-birthday .gate-icon{font-size:52px;margin-bottom:14px;animation:wobble 3s infinite;}
-.tpl-birthday .gate-title{font-family:'Nunito',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;color:var(--accent);}
-.tpl-birthday .gate-sub{font-size:15px;color:var(--text2);margin-bottom:28px;font-weight:600;}
-.tpl-birthday .gate-input{background:var(--bg2);border:2px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
-.tpl-birthday .face-panel{background:#fff;border:2px solid var(--border2);border-radius:var(--r2);padding:24px;margin-bottom:20px;}
-.tpl-birthday .face-drop{border-color:var(--border2);background:var(--bg2);}
-.tpl-birthday .matched-banner{background:#f0fdf4;color:#059669;border:1px solid rgba(5,150,105,.2);}
-.tpl-birthday .toast{background:#fff;border:2px solid var(--border2);color:var(--text);}
-.tpl-birthday .modal-box{background:#fff;border:2px solid var(--border2);}
-
-.tpl-wedding{--bg:#fdfaf7;--bg2:#f7f0e8;--card:#fff;--border:#e8dcc8;--border2:#c9a96e;--text:#1a1208;--text2:#6b5a3e;--text3:#a8936a;--accent:#9b7653;--accent2:#c4a46b;--accent-dim:rgba(155,118,83,.08);--accent-glo:rgba(155,118,83,.2);--r:6px;--r2:12px;--r3:16px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-wedding .ev-nav{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;background:rgba(253,250,247,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 36px;gap:16px;}
-.tpl-wedding .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.04em;}
-.tpl-wedding .nav-logo-img{width:26px;height:26px;border-radius:4px;object-fit:contain;}
-.tpl-wedding .nav-logo-mark{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
+/* ══════════════════════════════════════
+   ████  WEDDING TEMPLATE  ████
+══════════════════════════════════════ */
+.tpl-wedding{
+  --bg:#fdfaf5;--bg2:#f5ede0;--card:#fff;
+  --border:#e8d6bc;--border2:#c4a882;
+  --text:#1a1208;--text2:#6b5030;--text3:#a8916a;
+  --accent:#9b7030;--accent2:#c4a050;
+  --accent-dim:rgba(155,112,48,.08);--accent-glo:rgba(155,112,48,.25);
+  --r:6px;--r2:12px;--r3:18px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
+.tpl-wedding .ev-nav{
+  position:fixed;top:0;left:0;right:0;height:62px;z-index:100;
+  background:rgba(253,250,245,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;padding:0 36px;gap:16px;
+}
+.tpl-wedding .nav-logo{
+  display:flex;align-items:center;gap:10px;
+  font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.03em;
+}
+.tpl-wedding .nav-logo-mark{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;
+}
 .tpl-wedding .nav-divider{width:1px;height:24px;background:var(--border2);}
-.tpl-wedding .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
+.tpl-wedding .nav-event-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:15px;font-style:italic;color:var(--text2);
+}
 .tpl-wedding .nav-right{margin-left:auto;}
-.tpl-wedding .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:4px 10px;}
-.tpl-wedding .ev-hero{padding:120px 36px 80px;text-align:center;max-width:720px;margin:0 auto;}
-.tpl-wedding .hero-ornament{font-size:28px;color:var(--accent2);margin-bottom:20px;letter-spacing:.3em;opacity:.7;}
-.tpl-wedding .hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.05;color:var(--text);margin-bottom:16px;}
-.tpl-wedding .hero-title em{font-style:italic;color:var(--accent);}
-.tpl-wedding .hero-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:0 auto 24px;}
-.tpl-wedding .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--text2);line-height:1.8;margin-bottom:36px;}
-.tpl-wedding .gallery-wrap{max-width:1300px;margin:0 auto;padding:0 36px 100px;}
-.tpl-wedding .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
+.tpl-wedding .nav-code-badge{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);
+  padding:4px 10px;border-radius:4px;
+}
+.tpl-wedding .slideshow{height:75vh;min-height:500px;max-height:780px;}
+.tpl-wedding .slide-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,transparent 35%,rgba(26,18,8,.6) 100%);
+}
+.tpl-wedding .hero-text-layer{
+  position:absolute;bottom:0;left:0;right:0;z-index:4;
+  padding:60px 48px 48px;text-align:center;
+  background:linear-gradient(to top,rgba(26,18,8,.85) 0%,transparent);
+}
+.tpl-wedding .hero-ornament{
+  font-size:22px;letter-spacing:.5em;color:rgba(196,160,80,.8);
+  margin-bottom:18px;
+}
+.tpl-wedding .hero-title{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(36px,5.5vw,72px);line-height:1.05;
+  color:#fff;margin-bottom:14px;letter-spacing:.01em;
+}
+.tpl-wedding .hero-title em{font-style:italic;color:var(--accent2);}
+.tpl-wedding .hero-divider{
+  width:80px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(196,160,80,.6),transparent);
+  margin:0 auto 16px;
+}
+.tpl-wedding .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;color:rgba(255,255,255,.65);}
+.tpl-wedding .gallery-wrap{max-width:1300px;margin:0 auto;padding:48px 36px 140px;}
+.tpl-wedding .gallery-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;margin-bottom:28px;
+  padding-bottom:16px;border-bottom:1px solid var(--border2);
+}
 .tpl-wedding .gallery-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:28px;}
 .tpl-wedding .gallery-actions{display:flex;gap:10px;align-items:center;}
-.tpl-wedding .photo-grid{columns:4;column-gap:12px;}
-.tpl-wedding .photo-card{break-inside:avoid;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;border:1px solid var(--border);transition:all .4s;display:block;}
+.tpl-wedding .photo-grid{columns:4;column-gap:10px;}
+.tpl-wedding .photo-card{
+  break-inside:avoid;margin-bottom:10px;cursor:pointer;
+  position:relative;overflow:hidden;border:1px solid var(--border);
+  transition:all .4s;display:block;
+}
 .tpl-wedding .photo-card img{width:100%;display:block;transition:transform .5s;}
-.tpl-wedding .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(155,118,83,.15);}
+.tpl-wedding .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(155,112,48,.15);}
 .tpl-wedding .photo-card:hover img{transform:scale(1.04);}
-.tpl-wedding .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,18,8,.65),transparent 55%);opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:16px;}
+.tpl-wedding .photo-card-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(26,18,8,.65),transparent 55%);
+  opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:16px;
+}
 .tpl-wedding .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-wedding .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:500;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:11px 22px;display:inline-flex;align-items:center;gap:8px;transition:all .3s;}
+.tpl-wedding .btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-weight:500;font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;padding:11px 22px;
+  display:inline-flex;align-items:center;gap:8px;transition:all .3s;
+}
 .tpl-wedding .btn-primary:hover{box-shadow:0 6px 20px var(--accent-glo);transform:translateY(-1px);}
-.tpl-wedding .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-wedding .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
+.tpl-wedding .btn-outline{
+  background:transparent;border:1px solid var(--border2);color:var(--text2);
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;
+  padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;
+}
 .tpl-wedding .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.tpl-wedding .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-wedding .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;}
+.tpl-wedding .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
+.tpl-wedding .gate-box{
+  background:var(--card);border:1px solid var(--border2);
+  padding:56px 48px;max-width:440px;width:100%;text-align:center;
+}
 .tpl-wedding .gate-icon{font-size:36px;color:var(--accent2);margin-bottom:20px;letter-spacing:.3em;}
 .tpl-wedding .gate-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
-.tpl-wedding .gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-wedding .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
-.tpl-wedding .face-panel{background:var(--bg2);border:1px solid var(--border);padding:24px;margin-bottom:20px;}
-.tpl-wedding .face-drop{border-color:var(--border2);background:var(--bg);}
-.tpl-wedding .matched-banner{background:#fdfaf7;color:var(--accent);border:1px solid var(--border2);}
+.tpl-wedding .gate-sub{
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;
+}
+.tpl-wedding .gate-input{
+  background:var(--bg2);border:1px solid var(--border2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;
+  text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;
+}
 .tpl-wedding .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-wedding .modal-box{background:var(--card);border:1px solid var(--border2);}
+.tpl-wedding .dl-bar{background:rgba(253,250,245,.97);border-color:var(--border2);}
 
-.tpl-sports{--bg:#f0f4ff;--bg2:#e0e8ff;--card:#fff;--border:#c7d2fe;--border2:#6366f1;--text:#0a0e1a;--text2:#3730a3;--accent:#4f46e5;--accent2:#6366f1;--accent-dim:rgba(79,70,229,.08);--accent-glo:rgba(79,70,229,.25);--r:4px;--r2:8px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-sports .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:var(--accent);display:flex;align-items:center;padding:0 28px;gap:16px;}
-.tpl-sports .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Oswald',sans-serif;font-weight:700;font-size:16px;color:#fff;letter-spacing:.05em;text-transform:uppercase;}
-.tpl-sports .nav-logo-img{width:28px;height:28px;border-radius:4px;object-fit:contain;}
-.tpl-sports .nav-logo-mark{width:28px;height:28px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
-.tpl-sports .nav-divider{width:2px;height:18px;background:rgba(255,255,255,.3);}
-.tpl-sports .nav-event-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.8);}
-.tpl-sports .nav-right{margin-left:auto;}
-.tpl-sports .nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:#fff;padding:4px 10px;}
-.tpl-sports .ev-hero{padding:80px 28px 60px;max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
-.tpl-sports .hero-label{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);margin-bottom:12px;}
-.tpl-sports .hero-title{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(36px,5vw,64px);line-height:1;letter-spacing:.02em;text-transform:uppercase;color:var(--text);margin-bottom:16px;}
-.tpl-sports .hero-sub{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:28px;}
-.tpl-sports .hero-visual{background:linear-gradient(135deg,var(--accent),var(--accent2));height:260px;display:flex;align-items:center;justify-content:center;font-size:80px;}
-.tpl-sports .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
-.tpl-sports .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid var(--accent);}
-.tpl-sports .gallery-title{font-family:'Oswald',sans-serif;font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
-.tpl-sports .gallery-actions{display:flex;gap:8px;}
-.tpl-sports .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:3px;background:var(--accent);}
-.tpl-sports .photo-card{position:relative;aspect-ratio:16/10;overflow:hidden;cursor:pointer;background:var(--bg2);}
-.tpl-sports .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.tpl-sports .photo-card:hover img{transform:scale(1.08);}
-.tpl-sports .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(79,70,229,.8),transparent 50%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;}
-.tpl-sports .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-sports .btn-primary{background:var(--accent);color:#fff;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:11px 22px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
-.tpl-sports .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);}
-.tpl-sports .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-sports .btn-outline{background:transparent;border:2px solid var(--border2);color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:9px 18px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
-.tpl-sports .btn-outline:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
-.tpl-sports .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-sports .gate-box{background:#fff;border:2px solid var(--border2);padding:48px 40px;max-width:420px;width:100%;text-align:center;}
-.tpl-sports .gate-icon{font-size:48px;margin-bottom:14px;}
-.tpl-sports .gate-title{font-family:'Oswald',sans-serif;font-size:30px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
-.tpl-sports .gate-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
-.tpl-sports .gate-input{background:var(--bg2);border:2px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
-.tpl-sports .face-panel{background:#fff;border:2px solid var(--border2);padding:24px;margin-bottom:20px;}
-.tpl-sports .face-drop{border-color:var(--border2);background:var(--bg2);}
-.tpl-sports .matched-banner{background:#f0fdf4;color:#059669;border:1px solid rgba(5,150,105,.2);}
-.tpl-sports .toast{background:#fff;border:2px solid var(--border2);color:var(--text);}
-.tpl-sports .modal-box{background:#fff;border:2px solid var(--border2);}
+/* ══════════════════════════════════════
+   ████  BIRTHDAY / KIDS TEMPLATE  ████
+══════════════════════════════════════ */
+.tpl-birthday{
+  --bg:#fff8f0;--bg2:#ffe8cc;--card:#fff;
+  --border:#ffd4a0;--border2:#ff8c42;
+  --text:#1a0a00;--text2:#8a4010;
+  --accent:#ff5c00;--accent2:#ff8c42;
+  --accent-dim:rgba(255,92,0,.08);--accent-glo:rgba(255,92,0,.25);
+  --pink:#e91e8c;--purple:#7c3aed;
+  --r:16px;--r2:24px;--r3:32px;
+  background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;
+}
+.tpl-birthday .ev-nav{
+  position:fixed;top:0;left:0;right:0;height:66px;z-index:100;
+  background:rgba(255,248,240,.97);backdrop-filter:blur(20px);
+  border-bottom:3px solid var(--accent2);
+  display:flex;align-items:center;padding:0 24px;gap:14px;
+}
+.tpl-birthday .nav-logo{
+  display:flex;align-items:center;gap:9px;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;
+}
+.tpl-birthday .nav-logo-mark{
+  width:32px;height:32px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--pink));
+  display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;
+}
+.tpl-birthday .nav-divider{width:3px;height:22px;background:var(--accent2);border-radius:2px;}
+.tpl-birthday .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
+.tpl-birthday .nav-right{margin-left:auto;}
+.tpl-birthday .nav-code-badge{
+  font-size:11px;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--pink));
+  padding:5px 14px;border-radius:100px;
+}
+.tpl-birthday .slideshow{height:65vh;min-height:420px;max-height:680px;}
+.tpl-birthday .slide-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,transparent 30%,rgba(26,10,0,.65) 100%);
+}
+.tpl-birthday .hero-text-layer{
+  position:absolute;bottom:0;left:0;right:0;z-index:4;
+  padding:60px 32px 40px;text-align:center;
+}
+.tpl-birthday .hero-emoji{font-size:52px;margin-bottom:10px;display:block;}
+.tpl-birthday .hero-title{
+  font-family:'Nunito',sans-serif;font-weight:900;
+  font-size:clamp(30px,5vw,60px);line-height:1.1;color:#fff;
+  margin-bottom:10px;
+  text-shadow:0 2px 20px rgba(0,0,0,.4);
+}
+.tpl-birthday .hero-sub{font-size:16px;color:rgba(255,255,255,.75);font-weight:600;}
+.tpl-birthday .gallery-wrap{max-width:1200px;margin:0 auto;padding:36px 24px 140px;}
+.tpl-birthday .gallery-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;margin-bottom:20px;
+}
+.tpl-birthday .gallery-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;color:var(--accent);}
+.tpl-birthday .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.tpl-birthday .photo-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;
+}
+.tpl-birthday .photo-card{
+  position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;
+  aspect-ratio:1;background:var(--bg2);
+  border:3px solid transparent;transition:all .3s;
+  box-shadow:0 4px 16px rgba(255,92,0,.1);
+}
+.tpl-birthday .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+.tpl-birthday .photo-card:hover{border-color:var(--accent2);transform:rotate(1.5deg) scale(1.04);}
+.tpl-birthday .photo-card:hover img{transform:scale(1.05);}
+.tpl-birthday .photo-card-overlay{
+  position:absolute;inset:0;background:rgba(255,92,0,.35);
+  opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;
+}
+.tpl-birthday .photo-card:hover .photo-card-overlay{opacity:1;}
+.tpl-birthday .btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;
+  font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;
+  display:inline-flex;align-items:center;gap:8px;transition:all .25s;
+  box-shadow:0 4px 16px var(--accent-glo);
+}
+.tpl-birthday .btn-primary:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 8px 28px var(--accent-glo);}
+.tpl-birthday .btn-outline{
+  background:#fff;border:2px solid var(--accent2);color:var(--accent);
+  font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;
+  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
+}
+.tpl-birthday .btn-outline:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.tpl-birthday .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
+.tpl-birthday .gate-box{
+  background:#fff;border:4px solid var(--accent2);border-radius:var(--r2);
+  padding:48px 40px;max-width:440px;width:100%;text-align:center;
+  box-shadow:0 8px 40px var(--accent-glo);
+}
+.tpl-birthday .gate-icon{font-size:52px;margin-bottom:14px;display:block;}
+.tpl-birthday .gate-title{font-family:'Nunito',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;color:var(--accent);}
+.tpl-birthday .gate-sub{font-size:15px;color:var(--text2);margin-bottom:28px;font-weight:600;}
+.tpl-birthday .gate-input{
+  background:var(--bg2);border:3px solid var(--accent2);color:var(--text);
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;
+  letter-spacing:.2em;text-align:center;padding:14px;
+  border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;
+}
+.tpl-birthday .toast{background:#fff;border:3px solid var(--accent2);color:var(--text);}
+.tpl-birthday .modal-box{background:#fff;border:3px solid var(--accent2);}
+.tpl-birthday .dl-bar{background:rgba(255,248,240,.97);border-color:var(--accent2);}
 
-.tpl-nightlife{--bg:#080612;--bg2:#100e1e;--card:#16122a;--border:rgba(139,92,246,.15);--border2:rgba(139,92,246,.35);--text:#f0ecff;--text2:#9d8fff;--accent:#8b5cf6;--accent2:#a78bfa;--accent-dim:rgba(139,92,246,.12);--accent-glo:rgba(139,92,246,.4);--pink:#f472b6;--cyan:#22d3ee;--r:8px;--r2:14px;--r3:20px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-nightlife .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:rgba(8,6,18,.9);backdrop-filter:blur(24px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 28px;gap:16px;}
-.tpl-nightlife .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:var(--text);}
-.tpl-nightlife .nav-logo-img{width:26px;height:26px;border-radius:6px;object-fit:contain;}
-.tpl-nightlife .nav-logo-mark{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
-.tpl-nightlife .nav-divider{width:1px;height:18px;background:var(--border2);}
-.tpl-nightlife .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
-.tpl-nightlife .nav-right{margin-left:auto;}
-.tpl-nightlife .nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);background:var(--accent-dim);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;}
-.tpl-nightlife .ev-hero{padding:100px 28px 60px;text-align:center;max-width:700px;margin:0 auto;}
-.tpl-nightlife .hero-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;}
-.tpl-nightlife .hero-label::before,.tpl-nightlife .hero-label::after{content:'';width:24px;height:1px;background:var(--cyan);}
-.tpl-nightlife .hero-title{font-family:'Syne',sans-serif;font-weight:900;font-size:clamp(36px,5vw,64px);line-height:1.05;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--pink),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.tpl-nightlife .hero-sub{font-size:15px;color:var(--text2);margin-bottom:32px;line-height:1.7;}
-.tpl-nightlife .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px;}
-.tpl-nightlife .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
-.tpl-nightlife .gallery-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.tpl-nightlife .gallery-actions{display:flex;gap:8px;}
-.tpl-nightlife .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;background:rgba(139,92,246,.2);}
-.tpl-nightlife .photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;cursor:pointer;background:var(--bg2);}
-.tpl-nightlife .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;filter:saturate(1.2);}
-.tpl-nightlife .photo-card:hover img{transform:scale(1.06);}
-.tpl-nightlife .photo-card:hover{box-shadow:0 0 30px rgba(139,92,246,.4);}
-.tpl-nightlife .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(139,92,246,.7),transparent 50%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;}
-.tpl-nightlife .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-nightlife .btn-primary{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;font-weight:700;font-size:13px;padding:11px 22px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;box-shadow:0 4px 20px var(--accent-glo);}
-.tpl-nightlife .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glo);}
-.tpl-nightlife .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-nightlife .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
-.tpl-nightlife .btn-outline:hover{border-color:var(--accent);color:var(--accent2);}
-.tpl-nightlife .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-nightlife .gate-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:48px 40px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 48px rgba(139,92,246,.2);}
-.tpl-nightlife .gate-icon{font-size:44px;margin-bottom:14px;}
-.tpl-nightlife .gate-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.tpl-nightlife .gate-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
-.tpl-nightlife .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
-.tpl-nightlife .face-panel{background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:24px;margin-bottom:20px;}
-.tpl-nightlife .face-drop{border-color:var(--border2);background:var(--bg2);}
-.tpl-nightlife .matched-banner{background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.25);}
-.tpl-nightlife .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
-.tpl-nightlife .modal-box{background:var(--card);border:1px solid var(--border2);}
-
-.tpl-gala{--bg:#0a0804;--bg2:#110f07;--card:#18140a;--border:rgba(212,175,55,.12);--border2:rgba(212,175,55,.3);--text:#f5f0e8;--text2:#a09070;--accent:#d4af37;--accent2:#f0d060;--accent-dim:rgba(212,175,55,.08);--accent-glo:rgba(212,175,55,.25);--r:2px;--r2:6px;--r3:10px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-gala .ev-nav{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;background:rgba(10,8,4,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 40px;gap:16px;}
-.tpl-gala .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;letter-spacing:.04em;}
-.tpl-gala .nav-logo-img{width:26px;height:26px;border-radius:3px;object-fit:contain;}
-.tpl-gala .nav-logo-mark{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;}
+/* ══════════════════════════════════════
+   ████  GALA / LUXURY TEMPLATE  ████
+══════════════════════════════════════ */
+.tpl-gala{
+  --bg:#06050a;--bg2:#0f0d17;--card:#17142a;
+  --border:rgba(212,170,40,.12);--border2:rgba(212,170,40,.3);
+  --text:#f2eddd;--text2:#a09060;--text3:#6a5a30;
+  --accent:#d4aa28;--accent2:#f5d060;
+  --accent-dim:rgba(212,170,40,.08);--accent-glo:rgba(212,170,40,.25);
+  --r:3px;--r2:8px;--r3:12px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
+.tpl-gala .ev-nav{
+  position:fixed;top:0;left:0;right:0;height:64px;z-index:100;
+  background:rgba(6,5,10,.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;padding:0 40px;gap:16px;
+}
+.tpl-gala .nav-logo{
+  display:flex;align-items:center;gap:10px;
+  font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;letter-spacing:.04em;
+}
+.tpl-gala .nav-logo-mark{
+  width:28px;height:28px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;
+}
 .tpl-gala .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-gala .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
 .tpl-gala .nav-right{margin-left:auto;}
-.tpl-gala .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:5px 12px;background:var(--accent-dim);}
-.tpl-gala .ev-hero{padding:120px 40px 80px;text-align:center;max-width:800px;margin:0 auto;}
-.tpl-gala .hero-ornament{font-size:14px;letter-spacing:.5em;color:var(--accent);margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:12px;}
-.tpl-gala .hero-ornament::before,.tpl-gala .hero-ornament::after{content:'';flex:1;max-width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
-.tpl-gala .hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.05;color:var(--text);margin-bottom:20px;}
-.tpl-gala .hero-title em{font-style:italic;color:var(--accent);}
-.tpl-gala .hero-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:0 auto 28px;}
-.tpl-gala .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--text2);line-height:1.8;margin-bottom:36px;}
-.tpl-gala .gallery-wrap{max-width:1300px;margin:0 auto;padding:0 40px 100px;}
-.tpl-gala .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
+.tpl-gala .nav-code-badge{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent);border:1px solid var(--border2);
+  padding:5px 12px;background:var(--accent-dim);
+}
+.tpl-gala .slideshow{height:80vh;min-height:520px;max-height:860px;}
+.tpl-gala .slide-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 30%,rgba(6,5,10,.8) 100%);
+}
+.tpl-gala .hero-text-layer{
+  position:absolute;bottom:0;left:0;right:0;z-index:4;
+  padding:80px 60px 60px;text-align:center;
+}
+.tpl-gala .hero-ornament{
+  font-size:13px;letter-spacing:.6em;color:var(--accent);
+  margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:12px;
+}
+.tpl-gala .hero-ornament::before,.tpl-gala .hero-ornament::after{
+  content:'';flex:1;max-width:80px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+}
+.tpl-gala .hero-title{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(40px,6vw,80px);line-height:1.03;color:#fff;margin-bottom:18px;
+}
+.tpl-gala .hero-title em{font-style:italic;color:var(--accent2);}
+.tpl-gala .hero-divider{
+  width:80px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent2),transparent);
+  margin:0 auto 20px;
+}
+.tpl-gala .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:rgba(255,255,255,.55);}
+.tpl-gala .gallery-wrap{max-width:1380px;margin:0 auto;padding:56px 40px 140px;}
+.tpl-gala .gallery-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;margin-bottom:28px;
+  padding-bottom:16px;border-bottom:1px solid var(--border2);
+}
 .tpl-gala .gallery-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:30px;}
 .tpl-gala .gallery-actions{display:flex;gap:10px;align-items:center;}
-.tpl-gala .photo-grid{columns:4;column-gap:10px;}
-.tpl-gala .photo-card{break-inside:avoid;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden;border:1px solid var(--border);transition:all .4s;display:block;}
-.tpl-gala .photo-card img{width:100%;display:block;transition:transform .5s;}
-.tpl-gala .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 40px rgba(212,175,55,.2);}
-.tpl-gala .photo-card:hover img{transform:scale(1.04);}
-.tpl-gala .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,8,4,.8),transparent 55%);opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:20px;}
+.tpl-gala .photo-grid{columns:5;column-gap:8px;}
+.tpl-gala .photo-card{
+  break-inside:avoid;margin-bottom:8px;cursor:pointer;
+  position:relative;overflow:hidden;border:1px solid var(--border);
+  transition:all .4s;display:block;
+}
+.tpl-gala .photo-card img{width:100%;display:block;transition:transform .5s;filter:saturate(.9);}
+.tpl-gala .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 40px rgba(212,170,40,.2);}
+.tpl-gala .photo-card:hover img{transform:scale(1.04);filter:saturate(1.1);}
+.tpl-gala .photo-card-overlay{
+  position:absolute;inset:0;background:linear-gradient(to top,rgba(6,5,10,.8),transparent 55%);
+  opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:20px;
+}
 .tpl-gala .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-gala .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:12px 24px;display:inline-flex;align-items:center;gap:8px;transition:all .3s;}
+.tpl-gala .btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;
+  font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  padding:12px 24px;display:inline-flex;align-items:center;gap:8px;transition:all .3s;
+}
 .tpl-gala .btn-primary:hover{box-shadow:0 6px 24px var(--accent-glo);transform:translateY(-1px);}
-.tpl-gala .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-gala .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:11px 20px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
+.tpl-gala .btn-outline{
+  background:transparent;border:1px solid var(--border2);color:var(--text2);
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;
+  padding:11px 20px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;
+}
 .tpl-gala .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.tpl-gala .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-gala .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;}
-.tpl-gala .gate-icon{font-size:32px;color:var(--accent);margin-bottom:20px;letter-spacing:.4em;}
+.tpl-gala .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
+.tpl-gala .gate-box{
+  background:var(--card);border:1px solid var(--border2);
+  padding:56px 48px;max-width:440px;width:100%;text-align:center;
+}
+.tpl-gala .gate-icon{font-size:30px;color:var(--accent);margin-bottom:20px;letter-spacing:.4em;display:block;}
 .tpl-gala .gate-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
 .tpl-gala .gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-gala .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
-.tpl-gala .face-panel{background:var(--bg2);border:1px solid var(--border2);padding:24px;margin-bottom:20px;}
-.tpl-gala .face-drop{border-color:var(--border2);background:var(--bg);}
-.tpl-gala .matched-banner{background:rgba(212,175,55,.08);color:var(--accent);border:1px solid var(--border2);}
+.tpl-gala .gate-input{
+  background:var(--bg2);border:1px solid var(--border2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;
+  text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;
+}
 .tpl-gala .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-gala .modal-box{background:var(--card);border:1px solid var(--border2);}
+.tpl-gala .dl-bar{background:rgba(6,5,10,.97);border-color:var(--border2);}
 
-.tpl-ceremony{--bg:#faf8f5;--bg2:#f2ede6;--card:#fff;--border:#ddd0bc;--border2:#b8a48a;--text:#1a1510;--text2:#6b5c45;--accent:#7c5c3a;--accent2:#a07850;--accent-dim:rgba(124,92,58,.08);--accent-glo:rgba(124,92,58,.2);--r:4px;--r2:8px;--r3:14px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
-.tpl-ceremony .ev-nav{position:fixed;top:0;left:0;right:0;height:62px;z-index:100;background:rgba(250,248,245,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 36px;gap:16px;}
-.tpl-ceremony .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:var(--text);}
-.tpl-ceremony .nav-logo-img{width:26px;height:26px;border-radius:4px;object-fit:contain;}
-.tpl-ceremony .nav-logo-mark{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
-.tpl-ceremony .nav-divider{width:1px;height:22px;background:var(--border2);}
-.tpl-ceremony .nav-event-name{font-family:'Playfair Display',serif;font-style:italic;font-size:15px;color:var(--text2);}
-.tpl-ceremony .nav-right{margin-left:auto;}
-.tpl-ceremony .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:4px 10px;}
-.tpl-ceremony .ev-hero{padding:110px 36px 70px;text-align:center;max-width:720px;margin:0 auto;}
-.tpl-ceremony .hero-ornament{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:22px;color:var(--accent2);}
-.tpl-ceremony .hero-ornament::before,.tpl-ceremony .hero-ornament::after{content:'';flex:1;max-width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);}
-.tpl-ceremony .hero-ornament span{font-size:20px;}
-.tpl-ceremony .hero-title{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(34px,5vw,60px);line-height:1.1;color:var(--text);margin-bottom:16px;}
-.tpl-ceremony .hero-title em{font-style:italic;color:var(--accent);}
-.tpl-ceremony .hero-divider{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:0 auto 22px;}
-.tpl-ceremony .hero-sub{font-family:'Playfair Display',serif;font-style:italic;font-size:17px;color:var(--text2);line-height:1.8;margin-bottom:32px;}
-.tpl-ceremony .gallery-wrap{max-width:1200px;margin:0 auto;padding:0 36px 90px;}
-.tpl-ceremony .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
-.tpl-ceremony .gallery-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;}
-.tpl-ceremony .gallery-actions{display:flex;gap:10px;align-items:center;}
-.tpl-ceremony .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
-.tpl-ceremony .photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;cursor:pointer;background:var(--bg2);border:1px solid var(--border);transition:all .3s;}
-.tpl-ceremony .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.tpl-ceremony .photo-card:hover{border-color:var(--border2);box-shadow:0 6px 24px rgba(124,92,58,.12);}
-.tpl-ceremony .photo-card:hover img{transform:scale(1.04);}
-.tpl-ceremony .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,21,16,.65),transparent 55%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:14px;}
-.tpl-ceremony .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-ceremony .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:11px 22px;display:inline-flex;align-items:center;gap:8px;transition:all .3s;}
-.tpl-ceremony .btn-primary:hover{box-shadow:0 6px 20px var(--accent-glo);transform:translateY(-1px);}
-.tpl-ceremony .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.tpl-ceremony .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
-.tpl-ceremony .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.tpl-ceremony .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;}
-.tpl-ceremony .gate-box{background:var(--card);border:1px solid var(--border2);padding:52px 44px;max-width:440px;width:100%;text-align:center;}
-.tpl-ceremony .gate-icon{font-size:36px;margin-bottom:18px;color:var(--accent2);}
-.tpl-ceremony .gate-title{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;margin-bottom:8px;}
-.tpl-ceremony .gate-sub{font-family:'Playfair Display',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-ceremony .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
-.tpl-ceremony .face-panel{background:var(--bg2);border:1px solid var(--border);padding:24px;margin-bottom:20px;}
-.tpl-ceremony .face-drop{border-color:var(--border2);background:var(--bg);}
-.tpl-ceremony .matched-banner{background:rgba(124,92,58,.08);color:var(--accent);border:1px solid var(--border2);}
-.tpl-ceremony .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
-.tpl-ceremony .modal-box{background:var(--card);border:1px solid var(--border2);}
+/* ══════════════════════════════════════
+   ████  NIGHTLIFE TEMPLATE  ████
+══════════════════════════════════════ */
+.tpl-nightlife{
+  --bg:#040308;--bg2:#0c0a18;--card:#131025;
+  --border:rgba(130,80,255,.15);--border2:rgba(130,80,255,.35);
+  --text:#ede8ff;--text2:#9080d0;--text3:#5040a0;
+  --accent:#8050ff;--accent2:#b080ff;
+  --accent-dim:rgba(128,80,255,.12);--accent-glo:rgba(128,80,255,.4);
+  --pink:#ff4da6;--cyan:#00e5ff;
+  --r:8px;--r2:14px;--r3:20px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
+.tpl-nightlife .ev-nav{
+  position:fixed;top:0;left:0;right:0;height:60px;z-index:100;
+  background:rgba(4,3,8,.94);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;padding:0 28px;gap:16px;
+}
+.tpl-nightlife .nav-logo{
+  display:flex;align-items:center;gap:9px;
+  font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:var(--text);
+}
+.tpl-nightlife .nav-logo-mark{
+  width:28px;height:28px;border-radius:6px;
+  background:linear-gradient(135deg,var(--accent),var(--pink));
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;
+}
+.tpl-nightlife .nav-divider{width:1px;height:18px;background:var(--border2);}
+.tpl-nightlife .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
+.tpl-nightlife .nav-right{margin-left:auto;}
+.tpl-nightlife .nav-code-badge{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent2);background:var(--accent-dim);border:1px solid var(--border2);
+  padding:4px 10px;border-radius:6px;
+}
+.tpl-nightlife .slideshow{height:70vh;min-height:460px;max-height:760px;}
+.tpl-nightlife .slide-overlay{
+  background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 30%,rgba(4,3,8,.85) 100%);
+}
+.tpl-nightlife .hero-text-layer{
+  position:absolute;bottom:0;left:0;right:0;z-index:4;
+  padding:60px 36px 44px;text-align:center;
+}
+.tpl-nightlife .hero-label{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:14px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.tpl-nightlife .hero-label::before,.tpl-nightlife .hero-label::after{
+  content:'';width:24px;height:1px;background:var(--cyan);
+}
+.tpl-nightlife .hero-title{
+  font-family:'Syne',sans-serif;font-weight:900;
+  font-size:clamp(32px,5vw,64px);line-height:1.05;margin-bottom:14px;
+  background:linear-gradient(135deg,var(--accent2),var(--pink),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.tpl-nightlife .hero-sub{font-size:15px;color:var(--text2);}
+.tpl-nightlife .gallery-wrap{max-width:1260px;margin:0 auto;padding:44px 28px 140px;}
+.tpl-nightlife .gallery-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;margin-bottom:20px;
+  padding-bottom:16px;border-bottom:1px solid var(--border2);
+}
+.tpl-nightlife .gallery-title{
+  font-family:'Syne',sans-serif;font-size:22px;font-weight:900;
+  background:linear-gradient(135deg,var(--accent2),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.tpl-nightlife .gallery-actions{display:flex;gap:8px;}
+.tpl-nightlife .photo-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:2px;background:rgba(128,80,255,.2);
+}
+.tpl-nightlife .photo-card{
+  position:relative;aspect-ratio:3/4;overflow:hidden;
+  cursor:pointer;background:var(--bg2);
+}
+.tpl-nightlife .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;filter:saturate(1.2);}
+.tpl-nightlife .photo-card:hover img{transform:scale(1.07);}
+.tpl-nightlife .photo-card:hover{box-shadow:inset 0 0 30px rgba(128,80,255,.4);}
+.tpl-nightlife .photo-card-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(128,80,255,.65),transparent 50%);
+  opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;
+}
+.tpl-nightlife .photo-card:hover .photo-card-overlay{opacity:1;}
+.tpl-nightlife .btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;
+  font-weight:700;font-size:13px;padding:11px 22px;border-radius:var(--r);
+  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
+  box-shadow:0 4px 20px var(--accent-glo);
+}
+.tpl-nightlife .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glo);}
+.tpl-nightlife .btn-outline{
+  background:transparent;border:1px solid var(--border2);color:var(--text2);
+  font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);
+  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
+}
+.tpl-nightlife .btn-outline:hover{border-color:var(--accent);color:var(--accent2);}
+.tpl-nightlife .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
+.tpl-nightlife .gate-box{
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);
+  padding:48px 40px;max-width:420px;width:100%;text-align:center;
+  box-shadow:0 8px 48px rgba(128,80,255,.2);
+}
+.tpl-nightlife .gate-icon{font-size:44px;margin-bottom:14px;display:block;}
+.tpl-nightlife .gate-title{
+  font-family:'Syne',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;
+  background:linear-gradient(135deg,var(--accent2),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.tpl-nightlife .gate-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
+.tpl-nightlife .gate-input{
+  background:var(--bg2);border:1px solid var(--border2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;
+  text-transform:uppercase;text-align:center;padding:14px;
+  border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;
+}
+.tpl-nightlife .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
+.tpl-nightlife .modal-box{background:var(--card);border:1px solid var(--border2);}
+.tpl-nightlife .dl-bar{background:rgba(4,3,8,.97);border-color:var(--border2);}
 
-@media(max-width:768px){
-  .tpl-professional .ev-hero,.tpl-sports .ev-hero{grid-template-columns:1fr;}
-  .tpl-professional .hero-visual,.tpl-sports .hero-visual{display:none;}
-  .tpl-professional .gallery-wrap,.tpl-kids .gallery-wrap,.tpl-birthday .gallery-wrap,
-  .tpl-wedding .gallery-wrap,.tpl-sports .gallery-wrap,.tpl-nightlife .gallery-wrap,
-  .tpl-gala .gallery-wrap,.tpl-ceremony .gallery-wrap{padding-left:16px;padding-right:16px;}
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media(max-width:900px){
   .tpl-wedding .photo-grid,.tpl-gala .photo-grid{columns:2;}
-  .tpl-wedding .gate-box,.tpl-gala .gate-box,.tpl-ceremony .gate-box{padding:36px 24px;}
+}
+@media(max-width:640px){
+  .tpl-wedding .gate-box,.tpl-gala .gate-box{padding:36px 24px;}
+  .tpl-gala .photo-grid{columns:2;}
+  .lightbox-prev{left:-20px;}
+  .lightbox-next{right:-20px;}
+  .dl-bar{flex-direction:column;align-items:flex-start;gap:10px;}
+  .dl-bar-actions{width:100%;justify-content:space-between;}
 }
 </style>
 </head>
 <body>
 
-<!-- ══ GATE ══ -->
+<!-- ══════════════════════════════════════
+   GATE SECTION
+══════════════════════════════════════ -->
 <div class="section" id="section-gate">
   <nav class="ev-nav">
     <a href="index.html" class="nav-logo">
-      <img src="logo.png" class="nav-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="nav-logo-mark" style="display:none;">IG</div>
+      <div class="nav-logo-mark">IG</div>
       ImpactGrid
     </a>
   </nav>
@@ -421,22 +851,28 @@ input,textarea{font-family:inherit;}
       <div class="gate-icon" id="gateIcon">📸</div>
       <div class="gate-title" id="gateTitle">Event Gallery</div>
       <div class="gate-sub" id="gateSub">Enter your access code to view the photos.</div>
-      <div class="gate-alert" id="gateAlert"></div>
-      <input class="gate-input" id="gateCodeInput" type="text" maxlength="6" placeholder="XXXXXX"
-        autocomplete="off" oninput="this.value=this.value.toUpperCase()"
+      <div class="gate-alert gate-alert-error" id="gateAlert"></div>
+      <input class="gate-input" id="gateCodeInput" type="text" maxlength="6"
+        placeholder="XXXXXX" autocomplete="off"
+        oninput="this.value=this.value.toUpperCase()"
         onkeydown="if(event.key==='Enter')submitCode()"/>
-      <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;"
-        id="gateSubmitBtn" onclick="submitCode()">Enter Gallery →</button>
+      <button class="btn-primary" id="gateSubmitBtn" onclick="submitCode()"
+        style="width:100%;justify-content:center;padding:14px;margin-top:4px;">
+        Enter Gallery →
+      </button>
     </div>
   </div>
 </div>
 
-<!-- ══ GALLERY ══ -->
+<!-- ══════════════════════════════════════
+   GALLERY SECTION
+══════════════════════════════════════ -->
 <div class="section" id="section-gallery">
+
+  <!-- NAV -->
   <nav class="ev-nav" id="mainNav">
     <a href="index.html" class="nav-logo">
-      <img src="logo.png" class="nav-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="nav-logo-mark" style="display:none;">IG</div>
+      <div class="nav-logo-mark">IG</div>
       ImpactGrid
     </a>
     <div class="nav-divider"></div>
@@ -446,206 +882,85 @@ input,textarea{font-family:inherit;}
     </div>
   </nav>
 
-  <div class="ev-hero" id="evHeroGrid" style="display:none;">
-    <div>
-      <div class="hero-label" id="heroLabel">📸 Photo Gallery</div>
-      <h1 class="hero-title" id="heroTitleGrid">Event Gallery</h1>
-      <p class="hero-sub" id="heroSubGrid">Browse your event photos below.</p>
+  <!-- SLIDESHOW HERO -->
+  <div class="slideshow" id="slideshowWrap">
+    <!-- Celebrant photo (blended into hero) -->
+    <div class="celebrant-photo" id="celebrantPhoto" style="display:none;">
+      <img id="celebrantImg" src="" alt="Celebrant"/>
     </div>
-    <div class="hero-visual" id="heroVisual">📷</div>
+
+    <div class="slideshow-track" id="slideshowTrack"></div>
+
+    <div class="slide-overlay"></div>
+
+    <!-- Text overlay -->
+    <div class="hero-text-layer" id="heroTextLayer">
+      <!-- Template-specific content injected here -->
+    </div>
+
+    <!-- Controls -->
+    <button class="slideshow-nav slideshow-prev" id="slidePrev" onclick="prevSlide()">‹</button>
+    <button class="slideshow-nav slideshow-next" id="slideNext" onclick="nextSlide()">›</button>
+    <div class="slideshow-dots" id="slideshowDots"></div>
+    <div class="slide-counter" id="slideCounter">1 / 10</div>
   </div>
 
-  <div class="ev-hero" id="evHeroCentered" style="display:none;">
-    <div class="hero-emoji" id="heroEmoji">🎉</div>
-    <h1 class="hero-title" id="heroTitleCentered">Event Gallery</h1>
-    <p class="hero-sub" id="heroSubCentered">Browse your amazing photos!</p>
-  </div>
-
-  <div class="ev-hero" id="evHeroElegant" style="display:none;">
-    <div class="hero-ornament" id="heroOrnament">✦ ✦ ✦</div>
-    <h1 class="hero-title" id="heroTitleElegant">Event Gallery</h1>
-    <div class="hero-divider"></div>
-    <p class="hero-sub" id="heroSubElegant">A curated collection of your finest moments.</p>
-  </div>
-
+  <!-- GALLERY BODY -->
   <div class="gallery-wrap" id="galleryWrap">
-    <div class="matched-banner hidden" id="matchedBanner">
-      <span style="font-size:20px;">✅</span>
-      <span id="matchedBannerText">Found your photos!</span>
-    </div>
-
     <div class="gallery-header">
       <div>
-        <div id="galleryTag" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.6;margin-bottom:6px;">📸 Gallery</div>
+        <div id="galleryTag" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.5;margin-bottom:6px;">📸 Gallery</div>
         <div class="gallery-title" id="galleryTitle">All Photos</div>
       </div>
-      <div class="gallery-actions" id="galleryActions" style="display:none;">
-        <button class="btn-primary" onclick="openRequestModal()">📥 Request Download</button>
+      <div class="gallery-actions" id="galleryActions">
+        <button class="btn-outline" id="selectAllBtn" onclick="toggleSelectAll()">☐ Select All</button>
+        <button class="btn-primary" id="downloadSelectedBtn" onclick="downloadSelected()" style="display:none;">
+          ⬇ Download Selected (<span id="selectedCount">0</span>)
+        </button>
+        <button class="btn-primary" onclick="downloadAllPhotos()">⬇ Download All</button>
       </div>
     </div>
 
-    <!-- ══ FACE RECOGNITION PANEL ══ -->
-    <div class="face-panel hidden" id="facePanel">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:10px;">
-        <div>
-          <div style="font-size:18px;font-weight:900;margin-bottom:4px;">🔍 Find My Photos</div>
-          <div style="font-size:13px;opacity:.6;line-height:1.5;">AI scans the photo index to find you — privately and securely.</div>
-        </div>
-        <button onclick="closeFacePanel()" style="font-size:22px;opacity:.4;padding:4px;flex-shrink:0;line-height:1;background:none;border:none;cursor:pointer;">✕</button>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;padding:16px;border-radius:10px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;opacity:.6;margin-bottom:2px;">How it works</div>
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#6366f1;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">1</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>Enter your email</strong> — download links sent here</div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#6366f1;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">2</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>Let the AI guide you</strong> — hold still until the oval turns green</div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#059669;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">✓</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>80%+ match</strong> → instant download link emailed to you</div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:#d97706;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">~</div>
-          <div style="font-size:13px;line-height:1.5;"><strong>65–79% match</strong> → sent for admin review, email when approved</div>
-        </div>
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:6px;">Step 1 — Your Email</div>
-        <input type="email" id="guestEmailInput"
-          style="width:100%;padding:12px 14px;font-size:15px;border-radius:8px;outline:none;border:1.5px solid rgba(99,102,241,.2);background:rgba(99,102,241,.04);color:inherit;font-family:inherit;margin-bottom:4px;"
-          placeholder="your@email.com" autocomplete="email"/>
-        <div style="font-size:11px;opacity:.45;">Download links sent here · No spam ever</div>
-      </div>
-
-      <div style="font-size:12px;opacity:.65;margin-bottom:14px;padding:10px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);">
-        💡 <strong>Tips:</strong> Face camera directly · Good lighting · No sunglasses · Hold still until oval turns green
-      </div>
-
-      <div style="margin-bottom:4px;">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:10px;">Step 2 — Scan Your Face</div>
-
-        <div id="camPlaceholder" style="border-radius:12px;overflow:hidden;background:#111;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-          <div style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;">📷<br>Camera will appear here</div>
-        </div>
-
-        <div id="cameraContainer" style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;display:none;margin-bottom:10px;">
-          <video id="cameraVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;"></video>
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-            <svg id="ovalGuideSvg" style="width:55%;" viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <ellipse id="ovalRing" cx="60" cy="80" rx="55" ry="75"
-                stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-dasharray="6 4"/>
-            </svg>
-          </div>
-          <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);">
-            <div id="camStatusText" style="font-size:12px;font-weight:700;color:#fff;text-align:center;">Starting camera…</div>
-          </div>
-        </div>
-
-        <div id="qualityRow" style="display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
-          <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:7px;">
-            <div class="q-dot" id="qCentered"></div><span style="font-size:11px;opacity:.7;">Centered</span>
-          </div>
-          <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:7px;">
-            <div class="q-dot" id="qLit"></div><span style="font-size:11px;opacity:.7;">Lighting</span>
-          </div>
-          <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:7px;">
-            <div class="q-dot" id="qStill"></div><span style="font-size:11px;opacity:.7;">Still</span>
-          </div>
-        </div>
-
-        <div id="confBarWrap" style="display:none;margin-bottom:12px;">
-          <div style="height:5px;border-radius:3px;background:rgba(0,0,0,.08);overflow:hidden;">
-            <div id="camConfFill" style="height:100%;width:0%;border-radius:3px;background:#ef4444;transition:width .2s,background .2s;"></div>
-          </div>
-          <div id="camConfLabel" style="font-size:11px;opacity:.5;text-align:right;margin-top:4px;">Waiting…</div>
-        </div>
-
-        <div id="capturedPreview" style="display:none;border-radius:12px;overflow:hidden;aspect-ratio:4/3;background:#000;margin-bottom:10px;">
-          <img id="capturedImg" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Captured selfie"/>
-        </div>
-
-        <canvas id="cameraCanvas" style="display:none;"></canvas>
-
-        <div id="cameraControls" style="display:flex;gap:8px;flex-direction:column;">
-          <button id="startCameraBtn" onclick="startCamera()"
-            style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-            📷 Open Camera
-          </button>
-          <button id="captureBtn" onclick="capturePhoto()"
-            style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;opacity:.5;"
-            disabled>
-            ✅ Take Photo &amp; Scan
-          </button>
-          <button id="retakeBtn" onclick="retakePhoto()"
-            style="width:100%;padding:10px;border-radius:10px;background:none;border:1.5px solid rgba(99,102,241,.3);color:inherit;font-size:13px;font-weight:600;cursor:pointer;display:none;">
-            🔄 Retake
-          </button>
-          <div style="text-align:center;margin-top:4px;">
-            <label style="font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline;">
-              Can't use camera? Upload a photo instead
-              <input type="file" id="faceFileIn" accept="image/jpeg,image/png,image/webp"
-                onchange="handleSelfie(event)" style="display:none;"/>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="hidden" id="faceResults" style="margin-top:16px;padding:14px;border-radius:10px;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.1);">
-        <div style="font-size:14px;font-weight:700;margin-bottom:8px;" id="faceResultText">Scanning…</div>
-        <div class="face-result-bar"><div class="face-result-fill" id="faceResultFill" style="width:0%"></div></div>
-        <div style="font-size:12px;opacity:.6;margin-top:8px;line-height:1.5;" id="faceResultDetail"></div>
-      </div>
-
-      <div style="font-size:11px;opacity:.3;margin-top:16px;text-align:center;line-height:1.6;">
-        🔒 Face scan runs via AI · Your photo is deleted after 90 seconds
-      </div>
+    <div class="photo-grid" id="photoGrid">
+      <!-- Photos rendered here -->
     </div>
-
-    <div id="faceScanPrompt" style="text-align:center;padding:64px 24px;">
-      <div style="font-size:52px;margin-bottom:16px;">🤳</div>
-      <div style="font-size:20px;font-weight:800;margin-bottom:8px;">Find Your Photos</div>
-      <div style="font-size:14px;opacity:.6;line-height:1.7;max-width:360px;margin:0 auto 24px;">
-        This is a private gallery. Use face recognition to find the photos you appear in.
-      </div>
-      <button class="btn-primary" style="margin:0 auto;display:inline-flex;" onclick="openFacePanel()">
-        🔍 Scan My Face to Find My Photos
-      </button>
-    </div>
-
-    <div class="photo-grid hidden" id="photoGrid"></div>
   </div>
 </div>
 
-<!-- ══ LIGHTBOX ══ -->
-<div class="lightbox hidden" id="lightbox" onclick="closeLightbox()">
-  <span class="lightbox-close" onclick="closeLightbox()">✕</span>
-  <img id="lightboxImg" src="" alt=""/>
+<!-- ══════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════ -->
+<div class="lightbox hidden" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <div class="lb-counter" id="lbCounter">1 / 10</div>
+  <div class="lightbox-img-wrap">
+    <button class="lightbox-nav lightbox-prev" onclick="lbPrev(event)">‹</button>
+    <img id="lightboxImg" src="" alt=""/>
+    <button class="lightbox-nav lightbox-next" onclick="lbNext(event)">›</button>
+  </div>
   <div class="lightbox-actions" onclick="event.stopPropagation()">
-    <button class="overlay-btn" onclick="openRequestModal()">📥 Request Download</button>
+    <a id="lbDownloadBtn" href="#" class="lb-btn lb-btn-dl" download>⬇ Save Photo</a>
+    <button class="lb-btn lb-btn-ghost" onclick="closeLightbox()">✕ Close</button>
   </div>
 </div>
 
-<!-- ══ REQUEST MODAL ══ -->
-<div class="modal-backdrop hidden" id="requestModal">
-  <div class="modal-box" id="requestModalBox">
-    <div style="font-size:22px;font-weight:800;margin-bottom:8px;">📥 Request Download</div>
-    <div style="font-size:14px;opacity:.6;margin-bottom:20px;line-height:1.6;">Enter your email and we'll notify you when your download is approved.</div>
-    <div id="requestAlert" class="gate-alert"></div>
-    <input class="req-input" id="reqEmail" type="email" placeholder="your@email.com" autocomplete="email"/>
-    <textarea class="req-input" id="reqMessage" rows="3" placeholder="Optional note…" style="resize:none;"></textarea>
-    <div style="display:flex;gap:10px;margin-top:4px;">
-      <button class="btn-outline" style="flex:1;justify-content:center;padding:12px;" onclick="closeRequestModal()">Cancel</button>
-      <button class="btn-primary" style="flex:2;justify-content:center;padding:12px;" id="reqSubmitBtn" onclick="submitRequest()">Send Request →</button>
-    </div>
+<!-- ══════════════════════════════════════
+   FLOATING DOWNLOAD BAR
+══════════════════════════════════════ -->
+<div class="dl-bar" id="dlBar">
+  <div>
+    <div class="dl-bar-info"><span id="dlBarCount">0</span> photos selected</div>
+    <div class="dl-bar-sub">Tap download — files save to your Photos / Gallery</div>
+  </div>
+  <div class="dl-bar-actions">
+    <button class="btn-outline" onclick="clearSelection()" style="font-size:12px;padding:8px 14px;">✕ Clear</button>
+    <button class="btn-primary" onclick="downloadSelected()" style="padding:10px 20px;">⬇ Download</button>
   </div>
 </div>
 
-<!-- ══ TOAST ══ -->
+<!-- ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ -->
 <div class="toast" id="toast">
   <span id="toastIcon">✅</span>
   <div>
@@ -655,51 +970,40 @@ input,textarea{font-family:inherit;}
 </div>
 
 <script>
-/* ══ CONFIG ══ */
-var EVENTS_API  = 'https://impactgrid-events-api.onrender.com';
-var FACE_AUTO   = 80;   /* confidence threshold for auto-approve */
-var FACE_REVIEW = 65;   /* confidence threshold for review queue */
+/* ══════════════════════════════════════
+   CONFIG
+══════════════════════════════════════ */
+var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
 
-/* ══ TEMPLATE MAP ══ */
+/* Template map */
 var TPL_MAP = {
-  professional: { cls:'tpl-professional', hero:'grid',     icon:'📸', emoji:null,  ornament:null },
-  kids        : { cls:'tpl-kids',         hero:'centered', icon:'🎉', emoji:'🎉',  ornament:null },
-  birthday    : { cls:'tpl-birthday',     hero:'centered', icon:'🎂', emoji:'🎂',  ornament:null },
-  wedding     : { cls:'tpl-wedding',      hero:'elegant',  icon:'💍', emoji:null,  ornament:'❦'  },
-  sports      : { cls:'tpl-sports',       hero:'grid',     icon:'🏆', emoji:null,  ornament:null },
-  nightlife   : { cls:'tpl-nightlife',    hero:'centered', icon:'🎧', emoji:'🎧',  ornament:null },
-  gala        : { cls:'tpl-gala',         hero:'elegant',  icon:'✦',  emoji:null,  ornament:'✦ ✦ ✦' },
-  ceremony    : { cls:'tpl-ceremony',     hero:'elegant',  icon:'🎓', emoji:null,  ornament:'✦'  }
+  professional : { cls:'tpl-professional', icon:'📸', heroType:'dark-text'  },
+  wedding      : { cls:'tpl-wedding',      icon:'💍', heroType:'elegant'    },
+  birthday     : { cls:'tpl-birthday',     icon:'🎂', heroType:'colorful'   },
+  kids         : { cls:'tpl-birthday',     icon:'🎉', heroType:'colorful'   },
+  gala         : { cls:'tpl-gala',         icon:'✦',  heroType:'luxury'     },
+  nightlife    : { cls:'tpl-nightlife',    icon:'🎧', heroType:'neon'       },
+  sports       : { cls:'tpl-professional', icon:'🏆', heroType:'dark-text'  },
+  ceremony     : { cls:'tpl-professional', icon:'🎓', heroType:'dark-text'  },
 };
 
-/* ══ STATE ══ */
-var eventData            = null;
-var eventSettings        = null;
-var allPhotos            = [];
-var matchedIds           = new Set();
-var matchedPhotos        = {};
-var guestEmail           = '';
-var selfiePublicUrl      = null;
-var currentLightboxPhoto = null;
+/* State */
+var eventData     = null;
+var allPhotos     = [];
+var selectedIds   = new Set();
+var currentSlide  = 0;
+var slideTimer    = null;
+var lbIndex       = 0;
+var lbPhotos      = [];
+var allSelected   = false;
 
-/* ══ SMART CAMERA STATE ══ */
-var cameraStream    = null;
-var qualityInterval = null;
-var prevFrameData   = null;
-var readyFrames     = 0;
-var motionBuf       = document.createElement('canvas');
-var autoCaptured    = false;
-
-/* ════════════════════════════════════════════════════
+/* ══════════════════════════════════════
    BOOT
-   FIX: keep-alive ping prevents Render cold starts
-════════════════════════════════════════════════════ */
+══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
-  /* Warm up Render backend immediately, then every 13 minutes */
+  /* Keep backend warm */
   fetch(EVENTS_API + '/ping').catch(function(){});
-  setInterval(function(){
-    fetch(EVENTS_API + '/ping').catch(function(){});
-  }, 13 * 60 * 1000);
+  setInterval(function(){ fetch(EVENTS_API + '/ping').catch(function(){}); }, 13 * 60 * 1000);
 
   var params = new URLSearchParams(window.location.search);
   var slug   = params.get('event') || params.get('slug');
@@ -709,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', async function(){
 
   try{
     var c = getSupabase();
-    var { data: ev, error } = await c
+    var { data:ev, error } = await c
       .from('events')
       .select('*, event_settings(*)')
       .eq('event_slug', slug)
@@ -718,8 +1022,8 @@ document.addEventListener('DOMContentLoaded', async function(){
 
     if(error || !ev){ showError('This event was not found or has expired.'); return; }
 
-    eventData     = ev;
-    eventSettings = Array.isArray(ev.event_settings)
+    eventData = ev;
+    var settings = Array.isArray(ev.event_settings)
       ? ev.event_settings[0]
       : (ev.event_settings || {});
 
@@ -730,102 +1034,81 @@ document.addEventListener('DOMContentLoaded', async function(){
     document.getElementById('navEventName').textContent = ev.name;
     document.getElementById('navCodeBadge').textContent = ev.event_code;
 
-    if(eventSettings.require_code === false){
+    /* Style the gate */
+    styleGate(type, ev.name);
+
+    if(settings.require_code === false){
       enterGallery();
     } else if(code && code.toUpperCase() === ev.event_code){
       enterGallery();
     } else {
-      styleGate(type, ev.name);
       showSection('section-gate');
     }
 
   }catch(e){ showError('Could not load event: ' + e.message); }
 });
 
-/* ════════════════════════════════════════════════════
+/* ══════════════════════════════════════
    GATE
-════════════════════════════════════════════════════ */
+══════════════════════════════════════ */
 function styleGate(type, name){
-  var tpl    = TPL_MAP[type] || TPL_MAP.professional;
-  var subMap = {
-    kids        : '🔑 Enter your magic code to see the photos!',
-    birthday    : '🎉 Enter your special code to join the party!',
-    wedding     : 'Please enter your private access code to view the gallery.',
-    sports      : 'Enter your team access code to view the photos.',
-    nightlife   : 'Enter your exclusive access code.',
-    gala        : 'Please present your access code to enter.',
-    ceremony    : 'Enter your access code to view the ceremony gallery.',
-    professional: 'Enter your access code to view the event photos.'
+  var icons = {
+    wedding:'💍', birthday:'🎂', kids:'🎉', gala:'✦', nightlife:'🎧',
+    sports:'🏆', ceremony:'🎓', professional:'📸'
   };
-  document.getElementById('gateIcon').textContent  = tpl.emoji || tpl.icon;
+  var subs = {
+    wedding    : 'Please enter your access code to view the gallery.',
+    birthday   : '🎉 Enter your code to join the celebration!',
+    kids       : '🔑 Enter your magic code to see the photos!',
+    gala       : 'Please present your access code to enter.',
+    nightlife  : 'Enter your exclusive access code.',
+    professional: 'Enter your access code to view the event photos.',
+    sports     : 'Enter your team access code.',
+    ceremony   : 'Enter your access code to view the ceremony gallery.',
+  };
+  document.getElementById('gateIcon').textContent = icons[type] || '📸';
   document.getElementById('gateTitle').textContent = name;
-  document.getElementById('gateSub').textContent   = subMap[type] || subMap.professional;
+  document.getElementById('gateSub').textContent   = subs[type] || subs.professional;
 }
 
 async function submitCode(){
   var input = document.getElementById('gateCodeInput').value.trim().toUpperCase();
   var btn   = document.getElementById('gateSubmitBtn');
-  if(!input || input.length < 4){ showGateAlert('Please enter your access code.', 'error'); return; }
-  if(input !== eventData.event_code){ showGateAlert('Incorrect code. Please try again.', 'error'); return; }
-  btn.disabled    = true;
+  var err   = document.getElementById('gateAlert');
+
+  if(!input || input.length < 4){
+    showAlert(err,'Please enter your access code.');return;
+  }
+  if(input !== eventData.event_code){
+    showAlert(err,'Incorrect code. Please try again.');return;
+  }
+  btn.disabled = true;
   btn.textContent = 'Entering…';
   enterGallery();
 }
 
-function showGateAlert(msg, type){
-  var el = document.getElementById('gateAlert');
+function showAlert(el, msg){
   el.textContent = msg;
-  el.className   = 'gate-alert gate-alert-' + type + ' show';
+  el.style.display = 'block';
 }
 
-/* ════════════════════════════════════════════════════
-   GALLERY
-════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   GALLERY ENTRY
+══════════════════════════════════════ */
+async function enterGallery(){
+  showSection('section-gallery');
+  await loadPhotos();
+}
+
 function showSection(id){
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById(id);
   if(el) el.classList.add('active');
 }
 
-async function enterGallery(){
-  buildHero();
-  showSection('section-gallery');
-  await loadPhotos();
-}
-
-function buildHero(){
-  var ev   = eventData;
-  var type = ev.type || ev.template || 'professional';
-  var tpl  = TPL_MAP[type] || TPL_MAP.professional;
-
-  ['evHeroGrid','evHeroCentered','evHeroElegant'].forEach(function(id){
-    document.getElementById(id).style.display = 'none';
-  });
-
-  var expDate  = new Date(ev.expiry_date);
-  var daysLeft = Math.ceil((expDate - new Date()) / (1000*60*60*24));
-
-  if(tpl.hero === 'grid'){
-    document.getElementById('evHeroGrid').style.display   = '';
-    document.getElementById('heroLabel').textContent      = type === 'sports' ? '🏆 Event Photos' : '📸 Photo Gallery';
-    document.getElementById('heroTitleGrid').textContent  = ev.name;
-    document.getElementById('heroSubGrid').textContent    = 'Browse your photos · Use face scan to find yourself · ' + daysLeft + ' days remaining';
-    document.getElementById('heroVisual').textContent     = tpl.icon;
-  } else if(tpl.hero === 'centered'){
-    document.getElementById('evHeroCentered').style.display  = '';
-    document.getElementById('heroEmoji').textContent          = tpl.emoji;
-    document.getElementById('heroTitleCentered').textContent  = ev.name;
-    document.getElementById('heroSubCentered').textContent    = 'Tap any photo to view · ' + daysLeft + ' days remaining';
-  } else {
-    document.getElementById('evHeroElegant').style.display = '';
-    document.getElementById('heroOrnament').textContent    = tpl.ornament;
-    document.getElementById('heroTitleElegant').innerHTML  = '<em>' + esc(ev.name) + '</em>';
-    document.getElementById('heroSubElegant').textContent  = 'A curated collection · Available for ' + daysLeft + ' more days';
-  }
-
-  document.getElementById('galleryTitle').textContent = ev.name;
-}
-
+/* ══════════════════════════════════════
+   LOAD PHOTOS
+══════════════════════════════════════ */
 async function loadPhotos(){
   try{
     var { data } = await getSupabase()
@@ -833,671 +1116,414 @@ async function loadPhotos(){
       .select('*')
       .eq('event_id', eventData.id)
       .order('created_at', { ascending: true });
+
     allPhotos = data || [];
-    if(!allPhotos.length){
-      var prompt = document.getElementById('faceScanPrompt');
-      if(prompt) prompt.innerHTML =
-        '<div style="font-size:48px;margin-bottom:16px;">📷</div>'
-        + '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">No Photos Yet</div>'
-        + '<div style="font-size:14px;opacity:.6;">The photographer hasn\'t uploaded photos yet. Check back soon.</div>';
-    }
-  }catch(e){}
+    lbPhotos  = allPhotos;
+
+    buildHero();
+    buildSlideshow(allPhotos.slice(0, 10));
+    renderPhotos(allPhotos);
+    loadCelebrantPhoto();
+
+  }catch(e){
+    console.error(e);
+  }
 }
 
+/* ══════════════════════════════════════
+   CELEBRANT PHOTO (from event_settings or photos table)
+══════════════════════════════════════ */
+async function loadCelebrantPhoto(){
+  try{
+    var settings = Array.isArray(eventData.event_settings)
+      ? eventData.event_settings[0] : (eventData.event_settings || {});
+
+    /* Check for a celebrant_photo_url in settings */
+    var celebUrl = settings.celebrant_photo_url || eventData.celebrant_photo_url || null;
+
+    if(!celebUrl){
+      /* Try to fetch from storage path: {event_id}/celebrant.* */
+      var c = getSupabase();
+      var { data: files } = await c.storage.from('events').list(eventData.id + '/celebrant');
+      if(files && files.length){
+        var { data: urlData } = c.storage.from('events').getPublicUrl(eventData.id + '/celebrant/' + files[0].name);
+        celebUrl = urlData.publicUrl;
+      }
+    }
+
+    if(celebUrl){
+      var wrap = document.getElementById('celebrantPhoto');
+      var img  = document.getElementById('celebrantImg');
+      img.src  = celebUrl;
+      wrap.style.display = 'block';
+      positionCelebrantPhoto();
+    }
+  }catch(e){ /* silently ignore */ }
+}
+
+function positionCelebrantPhoto(){
+  var type = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
+  var wrap = document.getElementById('celebrantPhoto');
+  if(!wrap) return;
+
+  /* Position right side, lower third of slideshow */
+  wrap.style.right  = '5%';
+  wrap.style.width  = 'clamp(180px, 25vw, 380px)';
+
+  /* For wedding/gala — centre position */
+  if(['wedding','gala','ceremony'].includes(type)){
+    wrap.style.right = '10%';
+    wrap.style.width = 'clamp(160px, 22vw, 340px)';
+  }
+  /* For birthday/kids — left side, larger */
+  if(['birthday','kids'].includes(type)){
+    wrap.style.right = 'auto';
+    wrap.style.left  = '5%';
+    wrap.style.width = 'clamp(150px, 22vw, 300px)';
+  }
+}
+
+/* ══════════════════════════════════════
+   BUILD HERO TEXT
+══════════════════════════════════════ */
+function buildHero(){
+  var ev   = eventData;
+  var type = ev.type || ev.template || 'professional';
+  var tpl  = TPL_MAP[type] || TPL_MAP.professional;
+  var days = Math.max(0, Math.ceil((new Date(ev.expiry_date) - new Date()) / (1000*60*60*24)));
+  var hl   = document.getElementById('heroTextLayer');
+
+  var html = '';
+
+  if(tpl.heroType === 'elegant'){
+    html = '<div class="hero-ornament">❦ ' + esc(ev.name) + ' ❦</div>'
+      + '<h1 class="hero-title"><em>' + esc(ev.name) + '</em></h1>'
+      + '<div class="hero-divider"></div>'
+      + '<p class="hero-sub">A collection of your finest moments · ' + days + ' days remaining</p>';
+  } else if(tpl.heroType === 'colorful'){
+    html = '<span class="hero-emoji">' + tpl.icon + '</span>'
+      + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
+      + '<p class="hero-sub">Tap any photo to view &amp; download · ' + days + ' days remaining ✨</p>';
+  } else if(tpl.heroType === 'luxury'){
+    html = '<div class="hero-ornament">✦ ✦ ✦</div>'
+      + '<h1 class="hero-title"><em>' + esc(ev.name) + '</em></h1>'
+      + '<div class="hero-divider"></div>'
+      + '<p class="hero-sub">An exclusive collection · ' + days + ' days remaining</p>';
+  } else if(tpl.heroType === 'neon'){
+    html = '<div class="hero-label">LIVE GALLERY</div>'
+      + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
+      + '<p class="hero-sub">Browse your photos · ' + days + ' days to download</p>';
+  } else {
+    /* dark-text default */
+    html = '<div class="hero-label">' + tpl.icon + ' Photo Gallery</div>'
+      + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
+      + '<p class="hero-sub">Browse &amp; download your event photos · ' + days + ' days remaining</p>';
+  }
+
+  hl.innerHTML = html;
+  document.getElementById('galleryTitle').textContent = ev.name;
+}
+
+/* ══════════════════════════════════════
+   SLIDESHOW
+══════════════════════════════════════ */
+function buildSlideshow(photos){
+  var track = document.getElementById('slideshowTrack');
+  var dots  = document.getElementById('slideshowDots');
+  var counter = document.getElementById('slideCounter');
+
+  if(!photos.length){
+    document.getElementById('slideshowWrap').style.display = 'none';
+    document.getElementById('galleryWrap').style.paddingTop = '80px';
+    return;
+  }
+
+  /* If fewer than 2 photos — hide navigation */
+  if(photos.length < 2){
+    document.getElementById('slidePrev').style.display = 'none';
+    document.getElementById('slideNext').style.display = 'none';
+  }
+
+  track.innerHTML = photos.map(function(p, i){
+    return '<div class="slide' + (i===0?' active':'') + '" id="slide-'+i+'">'
+      + '<img src="' + esc(p.preview_url) + '" alt="" loading="' + (i===0?'eager':'lazy') + '"/>'
+      + '</div>';
+  }).join('');
+
+  dots.innerHTML = photos.map(function(_,i){
+    return '<div class="dot' + (i===0?' active':'') + '" onclick="goSlide(' + i + ')"></div>';
+  }).join('');
+
+  counter.textContent = '1 / ' + photos.length;
+  currentSlide = 0;
+
+  /* Auto advance */
+  clearInterval(slideTimer);
+  slideTimer = setInterval(function(){ nextSlide(); }, 5000);
+}
+
+function goSlide(idx){
+  var slides = document.querySelectorAll('.slide');
+  var dots   = document.querySelectorAll('.dot');
+  if(!slides.length) return;
+  slides[currentSlide].classList.remove('active');
+  dots[currentSlide] && dots[currentSlide].classList.remove('active');
+  currentSlide = (idx + slides.length) % slides.length;
+  slides[currentSlide].classList.add('active');
+  dots[currentSlide] && dots[currentSlide].classList.add('active');
+  document.getElementById('slideCounter').textContent = (currentSlide+1) + ' / ' + slides.length;
+  clearInterval(slideTimer);
+  slideTimer = setInterval(function(){ nextSlide(); }, 5000);
+}
+function nextSlide(){ goSlide(currentSlide + 1); }
+function prevSlide(){ goSlide(currentSlide - 1); }
+
+/* ══════════════════════════════════════
+   PHOTO GRID
+══════════════════════════════════════ */
 function renderPhotos(photos){
   var type    = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
   var grid    = document.getElementById('photoGrid');
-  var prompt  = document.getElementById('faceScanPrompt');
-  var masonry = ['wedding','gala','ceremony'].includes(type);
+  var masonry = ['wedding','gala'].includes(type);
 
-  if(prompt) prompt.style.display = 'none';
-  grid.classList.remove('hidden');
-  grid.style.display = masonry ? 'block' : '';
+  if(masonry){
+    grid.style.display = 'block';
+  } else {
+    grid.style.display = '';
+  }
 
   if(!photos.length){
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">🔍</div><div class="empty-state-title">No photos match</div></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;column-span:all;">'
+      + '<div class="empty-state-icon">📷</div>'
+      + '<div class="empty-state-title">No photos yet</div>'
+      + '<p style="font-size:14px;opacity:.6;">The photographer hasn\'t uploaded photos yet. Check back soon.</p>'
+      + '</div>';
     return;
   }
 
-  grid.innerHTML = photos.map(function(p){
-    var isMatched = matchedIds.has(p.id);
-    var meta      = matchedPhotos[p.id] || {};
-    var badge     = '';
-    if(isMatched){
-      var bgColor = meta.tier === 'auto' ? '#059669' : '#d97706';
-      var label   = meta.tier === 'auto' ? '⬇️ Ready' : '⏳ Pending';
-      badge = '<div class="photo-matched-badge" style="background:' + bgColor + ';">' + label + '</div>';
-    }
-    var overlayBtn = (isMatched && meta.tier === 'auto')
-      ? '<a href="' + esc(p.original_url || p.preview_url) + '" download="ImpactGrid-Photo.jpg" class="overlay-btn" onclick="event.stopPropagation()">⬇️ Download</a>'
-      : '<button class="overlay-btn" onclick="event.stopPropagation();openRequestModal()">📥 Request</button>';
-
-    return '<div class="photo-card" onclick="openLightbox(\'' + p.id + '\',\'' + esc(p.preview_url) + '\')">'
-      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy" onerror="this.parentElement.style.background=\'rgba(255,255,255,0.05)\'"/>'
-      + badge
-      + '<div class="photo-card-overlay">' + overlayBtn + '</div>'
+  grid.innerHTML = photos.map(function(p, i){
+    var isSelected = selectedIds.has(p.id);
+    return '<div class="photo-card' + (isSelected?' selected':'') + '" id="card-' + p.id + '" data-id="' + p.id + '" data-idx="' + i + '">'
+      + '<div class="select-checkbox"></div>'
+      + '<div class="select-overlay" onclick="toggleSelect(\'' + p.id + '\',event)"></div>'
+      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy" onclick="openLightbox(' + i + ',event)"/>'
+      + '<div class="photo-card-overlay">'
+      + '<button class="lb-btn lb-btn-dl" style="font-size:11px;padding:7px 14px;" onclick="event.stopPropagation();quickDownload(\'' + esc(p.original_url||p.preview_url) + '\',\'' + i + '\')">⬇ Save</button>'
+      + '</div>'
       + '</div>';
   }).join('');
+
+  updateSelectionUI();
 }
 
-/* ════════════════════════════════════════════════════
+/* ══════════════════════════════════════
+   SELECTION
+══════════════════════════════════════ */
+function toggleSelect(id, event){
+  event && event.stopPropagation();
+  if(selectedIds.has(id)){
+    selectedIds.delete(id);
+  } else {
+    selectedIds.add(id);
+  }
+  var card = document.getElementById('card-' + id);
+  if(card) card.classList.toggle('selected', selectedIds.has(id));
+  updateSelectionUI();
+}
+
+function toggleSelectAll(){
+  if(allSelected){
+    clearSelection();
+  } else {
+    allPhotos.forEach(function(p){ selectedIds.add(p.id); });
+    document.querySelectorAll('.photo-card').forEach(function(c){ c.classList.add('selected'); });
+    allSelected = true;
+    document.getElementById('selectAllBtn').textContent = '☑ Deselect All';
+    updateSelectionUI();
+  }
+}
+
+function clearSelection(){
+  selectedIds.clear();
+  allSelected = false;
+  document.querySelectorAll('.photo-card').forEach(function(c){ c.classList.remove('selected'); });
+  document.getElementById('selectAllBtn').textContent = '☐ Select All';
+  updateSelectionUI();
+}
+
+function updateSelectionUI(){
+  var count = selectedIds.size;
+  var dlBar = document.getElementById('dlBar');
+  var dlBtn = document.getElementById('downloadSelectedBtn');
+  var countEl = document.getElementById('selectedCount');
+  var barCount = document.getElementById('dlBarCount');
+
+  if(countEl) countEl.textContent = count;
+  if(barCount) barCount.textContent = count;
+
+  if(count > 0){
+    dlBar.classList.add('visible');
+    if(dlBtn) dlBtn.style.display = 'inline-flex';
+    /* Update select all btn */
+    if(count === allPhotos.length){
+      allSelected = true;
+      document.getElementById('selectAllBtn').textContent = '☑ Deselect All';
+    }
+  } else {
+    dlBar.classList.remove('visible');
+    if(dlBtn) dlBtn.style.display = 'none';
+    allSelected = false;
+    document.getElementById('selectAllBtn').textContent = '☐ Select All';
+  }
+}
+
+/* ══════════════════════════════════════
+   DOWNLOADS
+   Cross-platform: creates hidden <a> tags with
+   download attribute — works on desktop, Android.
+   On iOS Safari, opens in new tab (browser limitation).
+══════════════════════════════════════ */
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+function quickDownload(url, idx){
+  if(isIOS()){
+    /* iOS: open full-res in new tab — user long-presses to save */
+    window.open(url, '_blank');
+    toast('📱', 'Photo opened!', 'Long-press the image → "Save to Photos"');
+  } else {
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ document.body.removeChild(a); }, 1000);
+    toast('⬇', 'Saving photo…', 'Check your Downloads / Photos gallery');
+  }
+}
+
+function downloadSelected(){
+  var toDownload = allPhotos.filter(function(p){ return selectedIds.has(p.id); });
+  if(!toDownload.length){ toast('⚠️','Select photos first','Tap photos to select them'); return; }
+
+  if(isIOS()){
+    /* iOS: open each in new tab with delay */
+    toast('📱', 'Opening ' + toDownload.length + ' photos…', 'Long-press each → "Save to Photos"');
+    toDownload.forEach(function(p, i){
+      setTimeout(function(){
+        window.open(p.original_url || p.preview_url, '_blank');
+      }, i * 800);
+    });
+  } else {
+    toast('⬇', 'Downloading ' + toDownload.length + ' photos…', 'Files saving to your gallery');
+    toDownload.forEach(function(p, i){
+      setTimeout(function(){
+        var a = document.createElement('a');
+        a.href = p.original_url || p.preview_url;
+        a.download = 'ImpactGrid-Photo-' + (i+1) + '.jpg';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){ document.body.removeChild(a); }, 1000);
+      }, i * 400);
+    });
+  }
+}
+
+function downloadAllPhotos(){
+  if(!allPhotos.length){ toast('⚠️','No photos yet',''); return; }
+
+  if(isIOS()){
+    toast('📱', 'Tap each photo to save it', 'Long-press image → "Save to Photos"');
+    /* Select all so they can easily see all */
+    toggleSelectAll();
+  } else {
+    toast('⬇', 'Downloading all ' + allPhotos.length + ' photos…', 'Files saving to your gallery');
+    allPhotos.forEach(function(p, i){
+      setTimeout(function(){
+        var a = document.createElement('a');
+        a.href = p.original_url || p.preview_url;
+        a.download = 'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){ document.body.removeChild(a); }, 1000);
+      }, i * 350);
+    });
+  }
+}
+
+/* ══════════════════════════════════════
    LIGHTBOX
-════════════════════════════════════════════════════ */
-function openLightbox(id, url){
-  currentLightboxPhoto = id;
-  document.getElementById('lightboxImg').src = url;
+══════════════════════════════════════ */
+function openLightbox(idx, event){
+  if(event) event.stopPropagation();
+  lbIndex = idx;
+  showLightboxAt(idx);
   document.getElementById('lightbox').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 }
-function closeLightbox(){
+
+function showLightboxAt(idx){
+  if(!lbPhotos.length) return;
+  lbIndex = (idx + lbPhotos.length) % lbPhotos.length;
+  var p   = lbPhotos[lbIndex];
+  document.getElementById('lightboxImg').src         = p.preview_url;
+  document.getElementById('lbDownloadBtn').href      = p.original_url || p.preview_url;
+  document.getElementById('lbDownloadBtn').download  = 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg';
+  document.getElementById('lbCounter').textContent   = (lbIndex+1) + ' / ' + lbPhotos.length;
+
+  /* Handle iOS download in lightbox */
+  document.getElementById('lbDownloadBtn').onclick = function(e){
+    if(isIOS()){
+      e.preventDefault();
+      window.open(p.original_url || p.preview_url, '_blank');
+      toast('📱','Long-press → "Save to Photos"','');
+    }
+  };
+}
+
+function closeLightbox(event){
+  if(event && event.target !== document.getElementById('lightbox')) return;
   document.getElementById('lightbox').classList.add('hidden');
   document.body.style.overflow = '';
-  currentLightboxPhoto = null;
 }
+
+function lbPrev(e){
+  e && e.stopPropagation();
+  showLightboxAt(lbIndex - 1);
+}
+function lbNext(e){
+  e && e.stopPropagation();
+  showLightboxAt(lbIndex + 1);
+}
+
+/* Keyboard nav */
 document.addEventListener('keydown', function(e){
-  if(e.key === 'Escape'){ closeLightbox(); closeRequestModal(); }
+  var lb = document.getElementById('lightbox');
+  if(!lb.classList.contains('hidden')){
+    if(e.key === 'ArrowLeft')  lbPrev();
+    if(e.key === 'ArrowRight') lbNext();
+    if(e.key === 'Escape')     { lb.classList.add('hidden'); document.body.style.overflow = ''; }
+  }
 });
 
-/* ════════════════════════════════════════════════════
-   FACE PANEL UI
-════════════════════════════════════════════════════ */
-function openFacePanel(){
-  document.getElementById('facePanel').classList.remove('hidden');
-  document.getElementById('facePanel').scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function closeFacePanel(){
-  document.getElementById('facePanel').classList.add('hidden');
-  stopCamera();
-}
-function handleSelfie(e){
-  var file = e.target.files && e.target.files[0];
-  if(file) runFaceRecognition(file);
-  e.target.value = '';
-}
-
-/* ════════════════════════════════════════════════════
-   SMART CAMERA
-════════════════════════════════════════════════════ */
-async function startCamera(){
-  var btn = document.getElementById('startCameraBtn');
-  btn.textContent = '⏳ Starting…';
-  btn.disabled    = true;
-  autoCaptured    = false;
-
-  try{
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode:'user', width:{ ideal:1280 }, height:{ ideal:960 } },
-      audio: false
-    });
-    var vid = document.getElementById('cameraVideo');
-    vid.srcObject = cameraStream;
-    await vid.play();
-
-    document.getElementById('camPlaceholder').style.display   = 'none';
-    document.getElementById('cameraContainer').style.display  = 'block';
-    document.getElementById('qualityRow').style.display       = 'grid';
-    document.getElementById('confBarWrap').style.display      = 'block';
-    document.getElementById('startCameraBtn').style.display   = 'none';
-    document.getElementById('captureBtn').style.display       = 'flex';
-    document.getElementById('captureBtn').disabled            = true;
-    document.getElementById('captureBtn').style.opacity       = '0.5';
-    document.getElementById('retakeBtn').style.display        = 'none';
-
-    prevFrameData = null;
-    readyFrames   = 0;
-    qualityInterval = setInterval(runQualityCheck, 180);
-
-  }catch(err){
-    btn.textContent = '📷 Open Camera';
-    btn.disabled    = false;
-    if(err.name === 'NotAllowedError'){
-      toast('⚠️', 'Camera access denied', 'Please allow camera access or upload a photo instead');
-    } else {
-      toast('⚠️', 'Camera error', err.message);
-    }
-  }
-}
-
-function runQualityCheck(){
-  var vid = document.getElementById('cameraVideo');
-  if(!vid || !vid.videoWidth) return;
-
-  var w = vid.videoWidth, h = vid.videoHeight;
-  motionBuf.width  = w;
-  motionBuf.height = h;
-  var ctx = motionBuf.getContext('2d');
-
-  ctx.save();
-  ctx.scale(-1, 1);
-  ctx.drawImage(vid, -w, 0, w, h);
-  ctx.restore();
-
-  var frame = ctx.getImageData(0, 0, w, h);
-  var d     = frame.data;
-  var totalLum = 0, centerLum = 0;
-  var cx = w/2, cy = h/2;
-  var zW = w * 0.4, zH = h * 0.55;
-  var x0 = cx - zW/2, y0 = cy - zH/2;
-  var x1 = cx + zW/2, y1 = cy + zH/2;
-  var samples = 0, centerSamples = 0;
-  var step = 8;
-
-  for(var y = 0; y < h; y += step){
-    for(var x = 0; x < w; x += step){
-      var i   = (y * w + x) * 4;
-      var lum = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-      totalLum += lum; samples++;
-      if(x >= x0 && x <= x1 && y >= y0 && y <= y1){
-        centerLum += lum; centerSamples++;
-      }
-    }
-  }
-
-  var avgLum    = totalLum / samples;
-  var avgCenter = centerSamples ? centerLum / centerSamples : 0;
-  var litPass      = avgLum > 55 && avgLum < 235;
-  var centeredPass = avgCenter > avgLum * 1.02;
-
-  var stillPass = true;
-  if(prevFrameData){
-    var prev = prevFrameData;
-    var diffSum = 0, diffCount = 0;
-    for(var j = 0; j < d.length; j += 4 * 12){
-      diffSum += Math.abs(d[j]-prev[j]) + Math.abs(d[j+1]-prev[j+1]) + Math.abs(d[j+2]-prev[j+2]);
-      diffCount++;
-    }
-    stillPass = (diffSum / diffCount) < 20;
-  }
-  prevFrameData = d.slice();
-
-  setQDot('qCentered', centeredPass);
-  setQDot('qLit',      litPass);
-  setQDot('qStill',    stillPass);
-
-  var score = (litPass?33:0) + (centeredPass?34:0) + (stillPass?33:0);
-  var fill  = document.getElementById('camConfFill');
-  if(fill){
-    fill.style.width      = score + '%';
-    fill.style.background = score >= 100 ? '#10b981' : score >= 66 ? '#f59e0b' : '#ef4444';
-  }
-
-  var hints = [];
-  if(!litPass)      hints.push(avgLum < 55 ? 'need more light' : 'too bright');
-  if(!centeredPass) hints.push('center your face in the oval');
-  if(!stillPass)    hints.push('hold still');
-  var confLabel = document.getElementById('camConfLabel');
-  if(confLabel) confLabel.textContent = score >= 100 ? 'Ready!' : (score + '% — ' + (hints.join(' · ') || 'checking…'));
-
-  var oval = document.getElementById('ovalRing');
-  if(oval){
-    oval.setAttribute('stroke', score >= 100 ? '#10b981' : score >= 66 ? '#f59e0b' : 'rgba(255,255,255,0.55)');
-    oval.setAttribute('stroke-width', score >= 100 ? '3' : '2');
-    oval.setAttribute('stroke-dasharray', score >= 100 ? '' : '6 4');
-  }
-
-  var captBtn    = document.getElementById('captureBtn');
-  var statusText = document.getElementById('camStatusText');
-
-  if(score >= 100){
-    readyFrames++;
-    if(captBtn){ captBtn.disabled = false; captBtn.style.opacity = '1'; }
-    if(statusText) statusText.textContent = readyFrames > 15 ? 'Auto-capturing…' : '✅ Perfect — tap Take Photo & Scan';
-    if(readyFrames > 20 && !autoCaptured){ autoCaptured = true; capturePhoto(); }
-  } else {
-    readyFrames = 0;
-    if(captBtn){ captBtn.disabled = true; captBtn.style.opacity = '0.5'; }
-    if(statusText) statusText.textContent = hints.length ? hints.join(' · ') : 'Checking…';
-  }
-}
-
-function setQDot(id, pass){
-  var el = document.getElementById(id);
-  if(el) el.className = 'q-dot ' + (pass ? 'pass' : 'fail');
-}
-
-function capturePhoto(){
-  if(qualityInterval){ clearInterval(qualityInterval); qualityInterval = null; }
-
-  var vid    = document.getElementById('cameraVideo');
-  var canvas = document.getElementById('cameraCanvas');
-  canvas.width  = vid.videoWidth  || 1280;
-  canvas.height = vid.videoHeight || 960;
-
-  var ctx = canvas.getContext('2d');
-  ctx.save();
-  ctx.scale(-1, 1);
-  ctx.drawImage(vid, -canvas.width, 0, canvas.width, canvas.height);
-  ctx.restore();
-
-  var dataUrl = canvas.toDataURL('image/jpeg', 0.93);
-  document.getElementById('capturedImg').src = dataUrl;
-
-  document.getElementById('cameraContainer').style.display = 'none';
-  document.getElementById('qualityRow').style.display      = 'none';
-  document.getElementById('confBarWrap').style.display     = 'none';
-  document.getElementById('capturedPreview').style.display = 'block';
-  document.getElementById('captureBtn').style.display      = 'none';
-  document.getElementById('retakeBtn').style.display       = 'block';
-
-  stopCamera();
-
-  canvas.toBlob(function(blob){
-    if(blob) runFaceRecognition(blob);
-  }, 'image/jpeg', 0.93);
-}
-
-function retakePhoto(){
-  document.getElementById('capturedPreview').style.display = 'none';
-  document.getElementById('camPlaceholder').style.display  = 'flex';
-  document.getElementById('retakeBtn').style.display       = 'none';
-  document.getElementById('startCameraBtn').style.display  = 'block';
-  document.getElementById('startCameraBtn').textContent    = '📷 Open Camera';
-  document.getElementById('startCameraBtn').disabled       = false;
-  document.getElementById('faceResults').classList.add('hidden');
-  prevFrameData = null;
-  readyFrames   = 0;
-  autoCaptured  = false;
-}
-
-function stopCamera(){
-  if(cameraStream){
-    cameraStream.getTracks().forEach(function(t){ t.stop(); });
-    cameraStream = null;
-  }
-  if(qualityInterval){ clearInterval(qualityInterval); qualityInterval = null; }
-}
-
-/* ════════════════════════════════════════════════════
-   MAIN FACE RECOGNITION FLOW
-   FIX 1: email regex requires TLD of 2+ chars
-   FIX 2: uploadSelfieTemp waits 2s for CDN propagation
-   FIX 3: cleanup deferred 90s — after all API calls done
-   FIX 4: fallback compare loop filters null face_crop_url
-════════════════════════════════════════════════════ */
-async function runFaceRecognition(selfieFile){
-  var resultText   = document.getElementById('faceResultText');
-  var resultFill   = document.getElementById('faceResultFill');
-  var resultDetail = document.getElementById('faceResultDetail');
-  document.getElementById('faceResults').classList.remove('hidden');
-
-  /* FIX 1: strengthened email regex requires 2+ char TLD */
-  var emailEl = document.getElementById('guestEmailInput');
-  guestEmail  = emailEl ? emailEl.value.trim() : '';
-  if(!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(guestEmail)){
-    resultText.textContent   = '⚠️ Please enter your email first (Step 1)';
-    resultFill.style.width   = '0%';
-    resultDetail.textContent = 'We need it to send your download links.';
-    if(emailEl) emailEl.focus();
-    return;
-  }
-
-  resultText.textContent   = 'Uploading selfie securely…';
-  resultFill.style.width   = '15%';
-  resultDetail.textContent = '';
-
-  /* FIX 2: uploadSelfieTemp now waits 2s for CDN propagation before returning */
-  selfiePublicUrl = await uploadSelfieTemp(selfieFile);
-  if(!selfiePublicUrl){
-    resultText.textContent = '⚠️ Could not upload selfie. Please try again.';
-    resultFill.style.width = '0%';
-    return;
-  }
-
-  resultText.textContent = 'Loading face index…';
-  resultFill.style.width = '30%';
-
-  try{
-    var { data: embeddings, error: embErr } = await getSupabase()
-      .from('face_embeddings')
-      .select('photo_id, face_crop_url, face_token, group_id')
-      .eq('event_id', eventData.id)
-      .not('face_crop_url', 'is', null);
-
-    if(embErr || !embeddings || !embeddings.length){
-      resultText.textContent   = '😔 Photos haven\'t been indexed yet.';
-      resultFill.style.width   = '0%';
-      resultDetail.textContent = 'Check back soon — the photographer is still processing photos.';
-      scheduleCleanup(); /* FIX 3 */
-      return;
-    }
-
-    resultText.textContent = 'Searching face index…';
-    resultFill.style.width = '45%';
-
-    var autoMatches   = [];
-    var reviewMatches = [];
-    var searchOk      = false;
-
-    /* ── Try FaceSet search first (fast, one API call) ── */
-    try{
-      var searchRes = await fetch(EVENTS_API + '/api/facepp-search', {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ selfieUrl: selfiePublicUrl, eventId: eventData.id })
-      });
-
-      if(searchRes.ok){
-        var searchData = await searchRes.json();
-        var matches    = searchData.results || [];
-        var faceTokenMap = {};
-        embeddings.forEach(function(e){ if(e.face_token) faceTokenMap[e.face_token] = e.photo_id; });
-
-        matches.forEach(function(m){
-          var photoId = faceTokenMap[m.face_token];
-          if(!photoId) return;
-          var photo = allPhotos.find(function(p){ return p.id === photoId; });
-          if(!photo) return;
-          if(m.tier === 'auto')   autoMatches.push({ photo: photo, confidence: m.confidence });
-          if(m.tier === 'review') reviewMatches.push({ photo: photo, confidence: m.confidence });
-        });
-        searchOk = true;
-      }
-    }catch(searchErr){
-      console.warn('[FaceScan] FaceSet search failed, using compare fallback:', searchErr.message);
-    }
-
-    /* ── Fallback: compare individual crops ── */
-    if(!searchOk){
-      resultText.textContent = 'Searching (compare mode)…';
-
-      /* FIX 4: filter out null face_crop_url AND deduplicate by photo_id */
-      var seen        = {};
-      var uniqueFaces = embeddings.filter(function(e){
-        if(!e.face_crop_url) return false; /* skip rows with no crop */
-        if(seen[e.photo_id]) return false;
-        seen[e.photo_id] = true;
-        return true;
-      });
-
-      var BATCH = 5;
-      var done  = 0;
-
-      for(var b = 0; b < uniqueFaces.length; b += BATCH){
-        var batch = uniqueFaces.slice(b, b + BATCH);
-
-        var batchResults = await Promise.all(batch.map(async function(emb){
-          try{
-            var r = await fetch(EVENTS_API + '/api/facepp-match', {
-              method : 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body   : JSON.stringify({ selfieUrl: selfiePublicUrl, photoUrl: emb.face_crop_url })
-            });
-            if(!r.ok) return null;
-            var d = await r.json();
-            return { emb: emb, confidence: d.confidence || 0 };
-          }catch(e){ return null; }
-        }));
-
-        batchResults.forEach(function(r){
-          if(!r) return;
-          var photo = allPhotos.find(function(p){ return p.id === r.emb.photo_id; });
-          if(!photo) return;
-          if(r.confidence >= FACE_AUTO)        autoMatches.push({ photo: photo, confidence: r.confidence });
-          else if(r.confidence >= FACE_REVIEW) reviewMatches.push({ photo: photo, confidence: r.confidence });
-        });
-
-        done += batch.length;
-        resultFill.style.width = Math.round(45 + (done / uniqueFaces.length) * 45) + '%';
-        if(b + BATCH < uniqueFaces.length) await sleep(350);
-      }
-    }
-
-    resultFill.style.width = '100%';
-
-    /* Build result sets */
-    matchedIds    = new Set();
-    matchedPhotos = {};
-    autoMatches.forEach(function(item){
-      matchedIds.add(item.photo.id);
-      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'auto' };
-    });
-    reviewMatches.forEach(function(item){
-      matchedIds.add(item.photo.id);
-      matchedPhotos[item.photo.id] = { confidence: item.confidence, tier: 'review' };
-    });
-
-    if(matchedIds.size === 0){
-      resultText.textContent   = '😔 No matches found.';
-      resultDetail.textContent = 'Try a clearer selfie — face camera directly, good lighting, no sunglasses.';
-      toast('😔', 'No matches found', 'Try a clearer forward-facing selfie');
-      scheduleCleanup();
-      return;
-    }
-
-    var matchedArr = allPhotos.filter(function(p){ return matchedIds.has(p.id); });
-    renderPhotos(matchedArr);
-
-    document.getElementById('galleryTitle').textContent = 'Your Photos (' + matchedArr.length + ')';
-    document.getElementById('galleryTag').textContent   = '✅ Matched to your face';
-    addShowAllBtn();
-
-    document.getElementById('matchedBanner').classList.remove('hidden');
-    var parts = [];
-    if(autoMatches.length)   parts.push(autoMatches.length   + ' ready to download');
-    if(reviewMatches.length) parts.push(reviewMatches.length + ' sent for approval');
-    resultText.textContent   = '✅ Found you in ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!';
-    resultDetail.textContent = parts.join(' · ');
-    document.getElementById('matchedBannerText').textContent =
-      'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + ' — ' + parts.join(' · ');
-
-    toast('✅', 'Found ' + matchedIds.size + ' photo' + (matchedIds.size > 1 ? 's' : '') + '!', parts.join(' · '));
-
-    if(autoMatches.length   > 0) await processAutoDownloads(autoMatches.map(function(i){ return i.photo; }));
-    if(reviewMatches.length > 0) await processReviewRequests(reviewMatches.map(function(i){ return i.photo; }));
-
-    /* FIX 3: safe cleanup — delayed until all Face++ work is done */
-    scheduleCleanup();
-
-  }catch(err){
-    resultText.textContent   = '⚠️ Error: ' + err.message;
-    resultFill.style.width   = '0%';
-    resultDetail.textContent = 'Please try again.';
-    scheduleCleanup();
-  }
-}
-
-/* FIX 3: single cleanup entry point — always delayed 90 seconds */
-function scheduleCleanup(){
-  setTimeout(cleanupSelfie, 90 * 1000);
-}
-
-function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
-
-function addShowAllBtn(){
-  var actions = document.getElementById('galleryActions');
-  if(actions) actions.style.display = 'flex';
-  if(!actions || document.getElementById('showAllBtn')) return;
-  var btn         = document.createElement('button');
-  btn.id          = 'showAllBtn';
-  btn.className   = 'btn-outline';
-  btn.textContent = '📷 Show All Photos';
-  btn.onclick     = function(){
-    matchedIds = new Set(); matchedPhotos = {};
-    renderPhotos(allPhotos);
-    document.getElementById('galleryTitle').textContent = eventData.name;
-    document.getElementById('galleryTag').textContent   = '📸 Gallery';
-    document.getElementById('matchedBanner').classList.add('hidden');
-    btn.remove();
-  };
-  actions.prepend(btn);
-}
-
-/* ════════════════════════════════════════════════════
-   AUTO DOWNLOADS
-════════════════════════════════════════════════════ */
-async function processAutoDownloads(photos){
-  if(!photos.length || !guestEmail) return;
-  try{
-    var c = getSupabase();
-    for(var i = 0; i < photos.length; i++){
-      await c.from('download_requests').insert({
-        event_id  : eventData.id,
-        user_email: guestEmail,
-        status    : 'approved'
-      });
-    }
-  }catch(e){}
-
-  var eventUrl = window.location.origin + '/event.html?event='
-    + eventData.event_slug + '&code=' + eventData.event_code;
-  try{
-    await fetch(EVENTS_API + '/api/notify-guest', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({
-        guestEmail: guestEmail,
-        eventName : eventData.name,
-        photoUrls : photos.map(function(p){ return p.original_url || p.preview_url; }),
-        eventUrl  : eventUrl
-      })
-    });
-  }catch(e){}
-
-  showInstantPanel(photos);
-}
-
-/* ════════════════════════════════════════════════════
-   REVIEW REQUESTS
-════════════════════════════════════════════════════ */
-async function processReviewRequests(photos){
-  if(!photos.length || !guestEmail) return;
-  try{
-    var c = getSupabase();
-    for(var i = 0; i < photos.length; i++){
-      await c.from('download_requests').insert({
-        event_id  : eventData.id,
-        user_email: guestEmail,
-        status    : 'pending'
-      });
-    }
-    toast('📬',
-      photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' sent for review',
-      'You\'ll get an email when approved');
-  }catch(e){}
-}
-
-/* ════════════════════════════════════════════════════
-   INSTANT DOWNLOAD PANEL
-════════════════════════════════════════════════════ */
-function showInstantPanel(photos){
-  var existing = document.getElementById('instantPanel');
-  if(existing) existing.remove();
-
-  var panel = document.createElement('div');
-  panel.id        = 'instantPanel';
-  panel.className = 'instant-panel';
-  panel.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
-    + '<div>'
-    + '<div style="font-size:15px;font-weight:900;color:#059669;">✅ Your Photos Found!</div>'
-    + '<div style="font-size:12px;color:#6b7280;margin-top:2px;">'
-    + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' · links emailed to ' + esc(guestEmail)
-    + '</div></div>'
-    + '<button onclick="document.getElementById(\'instantPanel\').remove()" '
-    + 'style="opacity:.4;font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:4px;">✕</button>'
-    + '</div>'
-    + photos.map(function(p, i){
-        return '<a href="' + esc(p.original_url || p.preview_url) + '" download="ImpactGrid-Photo-' + (i+1) + '.jpg" '
-          + 'style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f0fdf4;'
-          + 'border:1px solid rgba(16,185,129,.25);border-radius:10px;font-size:13px;font-weight:700;'
-          + 'color:#059669;text-decoration:none;margin-bottom:8px;">'
-          + '<span style="font-size:20px;">⬇️</span>'
-          + '<div><div>Download Photo ' + (i+1) + '</div>'
-          + '<div style="font-size:10px;font-weight:400;color:#6b7280;">Full quality original</div></div>'
-          + '</a>';
-      }).join('');
-
-  document.body.appendChild(panel);
-}
-
-/* ════════════════════════════════════════════════════
-   TEMP SELFIE UPLOAD
-   FIX 2: waits 2 seconds after upload for Supabase CDN
-   to propagate the public URL before returning it.
-   This prevents Face++ getting a 404 on the selfie.
-════════════════════════════════════════════════════ */
-async function uploadSelfieTemp(file){
-  try{
-    var ts   = Date.now();
-    var path = 'selfies/temp_' + ts + '_' + Math.random().toString(36).substring(2,7) + '.jpg';
-    var c    = getSupabase();
-    var { error } = await c.storage.from('events').upload(path, file, {
-      contentType: 'image/jpeg',
-      upsert     : true
-    });
-    if(error) return null;
-    var { data } = c.storage.from('events').getPublicUrl(path);
-    window._selfieCleanupPath = path;
-
-    /* Wait for CDN propagation before Face++ tries to fetch the URL */
-    await new Promise(function(r){ setTimeout(r, 2000); });
-
-    return data.publicUrl;
-  }catch(e){ return null; }
-}
-
-/* FIX 3: safe cleanup — only clears the path once, never double-fires */
-async function cleanupSelfie(){
-  if(!window._selfieCleanupPath) return;
-  var pathToDelete              = window._selfieCleanupPath;
-  window._selfieCleanupPath     = null; /* Clear immediately — prevents double calls */
-  try{
-    await getSupabase().storage.from('events').remove([pathToDelete]);
-  }catch(e){}
-}
-
-/* ════════════════════════════════════════════════════
-   REQUEST MODAL
-════════════════════════════════════════════════════ */
-function openRequestModal(){
-  document.getElementById('reqEmail').value   = guestEmail || '';
-  document.getElementById('reqMessage').value = '';
-  document.getElementById('requestAlert').className = 'gate-alert';
-  document.getElementById('requestModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  setTimeout(function(){ document.getElementById('reqEmail').focus(); }, 100);
-}
-function closeRequestModal(){
-  document.getElementById('requestModal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-async function submitRequest(){
-  var email   = document.getElementById('reqEmail').value.trim();
-  var btn     = document.getElementById('reqSubmitBtn');
-  var alertEl = document.getElementById('requestAlert');
-
-  /* FIX 1 also applies here */
-  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){
-    alertEl.textContent = 'Please enter a valid email address.';
-    alertEl.className   = 'gate-alert gate-alert-error show';
-    return;
-  }
-
-  guestEmail      = email;
-  btn.disabled    = true;
-  btn.textContent = 'Sending…';
-
-  try{
-    var { error } = await getSupabase().from('download_requests').insert({
-      event_id  : eventData.id,
-      user_email: email,
-      status    : 'pending'
-    });
-    if(error) throw error;
-    closeRequestModal();
-    toast('✅', 'Request sent!', 'We\'ll email you when it\'s approved');
-  }catch(e){
-    alertEl.textContent = 'Error: ' + e.message;
-    alertEl.className   = 'gate-alert gate-alert-error show';
-    btn.disabled    = false;
-    btn.textContent = 'Send Request →';
-  }
-}
-
-/* ════════════════════════════════════════════════════
+/* Touch swipe for lightbox */
+var lbTouchX = 0;
+document.getElementById('lightbox') && (function(){
+  var lb = document.getElementById('lightbox');
+  lb.addEventListener('touchstart', function(e){ lbTouchX = e.touches[0].clientX; }, {passive:true});
+  lb.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - lbTouchX;
+    if(Math.abs(dx) > 50){ dx < 0 ? lbNext() : lbPrev(); }
+  }, {passive:true});
+})();
+
+/* ══════════════════════════════════════
    TOAST
-════════════════════════════════════════════════════ */
+══════════════════════════════════════ */
 function toast(icon, msg, sub){
   var t = document.getElementById('toast');
   document.getElementById('toastIcon').textContent = icon;
@@ -1507,27 +1533,32 @@ function toast(icon, msg, sub){
   setTimeout(function(){ t.classList.remove('show'); }, 4500);
 }
 
-/* ════════════════════════════════════════════════════
+/* ══════════════════════════════════════
    ERROR PAGE
-════════════════════════════════════════════════════ */
+══════════════════════════════════════ */
 function showError(msg){
   document.body.className = 'tpl-professional';
   document.body.innerHTML =
     '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;'
-    + 'font-family:DM Sans,sans-serif;text-align:center;padding:40px;background:#f8f9fc;">'
-    + '<div><div style="font-size:48px;margin-bottom:16px;">🔍</div>'
-    + '<div style="font-size:22px;font-weight:700;margin-bottom:8px;color:#0d1020;">Event Not Found</div>'
-    + '<div style="font-size:14px;color:#505878;margin-bottom:24px;">' + esc(msg) + '</div>'
-    + '<a href="index.html" style="display:inline-block;padding:10px 24px;background:#2563eb;'
-    + 'color:#fff;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none;">← Back to ImpactGrid</a>'
+    + 'font-family:DM Sans,sans-serif;text-align:center;padding:40px;background:#f6f7fb;">'
+    + '<div>'
+    + '<div style="font-size:48px;margin-bottom:16px;">🔍</div>'
+    + '<div style="font-size:22px;font-weight:700;margin-bottom:8px;color:#0c0e1a;">Event Not Found</div>'
+    + '<div style="font-size:14px;color:#4a5068;margin-bottom:24px;">' + esc(msg) + '</div>'
+    + '<a href="index.html" style="display:inline-block;padding:10px 24px;background:#3b4eff;'
+    + 'color:#fff;border-radius:8px;font-weight:700;font-size:13px;">← Back to ImpactGrid</a>'
     + '</div></div>';
 }
 
-/* ════════════════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   HELPER
+══════════════════════════════════════ */
 function esc(s){
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
 </script>
 </body>
