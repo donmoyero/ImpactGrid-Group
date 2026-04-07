@@ -1,13 +1,12 @@
 /* ════════════════════════════════════════════════════
-   EVENTS MANAGEMENT — FIXED
-   Changes vs original:
-   - uploadPhotos: generates web-resized preview + keeps original separately
-   - resizeImageToWebVersion: client-side canvas resize helper
-   - indexPhotoFaces: called after each upload, with rate-limit retry
-   - loadFacesPanel / loadFacesForEvent: full face group viewer
-   - reindexEventFaces: wipe + rebuild index for an event
-   - approveRequest: now calls backend email route
-   - deletePhoto: cleans up both preview + original from storage
+   EVENTS MANAGEMENT
+   - No face detection / face indexing
+   - No QR print, no copy link
+   - loadEvents: 👁 View Event · 📧 Resend Email · 📤 Upload · Activate/Deactivate · ✕ Delete
+   - uploadPhotos: web-resized preview (1400px) + original kept separately
+   - deletePhoto: cleans preview + original from storage only (no face_embeddings)
+   - deleteEvent: cleans original/web/selfies/celebrant folders only
+   - approveRequest: calls backend email route
 ════════════════════════════════════════════════════ */
 
 var EVENTS_API      = 'https://impactgrid-events-api.onrender.com';
@@ -145,6 +144,8 @@ async function sendOwnerNotification(ownerEmail, ownerName, eventName, eventCode
 
 /* ════════════════════════════════════════════════════
    LOAD EVENTS LIST
+   Actions: 👁 View Event · 📧 Resend Email · 📤 Upload · Activate/Deactivate · ✕ Delete
+   (No QR print, no copy link)
 ════════════════════════════════════════════════════ */
 async function loadEvents(){
   var el = document.getElementById('eventsList');
@@ -177,12 +178,10 @@ async function loadEvents(){
             + '<td style="font-size:12px;color:' + (daysLeft < 5 ? 'var(--red)' : 'var(--text2)') + ';">' + expStr + '</td>'
             + '<td>' + statusPill + '</td>'
             + '<td><div class="td-actions">'
-            + '<a class="btn btn-ghost btn-sm" href="event.html?event=' + ev.event_slug + '&code=' + ev.event_code + '" target="_blank">👁 View</a>'
-            + '<button class="btn btn-ghost btn-sm" onclick="copyEventLink(\'' + ev.event_slug + '\',\'' + ev.event_code + '\')">🔗 Link</button>'
-            + '<button class="btn btn-ghost btn-sm" onclick="printQR(\'' + ev.event_slug + '\',\'' + ev.event_code + '\',\'' + esc(ev.name) + '\')">🖨 QR</button>'
+            + '<a class="btn btn-ghost btn-sm" href="event.html?event=' + ev.event_slug + '&code=' + ev.event_code + '" target="_blank">👁 View Event</a>'
             + '<button class="btn btn-ghost btn-sm" onclick="goUploadForEvent(\'' + ev.id + '\')">📤 Upload</button>'
-            + (ev.owner_email ? '<button class="btn btn-ghost btn-sm" onclick="resendOwnerEmail(\'' + esc(ev.owner_email) + '\',\'' + esc(ev.name) + '\')">📧</button>' : '')
-            + '<button class="btn ' + (ev.is_active?'btn-red':'btn-green') + ' btn-sm" onclick="toggleEvent(\'' + ev.id + '\',' + ev.is_active + ')">'
+            + (ev.owner_email ? '<button class="btn btn-ghost btn-sm" onclick="resendOwnerEmail(\'' + esc(ev.owner_email) + '\',\'' + esc(ev.name) + '\')">📧 Resend Email</button>' : '')
+            + '<button class="btn ' + (ev.is_active ? 'btn-red' : 'btn-green') + ' btn-sm" onclick="toggleEvent(\'' + ev.id + '\',' + ev.is_active + ')">'
             + (ev.is_active ? 'Deactivate' : 'Activate') + '</button>'
             + '<button class="btn btn-red btn-icon btn-sm" onclick="deleteEvent(\'' + ev.id + '\')">✕</button>'
             + '</div></td></tr>';
@@ -191,17 +190,6 @@ async function loadEvents(){
   }catch(e){
     el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
   }
-}
-
-function printQR(slug, code, name){
-  window.open('qr-print.html?event=' + slug + '&code=' + code + '&name=' + encodeURIComponent(name) + '&base=' + encodeURIComponent(window.location.origin), '_blank', 'width=740,height=620');
-}
-
-function copyEventLink(slug, code){
-  var url = window.location.origin + '/event.html?event=' + slug + '&code=' + code;
-  navigator.clipboard.writeText(url)
-    .then(function(){ toast('🔗', 'Link copied!', ''); })
-    .catch(function(){ prompt('Copy this link:', url); });
 }
 
 async function resendOwnerEmail(ownerEmail, eventName){
@@ -229,8 +217,8 @@ async function deleteEvent(id){
   if(!confirm('Delete this event and ALL its photos? This cannot be undone.')) return;
   var c = getSupabase();
   try{
-    /* Delete original, preview, web and face crop subfolders */
-    for(var folder of ['original','web','faces','selfies']){
+    /* Clean up all storage subfolders (no faces folder anymore) */
+    for(var folder of ['original', 'web', 'selfies', 'celebrant']){
       var { data: files } = await c.storage.from('events').list(id + '/' + folder);
       if(files && files.length)
         await c.storage.from('events').remove(files.map(function(f){ return id + '/' + folder + '/' + f.name; }));
@@ -253,9 +241,10 @@ function goUploadForEvent(eventId){
 
 /* ════════════════════════════════════════════════════
    UPLOAD PHOTOS
-   FIX: generates a separate web-resized preview (1400px max)
-   and keeps the original at full resolution.
-   Both URLs saved to photos table.
+   - Generates a web-resized preview (max 1400px wide, 82% quality)
+   - Keeps original at full resolution separately
+   - Both URLs saved to photos table
+   - No face indexing
 ════════════════════════════════════════════════════ */
 async function loadUploadPhotos(){
   var sel = document.getElementById('upload-event-select');
@@ -346,8 +335,8 @@ async function uploadPhotos(files){
       return function(msg, pct, color){
         var el  = document.getElementById(id + '-pct');
         var bar = document.getElementById(id + '-bar');
-        if(el)  el.textContent      = msg;
-        if(bar){ bar.style.width    = pct + '%'; if(color) bar.style.background = color; }
+        if(el)  el.textContent   = msg;
+        if(bar){ bar.style.width = pct + '%'; if(color) bar.style.background = color; }
       };
     })(rowId);
 
@@ -355,14 +344,14 @@ async function uploadPhotos(files){
       var c = getSupabase();
 
       /* 1 — Upload original at full resolution */
-      setStatus('Uploading original…', 20, '');
+      setStatus('Uploading original…', 25, '');
       var { error: origErr } = await c.storage.from('events').upload(origPath, file, {
         contentType: 'image/jpeg', upsert: false
       });
       if(origErr) throw origErr;
 
       /* 2 — Generate + upload web-sized preview (max 1400px wide, 82% quality) */
-      setStatus('Creating web preview…', 45, '');
+      setStatus('Creating web preview…', 55, '');
       var webBlob = await resizeImageToWebVersion(file, 1400);
       var { error: webErr } = await c.storage.from('events').upload(webPath, webBlob, {
         contentType: 'image/jpeg', upsert: false
@@ -376,20 +365,16 @@ async function uploadPhotos(files){
         webUrl = webUrlData.publicUrl;
       }
 
-      /* 3 — Save to photos table — preview_url = web, original_url = full res */
-      setStatus('Saving record…', 65, '');
-      var { data: photoRow, error: dbErr } = await c.from('photos').insert({
+      /* 3 — Save to photos table */
+      setStatus('Saving record…', 80, '');
+      var { error: dbErr } = await c.from('photos').insert({
         event_id    : selectedEventId,
-        preview_url : webUrl,                  /* shown in gallery grid — fast to load */
-        original_url: origUrlData.publicUrl    /* sent to guest on download approval */
+        preview_url : webUrl,                /* shown in gallery grid — fast to load */
+        original_url: origUrlData.publicUrl  /* used for downloads */
       }).select().single();
       if(dbErr) throw dbErr;
 
-      /* 4 — Kick off face indexing in background (non-blocking) */
-      setStatus('Indexing face…', 80, '');
-      indexPhotoFaces(photoRow.id, origUrlData.publicUrl, selectedEventId)
-        .then(function(){ setStatus('✅ Done', 100, 'var(--green)'); })
-        .catch(function(){ setStatus('✅ Done (no face)', 100, 'var(--green)'); });
+      setStatus('✅ Done', 100, 'var(--green)');
 
     }catch(err){
       setStatus('⚠️ ' + err.message, 100, 'var(--red)');
@@ -401,221 +386,22 @@ async function uploadPhotos(files){
 }
 
 /* ════════════════════════════════════════════════════
-   FACE INDEXING
-   Calls backend /api/facepp-embed which:
-   - Detects face in the photo
-   - Crops and uploads the face thumbnail
-   - Searches existing FaceSet for a match (dedup)
-   - Returns: { faceFound, face_token, face_crop_url, group_id }
-   Frontend saves result to face_embeddings table.
+   UPLOAD CELEBRANT PHOTO
+   Uploads to {event_id}/celebrant/ in storage.
+   Called from the admin upload page celebrant card.
 ════════════════════════════════════════════════════ */
-async function indexPhotoFaces(photoId, photoUrl, eventId){
-  try{
-    /* Cache-bust so the backend always fetches fresh */
-    var urlCb = photoUrl + (photoUrl.includes('?') ? '&' : '?') + 'cb=' + Date.now();
-
-    var res = await fetch(EVENTS_API + '/api/facepp-embed', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ imageUrl: urlCb, eventId: eventId })
-    });
-
-    /* Retry once on rate-limit (Face++ free tier: ~1 req/3s) */
-    if(res.status === 429){
-      await new Promise(function(r){ setTimeout(r, 4000); });
-      res = await fetch(EVENTS_API + '/api/facepp-embed', {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ imageUrl: urlCb, eventId: eventId })
-      });
-      if(res.status === 429) return; /* Give up silently */
-    }
-
-    if(!res.ok) return;
-    var data = await res.json();
-    if(!data.faceFound || !data.face_token) return;
-
-    await getSupabase().from('face_embeddings').insert({
-      event_id     : eventId,
-      photo_id     : photoId,
-      face_index   : 0,
-      face_token   : data.face_token,
-      embedding    : null,
-      face_crop_url: data.face_crop_url || null,
-      group_id     : (data.group_id !== undefined && data.group_id !== null) ? data.group_id : -1
-    });
-
-    console.log('[indexPhotoFaces] saved — photo:', photoId, '| group:', data.group_id, '| crop:', data.face_crop_url ? 'yes' : 'no');
-  }catch(e){
-    console.warn('[indexPhotoFaces] error:', e.message);
-  }
-}
-
-/* ════════════════════════════════════════════════════
-   FACE INDEX PANEL
-════════════════════════════════════════════════════ */
-async function loadFacesPanel(){
-  var sel = document.getElementById('faces-event-select');
-  if(!sel) return;
-  sel.innerHTML = '<option value="">— Select an event —</option>';
-  try{
-    var { data: events } = await getSupabase()
-      .from('events')
-      .select('id,name,event_code')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    (events||[]).forEach(function(ev){
-      var opt = document.createElement('option');
-      opt.value       = ev.id;
-      opt.textContent = ev.name + ' (' + ev.event_code + ')';
-      sel.appendChild(opt);
-    });
-  }catch(e){}
-}
-
-async function loadFacesForEvent(){
-  var sel      = document.getElementById('faces-event-select');
-  var eventId  = sel ? sel.value : '';
-  var grid     = document.getElementById('facesGroupGrid');
-  var statsBar = document.getElementById('facesStatsBar');
-  var reindexBtn = document.getElementById('reindexBtn');
-
-  if(!eventId){
-    grid.innerHTML = '<div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Select an event</div></div>';
-    if(statsBar)   statsBar.style.display   = 'none';
-    if(reindexBtn) reindexBtn.style.display = 'none';
-    return;
-  }
-
-  if(reindexBtn) reindexBtn.style.display = 'inline-flex';
-  grid.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
-
-  try{
-    var { data: embeddings } = await getSupabase()
-      .from('face_embeddings')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('group_id', { ascending: true });
-
-    if(!embeddings || !embeddings.length){
-      grid.innerHTML = '<div class="empty"><div class="empty-ico">📷</div><div class="empty-txt">No faces indexed yet. Upload photos first.</div></div>';
-      if(statsBar) statsBar.style.display = 'none';
-      return;
-    }
-
-    /* Group embeddings by group_id */
-    var groups    = {};
-    var ungrouped = 0;
-    embeddings.forEach(function(e){
-      if(e.group_id < 0){ ungrouped++; return; }
-      if(!groups[e.group_id]) groups[e.group_id] = [];
-      groups[e.group_id].push(e);
-    });
-
-    var groupKeys  = Object.keys(groups);
-    var totalPhotos = new Set(embeddings.map(function(e){ return e.photo_id; })).size;
-
-    /* Stats bar */
-    if(statsBar) statsBar.style.display = 'block';
-    var stf = document.getElementById('stat-total-faces');
-    var sfg = document.getElementById('stat-face-groups');
-    var sip = document.getElementById('stat-indexed-photos');
-    if(stf) stf.textContent = embeddings.length;
-    if(sfg) sfg.textContent = groupKeys.length;
-    if(sip) sip.textContent = totalPhotos;
-
-    if(!groupKeys.length){
-      grid.innerHTML = '<div class="empty"><div class="empty-ico">🔄</div><div class="empty-txt">Faces found but not yet grouped. Click Re-index All.</div></div>';
-      return;
-    }
-
-    /* Sort groups by size descending */
-    groupKeys.sort(function(a, b){ return groups[b].length - groups[a].length; });
-
-    var html = ungrouped > 0
-      ? '<div style="font-size:11px;color:var(--text3);margin-bottom:14px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);">⚠️ '
-        + ungrouped + ' face' + (ungrouped > 1 ? 's' : '') + ' skipped (no face detected in photo)</div>'
-      : '';
-
-    groupKeys.forEach(function(gid){
-      var members = groups[gid];
-      var shown   = members.slice(0, 8);
-      var extra   = members.length - shown.length;
-
-      html += '<div class="face-group-card">'
-        + '<div class="face-group-header">'
-        + '<div style="display:flex;align-items:center;gap:8px;">'
-        + '<div style="font-size:13px;font-weight:700;">Person ' + (parseInt(gid) + 1) + '</div>'
-        + '<div class="face-group-count">' + members.length + ' photo' + (members.length > 1 ? 's' : '') + '</div>'
-        + '</div>'
-        + '<div class="face-group-id">Group #' + gid + '</div>'
-        + '</div>'
-        + '<div class="face-thumbs">';
-
-      shown.forEach(function(emb){
-        if(emb.face_crop_url){
-          html += '<div class="face-thumb"><img src="' + esc(emb.face_crop_url) + '" alt="" onerror="this.parentElement.style.background=\'var(--bg3)\'"/></div>';
-        }
-      });
-
-      if(extra > 0) html += '<div class="face-thumb-more">+' + extra + '</div>';
-      html += '</div></div>';
-    });
-
-    grid.innerHTML = html;
-
-  }catch(e){
-    grid.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
-  }
-}
-
-async function reindexEventFaces(){
-  var sel     = document.getElementById('faces-event-select');
-  var eventId = sel ? sel.value : '';
-  if(!eventId){ toast('⚠️', 'No event selected', ''); return; }
-
-  if(!confirm('Re-index all faces for this event?\n\nThis deletes existing face data and rebuilds from scratch.\nNote: Face++ free tier = ~1 photo every 3 seconds — large events take a while.')) return;
-
-  var btn = document.getElementById('reindexBtn');
-  btn.disabled    = true;
-  btn.textContent = '⏳ Indexing…';
-  toast('🔄', 'Re-indexing…', 'This will take a while for large events', true);
-
-  try{
-    var c = getSupabase();
-
-    /* Wipe existing face data for this event */
-    await c.from('face_embeddings').delete().eq('event_id', eventId);
-    try{
-      var { data: crops } = await c.storage.from('events').list(eventId + '/faces');
-      if(crops && crops.length)
-        await c.storage.from('events').remove(crops.map(function(f){ return eventId + '/faces/' + f.name; }));
-    }catch(e){}
-
-    var { data: photos } = await c.from('photos').select('id,preview_url,original_url').eq('event_id', eventId);
-    if(!photos || !photos.length){
-      toast('⚠️', 'No photos found', 'Upload photos first');
-      btn.disabled    = false;
-      btn.textContent = '🔄 Re-index All';
-      return;
-    }
-
-    for(var i = 0; i < photos.length; i++){
-      btn.textContent = '⏳ ' + (i + 1) + ' / ' + photos.length;
-      await indexPhotoFaces(photos[i].id, photos[i].original_url || photos[i].preview_url, eventId);
-      if(i < photos.length - 1) await new Promise(function(r){ setTimeout(r, 3200); }); /* Rate-limit buffer */
-    }
-
-    toast('✅', 'Re-indexing complete!', photos.length + ' photos processed');
-    btn.disabled    = false;
-    btn.textContent = '🔄 Re-index All';
-    loadFacesForEvent();
-
-  }catch(e){
-    toast('⚠️', 'Re-index failed', e.message);
-    btn.disabled    = false;
-    btn.textContent = '🔄 Re-index All';
-  }
+async function uploadCelebrantPhoto(file, eventId){
+  if(!file || !eventId) return;
+  var c    = getSupabase();
+  var path = eventId + '/celebrant/hero.jpg';
+  /* Remove old celebrant photo first (ignore error if not exists) */
+  try{ await c.storage.from('events').remove([path]); }catch(e){}
+  var { error } = await c.storage.from('events').upload(path, file, {
+    contentType: 'image/jpeg', upsert: true
+  });
+  if(error) throw error;
+  var { data } = c.storage.from('events').getPublicUrl(path);
+  return data.publicUrl;
 }
 
 /* ════════════════════════════════════════════════════
@@ -652,7 +438,7 @@ async function loadEventPhotos(){
 }
 
 async function deletePhoto(id, previewUrl, originalUrl){
-  if(!confirm('Delete this photo and its face data?')) return;
+  if(!confirm('Delete this photo?')) return;
   var c    = getSupabase();
   var base = 'https://wedjsnizcvtgptobwugc.supabase.co/storage/v1/object/public/events/';
   try{
@@ -660,15 +446,14 @@ async function deletePhoto(id, previewUrl, originalUrl){
     if(originalUrl && originalUrl.includes(base)) await c.storage.from('events').remove([originalUrl.replace(base, '')]);
   }catch(e){}
   await c.from('photos').delete().eq('id', id);
-  await c.from('face_embeddings').delete().eq('photo_id', id);
   toast('🗑️', 'Photo deleted', '');
   loadEventPhotos();
 }
 
 /* ════════════════════════════════════════════════════
    DOWNLOAD REQUESTS
-   FIX: approveRequest now calls backend email route
-   so the guest actually receives their download links.
+   approveRequest calls backend email route so the
+   guest receives their download links automatically.
 ════════════════════════════════════════════════════ */
 var allRequests = [];
 
@@ -726,7 +511,7 @@ function renderRequestsTable(data){
           + '<td style="color:var(--text3);">' + new Date(r.created_at).toLocaleDateString('en-GB') + '</td>'
           + '<td><div class="td-actions">'
           + (r.status !== 'approved' ? '<button class="btn btn-green btn-sm" onclick="approveRequest(\'' + r.id + '\',\'' + esc(r.user_email) + '\',\'' + r.event_id + '\')">✓ Approve</button>' : '')
-          + (r.status !== 'rejected' ? '<button class="btn btn-red btn-sm" onclick="rejectRequest(\'' + r.id + '\')">✕ Reject</button>' : '')
+          + (r.status !== 'rejected' ? '<button class="btn btn-red btn-sm"   onclick="rejectRequest(\'' + r.id + '\')">✕ Reject</button>' : '')
           + '</div></td></tr>';
       }).join('')
     + '</tbody></table>';
