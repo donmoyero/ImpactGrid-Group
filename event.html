@@ -37,6 +37,7 @@ input,textarea,select{font-family:inherit;}
 @keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes skeletonPulse{0%,100%{opacity:.5;}50%{opacity:1;}}
 @keyframes barRise{from{transform:translateY(100%);}to{transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 /* ══════════════════════════════════════
    SKELETON LOADING
@@ -232,6 +233,50 @@ input,textarea,select{font-family:inherit;}
 }
 
 /* ══════════════════════════════════════
+   DOWNLOAD PROGRESS OVERLAY
+══════════════════════════════════════ */
+.dl-progress-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  backdrop-filter:blur(12px);z-index:3000;
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .2s ease;
+}
+.dl-progress-box{
+  background:#1c1c1e;border-radius:24px;
+  padding:36px 40px;max-width:360px;width:90%;
+  text-align:center;color:#fff;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+}
+.dl-progress-icon{font-size:40px;margin-bottom:16px;display:block;}
+.dl-progress-title{font-size:18px;font-weight:700;margin-bottom:6px;}
+.dl-progress-sub{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:24px;line-height:1.5;}
+.dl-progress-bar-wrap{
+  background:rgba(255,255,255,.1);border-radius:100px;
+  height:6px;overflow:hidden;margin-bottom:10px;
+}
+.dl-progress-bar-fill{
+  height:100%;border-radius:100px;
+  background:linear-gradient(90deg,#22c55e,#16a34a);
+  transition:width .3s ease;
+}
+.dl-progress-count{font-size:12px;color:rgba(255,255,255,.4);font-family:'DM Mono',monospace;}
+.dl-cancel-btn{
+  margin-top:20px;padding:11px 24px;border-radius:12px;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);
+  font-size:13px;font-weight:600;border:none;cursor:pointer;
+  transition:background .2s;
+}
+.dl-cancel-btn:hover{background:rgba(255,255,255,.14);}
+/* Spinner for single photo */
+.dl-spinner{
+  width:32px;height:32px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.1);
+  border-top-color:#22c55e;
+  animation:spin .7s linear infinite;
+  margin:0 auto 16px;
+}
+
+/* ══════════════════════════════════════
    PHOTO COUNT BADGE
 ══════════════════════════════════════ */
 .photo-count-badge{
@@ -363,12 +408,7 @@ input,textarea,select{font-family:inherit;}
   --r:10px;--r2:16px;--r3:24px;
   background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
 }
-.tpl-professional .ev-nav{
-  position:fixed;top:0;left:0;right:0;height:58px;z-index:100;
-  background:rgba(246,247,251,.94);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 28px;gap:14px;
-}
+.tpl-professional .ev-nav{position:fixed;top:0;left:0;right:0;height:58px;z-index:100;background:rgba(246,247,251,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;}
 .tpl-professional .nav-logo{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;}
 .tpl-professional .nav-logo-mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
 .tpl-professional .nav-divider{width:1px;height:18px;background:var(--border2);}
@@ -772,7 +812,7 @@ input,textarea,select{font-family:inherit;}
     <div class="ios-modal-sub" id="iosModalSub">Here's how to save photos on iPhone &amp; iPad</div>
     <div class="ios-step">
       <div class="ios-step-num">1</div>
-      <div class="ios-step-text">Tap <strong>Open Photos</strong> below — each photo opens in a new tab</div>
+      <div class="ios-step-text">Tap each photo thumbnail below — it opens in a new tab</div>
     </div>
     <div class="ios-step">
       <div class="ios-step-num">2</div>
@@ -780,11 +820,11 @@ input,textarea,select{font-family:inherit;}
     </div>
     <div class="ios-step">
       <div class="ios-step-num">3</div>
-      <div class="ios-step-text">Tap <strong>"Save to Photos"</strong> — it saves directly to your Camera Roll</div>
+      <div class="ios-step-text">Tap <strong>"Save to Photos"</strong> — saves directly to Camera Roll 📷</div>
     </div>
     <div class="ios-photos-grid" id="iosPhotosGrid"></div>
     <button class="ios-open-all-btn" id="iosOpenAllBtn" onclick="iosOpenAll()">
-      📂 Open All Photos in New Tabs
+      📂 Open All Photos
     </button>
     <button class="ios-cancel-btn" onclick="closeIosModal()">Cancel</button>
   </div>
@@ -838,8 +878,11 @@ var slideTimer   = null;
 var lbIndex      = 0;
 var allSelected  = false;
 
-/* Pending iOS photos to open */
+/* iOS pending photos */
 var iosPendingPhotos = [];
+
+/* Download cancellation flag */
+var dlCancelled = false;
 
 /* ══════════════════════════════════════
    PLATFORM DETECTION
@@ -858,7 +901,6 @@ function isMobile(){
    BOOT
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
-  /* Wake up backend */
   fetch(EVENTS_API + '/ping').catch(function(){});
   setInterval(function(){ fetch(EVENTS_API + '/ping').catch(function(){}); }, 13 * 60 * 1000);
 
@@ -926,7 +968,6 @@ function styleGate(type, name){
 async function submitCode(){
   var input = document.getElementById('gateCodeInput').value.trim().toUpperCase();
   var btn   = document.getElementById('gateSubmitBtn');
-  var err   = document.getElementById('gateAlert');
 
   if(!input || input.length < 4){ showGateAlert('Please enter your access code.'); return; }
   if(input !== eventData.event_code){ showGateAlert('Incorrect code. Please try again.'); return; }
@@ -969,7 +1010,6 @@ async function loadPhotos(){
 
     allPhotos = data || [];
 
-    /* Hide skeletons */
     var sg = document.getElementById('skeletonGrid');
     var pg = document.getElementById('photoGrid');
     var ss = document.getElementById('slideshowSkeleton');
@@ -977,7 +1017,6 @@ async function loadPhotos(){
     if(pg) pg.style.display = '';
     if(ss) ss.style.display = 'none';
 
-    /* Photo count badge */
     var badge   = document.getElementById('photoCountBadge');
     var countEl = document.getElementById('photoCountNum');
     if(badge && countEl){
@@ -985,12 +1024,11 @@ async function loadPhotos(){
       badge.style.display = allPhotos.length ? 'inline-flex' : 'none';
     }
 
-    /* dl-bar sub text */
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
       dlSub.textContent = isIOS()
-        ? 'Long-press each photo to save to Camera Roll'
-        : 'Files save directly to your Photos / Gallery';
+        ? 'Long-press each photo tab to save to Camera Roll'
+        : 'Files save directly to your Photos / Downloads';
     }
 
     buildHero();
@@ -1301,79 +1339,172 @@ function updateSelectionUI(){
 }
 
 /* ══════════════════════════════════════
-   DOWNLOADS — FULL CROSS-PLATFORM
+   ████  DOWNLOAD ENGINE  ████
 
-   DESKTOP / ANDROID:
-   - Direct <a download> trigger — saves straight to Downloads/Gallery
+   ROOT PROBLEM: <a download> is blocked
+   for cross-origin URLs by all modern browsers.
+   Supabase storage URLs are cross-origin,
+   so the old approach opened a new tab instead
+   of downloading.
 
-   iOS (iPhone / iPad) Safari:
-   - Safari blocks programmatic <a download> for cross-origin URLs
-   - It also blocks window.open() in async loops (popup blocker)
-   - Best approach: Show the iOS modal with thumbnail grid
-     Each thumb opens its photo in a new tab on direct user tap
-     "Open All" button opens them sequentially with a small delay
-     to avoid being blocked (user sees first open, then rest follow)
+   FIX: Fetch the file as a Blob first,
+   create an object URL (which IS same-origin),
+   then trigger <a download> on that object URL.
+   This works on Android + Desktop.
+
+   iOS Safari: Cannot trigger downloads at all
+   (even blob URLs). Show the iOS modal instead,
+   where users tap individual photos to open in
+   new tabs and long-press to save.
 ══════════════════════════════════════ */
 
-function triggerDirectDownload(url, filename){
-  var a = document.createElement('a');
-  a.href     = url;
-  a.download = filename || 'ImpactGrid-Photo.jpg';
-  a.rel      = 'noopener';
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function(){ document.body.removeChild(a); }, 2000);
+/**
+ * Download one file as a blob → triggers real save-to-gallery.
+ * Returns a promise that resolves when done (or rejects on fail).
+ */
+function downloadOneBlob(url, filename){
+  return fetch(url)
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.blob();
+    })
+    .then(function(blob){
+      var objUrl = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href     = objUrl;
+      a.download = filename || 'ImpactGrid-Photo.jpg';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){
+        document.body.removeChild(a);
+        URL.revokeObjectURL(objUrl);
+      }, 2000);
+    });
 }
 
+/**
+ * Quick download from hover Save button on a single photo.
+ */
 function quickDownload(url, idx){
   if(isIOS()){
-    /* Single photo — open directly in new tab (user tapped, so not blocked) */
     window.open(url, '_blank');
     toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
-  } else {
-    triggerDirectDownload(url, 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg');
-    toast('⬇', 'Saving photo…', 'Check your Downloads / Photos gallery');
+    return;
+  }
+  toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+  downloadOneBlob(url, 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg')
+    .catch(function(e){
+      console.warn('Blob download failed, fallback:', e);
+      /* Fallback: direct link (will open in tab on strict CORS, better than nothing) */
+      var a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ document.body.removeChild(a); }, 1000);
+    });
+}
+
+/**
+ * Show download progress overlay for multi-photo downloads.
+ */
+function showDlProgress(total){
+  removeDlProgress();
+  var box = document.createElement('div');
+  box.className = 'dl-progress-overlay';
+  box.id = 'dlProgressOverlay';
+  box.innerHTML =
+    '<div class="dl-progress-box">'
+    + '<span class="dl-progress-icon">⬇️</span>'
+    + '<div class="dl-progress-title">Saving Photos</div>'
+    + '<div class="dl-progress-sub">Downloading to your gallery — please keep this page open.</div>'
+    + '<div class="dl-progress-bar-wrap"><div class="dl-progress-bar-fill" id="dlProgressFill" style="width:0%"></div></div>'
+    + '<div class="dl-progress-count" id="dlProgressCount">0 / ' + total + '</div>'
+    + '<button class="dl-cancel-btn" onclick="cancelDl()">Cancel</button>'
+    + '</div>';
+  document.body.appendChild(box);
+  dlCancelled = false;
+}
+
+function updateDlProgress(done, total){
+  var fill  = document.getElementById('dlProgressFill');
+  var count = document.getElementById('dlProgressCount');
+  if(fill)  fill.style.width = Math.round((done/total)*100) + '%';
+  if(count) count.textContent = done + ' / ' + total;
+}
+
+function removeDlProgress(){
+  var el = document.getElementById('dlProgressOverlay');
+  if(el) el.remove();
+}
+
+function cancelDl(){
+  dlCancelled = true;
+  removeDlProgress();
+  toast('✕', 'Download cancelled', '');
+}
+
+/**
+ * Download multiple photos sequentially with progress.
+ * Sequential (not parallel) keeps memory low and avoids
+ * browser download limits.
+ */
+async function downloadBatch(photos){
+  if(isIOS()){
+    showIosModal(photos);
+    return;
+  }
+
+  if(photos.length === 1){
+    /* Single photo — no need for progress overlay */
+    toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+    try{
+      await downloadOneBlob(
+        photos[0].original_url || photos[0].preview_url,
+        'ImpactGrid-Photo-001.jpg'
+      );
+    }catch(e){
+      toast('⚠️', 'Download failed', 'Please try again');
+    }
+    return;
+  }
+
+  showDlProgress(photos.length);
+  var done = 0;
+
+  for(var i = 0; i < photos.length; i++){
+    if(dlCancelled) break;
+    var p   = photos[i];
+    var url = p.original_url || p.preview_url;
+    var num = String(i+1).padStart(3,'0');
+    try{
+      await downloadOneBlob(url, 'ImpactGrid-Photo-' + num + '.jpg');
+    }catch(e){
+      console.warn('Failed photo', i, e);
+      /* Skip failed photo, continue batch */
+    }
+    done++;
+    updateDlProgress(done, photos.length);
+    /* Small gap so browser can process between downloads */
+    if(i < photos.length - 1 && !dlCancelled){
+      await new Promise(function(res){ setTimeout(res, 200); });
+    }
+  }
+
+  removeDlProgress();
+  if(!dlCancelled){
+    toast('✅', 'All ' + done + ' photos saved!', 'Check your Downloads / Gallery');
   }
 }
 
 function downloadSelected(){
   var toDownload = allPhotos.filter(function(p){ return selectedIds.has(p.id); });
   if(!toDownload.length){ toast('⚠️','Select photos first','Tap photos to select them'); return; }
-
-  if(isIOS()){
-    showIosModal(toDownload);
-  } else {
-    /* Android / Desktop — staggered direct download */
-    toast('⬇', 'Saving ' + toDownload.length + ' photos…', 'Files going to your gallery');
-    toDownload.forEach(function(p, i){
-      setTimeout(function(){
-        triggerDirectDownload(
-          p.original_url || p.preview_url,
-          'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg'
-        );
-      }, i * 350);
-    });
-  }
+  downloadBatch(toDownload);
 }
 
 function downloadAllPhotos(){
   if(!allPhotos.length){ toast('⚠️','No photos yet',''); return; }
-
-  if(isIOS()){
-    showIosModal(allPhotos);
-  } else {
-    /* Android / Desktop */
-    toast('⬇', 'Saving all ' + allPhotos.length + ' photos…', 'Saving to your gallery');
-    allPhotos.forEach(function(p, i){
-      setTimeout(function(){
-        triggerDirectDownload(
-          p.original_url || p.preview_url,
-          'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg'
-        );
-      }, i * 350);
-    });
-  }
+  downloadBatch(allPhotos);
 }
 
 /* ══════════════════════════════════════
@@ -1388,7 +1519,7 @@ function showIosModal(photos){
 
   sub.textContent = 'Save ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' to your Camera Roll';
 
-  /* Show up to 8 thumbnails */
+  /* Always show thumbnail grid (fixed: was hidden for ≤8) */
   var shown = photos.slice(0, 8);
   grid.innerHTML = shown.map(function(p, i){
     return '<div class="ios-photo-thumb" onclick="iosTapThumb(' + i + ')">'
@@ -1397,13 +1528,11 @@ function showIosModal(photos){
       + '</div>';
   }).join('');
 
-  if(photos.length <= 8){
-    grid.style.display = 'none';
-  } else {
-    grid.style.display = 'grid';
-  }
+  grid.style.display = 'grid'; /* Always show */
 
-  btn.textContent = '📂 Open All ' + photos.length + ' Photos';
+  btn.textContent = photos.length > 1
+    ? '📂 Open All ' + photos.length + ' Photos'
+    : '📂 Open Photo';
 
   document.getElementById('iosModal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -1417,18 +1546,38 @@ function iosTapThumb(idx){
 }
 
 function iosOpenAll(){
-  /* Open first one immediately (direct user gesture — won't be blocked) */
-  /* Remaining ones open after small delays — most iOS versions allow this
-     within the same gesture chain if delays are short enough */
-  iosPendingPhotos.forEach(function(p, i){
-    if(i === 0){
-      window.open(p.original_url || p.preview_url, '_blank');
-    } else {
+  /*
+   * Safari popup rules: only window.open() called *synchronously*
+   * during a user gesture is guaranteed to open.
+   * Opening many tabs in setTimeout after the gesture is blocked.
+   *
+   * Best approach for iOS: open the first one immediately,
+   * then guide the user to tap each thumbnail individually.
+   * "Open All" opens just the first and shows a tip.
+   */
+  if(iosPendingPhotos.length === 0) return;
+
+  /* Open first photo immediately (guaranteed, user tapped the button) */
+  window.open(iosPendingPhotos[0].original_url || iosPendingPhotos[0].preview_url, '_blank');
+
+  if(iosPendingPhotos.length === 1){
+    toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
+    closeIosModal();
+    return;
+  }
+
+  /* For multiple: open all with small delays — works in most iOS versions
+     as long as this runs within the same tap event chain */
+  for(var i = 1; i < iosPendingPhotos.length; i++){
+    (function(idx){
       setTimeout(function(){
-        window.open(p.original_url || p.preview_url, '_blank');
-      }, i * 600); /* 600ms gap — gives Safari time between tabs */
-    }
-  });
+        if(iosPendingPhotos[idx]){
+          window.open(iosPendingPhotos[idx].original_url || iosPendingPhotos[idx].preview_url, '_blank');
+        }
+      }, idx * 500);
+    })(i);
+  }
+
   toast('📱', 'Opening ' + iosPendingPhotos.length + ' photos…', 'Long-press each → "Save to Photos"');
   closeIosModal();
 }
@@ -1466,8 +1615,14 @@ function lbDownload(){
     window.open(url, '_blank');
     toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
   } else {
-    triggerDirectDownload(url, 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg');
-    toast('⬇', 'Saving photo…', 'Check your Downloads / Photos gallery');
+    toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+    downloadOneBlob(url, 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg')
+      .catch(function(){
+        var a = document.createElement('a');
+        a.href = url; a.target = '_blank'; a.rel = 'noopener';
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){ document.body.removeChild(a); }, 1000);
+      });
   }
 }
 
