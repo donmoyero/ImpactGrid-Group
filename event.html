@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -32,11 +32,42 @@ input,textarea,select{font-family:inherit;}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
 @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
-@keyframes kenBurns{0%{transform:scale(1) translate(0,0);}50%{transform:scale(1.08) translate(-1%,-1%);}100%{transform:scale(1.04) translate(1%,0);}  }
+@keyframes kenBurns{0%{transform:scale(1) translate(0,0);}50%{transform:scale(1.08) translate(-1%,-1%);}100%{transform:scale(1.04) translate(1%,0);}}
 @keyframes slideNext{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
 @keyframes slidePrev{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:translateX(0);}}
 @keyframes checkPop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
 @keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes skeletonPulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+
+/* ══════════════════════════════════════
+   SKELETON LOADING
+══════════════════════════════════════ */
+.skeleton{
+  background:linear-gradient(90deg,rgba(128,128,128,.1) 25%,rgba(128,128,128,.2) 50%,rgba(128,128,128,.1) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.4s infinite;
+  border-radius:6px;
+}
+.skeleton-photo{
+  aspect-ratio:3/2;
+  border-radius:inherit;
+}
+.skeleton-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:3px;
+}
+.skeleton-grid .skeleton-photo{
+  animation:skeletonPulse 1.4s ease-in-out infinite;
+  background:rgba(128,128,128,.12);
+}
+.skeleton-grid .skeleton-photo:nth-child(2n){animation-delay:.15s;}
+.skeleton-grid .skeleton-photo:nth-child(3n){animation-delay:.3s;}
+.skeleton-grid .skeleton-photo:nth-child(4n){animation-delay:.45s;}
+.skeleton-hero{
+  width:100%;animation:skeletonPulse 1.4s ease-in-out infinite;
+  background:rgba(128,128,128,.1);
+}
 
 /* ══════════════════════════════════════
    TOAST
@@ -110,21 +141,77 @@ input,textarea,select{font-family:inherit;}
 }
 
 /* ══════════════════════════════════════
-   FLOATING DOWNLOAD BAR
+   FLOATING DOWNLOAD BAR — MOBILE OPTIMISED
 ══════════════════════════════════════ */
 .dl-bar{
   position:fixed;bottom:0;left:0;right:0;z-index:500;
-  padding:14px 24px;
+  padding:16px 20px 20px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   transform:translateY(100%);
   transition:transform .4s cubic-bezier(.34,1.56,.64,1);
   backdrop-filter:blur(20px);
   border-top:1px solid rgba(255,255,255,.1);
+  /* safe area for iPhone home bar */
+  padding-bottom:max(20px, env(safe-area-inset-bottom));
 }
 .dl-bar.visible{transform:translateY(0);}
-.dl-bar-info{font-size:14px;font-weight:700;}
-.dl-bar-sub{font-size:11px;opacity:.6;margin-top:2px;}
+.dl-bar-left{display:flex;align-items:center;gap:12px;min-width:0;}
+.dl-bar-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.dl-bar-info{min-width:0;}
+.dl-bar-count{font-size:15px;font-weight:700;line-height:1.2;}
+.dl-bar-sub{font-size:11px;opacity:.6;margin-top:2px;white-space:nowrap;}
 .dl-bar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+/* Mobile: stack vertically on narrow screens */
+@media(max-width:480px){
+  .dl-bar{flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px max(16px,env(safe-area-inset-bottom));}
+  .dl-bar-left{justify-content:center;}
+  .dl-bar-actions{flex-direction:row;justify-content:stretch;}
+  .dl-bar-actions .btn-outline,.dl-bar-actions .btn-primary{flex:1;justify-content:center;}
+}
+
+/* ══════════════════════════════════════
+   PHOTO COUNT BADGE
+══════════════════════════════════════ */
+.photo-count-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+  letter-spacing:.06em;padding:4px 10px;border-radius:100px;
+  opacity:.7;
+}
+
+/* ══════════════════════════════════════
+   SCROLL TO GALLERY BUTTON
+══════════════════════════════════════ */
+.scroll-to-gallery{
+  position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
+  z-index:10;display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;opacity:.7;transition:opacity .2s;
+  background:none;border:none;color:#fff;
+}
+.scroll-to-gallery:hover{opacity:1;}
+.scroll-to-gallery-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;}
+.scroll-to-gallery-arrow{
+  width:28px;height:28px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+  animation:pulse 2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════
+   SHARE BUTTON
+══════════════════════════════════════ */
+.share-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;padding:8px 14px;
+  border-radius:8px;cursor:pointer;transition:all .2s;
+  border:none;
+}
 
 /* ══════════════════════════════════════
    SLIDESHOW HERO
@@ -150,7 +237,7 @@ input,textarea,select{font-family:inherit;}
   pointer-events:none;
 }
 .slideshow-dots{
-  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  position:absolute;bottom:56px;left:50%;transform:translateX(-50%);
   display:flex;gap:6px;z-index:10;
 }
 .dot{
@@ -160,7 +247,7 @@ input,textarea,select{font-family:inherit;}
 }
 .dot.active{background:#fff;width:22px;border-radius:3px;}
 .slide-counter{
-  position:absolute;bottom:20px;right:24px;
+  position:absolute;bottom:56px;right:24px;
   font-family:'DM Mono',monospace;font-size:11px;
   color:rgba(255,255,255,.6);z-index:10;
   letter-spacing:.08em;
@@ -274,14 +361,13 @@ input,textarea,select{font-family:inherit;}
   color:var(--accent);background:var(--accent-dim);border:1px solid rgba(59,78,255,.15);
   padding:4px 10px;border-radius:6px;
 }
-
 .tpl-professional .slideshow{height:65vh;min-height:400px;max-height:680px;}
 .tpl-professional .slide-overlay{
   background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 40%,rgba(6,8,26,.55) 100%);
 }
 .tpl-professional .hero-text-layer{
   position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:40px 40px 36px;
+  padding:40px 40px 80px;
   background:linear-gradient(to top,rgba(6,8,26,.9) 0%,transparent);
 }
 .tpl-professional .hero-label{
@@ -294,7 +380,6 @@ input,textarea,select{font-family:inherit;}
   letter-spacing:-.02em;color:#fff;margin-bottom:8px;
 }
 .tpl-professional .hero-sub{font-size:14px;color:rgba(255,255,255,.6);}
-
 .tpl-professional .gallery-wrap{max-width:1300px;margin:0 auto;padding:40px 28px 140px;}
 .tpl-professional .gallery-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -353,6 +438,11 @@ input,textarea,select{font-family:inherit;}
 .tpl-professional .toast{background:#fff;border:1px solid var(--border);color:var(--text);}
 .tpl-professional .modal-box{background:#fff;border:1px solid var(--border);}
 .tpl-professional .dl-bar{background:rgba(246,247,251,.96);border-color:var(--border);}
+.tpl-professional .dl-bar-count{color:var(--text);}
+.tpl-professional .dl-bar-sub{color:var(--text2);}
+.tpl-professional .photo-count-badge{background:var(--bg2);border:1px solid var(--border2);color:var(--text3);}
+.tpl-professional .share-btn{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,78,255,.2);}
+.tpl-professional .share-btn:hover{background:var(--accent);color:#fff;}
 
 /* ══════════════════════════════════════
    ████  WEDDING TEMPLATE  ████
@@ -382,11 +472,8 @@ input,textarea,select{font-family:inherit;}
   display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;
 }
 .tpl-wedding .nav-divider{width:1px;height:24px;background:var(--border2);}
-.tpl-wedding .nav-event-name{
-  font-family:'Cormorant Garamond',serif;
-  font-size:15px;font-style:italic;color:var(--text2);
-}
-.tpl-wedding .nav-right{margin-left:auto;}
+.tpl-wedding .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
+.tpl-wedding .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .tpl-wedding .nav-code-badge{
   font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);
@@ -398,13 +485,10 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-wedding .hero-text-layer{
   position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:60px 48px 48px;text-align:center;
+  padding:60px 48px 80px;text-align:center;
   background:linear-gradient(to top,rgba(26,18,8,.85) 0%,transparent);
 }
-.tpl-wedding .hero-ornament{
-  font-size:22px;letter-spacing:.5em;color:rgba(196,160,80,.8);
-  margin-bottom:18px;
-}
+.tpl-wedding .hero-ornament{font-size:22px;letter-spacing:.5em;color:rgba(196,160,80,.8);margin-bottom:18px;}
 .tpl-wedding .hero-title{
   font-family:'Cormorant Garamond',serif;font-weight:300;
   font-size:clamp(36px,5.5vw,72px);line-height:1.05;
@@ -460,10 +544,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-wedding .gate-icon{font-size:36px;color:var(--accent2);margin-bottom:20px;letter-spacing:.3em;}
 .tpl-wedding .gate-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
-.tpl-wedding .gate-sub{
-  font-family:'Cormorant Garamond',serif;font-style:italic;
-  font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;
-}
+.tpl-wedding .gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
 .tpl-wedding .gate-input{
   background:var(--bg2);border:1px solid var(--border2);color:var(--text);
   font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;
@@ -472,6 +553,10 @@ input,textarea,select{font-family:inherit;}
 .tpl-wedding .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-wedding .modal-box{background:var(--card);border:1px solid var(--border2);}
 .tpl-wedding .dl-bar{background:rgba(253,250,245,.97);border-color:var(--border2);}
+.tpl-wedding .dl-bar-count{color:var(--text);}
+.tpl-wedding .photo-count-badge{background:var(--bg2);border:1px solid var(--border2);color:var(--text3);}
+.tpl-wedding .share-btn{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(155,112,48,.2);}
+.tpl-wedding .share-btn:hover{background:var(--accent);color:#fff;}
 
 /* ══════════════════════════════════════
    ████  BIRTHDAY / KIDS TEMPLATE  ████
@@ -503,7 +588,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-birthday .nav-divider{width:3px;height:22px;background:var(--accent2);border-radius:2px;}
 .tpl-birthday .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
-.tpl-birthday .nav-right{margin-left:auto;}
+.tpl-birthday .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .tpl-birthday .nav-code-badge{
   font-size:11px;font-weight:800;color:#fff;
   background:linear-gradient(135deg,var(--accent),var(--pink));
@@ -515,7 +600,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-birthday .hero-text-layer{
   position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:60px 32px 40px;text-align:center;
+  padding:60px 32px 80px;text-align:center;
 }
 .tpl-birthday .hero-emoji{font-size:52px;margin-bottom:10px;display:block;}
 .tpl-birthday .hero-title{
@@ -532,9 +617,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-birthday .gallery-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;color:var(--accent);}
 .tpl-birthday .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.tpl-birthday .photo-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;
-}
+.tpl-birthday .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}
 .tpl-birthday .photo-card{
   position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;
   aspect-ratio:1;background:var(--bg2);
@@ -580,6 +663,9 @@ input,textarea,select{font-family:inherit;}
 .tpl-birthday .toast{background:#fff;border:3px solid var(--accent2);color:var(--text);}
 .tpl-birthday .modal-box{background:#fff;border:3px solid var(--accent2);}
 .tpl-birthday .dl-bar{background:rgba(255,248,240,.97);border-color:var(--accent2);}
+.tpl-birthday .dl-bar-count{color:var(--text);}
+.tpl-birthday .photo-count-badge{background:var(--bg2);border:2px solid var(--accent2);color:var(--accent);}
+.tpl-birthday .share-btn{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;border:none;}
 
 /* ══════════════════════════════════════
    ████  GALA / LUXURY TEMPLATE  ████
@@ -610,7 +696,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-gala .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-gala .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
-.tpl-gala .nav-right{margin-left:auto;}
+.tpl-gala .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .tpl-gala .nav-code-badge{
   font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--accent);border:1px solid var(--border2);
@@ -622,7 +708,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-gala .hero-text-layer{
   position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:80px 60px 60px;text-align:center;
+  padding:80px 60px 90px;text-align:center;
 }
 .tpl-gala .hero-ornament{
   font-size:13px;letter-spacing:.6em;color:var(--accent);
@@ -693,6 +779,10 @@ input,textarea,select{font-family:inherit;}
 .tpl-gala .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-gala .modal-box{background:var(--card);border:1px solid var(--border2);}
 .tpl-gala .dl-bar{background:rgba(6,5,10,.97);border-color:var(--border2);}
+.tpl-gala .dl-bar-count{color:var(--text);}
+.tpl-gala .photo-count-badge{background:var(--accent-dim);border:1px solid var(--border2);color:var(--accent);}
+.tpl-gala .share-btn{background:var(--accent-dim);color:var(--accent);border:1px solid var(--border2);}
+.tpl-gala .share-btn:hover{background:var(--accent);color:#000;}
 
 /* ══════════════════════════════════════
    ████  NIGHTLIFE TEMPLATE  ████
@@ -724,7 +814,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-nightlife .nav-divider{width:1px;height:18px;background:var(--border2);}
 .tpl-nightlife .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
-.tpl-nightlife .nav-right{margin-left:auto;}
+.tpl-nightlife .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .tpl-nightlife .nav-code-badge{
   font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--accent2);background:var(--accent-dim);border:1px solid var(--border2);
@@ -736,7 +826,7 @@ input,textarea,select{font-family:inherit;}
 }
 .tpl-nightlife .hero-text-layer{
   position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:60px 36px 44px;text-align:center;
+  padding:60px 36px 80px;text-align:center;
 }
 .tpl-nightlife .hero-label{
   font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
@@ -817,6 +907,10 @@ input,textarea,select{font-family:inherit;}
 .tpl-nightlife .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
 .tpl-nightlife .modal-box{background:var(--card);border:1px solid var(--border2);}
 .tpl-nightlife .dl-bar{background:rgba(4,3,8,.97);border-color:var(--border2);}
+.tpl-nightlife .dl-bar-count{color:var(--text);}
+.tpl-nightlife .photo-count-badge{background:var(--accent-dim);border:1px solid var(--border2);color:var(--accent2);}
+.tpl-nightlife .share-btn{background:var(--accent-dim);color:var(--accent2);border:1px solid var(--border2);}
+.tpl-nightlife .share-btn:hover{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;border-color:transparent;}
 
 /* ══════════════════════════════════════
    RESPONSIVE
@@ -829,8 +923,19 @@ input,textarea,select{font-family:inherit;}
   .tpl-gala .photo-grid{columns:2;}
   .lightbox-prev{left:-20px;}
   .lightbox-next{right:-20px;}
-  .dl-bar{flex-direction:column;align-items:flex-start;gap:10px;}
-  .dl-bar-actions{width:100%;justify-content:space-between;}
+  .tpl-professional .hero-text-layer,
+  .tpl-wedding .hero-text-layer,
+  .tpl-birthday .hero-text-layer,
+  .tpl-gala .hero-text-layer,
+  .tpl-nightlife .hero-text-layer{padding-left:20px;padding-right:20px;}
+  .tpl-professional .gallery-wrap,
+  .tpl-birthday .gallery-wrap,
+  .tpl-nightlife .gallery-wrap{padding-left:16px;padding-right:16px;}
+  .tpl-wedding .gallery-wrap,.tpl-gala .gallery-wrap{padding-left:16px;padding-right:16px;}
+  .gallery-header{gap:10px;}
+  .gallery-actions{gap:6px;}
+  /* hide "Download All" on mobile — use select all instead */
+  #downloadAllBtn{display:none!important;}
 }
 </style>
 </head>
@@ -884,6 +989,9 @@ input,textarea,select{font-family:inherit;}
 
   <!-- SLIDESHOW HERO -->
   <div class="slideshow" id="slideshowWrap">
+    <!-- Skeleton shown while loading -->
+    <div class="skeleton-hero" id="slideshowSkeleton" style="height:100%;position:absolute;inset:0;z-index:20;"></div>
+
     <!-- Celebrant photo (blended into hero) -->
     <div class="celebrant-photo" id="celebrantPhoto" style="display:none;">
       <img id="celebrantImg" src="" alt="Celebrant"/>
@@ -894,11 +1002,15 @@ input,textarea,select{font-family:inherit;}
     <div class="slide-overlay"></div>
 
     <!-- Text overlay -->
-    <div class="hero-text-layer" id="heroTextLayer">
-      <!-- Template-specific content injected here -->
-    </div>
+    <div class="hero-text-layer" id="heroTextLayer"></div>
 
-    <!-- Controls -->
+    <!-- Scroll to gallery arrow -->
+    <button class="scroll-to-gallery" id="scrollToGalleryBtn" onclick="scrollToGallery()">
+      <span class="scroll-to-gallery-label">View Photos</span>
+      <span class="scroll-to-gallery-arrow">↓</span>
+    </button>
+
+    <!-- Slideshow controls -->
     <button class="slideshow-nav slideshow-prev" id="slidePrev" onclick="prevSlide()">‹</button>
     <button class="slideshow-nav slideshow-next" id="slideNext" onclick="nextSlide()">›</button>
     <div class="slideshow-dots" id="slideshowDots"></div>
@@ -908,20 +1020,37 @@ input,textarea,select{font-family:inherit;}
   <!-- GALLERY BODY -->
   <div class="gallery-wrap" id="galleryWrap">
     <div class="gallery-header">
-      <div>
-        <div id="galleryTag" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.5;margin-bottom:6px;">📸 Gallery</div>
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
         <div class="gallery-title" id="galleryTitle">All Photos</div>
+        <span class="photo-count-badge" id="photoCountBadge" style="display:none;">
+          <span id="photoCountNum">0</span> photos
+        </span>
       </div>
       <div class="gallery-actions" id="galleryActions">
+        <button class="share-btn" id="shareBtn" onclick="shareEvent()" title="Share this gallery">
+          ↗ Share
+        </button>
         <button class="btn-outline" id="selectAllBtn" onclick="toggleSelectAll()">☐ Select All</button>
         <button class="btn-primary" id="downloadSelectedBtn" onclick="downloadSelected()" style="display:none;">
-          ⬇ Download Selected (<span id="selectedCount">0</span>)
+          ⬇ Download (<span id="selectedCount">0</span>)
         </button>
-        <button class="btn-primary" onclick="downloadAllPhotos()">⬇ Download All</button>
+        <button class="btn-primary" id="downloadAllBtn" onclick="downloadAllPhotos()">⬇ Download All</button>
       </div>
     </div>
 
-    <div class="photo-grid" id="photoGrid">
+    <!-- Skeleton grid shown while photos load -->
+    <div class="skeleton-grid" id="skeletonGrid" style="display:grid;">
+      <div class="skeleton-photo skeleton"></div>
+      <div class="skeleton-photo skeleton"></div>
+      <div class="skeleton-photo skeleton"></div>
+      <div class="skeleton-photo skeleton"></div>
+      <div class="skeleton-photo skeleton"></div>
+      <div class="skeleton-photo skeleton"></div>
+      <div class="skeleton-photo skeleton"></div>
+      <div class="skeleton-photo skeleton"></div>
+    </div>
+
+    <div class="photo-grid" id="photoGrid" style="display:none;">
       <!-- Photos rendered here -->
     </div>
   </div>
@@ -945,22 +1074,25 @@ input,textarea,select{font-family:inherit;}
 </div>
 
 <!-- ══════════════════════════════════════
-   FLOATING DOWNLOAD BAR
+   FLOATING DOWNLOAD BAR — MOBILE OPTIMISED
 ══════════════════════════════════════ -->
 <div class="dl-bar" id="dlBar">
-  <div>
-    <div class="dl-bar-info"><span id="dlBarCount">0</span> photos selected</div>
-    <div class="dl-bar-sub">Tap download — files save to your Photos / Gallery</div>
+  <div class="dl-bar-left">
+    <div class="dl-bar-icon">📥</div>
+    <div class="dl-bar-info">
+      <div class="dl-bar-count"><span id="dlBarCount">0</span> photos selected</div>
+      <div class="dl-bar-sub" id="dlBarSub">Tap photos to select them</div>
+    </div>
   </div>
   <div class="dl-bar-actions">
-    <button class="btn-outline" onclick="clearSelection()" style="font-size:12px;padding:8px 14px;">✕ Clear</button>
-    <button class="btn-primary" onclick="downloadSelected()" style="padding:10px 20px;">⬇ Download</button>
+    <button class="btn-outline" onclick="clearSelection()" style="font-size:12px;padding:9px 16px;">✕ Clear</button>
+    <button class="btn-primary" onclick="downloadSelected()" style="padding:10px 20px;">⬇ Save</button>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════
    TOAST
-══════════════════════════════════════ -->
+══════════════════════════════════════ */
 <div class="toast" id="toast">
   <span id="toastIcon">✅</span>
   <div>
@@ -975,7 +1107,6 @@ input,textarea,select{font-family:inherit;}
 ══════════════════════════════════════ */
 var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
 
-/* Template map */
 var TPL_MAP = {
   professional : { cls:'tpl-professional', icon:'📸', heroType:'dark-text'  },
   wedding      : { cls:'tpl-wedding',      icon:'💍', heroType:'elegant'    },
@@ -988,20 +1119,19 @@ var TPL_MAP = {
 };
 
 /* State */
-var eventData     = null;
-var allPhotos     = [];
-var selectedIds   = new Set();
-var currentSlide  = 0;
-var slideTimer    = null;
-var lbIndex       = 0;
-var lbPhotos      = [];
-var allSelected   = false;
+var eventData    = null;
+var allPhotos    = [];
+var selectedIds  = new Set();
+var currentSlide = 0;
+var slideTimer   = null;
+var lbIndex      = 0;
+var lbPhotos     = [];
+var allSelected  = false;
 
 /* ══════════════════════════════════════
    BOOT
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
-  /* Keep backend warm */
   fetch(EVENTS_API + '/ping').catch(function(){});
   setInterval(function(){ fetch(EVENTS_API + '/ping').catch(function(){}); }, 13 * 60 * 1000);
 
@@ -1024,8 +1154,7 @@ document.addEventListener('DOMContentLoaded', async function(){
 
     eventData = ev;
     var settings = Array.isArray(ev.event_settings)
-      ? ev.event_settings[0]
-      : (ev.event_settings || {});
+      ? ev.event_settings[0] : (ev.event_settings || {});
 
     var type = ev.type || ev.template || 'professional';
     var tpl  = TPL_MAP[type] || TPL_MAP.professional;
@@ -1034,7 +1163,6 @@ document.addEventListener('DOMContentLoaded', async function(){
     document.getElementById('navEventName').textContent = ev.name;
     document.getElementById('navCodeBadge').textContent = ev.event_code;
 
-    /* Style the gate */
     styleGate(type, ev.name);
 
     if(settings.require_code === false){
@@ -1076,19 +1204,16 @@ async function submitCode(){
   var btn   = document.getElementById('gateSubmitBtn');
   var err   = document.getElementById('gateAlert');
 
-  if(!input || input.length < 4){
-    showAlert(err,'Please enter your access code.');return;
-  }
-  if(input !== eventData.event_code){
-    showAlert(err,'Incorrect code. Please try again.');return;
-  }
-  btn.disabled = true;
+  if(!input || input.length < 4){ showAlert(err,'Please enter your access code.'); return; }
+  if(input !== eventData.event_code){ showAlert(err,'Incorrect code. Please try again.'); return; }
+
+  btn.disabled    = true;
   btn.textContent = 'Entering…';
   enterGallery();
 }
 
 function showAlert(el, msg){
-  el.textContent = msg;
+  el.textContent  = msg;
   el.style.display = 'block';
 }
 
@@ -1120,6 +1245,30 @@ async function loadPhotos(){
     allPhotos = data || [];
     lbPhotos  = allPhotos;
 
+    /* Hide skeletons */
+    var skeletonGrid = document.getElementById('skeletonGrid');
+    var photoGrid    = document.getElementById('photoGrid');
+    var slideSkeleton = document.getElementById('slideshowSkeleton');
+    if(skeletonGrid) skeletonGrid.style.display = 'none';
+    if(photoGrid)    photoGrid.style.display    = '';
+    if(slideSkeleton) slideSkeleton.style.display = 'none';
+
+    /* Update photo count badge */
+    var badge   = document.getElementById('photoCountBadge');
+    var countEl = document.getElementById('photoCountNum');
+    if(badge && countEl){
+      countEl.textContent  = allPhotos.length;
+      badge.style.display  = allPhotos.length ? 'inline-flex' : 'none';
+    }
+
+    /* Update dl-bar sub text based on platform */
+    var dlSub = document.getElementById('dlBarSub');
+    if(dlSub){
+      dlSub.textContent = isIOS()
+        ? 'Long-press each photo → "Save to Photos"'
+        : 'Files will save to your Photos / Gallery';
+    }
+
     buildHero();
     buildSlideshow(allPhotos.slice(0, 10));
     renderPhotos(allPhotos);
@@ -1127,22 +1276,31 @@ async function loadPhotos(){
 
   }catch(e){
     console.error(e);
+    var skeletonGrid = document.getElementById('skeletonGrid');
+    if(skeletonGrid) skeletonGrid.style.display = 'none';
+    var photoGrid = document.getElementById('photoGrid');
+    if(photoGrid){
+      photoGrid.style.display = '';
+      photoGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">'
+        + '<div class="empty-state-icon">⚠️</div>'
+        + '<div class="empty-state-title">Could not load photos</div>'
+        + '<p style="font-size:14px;opacity:.6;">Please refresh the page and try again.</p>'
+        + '</div>';
+    }
   }
 }
 
 /* ══════════════════════════════════════
-   CELEBRANT PHOTO (from event_settings or photos table)
+   CELEBRANT PHOTO
 ══════════════════════════════════════ */
 async function loadCelebrantPhoto(){
   try{
     var settings = Array.isArray(eventData.event_settings)
       ? eventData.event_settings[0] : (eventData.event_settings || {});
 
-    /* Check for a celebrant_photo_url in settings */
     var celebUrl = settings.celebrant_photo_url || eventData.celebrant_photo_url || null;
 
     if(!celebUrl){
-      /* Try to fetch from storage path: {event_id}/celebrant.* */
       var c = getSupabase();
       var { data: files } = await c.storage.from('events').list(eventData.id + '/celebrant');
       if(files && files.length){
@@ -1165,17 +1323,12 @@ function positionCelebrantPhoto(){
   var type = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
   var wrap = document.getElementById('celebrantPhoto');
   if(!wrap) return;
-
-  /* Position right side, lower third of slideshow */
-  wrap.style.right  = '5%';
-  wrap.style.width  = 'clamp(180px, 25vw, 380px)';
-
-  /* For wedding/gala — centre position */
+  wrap.style.right = '5%';
+  wrap.style.width = 'clamp(180px, 25vw, 380px)';
   if(['wedding','gala','ceremony'].includes(type)){
     wrap.style.right = '10%';
     wrap.style.width = 'clamp(160px, 22vw, 340px)';
   }
-  /* For birthday/kids — left side, larger */
   if(['birthday','kids'].includes(type)){
     wrap.style.right = 'auto';
     wrap.style.left  = '5%';
@@ -1192,7 +1345,6 @@ function buildHero(){
   var tpl  = TPL_MAP[type] || TPL_MAP.professional;
   var days = Math.max(0, Math.ceil((new Date(ev.expiry_date) - new Date()) / (1000*60*60*24)));
   var hl   = document.getElementById('heroTextLayer');
-
   var html = '';
 
   if(tpl.heroType === 'elegant'){
@@ -1214,7 +1366,6 @@ function buildHero(){
       + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
       + '<p class="hero-sub">Browse your photos · ' + days + ' days to download</p>';
   } else {
-    /* dark-text default */
     html = '<div class="hero-label">' + tpl.icon + ' Photo Gallery</div>'
       + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
       + '<p class="hero-sub">Browse &amp; download your event photos · ' + days + ' days remaining</p>';
@@ -1225,20 +1376,20 @@ function buildHero(){
 }
 
 /* ══════════════════════════════════════
-   SLIDESHOW
+   SLIDESHOW (with touch/swipe)
 ══════════════════════════════════════ */
 function buildSlideshow(photos){
-  var track = document.getElementById('slideshowTrack');
-  var dots  = document.getElementById('slideshowDots');
+  var track   = document.getElementById('slideshowTrack');
+  var dots    = document.getElementById('slideshowDots');
   var counter = document.getElementById('slideCounter');
+  var wrap    = document.getElementById('slideshowWrap');
 
   if(!photos.length){
-    document.getElementById('slideshowWrap').style.display = 'none';
+    wrap.style.display = 'none';
     document.getElementById('galleryWrap').style.paddingTop = '80px';
     return;
   }
 
-  /* If fewer than 2 photos — hide navigation */
   if(photos.length < 2){
     document.getElementById('slidePrev').style.display = 'none';
     document.getElementById('slideNext').style.display = 'none';
@@ -1257,9 +1408,34 @@ function buildSlideshow(photos){
   counter.textContent = '1 / ' + photos.length;
   currentSlide = 0;
 
-  /* Auto advance */
   clearInterval(slideTimer);
   slideTimer = setInterval(function(){ nextSlide(); }, 5000);
+
+  /* ── Touch/Swipe support for slideshow ── */
+  var touchStartX = 0;
+  var touchStartY = 0;
+  var isSwiping   = false;
+
+  wrap.addEventListener('touchstart', function(e){
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    isSwiping   = false;
+  }, { passive: true });
+
+  wrap.addEventListener('touchmove', function(e){
+    var dx = Math.abs(e.touches[0].clientX - touchStartX);
+    var dy = Math.abs(e.touches[0].clientY - touchStartY);
+    if(dx > dy && dx > 8) isSwiping = true;
+  }, { passive: true });
+
+  wrap.addEventListener('touchend', function(e){
+    if(!isSwiping) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) > 40){
+      dx < 0 ? nextSlide() : prevSlide();
+    }
+    isSwiping = false;
+  }, { passive: true });
 }
 
 function goSlide(idx){
@@ -1279,6 +1455,62 @@ function nextSlide(){ goSlide(currentSlide + 1); }
 function prevSlide(){ goSlide(currentSlide - 1); }
 
 /* ══════════════════════════════════════
+   SMOOTH SCROLL TO GALLERY
+══════════════════════════════════════ */
+function scrollToGallery(){
+  var galleryWrap = document.getElementById('galleryWrap');
+  if(!galleryWrap) return;
+  galleryWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ══════════════════════════════════════
+   SHARE EVENT
+══════════════════════════════════════ */
+function shareEvent(){
+  var url   = window.location.href.split('?')[0];
+  var slug  = new URLSearchParams(window.location.search).get('event') || new URLSearchParams(window.location.search).get('slug');
+  var share = url + (slug ? '?event=' + encodeURIComponent(slug) : '');
+  var name  = eventData ? eventData.name : 'this event';
+
+  /* Use native share sheet on mobile if available */
+  if(navigator.share){
+    navigator.share({
+      title: name + ' — ImpactGrid Gallery',
+      text:  'View photos from ' + name,
+      url:   share
+    }).catch(function(){});
+    return;
+  }
+
+  /* Fallback: copy to clipboard */
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(share).then(function(){
+      toast('🔗', 'Link copied!', 'Share it with your guests');
+    }).catch(function(){
+      fallbackCopy(share);
+    });
+  } else {
+    fallbackCopy(share);
+  }
+}
+
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity  = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{
+    document.execCommand('copy');
+    toast('🔗', 'Link copied!', 'Share it with your guests');
+  }catch(e){
+    toast('📋', 'Copy this link:', text.substring(0, 40) + '…');
+  }
+  document.body.removeChild(ta);
+}
+
+/* ══════════════════════════════════════
    PHOTO GRID
 ══════════════════════════════════════ */
 function renderPhotos(photos){
@@ -1286,11 +1518,7 @@ function renderPhotos(photos){
   var grid    = document.getElementById('photoGrid');
   var masonry = ['wedding','gala'].includes(type);
 
-  if(masonry){
-    grid.style.display = 'block';
-  } else {
-    grid.style.display = '';
-  }
+  grid.style.display = masonry ? 'block' : '';
 
   if(!photos.length){
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;column-span:all;">'
@@ -1321,11 +1549,7 @@ function renderPhotos(photos){
 ══════════════════════════════════════ */
 function toggleSelect(id, event){
   event && event.stopPropagation();
-  if(selectedIds.has(id)){
-    selectedIds.delete(id);
-  } else {
-    selectedIds.add(id);
-  }
+  if(selectedIds.has(id)){ selectedIds.delete(id); } else { selectedIds.add(id); }
   var card = document.getElementById('card-' + id);
   if(card) card.classList.toggle('selected', selectedIds.has(id));
   updateSelectionUI();
@@ -1352,19 +1576,18 @@ function clearSelection(){
 }
 
 function updateSelectionUI(){
-  var count = selectedIds.size;
-  var dlBar = document.getElementById('dlBar');
-  var dlBtn = document.getElementById('downloadSelectedBtn');
+  var count   = selectedIds.size;
+  var dlBar   = document.getElementById('dlBar');
+  var dlBtn   = document.getElementById('downloadSelectedBtn');
   var countEl = document.getElementById('selectedCount');
-  var barCount = document.getElementById('dlBarCount');
+  var barCount= document.getElementById('dlBarCount');
 
-  if(countEl) countEl.textContent = count;
+  if(countEl)  countEl.textContent  = count;
   if(barCount) barCount.textContent = count;
 
   if(count > 0){
     dlBar.classList.add('visible');
     if(dlBtn) dlBtn.style.display = 'inline-flex';
-    /* Update select all btn */
     if(count === allPhotos.length){
       allSelected = true;
       document.getElementById('selectAllBtn').textContent = '☑ Deselect All';
@@ -1378,10 +1601,9 @@ function updateSelectionUI(){
 }
 
 /* ══════════════════════════════════════
-   DOWNLOADS
-   Cross-platform: creates hidden <a> tags with
-   download attribute — works on desktop, Android.
-   On iOS Safari, opens in new tab (browser limitation).
+   DOWNLOADS — Cross-platform
+   iOS Safari: opens in new tab (browser limitation)
+   Android / Desktop: saves directly
 ══════════════════════════════════════ */
 function isIOS(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -1389,12 +1611,11 @@ function isIOS(){
 
 function quickDownload(url, idx){
   if(isIOS()){
-    /* iOS: open full-res in new tab — user long-presses to save */
     window.open(url, '_blank');
     toast('📱', 'Photo opened!', 'Long-press the image → "Save to Photos"');
   } else {
     var a = document.createElement('a');
-    a.href = url;
+    a.href     = url;
     a.download = 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg';
     a.style.display = 'none';
     document.body.appendChild(a);
@@ -1409,20 +1630,17 @@ function downloadSelected(){
   if(!toDownload.length){ toast('⚠️','Select photos first','Tap photos to select them'); return; }
 
   if(isIOS()){
-    /* iOS: open each in new tab with delay */
     toast('📱', 'Opening ' + toDownload.length + ' photos…', 'Long-press each → "Save to Photos"');
     toDownload.forEach(function(p, i){
-      setTimeout(function(){
-        window.open(p.original_url || p.preview_url, '_blank');
-      }, i * 800);
+      setTimeout(function(){ window.open(p.original_url || p.preview_url, '_blank'); }, i * 800);
     });
   } else {
-    toast('⬇', 'Downloading ' + toDownload.length + ' photos…', 'Files saving to your gallery');
+    toast('⬇', 'Saving ' + toDownload.length + ' photos…', 'Files going to your gallery');
     toDownload.forEach(function(p, i){
       setTimeout(function(){
         var a = document.createElement('a');
-        a.href = p.original_url || p.preview_url;
-        a.download = 'ImpactGrid-Photo-' + (i+1) + '.jpg';
+        a.href     = p.original_url || p.preview_url;
+        a.download = 'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg';
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
@@ -1436,15 +1654,14 @@ function downloadAllPhotos(){
   if(!allPhotos.length){ toast('⚠️','No photos yet',''); return; }
 
   if(isIOS()){
-    toast('📱', 'Tap each photo to save it', 'Long-press image → "Save to Photos"');
-    /* Select all so they can easily see all */
+    toast('📱', 'Select All then save', 'Long-press each photo → "Save to Photos"');
     toggleSelectAll();
   } else {
-    toast('⬇', 'Downloading all ' + allPhotos.length + ' photos…', 'Files saving to your gallery');
+    toast('⬇', 'Downloading all ' + allPhotos.length + ' photos…', 'Saving to your gallery');
     allPhotos.forEach(function(p, i){
       setTimeout(function(){
         var a = document.createElement('a');
-        a.href = p.original_url || p.preview_url;
+        a.href     = p.original_url || p.preview_url;
         a.download = 'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg';
         a.style.display = 'none';
         document.body.appendChild(a);
@@ -1470,12 +1687,11 @@ function showLightboxAt(idx){
   if(!lbPhotos.length) return;
   lbIndex = (idx + lbPhotos.length) % lbPhotos.length;
   var p   = lbPhotos[lbIndex];
-  document.getElementById('lightboxImg').src         = p.preview_url;
-  document.getElementById('lbDownloadBtn').href      = p.original_url || p.preview_url;
-  document.getElementById('lbDownloadBtn').download  = 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg';
-  document.getElementById('lbCounter').textContent   = (lbIndex+1) + ' / ' + lbPhotos.length;
+  document.getElementById('lightboxImg').src        = p.preview_url;
+  document.getElementById('lbDownloadBtn').href     = p.original_url || p.preview_url;
+  document.getElementById('lbDownloadBtn').download = 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg';
+  document.getElementById('lbCounter').textContent  = (lbIndex+1) + ' / ' + lbPhotos.length;
 
-  /* Handle iOS download in lightbox */
   document.getElementById('lbDownloadBtn').onclick = function(e){
     if(isIOS()){
       e.preventDefault();
@@ -1491,14 +1707,8 @@ function closeLightbox(event){
   document.body.style.overflow = '';
 }
 
-function lbPrev(e){
-  e && e.stopPropagation();
-  showLightboxAt(lbIndex - 1);
-}
-function lbNext(e){
-  e && e.stopPropagation();
-  showLightboxAt(lbIndex + 1);
-}
+function lbPrev(e){ e && e.stopPropagation(); showLightboxAt(lbIndex - 1); }
+function lbNext(e){ e && e.stopPropagation(); showLightboxAt(lbIndex + 1); }
 
 /* Keyboard nav */
 document.addEventListener('keydown', function(e){
@@ -1506,14 +1716,14 @@ document.addEventListener('keydown', function(e){
   if(!lb.classList.contains('hidden')){
     if(e.key === 'ArrowLeft')  lbPrev();
     if(e.key === 'ArrowRight') lbNext();
-    if(e.key === 'Escape')     { lb.classList.add('hidden'); document.body.style.overflow = ''; }
+    if(e.key === 'Escape'){ lb.classList.add('hidden'); document.body.style.overflow = ''; }
   }
 });
 
 /* Touch swipe for lightbox */
-var lbTouchX = 0;
-document.getElementById('lightbox') && (function(){
+(function(){
   var lb = document.getElementById('lightbox');
+  var lbTouchX = 0;
   lb.addEventListener('touchstart', function(e){ lbTouchX = e.touches[0].clientX; }, {passive:true});
   lb.addEventListener('touchend', function(e){
     var dx = e.changedTouches[0].clientX - lbTouchX;
