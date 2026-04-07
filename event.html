@@ -33,11 +33,10 @@ input,textarea,select{font-family:inherit;}
 @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
 @keyframes kenBurns{0%{transform:scale(1) translate(0,0);}50%{transform:scale(1.08) translate(-1%,-1%);}100%{transform:scale(1.04) translate(1%,0);}}
-@keyframes slideNext{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
-@keyframes slidePrev{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:translateX(0);}}
 @keyframes checkPop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
 @keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes skeletonPulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+@keyframes barRise{from{transform:translateY(100%);}to{transform:translateY(0);}}
 
 /* ══════════════════════════════════════
    SKELETON LOADING
@@ -64,10 +63,7 @@ input,textarea,select{font-family:inherit;}
 .skeleton-grid .skeleton-photo:nth-child(2n){animation-delay:.15s;}
 .skeleton-grid .skeleton-photo:nth-child(3n){animation-delay:.3s;}
 .skeleton-grid .skeleton-photo:nth-child(4n){animation-delay:.45s;}
-.skeleton-hero{
-  width:100%;animation:skeletonPulse 1.4s ease-in-out infinite;
-  background:rgba(128,128,128,.1);
-}
+.skeleton-hero{width:100%;animation:skeletonPulse 1.4s ease-in-out infinite;background:rgba(128,128,128,.1);}
 
 /* ══════════════════════════════════════
    TOAST
@@ -75,12 +71,15 @@ input,textarea,select{font-family:inherit;}
 .toast{
   position:fixed;bottom:24px;right:24px;z-index:9999;
   padding:14px 20px;border-radius:16px;font-size:13px;font-weight:600;
-  display:flex;align-items:center;gap:10px;min-width:260px;
+  display:flex;align-items:center;gap:10px;min-width:260px;max-width:340px;
   transform:translateY(80px);opacity:0;
   transition:all .4s cubic-bezier(.34,1.56,.64,1);
   box-shadow:0 12px 40px rgba(0,0,0,.2);
 }
 .toast.show{transform:translateY(0);opacity:1;}
+@media(max-width:480px){
+  .toast{right:12px;left:12px;bottom:100px;min-width:0;}
+}
 
 /* ══════════════════════════════════════
    LIGHTBOX
@@ -89,13 +88,15 @@ input,textarea,select{font-family:inherit;}
   position:fixed;inset:0;background:rgba(0,0,0,.97);
   z-index:1000;display:flex;align-items:center;justify-content:center;
   animation:fadeIn .2s ease;
+  flex-direction:column;
 }
-.lightbox-img-wrap{position:relative;max-width:90vw;max-height:88vh;}
-.lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;border-radius:4px;}
+.lightbox-img-wrap{position:relative;max-width:90vw;max-height:82vh;display:flex;align-items:center;justify-content:center;}
+.lightbox img{max-width:90vw;max-height:82vh;object-fit:contain;border-radius:4px;}
 .lightbox-close{
-  position:absolute;top:20px;right:24px;
+  position:absolute;top:16px;right:20px;
   color:#fff;font-size:26px;cursor:pointer;opacity:.6;
   transition:opacity .2s,transform .2s;line-height:1;background:none;border:none;
+  z-index:10;
 }
 .lightbox-close:hover{opacity:1;transform:scale(1.1);}
 .lightbox-nav{
@@ -107,41 +108,99 @@ input,textarea,select{font-family:inherit;}
   cursor:pointer;transition:all .2s;
 }
 .lightbox-nav:hover{background:rgba(255,255,255,.25);}
-.lightbox-prev{left:-60px;}
-.lightbox-next{right:-60px;}
+.lightbox-prev{left:-56px;}
+.lightbox-next{right:-56px;}
 .lightbox-actions{
-  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
-  display:flex;gap:10px;
+  margin-top:20px;
+  display:flex;gap:10px;align-items:center;
+  flex-wrap:wrap;justify-content:center;
+  padding:0 16px;
 }
 .lb-btn{
-  padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;
+  padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;
   cursor:pointer;border:none;display:inline-flex;align-items:center;gap:7px;
   transition:all .2s;text-decoration:none;
 }
 .lb-btn-dl{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;}
+.lb-btn-dl:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(22,163,74,.4);}
 .lb-btn-ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;}
 .lb-counter{
-  position:absolute;top:20px;left:50%;transform:translateX(-50%);
-  color:rgba(255,255,255,.5);font-size:12px;font-family:'DM Mono',monospace;
-  letter-spacing:.1em;
+  margin-top:12px;
+  color:rgba(255,255,255,.45);font-size:11px;font-family:'DM Mono',monospace;
+  letter-spacing:.1em;text-align:center;
+}
+@media(max-width:640px){
+  .lightbox-prev{left:-14px;}
+  .lightbox-next{right:-14px;}
+  .lightbox-nav{width:36px;height:36px;font-size:15px;}
 }
 
 /* ══════════════════════════════════════
-   MODAL
+   iOS DOWNLOAD MODAL
 ══════════════════════════════════════ */
-.modal-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.6);
-  backdrop-filter:blur(10px);z-index:999;
+.ios-modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  backdrop-filter:blur(12px);z-index:2000;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:0;animation:fadeIn .2s ease;
+}
+.ios-modal-box{
+  width:100%;max-width:560px;
+  border-radius:24px 24px 0 0;
+  padding:28px 28px max(28px, env(safe-area-inset-bottom));
+  animation:slideUp .3s ease;
+  background:#1c1c1e;color:#fff;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.ios-modal-handle{
+  width:36px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,.25);margin:0 auto 20px;
+}
+.ios-modal-title{font-size:18px;font-weight:700;margin-bottom:6px;text-align:center;}
+.ios-modal-sub{font-size:13px;color:rgba(255,255,255,.6);text-align:center;margin-bottom:24px;line-height:1.6;}
+.ios-step{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 16px;border-radius:14px;
+  background:rgba(255,255,255,.06);margin-bottom:8px;
+}
+.ios-step-num{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
   display:flex;align-items:center;justify-content:center;
-  padding:20px;animation:fadeIn .2s ease;
+  font-size:12px;font-weight:700;flex-shrink:0;color:#fff;
 }
-.modal-box{
-  animation:slideUp .3s ease;width:100%;max-width:480px;
-  border-radius:24px;padding:36px;
+.ios-step-text{font-size:13px;color:rgba(255,255,255,.85);line-height:1.5;padding-top:4px;}
+.ios-photos-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  margin-bottom:20px;border-radius:12px;overflow:hidden;
 }
+.ios-photo-thumb{
+  aspect-ratio:1;background:#333;overflow:hidden;cursor:pointer;
+  position:relative;
+}
+.ios-photo-thumb img{width:100%;height:100%;object-fit:cover;}
+.ios-photo-thumb-open{
+  position:absolute;inset:0;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;opacity:0;transition:opacity .2s;
+}
+.ios-photo-thumb:hover .ios-photo-thumb-open{opacity:1;}
+.ios-open-all-btn{
+  width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;
+  background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;
+  cursor:pointer;margin-bottom:10px;display:flex;align-items:center;
+  justify-content:center;gap:8px;transition:all .2s;
+}
+.ios-open-all-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,.35);}
+.ios-cancel-btn{
+  width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:none;
+  cursor:pointer;transition:background .2s;
+}
+.ios-cancel-btn:hover{background:rgba(255,255,255,.12);}
 
 /* ══════════════════════════════════════
-   FLOATING DOWNLOAD BAR — MOBILE OPTIMISED
+   FLOATING DOWNLOAD BAR
 ══════════════════════════════════════ */
 .dl-bar{
   position:fixed;bottom:0;left:0;right:0;z-index:500;
@@ -151,7 +210,6 @@ input,textarea,select{font-family:inherit;}
   transition:transform .4s cubic-bezier(.34,1.56,.64,1);
   backdrop-filter:blur(20px);
   border-top:1px solid rgba(255,255,255,.1);
-  /* safe area for iPhone home bar */
   padding-bottom:max(20px, env(safe-area-inset-bottom));
 }
 .dl-bar.visible{transform:translateY(0);}
@@ -166,7 +224,6 @@ input,textarea,select{font-family:inherit;}
 .dl-bar-count{font-size:15px;font-weight:700;line-height:1.2;}
 .dl-bar-sub{font-size:11px;opacity:.6;margin-top:2px;white-space:nowrap;}
 .dl-bar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
-/* Mobile: stack vertically on narrow screens */
 @media(max-width:480px){
   .dl-bar{flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px max(16px,env(safe-area-inset-bottom));}
   .dl-bar-left{justify-content:center;}
@@ -180,8 +237,7 @@ input,textarea,select{font-family:inherit;}
 .photo-count-badge{
   display:inline-flex;align-items:center;gap:5px;
   font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
-  letter-spacing:.06em;padding:4px 10px;border-radius:100px;
-  opacity:.7;
+  letter-spacing:.06em;padding:4px 10px;border-radius:100px;opacity:.7;
 }
 
 /* ══════════════════════════════════════
@@ -199,8 +255,7 @@ input,textarea,select{font-family:inherit;}
   width:28px;height:28px;border-radius:50%;
   border:1.5px solid rgba(255,255,255,.5);
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;
-  animation:pulse 2s ease-in-out infinite;
+  font-size:14px;animation:pulse 2s ease-in-out infinite;
 }
 
 /* ══════════════════════════════════════
@@ -209,48 +264,31 @@ input,textarea,select{font-family:inherit;}
 .share-btn{
   display:inline-flex;align-items:center;gap:6px;
   font-size:12px;font-weight:600;padding:8px 14px;
-  border-radius:8px;cursor:pointer;transition:all .2s;
-  border:none;
+  border-radius:8px;cursor:pointer;transition:all .2s;border:none;
 }
 
 /* ══════════════════════════════════════
    SLIDESHOW HERO
 ══════════════════════════════════════ */
-.slideshow{
-  position:relative;overflow:hidden;
-  width:100%;
-}
-.slideshow-track{
-  position:relative;width:100%;height:100%;
-}
-.slide{
-  position:absolute;inset:0;
-  opacity:0;transition:opacity .8s ease;
-}
+.slideshow{position:relative;overflow:hidden;width:100%;}
+.slideshow-track{position:relative;width:100%;height:100%;}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity .8s ease;}
 .slide.active{opacity:1;z-index:2;}
-.slide img{
-  width:100%;height:100%;object-fit:cover;
-  animation:kenBurns 12s ease-in-out infinite;
-}
-.slide-overlay{
-  position:absolute;inset:0;
-  pointer-events:none;
-}
+.slide img{width:100%;height:100%;object-fit:cover;animation:kenBurns 12s ease-in-out infinite;}
+.slide-overlay{position:absolute;inset:0;pointer-events:none;}
 .slideshow-dots{
   position:absolute;bottom:56px;left:50%;transform:translateX(-50%);
   display:flex;gap:6px;z-index:10;
 }
 .dot{
   width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,.4);cursor:pointer;
-  transition:all .3s;
+  background:rgba(255,255,255,.4);cursor:pointer;transition:all .3s;
 }
 .dot.active{background:#fff;width:22px;border-radius:3px;}
 .slide-counter{
   position:absolute;bottom:56px;right:24px;
   font-family:'DM Mono',monospace;font-size:11px;
-  color:rgba(255,255,255,.6);z-index:10;
-  letter-spacing:.08em;
+  color:rgba(255,255,255,.6);z-index:10;letter-spacing:.08em;
 }
 .slideshow-nav{
   position:absolute;top:50%;transform:translateY(-50%);
@@ -268,15 +306,10 @@ input,textarea,select{font-family:inherit;}
    CELEBRANT HERO PHOTO
 ══════════════════════════════════════ */
 .celebrant-photo{
-  position:absolute;
-  bottom:-1px;
-  z-index:5;
-  pointer-events:none;
+  position:absolute;bottom:-1px;z-index:5;pointer-events:none;
 }
 .celebrant-photo img{
-  width:100%;height:auto;
-  object-fit:contain;
-  object-position:bottom;
+  width:100%;height:auto;object-fit:contain;object-position:bottom;
   filter:drop-shadow(0 -20px 40px rgba(0,0,0,.3));
   animation:fadeSlideIn .8s ease .3s both;
 }
@@ -284,20 +317,14 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    GATE
 ══════════════════════════════════════ */
-.gate-alert{
-  font-size:13px;padding:10px 14px;
-  margin-bottom:14px;display:none;border-radius:8px;
-}
+.gate-alert{font-size:13px;padding:10px 14px;margin-bottom:14px;display:none;border-radius:8px;}
 .gate-alert.show{display:block;}
 .gate-alert-error{background:#fef2f2;color:#dc2626;border:1px solid rgba(220,38,38,.2);}
 
 /* ══════════════════════════════════════
    SELECT OVERLAY
 ══════════════════════════════════════ */
-.select-overlay{
-  position:absolute;inset:0;z-index:5;
-  cursor:pointer;
-}
+.select-overlay{position:absolute;inset:0;z-index:5;cursor:pointer;}
 .select-checkbox{
   position:absolute;top:10px;left:10px;z-index:6;
   width:24px;height:24px;border-radius:6px;
@@ -306,9 +333,7 @@ input,textarea,select{font-family:inherit;}
   display:flex;align-items:center;justify-content:center;
   transition:all .2s;pointer-events:none;
 }
-.photo-card.selected .select-checkbox{
-  background:var(--accent);border-color:var(--accent);
-}
+.photo-card.selected .select-checkbox{background:var(--accent);border-color:var(--accent);}
 .photo-card.selected .select-checkbox::after{
   content:'✓';color:#fff;font-size:13px;font-weight:900;
   animation:checkPop .2s ease;
@@ -344,99 +369,40 @@ input,textarea,select{font-family:inherit;}
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;padding:0 28px;gap:14px;
 }
-.tpl-professional .nav-logo{
-  display:flex;align-items:center;gap:8px;
-  font-family:'Syne',sans-serif;font-weight:900;font-size:15px;
-}
-.tpl-professional .nav-logo-mark{
-  width:28px;height:28px;border-radius:7px;
-  background:var(--accent);display:flex;align-items:center;
-  justify-content:center;font-size:11px;font-weight:900;color:#fff;
-}
+.tpl-professional .nav-logo{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;}
+.tpl-professional .nav-logo-mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
 .tpl-professional .nav-divider{width:1px;height:18px;background:var(--border2);}
 .tpl-professional .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
 .tpl-professional .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.tpl-professional .nav-code-badge{
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--accent);background:var(--accent-dim);border:1px solid rgba(59,78,255,.15);
-  padding:4px 10px;border-radius:6px;
-}
+.tpl-professional .nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(59,78,255,.15);padding:4px 10px;border-radius:6px;}
 .tpl-professional .slideshow{height:65vh;min-height:400px;max-height:680px;}
-.tpl-professional .slide-overlay{
-  background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 40%,rgba(6,8,26,.55) 100%);
-}
-.tpl-professional .hero-text-layer{
-  position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:40px 40px 80px;
-  background:linear-gradient(to top,rgba(6,8,26,.9) 0%,transparent);
-}
-.tpl-professional .hero-label{
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;
-  text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:10px;
-}
-.tpl-professional .hero-title{
-  font-family:'Syne',sans-serif;font-weight:900;
-  font-size:clamp(28px,4vw,52px);line-height:1.05;
-  letter-spacing:-.02em;color:#fff;margin-bottom:8px;
-}
+.tpl-professional .slide-overlay{background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 40%,rgba(6,8,26,.55) 100%);}
+.tpl-professional .hero-text-layer{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:40px 40px 80px;background:linear-gradient(to top,rgba(6,8,26,.9) 0%,transparent);}
+.tpl-professional .hero-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:10px;}
+.tpl-professional .hero-title{font-family:'Syne',sans-serif;font-weight:900;font-size:clamp(28px,4vw,52px);line-height:1.05;letter-spacing:-.02em;color:#fff;margin-bottom:8px;}
 .tpl-professional .hero-sub{font-size:14px;color:rgba(255,255,255,.6);}
-.tpl-professional .gallery-wrap{max-width:1300px;margin:0 auto;padding:40px 28px 140px;}
-.tpl-professional .gallery-header{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:16px;flex-wrap:wrap;margin-bottom:24px;
-  padding-bottom:18px;border-bottom:1px solid var(--border);
-}
+.tpl-professional .gallery-wrap{max-width:1300px;margin:0 auto;padding:40px 28px 160px;}
+.tpl-professional .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border);}
 .tpl-professional .gallery-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:900;}
 .tpl-professional .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.tpl-professional .photo-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:3px;
-  background:var(--border);border-radius:var(--r2);overflow:hidden;
-}
-.tpl-professional .photo-card{
-  position:relative;aspect-ratio:3/2;overflow:hidden;
-  cursor:pointer;background:var(--bg2);transition:all .3s;
-}
+.tpl-professional .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:3px;background:var(--border);border-radius:var(--r2);overflow:hidden;}
+.tpl-professional .photo-card{position:relative;aspect-ratio:3/2;overflow:hidden;cursor:pointer;background:var(--bg2);transition:all .3s;}
 .tpl-professional .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .5s;}
 .tpl-professional .photo-card:hover img{transform:scale(1.07);}
-.tpl-professional .photo-card-overlay{
-  position:absolute;inset:0;background:rgba(6,8,26,.45);
-  opacity:0;transition:opacity .3s;
-  display:flex;align-items:flex-end;padding:14px;
-}
+.tpl-professional .photo-card-overlay{position:absolute;inset:0;background:rgba(6,8,26,.45);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:14px;}
 .tpl-professional .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-professional .btn-primary{
-  background:var(--accent);color:#fff;font-weight:700;font-size:13px;
-  padding:10px 20px;border-radius:var(--r);display:inline-flex;
-  align-items:center;gap:7px;transition:all .2s;
-}
+.tpl-professional .btn-primary{background:var(--accent);color:#fff;font-weight:700;font-size:13px;padding:10px 20px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
 .tpl-professional .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 16px var(--accent-glo);}
-.tpl-professional .btn-outline{
-  background:#fff;border:1px solid var(--border2);color:var(--text2);
-  font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);
-  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
-}
+.tpl-professional .btn-outline{background:#fff;border:1px solid var(--border2);color:var(--text2);font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
 .tpl-professional .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
 .tpl-professional .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
-.tpl-professional .gate-box{
-  background:#fff;border:1px solid var(--border);border-radius:var(--r3);
-  padding:48px 40px;max-width:420px;width:100%;
-  box-shadow:0 4px 32px rgba(13,16,32,.08);
-}
+.tpl-professional .gate-box{background:#fff;border:1px solid var(--border);border-radius:var(--r3);padding:48px 40px;max-width:420px;width:100%;box-shadow:0 4px 32px rgba(13,16,32,.08);}
 .tpl-professional .gate-icon{font-size:40px;text-align:center;margin-bottom:16px;}
-.tpl-professional .gate-title{
-  font-family:'Syne',sans-serif;font-size:26px;font-weight:900;
-  margin-bottom:8px;text-align:center;
-}
+.tpl-professional .gate-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:900;margin-bottom:8px;text-align:center;}
 .tpl-professional .gate-sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:28px;line-height:1.6;}
-.tpl-professional .gate-input{
-  background:var(--bg2);border:1.5px solid var(--border2);color:var(--text);
-  font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;
-  text-transform:uppercase;text-align:center;padding:14px;
-  border-radius:var(--r);width:100%;outline:none;transition:all .2s;margin-bottom:14px;
-}
+.tpl-professional .gate-input{background:var(--bg2);border:1.5px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;transition:all .2s;margin-bottom:14px;}
 .tpl-professional .gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
 .tpl-professional .toast{background:#fff;border:1px solid var(--border);color:var(--text);}
-.tpl-professional .modal-box{background:#fff;border:1px solid var(--border);}
 .tpl-professional .dl-bar{background:rgba(246,247,251,.96);border-color:var(--border);}
 .tpl-professional .dl-bar-count{color:var(--text);}
 .tpl-professional .dl-bar-sub{color:var(--text2);}
@@ -456,102 +422,43 @@ input,textarea,select{font-family:inherit;}
   --r:6px;--r2:12px;--r3:18px;
   background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
 }
-.tpl-wedding .ev-nav{
-  position:fixed;top:0;left:0;right:0;height:62px;z-index:100;
-  background:rgba(253,250,245,.96);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border2);
-  display:flex;align-items:center;padding:0 36px;gap:16px;
-}
-.tpl-wedding .nav-logo{
-  display:flex;align-items:center;gap:10px;
-  font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.03em;
-}
-.tpl-wedding .nav-logo-mark{
-  width:28px;height:28px;border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;
-}
+.tpl-wedding .ev-nav{position:fixed;top:0;left:0;right:0;height:62px;z-index:100;background:rgba(253,250,245,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 36px;gap:16px;}
+.tpl-wedding .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.03em;}
+.tpl-wedding .nav-logo-mark{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
 .tpl-wedding .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-wedding .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
 .tpl-wedding .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.tpl-wedding .nav-code-badge{
-  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);
-  padding:4px 10px;border-radius:4px;
-}
+.tpl-wedding .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:4px 10px;border-radius:4px;}
 .tpl-wedding .slideshow{height:75vh;min-height:500px;max-height:780px;}
-.tpl-wedding .slide-overlay{
-  background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,transparent 35%,rgba(26,18,8,.6) 100%);
-}
-.tpl-wedding .hero-text-layer{
-  position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:60px 48px 80px;text-align:center;
-  background:linear-gradient(to top,rgba(26,18,8,.85) 0%,transparent);
-}
+.tpl-wedding .slide-overlay{background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,transparent 35%,rgba(26,18,8,.6) 100%);}
+.tpl-wedding .hero-text-layer{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:60px 48px 80px;text-align:center;background:linear-gradient(to top,rgba(26,18,8,.85) 0%,transparent);}
 .tpl-wedding .hero-ornament{font-size:22px;letter-spacing:.5em;color:rgba(196,160,80,.8);margin-bottom:18px;}
-.tpl-wedding .hero-title{
-  font-family:'Cormorant Garamond',serif;font-weight:300;
-  font-size:clamp(36px,5.5vw,72px);line-height:1.05;
-  color:#fff;margin-bottom:14px;letter-spacing:.01em;
-}
+.tpl-wedding .hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(36px,5.5vw,72px);line-height:1.05;color:#fff;margin-bottom:14px;letter-spacing:.01em;}
 .tpl-wedding .hero-title em{font-style:italic;color:var(--accent2);}
-.tpl-wedding .hero-divider{
-  width:80px;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(196,160,80,.6),transparent);
-  margin:0 auto 16px;
-}
+.tpl-wedding .hero-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,rgba(196,160,80,.6),transparent);margin:0 auto 16px;}
 .tpl-wedding .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;color:rgba(255,255,255,.65);}
-.tpl-wedding .gallery-wrap{max-width:1300px;margin:0 auto;padding:48px 36px 140px;}
-.tpl-wedding .gallery-header{
-  display:flex;align-items:flex-end;justify-content:space-between;
-  gap:20px;flex-wrap:wrap;margin-bottom:28px;
-  padding-bottom:16px;border-bottom:1px solid var(--border2);
-}
+.tpl-wedding .gallery-wrap{max-width:1300px;margin:0 auto;padding:48px 36px 160px;}
+.tpl-wedding .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
 .tpl-wedding .gallery-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:28px;}
 .tpl-wedding .gallery-actions{display:flex;gap:10px;align-items:center;}
 .tpl-wedding .photo-grid{columns:4;column-gap:10px;}
-.tpl-wedding .photo-card{
-  break-inside:avoid;margin-bottom:10px;cursor:pointer;
-  position:relative;overflow:hidden;border:1px solid var(--border);
-  transition:all .4s;display:block;
-}
+.tpl-wedding .photo-card{break-inside:avoid;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden;border:1px solid var(--border);transition:all .4s;display:block;}
 .tpl-wedding .photo-card img{width:100%;display:block;transition:transform .5s;}
 .tpl-wedding .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(155,112,48,.15);}
 .tpl-wedding .photo-card:hover img{transform:scale(1.04);}
-.tpl-wedding .photo-card-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(26,18,8,.65),transparent 55%);
-  opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:16px;
-}
+.tpl-wedding .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,18,8,.65),transparent 55%);opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:16px;}
 .tpl-wedding .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-wedding .btn-primary{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  color:#fff;font-weight:500;font-size:12px;letter-spacing:.08em;
-  text-transform:uppercase;padding:11px 22px;
-  display:inline-flex;align-items:center;gap:8px;transition:all .3s;
-}
+.tpl-wedding .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:500;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:11px 22px;display:inline-flex;align-items:center;gap:8px;transition:all .3s;}
 .tpl-wedding .btn-primary:hover{box-shadow:0 6px 20px var(--accent-glo);transform:translateY(-1px);}
-.tpl-wedding .btn-outline{
-  background:transparent;border:1px solid var(--border2);color:var(--text2);
-  font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;
-  padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;
-}
+.tpl-wedding .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
 .tpl-wedding .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
 .tpl-wedding .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
-.tpl-wedding .gate-box{
-  background:var(--card);border:1px solid var(--border2);
-  padding:56px 48px;max-width:440px;width:100%;text-align:center;
-}
+.tpl-wedding .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;}
 .tpl-wedding .gate-icon{font-size:36px;color:var(--accent2);margin-bottom:20px;letter-spacing:.3em;}
 .tpl-wedding .gate-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
 .tpl-wedding .gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-wedding .gate-input{
-  background:var(--bg2);border:1px solid var(--border2);color:var(--text);
-  font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;
-  text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;
-}
+.tpl-wedding .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
 .tpl-wedding .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
-.tpl-wedding .modal-box{background:var(--card);border:1px solid var(--border2);}
 .tpl-wedding .dl-bar{background:rgba(253,250,245,.97);border-color:var(--border2);}
 .tpl-wedding .dl-bar-count{color:var(--text);}
 .tpl-wedding .photo-count-badge{background:var(--bg2);border:1px solid var(--border2);color:var(--text3);}
@@ -571,97 +478,41 @@ input,textarea,select{font-family:inherit;}
   --r:16px;--r2:24px;--r3:32px;
   background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;
 }
-.tpl-birthday .ev-nav{
-  position:fixed;top:0;left:0;right:0;height:66px;z-index:100;
-  background:rgba(255,248,240,.97);backdrop-filter:blur(20px);
-  border-bottom:3px solid var(--accent2);
-  display:flex;align-items:center;padding:0 24px;gap:14px;
-}
-.tpl-birthday .nav-logo{
-  display:flex;align-items:center;gap:9px;
-  font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;
-}
-.tpl-birthday .nav-logo-mark{
-  width:32px;height:32px;border-radius:10px;
-  background:linear-gradient(135deg,var(--accent),var(--pink));
-  display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;
-}
+.tpl-birthday .ev-nav{position:fixed;top:0;left:0;right:0;height:66px;z-index:100;background:rgba(255,248,240,.97);backdrop-filter:blur(20px);border-bottom:3px solid var(--accent2);display:flex;align-items:center;padding:0 24px;gap:14px;}
+.tpl-birthday .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
+.tpl-birthday .nav-logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;}
 .tpl-birthday .nav-divider{width:3px;height:22px;background:var(--accent2);border-radius:2px;}
 .tpl-birthday .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
 .tpl-birthday .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.tpl-birthday .nav-code-badge{
-  font-size:11px;font-weight:800;color:#fff;
-  background:linear-gradient(135deg,var(--accent),var(--pink));
-  padding:5px 14px;border-radius:100px;
-}
+.tpl-birthday .nav-code-badge{font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--accent),var(--pink));padding:5px 14px;border-radius:100px;}
 .tpl-birthday .slideshow{height:65vh;min-height:420px;max-height:680px;}
-.tpl-birthday .slide-overlay{
-  background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,transparent 30%,rgba(26,10,0,.65) 100%);
-}
-.tpl-birthday .hero-text-layer{
-  position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:60px 32px 80px;text-align:center;
-}
+.tpl-birthday .slide-overlay{background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,transparent 30%,rgba(26,10,0,.65) 100%);}
+.tpl-birthday .hero-text-layer{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:60px 32px 80px;text-align:center;}
 .tpl-birthday .hero-emoji{font-size:52px;margin-bottom:10px;display:block;}
-.tpl-birthday .hero-title{
-  font-family:'Nunito',sans-serif;font-weight:900;
-  font-size:clamp(30px,5vw,60px);line-height:1.1;color:#fff;
-  margin-bottom:10px;
-  text-shadow:0 2px 20px rgba(0,0,0,.4);
-}
+.tpl-birthday .hero-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(30px,5vw,60px);line-height:1.1;color:#fff;margin-bottom:10px;text-shadow:0 2px 20px rgba(0,0,0,.4);}
 .tpl-birthday .hero-sub{font-size:16px;color:rgba(255,255,255,.75);font-weight:600;}
-.tpl-birthday .gallery-wrap{max-width:1200px;margin:0 auto;padding:36px 24px 140px;}
-.tpl-birthday .gallery-header{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:16px;flex-wrap:wrap;margin-bottom:20px;
-}
+.tpl-birthday .gallery-wrap{max-width:1200px;margin:0 auto;padding:36px 24px 160px;}
+.tpl-birthday .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
 .tpl-birthday .gallery-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;color:var(--accent);}
 .tpl-birthday .gallery-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .tpl-birthday .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}
-.tpl-birthday .photo-card{
-  position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;
-  aspect-ratio:1;background:var(--bg2);
-  border:3px solid transparent;transition:all .3s;
-  box-shadow:0 4px 16px rgba(255,92,0,.1);
-}
+.tpl-birthday .photo-card{position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;aspect-ratio:1;background:var(--bg2);border:3px solid transparent;transition:all .3s;box-shadow:0 4px 16px rgba(255,92,0,.1);}
 .tpl-birthday .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
 .tpl-birthday .photo-card:hover{border-color:var(--accent2);transform:rotate(1.5deg) scale(1.04);}
 .tpl-birthday .photo-card:hover img{transform:scale(1.05);}
-.tpl-birthday .photo-card-overlay{
-  position:absolute;inset:0;background:rgba(255,92,0,.35);
-  opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;
-}
+.tpl-birthday .photo-card-overlay{position:absolute;inset:0;background:rgba(255,92,0,.35);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
 .tpl-birthday .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-birthday .btn-primary{
-  background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;
-  font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;
-  display:inline-flex;align-items:center;gap:8px;transition:all .25s;
-  box-shadow:0 4px 16px var(--accent-glo);
-}
+.tpl-birthday .btn-primary{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;transition:all .25s;box-shadow:0 4px 16px var(--accent-glo);}
 .tpl-birthday .btn-primary:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 8px 28px var(--accent-glo);}
-.tpl-birthday .btn-outline{
-  background:#fff;border:2px solid var(--accent2);color:var(--accent);
-  font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;
-  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
-}
+.tpl-birthday .btn-outline{background:#fff;border:2px solid var(--accent2);color:var(--accent);font-weight:800;font-size:13px;padding:10px 20px;border-radius:100px;display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
 .tpl-birthday .btn-outline:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
 .tpl-birthday .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
-.tpl-birthday .gate-box{
-  background:#fff;border:4px solid var(--accent2);border-radius:var(--r2);
-  padding:48px 40px;max-width:440px;width:100%;text-align:center;
-  box-shadow:0 8px 40px var(--accent-glo);
-}
+.tpl-birthday .gate-box{background:#fff;border:4px solid var(--accent2);border-radius:var(--r2);padding:48px 40px;max-width:440px;width:100%;text-align:center;box-shadow:0 8px 40px var(--accent-glo);}
 .tpl-birthday .gate-icon{font-size:52px;margin-bottom:14px;display:block;}
 .tpl-birthday .gate-title{font-family:'Nunito',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;color:var(--accent);}
 .tpl-birthday .gate-sub{font-size:15px;color:var(--text2);margin-bottom:28px;font-weight:600;}
-.tpl-birthday .gate-input{
-  background:var(--bg2);border:3px solid var(--accent2);color:var(--text);
-  font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;
-  letter-spacing:.2em;text-align:center;padding:14px;
-  border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;
-}
+.tpl-birthday .gate-input{background:var(--bg2);border:3px solid var(--accent2);color:var(--text);font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;letter-spacing:.2em;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
 .tpl-birthday .toast{background:#fff;border:3px solid var(--accent2);color:var(--text);}
-.tpl-birthday .modal-box{background:#fff;border:3px solid var(--accent2);}
 .tpl-birthday .dl-bar{background:rgba(255,248,240,.97);border-color:var(--accent2);}
 .tpl-birthday .dl-bar-count{color:var(--text);}
 .tpl-birthday .photo-count-badge{background:var(--bg2);border:2px solid var(--accent2);color:var(--accent);}
@@ -679,105 +530,44 @@ input,textarea,select{font-family:inherit;}
   --r:3px;--r2:8px;--r3:12px;
   background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
 }
-.tpl-gala .ev-nav{
-  position:fixed;top:0;left:0;right:0;height:64px;z-index:100;
-  background:rgba(6,5,10,.97);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border2);
-  display:flex;align-items:center;padding:0 40px;gap:16px;
-}
-.tpl-gala .nav-logo{
-  display:flex;align-items:center;gap:10px;
-  font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;letter-spacing:.04em;
-}
-.tpl-gala .nav-logo-mark{
-  width:28px;height:28px;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;
-}
+.tpl-gala .ev-nav{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;background:rgba(6,5,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 40px;gap:16px;}
+.tpl-gala .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;letter-spacing:.04em;}
+.tpl-gala .nav-logo-mark{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;}
 .tpl-gala .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-gala .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
 .tpl-gala .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.tpl-gala .nav-code-badge{
-  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--accent);border:1px solid var(--border2);
-  padding:5px 12px;background:var(--accent-dim);
-}
+.tpl-gala .nav-code-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);border:1px solid var(--border2);padding:5px 12px;background:var(--accent-dim);}
 .tpl-gala .slideshow{height:80vh;min-height:520px;max-height:860px;}
-.tpl-gala .slide-overlay{
-  background:linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 30%,rgba(6,5,10,.8) 100%);
-}
-.tpl-gala .hero-text-layer{
-  position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:80px 60px 90px;text-align:center;
-}
-.tpl-gala .hero-ornament{
-  font-size:13px;letter-spacing:.6em;color:var(--accent);
-  margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:12px;
-}
-.tpl-gala .hero-ornament::before,.tpl-gala .hero-ornament::after{
-  content:'';flex:1;max-width:80px;height:1px;
-  background:linear-gradient(90deg,transparent,var(--accent),transparent);
-}
-.tpl-gala .hero-title{
-  font-family:'Cormorant Garamond',serif;font-weight:300;
-  font-size:clamp(40px,6vw,80px);line-height:1.03;color:#fff;margin-bottom:18px;
-}
+.tpl-gala .slide-overlay{background:linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 30%,rgba(6,5,10,.8) 100%);}
+.tpl-gala .hero-text-layer{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:80px 60px 90px;text-align:center;}
+.tpl-gala .hero-ornament{font-size:13px;letter-spacing:.6em;color:var(--accent);margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:12px;}
+.tpl-gala .hero-ornament::before,.tpl-gala .hero-ornament::after{content:'';flex:1;max-width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.tpl-gala .hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(40px,6vw,80px);line-height:1.03;color:#fff;margin-bottom:18px;}
 .tpl-gala .hero-title em{font-style:italic;color:var(--accent2);}
-.tpl-gala .hero-divider{
-  width:80px;height:1px;
-  background:linear-gradient(90deg,transparent,var(--accent2),transparent);
-  margin:0 auto 20px;
-}
+.tpl-gala .hero-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:0 auto 20px;}
 .tpl-gala .hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:rgba(255,255,255,.55);}
-.tpl-gala .gallery-wrap{max-width:1380px;margin:0 auto;padding:56px 40px 140px;}
-.tpl-gala .gallery-header{
-  display:flex;align-items:flex-end;justify-content:space-between;
-  gap:20px;flex-wrap:wrap;margin-bottom:28px;
-  padding-bottom:16px;border-bottom:1px solid var(--border2);
-}
+.tpl-gala .gallery-wrap{max-width:1380px;margin:0 auto;padding:56px 40px 160px;}
+.tpl-gala .gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
 .tpl-gala .gallery-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:30px;}
 .tpl-gala .gallery-actions{display:flex;gap:10px;align-items:center;}
 .tpl-gala .photo-grid{columns:5;column-gap:8px;}
-.tpl-gala .photo-card{
-  break-inside:avoid;margin-bottom:8px;cursor:pointer;
-  position:relative;overflow:hidden;border:1px solid var(--border);
-  transition:all .4s;display:block;
-}
+.tpl-gala .photo-card{break-inside:avoid;margin-bottom:8px;cursor:pointer;position:relative;overflow:hidden;border:1px solid var(--border);transition:all .4s;display:block;}
 .tpl-gala .photo-card img{width:100%;display:block;transition:transform .5s;filter:saturate(.9);}
 .tpl-gala .photo-card:hover{border-color:var(--border2);box-shadow:0 8px 40px rgba(212,170,40,.2);}
 .tpl-gala .photo-card:hover img{transform:scale(1.04);filter:saturate(1.1);}
-.tpl-gala .photo-card-overlay{
-  position:absolute;inset:0;background:linear-gradient(to top,rgba(6,5,10,.8),transparent 55%);
-  opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:20px;
-}
+.tpl-gala .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,5,10,.8),transparent 55%);opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:20px;}
 .tpl-gala .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-gala .btn-primary{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;
-  font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-  padding:12px 24px;display:inline-flex;align-items:center;gap:8px;transition:all .3s;
-}
+.tpl-gala .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:12px 24px;display:inline-flex;align-items:center;gap:8px;transition:all .3s;}
 .tpl-gala .btn-primary:hover{box-shadow:0 6px 24px var(--accent-glo);transform:translateY(-1px);}
-.tpl-gala .btn-outline{
-  background:transparent;border:1px solid var(--border2);color:var(--text2);
-  font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;
-  padding:11px 20px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;
-}
+.tpl-gala .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:11px 20px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
 .tpl-gala .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
 .tpl-gala .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
-.tpl-gala .gate-box{
-  background:var(--card);border:1px solid var(--border2);
-  padding:56px 48px;max-width:440px;width:100%;text-align:center;
-}
+.tpl-gala .gate-box{background:var(--card);border:1px solid var(--border2);padding:56px 48px;max-width:440px;width:100%;text-align:center;}
 .tpl-gala .gate-icon{font-size:30px;color:var(--accent);margin-bottom:20px;letter-spacing:.4em;display:block;}
 .tpl-gala .gate-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
 .tpl-gala .gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--text2);margin-bottom:28px;line-height:1.7;}
-.tpl-gala .gate-input{
-  background:var(--bg2);border:1px solid var(--border2);color:var(--text);
-  font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;
-  text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;
-}
+.tpl-gala .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.25em;text-transform:uppercase;text-align:center;padding:14px;width:100%;outline:none;margin-bottom:14px;}
 .tpl-gala .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
-.tpl-gala .modal-box{background:var(--card);border:1px solid var(--border2);}
 .tpl-gala .dl-bar{background:rgba(6,5,10,.97);border-color:var(--border2);}
 .tpl-gala .dl-bar-count{color:var(--text);}
 .tpl-gala .photo-count-badge{background:var(--accent-dim);border:1px solid var(--border2);color:var(--accent);}
@@ -797,115 +587,42 @@ input,textarea,select{font-family:inherit;}
   --r:8px;--r2:14px;--r3:20px;
   background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
 }
-.tpl-nightlife .ev-nav{
-  position:fixed;top:0;left:0;right:0;height:60px;z-index:100;
-  background:rgba(4,3,8,.94);backdrop-filter:blur(24px);
-  border-bottom:1px solid var(--border2);
-  display:flex;align-items:center;padding:0 28px;gap:16px;
-}
-.tpl-nightlife .nav-logo{
-  display:flex;align-items:center;gap:9px;
-  font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:var(--text);
-}
-.tpl-nightlife .nav-logo-mark{
-  width:28px;height:28px;border-radius:6px;
-  background:linear-gradient(135deg,var(--accent),var(--pink));
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;
-}
+.tpl-nightlife .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:rgba(4,3,8,.94);backdrop-filter:blur(24px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 28px;gap:16px;}
+.tpl-nightlife .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:var(--text);}
+.tpl-nightlife .nav-logo-mark{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
 .tpl-nightlife .nav-divider{width:1px;height:18px;background:var(--border2);}
 .tpl-nightlife .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
 .tpl-nightlife .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.tpl-nightlife .nav-code-badge{
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--accent2);background:var(--accent-dim);border:1px solid var(--border2);
-  padding:4px 10px;border-radius:6px;
-}
+.tpl-nightlife .nav-code-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);background:var(--accent-dim);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;}
 .tpl-nightlife .slideshow{height:70vh;min-height:460px;max-height:760px;}
-.tpl-nightlife .slide-overlay{
-  background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 30%,rgba(4,3,8,.85) 100%);
-}
-.tpl-nightlife .hero-text-layer{
-  position:absolute;bottom:0;left:0;right:0;z-index:4;
-  padding:60px 36px 80px;text-align:center;
-}
-.tpl-nightlife .hero-label{
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--cyan);margin-bottom:14px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.tpl-nightlife .hero-label::before,.tpl-nightlife .hero-label::after{
-  content:'';width:24px;height:1px;background:var(--cyan);
-}
-.tpl-nightlife .hero-title{
-  font-family:'Syne',sans-serif;font-weight:900;
-  font-size:clamp(32px,5vw,64px);line-height:1.05;margin-bottom:14px;
-  background:linear-gradient(135deg,var(--accent2),var(--pink),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
+.tpl-nightlife .slide-overlay{background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 30%,rgba(4,3,8,.85) 100%);}
+.tpl-nightlife .hero-text-layer{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:60px 36px 80px;text-align:center;}
+.tpl-nightlife .hero-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.tpl-nightlife .hero-label::before,.tpl-nightlife .hero-label::after{content:'';width:24px;height:1px;background:var(--cyan);}
+.tpl-nightlife .hero-title{font-family:'Syne',sans-serif;font-weight:900;font-size:clamp(32px,5vw,64px);line-height:1.05;margin-bottom:14px;background:linear-gradient(135deg,var(--accent2),var(--pink),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tpl-nightlife .hero-sub{font-size:15px;color:var(--text2);}
-.tpl-nightlife .gallery-wrap{max-width:1260px;margin:0 auto;padding:44px 28px 140px;}
-.tpl-nightlife .gallery-header{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:16px;flex-wrap:wrap;margin-bottom:20px;
-  padding-bottom:16px;border-bottom:1px solid var(--border2);
-}
-.tpl-nightlife .gallery-title{
-  font-family:'Syne',sans-serif;font-size:22px;font-weight:900;
-  background:linear-gradient(135deg,var(--accent2),var(--pink));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
+.tpl-nightlife .gallery-wrap{max-width:1260px;margin:0 auto;padding:44px 28px 160px;}
+.tpl-nightlife .gallery-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
+.tpl-nightlife .gallery-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tpl-nightlife .gallery-actions{display:flex;gap:8px;}
-.tpl-nightlife .photo-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  gap:2px;background:rgba(128,80,255,.2);
-}
-.tpl-nightlife .photo-card{
-  position:relative;aspect-ratio:3/4;overflow:hidden;
-  cursor:pointer;background:var(--bg2);
-}
+.tpl-nightlife .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;background:rgba(128,80,255,.2);}
+.tpl-nightlife .photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;cursor:pointer;background:var(--bg2);}
 .tpl-nightlife .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;filter:saturate(1.2);}
 .tpl-nightlife .photo-card:hover img{transform:scale(1.07);}
 .tpl-nightlife .photo-card:hover{box-shadow:inset 0 0 30px rgba(128,80,255,.4);}
-.tpl-nightlife .photo-card-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(128,80,255,.65),transparent 50%);
-  opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;
-}
+.tpl-nightlife .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(128,80,255,.65),transparent 50%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;}
 .tpl-nightlife .photo-card:hover .photo-card-overlay{opacity:1;}
-.tpl-nightlife .btn-primary{
-  background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;
-  font-weight:700;font-size:13px;padding:11px 22px;border-radius:var(--r);
-  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
-  box-shadow:0 4px 20px var(--accent-glo);
-}
+.tpl-nightlife .btn-primary{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;font-weight:700;font-size:13px;padding:11px 22px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;box-shadow:0 4px 20px var(--accent-glo);}
 .tpl-nightlife .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glo);}
-.tpl-nightlife .btn-outline{
-  background:transparent;border:1px solid var(--border2);color:var(--text2);
-  font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);
-  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
-}
+.tpl-nightlife .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);font-weight:600;font-size:13px;padding:10px 18px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;}
 .tpl-nightlife .btn-outline:hover{border-color:var(--accent);color:var(--accent2);}
 .tpl-nightlife .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 24px;background:var(--bg);}
-.tpl-nightlife .gate-box{
-  background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);
-  padding:48px 40px;max-width:420px;width:100%;text-align:center;
-  box-shadow:0 8px 48px rgba(128,80,255,.2);
-}
+.tpl-nightlife .gate-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:48px 40px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 48px rgba(128,80,255,.2);}
 .tpl-nightlife .gate-icon{font-size:44px;margin-bottom:14px;display:block;}
-.tpl-nightlife .gate-title{
-  font-family:'Syne',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;
-  background:linear-gradient(135deg,var(--accent2),var(--pink));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
+.tpl-nightlife .gate-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .tpl-nightlife .gate-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
-.tpl-nightlife .gate-input{
-  background:var(--bg2);border:1px solid var(--border2);color:var(--text);
-  font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;
-  text-transform:uppercase;text-align:center;padding:14px;
-  border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;
-}
+.tpl-nightlife .gate-input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:14px;border-radius:var(--r);width:100%;outline:none;margin-bottom:14px;}
 .tpl-nightlife .toast{background:var(--card);border:1px solid var(--border2);color:var(--text);}
-.tpl-nightlife .modal-box{background:var(--card);border:1px solid var(--border2);}
 .tpl-nightlife .dl-bar{background:rgba(4,3,8,.97);border-color:var(--border2);}
 .tpl-nightlife .dl-bar-count{color:var(--text);}
 .tpl-nightlife .photo-count-badge{background:var(--accent-dim);border:1px solid var(--border2);color:var(--accent2);}
@@ -921,8 +638,6 @@ input,textarea,select{font-family:inherit;}
 @media(max-width:640px){
   .tpl-wedding .gate-box,.tpl-gala .gate-box{padding:36px 24px;}
   .tpl-gala .photo-grid{columns:2;}
-  .lightbox-prev{left:-20px;}
-  .lightbox-next{right:-20px;}
   .tpl-professional .hero-text-layer,
   .tpl-wedding .hero-text-layer,
   .tpl-birthday .hero-text-layer,
@@ -934,16 +649,13 @@ input,textarea,select{font-family:inherit;}
   .tpl-wedding .gallery-wrap,.tpl-gala .gallery-wrap{padding-left:16px;padding-right:16px;}
   .gallery-header{gap:10px;}
   .gallery-actions{gap:6px;}
-  /* hide "Download All" on mobile — use select all instead */
   #downloadAllBtn{display:none!important;}
 }
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
-   GATE SECTION
-══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════ GATE ══════════════════════════════════════ -->
 <div class="section" id="section-gate">
   <nav class="ev-nav">
     <a href="index.html" class="nav-logo">
@@ -969,12 +681,9 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-   GALLERY SECTION
-══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════ GALLERY ══════════════════════════════════════ -->
 <div class="section" id="section-gallery">
 
-  <!-- NAV -->
   <nav class="ev-nav" id="mainNav">
     <a href="index.html" class="nav-logo">
       <div class="nav-logo-mark">IG</div>
@@ -989,28 +698,17 @@ input,textarea,select{font-family:inherit;}
 
   <!-- SLIDESHOW HERO -->
   <div class="slideshow" id="slideshowWrap">
-    <!-- Skeleton shown while loading -->
     <div class="skeleton-hero" id="slideshowSkeleton" style="height:100%;position:absolute;inset:0;z-index:20;"></div>
-
-    <!-- Celebrant photo (blended into hero) -->
     <div class="celebrant-photo" id="celebrantPhoto" style="display:none;">
       <img id="celebrantImg" src="" alt="Celebrant"/>
     </div>
-
     <div class="slideshow-track" id="slideshowTrack"></div>
-
     <div class="slide-overlay"></div>
-
-    <!-- Text overlay -->
     <div class="hero-text-layer" id="heroTextLayer"></div>
-
-    <!-- Scroll to gallery arrow -->
     <button class="scroll-to-gallery" id="scrollToGalleryBtn" onclick="scrollToGallery()">
       <span class="scroll-to-gallery-label">View Photos</span>
       <span class="scroll-to-gallery-arrow">↓</span>
     </button>
-
-    <!-- Slideshow controls -->
     <button class="slideshow-nav slideshow-prev" id="slidePrev" onclick="prevSlide()">‹</button>
     <button class="slideshow-nav slideshow-next" id="slideNext" onclick="nextSlide()">›</button>
     <div class="slideshow-dots" id="slideshowDots"></div>
@@ -1027,9 +725,7 @@ input,textarea,select{font-family:inherit;}
         </span>
       </div>
       <div class="gallery-actions" id="galleryActions">
-        <button class="share-btn" id="shareBtn" onclick="shareEvent()" title="Share this gallery">
-          ↗ Share
-        </button>
+        <button class="share-btn" id="shareBtn" onclick="shareEvent()" title="Share this gallery">↗ Share</button>
         <button class="btn-outline" id="selectAllBtn" onclick="toggleSelectAll()">☐ Select All</button>
         <button class="btn-primary" id="downloadSelectedBtn" onclick="downloadSelected()" style="display:none;">
           ⬇ Download (<span id="selectedCount">0</span>)
@@ -1038,7 +734,6 @@ input,textarea,select{font-family:inherit;}
       </div>
     </div>
 
-    <!-- Skeleton grid shown while photos load -->
     <div class="skeleton-grid" id="skeletonGrid" style="display:grid;">
       <div class="skeleton-photo skeleton"></div>
       <div class="skeleton-photo skeleton"></div>
@@ -1050,32 +745,52 @@ input,textarea,select{font-family:inherit;}
       <div class="skeleton-photo skeleton"></div>
     </div>
 
-    <div class="photo-grid" id="photoGrid" style="display:none;">
-      <!-- Photos rendered here -->
-    </div>
+    <div class="photo-grid" id="photoGrid" style="display:none;"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-   LIGHTBOX
-══════════════════════════════════════ -->
-<div class="lightbox hidden" id="lightbox" onclick="closeLightbox(event)">
+<!-- ══════════════════════════════════════ LIGHTBOX ══════════════════════════════════════ -->
+<div class="lightbox hidden" id="lightbox" onclick="closeLightboxBg(event)">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <div class="lb-counter" id="lbCounter">1 / 10</div>
   <div class="lightbox-img-wrap">
     <button class="lightbox-nav lightbox-prev" onclick="lbPrev(event)">‹</button>
     <img id="lightboxImg" src="" alt=""/>
     <button class="lightbox-nav lightbox-next" onclick="lbNext(event)">›</button>
   </div>
+  <div class="lb-counter" id="lbCounter">1 / 10</div>
   <div class="lightbox-actions" onclick="event.stopPropagation()">
-    <a id="lbDownloadBtn" href="#" class="lb-btn lb-btn-dl" download>⬇ Save Photo</a>
+    <button id="lbDownloadBtn" class="lb-btn lb-btn-dl" onclick="lbDownload()">⬇ Save Photo</button>
     <button class="lb-btn lb-btn-ghost" onclick="closeLightbox()">✕ Close</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-   FLOATING DOWNLOAD BAR — MOBILE OPTIMISED
-══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════ iOS DOWNLOAD MODAL ══════════════════════════════════════ -->
+<div class="ios-modal-backdrop hidden" id="iosModal" onclick="closeIosModal(event)">
+  <div class="ios-modal-box" onclick="event.stopPropagation()">
+    <div class="ios-modal-handle"></div>
+    <div class="ios-modal-title">📱 Save Your Photos</div>
+    <div class="ios-modal-sub" id="iosModalSub">Here's how to save photos on iPhone &amp; iPad</div>
+    <div class="ios-step">
+      <div class="ios-step-num">1</div>
+      <div class="ios-step-text">Tap <strong>Open Photos</strong> below — each photo opens in a new tab</div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">2</div>
+      <div class="ios-step-text"><strong>Long-press</strong> the photo image until a menu appears</div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">3</div>
+      <div class="ios-step-text">Tap <strong>"Save to Photos"</strong> — it saves directly to your Camera Roll</div>
+    </div>
+    <div class="ios-photos-grid" id="iosPhotosGrid"></div>
+    <button class="ios-open-all-btn" id="iosOpenAllBtn" onclick="iosOpenAll()">
+      📂 Open All Photos in New Tabs
+    </button>
+    <button class="ios-cancel-btn" onclick="closeIosModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ FLOATING DOWNLOAD BAR ══════════════════════════════════════ -->
 <div class="dl-bar" id="dlBar">
   <div class="dl-bar-left">
     <div class="dl-bar-icon">📥</div>
@@ -1090,9 +805,7 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-   TOAST
-══════════════════════════════════════ */
+<!-- TOAST -->
 <div class="toast" id="toast">
   <span id="toastIcon">✅</span>
   <div>
@@ -1103,10 +816,9 @@ input,textarea,select{font-family:inherit;}
 
 <script>
 /* ══════════════════════════════════════
-   CONFIG
+   CONFIG & STATE
 ══════════════════════════════════════ */
-var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
-
+var EVENTS_API   = 'https://impactgrid-events-api.onrender.com';
 var TPL_MAP = {
   professional : { cls:'tpl-professional', icon:'📸', heroType:'dark-text'  },
   wedding      : { cls:'tpl-wedding',      icon:'💍', heroType:'elegant'    },
@@ -1118,20 +830,35 @@ var TPL_MAP = {
   ceremony     : { cls:'tpl-professional', icon:'🎓', heroType:'dark-text'  },
 };
 
-/* State */
 var eventData    = null;
 var allPhotos    = [];
 var selectedIds  = new Set();
 var currentSlide = 0;
 var slideTimer   = null;
 var lbIndex      = 0;
-var lbPhotos     = [];
 var allSelected  = false;
+
+/* Pending iOS photos to open */
+var iosPendingPhotos = [];
+
+/* ══════════════════════════════════════
+   PLATFORM DETECTION
+══════════════════════════════════════ */
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function isAndroid(){
+  return /Android/.test(navigator.userAgent);
+}
+function isMobile(){
+  return isIOS() || isAndroid() || /Mobi/.test(navigator.userAgent);
+}
 
 /* ══════════════════════════════════════
    BOOT
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
+  /* Wake up backend */
   fetch(EVENTS_API + '/ping').catch(function(){});
   setInterval(function(){ fetch(EVENTS_API + '/ping').catch(function(){}); }, 13 * 60 * 1000);
 
@@ -1143,7 +870,7 @@ document.addEventListener('DOMContentLoaded', async function(){
 
   try{
     var c = getSupabase();
-    var { data:ev, error } = await c
+    var { data: ev, error } = await c
       .from('events')
       .select('*, event_settings(*)')
       .eq('event_slug', slug)
@@ -1180,11 +907,8 @@ document.addEventListener('DOMContentLoaded', async function(){
    GATE
 ══════════════════════════════════════ */
 function styleGate(type, name){
-  var icons = {
-    wedding:'💍', birthday:'🎂', kids:'🎉', gala:'✦', nightlife:'🎧',
-    sports:'🏆', ceremony:'🎓', professional:'📸'
-  };
-  var subs = {
+  var icons = { wedding:'💍', birthday:'🎂', kids:'🎉', gala:'✦', nightlife:'🎧', sports:'🏆', ceremony:'🎓', professional:'📸' };
+  var subs  = {
     wedding    : 'Please enter your access code to view the gallery.',
     birthday   : '🎉 Enter your code to join the celebration!',
     kids       : '🔑 Enter your magic code to see the photos!',
@@ -1204,16 +928,17 @@ async function submitCode(){
   var btn   = document.getElementById('gateSubmitBtn');
   var err   = document.getElementById('gateAlert');
 
-  if(!input || input.length < 4){ showAlert(err,'Please enter your access code.'); return; }
-  if(input !== eventData.event_code){ showAlert(err,'Incorrect code. Please try again.'); return; }
+  if(!input || input.length < 4){ showGateAlert('Please enter your access code.'); return; }
+  if(input !== eventData.event_code){ showGateAlert('Incorrect code. Please try again.'); return; }
 
   btn.disabled    = true;
   btn.textContent = 'Entering…';
   enterGallery();
 }
 
-function showAlert(el, msg){
-  el.textContent  = msg;
+function showGateAlert(msg){
+  var el = document.getElementById('gateAlert');
+  el.textContent   = msg;
   el.style.display = 'block';
 }
 
@@ -1243,30 +968,29 @@ async function loadPhotos(){
       .order('created_at', { ascending: true });
 
     allPhotos = data || [];
-    lbPhotos  = allPhotos;
 
     /* Hide skeletons */
-    var skeletonGrid = document.getElementById('skeletonGrid');
-    var photoGrid    = document.getElementById('photoGrid');
-    var slideSkeleton = document.getElementById('slideshowSkeleton');
-    if(skeletonGrid) skeletonGrid.style.display = 'none';
-    if(photoGrid)    photoGrid.style.display    = '';
-    if(slideSkeleton) slideSkeleton.style.display = 'none';
+    var sg = document.getElementById('skeletonGrid');
+    var pg = document.getElementById('photoGrid');
+    var ss = document.getElementById('slideshowSkeleton');
+    if(sg) sg.style.display = 'none';
+    if(pg) pg.style.display = '';
+    if(ss) ss.style.display = 'none';
 
-    /* Update photo count badge */
+    /* Photo count badge */
     var badge   = document.getElementById('photoCountBadge');
     var countEl = document.getElementById('photoCountNum');
     if(badge && countEl){
-      countEl.textContent  = allPhotos.length;
-      badge.style.display  = allPhotos.length ? 'inline-flex' : 'none';
+      countEl.textContent = allPhotos.length;
+      badge.style.display = allPhotos.length ? 'inline-flex' : 'none';
     }
 
-    /* Update dl-bar sub text based on platform */
+    /* dl-bar sub text */
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
       dlSub.textContent = isIOS()
-        ? 'Long-press each photo → "Save to Photos"'
-        : 'Files will save to your Photos / Gallery';
+        ? 'Long-press each photo to save to Camera Roll'
+        : 'Files save directly to your Photos / Gallery';
     }
 
     buildHero();
@@ -1276,12 +1000,12 @@ async function loadPhotos(){
 
   }catch(e){
     console.error(e);
-    var skeletonGrid = document.getElementById('skeletonGrid');
-    if(skeletonGrid) skeletonGrid.style.display = 'none';
-    var photoGrid = document.getElementById('photoGrid');
-    if(photoGrid){
-      photoGrid.style.display = '';
-      photoGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">'
+    var sg = document.getElementById('skeletonGrid');
+    if(sg) sg.style.display = 'none';
+    var pg = document.getElementById('photoGrid');
+    if(pg){
+      pg.style.display = '';
+      pg.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">'
         + '<div class="empty-state-icon">⚠️</div>'
         + '<div class="empty-state-title">Could not load photos</div>'
         + '<p style="font-size:14px;opacity:.6;">Please refresh the page and try again.</p>'
@@ -1297,7 +1021,6 @@ async function loadCelebrantPhoto(){
   try{
     var settings = Array.isArray(eventData.event_settings)
       ? eventData.event_settings[0] : (eventData.event_settings || {});
-
     var celebUrl = settings.celebrant_photo_url || eventData.celebrant_photo_url || null;
 
     if(!celebUrl){
@@ -1316,7 +1039,7 @@ async function loadCelebrantPhoto(){
       wrap.style.display = 'block';
       positionCelebrantPhoto();
     }
-  }catch(e){ /* silently ignore */ }
+  }catch(e){}
 }
 
 function positionCelebrantPhoto(){
@@ -1324,6 +1047,7 @@ function positionCelebrantPhoto(){
   var wrap = document.getElementById('celebrantPhoto');
   if(!wrap) return;
   wrap.style.right = '5%';
+  wrap.style.left  = 'auto';
   wrap.style.width = 'clamp(180px, 25vw, 380px)';
   if(['wedding','gala','ceremony'].includes(type)){
     wrap.style.right = '10%';
@@ -1376,7 +1100,7 @@ function buildHero(){
 }
 
 /* ══════════════════════════════════════
-   SLIDESHOW (with touch/swipe)
+   SLIDESHOW
 ══════════════════════════════════════ */
 function buildSlideshow(photos){
   var track   = document.getElementById('slideshowTrack');
@@ -1402,7 +1126,7 @@ function buildSlideshow(photos){
   }).join('');
 
   dots.innerHTML = photos.map(function(_,i){
-    return '<div class="dot' + (i===0?' active':'') + '" onclick="goSlide(' + i + ')"></div>';
+    return '<div class="dot' + (i===0?' active':'') + '" onclick="goSlide('+i+')"></div>';
   }).join('');
 
   counter.textContent = '1 / ' + photos.length;
@@ -1411,31 +1135,24 @@ function buildSlideshow(photos){
   clearInterval(slideTimer);
   slideTimer = setInterval(function(){ nextSlide(); }, 5000);
 
-  /* ── Touch/Swipe support for slideshow ── */
-  var touchStartX = 0;
-  var touchStartY = 0;
-  var isSwiping   = false;
-
+  /* Touch swipe */
+  var touchStartX = 0, touchStartY = 0, isSwiping = false;
   wrap.addEventListener('touchstart', function(e){
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
     isSwiping   = false;
-  }, { passive: true });
-
+  }, { passive:true });
   wrap.addEventListener('touchmove', function(e){
     var dx = Math.abs(e.touches[0].clientX - touchStartX);
     var dy = Math.abs(e.touches[0].clientY - touchStartY);
     if(dx > dy && dx > 8) isSwiping = true;
-  }, { passive: true });
-
+  }, { passive:true });
   wrap.addEventListener('touchend', function(e){
     if(!isSwiping) return;
     var dx = e.changedTouches[0].clientX - touchStartX;
-    if(Math.abs(dx) > 40){
-      dx < 0 ? nextSlide() : prevSlide();
-    }
+    if(Math.abs(dx) > 40){ dx < 0 ? nextSlide() : prevSlide(); }
     isSwiping = false;
-  }, { passive: true });
+  }, { passive:true });
 }
 
 function goSlide(idx){
@@ -1443,10 +1160,10 @@ function goSlide(idx){
   var dots   = document.querySelectorAll('.dot');
   if(!slides.length) return;
   slides[currentSlide].classList.remove('active');
-  dots[currentSlide] && dots[currentSlide].classList.remove('active');
+  if(dots[currentSlide]) dots[currentSlide].classList.remove('active');
   currentSlide = (idx + slides.length) % slides.length;
   slides[currentSlide].classList.add('active');
-  dots[currentSlide] && dots[currentSlide].classList.add('active');
+  if(dots[currentSlide]) dots[currentSlide].classList.add('active');
   document.getElementById('slideCounter').textContent = (currentSlide+1) + ' / ' + slides.length;
   clearInterval(slideTimer);
   slideTimer = setInterval(function(){ nextSlide(); }, 5000);
@@ -1454,59 +1171,43 @@ function goSlide(idx){
 function nextSlide(){ goSlide(currentSlide + 1); }
 function prevSlide(){ goSlide(currentSlide - 1); }
 
-/* ══════════════════════════════════════
-   SMOOTH SCROLL TO GALLERY
-══════════════════════════════════════ */
 function scrollToGallery(){
-  var galleryWrap = document.getElementById('galleryWrap');
-  if(!galleryWrap) return;
-  galleryWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  var gw = document.getElementById('galleryWrap');
+  if(gw) gw.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 /* ══════════════════════════════════════
-   SHARE EVENT
+   SHARE
 ══════════════════════════════════════ */
 function shareEvent(){
-  var url   = window.location.href.split('?')[0];
-  var slug  = new URLSearchParams(window.location.search).get('event') || new URLSearchParams(window.location.search).get('slug');
-  var share = url + (slug ? '?event=' + encodeURIComponent(slug) : '');
-  var name  = eventData ? eventData.name : 'this event';
+  var params = new URLSearchParams(window.location.search);
+  var slug   = params.get('event') || params.get('slug');
+  var base   = window.location.origin + window.location.pathname;
+  var url    = base + (slug ? '?event=' + encodeURIComponent(slug) : '');
 
-  /* Use native share sheet on mobile if available */
   if(navigator.share){
     navigator.share({
-      title: name + ' — ImpactGrid Gallery',
-      text:  'View photos from ' + name,
-      url:   share
+      title: (eventData ? eventData.name : 'Event') + ' — ImpactGrid Gallery',
+      text : 'View photos from ' + (eventData ? eventData.name : 'this event'),
+      url  : url
     }).catch(function(){});
     return;
   }
-
-  /* Fallback: copy to clipboard */
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(share).then(function(){
+    navigator.clipboard.writeText(url).then(function(){
       toast('🔗', 'Link copied!', 'Share it with your guests');
-    }).catch(function(){
-      fallbackCopy(share);
-    });
+    }).catch(function(){ fallbackCopy(url); });
   } else {
-    fallbackCopy(share);
+    fallbackCopy(url);
   }
 }
 
 function fallbackCopy(text){
   var ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity  = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try{
-    document.execCommand('copy');
-    toast('🔗', 'Link copied!', 'Share it with your guests');
-  }catch(e){
-    toast('📋', 'Copy this link:', text.substring(0, 40) + '…');
-  }
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); toast('🔗', 'Link copied!', 'Share it with your guests'); }
+  catch(e){ toast('📋', 'Copy this link:', text.substring(0,40) + '…'); }
   document.body.removeChild(ta);
 }
 
@@ -1517,7 +1218,6 @@ function renderPhotos(photos){
   var type    = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
   var grid    = document.getElementById('photoGrid');
   var masonry = ['wedding','gala'].includes(type);
-
   grid.style.display = masonry ? 'block' : '';
 
   if(!photos.length){
@@ -1530,13 +1230,13 @@ function renderPhotos(photos){
   }
 
   grid.innerHTML = photos.map(function(p, i){
-    var isSelected = selectedIds.has(p.id);
-    return '<div class="photo-card' + (isSelected?' selected':'') + '" id="card-' + p.id + '" data-id="' + p.id + '" data-idx="' + i + '">'
+    var isSel = selectedIds.has(p.id);
+    return '<div class="photo-card' + (isSel?' selected':'') + '" id="card-' + p.id + '" data-id="' + p.id + '" data-idx="' + i + '">'
       + '<div class="select-checkbox"></div>'
       + '<div class="select-overlay" onclick="toggleSelect(\'' + p.id + '\',event)"></div>'
       + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy" onclick="openLightbox(' + i + ',event)"/>'
       + '<div class="photo-card-overlay">'
-      + '<button class="lb-btn lb-btn-dl" style="font-size:11px;padding:7px 14px;" onclick="event.stopPropagation();quickDownload(\'' + esc(p.original_url||p.preview_url) + '\',\'' + i + '\')">⬇ Save</button>'
+      + '<button class="lb-btn lb-btn-dl" style="font-size:11px;padding:7px 14px;" onclick="event.stopPropagation();quickDownload(\'' + esc(p.original_url||p.preview_url) + '\',' + i + ')">⬇ Save</button>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1548,7 +1248,7 @@ function renderPhotos(photos){
    SELECTION
 ══════════════════════════════════════ */
 function toggleSelect(id, event){
-  event && event.stopPropagation();
+  if(event) event.stopPropagation();
   if(selectedIds.has(id)){ selectedIds.delete(id); } else { selectedIds.add(id); }
   var card = document.getElementById('card-' + id);
   if(card) card.classList.toggle('selected', selectedIds.has(id));
@@ -1601,26 +1301,38 @@ function updateSelectionUI(){
 }
 
 /* ══════════════════════════════════════
-   DOWNLOADS — Cross-platform
-   iOS Safari: opens in new tab (browser limitation)
-   Android / Desktop: saves directly
+   DOWNLOADS — FULL CROSS-PLATFORM
+
+   DESKTOP / ANDROID:
+   - Direct <a download> trigger — saves straight to Downloads/Gallery
+
+   iOS (iPhone / iPad) Safari:
+   - Safari blocks programmatic <a download> for cross-origin URLs
+   - It also blocks window.open() in async loops (popup blocker)
+   - Best approach: Show the iOS modal with thumbnail grid
+     Each thumb opens its photo in a new tab on direct user tap
+     "Open All" button opens them sequentially with a small delay
+     to avoid being blocked (user sees first open, then rest follow)
 ══════════════════════════════════════ */
-function isIOS(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+function triggerDirectDownload(url, filename){
+  var a = document.createElement('a');
+  a.href     = url;
+  a.download = filename || 'ImpactGrid-Photo.jpg';
+  a.rel      = 'noopener';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ document.body.removeChild(a); }, 2000);
 }
 
 function quickDownload(url, idx){
   if(isIOS()){
+    /* Single photo — open directly in new tab (user tapped, so not blocked) */
     window.open(url, '_blank');
-    toast('📱', 'Photo opened!', 'Long-press the image → "Save to Photos"');
+    toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
   } else {
-    var a = document.createElement('a');
-    a.href     = url;
-    a.download = 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){ document.body.removeChild(a); }, 1000);
+    triggerDirectDownload(url, 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg');
     toast('⬇', 'Saving photo…', 'Check your Downloads / Photos gallery');
   }
 }
@@ -1630,22 +1342,17 @@ function downloadSelected(){
   if(!toDownload.length){ toast('⚠️','Select photos first','Tap photos to select them'); return; }
 
   if(isIOS()){
-    toast('📱', 'Opening ' + toDownload.length + ' photos…', 'Long-press each → "Save to Photos"');
-    toDownload.forEach(function(p, i){
-      setTimeout(function(){ window.open(p.original_url || p.preview_url, '_blank'); }, i * 800);
-    });
+    showIosModal(toDownload);
   } else {
+    /* Android / Desktop — staggered direct download */
     toast('⬇', 'Saving ' + toDownload.length + ' photos…', 'Files going to your gallery');
     toDownload.forEach(function(p, i){
       setTimeout(function(){
-        var a = document.createElement('a');
-        a.href     = p.original_url || p.preview_url;
-        a.download = 'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function(){ document.body.removeChild(a); }, 1000);
-      }, i * 400);
+        triggerDirectDownload(
+          p.original_url || p.preview_url,
+          'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg'
+        );
+      }, i * 350);
     });
   }
 }
@@ -1654,22 +1361,82 @@ function downloadAllPhotos(){
   if(!allPhotos.length){ toast('⚠️','No photos yet',''); return; }
 
   if(isIOS()){
-    toast('📱', 'Select All then save', 'Long-press each photo → "Save to Photos"');
-    toggleSelectAll();
+    showIosModal(allPhotos);
   } else {
-    toast('⬇', 'Downloading all ' + allPhotos.length + ' photos…', 'Saving to your gallery');
+    /* Android / Desktop */
+    toast('⬇', 'Saving all ' + allPhotos.length + ' photos…', 'Saving to your gallery');
     allPhotos.forEach(function(p, i){
       setTimeout(function(){
-        var a = document.createElement('a');
-        a.href     = p.original_url || p.preview_url;
-        a.download = 'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function(){ document.body.removeChild(a); }, 1000);
+        triggerDirectDownload(
+          p.original_url || p.preview_url,
+          'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.jpg'
+        );
       }, i * 350);
     });
   }
+}
+
+/* ══════════════════════════════════════
+   iOS DOWNLOAD MODAL
+══════════════════════════════════════ */
+function showIosModal(photos){
+  iosPendingPhotos = photos;
+
+  var sub  = document.getElementById('iosModalSub');
+  var grid = document.getElementById('iosPhotosGrid');
+  var btn  = document.getElementById('iosOpenAllBtn');
+
+  sub.textContent = 'Save ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' to your Camera Roll';
+
+  /* Show up to 8 thumbnails */
+  var shown = photos.slice(0, 8);
+  grid.innerHTML = shown.map(function(p, i){
+    return '<div class="ios-photo-thumb" onclick="iosTapThumb(' + i + ')">'
+      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy"/>'
+      + '<div class="ios-photo-thumb-open">↗</div>'
+      + '</div>';
+  }).join('');
+
+  if(photos.length <= 8){
+    grid.style.display = 'none';
+  } else {
+    grid.style.display = 'grid';
+  }
+
+  btn.textContent = '📂 Open All ' + photos.length + ' Photos';
+
+  document.getElementById('iosModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function iosTapThumb(idx){
+  var p = iosPendingPhotos[idx];
+  if(!p) return;
+  window.open(p.original_url || p.preview_url, '_blank');
+  toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
+}
+
+function iosOpenAll(){
+  /* Open first one immediately (direct user gesture — won't be blocked) */
+  /* Remaining ones open after small delays — most iOS versions allow this
+     within the same gesture chain if delays are short enough */
+  iosPendingPhotos.forEach(function(p, i){
+    if(i === 0){
+      window.open(p.original_url || p.preview_url, '_blank');
+    } else {
+      setTimeout(function(){
+        window.open(p.original_url || p.preview_url, '_blank');
+      }, i * 600); /* 600ms gap — gives Safari time between tabs */
+    }
+  });
+  toast('📱', 'Opening ' + iosPendingPhotos.length + ' photos…', 'Long-press each → "Save to Photos"');
+  closeIosModal();
+}
+
+function closeIosModal(event){
+  if(event && event.target !== document.getElementById('iosModal')) return;
+  document.getElementById('iosModal').classList.add('hidden');
+  document.body.style.overflow = '';
 }
 
 /* ══════════════════════════════════════
@@ -1684,31 +1451,39 @@ function openLightbox(idx, event){
 }
 
 function showLightboxAt(idx){
-  if(!lbPhotos.length) return;
-  lbIndex = (idx + lbPhotos.length) % lbPhotos.length;
-  var p   = lbPhotos[lbIndex];
-  document.getElementById('lightboxImg').src        = p.preview_url;
-  document.getElementById('lbDownloadBtn').href     = p.original_url || p.preview_url;
-  document.getElementById('lbDownloadBtn').download = 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg';
-  document.getElementById('lbCounter').textContent  = (lbIndex+1) + ' / ' + lbPhotos.length;
-
-  document.getElementById('lbDownloadBtn').onclick = function(e){
-    if(isIOS()){
-      e.preventDefault();
-      window.open(p.original_url || p.preview_url, '_blank');
-      toast('📱','Long-press → "Save to Photos"','');
-    }
-  };
+  if(!allPhotos.length) return;
+  lbIndex = (idx + allPhotos.length) % allPhotos.length;
+  var p = allPhotos[lbIndex];
+  document.getElementById('lightboxImg').src       = p.preview_url;
+  document.getElementById('lbCounter').textContent = (lbIndex+1) + ' / ' + allPhotos.length;
 }
 
-function closeLightbox(event){
-  if(event && event.target !== document.getElementById('lightbox')) return;
+function lbDownload(){
+  var p = allPhotos[lbIndex];
+  if(!p) return;
+  var url = p.original_url || p.preview_url;
+  if(isIOS()){
+    window.open(url, '_blank');
+    toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
+  } else {
+    triggerDirectDownload(url, 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg');
+    toast('⬇', 'Saving photo…', 'Check your Downloads / Photos gallery');
+  }
+}
+
+function closeLightbox(){
   document.getElementById('lightbox').classList.add('hidden');
   document.body.style.overflow = '';
 }
 
-function lbPrev(e){ e && e.stopPropagation(); showLightboxAt(lbIndex - 1); }
-function lbNext(e){ e && e.stopPropagation(); showLightboxAt(lbIndex + 1); }
+function closeLightboxBg(event){
+  if(event && event.target === document.getElementById('lightbox')){
+    closeLightbox();
+  }
+}
+
+function lbPrev(e){ if(e) e.stopPropagation(); showLightboxAt(lbIndex - 1); }
+function lbNext(e){ if(e) e.stopPropagation(); showLightboxAt(lbIndex + 1); }
 
 /* Keyboard nav */
 document.addEventListener('keydown', function(e){
@@ -1716,8 +1491,10 @@ document.addEventListener('keydown', function(e){
   if(!lb.classList.contains('hidden')){
     if(e.key === 'ArrowLeft')  lbPrev();
     if(e.key === 'ArrowRight') lbNext();
-    if(e.key === 'Escape'){ lb.classList.add('hidden'); document.body.style.overflow = ''; }
+    if(e.key === 'Escape')     closeLightbox();
   }
+  var ios = document.getElementById('iosModal');
+  if(!ios.classList.contains('hidden') && e.key === 'Escape') closeIosModal();
 });
 
 /* Touch swipe for lightbox */
@@ -1734,13 +1511,15 @@ document.addEventListener('keydown', function(e){
 /* ══════════════════════════════════════
    TOAST
 ══════════════════════════════════════ */
+var toastTimer = null;
 function toast(icon, msg, sub){
   var t = document.getElementById('toast');
   document.getElementById('toastIcon').textContent = icon;
   document.getElementById('toastMsg').textContent  = msg;
   document.getElementById('toastSub').textContent  = sub || '';
   t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 4500);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4500);
 }
 
 /* ══════════════════════════════════════
@@ -1750,7 +1529,7 @@ function showError(msg){
   document.body.className = 'tpl-professional';
   document.body.innerHTML =
     '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;'
-    + 'font-family:DM Sans,sans-serif;text-align:center;padding:40px;background:#f6f7fb;">'
+    + 'font-family:\'DM Sans\',sans-serif;text-align:center;padding:40px;background:#f6f7fb;">'
     + '<div>'
     + '<div style="font-size:48px;margin-bottom:16px;">🔍</div>'
     + '<div style="font-size:22px;font-weight:700;margin-bottom:8px;color:#0c0e1a;">Event Not Found</div>'
@@ -1765,10 +1544,7 @@ function showError(msg){
 ══════════════════════════════════════ */
 function esc(s){
   return String(s||'')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>
