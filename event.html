@@ -803,23 +803,25 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════ iOS DOWNLOAD MODAL ══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════ iOS / ANDROID DOWNLOAD MODAL ══════════════════════════════════════ -->
 <div class="ios-modal-backdrop hidden" id="iosModal" onclick="closeIosModal(event)">
   <div class="ios-modal-box" onclick="event.stopPropagation()">
     <div class="ios-modal-handle"></div>
-    <div class="ios-modal-title">📱 Save Your Photos</div>
-    <div class="ios-modal-sub" id="iosModalSub">Here's how to save photos on iPhone &amp; iPad</div>
-    <div class="ios-step">
-      <div class="ios-step-num">1</div>
-      <div class="ios-step-text">Tap each photo thumbnail below — it opens in a new tab</div>
-    </div>
-    <div class="ios-step">
-      <div class="ios-step-num">2</div>
-      <div class="ios-step-text"><strong>Long-press</strong> the photo image until a menu appears</div>
-    </div>
-    <div class="ios-step">
-      <div class="ios-step-num">3</div>
-      <div class="ios-step-text">Tap <strong>"Save to Photos"</strong> — saves directly to Camera Roll 📷</div>
+    <div class="ios-modal-title" id="iosModalTitle">📱 Save Your Photos</div>
+    <div class="ios-modal-sub" id="iosModalSub">Here's how to save photos on your device</div>
+    <div id="iosSteps">
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div class="ios-step-text">Tap each photo thumbnail below — it opens in a new tab</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div class="ios-step-text" id="iosStep2Text"><strong>Long-press</strong> the photo image until a menu appears</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div class="ios-step-text" id="iosStep3Text">Tap <strong>"Save to Photos"</strong> — saves directly to Camera Roll 📷</div>
+      </div>
     </div>
     <div class="ios-photos-grid" id="iosPhotosGrid"></div>
     <button class="ios-open-all-btn" id="iosOpenAllBtn" onclick="iosOpenAll()">
@@ -1019,9 +1021,13 @@ async function loadPhotos(){
 
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
-      dlSub.textContent = isIOS()
-        ? 'Long-press each photo tab to save to Camera Roll'
-        : 'Files save directly to your Photos / Downloads';
+      if(isIOS()){
+        dlSub.textContent = 'Long-press each photo tab to save to Camera Roll';
+      } else if(isAndroid()){
+        dlSub.textContent = 'Photos will open in new tabs — tap ⋮ → Download';
+      } else {
+        dlSub.textContent = 'Files save directly to your Photos / Downloads';
+      }
     }
 
     buildHero();
@@ -1328,44 +1334,54 @@ function updateSelectionUI(){
 }
 
 /* ══════════════════════════════════════
-   ████  FIXED DOWNLOAD ENGINE  ████
-
-   FIX 1 — downloadOneBlob():
-     Added mode:'cors' + cache:'no-store' for Android.
-     Added requestAnimationFrame before a.click() so the
-     element is in the DOM before the click fires.
-
-   FIX 2 — iosOpenAll():
-     Removed all setTimeout. Opens every tab synchronously
-     inside the same user-gesture call stack so Safari
-     doesn't block them as popups.
-
-   FIX 3 — downloadBatch():
-     Longer inter-photo gap on mobile (600ms vs 200ms).
-     Hard fallback opens the photo in a new tab if blob
-     fetch fails, so users always get something.
+   ████  DOWNLOAD ENGINE — ALL PLATFORMS
+   
+   STRATEGY:
+   • iOS/iPad  → showIosModal() — open tabs, long-press to save
+   • Android   → single photo: direct <a> click
+                 multiple photos: open all as tabs (most reliable)
+   • Desktop   → blob fetch → real file download with progress
 ══════════════════════════════════════ */
 
 /**
- * FIX 1: Download one photo as a blob → real save-to-gallery.
- * mode:'cors' required for Android Chrome cross-origin fetch.
- * requestAnimationFrame ensures the <a> is painted before .click().
+ * Desktop: fetch blob and trigger real file download.
+ * Mobile: direct anchor click (no blob needed — public URL works directly).
  */
 function downloadOneBlob(url, filename){
-  return fetch(url, { mode: 'cors', cache: 'no-store' })
+  /* Mobile: skip blob, use direct anchor — works on Android Chrome with public Supabase URLs */
+  if(isMobile()){
+    return new Promise(function(resolve){
+      var a = document.createElement('a');
+      a.href     = url;
+      a.download = filename || 'ImpactGrid-Photo.jpg';
+      a.target   = '_blank';
+      a.rel      = 'noopener noreferrer';
+      a.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+      document.body.appendChild(a);
+      requestAnimationFrame(function(){
+        a.click();
+        setTimeout(function(){
+          document.body.removeChild(a);
+          resolve();
+        }, 1000);
+      });
+    });
+  }
+
+  /* Desktop: blob fetch for proper filename + format */
+  return fetch(url, { mode:'cors', cache:'no-store' })
     .then(function(r){
       if(!r.ok) throw new Error('HTTP ' + r.status);
       return r.blob();
     })
     .then(function(blob){
-      return new Promise(function(resolve, reject){
+      return new Promise(function(resolve){
         var objUrl = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href     = objUrl;
         a.download = filename || 'ImpactGrid-Photo.jpg';
         a.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
         document.body.appendChild(a);
-        /* Wait for next paint so DOM registers the element before click */
         requestAnimationFrame(function(){
           a.click();
           setTimeout(function(){
@@ -1379,7 +1395,7 @@ function downloadOneBlob(url, filename){
 }
 
 /**
- * Quick download from the hover Save button on a single photo.
+ * Single photo quick-save from the hover button on a card.
  */
 function quickDownload(url, idx){
   if(isIOS()){
@@ -1387,12 +1403,17 @@ function quickDownload(url, idx){
     toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
     return;
   }
-  toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+  if(isAndroid()){
+    window.open(url, '_blank');
+    toast('📥', 'Photo opened in new tab', 'Tap ⋮ → Download to save it');
+    return;
+  }
+  /* Desktop */
+  toast('⬇', 'Saving photo…', 'Check your Downloads folder');
   downloadOneBlob(url, 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg')
-    .catch(function(e){
-      console.warn('Blob download failed, opening tab instead:', e);
+    .catch(function(){
       window.open(url, '_blank');
-      toast('📥', 'Tap the photo', 'Then hold to save it');
+      toast('📥', 'Tap the photo', 'Then save it from your browser');
     });
 }
 
@@ -1434,35 +1455,50 @@ function cancelDl(){
 }
 
 /**
- * FIX 3: Download multiple photos with progress.
- * Mobile gets a longer gap (600ms) between downloads so the
- * file system has time to write. Blob failures fall back to
- * opening the photo in a new tab.
+ * Main batch download dispatcher.
+ * iOS/iPad  → modal with tabs
+ * Android   → open all as new tabs (most reliable cross-device method)
+ * Desktop   → sequential blob downloads with progress bar
  */
 async function downloadBatch(photos){
+  /* iOS and iPad — show the save modal */
   if(isIOS()){
     showIosModal(photos);
     return;
   }
 
+  /* Android — open all photos as tabs; user taps ⋮ → Download in Chrome */
+  if(isAndroid()){
+    if(photos.length === 1){
+      window.open(photos[0].original_url || photos[0].preview_url, '_blank');
+      toast('📥', 'Photo opened!', 'Tap ⋮ → Download to save it');
+    } else {
+      /* Open all synchronously in the same gesture tick */
+      for(var i = 0; i < photos.length; i++){
+        window.open(photos[i].original_url || photos[i].preview_url, '_blank');
+      }
+      toast('📥', photos.length + ' photos opened in tabs', 'In each tab: tap ⋮ → Download');
+    }
+    return;
+  }
+
+  /* Desktop — sequential blob downloads with progress overlay */
   if(photos.length === 1){
-    toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+    toast('⬇', 'Saving photo…', 'Check your Downloads folder');
     try{
       await downloadOneBlob(
         photos[0].original_url || photos[0].preview_url,
         'ImpactGrid-Photo-001.jpg'
       );
     }catch(e){
-      /* Hard fallback */
       window.open(photos[0].original_url || photos[0].preview_url, '_blank');
-      toast('📥', 'Tap the photo', 'Then hold to save it');
+      toast('📥', 'Opened in new tab', 'Save it from your browser');
     }
     return;
   }
 
   showDlProgress(photos.length);
   var done = 0;
-  var gap  = isMobile() ? 600 : 200;
 
   for(var i = 0; i < photos.length; i++){
     if(dlCancelled) break;
@@ -1470,20 +1506,21 @@ async function downloadBatch(photos){
     var num = String(i+1).padStart(3,'0');
     try{
       await downloadOneBlob(url, 'ImpactGrid-Photo-' + num + '.jpg');
+      done++;
     }catch(e){
-      console.warn('Blob failed for photo', i, '— opening tab fallback');
+      console.warn('Blob failed photo', i, '— opening tab fallback');
       window.open(url, '_blank');
+      done++;
     }
-    done++;
     updateDlProgress(done, photos.length);
     if(i < photos.length - 1 && !dlCancelled){
-      await new Promise(function(res){ setTimeout(res, gap); });
+      await new Promise(function(res){ setTimeout(res, 200); });
     }
   }
 
   removeDlProgress();
   if(!dlCancelled){
-    toast('✅', 'All ' + done + ' photos saved!', 'Check your Downloads / Gallery');
+    toast('✅', 'All ' + done + ' photos saved!', 'Check your Downloads folder');
   }
 }
 
@@ -1499,19 +1536,24 @@ function downloadAllPhotos(){
 }
 
 /* ══════════════════════════════════════
-   FIX 2: iOS DOWNLOAD MODAL
-   iosOpenAll() opens ALL tabs synchronously
-   in one loop — no setTimeout — so Safari
-   doesn't classify them as blocked popups.
+   iOS / iPadOS SAVE MODAL
+   Opens every tab synchronously (no setTimeout)
+   so Safari doesn't block them as popups.
 ══════════════════════════════════════ */
 function showIosModal(photos){
   iosPendingPhotos = photos;
 
-  var sub  = document.getElementById('iosModalSub');
-  var grid = document.getElementById('iosPhotosGrid');
-  var btn  = document.getElementById('iosOpenAllBtn');
+  var title = document.getElementById('iosModalTitle');
+  var sub   = document.getElementById('iosModalSub');
+  var step2 = document.getElementById('iosStep2Text');
+  var step3 = document.getElementById('iosStep3Text');
+  var grid  = document.getElementById('iosPhotosGrid');
+  var btn   = document.getElementById('iosOpenAllBtn');
 
-  sub.textContent = 'Save ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' to your Camera Roll';
+  title.textContent = '📱 Save Your Photos';
+  sub.textContent   = 'Save ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' to your Camera Roll';
+  step2.innerHTML   = '<strong>Long-press</strong> the photo image until a menu appears';
+  step3.innerHTML   = 'Tap <strong>"Save to Photos"</strong> — saves directly to Camera Roll 📷';
 
   var shown = photos.slice(0, 8);
   grid.innerHTML = shown.map(function(p, i){
@@ -1539,13 +1581,12 @@ function iosTapThumb(idx){
 }
 
 /**
- * KEY FIX: Open ALL tabs in a plain for-loop — fully synchronous
- * within the user's tap gesture. No setTimeout at all.
- * Safari permits multiple window.open() calls in the same
- * synchronous gesture handler.
+ * Open ALL photos as tabs in one synchronous loop.
+ * Safari allows multiple window.open() calls in the same
+ * gesture handler — no setTimeout needed or allowed.
  */
 function iosOpenAll(){
-  if(iosPendingPhotos.length === 0) return;
+  if(!iosPendingPhotos.length) return;
 
   for(var i = 0; i < iosPendingPhotos.length; i++){
     var p = iosPendingPhotos[i];
@@ -1592,12 +1633,15 @@ function lbDownload(){
   if(isIOS()){
     window.open(url, '_blank');
     toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
+  } else if(isAndroid()){
+    window.open(url, '_blank');
+    toast('📥', 'Photo opened in new tab', 'Tap ⋮ → Download to save it');
   } else {
-    toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+    toast('⬇', 'Saving photo…', 'Check your Downloads folder');
     downloadOneBlob(url, 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg')
       .catch(function(){
         window.open(url, '_blank');
-        toast('📥', 'Tap the photo', 'Then hold to save it');
+        toast('📥', 'Opened in new tab', 'Save it from your browser');
       });
   }
 }
