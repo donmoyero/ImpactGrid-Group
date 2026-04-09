@@ -1520,25 +1520,77 @@ function downloadAllPhotos(){
 }
 
 /* ══════════════════════════════════════
-   iOS / iPadOS SAVE MODAL
-   Opens every tab synchronously (no setTimeout)
-   so Safari doesn't block them as popups.
+   iOS SAVE — Web Share API
+   Uses navigator.share() with File objects.
+   Opens native iOS Share Sheet → user taps
+   "Save Image" → saves directly to Camera Roll.
+   No long-press needed. Same as creator-studio.html.
 ══════════════════════════════════════ */
-function showIosModal(photos){
+
+/**
+ * iOS Save: fetch each photo as a blob, convert to File objects,
+ * then trigger navigator.share() — opens the iOS native Share Sheet.
+ * User taps "Save Image" and it goes straight to Camera Roll.
+ */
+async function showIosModal(photos){
+  /* If Web Share API with files is supported — use it (iOS 15+, iPadOS 15+) */
+  if(navigator.share && navigator.canShare){
+    toast('📲', 'Preparing photos…', 'This may take a moment');
+
+    var files = [];
+    for(var i = 0; i < photos.length; i++){
+      try{
+        var url = photos[i].original_url || photos[i].preview_url;
+        var r   = await fetch(url, { mode: 'cors', cache: 'no-store', redirect: 'follow' });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        var blob = await r.blob();
+        var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
+        var ext  = mime === 'image/png' ? 'png' : 'jpg';
+        files.push(new File([blob], 'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.' + ext, { type: mime }));
+      }catch(e){
+        console.warn('Failed to fetch photo', i, e);
+      }
+    }
+
+    if(files.length === 0){
+      toast('⚠️', 'Could not load photos', 'Check your connection and try again');
+      return;
+    }
+
+    if(navigator.canShare({ files: files })){
+      try{
+        await navigator.share({
+          files : files,
+          title : 'ImpactGrid Photos',
+          text  : 'Your event photos from ImpactGrid'
+        });
+        toast('✅', 'Saved!', 'Tap "Save Image" in the share sheet if not auto-saved');
+      }catch(e){
+        if(e.name !== 'AbortError'){
+          /* Share failed — fall back to tab method */
+          iosFallbackTabs(photos);
+        }
+      }
+      return;
+    }
+  }
+
+  /* Fallback for older iOS (< 15) that doesn't support file sharing */
+  iosFallbackTabs(photos);
+}
+
+/**
+ * Fallback for older iOS: show modal with tabs + long-press instructions.
+ */
+function iosFallbackTabs(photos){
   iosPendingPhotos = photos;
 
-  var title = document.getElementById('iosModalTitle');
-  var sub   = document.getElementById('iosModalSub');
-  var step2 = document.getElementById('iosStep2Text');
-  var step3 = document.getElementById('iosStep3Text');
+  document.getElementById('iosModalTitle').textContent = '📱 Save Your Photos';
+  document.getElementById('iosModalSub').textContent   = 'Save ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' to your Camera Roll';
+  document.getElementById('iosStep2Text').innerHTML    = '<strong>Long-press</strong> the photo until a menu appears';
+  document.getElementById('iosStep3Text').innerHTML    = 'Tap <strong>"Save to Photos"</strong> — saves to Camera Roll 📷';
+
   var grid  = document.getElementById('iosPhotosGrid');
-  var btn   = document.getElementById('iosOpenAllBtn');
-
-  title.textContent = '📱 Save Your Photos';
-  sub.textContent   = 'Save ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' to your Camera Roll';
-  step2.innerHTML   = '<strong>Long-press</strong> the photo image until a menu appears';
-  step3.innerHTML   = 'Tap <strong>"Save to Photos"</strong> — saves directly to Camera Roll 📷';
-
   var shown = photos.slice(0, 8);
   grid.innerHTML = shown.map(function(p, i){
     return '<div class="ios-photo-thumb" onclick="iosTapThumb(' + i + ')">'
@@ -1546,12 +1598,10 @@ function showIosModal(photos){
       + '<div class="ios-photo-thumb-open">↗</div>'
       + '</div>';
   }).join('');
-
   grid.style.display = 'grid';
 
-  btn.textContent = photos.length > 1
-    ? '📂 Open All ' + photos.length + ' Photos'
-    : '📂 Open Photo';
+  var btn = document.getElementById('iosOpenAllBtn');
+  btn.textContent = photos.length > 1 ? '📂 Open All ' + photos.length + ' Photos' : '📂 Open Photo';
 
   document.getElementById('iosModal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -1564,24 +1614,12 @@ function iosTapThumb(idx){
   toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
 }
 
-/**
- * Open ALL photos as tabs in one synchronous loop.
- * Safari allows multiple window.open() calls in the same
- * gesture handler — no setTimeout needed or allowed.
- */
 function iosOpenAll(){
   if(!iosPendingPhotos.length) return;
-
   for(var i = 0; i < iosPendingPhotos.length; i++){
-    var p = iosPendingPhotos[i];
-    window.open(p.original_url || p.preview_url, '_blank');
+    window.open(iosPendingPhotos[i].original_url || iosPendingPhotos[i].preview_url, '_blank');
   }
-
-  if(iosPendingPhotos.length === 1){
-    toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
-  } else {
-    toast('📱', iosPendingPhotos.length + ' photos opened!', 'Long-press each → "Save to Photos"');
-  }
+  toast('📱', iosPendingPhotos.length + ' photos opened!', 'Long-press each → "Save to Photos"');
   closeIosModal();
 }
 
