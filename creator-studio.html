@@ -1,243 +1,1047 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Creator Intelligence Engine — ImpactGrid</title>
-  <meta name="description" content="ImpactGrid Creator Intelligence Engine — AI-powered content advice, trend scoring, and content generation built on real data."/>
-  <link rel="icon" href="favicon.ico"/>
-  <link rel="stylesheet" href="shared.css"/>
-  <link rel="stylesheet" href="creator-studio.css"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Creator Studio — ImpactGrid</title>
+<meta name="description" content="ImpactGrid Creator Studio — your daily content intelligence app."/>
+<link rel="icon" href="favicon.ico"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#c97e08"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="ImpactGrid"/>
+<link rel="apple-touch-icon" href="logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════
+   TOKENS
+═══════════════════════════ */
+:root {
+  --bg:#f2f4fb; --bg2:#e6eaf5; --bg3:#d9dff0;
+  --card:#ffffff; --card2:#f4f6fc;
+  --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.13);
+  --text:#0d1017; --text2:#4a5068; --text3:#9099b8;
+  --gold:#c97e08; --gold2:#a86505;
+  --gold-dim:rgba(201,126,8,0.09); --gold-glo:rgba(201,126,8,0.22);
+  --blue:#2d6edb; --blue-dim:rgba(45,110,219,0.08);
+  --green:#0fa876; --green-dim:rgba(15,168,118,0.10);
+  --purple:#7c3aed; --purple-dim:rgba(124,58,237,0.08);
+  --red:#d94f3b; --red-dim:rgba(217,79,59,0.08);
+  --sidebar-w:220px;
+  --topbar-h:56px;
+  --r:12px; --r2:16px;
+  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
+}
+[data-theme="dark"] {
+  --bg:#07090f; --bg2:#0d1017; --bg3:#111520;
+  --card:#151a28; --card2:#1c2235;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#eef0f6; --text2:#8a91a8; --text3:#4a5068;
+  --gold:#f0b429; --gold2:#ffd166;
+  --gold-dim:rgba(240,180,41,0.10); --gold-glo:rgba(240,180,41,0.25);
+  --blue:#4f8ef7; --blue-dim:rgba(79,142,247,0.10);
+  --green:#2dd4a0; --green-dim:rgba(45,212,160,0.10);
+  --purple:#a78bfa; --purple-dim:rgba(167,139,250,0.10);
+  --red:#f75f4f; --red-dim:rgba(247,95,79,0.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
+h1,h2,h3,h4{font-family:var(--fd);font-weight:900;line-height:1.1;letter-spacing:-.025em;}
+img{display:block;max-width:100%;}
+
+/* ═══════════════════════════
+   APP SHELL
+═══════════════════════════ */
+.app{display:flex;height:100vh;height:100dvh;overflow:hidden;}
+
+/* ═══════════════════════════
+   SIDEBAR
+═══════════════════════════ */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--card);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  height:100%;overflow:hidden;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  z-index:200;
+}
+.sb-head{padding:16px 14px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sb-logo{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:900;font-size:14px;letter-spacing:-.03em;}
+.sb-logo-img{width:26px;height:26px;object-fit:contain;border-radius:6px;}
+.sb-logo-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;display:none;}
+.sb-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:2px;}
+.sb-nav::-webkit-scrollbar{width:3px;}
+.sb-nav::-webkit-scrollbar-track{background:transparent;}
+.sb-nav::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.sb-label{font-family:var(--fm);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);padding:10px 8px 4px;margin-top:4px;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:1px solid transparent;user-select:none;}
+.sb-item:hover{background:var(--bg2);color:var(--text);}
+.sb-item.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-glo);font-weight:700;}
+.sb-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.sb-badge{margin-left:auto;font-family:var(--fm);font-size:9px;padding:1px 6px;border-radius:4px;background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);}
+.sb-badge.soon{background:var(--blue-dim);color:var(--blue);border-color:rgba(45,110,219,.2);}
+/* bottom of sidebar */
+.sb-bottom{flex-shrink:0;border-top:1px solid var(--border);padding:10px 8px;}
+.sb-user{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .15s;position:relative;}
+.sb-user:hover{background:var(--bg2);}
+.sb-av{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;flex-shrink:0;font-family:var(--fd);}
+[data-theme="dark"] .sb-av{color:#07090f;}
+.sb-user-info{flex:1;min-width:0;}
+.sb-user-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-user-role{font-size:10px;color:var(--text3);}
+.sb-user-drop{position:absolute;bottom:calc(100% + 4px);left:8px;right:8px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:6px;box-shadow:0 -10px 32px rgba(0,0,0,.12);display:none;flex-direction:column;gap:2px;z-index:300;}
+[data-theme="dark"] .sb-user-drop{box-shadow:0 -10px 32px rgba(0,0,0,.4);}
+.sb-user-drop.open{display:flex;}
+.sb-user-drop a,.sb-user-drop button{padding:8px 10px;border-radius:8px;font-size:12px;font-weight:500;color:var(--text2);display:block;width:100%;text-align:left;transition:background .15s;}
+.sb-user-drop a:hover,.sb-user-drop button:hover{background:var(--bg2);color:var(--text);}
+.sb-user-drop .dd-div{height:1px;background:var(--border);margin:3px 0;}
+.sb-guest{padding:8px;}
+.sb-btn-login{display:block;width:100%;padding:9px;border-radius:9px;font-size:12px;font-weight:600;text-align:center;border:1px solid var(--border2);color:var(--text2);margin-bottom:6px;transition:all .2s;}
+.sb-btn-login:hover{border-color:var(--gold);color:var(--gold);}
+.sb-btn-join{display:block;width:100%;padding:9px;border-radius:9px;font-size:12px;font-weight:700;text-align:center;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .sb-btn-join{color:#07090f;}
+.sb-btn-join:hover{box-shadow:0 4px 14px var(--gold-glo);}
+
+/* ═══════════════════════════
+   MAIN AREA
+═══════════════════════════ */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden;}
+
+/* topbar */
+.topbar{height:var(--topbar-h);flex-shrink:0;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 18px;}
+.topbar-hamburger{display:none;flex-direction:column;gap:5px;padding:6px;cursor:pointer;margin-right:4px;}
+.topbar-hamburger span{display:block;width:18px;height:2px;background:var(--text2);border-radius:2px;}
+.topbar-title{font-family:var(--fd);font-size:15px;font-weight:900;letter-spacing:-.02em;flex:1;}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.topbar-theme{width:30px;height:30px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;}
+.topbar-live{display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;color:var(--green);padding:4px 10px;border-radius:6px;background:var(--green-dim);border:1px solid rgba(15,168,118,.2);}
+.topbar-live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 1.6s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* content area */
+.content{flex:1;overflow-y:auto;background:var(--bg);}
+.content::-webkit-scrollbar{width:4px;}
+.content::-webkit-scrollbar-track{background:transparent;}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* panels */
+.panel{display:none;padding:24px;max-width:1100px;}
+.panel.active{display:block;animation:fadeIn .2s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ═══════════════════════════
+   DASHBOARD PANEL
+═══════════════════════════ */
+.dash-greeting{margin-bottom:24px;}
+.dash-greeting h2{font-size:clamp(20px,2.5vw,26px);margin-bottom:4px;}
+.dash-greeting p{font-size:13px;color:var(--text2);}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+.dash-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;}
+.dash-stat-label{font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.dash-stat-val{font-family:var(--fd);font-size:28px;font-weight:900;letter-spacing:-.03em;line-height:1;}
+.dash-stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+/* briefing card */
+.briefing-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px;}
+.briefing-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.briefing-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;font-family:var(--fd);}
+[data-theme="dark"] .briefing-av{color:#07090f;}
+.briefing-title{font-size:13px;font-weight:700;}
+.briefing-meta{font-size:11px;color:var(--text3);}
+.briefing-text{font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:14px;}
+.briefing-scores{display:flex;gap:8px;flex-wrap:wrap;}
+.b-score{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;}
+.b-score-n{font-family:var(--fd);font-size:15px;font-weight:900;color:var(--gold);}
+/* top opportunities */
+.opps-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.opp-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;}
+.opp-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.opp-icon{font-size:20px;flex-shrink:0;}
+.opp-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.opp-meta{font-size:11px;color:var(--text3);}
+.opp-score{margin-left:auto;flex-shrink:0;}
+.opp-score-n{font-family:var(--fd);font-size:18px;font-weight:900;color:var(--green);text-align:right;line-height:1;}
+.opp-score-l{font-size:10px;color:var(--text3);text-align:right;}
+/* quick actions */
+.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.qa-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px 14px;text-align:center;cursor:pointer;transition:all .2s;}
+.qa-btn:hover{border-color:var(--border2);transform:translateY(-2px);}
+.qa-icon{font-size:20px;margin-bottom:8px;}
+.qa-label{font-size:12px;font-weight:700;color:var(--text);}
+.qa-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* ═══════════════════════════
+   TREND FEED PANEL
+═══════════════════════════ */
+.feed-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.feed-head h2{font-size:20px;flex:1;}
+.feed-refresh{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--border2);color:var(--text2);display:flex;align-items:center;gap:6px;}
+.feed-refresh:hover{border-color:var(--gold);color:var(--gold);}
+.trend-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s;}
+.trend-card:hover{border-color:var(--border2);transform:translateX(4px);}
+.trend-card.top{border-left:3px solid var(--gold);}
+.t-rank{font-family:var(--fm);font-size:11px;color:var(--text3);width:22px;flex-shrink:0;}
+.t-info{flex:1;min-width:0;}
+.t-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-meta{font-size:11px;color:var(--text3);margin-top:3px;}
+.t-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.t-score{font-family:var(--fd);font-size:18px;font-weight:900;color:var(--green);}
+.t-score.mid{color:var(--gold);}
+.t-plat{font-size:10px;font-family:var(--fm);color:var(--text3);background:var(--bg2);padding:2px 7px;border-radius:4px;}
+.t-gen{padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+.t-gen:hover{background:rgba(201,126,8,.15);}
+
+/* ═══════════════════════════
+   CREATE PANEL
+═══════════════════════════ */
+.create-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.create-form{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:22px;}
+.create-form h3{font-size:16px;margin-bottom:16px;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;font-family:var(--fm);letter-spacing:.05em;text-transform:uppercase;}
+.form-input,.form-select{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--fb);transition:border-color .2s;}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--gold);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239099b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+.btn-generate{width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;margin-top:4px;}
+[data-theme="dark"] .btn-generate{color:#07090f;}
+.btn-generate:hover{box-shadow:0 6px 20px var(--gold-glo);transform:translateY(-1px);}
+.btn-generate:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+/* output */
+.create-output{display:flex;flex-direction:column;gap:12px;}
+.output-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px;}
+.output-label{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;}
+.output-text{font-size:13px;color:var(--text);line-height:1.7;}
+.output-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.output-tag{font-family:var(--fm);font-size:11px;padding:3px 8px;border-radius:5px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+.output-copy{width:100%;margin-top:10px;padding:8px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--border2);color:var(--text2);transition:all .2s;}
+.output-copy:hover{border-color:var(--gold);color:var(--gold);}
+.output-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;min-height:200px;color:var(--text3);font-size:13px;text-align:center;}
+.output-empty-icon{font-size:32px;opacity:.4;}
+.spinner{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--gold);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ═══════════════════════════
+   CAROUSELS PANEL
+═══════════════════════════ */
+.carousel-layout{display:grid;grid-template-columns:260px 1fr;gap:20px;}
+.carousel-controls{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;height:fit-content;}
+.carousel-controls h3{font-size:15px;margin-bottom:16px;}
+.carousel-preview-area{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;}
+.carousel-preview-area h3{font-size:15px;margin-bottom:16px;}
+.slides-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.slide-thumb{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;font-size:11px;font-weight:700;line-height:1.4;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s;border:2px solid transparent;}
+.slide-thumb:hover{transform:scale(1.03);}
+.slide-thumb.selected{border-color:var(--gold);}
+.slide-num{position:absolute;top:7px;right:8px;font-family:var(--fm);font-size:9px;opacity:.6;}
+.slide-dark{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#f0b429;}
+.slide-mid{background:linear-gradient(135deg,#0f3460,#533483);color:#e2e8f0;}
+.slide-purple{background:linear-gradient(135deg,#533483,#7c3aed);color:#fff;}
+.slide-green{background:linear-gradient(135deg,#0f3460,#0a7c5c);color:#2dd4a0;}
+.slide-warm{background:linear-gradient(135deg,#3d1a00,#8b3a00);color:#f0b429;}
+.slide-clean{background:linear-gradient(135deg,#f8f9fa,#e9ecef);color:#1a1a2e;}
+[data-theme="dark"] .slide-clean{background:linear-gradient(135deg,#1c2235,#151a28);color:#eef0f6;}
+.slide-add{background:var(--bg2);border:2px dashed var(--border2);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:11px;gap:4px;}
+.slide-add-icon{font-size:20px;}
+
+/* ═══════════════════════════
+   CONTENT PLAN PANEL
+═══════════════════════════ */
+.plan-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.plan-header h2{font-size:20px;flex:1;}
+.plan-week-nav{display:flex;align-items:center;gap:8px;}
+.plan-week-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2);transition:all .2s;}
+.plan-week-btn:hover{border-color:var(--gold);color:var(--gold);}
+.plan-week-label{font-size:12px;font-weight:700;font-family:var(--fm);}
+.plan-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:20px;}
+.plan-day-col{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;min-height:160px;}
+.plan-day-head{padding:10px 10px 8px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;}
+.plan-day-name{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;}
+.plan-day-num{font-family:var(--fd);font-size:18px;font-weight:900;line-height:1.1;}
+.plan-day-num.today{color:var(--gold);}
+.plan-day-body{padding:8px;}
+.plan-post{padding:6px 8px;border-radius:7px;margin-bottom:5px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .2s;}
+.plan-post:hover{opacity:.8;}
+.plan-post.yt{background:rgba(255,0,0,.08);color:#cc3300;border:1px solid rgba(255,0,0,.12);}
+[data-theme="dark"] .plan-post.yt{color:#ff6666;}
+.plan-post.tt{background:var(--bg2);color:var(--text2);border:1px solid var(--border);}
+.plan-post.ig{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.15);}
+.plan-add-slot{padding:6px 8px;border-radius:7px;border:1px dashed var(--border2);font-size:10px;color:var(--text3);text-align:center;cursor:pointer;transition:all .2s;}
+.plan-add-slot:hover{border-color:var(--gold);color:var(--gold);}
+.plan-gen-btn{width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;margin-top:4px;}
+[data-theme="dark"] .plan-gen-btn{color:#07090f;}
+.plan-gen-btn:hover{box-shadow:0 5px 18px var(--gold-glo);}
+
+/* ═══════════════════════════
+   PORTFOLIO PANEL
+═══════════════════════════ */
+.portfolio-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.portfolio-header h2{font-size:20px;flex:1;}
+.portfolio-empty{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:48px 24px;text-align:center;}
+.portfolio-empty-icon{font-size:40px;margin-bottom:14px;opacity:.4;}
+.portfolio-empty h3{font-size:17px;margin-bottom:8px;}
+.portfolio-empty p{font-size:13px;color:var(--text2);max-width:360px;margin:0 auto 20px;line-height:1.7;}
+.btn-setup-portfolio{padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .btn-setup-portfolio{color:#07090f;}
+.btn-setup-portfolio:hover{box-shadow:0 5px 18px var(--gold-glo);}
+
+/* ═══════════════════════════
+   OPPORTUNITIES PANEL
+═══════════════════════════ */
+.opps-grid-full{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;}
+.opp-full-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;}
+.opp-full-card:hover{border-color:var(--border2);}
+.opp-tag{display:inline-flex;font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-bottom:10px;font-weight:600;}
+.opp-full-title{font-size:15px;font-weight:800;margin-bottom:6px;letter-spacing:-.02em;}
+.opp-full-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px;}
+.opp-full-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);}
+.opp-apply{margin-left:auto;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+.opp-apply:hover{background:rgba(201,126,8,.15);}
+
+/* ═══════════════════════════
+   CONNECT PLATFORMS PANEL
+═══════════════════════════ */
+.connect-grid-app{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:20px;}
+.connect-card-app{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:22px 20px;transition:all .3s;position:relative;overflow:hidden;}
+.connect-card-app::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--cc-a,var(--gold));transform:scaleX(0);transition:transform .3s;transform-origin:left;}
+.connect-card-app:hover::before{transform:scaleX(1);}
+.connect-card-app.connected{border-color:rgba(45,212,160,.25);}
+.connect-card-app.connected::before{transform:scaleX(1);background:var(--green);}
+.cc-app-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px;}
+.cc-app-name{font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:4px;}
+.cc-app-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+.cc-app-status{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.1em;padding:3px 9px;border-radius:20px;margin-bottom:12px;}
+.cc-app-status.live{background:var(--green-dim);color:var(--green);border:1px solid rgba(45,212,160,.2);}
+.cc-app-status.soon{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(45,110,219,.2);}
+.cc-app-status.auto{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+.cc-app-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink 1.6s infinite;}
+.cc-app-btn{display:block;width:100%;padding:9px;border-radius:9px;font-size:12px;font-weight:700;text-align:center;border:none;cursor:pointer;font-family:var(--fb);transition:all .2s;}
+.cc-app-btn.yt{background:linear-gradient(135deg,#ff4040,#ff6060);color:#fff;}
+.cc-app-btn.yt:hover{box-shadow:0 4px 14px rgba(255,64,64,.3);}
+.cc-app-btn.tt{background:linear-gradient(135deg,#111,#2a2a2a);color:#fff;}
+[data-theme="dark"] .cc-app-btn.tt{background:linear-gradient(135deg,#2a2a2a,#3a3a3a);}
+.cc-app-btn.tt:hover{box-shadow:0 4px 14px rgba(0,0,0,.4);}
+.cc-app-btn.disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed;}
+.cc-app-btn.auto{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+
+/* ═══════════════════════════
+   SETTINGS PANEL
+═══════════════════════════ */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:22px;}
+.settings-card h3{font-size:14px;font-weight:800;margin-bottom:14px;}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:13px;font-weight:600;}
+.setting-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+.toggle{width:38px;height:22px;border-radius:11px;background:var(--bg3);border:1px solid var(--border2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--gold);border-color:var(--gold);}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;}
+.toggle.on::after{transform:translateX(16px);}
+
+/* ═══════════════════════════
+   DIJO AI PANEL
+═══════════════════════════ */
+.dijo-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - var(--topbar-h) - 48px);}
+.dijo-chat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;}
+.dijo-chat-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.dijo-chat-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;font-family:var(--fd);}
+[data-theme="dark"] .dijo-chat-av{color:#07090f;}
+.dijo-chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.dijo-chat-msgs::-webkit-scrollbar{width:3px;}
+.dijo-chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.chat-msg{display:flex;gap:9px;align-items:flex-start;}
+.chat-msg.user{flex-direction:row-reverse;}
+.chat-av-sm{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.chat-av-sm.dijo{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .chat-av-sm.dijo{color:#07090f;}
+.chat-av-sm.you{background:var(--bg2);color:var(--text2);}
+.chat-bubble{padding:10px 13px;border-radius:11px;font-size:13px;line-height:1.65;max-width:78%;}
+.chat-bubble.dijo{background:var(--card2);border:1px solid var(--border);}
+.chat-bubble.you{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .chat-bubble.you{color:#07090f;}
+.dijo-input-row{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;}
+.dijo-input{flex:1;padding:9px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--fb);}
+.dijo-input:focus{outline:none;border-color:var(--gold);}
+.dijo-send{padding:9px 16px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;}
+[data-theme="dark"] .dijo-send{color:#07090f;}
+.dijo-send:hover{box-shadow:0 3px 12px var(--gold-glo);}
+/* dijo sidebar */
+.dijo-sidebar{display:flex;flex-direction:column;gap:12px;}
+.dijo-quick-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px;}
+.dijo-quick-card h4{font-size:13px;font-weight:800;margin-bottom:10px;}
+.dijo-quick-btn{width:100%;text-align:left;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text2);border:1px solid var(--border);margin-bottom:5px;transition:all .2s;}
+.dijo-quick-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
+.dijo-quick-btn:last-child{margin-bottom:0;}
+
+/* ═══════════════════════════
+   MOBILE OVERLAY
+═══════════════════════════ */
+.mob-overlay{display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);}
+.mob-overlay.open{display:block;}
+
+/* ═══════════════════════════
+   RESPONSIVE
+═══════════════════════════ */
+@media(max-width:900px){
+  .sidebar{position:fixed;top:0;bottom:0;left:0;transform:translateX(-100%);box-shadow:8px 0 40px rgba(0,0,0,.15);}
+  [data-theme="dark"] .sidebar{box-shadow:8px 0 40px rgba(0,0,0,.6);}
+  .sidebar.open{transform:translateX(0);}
+  .topbar-hamburger{display:flex;}
+  .dash-grid{grid-template-columns:1fr 1fr;}
+  .create-layout{grid-template-columns:1fr;}
+  .carousel-layout{grid-template-columns:1fr;}
+  .dijo-layout{grid-template-columns:1fr;height:auto;}
+  .dijo-sidebar{display:none;}
+  .plan-grid{grid-template-columns:repeat(4,1fr);}
+  .opps-grid-full{grid-template-columns:1fr;}
+  .settings-grid{grid-template-columns:1fr;}
+  .connect-grid-app{grid-template-columns:1fr;}
+  .quick-actions{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:560px){
+  .panel{padding:14px;}
+  .dash-grid{grid-template-columns:1fr;}
+  .opps-row{grid-template-columns:1fr;}
+  .plan-grid{grid-template-columns:repeat(3,1fr);}
+  .quick-actions{grid-template-columns:repeat(2,1fr);}
+  .slides-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
 </head>
 <body>
 
-<div id="ig-nav"></div>
+<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 
-<!-- HERO -->
-<section class="cs-hero">
-  <div class="cs-hero-bg">
-    <div class="hero-orb hero-orb-1"></div>
-    <div class="hero-orb hero-orb-2"></div>
-    <div class="hero-orb hero-orb-3"></div>
-    <div class="hero-grid-lines"></div>
-  </div>
-  <div class="cs-hero-inner">
-    <div class="cs-hero-badge anim-fade">
-      <span class="pulse-dot"></span>
-      <span>CREATOR INTELLIGENCE ENGINE</span>
-      <span class="badge-sep">·</span>
-      <span class="badge-ver">V2.0</span>
+<div class="app">
+  <!-- ═══════════════ SIDEBAR ═══════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo">
+        <img src="logo.png" class="sb-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <div class="sb-logo-mark">IG</div>
+        <span>ImpactGrid</span>
+      </div>
     </div>
-    <h1 class="cs-hero-title anim-fade anim-d1">
-      Content Intelligence<br/>
-      <span class="title-accent">Powered by Real Data</span>
-    </h1>
-    <p class="cs-hero-sub anim-fade anim-d2">
-      Enter any topic and get a complete content package — hooks, captions, hashtags, and optimal posting windows — built from <em>real trend signals</em>, not guesswork.
-    </p>
-    <div class="cs-hero-actions anim-fade anim-d3">
-      <a href="creator-editor.html" class="btn-pri-lg">
-        <span>Launch Intelligence Dashboard</span>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <a href="#connect" class="btn-ghost-lg">Connect Platforms</a>
-    </div>
-  </div>
-</section>
 
-<!-- CONNECT PLATFORMS -->
-<section class="connect-section" id="connect">
-  <div class="section-inner">
-    <div class="label-tag">Platform Integrations</div>
-    <h2 class="sec-title">Connect Your Accounts.<br/>Get Real Data.</h2>
-    <p class="sec-sub">Link your accounts to unlock real follower counts, live engagement analytics, and direct publishing from the ImpactGrid dashboard.</p>
+    <nav class="sb-nav">
+      <div class="sb-label">Main</div>
+      <div class="sb-item active" onclick="showPanel('dashboard',this)"><span class="sb-icon">🏠</span>Dashboard</div>
+      <div class="sb-item" onclick="showPanel('trendfeed',this)"><span class="sb-icon">📡</span>Trend Feed<span class="sb-badge">Live</span></div>
+      <div class="sb-item" onclick="showPanel('create',this)"><span class="sb-icon">✍️</span>Create</div>
+      <div class="sb-item" onclick="showPanel('carousels',this)"><span class="sb-icon">🎨</span>Carousels</div>
 
-    <div class="connect-grid">
+      <div class="sb-label">Planning</div>
+      <div class="sb-item" onclick="showPanel('contentplan',this)"><span class="sb-icon">📅</span>Content Plan</div>
+      <div class="sb-item" onclick="showPanel('portfolio',this)"><span class="sb-icon">🌐</span>Portfolio</div>
+      <div class="sb-item" onclick="showPanel('dijo',this)"><span class="sb-icon">🤖</span>Dijo AI</div>
 
-      <!-- TikTok -->
-      <div class="connect-card" id="tt-connect-card" style="--cc-accent:#ff2d55;">
-        <div class="cc-icon" style="background:rgba(255,45,85,0.12);color:#ff2d55;">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.73a4.85 4.85 0 01-1.01-.04z"/></svg>
+      <div class="sb-label">Grow</div>
+      <div class="sb-item" onclick="showPanel('opportunities',this)"><span class="sb-icon">💼</span>Opportunities</div>
+      <div class="sb-item" onclick="showPanel('connect',this)"><span class="sb-icon">🔗</span>Connect Platforms</div>
+
+      <div class="sb-label">Account</div>
+      <div class="sb-item" onclick="showPanel('settings',this)"><span class="sb-icon">⚙️</span>Settings</div>
+    </nav>
+
+    <!-- bottom: user / login -->
+    <div class="sb-bottom">
+      <!-- logged in -->
+      <div id="sbUserWrap" style="display:none;">
+        <div class="sb-user" onclick="toggleSbDrop()">
+          <div class="sb-av" id="sbAv">?</div>
+          <div class="sb-user-info">
+            <div class="sb-user-name" id="sbName">Creator</div>
+            <div class="sb-user-role">Creator Account</div>
+          </div>
+          <span style="font-size:9px;color:var(--text3);">▲</span>
+          <div class="sb-user-drop" id="sbDrop">
+            <div class="dd-email" style="padding:7px 10px;font-size:10px;color:var(--text3);font-family:var(--fm);" id="sbEmail"></div>
+            <div class="dd-div"></div>
+            <a href="index.html">🏠 Home</a>
+            <div class="dd-div"></div>
+            <button onclick="igOut()">↩ Sign Out</button>
+          </div>
         </div>
-        <div class="cc-name">TikTok</div>
-        <div class="cc-desc">Follower analytics · Hashtag velocity · Content publishing · Share Kit</div>
-        <div class="cc-status live" id="tt-status"><span class="cc-status-dot"></span><span id="tt-status-text">Ready to Connect</span></div>
-        <button class="cc-btn cc-btn-tt" id="tt-connect-btn" onclick="TikTokAuth.connect(this)">Connect TikTok →</button>
       </div>
-
-      <!-- Instagram -->
-      <div class="connect-card" style="--cc-accent:#e1306c;">
-        <div class="cc-icon" style="background:rgba(225,48,108,0.12);color:#e1306c;">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-        </div>
-        <div class="cc-name">Instagram</div>
-        <div class="cc-desc">Profile insights · Media analytics · Reels performance · Content publishing</div>
-        <div class="cc-status soon"><span class="cc-spinner"></span>Coming Soon</div>
-        <button class="cc-btn cc-btn-soon" disabled>Pending API Approval</button>
-        <div class="coming-soon-note">Meta developer review in progress. Connection will activate automatically once approved.</div>
+      <!-- guest -->
+      <div id="sbGuestWrap" class="sb-guest">
+        <a href="login.html" class="sb-btn-login">Login</a>
+        <a href="join.html" class="sb-btn-join">Join Free →</a>
       </div>
-
-      <!-- YouTube -->
-      <div class="connect-card" id="yt-connect-card" style="--cc-accent:#ff6060;">
-        <div class="cc-icon" style="background:rgba(255,96,96,0.12);color:#ff6060;">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-        </div>
-        <div class="cc-name">YouTube</div>
-        <div class="cc-desc">Channel analytics · Video performance · Subscriber insights · Upload</div>
-        <div class="cc-status live" id="yt-status"><span class="cc-status-dot"></span><span id="yt-status-text">Ready to Connect</span></div>
-        <button class="cc-btn cc-btn-yt" id="yt-connect-btn" onclick="YouTubeAuth.connect(this)">Connect YouTube →</button>
-      </div>
-
-      <!-- Google Trends -->
-      <div class="connect-card" style="--cc-accent:#4285f4;">
-        <div class="cc-icon" style="background:rgba(66,133,244,0.12);color:#4285f4;">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
-        </div>
-        <div class="cc-name">Google Trends</div>
-        <div class="cc-desc">Search growth · Breakout queries · Regional demand · Trend velocity</div>
-        <div class="cc-status active"><span class="cc-status-dot"></span>Auto-Active</div>
-        <a href="creator-editor.html" class="cc-btn cc-btn-auto">Open Dashboard →</a>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- CAPABILITIES -->
-<section class="capabilities-section anim" id="features">
-  <div class="section-inner">
-    <div class="label-tag">Real Capabilities</div>
-    <h2 class="sec-title">What the Engine Actually Does</h2>
-    <p class="sec-sub">No invented numbers. Every output is generated from your topic input using the Trend Score™ algorithm and our content knowledge base.</p>
-
-    <div class="capabilities-grid">
-      <div class="cap-card">
-        <div class="cap-icon">📡</div>
-        <h3>Trend Score™ Algorithm</h3>
-        <p>A 4-signal weighted model scores any topic from 1–10 using search growth, video engagement, hashtag velocity, and creator adoption patterns.</p>
-        <div class="cap-note"><span class="cap-note-dot"></span>Live · Powered by Google Trends signals</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">✍️</div>
-        <h3>AI Content Generator</h3>
-        <p>Generate hooks, captions, content outlines, and hashtag sets for any topic. Output is niche-aware and platform-specific.</p>
-        <div class="cap-note"><span class="cap-note-dot"></span>Live · Available in the full dashboard</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">🕐</div>
-        <h3>Posting Intelligence</h3>
-        <p>Calculates optimal posting windows per platform and niche based on audience behaviour patterns. Tells you exactly when to post for peak reach.</p>
-        <div class="cap-note"><span class="cap-note-dot"></span>Live · Niche-specific windows</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">👥</div>
-        <h3>Audience Analysis</h3>
-        <p>Breaks down your target audience by demographic, motivation, and engagement trigger for any niche. Tells you how to speak to them, not just who they are.</p>
-        <div class="cap-note"><span class="cap-note-dot"></span>Live · Available in the full dashboard</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">📊</div>
-        <h3>YouTube Channel Analytics</h3>
-        <p>Connect your YouTube account to see real channel performance, video stats, subscriber data, and analytics — pulled directly from the YouTube Data API.</p>
-        <div class="cap-note"><span class="cap-note-dot"></span>Live · Connect YouTube above</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">🔗</div>
-        <h3>TikTok & Instagram Analytics</h3>
-        <p>Real follower data, engagement metrics, content performance, and direct publishing — once our developer applications are approved by TikTok and Meta.</p>
-        <div class="cap-note"><span class="cap-note-dot cap-note-dot-soon"></span>Coming Soon · Pending API approval</div>
+      <!-- theme toggle always visible -->
+      <div style="padding:6px 8px 0;">
+        <button onclick="toggleTheme()" style="width:100%;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid var(--border2);color:var(--text2);display:flex;align-items:center;gap:7px;" id="sbThemeBtn">
+          <span>🌙</span><span>Dark Mode</span>
+        </button>
       </div>
     </div>
-  </div>
-</section>
+  </aside>
 
-<!-- BOTTOM CTA -->
-<section class="cs-cta">
-  <div class="cta-inner">
-    <div class="label-tag" style="justify-content:center;">Powered by ImpactGrid</div>
-    <h2>Creator Intelligence,<br/>Backed by Real Data.</h2>
-    <p>The Creator Intelligence Engine is built on the same analytics infrastructure powering ImpactGrid V3.0. Enter a topic and get a complete content package in seconds.</p>
-    <div class="cta-actions">
-      <a href="creator-editor.html" class="btn-pri-lg">Open Intelligence Dashboard</a>
-      <a href="analytics.html" class="btn-ghost-lg">Explore ImpactGrid Analytics</a>
+  <!-- ═══════════════ MAIN ═══════════════ -->
+  <div class="main">
+    <!-- topbar -->
+    <div class="topbar">
+      <button class="topbar-hamburger" id="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-right">
+        <div class="topbar-live"><div class="topbar-live-dot"></div>Live</div>
+        <button class="topbar-theme" onclick="toggleTheme()" id="topThemeBtn">🌙</button>
+      </div>
     </div>
-  </div>
-</section>
 
-<div id="ig-footer"></div>
+    <!-- content -->
+    <div class="content" id="contentArea">
 
+      <!-- ══ DASHBOARD ══ -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="dash-greeting">
+          <h2 id="dashGreeting">Good morning, Creator 👋</h2>
+          <p id="dashDate">Loading today's intelligence…</p>
+        </div>
+        <div class="dash-grid">
+          <div class="dash-stat">
+            <div class="dash-stat-label">Top Trend Score</div>
+            <div class="dash-stat-val" style="color:var(--green);" id="dashTopScore">5.9</div>
+            <div class="dash-stat-sub">shorts · YouTube</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-label">Trends Today</div>
+            <div class="dash-stat-val" id="dashTrendCount">12</div>
+            <div class="dash-stat-sub">UK + Global signals</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-label">Best Platform</div>
+            <div class="dash-stat-val" style="font-size:20px;color:var(--gold);">YouTube</div>
+            <div class="dash-stat-sub">Most active right now</div>
+          </div>
+        </div>
+        <!-- Dijo briefing -->
+        <div class="briefing-card">
+          <div class="briefing-header">
+            <div class="briefing-av">D</div>
+            <div>
+              <div class="briefing-title">Dijo Daily Briefing</div>
+              <div class="briefing-meta" id="briefingDate">Thursday, 9 April 2026 · cached</div>
+            </div>
+            <button onclick="refreshBriefing()" style="margin-left:auto;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);">Refresh</button>
+          </div>
+          <p class="briefing-text" id="briefingText">Good morning, creator. Today's hottest topics are all about Viking history with "vikingtom" leading the charge, along with the rising popularity of "shorts" and the emerging interest in "inteligenciaartificial" on YouTube. I recommend creating a short, engaging video about a fascinating Viking myth and publishing it as a YouTube Short today. YouTube is the best platform play right now — stay consistent and ride this wave.</p>
+          <div class="briefing-scores">
+            <div class="b-score"><span class="b-score-n">5.9</span><span>shorts</span></div>
+            <div class="b-score"><span class="b-score-n">5.8</span><span>vikingtom</span></div>
+            <div class="b-score"><span class="b-score-n">5.8</span><span>inteligenciaartificial</span></div>
+          </div>
+        </div>
+        <!-- top opportunities -->
+        <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">⚡ Top Opportunities</div>
+        <div class="opps-row">
+          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
+            <span class="opp-icon">🔱</span>
+            <div><div class="opp-name">Viking history myths</div><div class="opp-meta">TikTok · emerging · 5 videos</div></div>
+            <div class="opp-score"><div class="opp-score-n">5.8</div><div class="opp-score-l">Score</div></div>
+          </div>
+          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
+            <span class="opp-icon">🇬🇧</span>
+            <div><div class="opp-name">UK Street Style</div><div class="opp-meta">TikTok · rising fast</div></div>
+            <div class="opp-score"><div class="opp-score-n">5.5</div><div class="opp-score-l">Score</div></div>
+          </div>
+        </div>
+        <!-- quick actions -->
+        <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Quick Actions</div>
+        <div class="quick-actions">
+          <div class="qa-btn" onclick="showPanel('trendfeed',document.querySelector('[onclick*=trendfeed]'))"><div class="qa-icon">📡</div><div class="qa-label">View Trends</div><div class="qa-desc">See what's hot today</div></div>
+          <div class="qa-btn" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><div class="qa-icon">✍️</div><div class="qa-label">Generate Content</div><div class="qa-desc">Hook, caption, hashtags</div></div>
+          <div class="qa-btn" onclick="showPanel('contentplan',document.querySelector('[onclick*=contentplan]'))"><div class="qa-icon">📅</div><div class="qa-label">Plan My Week</div><div class="qa-desc">Fill your content calendar</div></div>
+          <div class="qa-btn" onclick="showPanel('dijo',document.querySelector('[onclick*=dijo]'))"><div class="qa-icon">🤖</div><div class="qa-label">Ask Dijo</div><div class="qa-desc">Your AI creator brain</div></div>
+        </div>
+      </div>
+
+      <!-- ══ TREND FEED ══ -->
+      <div class="panel" id="panel-trendfeed">
+        <div class="feed-head">
+          <h2>Trend Feed</h2>
+          <div style="font-family:var(--fm);font-size:11px;color:var(--text3);">UK · Real Google Trends</div>
+          <button class="feed-refresh" style="margin-left:auto;">🔄 Refresh</button>
+        </div>
+        <div id="trendFeedList">
+          <div class="trend-card top" onclick="loadTopic('shorts')"><span class="t-rank">#1</span><div class="t-info"><div class="t-name">shorts</div><div class="t-meta">4 videos · 641,924 views · Google Trends</div></div><div class="t-right"><span class="t-score">5.9</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
+          <div class="trend-card top" onclick="loadTopic('vikingtom')"><span class="t-rank">#2</span><div class="t-info"><div class="t-name">vikingtom</div><div class="t-meta">5 videos · 126,349 views · YouTube</div></div><div class="t-right"><span class="t-score">5.8</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
+          <div class="trend-card" onclick="loadTopic('inteligenciaartificial')"><span class="t-rank">#3</span><div class="t-info"><div class="t-name">inteligenciaartificial</div><div class="t-meta">3 videos · 5,548 views · YouTube</div></div><div class="t-right"><span class="t-score">5.8</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
+          <div class="trend-card" onclick="loadTopic('UK Street Style')"><span class="t-rank">#4</span><div class="t-info"><div class="t-name">UK Street Style</div><div class="t-meta">Google Trends · Trend Score™</div></div><div class="t-right"><span class="t-score mid">5.5</span><span class="t-plat">TikTok</span><button class="t-gen">Generate →</button></div></div>
+          <div class="trend-card" onclick="loadTopic('James 14:3 bible')"><span class="t-rank">#5</span><div class="t-info"><div class="t-name">James 14:3 Bible verse</div><div class="t-meta">Google Trends · viral · UK</div></div><div class="t-right"><span class="t-score mid">5.5</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
+          <div class="trend-card" onclick="loadTopic('Wellingborough UK 2026')"><span class="t-rank">#6</span><div class="t-info"><div class="t-name">Wellingborough UK 2026</div><div class="t-meta">Trending shorts · viral · UK</div></div><div class="t-right"><span class="t-score mid">4.9</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
+        </div>
+      </div>
+
+      <!-- ══ CREATE ══ -->
+      <div class="panel" id="panel-create">
+        <h2 style="margin-bottom:20px;font-size:20px;">Create Content</h2>
+        <div class="create-layout">
+          <div class="create-form">
+            <h3>What do you want to create?</h3>
+            <div class="form-group">
+              <label class="form-label">Topic</label>
+              <input class="form-input" id="createTopic" placeholder="e.g. Viking myths, UK Street Style…"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Platform</label>
+              <select class="form-select" id="createPlatform">
+                <option>TikTok</option>
+                <option>YouTube</option>
+                <option>Instagram</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Content Type</label>
+              <select class="form-select" id="createType">
+                <option>Short / Reel</option>
+                <option>Long-form video</option>
+                <option>Carousel post</option>
+                <option>Story / Status</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tone</label>
+              <select class="form-select" id="createTone">
+                <option>Educational</option>
+                <option>Entertaining</option>
+                <option>Inspirational</option>
+                <option>Controversial / Hot take</option>
+              </select>
+            </div>
+            <button class="btn-generate" id="generateBtn" onclick="generateContent()">✨ Generate with Dijo</button>
+          </div>
+          <div class="create-output" id="createOutput">
+            <div class="output-empty"><div class="output-empty-icon">✨</div><p>Fill in the form and hit generate.<br/>Dijo will write your content package.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CAROUSELS ══ -->
+      <div class="panel" id="panel-carousels">
+        <h2 style="margin-bottom:20px;font-size:20px;">Carousel Generator</h2>
+        <div class="carousel-layout">
+          <div class="carousel-controls">
+            <h3>Settings</h3>
+            <div class="form-group">
+              <label class="form-label">Topic</label>
+              <input class="form-input" id="carouselTopic" placeholder="e.g. 5 Viking myths…"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Style</label>
+              <select class="form-select" id="carouselStyle">
+                <option value="dark">Dark &amp; Bold</option>
+                <option value="purple">Purple Gradient</option>
+                <option value="green">Deep Teal</option>
+                <option value="warm">Warm Gold</option>
+                <option value="clean">Clean Light</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Slides</label>
+              <select class="form-select" id="carouselSlides">
+                <option>5 slides</option>
+                <option>7 slides</option>
+                <option>10 slides</option>
+              </select>
+            </div>
+            <button class="btn-generate" onclick="generateCarousel()">🎨 Generate Carousel</button>
+          </div>
+          <div class="carousel-preview-area">
+            <h3>Preview</h3>
+            <div class="slides-grid" id="slidesGrid">
+              <div class="slide-thumb slide-dark"><span class="slide-num">1/5</span>5 Viking Myths That Changed History 🔱</div>
+              <div class="slide-thumb slide-mid"><span class="slide-num">2/5</span>Myth #1: They wore horned helmets</div>
+              <div class="slide-thumb slide-purple"><span class="slide-num">3/5</span>Truth: Never in battle. 19th century invention.</div>
+              <div class="slide-thumb slide-dark"><span class="slide-num">4/5</span>Myth #2: They were dirty barbarians</div>
+              <div class="slide-thumb slide-mid"><span class="slide-num">5/5</span>Truth: Most hygienic culture of their era.</div>
+              <div class="slide-add" onclick="addSlide()"><div class="slide-add-icon">+</div>Add slide</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CONTENT PLAN ══ -->
+      <div class="panel" id="panel-contentplan">
+        <div class="plan-header">
+          <h2>Content Plan</h2>
+          <div class="plan-week-nav">
+            <button class="plan-week-btn">←</button>
+            <span class="plan-week-label">7–13 Apr 2026</span>
+            <button class="plan-week-btn">→</button>
+          </div>
+          <button class="plan-gen-btn" style="width:auto;padding:8px 16px;margin-top:0;margin-left:10px;font-size:12px;" onclick="autoFillPlan()">✨ Auto-Fill with Dijo</button>
+        </div>
+        <div class="plan-grid" id="planGrid">
+          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Mon</div><div class="plan-day-num today">7</div></div><div class="plan-day-body"><div class="plan-post yt">Viking myths hook</div><div class="plan-add-slot">+ Add</div></div></div>
+          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Tue</div><div class="plan-day-num">8</div></div><div class="plan-day-body"><div class="plan-post ig">UK Style carousel</div><div class="plan-add-slot">+ Add</div></div></div>
+          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Wed</div><div class="plan-day-num">9</div></div><div class="plan-day-body"><div class="plan-post tt">AI tools short</div><div class="plan-add-slot">+ Add</div></div></div>
+          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Thu</div><div class="plan-day-num">10</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
+          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Fri</div><div class="plan-day-num">11</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
+          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Sat</div><div class="plan-day-num">12</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
+          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Sun</div><div class="plan-day-num">13</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
+        </div>
+      </div>
+
+      <!-- ══ PORTFOLIO ══ -->
+      <div class="panel" id="panel-portfolio">
+        <div class="portfolio-header"><h2>Portfolio</h2></div>
+        <div class="portfolio-empty">
+          <div class="portfolio-empty-icon">🌐</div>
+          <h3>Your creator portfolio</h3>
+          <p>Build a beautiful link-in-bio page that showcases your content, platforms, and brand. Dijo generates it from your profile.</p>
+          <button class="btn-setup-portfolio">✨ Build My Portfolio</button>
+        </div>
+      </div>
+
+      <!-- ══ DIJO AI ══ -->
+      <div class="panel" id="panel-dijo">
+        <div class="dijo-layout">
+          <div class="dijo-chat">
+            <div class="dijo-chat-head">
+              <div class="dijo-chat-av">D</div>
+              <div><div style="font-size:13px;font-weight:700;">Dijo AI</div><div style="font-size:11px;color:var(--text3);">Your creator intelligence engine</div></div>
+              <div style="margin-left:auto;" class="topbar-live"><div class="topbar-live-dot"></div>Active</div>
+            </div>
+            <div class="dijo-chat-msgs" id="dijoMsgs">
+              <div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">Hey! I'm Dijo — your always-on creator brain. Ask me anything: what to post, how to write a hook, which trends to chase, or how to grow faster. What's on your mind?</div></div>
+            </div>
+            <div class="dijo-input-row">
+              <input class="dijo-input" id="dijoInput" placeholder="Ask Dijo anything…" onkeydown="if(event.key==='Enter')sendDijo()"/>
+              <button class="dijo-send" onclick="sendDijo()">Send</button>
+            </div>
+          </div>
+          <div class="dijo-sidebar">
+            <div class="dijo-quick-card">
+              <h4>Quick prompts</h4>
+              <button class="dijo-quick-btn" onclick="quickDijo('What should I post today?')">What should I post today?</button>
+              <button class="dijo-quick-btn" onclick="quickDijo('Write me a viral hook about Vikings')">Write me a Viking hook</button>
+              <button class="dijo-quick-btn" onclick="quickDijo('What is the best time to post on TikTok UK?')">Best time to post TikTok UK</button>
+              <button class="dijo-quick-btn" onclick="quickDijo('Give me 5 content ideas for this week')">5 content ideas this week</button>
+              <button class="dijo-quick-btn" onclick="quickDijo('How do I grow faster on YouTube?')">How to grow on YouTube</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ OPPORTUNITIES ══ -->
+      <div class="panel" id="panel-opportunities">
+        <h2 style="font-size:20px;margin-bottom:6px;">Opportunities</h2>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">Brand deals, collabs, and creator gigs.</p>
+        <div class="opps-grid-full">
+          <div class="opp-full-card"><div class="opp-tag" style="background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);">Brand Deal</div><div class="opp-full-title">UK Lifestyle Creator — Spring Campaign</div><div class="opp-full-desc">Fashion brand seeking UK TikTok creators (10K+ followers) for a paid spring campaign. Gifted products + flat fee.</div><div class="opp-full-meta"><span>💰 Paid</span><span>📍 UK</span><span>▶️ TikTok</span><button class="opp-apply">Apply →</button></div></div>
+          <div class="opp-full-card"><div class="opp-tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);">Collab</div><div class="opp-full-title">YouTube Collab — History Niche</div><div class="opp-full-desc">History channel (85K subs) looking for creators in the UK history/mythology space for a collab series.</div><div class="opp-full-meta"><span>🤝 Collab</span><span>📍 UK</span><span>📺 YouTube</span><button class="opp-apply">Apply →</button></div></div>
+          <div class="opp-full-card"><div class="opp-tag" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.15);">Ambassador</div><div class="opp-full-title">Creator Ambassador — AI Tools Brand</div><div class="opp-full-desc">SaaS company wants creators in the productivity/AI space for a 3-month ambassador programme. Any platform.</div><div class="opp-full-meta"><span>💰 Monthly Fee</span><span>🌍 Remote</span><span>📱 Any</span><button class="opp-apply">Apply →</button></div></div>
+          <div class="opp-full-card"><div class="opp-tag" style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(45,110,219,.2);">Freelance</div><div class="opp-full-title">Short-Form Video Editor</div><div class="opp-full-desc">Agency looking for a UK-based short-form editor for TikTok and Reels. Remote, flexible hours, project-based.</div><div class="opp-full-meta"><span>💰 Project Rate</span><span>📍 UK Remote</span><button class="opp-apply">Apply →</button></div></div>
+        </div>
+      </div>
+
+      <!-- ══ CONNECT ══ -->
+      <div class="panel" id="panel-connect">
+        <h2 style="font-size:20px;margin-bottom:6px;">Connect Platforms</h2>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">Link your accounts for real analytics and direct publishing.</p>
+        <div class="connect-grid-app">
+          <div class="connect-card-app" id="tt-card" style="--cc-a:#ff2d55;"><div class="cc-app-icon" style="background:rgba(255,45,85,.1);color:#ff2d55;">🎵</div><div class="cc-app-name">TikTok</div><div class="cc-app-desc">Follower analytics · Hashtag velocity · Content publishing</div><div class="cc-app-status live" id="tt-status-app"><span class="cc-app-dot"></span><span id="tt-status-txt">Ready to Connect</span></div><button class="cc-app-btn tt" id="tt-btn-app" onclick="TikTokAuth&&TikTokAuth.connect(this)">Connect TikTok →</button></div>
+          <div class="connect-card-app" style="--cc-a:#ff6060;" id="yt-card"><div class="cc-app-icon" style="background:rgba(255,96,96,.1);color:#ff6060;">▶️</div><div class="cc-app-name">YouTube</div><div class="cc-app-desc">Channel analytics · Video performance · Subscriber insights</div><div class="cc-app-status live" id="yt-status-app"><span class="cc-app-dot"></span><span id="yt-status-txt">Ready to Connect</span></div><button class="cc-app-btn yt" id="yt-btn-app" onclick="YouTubeAuth&&YouTubeAuth.connect(this)">Connect YouTube →</button></div>
+          <div class="connect-card-app" style="--cc-a:#e1306c;"><div class="cc-app-icon" style="background:rgba(225,48,108,.1);color:#e1306c;">📸</div><div class="cc-app-name">Instagram</div><div class="cc-app-desc">Profile insights · Reels performance · Media analytics</div><div class="cc-app-status soon"><span>Coming Soon</span></div><button class="cc-app-btn disabled" disabled>Pending API Approval</button></div>
+          <div class="connect-card-app" style="--cc-a:#4285f4;"><div class="cc-app-icon" style="background:rgba(66,133,244,.1);color:#4285f4;">📈</div><div class="cc-app-name">Google Trends</div><div class="cc-app-desc">Search growth · Breakout queries · Trend velocity · Auto-active</div><div class="cc-app-status auto"><span class="cc-app-dot"></span>Auto-Active</div><button class="cc-app-btn auto" onclick="showPanel('trendfeed',document.querySelector('[onclick*=trendfeed]'))">Open Trend Feed →</button></div>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS ══ -->
+      <div class="panel" id="panel-settings">
+        <h2 style="font-size:20px;margin-bottom:20px;">Settings</h2>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>Appearance</h3>
+            <div class="setting-row"><div><div class="setting-label">Dark Mode</div><div class="setting-desc">Switch between light and dark</div></div><div class="toggle" id="themeToggle" onclick="toggleTheme()"></div></div>
+            <div class="setting-row"><div><div class="setting-label">Compact sidebar</div><div class="setting-desc">Icons only, hover for labels</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          </div>
+          <div class="settings-card">
+            <h3>Notifications</h3>
+            <div class="setting-row"><div><div class="setting-label">Daily briefing</div><div class="setting-desc">Dijo's morning trend summary</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="setting-row"><div><div class="setting-label">Trend alerts</div><div class="setting-desc">Notify when a trend spikes</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="setting-row"><div><div class="setting-label">Opportunity alerts</div><div class="setting-desc">New brand deals and gigs</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          </div>
+          <div class="settings-card">
+            <h3>Content Preferences</h3>
+            <div class="setting-row"><div><div class="setting-label">Primary platform</div></div><select class="form-select" style="width:120px;padding:6px 10px;font-size:12px;"><option>TikTok</option><option>YouTube</option><option>Instagram</option></select></div>
+            <div class="setting-row"><div><div class="setting-label">Content region</div></div><select class="form-select" style="width:120px;padding:6px 10px;font-size:12px;"><option>UK</option><option>Global</option><option>US</option></select></div>
+          </div>
+          <div class="settings-card">
+            <h3>Account</h3>
+            <div class="setting-row"><div><div class="setting-label">Email</div><div class="setting-desc" id="settingsEmail">Not logged in</div></div></div>
+            <div class="setting-row"><div><div class="setting-label">Plan</div><div class="setting-desc">Free tier</div></div><span style="font-size:11px;padding:3px 8px;border-radius:5px;background:var(--gold-dim);color:var(--gold);font-family:var(--fm);">FREE</span></div>
+            <div style="margin-top:12px;"><button style="width:100%;padding:9px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;" onclick="window.location.href='join.html'">Upgrade →</button></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
-<script src="nav.js"></script>
 <script src="tiktok-auth.js"></script>
-<script src="instagram-auth.js"></script>
 <script src="youtube-auth.js"></script>
+<script src="instagram-auth.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  renderNav('creator-studio.html');
-  renderFooter();
+/* ── THEME ── */
+var isDark=false;
+function applyTheme(dark){
+  isDark=dark;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  var ico=dark?'☀️':'🌙';
+  var tbt=document.getElementById('topThemeBtn'); if(tbt) tbt.textContent=ico;
+  var sbt=document.getElementById('sbThemeBtn'); if(sbt) sbt.innerHTML='<span>'+(dark?'☀️':'🌙')+'</span><span>'+(dark?'Light Mode':'Dark Mode')+'</span>';
+  var tt=document.getElementById('themeToggle'); if(tt) tt.classList.toggle('on',dark);
+  try{ localStorage.setItem('ig_theme',dark?'dark':'light'); }catch(e){}
+}
+function toggleTheme(){ applyTheme(!isDark); }
+(function(){ try{ if(localStorage.getItem('ig_theme')==='dark') applyTheme(true); }catch(e){} })();
 
-  /* Sync theme */
-  try {
-    var saved = localStorage.getItem('ig_theme') || 'light';
-    document.documentElement.setAttribute('data-theme', saved);
-  } catch(e){}
+/* ── PANELS ── */
+function showPanel(name, item){
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.sb-item').forEach(function(i){ i.classList.remove('active'); });
+  var panel=document.getElementById('panel-'+name);
+  if(panel) panel.classList.add('active');
+  if(item) item.classList.add('active');
+  var titles={dashboard:'Dashboard',trendfeed:'Trend Feed',create:'Create',carousels:'Carousels',contentplan:'Content Plan',portfolio:'Portfolio',dijo:'Dijo AI',opportunities:'Opportunities',connect:'Connect Platforms',settings:'Settings'};
+  var t=document.getElementById('topbarTitle'); if(t) t.textContent=titles[name]||name;
+  closeSidebar();
+  document.getElementById('contentArea').scrollTop=0;
+}
 
-  /* Scroll animations */
-  var obs = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.08 });
-  document.querySelectorAll('.anim').forEach(function(el){ obs.observe(el); });
+/* ── SIDEBAR MOBILE ── */
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('mobOverlay').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobOverlay').classList.remove('open'); document.body.style.overflow=''; }
 
-  /* YouTube session check */
-  (function(){
-    try {
-      if(typeof YouTubeAuth === 'undefined') return;
-      var session = YouTubeAuth.getSession();
-      if(!session) return;
-      var card   = document.getElementById('yt-connect-card');
-      var btn    = document.getElementById('yt-connect-btn');
-      var status = document.getElementById('yt-status');
-      var stText = document.getElementById('yt-status-text');
-      if(card)   card.classList.add('connected');
-      if(status) status.className = 'cc-status live';
-      var ch   = session.channel;
-      var name = (ch && ch.snippet && ch.snippet.title) ? ch.snippet.title : 'YouTube';
-      if(stText) stText.textContent = 'Connected · ' + name;
-      if(btn){
-        btn.className   = 'cc-btn cc-btn-connected';
-        btn.textContent = 'Open Dashboard →';
-        btn.onclick     = function(){ window.location.href = 'creator-editor.html'; };
+/* ── USER DROP ── */
+function toggleSbDrop(){ document.getElementById('sbDrop').classList.toggle('open'); }
+document.addEventListener('click',function(e){ var d=document.getElementById('sbDrop'); if(d&&!e.target.closest('.sb-user')) d.classList.remove('open'); });
+
+/* ── AUTH ── */
+function setUser(user){
+  if(!user) return;
+  var email=user.email||'';
+  var name=(user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||email.split('@')[0]||'Creator';
+  var init=(name.charAt(0)||'?').toUpperCase();
+  document.getElementById('sbGuestWrap').style.display='none';
+  document.getElementById('sbUserWrap').style.display='block';
+  document.getElementById('sbAv').textContent=init;
+  document.getElementById('sbName').textContent=name.split(' ')[0];
+  document.getElementById('sbEmail').textContent=email;
+  var se=document.getElementById('settingsEmail'); if(se) se.textContent=email;
+  /* greeting */
+  var hour=new Date().getHours();
+  var greet=hour<12?'Good morning':'hour<18?'Good afternoon':'Good evening';
+  var g=document.getElementById('dashGreeting'); if(g) g.textContent=greet+', '+name.split(' ')[0]+' 👋';
+}
+function clearUser(){
+  document.getElementById('sbGuestWrap').style.display='block';
+  document.getElementById('sbUserWrap').style.display='none';
+}
+window.igOut=async function(){
+  try{ var c=getSupabase(); if(c) await c.auth.signOut(); }catch(e){}
+  window.location.href='index.html';
+};
+function attachAuth(c){
+  c.auth.onAuthStateChange(function(ev,session){
+    if(session&&session.user) setUser(session.user);
+    else if(ev==='SIGNED_OUT'||ev==='USER_DELETED') clearUser();
+  });
+  c.auth.getSession().then(function(r){ if(r&&r.data&&r.data.session&&r.data.session.user) setUser(r.data.session.user); }).catch(function(){});
+}
+function checkAuth(){
+  var c=null;
+  try{ if(window.getSupabase) c=getSupabase(); }catch(e){}
+  if(c){ attachAuth(c); return; }
+  var tries=0,t=setInterval(function(){
+    tries++;
+    try{ if(window.getSupabase) c=getSupabase(); }catch(e){}
+    if(c){ clearInterval(t); attachAuth(c); }
+    else if(tries>=30) clearInterval(t);
+  },100);
+}
+
+/* ── DASHBOARD DATE ── */
+function setDashDate(){
+  var d=new Date();
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var str=days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  var el=document.getElementById('dashDate'); if(el) el.textContent=str+' · Live data';
+  var bd=document.getElementById('briefingDate'); if(bd) bd.textContent=str+' · cached';
+  /* greeting time */
+  var hour=d.getHours();
+  var greet=hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
+  var g=document.getElementById('dashGreeting'); if(g&&g.textContent.indexOf('Creator')>-1) g.textContent=greet+', Creator 👋';
+}
+
+/* ── TREND CLICK → CREATE ── */
+function loadTopic(topic){
+  var input=document.getElementById('createTopic');
+  if(input) input.value=topic;
+  showPanel('create',document.querySelector('.sb-item:nth-child(4)'));
+}
+
+/* ── GENERATE CONTENT ── */
+async function generateContent(){
+  var topic=document.getElementById('createTopic').value.trim();
+  if(!topic) return;
+  var btn=document.getElementById('generateBtn');
+  var out=document.getElementById('createOutput');
+  btn.disabled=true;
+  btn.textContent='Generating…';
+  out.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:20px;"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">Dijo is writing your content…</span></div>';
+  try{
+    var platform=document.getElementById('createPlatform').value;
+    var type=document.getElementById('createType').value;
+    var tone=document.getElementById('createTone').value;
+    var prompt='You are Dijo, an AI creator assistant. Generate a complete content package for a creator.\n\nTopic: '+topic+'\nPlatform: '+platform+'\nContent type: '+type+'\nTone: '+tone+'\n\nRespond ONLY with JSON (no markdown, no backticks):\n{"hook":"the hook","caption":"the caption","hashtags":["tag1","tag2","tag3","tag4","tag5"],"post_time":"best time to post","tip":"one quick tip"}';
+    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    var data=await res.json();
+    var text=data.content.map(function(i){return i.text||'';}).join('');
+    var clean=text.replace(/```json|```/g,'').trim();
+    var parsed=JSON.parse(clean);
+    out.innerHTML=
+      '<div class="output-card"><div class="output-label">Hook</div><div class="output-text">'+esc(parsed.hook||'')+'</div><button class="output-copy" onclick="copyText(\''+esc(parsed.hook||'')+'\')">Copy Hook</button></div>'+
+      '<div class="output-card"><div class="output-label">Caption</div><div class="output-text">'+esc(parsed.caption||'')+'</div><button class="output-copy" onclick="copyText(\''+esc(parsed.caption||'')+'\')">Copy Caption</button></div>'+
+      '<div class="output-card"><div class="output-label">Hashtags</div><div class="output-tags">'+(parsed.hashtags||[]).map(function(h){return '<span class="output-tag">#'+esc(h.replace('#',''))+'</span>';}).join('')+'</div></div>'+
+      '<div class="output-card" style="display:flex;gap:14px;"><div style="flex:1;"><div class="output-label">Best Post Time</div><div class="output-text" style="font-weight:700;color:var(--gold);">'+esc(parsed.post_time||'')+'</div></div><div style="flex:1;"><div class="output-label">Dijo\'s Tip</div><div class="output-text">'+esc(parsed.tip||'')+'</div></div></div>';
+  }catch(e){
+    out.innerHTML='<div class="output-card" style="border-color:var(--red-dim);"><div class="output-label" style="color:var(--red);">Error</div><div class="output-text" style="color:var(--text2);">Could not generate content. Check your connection and try again.</div></div>';
+  }
+  btn.disabled=false;
+  btn.textContent='✨ Generate with Dijo';
+}
+
+/* ── DIJO CHAT ── */
+async function sendDijo(){
+  var input=document.getElementById('dijoInput');
+  var val=input.value.trim();
+  if(!val) return;
+  var msgs=document.getElementById('dijoMsgs');
+  msgs.innerHTML+='<div class="chat-msg user"><div class="chat-av-sm you">Y</div><div class="chat-bubble you">'+esc(val)+'</div></div>';
+  input.value='';
+  msgs.scrollTop=msgs.scrollHeight;
+  msgs.innerHTML+='<div class="chat-msg" id="dijotyping"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo" style="color:var(--text3);">Thinking…</div></div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  try{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:'You are Dijo, an expert AI creator assistant for ImpactGrid. You help creators grow on TikTok, YouTube and Instagram. You give short, direct, actionable advice. Today\'s top trends: vikingtom (5.8), shorts (5.9), UK Street Style (5.5). User asks: '+val}]})});
+    var data=await res.json();
+    var reply=data.content.map(function(i){return i.text||'';}).join('');
+    var typing=document.getElementById('dijotyping');
+    if(typing) typing.remove();
+    msgs.innerHTML+='<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">'+esc(reply)+'</div></div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  }catch(e){
+    var typing=document.getElementById('dijotyping');
+    if(typing) typing.remove();
+    msgs.innerHTML+='<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">Sorry, I couldn\'t connect right now. Try again in a moment.</div></div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  }
+}
+function quickDijo(prompt){ document.getElementById('dijoInput').value=prompt; sendDijo(); }
+
+/* ── CAROUSEL GENERATE ── */
+function generateCarousel(){
+  var topic=document.getElementById('carouselTopic').value.trim()||'Your Topic';
+  var style=document.getElementById('carouselStyle').value;
+  var styleClass={'dark':'slide-dark','purple':'slide-purple','green':'slide-green','warm':'slide-warm','clean':'slide-clean'}[style]||'slide-dark';
+  var count=parseInt(document.getElementById('carouselSlides').value)||5;
+  var grid=document.getElementById('slidesGrid');
+  grid.innerHTML='';
+  var styles=['slide-dark','slide-mid','slide-purple','slide-green','slide-warm','slide-clean'];
+  for(var i=0;i<count;i++){
+    var s=document.createElement('div');
+    s.className='slide-thumb '+styles[i%styles.length];
+    s.innerHTML='<span class="slide-num">'+(i+1)+'/'+count+'</span>'+(i===0?topic+' 🔱':'Slide '+(i+1)+': '+topic.split(' ')[0]);
+    grid.appendChild(s);
+  }
+  var add=document.createElement('div');
+  add.className='slide-add';
+  add.innerHTML='<div class="slide-add-icon">+</div>Add slide';
+  add.onclick=addSlide;
+  grid.appendChild(add);
+}
+function addSlide(){ alert('Add slide feature coming soon!'); }
+
+/* ── AUTO FILL PLAN ── */
+function autoFillPlan(){
+  var posts=[
+    {day:'Mon',num:7,type:'yt',label:'Viking myths hook'},
+    {day:'Tue',num:8,type:'ig',label:'UK Style carousel'},
+    {day:'Wed',num:9,type:'tt',label:'AI tools short'},
+    {day:'Thu',num:10,type:'yt',label:'Bible verse short'},
+    {day:'Fri',num:11,type:'tt',label:'Trending audio'},
+    {day:'Sat',num:12,type:'ig',label:'Weekend lifestyle'},
+    {day:'Sun',num:13,type:'yt',label:'Week wrap-up'}
+  ];
+  var grid=document.getElementById('planGrid');
+  grid.innerHTML=posts.map(function(p){
+    return '<div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">'+p.day+'</div><div class="plan-day-num'+(p.num===9?' today':'')+'">'+p.num+'</div></div><div class="plan-day-body"><div class="plan-post '+p.type+'">'+p.label+'</div><div class="plan-add-slot">+ Add</div></div></div>';
+  }).join('');
+}
+
+/* ── REFRESH BRIEFING ── */
+function refreshBriefing(){
+  var el=document.getElementById('briefingText');
+  if(el){ el.style.opacity='.4'; setTimeout(function(){ el.style.opacity='1'; },600); }
+}
+
+/* ── COPY ── */
+function copyText(t){ try{ navigator.clipboard.writeText(t); }catch(e){} }
+
+/* ── PLATFORM SESSION CHECKS ── */
+function checkPlatformSessions(){
+  try{
+    if(typeof YouTubeAuth!=='undefined'){
+      var s=YouTubeAuth.getSession();
+      if(s){
+        var card=document.getElementById('yt-card');
+        var btn=document.getElementById('yt-btn-app');
+        var stxt=document.getElementById('yt-status-txt');
+        if(card) card.classList.add('connected');
+        var name=(s.channel&&s.channel.snippet&&s.channel.snippet.title)?s.channel.snippet.title:'YouTube';
+        if(stxt) stxt.textContent='Connected · '+name;
+        if(btn){ btn.className='cc-app-btn auto'; btn.textContent='Open Trends →'; btn.onclick=function(){ showPanel('trendfeed',null); }; }
       }
-    } catch(e){}
-  })();
-
-  /* TikTok session check */
-  (function(){
-    try {
-      if(typeof TikTokAuth === 'undefined') return;
-      var session = TikTokAuth.getSession();
-      if(!session) return;
-      var card   = document.getElementById('tt-connect-card');
-      var btn    = document.getElementById('tt-connect-btn');
-      var status = document.getElementById('tt-status');
-      var stText = document.getElementById('tt-status-text');
-      if(card)   card.classList.add('connected');
-      if(status) status.className = 'cc-status live';
-      var name = (session.user && session.user.display_name) ? session.user.display_name : 'TikTok';
-      if(stText) stText.textContent = 'Connected · ' + name;
-      if(btn){
-        btn.className   = 'cc-btn cc-btn-connected';
-        btn.textContent = 'Open Dashboard →';
-        btn.onclick     = function(){ window.location.href = 'creator-editor.html'; };
+    }
+  }catch(e){}
+  try{
+    if(typeof TikTokAuth!=='undefined'){
+      var s=TikTokAuth.getSession();
+      if(s){
+        var card=document.getElementById('tt-card');
+        var btn=document.getElementById('tt-btn-app');
+        var stxt=document.getElementById('tt-status-txt');
+        if(card) card.classList.add('connected');
+        var name=(s.user&&s.user.display_name)?s.user.display_name:'TikTok';
+        if(stxt) stxt.textContent='Connected · '+name;
+        if(btn){ btn.className='cc-app-btn auto'; btn.textContent='Connected ✓'; }
       }
-    } catch(e){}
-  })();
+    }
+  }catch(e){}
+}
 
-  /* Keep-warm ping */
-  setInterval(function(){
-    fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
-  }, 600000);
+/* ── HELPERS ── */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+/* ── INIT ── */
+window.addEventListener('load',function(){
+  checkAuth();
+  setDashDate();
+  checkPlatformSessions();
+  setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); },600000);
 });
 </script>
 </body>
