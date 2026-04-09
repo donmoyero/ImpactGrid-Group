@@ -893,6 +893,15 @@ function isAndroid(){
 function isMobile(){
   return isIOS() || isAndroid() || /Mobi/.test(navigator.userAgent);
 }
+/* Safari on iOS is the ONLY browser that cannot do blob downloads.
+   Chrome on iPhone, Chrome on Android, Samsung Browser — all support it.
+   We detect Safari specifically: has AppleWebKit but NOT Chrome/CriOS/Firefox */
+function isSafariIOS(){
+  var ua = navigator.userAgent;
+  var isiOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  var isSafari = /AppleWebKit/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/OPiOS/.test(ua) && !/EdgiOS/.test(ua);
+  return isiOS && isSafari;
+}
 
 /* ══════════════════════════════════════
    BOOT
@@ -1022,7 +1031,7 @@ async function loadPhotos(){
     /* Update dl-bar subtitle based on platform capability */
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
-      if(isIOS()){
+      if(isSafariIOS()){
         dlSub.textContent = 'Photos open in tabs — long-press each to save to Camera Roll';
       } else {
         dlSub.textContent = 'Selected photos save directly to your Downloads / Gallery';
@@ -1433,7 +1442,7 @@ function cancelDl(){
  * Single photo quick-save from the card hover button.
  */
 function quickDownload(url, idx){
-  if(isIOS()){
+  if(isSafariIOS()){
     window.open(url, '_blank');
     toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
     return;
@@ -1450,7 +1459,9 @@ function quickDownload(url, idx){
  * iOS → iOS modal. Everyone else → automatic saves with progress bar.
  */
 async function downloadBatch(photos){
-  if(isIOS()){
+  /* Only Safari on iOS cannot auto-download. Chrome iOS, Chrome Android,
+     Samsung Browser, Firefox mobile — all get real blob downloads. */
+  if(isSafariIOS()){
     showIosModal(photos);
     return;
   }
@@ -1603,7 +1614,7 @@ function lbDownload(){
   var p = allPhotos[lbIndex];
   if(!p) return;
   var url = p.original_url || p.preview_url;
-  if(isIOS()){
+  if(isSafariIOS()){
     window.open(url, '_blank');
     toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
     return;
