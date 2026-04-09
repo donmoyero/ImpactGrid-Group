@@ -1023,9 +1023,9 @@ async function loadPhotos(){
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
       if(isIOS()){
-        dlSub.textContent = 'Photos open in tabs — long-press to save to Camera Roll';
+        dlSub.textContent = 'Photos open in tabs — long-press each to save to Camera Roll';
       } else {
-        dlSub.textContent = 'Photos download automatically to your device';
+        dlSub.textContent = 'Selected photos save directly to your Downloads / Gallery';
       }
     }
 
@@ -1351,19 +1351,35 @@ function updateSelectionUI(){
  * Works on Android Chrome, Samsung Browser, Firefox, Desktop.
  */
 function blobDownload(url, filename){
-  return fetch(url, { mode: 'cors', cache: 'no-store' })
+  /*
+   * Supabase public bucket URLs sometimes redirect to a CDN.
+   * Using redirect:'follow' ensures fetch() follows that redirect.
+   * We also rewrite the URL to the direct /object/public/ path
+   * which skips the redirect entirely and avoids Android CORS blocks.
+   */
+  var directUrl = url
+    .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+    .replace('/storage/v1/object/sign/', '/storage/v1/object/public/');
+  /* Strip query params (transform params etc) for clean blob fetch */
+  var qmark = directUrl.indexOf('?');
+  if(qmark !== -1) directUrl = directUrl.substring(0, qmark);
+
+  return fetch(directUrl, { mode: 'cors', cache: 'no-store', redirect: 'follow' })
     .then(function(r){
       if(!r.ok) throw new Error('HTTP ' + r.status);
       return r.blob();
     })
     .then(function(blob){
+      /* Force image/jpeg mime if browser returns octet-stream */
+      var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
+      var safeBlob = (mime !== blob.type) ? new Blob([blob], { type: mime }) : blob;
       return new Promise(function(resolve, reject){
         try{
-          var objUrl = URL.createObjectURL(blob);
+          var objUrl = URL.createObjectURL(safeBlob);
           var a = document.createElement('a');
           a.href     = objUrl;
           a.download = filename || 'ImpactGrid-Photo.jpg';
-          a.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;';
+          a.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none;';
           document.body.appendChild(a);
           a.click();
           setTimeout(function(){
@@ -1583,26 +1599,19 @@ function showLightboxAt(idx){
   document.getElementById('lbCounter').textContent = (lbIndex+1) + ' / ' + allPhotos.length;
 }
 
-async function lbDownload(){
+function lbDownload(){
   var p = allPhotos[lbIndex];
   if(!p) return;
   var url = p.original_url || p.preview_url;
-
   if(isIOS()){
     window.open(url, '_blank');
     toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
     return;
   }
-
   toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
-  try{
-    await savePhoto(url, 'ImpactGrid-Photo-' + (lbIndex + 1) + '.jpg');
-    toast('✅', 'Photo saved!', 'Check your Downloads or Gallery');
-  }catch(e){
-    if(e && e.name === 'AbortError') return;
-    window.open(url, '_blank');
-    toast('📥', 'Opened in new tab', 'Save it from your browser');
-  }
+  blobDownload(url, 'ImpactGrid-Photo-' + (lbIndex + 1) + '.jpg')
+    .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
+    .catch(function(){ toast('⚠️', 'Download failed', 'Try again or check your connection'); });
 }
 
 function closeLightbox(){
