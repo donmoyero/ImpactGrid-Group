@@ -4,135 +4,248 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Login — ImpactGrid</title>
-<meta name="description" content="Sign in to your ImpactGrid account."/>
+<meta name="description" content="Sign in to your ImpactGrid Creator Studio."/>
 <link rel="icon" href="favicon.ico"/>
-<link rel="stylesheet" href="shared.css"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-.auth-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:1000;background:rgba(242,244,251,.95);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);transition:background .3s;}
-[data-theme="dark"] .auth-nav{background:rgba(7,9,15,.92);}
-.auth-nav-in{max-width:var(--max-w);margin:0 auto;padding:0 28px;height:100%;display:flex;align-items:center;justify-content:space-between;}
-.auth-nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;font-size:16px;letter-spacing:-.03em;}
-.auth-logo-mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;}
-[data-theme="dark"] .auth-logo-mark{color:#07090f;}
-.auth-logo-img{width:30px;height:30px;object-fit:contain;border-radius:5px;}
-.auth-nav-right{display:flex;align-items:center;gap:9px;}
-.auth-theme-btn{width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;cursor:pointer;}
-.auth-theme-btn:hover{border-color:var(--gold);}
-.auth-nav-link{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border2);transition:all .2s;}
-.auth-nav-link:hover{color:var(--text);}
-.auth-nav-cta{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;}
-[data-theme="dark"] .auth-nav-cta{color:#07090f;}
-.auth-nav-cta:hover{transform:translateY(-1px);box-shadow:0 5px 18px var(--gold-glo);}
+:root {
+  --bg:#f2f4fb; --bg2:#e6eaf5; --bg3:#d9dff0;
+  --card:#ffffff;
+  --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.13);
+  --text:#0d1017; --text2:#4a5068; --text3:#9099b8;
+  --gold:#c97e08; --gold2:#a86505;
+  --gold-dim:rgba(201,126,8,0.09); --gold-glo:rgba(201,126,8,0.22);
+  --green:#0fa876; --green-dim:rgba(15,168,118,0.10);
+  --red:#d94f3b; --red-dim:rgba(217,79,59,0.08);
+  --r:10px; --r2:16px;
+  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
+}
+[data-theme="dark"] {
+  --bg:#07090f; --bg2:#0d1017; --bg3:#111520;
+  --card:#151a28;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#eef0f6; --text2:#8a91a8; --text3:#4a5068;
+  --gold:#f0b429; --gold2:#ffd166;
+  --gold-dim:rgba(240,180,41,0.10); --gold-glo:rgba(240,180,41,0.25);
+  --green:#2dd4a0; --green-dim:rgba(45,212,160,0.10);
+  --red:#f75f4f; --red-dim:rgba(247,95,79,0.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--fb);-webkit-font-smoothing:antialiased;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 
-.login-bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 60% at 30% 40%,rgba(201,126,8,.05),transparent),radial-gradient(ellipse 40% 40% at 70% 70%,rgba(45,110,219,.04),transparent);}
-[data-theme="dark"] .login-bg{background:radial-gradient(ellipse 60% 60% at 30% 40%,rgba(240,180,41,.06),transparent),radial-gradient(ellipse 40% 40% at 70% 70%,rgba(79,142,247,.04),transparent);}
+/* ── background glow ── */
+.login-bg{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 55% 55% at 20% 30%, rgba(201,126,8,.07), transparent),
+    radial-gradient(ellipse 40% 40% at 80% 70%, rgba(45,110,219,.04), transparent);}
+[data-theme="dark"] .login-bg{
+  background:
+    radial-gradient(ellipse 55% 55% at 20% 30%, rgba(240,180,41,.07), transparent),
+    radial-gradient(ellipse 40% 40% at 80% 70%, rgba(79,142,247,.04), transparent);}
 
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:calc(var(--nav-h) + 40px) 24px 60px;position:relative;z-index:1;}
-.login-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:48px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,.08);animation:fadeUp .45s ease;}
-[data-theme="dark"] .login-box{box-shadow:0 24px 64px rgba(0,0,0,.5);}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+/* ── nav ── */
+.nav{position:fixed;top:0;left:0;right:0;height:56px;z-index:100;
+  background:rgba(242,244,251,.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+[data-theme="dark"] .nav{background:rgba(7,9,15,.88);}
+.nav-in{max-width:1100px;margin:0 auto;padding:0 24px;height:100%;
+  display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:9px;
+  font-family:var(--fd);font-weight:900;font-size:15px;letter-spacing:-.03em;}
+.nav-logo-img{width:26px;height:26px;object-fit:contain;border-radius:6px;}
+.nav-logo-mark{width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:none;align-items:center;justify-content:center;
+  font-size:10px;font-weight:900;color:#fff;}
+[data-theme="dark"] .nav-logo-mark{color:#07090f;}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.nav-theme{width:32px;height:32px;border-radius:8px;background:var(--card);
+  border:1px solid var(--border2);display:flex;align-items:center;
+  justify-content:center;font-size:13px;transition:border-color .2s;}
+.nav-theme:hover{border-color:var(--gold);}
+.nav-link{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;
+  color:var(--text2);border:1px solid var(--border2);transition:all .2s;}
+.nav-link:hover{color:var(--text);border-color:var(--border2);}
+.nav-cta{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;}
+[data-theme="dark"] .nav-cta{color:#07090f;}
+.nav-cta:hover{box-shadow:0 4px 16px var(--gold-glo);transform:translateY(-1px);}
 
-.box-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px;}
-.box-logo-text{font-family:var(--fd);font-weight:900;font-size:18px;letter-spacing:-.03em;}
-.login-box h1{font-size:26px;text-align:center;margin-bottom:8px;}
-.login-box .sub{font-size:15px;color:var(--text2);text-align:center;margin-bottom:30px;line-height:1.6;}
+/* ── page layout ── */
+.page{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:80px 20px 40px;position:relative;z-index:1;}
 
-.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
-.form-label{font-size:12px;font-weight:600;color:var(--text2);}
-.form-input-field{width:100%;padding:12px 14px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--fb);font-size:14px;outline:none;transition:border-color .2s;}
-.form-input-field:focus{border-color:var(--gold);}
-.form-input-field::placeholder{color:var(--text3);}
+/* ── card ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:44px 40px;width:100%;max-width:420px;
+  box-shadow:0 20px 60px rgba(0,0,0,.07);
+  animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both;}
+[data-theme="dark"] .card{box-shadow:0 20px 60px rgba(0,0,0,.5);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
 
-.forgot{text-align:right;margin-top:-8px;margin-bottom:20px;font-size:13px;}
-.forgot a{color:var(--gold);font-weight:600;transition:opacity .2s;}
-.forgot a:hover{opacity:.8;}
+/* card header */
+.card-logo{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:24px;}
+.card-logo-img{width:28px;height:28px;object-fit:contain;border-radius:6px;}
+.card-logo-mark{width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:none;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;}
+[data-theme="dark"] .card-logo-mark{color:#07090f;}
+.card-logo-name{font-family:var(--fd);font-weight:900;font-size:16px;letter-spacing:-.03em;}
+.card h1{font-family:var(--fd);font-size:24px;font-weight:900;
+  letter-spacing:-.03em;text-align:center;margin-bottom:6px;}
+.card-sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:28px;line-height:1.6;}
 
-.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-family:var(--fd);font-weight:800;font-size:15px;border-radius:var(--r);border:none;cursor:pointer;transition:all .2s;margin-top:6px;}
-[data-theme="dark"] .login-btn{color:#07090f;}
-.login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
-.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
-
-.divider-or{display:flex;align-items:center;gap:12px;margin:22px 0;font-family:var(--fm);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;}
-.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border);}
-
-.alert{font-size:13.5px;padding:12px 16px;border-radius:var(--r);margin-bottom:18px;display:none;line-height:1.55;}
+/* alert */
+.alert{font-size:13px;padding:11px 14px;border-radius:9px;margin-bottom:16px;
+  display:none;line-height:1.55;}
 .alert.show{display:block;}
-.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.25);}
-[data-theme="dark"] .alert-success{color:#2dd4a0;border-color:rgba(45,212,160,.25);}
-.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(217,79,59,.2);}
-[data-theme="dark"] .alert-error{color:#f75f4f;border-color:rgba(247,95,79,.25);}
+.alert-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(217,79,59,.15);}
+[data-theme="dark"] .alert-error{color:#f75f4f;}
+.alert-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);}
+[data-theme="dark"] .alert-success{color:#2dd4a0;}
 
-.no-account{text-align:center;margin-top:22px;font-size:14px;color:var(--text2);}
-.no-account a{color:var(--gold);font-weight:700;}
-.no-account a:hover{text-decoration:underline;}
-
+/* form */
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text2);
+  margin-bottom:6px;font-family:var(--fm);letter-spacing:.04em;text-transform:uppercase;}
 .input-wrap{position:relative;}
-.input-wrap .form-input-field{padding-right:52px;}
-.show-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--fm);font-size:11px;letter-spacing:.06em;color:var(--text3);cursor:pointer;background:none;border:none;padding:4px;transition:color .2s;}
-.show-pw:hover{color:var(--text);}
+.form-input{width:100%;padding:11px 14px;border-radius:9px;
+  border:1px solid var(--border2);background:var(--bg);
+  color:var(--text);font-size:14px;font-family:var(--fb);
+  outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--gold);}
+.form-input::placeholder{color:var(--text3);}
+.form-input.pw{padding-right:54px;}
+.show-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  font-family:var(--fm);font-size:10px;letter-spacing:.08em;
+  color:var(--text3);transition:color .2s;padding:4px;}
+.show-pw:hover{color:var(--gold);}
 
-.btn-dots{display:inline-flex;gap:4px;align-items:center;margin-left:6px;}
-.btn-dot{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.5;animation:dotPulse 1.2s infinite;}
-.btn-dot:nth-child(2){animation-delay:.2s;}
-.btn-dot:nth-child(3){animation-delay:.4s;}
-@keyframes dotPulse{0%,80%,100%{opacity:.3;}40%{opacity:1;}}
+.forgot{text-align:right;margin-top:-6px;margin-bottom:18px;}
+.forgot a{font-size:12px;font-weight:600;color:var(--gold);transition:opacity .2s;}
+.forgot a:hover{opacity:.75;}
 
-@media(max-width:480px){.login-box{padding:32px 24px;}}
+/* submit button */
+.btn-submit{width:100%;padding:13px;border-radius:10px;
+  font-family:var(--fd);font-size:15px;font-weight:800;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff;border:none;cursor:pointer;
+  transition:all .2s;margin-top:4px;letter-spacing:-.01em;}
+[data-theme="dark"] .btn-submit{color:#07090f;}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* loading dots */
+.dots{display:inline-flex;gap:4px;align-items:center;margin-left:6px;vertical-align:middle;}
+.dot{width:4px;height:4px;border-radius:50%;background:currentColor;
+  opacity:.4;animation:dp 1.2s infinite;}
+.dot:nth-child(2){animation-delay:.2s;}
+.dot:nth-child(3){animation-delay:.4s;}
+@keyframes dp{0%,80%,100%{opacity:.3;}40%{opacity:1;}}
+
+/* divider */
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;
+  font-family:var(--fm);font-size:10px;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.12em;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* footer links */
+.card-footer{text-align:center;font-size:13px;color:var(--text2);margin-top:18px;}
+.card-footer a{color:var(--gold);font-weight:700;}
+.card-footer a:hover{text-decoration:underline;}
+
+/* trust strip */
+.trust{display:flex;align-items:center;justify-content:center;gap:16px;
+  margin-top:20px;padding-top:18px;border-top:1px solid var(--border);}
+.trust-item{display:flex;align-items:center;gap:5px;
+  font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:.04em;}
+.trust-icon{font-size:12px;}
+
+@media(max-width:480px){
+  .card{padding:32px 22px;border-radius:16px;}
+  .nav-link{display:none;}
+}
 </style>
 </head>
 <body>
 
 <div class="login-bg"></div>
 
-<nav class="auth-nav">
-  <div class="auth-nav-in">
-    <a href="index.html" class="auth-nav-logo">
-      <img src="logo.png" class="auth-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="auth-logo-mark" style="display:none;">IG</div>
+<!-- nav -->
+<nav class="nav">
+  <div class="nav-in">
+    <a href="index.html" class="nav-logo">
+      <img src="logo.png" class="nav-logo-img" alt="ImpactGrid"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div class="nav-logo-mark">IG</div>
       ImpactGrid
     </a>
-    <div class="auth-nav-right">
-      <button class="auth-theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
-      <a href="join.html" class="auth-nav-link">Create Account</a>
-      <a href="join.html" class="auth-nav-cta">Join ImpactGrid</a>
+    <div class="nav-right">
+      <button class="nav-theme" id="themeBtn" onclick="toggleTheme()">🌙</button>
+      <a href="join.html" class="nav-link">Create account</a>
+      <a href="join.html" class="nav-cta">Join free →</a>
     </div>
   </div>
 </nav>
 
-<div class="login-wrap">
-  <div class="login-box">
-    <div class="box-logo">
-      <img src="logo.png" style="width:28px;height:28px;object-fit:contain;border-radius:6px;" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="auth-logo-mark" style="display:none;">IG</div>
-      <span class="box-logo-text">ImpactGrid</span>
+<!-- page -->
+<div class="page">
+  <div class="card">
+
+    <!-- logo -->
+    <div class="card-logo">
+      <img src="logo.png" class="card-logo-img" alt="ImpactGrid"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div class="card-logo-mark">IG</div>
+      <span class="card-logo-name">ImpactGrid</span>
     </div>
-    <h1>Welcome Back</h1>
-    <p class="sub">Sign in to your ImpactGrid account to continue.</p>
+
+    <h1>Welcome back</h1>
+    <p class="card-sub">Sign in to your Creator Studio.</p>
 
     <div class="alert" id="alertBox"></div>
 
     <div class="form-group">
-      <label class="form-label">Email Address</label>
-      <input id="email" class="form-input-field" type="email" placeholder="you@example.com"
-        autocomplete="email" onkeydown="if(event.key==='Enter')login()"/>
+      <label class="form-label">Email</label>
+      <input id="email" class="form-input" type="email"
+        placeholder="you@example.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter')login()"/>
     </div>
+
     <div class="form-group">
       <label class="form-label">Password</label>
       <div class="input-wrap">
-        <input id="password" class="form-input-field" type="password" placeholder="Your password"
-          autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/>
-        <button class="show-pw" onclick="togglePw()" id="showPwBtn">SHOW</button>
+        <input id="password" class="form-input pw" type="password"
+          placeholder="Your password" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')login()"/>
+        <button class="show-pw" id="showPwBtn" onclick="togglePw()">SHOW</button>
       </div>
     </div>
+
     <div class="forgot"><a href="reset-password.html">Forgot password?</a></div>
 
-    <button class="login-btn" id="loginBtn" onclick="login()">Sign In →</button>
-    <div class="divider-or">or</div>
-    <div class="no-account">Don't have an account? <a href="join.html">Join ImpactGrid</a></div>
+    <button class="btn-submit" id="loginBtn" onclick="login()">Sign In →</button>
+
+    <div class="divider">or</div>
+
+    <div class="card-footer">
+      Don't have an account? <a href="join.html">Join free</a>
+    </div>
+
+    <div class="trust">
+      <div class="trust-item"><span class="trust-icon">🔒</span>Secure login</div>
+      <div class="trust-item"><span class="trust-icon">✦</span>No card required</div>
+      <div class="trust-item"><span class="trust-icon">⚡</span>Instant access</div>
+    </div>
+
   </div>
 </div>
 
-<!-- ig-supabase.js only — this is the auth project (wedjsnizcvtgptobwugc) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
 <script>
@@ -166,14 +279,15 @@ function showAlert(msg, type) {
   el.className = 'alert alert-' + type + ' show';
 }
 
-/* ── Redirect helper — single source of truth for post-login routing ── */
+/* ── Redirect after login ── */
 function redirectByRole(user, role) {
-  if (role === 'admin' || user.email === 'admin@impactgridgroup.com') {
+  if (role === 'admin' || (user.email && user.email === 'admin@impactgridgroup.com')) {
     window.location.href = 'admin.html';
   } else if (role === 'employer') {
     window.location.href = 'employer-dashboard.html';
   } else {
-    window.location.href = 'dashboard.html';
+    /* Everyone else → Creator Studio */
+    window.location.href = 'creator-studio.html';
   }
 }
 
@@ -191,16 +305,15 @@ async function login() {
   }
 
   btn.disabled = true;
-  btn.innerHTML = 'Signing in <span class="btn-dots"><span class="btn-dot"></span><span class="btn-dot"></span><span class="btn-dot"></span></span>';
+  btn.innerHTML = 'Signing in <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
 
   try {
-    var client = getSupabase();  /* ig-supabase.js — auth project */
+    var client = getSupabase();
     var res = await client.auth.signInWithPassword({ email: email, password: password });
     if (res.error) throw res.error;
 
-    /* Fetch role from profiles table on the auth project */
     var profRes = await client.from('profiles').select('role,status').eq('id', res.data.user.id).single();
-    var role = (profRes.data && profRes.data.role) || 'professional';
+    var role = (profRes.data && profRes.data.role) || 'creator';
 
     redirectByRole(res.data.user, role);
 
@@ -221,9 +334,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     var client = getSupabase();
     var res = await client.auth.getSession();
     if (res.data && res.data.session) {
-      var user     = res.data.session.user;
-      var profRes  = await client.from('profiles').select('role').eq('id', user.id).single();
-      var role     = (profRes.data && profRes.data.role) || 'professional';
+      var user    = res.data.session.user;
+      var profRes = await client.from('profiles').select('role').eq('id', user.id).single();
+      var role    = (profRes.data && profRes.data.role) || 'creator';
       redirectByRole(user, role);
     }
   } catch(e) {}
