@@ -29,15 +29,24 @@ input,textarea,select{font-family:inherit;}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes slideUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
-@keyframes scaleIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.88);}to{opacity:1;transform:scale(1);}}
 @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 @keyframes kenBurns{0%{transform:scale(1) translate(0,0);}50%{transform:scale(1.08) translate(-1%,-1%);}100%{transform:scale(1.04) translate(1%,0);}}
 @keyframes checkPop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
 @keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes skeletonPulse{0%,100%{opacity:.5;}50%{opacity:1;}}
 @keyframes barRise{from{transform:translateY(100%);}to{transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
+@keyframes spinSlow{to{transform:rotate(360deg);}}
+@keyframes ringOrbit{
+  0%  { transform: rotate(0deg)   translateX(104px) rotate(0deg); }
+  100%{ transform: rotate(360deg) translateX(104px) rotate(-360deg); }
+}
+@keyframes glowPulse{
+  0%,100%{ box-shadow:0 0 12px rgba(34,197,94,.4), 0 0 0 0 rgba(34,197,94,.0); }
+  50%    { box-shadow:0 0 28px rgba(34,197,94,.7), 0 0 0 6px rgba(34,197,94,.08); }
+}
 
 /* ══════════════════════════════════════
    SKELETON LOADING
@@ -48,19 +57,9 @@ input,textarea,select{font-family:inherit;}
   animation:shimmer 1.4s infinite;
   border-radius:6px;
 }
-.skeleton-photo{
-  aspect-ratio:3/2;
-  border-radius:inherit;
-}
-.skeleton-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
-  gap:3px;
-}
-.skeleton-grid .skeleton-photo{
-  animation:skeletonPulse 1.4s ease-in-out infinite;
-  background:rgba(128,128,128,.12);
-}
+.skeleton-photo{aspect-ratio:3/2;border-radius:inherit;}
+.skeleton-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:3px;}
+.skeleton-grid .skeleton-photo{animation:skeletonPulse 1.4s ease-in-out infinite;background:rgba(128,128,128,.12);}
 .skeleton-grid .skeleton-photo:nth-child(2n){animation-delay:.15s;}
 .skeleton-grid .skeleton-photo:nth-child(3n){animation-delay:.3s;}
 .skeleton-grid .skeleton-photo:nth-child(4n){animation-delay:.45s;}
@@ -78,9 +77,7 @@ input,textarea,select{font-family:inherit;}
   box-shadow:0 12px 40px rgba(0,0,0,.2);
 }
 .toast.show{transform:translateY(0);opacity:1;}
-@media(max-width:480px){
-  .toast{right:12px;left:12px;bottom:100px;min-width:0;}
-}
+@media(max-width:480px){.toast{right:12px;left:12px;bottom:100px;min-width:0;}}
 
 /* ══════════════════════════════════════
    LIGHTBOX
@@ -88,392 +85,254 @@ input,textarea,select{font-family:inherit;}
 .lightbox{
   position:fixed;inset:0;background:rgba(0,0,0,.97);
   z-index:1000;display:flex;align-items:center;justify-content:center;
-  animation:fadeIn .2s ease;
-  flex-direction:column;
+  animation:fadeIn .2s ease;flex-direction:column;
 }
 .lightbox-img-wrap{position:relative;max-width:90vw;max-height:82vh;display:flex;align-items:center;justify-content:center;}
 .lightbox img{max-width:90vw;max-height:82vh;object-fit:contain;border-radius:4px;}
-.lightbox-close{
-  position:absolute;top:16px;right:20px;
-  color:#fff;font-size:26px;cursor:pointer;opacity:.6;
-  transition:opacity .2s,transform .2s;line-height:1;background:none;border:none;
-  z-index:10;
-}
+.lightbox-close{position:absolute;top:16px;right:20px;color:#fff;font-size:26px;cursor:pointer;opacity:.6;transition:opacity .2s,transform .2s;line-height:1;background:none;border:none;z-index:10;}
 .lightbox-close:hover{opacity:1;transform:scale(1.1);}
-.lightbox-nav{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(255,255,255,.12);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.2);color:#fff;
-  width:44px;height:44px;border-radius:50%;font-size:18px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .2s;
-}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
 .lightbox-nav:hover{background:rgba(255,255,255,.25);}
-.lightbox-prev{left:-56px;}
-.lightbox-next{right:-56px;}
-.lightbox-actions{
-  margin-top:20px;
-  display:flex;gap:10px;align-items:center;
-  flex-wrap:wrap;justify-content:center;
-  padding:0 16px;
-}
-.lb-btn{
-  padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;
-  cursor:pointer;border:none;display:inline-flex;align-items:center;gap:7px;
-  transition:all .2s;text-decoration:none;
-}
+.lightbox-prev{left:-56px;}.lightbox-next{right:-56px;}
+.lightbox-actions{margin-top:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;padding:0 16px;}
+.lb-btn{padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:7px;transition:all .2s;text-decoration:none;}
 .lb-btn-dl{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;}
 .lb-btn-dl:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(22,163,74,.4);}
 .lb-btn-ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;}
-.lb-counter{
-  margin-top:12px;
-  color:rgba(255,255,255,.45);font-size:11px;font-family:'DM Mono',monospace;
-  letter-spacing:.1em;text-align:center;
-}
-@media(max-width:640px){
-  .lightbox-prev{left:-14px;}
-  .lightbox-next{right:-14px;}
-  .lightbox-nav{width:36px;height:36px;font-size:15px;}
-}
+.lb-counter{margin-top:12px;color:rgba(255,255,255,.45);font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.1em;text-align:center;}
+@media(max-width:640px){.lightbox-prev{left:-14px;}.lightbox-next{right:-14px;}.lightbox-nav{width:36px;height:36px;font-size:15px;}}
 
 /* ══════════════════════════════════════
-   iOS BATCH DOWNLOAD MODAL
+   iOS BATCH DOWNLOAD MODAL — CIRCLE UI
 ══════════════════════════════════════ */
 .ios-dl-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  z-index:3000;display:flex;align-items:flex-end;justify-content:center;
-  animation:fadeIn .25s ease;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.94);
+  backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  z-index:3000;display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .3s ease;
 }
 .ios-dl-sheet{
-  width:100%;max-width:580px;
-  background:#111114;
-  border-radius:28px 28px 0 0;
-  border-top:1px solid rgba(255,255,255,.1);
-  padding:0 0 max(28px,env(safe-area-inset-bottom));
-  animation:slideUp .32s cubic-bezier(.32,1,.6,1);
-  overflow:hidden;
-  max-height:92vh;
+  width:100%;max-width:340px;
   display:flex;flex-direction:column;
+  align-items:center;
+  padding:40px 28px 44px;
+  animation:scaleIn .38s cubic-bezier(.32,1,.6,1);
+  position:relative;
 }
-.ios-dl-handle-wrap{
-  display:flex;justify-content:center;padding:14px 0 0;
+
+/* ── Big ring container ── */
+.ios-dl-ring-outer{
+  position:relative;
+  width:220px;height:220px;
   flex-shrink:0;
+  margin-bottom:32px;
 }
-.ios-dl-handle{
-  width:40px;height:4px;border-radius:2px;
-  background:rgba(255,255,255,.2);
+.ios-dl-ring-svg{
+  width:220px;height:220px;
+  position:absolute;inset:0;
+  overflow:visible;
 }
-.ios-dl-header{
-  padding:16px 28px 20px;flex-shrink:0;
-  border-bottom:1px solid rgba(255,255,255,.07);
-}
-.ios-dl-title{
-  font-size:20px;font-weight:800;color:#fff;
-  font-family:'DM Sans',sans-serif;margin-bottom:4px;
-  display:flex;align-items:center;gap:10px;
-}
-.ios-dl-title-icon{
-  width:34px;height:34px;border-radius:9px;
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;flex-shrink:0;
-}
-.ios-dl-subtitle{
-  font-size:13px;color:rgba(255,255,255,.45);
-  font-family:'DM Sans',sans-serif;margin-top:6px;
-  line-height:1.5;
-}
-.ios-dl-progress-area{
-  padding:24px 28px 20px;
-  display:flex;align-items:center;gap:20px;
-  flex-shrink:0;
-}
-.ios-dl-ring-wrap{
-  position:relative;width:72px;height:72px;flex-shrink:0;
-}
-.ios-dl-ring-svg{transform:rotate(-90deg);}
-.ios-dl-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:6;}
-.ios-dl-ring-fill{
-  fill:none;stroke:#22c55e;stroke-width:6;
-  stroke-linecap:round;
-  stroke-dasharray:188;stroke-dashoffset:188;
-  transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);
-}
-.ios-dl-ring-text{
-  position:absolute;inset:0;display:flex;flex-direction:column;
+/* inner ring content */
+.ios-dl-ring-inner{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
   align-items:center;justify-content:center;
+  gap:8px;
+  pointer-events:none;
 }
-.ios-dl-ring-num{font-size:18px;font-weight:800;color:#fff;line-height:1;}
-.ios-dl-ring-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-top:1px;}
-.ios-dl-progress-text{flex:1;}
-.ios-dl-batch-label{
-  font-size:16px;font-weight:700;color:#fff;
-  font-family:'DM Sans',sans-serif;margin-bottom:4px;
-}
-.ios-dl-batch-sub{
-  font-size:13px;color:rgba(255,255,255,.45);
-  font-family:'DM Sans',sans-serif;line-height:1.5;
-}
-.ios-dl-instruction{
-  margin:0 28px 20px;
-  background:rgba(34,197,94,.1);
-  border:1px solid rgba(34,197,94,.2);
-  border-radius:16px;padding:16px 18px;
-  display:flex;align-items:flex-start;gap:14px;
-  flex-shrink:0;
-}
-.ios-dl-instruction-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
-.ios-dl-instruction-text{
-  font-size:14px;color:rgba(255,255,255,.8);
-  font-family:'DM Sans',sans-serif;line-height:1.6;
-  font-weight:500;
-}
-.ios-dl-instruction-text strong{color:#4ade80;}
-.ios-dl-thumbs{
-  display:flex;gap:6px;padding:0 28px 20px;
-  overflow-x:auto;-webkit-overflow-scrolling:touch;
-  flex-shrink:0;
-}
-.ios-dl-thumbs::-webkit-scrollbar{display:none;}
-.ios-dl-thumb{
-  width:56px;height:56px;border-radius:10px;
-  overflow:hidden;flex-shrink:0;position:relative;
-  border:2px solid rgba(255,255,255,.08);
-  transition:all .2s;
-}
-.ios-dl-thumb.saved{border-color:#22c55e;}
-.ios-dl-thumb.saving{border-color:rgba(34,197,94,.5);animation:pulse .8s ease-in-out infinite;}
-.ios-dl-thumb img{width:100%;height:100%;object-fit:cover;}
-.ios-dl-thumb-check{
-  position:absolute;inset:0;background:rgba(22,163,74,.6);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;opacity:0;transition:opacity .2s;
-}
-.ios-dl-thumb.saved .ios-dl-thumb-check{opacity:1;}
-.ios-dl-btn-area{padding:0 28px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
-.ios-dl-save-btn{
-  width:100%;padding:16px;border-radius:16px;
+/* Logo mark */
+.ios-dl-logo{
+  width:58px;height:58px;border-radius:16px;
   background:linear-gradient(135deg,#22c55e,#16a34a);
-  color:#fff;font-size:16px;font-weight:800;
-  font-family:'DM Sans',sans-serif;border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:9px;
-  transition:all .2s;box-shadow:0 8px 28px rgba(22,163,74,.3);
-  -webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:900;font-size:18px;
+  color:#fff;letter-spacing:-.02em;
+  box-shadow:0 4px 24px rgba(34,197,94,.4);
+  transition:box-shadow .4s;
 }
-.ios-dl-save-btn:active{transform:scale(.97);}
-.ios-dl-save-btn:disabled{
-  background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);
-  box-shadow:none;cursor:not-allowed;
+.ios-dl-logo.pulsing{
+  animation:glowPulse 1.2s ease-in-out infinite;
 }
-.ios-dl-save-btn.loading{
-  background:rgba(255,255,255,.08);
-  animation:pulse .8s ease-in-out infinite;
+/* Tiny status dot below logo */
+.ios-dl-status-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.15);
+  transition:background .3s,box-shadow .3s;
 }
-.ios-dl-next-btn{
-  width:100%;padding:14px;border-radius:16px;
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-  color:rgba(255,255,255,.7);font-size:14px;font-weight:700;
-  font-family:'DM Sans',sans-serif;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  transition:all .2s;-webkit-tap-highlight-color:transparent;
+.ios-dl-status-dot.active{
+  background:#22c55e;
+  box-shadow:0 0 8px rgba(34,197,94,.9);
+  animation:pulse .9s ease-in-out infinite;
 }
-.ios-dl-next-btn:active{background:rgba(255,255,255,.12);}
-.ios-dl-cancel-btn{
-  width:100%;padding:13px;border-radius:16px;background:transparent;
-  color:rgba(255,255,255,.35);font-size:13px;font-weight:600;
-  font-family:'DM Sans',sans-serif;cursor:pointer;border:none;
-  transition:color .2s;-webkit-tap-highlight-color:transparent;
+.ios-dl-status-dot.done{
+  background:#22c55e;
+  box-shadow:0 0 8px rgba(34,197,94,.6);
+  animation:none;
 }
-.ios-dl-cancel-btn:active{color:rgba(255,255,255,.6);}
-.ios-dl-done{
-  padding:32px 28px;text-align:center;flex-shrink:0;
+
+/* Orbiting dot (visible while fetching) */
+.ios-dl-orbit{
+  position:absolute;
+  top:50%;left:50%;
+  width:0;height:0;
+  opacity:0;
+  transition:opacity .3s;
+  pointer-events:none;
 }
-.ios-dl-done-icon{font-size:52px;margin-bottom:14px;display:block;}
-.ios-dl-done-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;font-family:'DM Sans',sans-serif;}
-.ios-dl-done-sub{font-size:14px;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;line-height:1.6;margin-bottom:24px;}
+.ios-dl-orbit.visible{ opacity:1; }
+.ios-dl-orbit-dot{
+  position:absolute;
+  width:10px;height:10px;
+  border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 10px rgba(34,197,94,.9);
+  top:-110px;left:-5px;
+  animation:spin 1.4s linear infinite;
+  transform-origin:5px 110px;
+}
+
+/* ── Text block ── */
+.ios-dl-wordmark{
+  font-family:'Syne',sans-serif;font-weight:900;font-size:23px;
+  color:#fff;letter-spacing:-.02em;margin-bottom:8px;text-align:center;
+}
+.ios-dl-wordmark span{color:#22c55e;}
+.ios-dl-tagline{
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  color:rgba(255,255,255,.42);text-align:center;
+  line-height:1.65;min-height:46px;
+  transition:opacity .25s;
+}
+.ios-dl-tagline strong{color:rgba(255,255,255,.78);}
+.ios-dl-tagline.fade{opacity:0;}
+
+/* ── Save prompt pill (appears after fetch ready) ── */
+.ios-dl-save-prompt{
+  margin-top:28px;width:100%;
+  background:rgba(34,197,94,.1);
+  border:1.5px solid rgba(34,197,94,.28);
+  border-radius:18px;
+  padding:16px 20px;
+  display:flex;align-items:center;gap:14px;
+  animation:fadeSlideIn .4s cubic-bezier(.32,1,.6,1) both;
+}
+.ios-dl-save-prompt.hidden{display:none!important;}
+.ios-dl-prompt-icon{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;flex-shrink:0;
+}
+.ios-dl-prompt-text{
+  font-family:'DM Sans',sans-serif;font-size:13px;
+  color:rgba(255,255,255,.65);line-height:1.55;
+}
+.ios-dl-prompt-text strong{
+  color:#4ade80;display:block;font-size:15px;
+  font-weight:800;margin-bottom:2px;
+}
+
+/* ── Done state ── */
+.ios-dl-done-area{
+  margin-top:28px;width:100%;text-align:center;
+  animation:fadeSlideIn .4s ease both;
+}
+.ios-dl-done-area.hidden{display:none!important;}
+.ios-dl-done-emoji{font-size:46px;margin-bottom:12px;display:block;}
+.ios-dl-done-title{
+  font-family:'Syne',sans-serif;font-size:20px;font-weight:900;
+  color:#fff;margin-bottom:6px;
+}
+.ios-dl-done-sub{
+  font-family:'DM Sans',sans-serif;font-size:13px;
+  color:rgba(255,255,255,.42);line-height:1.6;margin-bottom:22px;
+}
 .ios-dl-done-btn{
-  width:100%;padding:15px;border-radius:16px;
+  width:100%;padding:14px;border-radius:14px;
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-  color:rgba(255,255,255,.7);font-size:15px;font-weight:700;
+  color:rgba(255,255,255,.65);font-size:14px;font-weight:700;
   font-family:'DM Sans',sans-serif;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
+  -webkit-tap-highlight-color:transparent;transition:background .2s;
 }
+.ios-dl-done-btn:active{background:rgba(255,255,255,.13);}
+
+/* ── Cancel ── */
+.ios-dl-cancel-link{
+  margin-top:22px;
+  font-family:'DM Sans',sans-serif;font-size:12px;
+  color:rgba(255,255,255,.18);cursor:pointer;
+  border:none;background:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .2s;letter-spacing:.03em;
+}
+.ios-dl-cancel-link:active{color:rgba(255,255,255,.5);}
 
 /* ══════════════════════════════════════
    iOS FALLBACK MODAL (old tab method)
 ══════════════════════════════════════ */
-.ios-modal-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.7);
-  backdrop-filter:blur(12px);z-index:2000;
-  display:flex;align-items:flex-end;justify-content:center;
-  padding:0;animation:fadeIn .2s ease;
-}
-.ios-modal-box{
-  width:100%;max-width:560px;
-  border-radius:24px 24px 0 0;
-  padding:28px 28px max(28px, env(safe-area-inset-bottom));
-  animation:slideUp .3s ease;
-  background:#1c1c1e;color:#fff;
-  border-top:1px solid rgba(255,255,255,.1);
-}
-.ios-modal-handle{
-  width:36px;height:4px;border-radius:2px;
-  background:rgba(255,255,255,.25);margin:0 auto 20px;
-}
+.ios-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);z-index:2000;display:flex;align-items:flex-end;justify-content:center;padding:0;animation:fadeIn .2s ease;}
+.ios-modal-box{width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:28px 28px max(28px, env(safe-area-inset-bottom));animation:slideUp .3s ease;background:#1c1c1e;color:#fff;border-top:1px solid rgba(255,255,255,.1);}
+.ios-modal-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);margin:0 auto 20px;}
 .ios-modal-title{font-size:18px;font-weight:700;margin-bottom:6px;text-align:center;}
 .ios-modal-sub{font-size:13px;color:rgba(255,255,255,.6);text-align:center;margin-bottom:24px;line-height:1.6;}
-.ios-step{
-  display:flex;align-items:flex-start;gap:14px;
-  padding:14px 16px;border-radius:14px;
-  background:rgba(255,255,255,.06);margin-bottom:8px;
-}
-.ios-step-num{
-  width:28px;height:28px;border-radius:50%;
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;flex-shrink:0;color:#fff;
-}
+.ios-step{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.06);margin-bottom:8px;}
+.ios-step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff;}
 .ios-step-text{font-size:13px;color:rgba(255,255,255,.85);line-height:1.5;padding-top:4px;}
-.ios-photos-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
-  margin-bottom:20px;border-radius:12px;overflow:hidden;
-}
-.ios-photo-thumb{
-  aspect-ratio:1;background:#333;overflow:hidden;cursor:pointer;
-  position:relative;
-}
+.ios-photos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:20px;border-radius:12px;overflow:hidden;}
+.ios-photo-thumb{aspect-ratio:1;background:#333;overflow:hidden;cursor:pointer;position:relative;}
 .ios-photo-thumb img{width:100%;height:100%;object-fit:cover;}
-.ios-photo-thumb-open{
-  position:absolute;inset:0;background:rgba(0,0,0,.5);
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;opacity:0;transition:opacity .2s;
-}
+.ios-photo-thumb-open{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0;transition:opacity .2s;}
 .ios-photo-thumb:hover .ios-photo-thumb-open{opacity:1;}
-.ios-open-all-btn{
-  width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;
-  background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;
-  cursor:pointer;margin-bottom:10px;display:flex;align-items:center;
-  justify-content:center;gap:8px;transition:all .2s;
-}
+.ios-open-all-btn{width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
 .ios-open-all-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,.35);}
-.ios-cancel-btn{
-  width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;
-  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:none;
-  cursor:pointer;transition:background .2s;
-}
+.ios-cancel-btn{width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:none;cursor:pointer;transition:background .2s;}
 .ios-cancel-btn:hover{background:rgba(255,255,255,.12);}
 
 /* ══════════════════════════════════════
    FLOATING DOWNLOAD BAR
 ══════════════════════════════════════ */
-.dl-bar{
-  position:fixed;bottom:0;left:0;right:0;z-index:500;
-  padding:16px 20px 20px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  transform:translateY(100%);
-  transition:transform .4s cubic-bezier(.34,1.56,.64,1);
-  backdrop-filter:blur(20px);
-  border-top:1px solid rgba(255,255,255,.1);
-  padding-bottom:max(20px, env(safe-area-inset-bottom));
-}
+.dl-bar{position:fixed;bottom:0;left:0;right:0;z-index:500;padding:16px 20px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;transform:translateY(100%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.1);padding-bottom:max(20px, env(safe-area-inset-bottom));}
 .dl-bar.visible{transform:translateY(0);}
 .dl-bar-left{display:flex;align-items:center;gap:12px;min-width:0;}
-.dl-bar-icon{
-  width:38px;height:38px;border-radius:10px;
-  background:rgba(255,255,255,.12);
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;flex-shrink:0;
-}
+.dl-bar-icon{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .dl-bar-info{min-width:0;}
 .dl-bar-count{font-size:15px;font-weight:700;line-height:1.2;}
 .dl-bar-sub{font-size:11px;opacity:.6;margin-top:2px;white-space:nowrap;}
 .dl-bar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
-@media(max-width:480px){
-  .dl-bar{flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px max(16px,env(safe-area-inset-bottom));}
-  .dl-bar-left{justify-content:center;}
-  .dl-bar-actions{flex-direction:row;justify-content:stretch;}
-  .dl-bar-actions .btn-outline,.dl-bar-actions .btn-primary{flex:1;justify-content:center;}
-}
+@media(max-width:480px){.dl-bar{flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px max(16px,env(safe-area-inset-bottom));}.dl-bar-left{justify-content:center;}.dl-bar-actions{flex-direction:row;justify-content:stretch;}.dl-bar-actions .btn-outline,.dl-bar-actions .btn-primary{flex:1;justify-content:center;}}
 
 /* ══════════════════════════════════════
    DOWNLOAD PROGRESS OVERLAY
 ══════════════════════════════════════ */
-.dl-progress-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.75);
-  backdrop-filter:blur(12px);z-index:3000;
-  display:flex;align-items:center;justify-content:center;
-  animation:fadeIn .2s ease;
-}
-.dl-progress-box{
-  background:#1c1c1e;border-radius:24px;
-  padding:36px 40px;max-width:360px;width:90%;
-  text-align:center;color:#fff;
-  box-shadow:0 24px 80px rgba(0,0,0,.5);
-}
+.dl-progress-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);z-index:3000;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;}
+.dl-progress-box{background:#1c1c1e;border-radius:24px;padding:36px 40px;max-width:360px;width:90%;text-align:center;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);}
 .dl-progress-icon{font-size:40px;margin-bottom:16px;display:block;}
 .dl-progress-title{font-size:18px;font-weight:700;margin-bottom:6px;}
 .dl-progress-sub{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:24px;line-height:1.5;}
-.dl-progress-bar-wrap{
-  background:rgba(255,255,255,.1);border-radius:100px;
-  height:6px;overflow:hidden;margin-bottom:10px;
-}
-.dl-progress-bar-fill{
-  height:100%;border-radius:100px;
-  background:linear-gradient(90deg,#22c55e,#16a34a);
-  transition:width .3s ease;
-}
+.dl-progress-bar-wrap{background:rgba(255,255,255,.1);border-radius:100px;height:6px;overflow:hidden;margin-bottom:10px;}
+.dl-progress-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .3s ease;}
 .dl-progress-count{font-size:12px;color:rgba(255,255,255,.4);font-family:'DM Mono',monospace;}
-.dl-cancel-btn{
-  margin-top:20px;padding:11px 24px;border-radius:12px;
-  background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);
-  font-size:13px;font-weight:600;border:none;cursor:pointer;
-  transition:background .2s;
-}
+.dl-cancel-btn{margin-top:20px;padding:11px 24px;border-radius:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background .2s;}
 .dl-cancel-btn:hover{background:rgba(255,255,255,.14);}
-.dl-spinner{
-  width:32px;height:32px;border-radius:50%;
-  border:3px solid rgba(255,255,255,.1);
-  border-top-color:#22c55e;
-  animation:spin .7s linear infinite;
-  margin:0 auto 16px;
-}
 
 /* ══════════════════════════════════════
    PHOTO COUNT BADGE
 ══════════════════════════════════════ */
-.photo-count-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
-  letter-spacing:.06em;padding:4px 10px;border-radius:100px;opacity:.7;
-}
+.photo-count-badge{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.06em;padding:4px 10px;border-radius:100px;opacity:.7;}
 
 /* ══════════════════════════════════════
    SCROLL TO GALLERY BUTTON
 ══════════════════════════════════════ */
-.scroll-to-gallery{
-  position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
-  z-index:10;display:flex;flex-direction:column;align-items:center;gap:4px;
-  cursor:pointer;opacity:.7;transition:opacity .2s;
-  background:none;border:none;color:#fff;
-}
+.scroll-to-gallery{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;opacity:.7;transition:opacity .2s;background:none;border:none;color:#fff;}
 .scroll-to-gallery:hover{opacity:1;}
 .scroll-to-gallery-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;}
-.scroll-to-gallery-arrow{
-  width:28px;height:28px;border-radius:50%;
-  border:1.5px solid rgba(255,255,255,.5);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;animation:pulse 2s ease-in-out infinite;
-}
+.scroll-to-gallery-arrow{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:14px;animation:pulse 2s ease-in-out infinite;}
 
 /* ══════════════════════════════════════
    SHARE BUTTON
 ══════════════════════════════════════ */
-.share-btn{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:12px;font-weight:600;padding:8px 14px;
-  border-radius:8px;cursor:pointer;transition:all .2s;border:none;
-}
+.share-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;transition:all .2s;border:none;}
 
 /* ══════════════════════════════════════
    SLIDESHOW HERO
@@ -484,43 +343,19 @@ input,textarea,select{font-family:inherit;}
 .slide.active{opacity:1;z-index:2;}
 .slide img{width:100%;height:100%;object-fit:cover;animation:kenBurns 12s ease-in-out infinite;}
 .slide-overlay{position:absolute;inset:0;pointer-events:none;}
-.slideshow-dots{
-  position:absolute;bottom:56px;left:50%;transform:translateX(-50%);
-  display:flex;gap:6px;z-index:10;
-}
-.dot{
-  width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,.4);cursor:pointer;transition:all .3s;
-}
+.slideshow-dots{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:all .3s;}
 .dot.active{background:#fff;width:22px;border-radius:3px;}
-.slide-counter{
-  position:absolute;bottom:56px;right:24px;
-  font-family:'DM Mono',monospace;font-size:11px;
-  color:rgba(255,255,255,.6);z-index:10;letter-spacing:.08em;
-}
-.slideshow-nav{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(0,0,0,.25);backdrop-filter:blur(6px);
-  border:1px solid rgba(255,255,255,.2);color:#fff;
-  width:40px;height:40px;border-radius:50%;font-size:16px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;z-index:10;transition:all .2s;
-}
+.slide-counter{position:absolute;bottom:56px;right:24px;font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);z-index:10;letter-spacing:.08em;}
+.slideshow-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.25);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;transition:all .2s;}
 .slideshow-nav:hover{background:rgba(255,255,255,.2);}
-.slideshow-prev{left:16px;}
-.slideshow-next{right:16px;}
+.slideshow-prev{left:16px;}.slideshow-next{right:16px;}
 
 /* ══════════════════════════════════════
    CELEBRANT HERO PHOTO
 ══════════════════════════════════════ */
-.celebrant-photo{
-  position:absolute;bottom:-1px;z-index:5;pointer-events:none;
-}
-.celebrant-photo img{
-  width:100%;height:auto;object-fit:contain;object-position:bottom;
-  filter:drop-shadow(0 -20px 40px rgba(0,0,0,.3));
-  animation:fadeSlideIn .8s ease .3s both;
-}
+.celebrant-photo{position:absolute;bottom:-1px;z-index:5;pointer-events:none;}
+.celebrant-photo img{width:100%;height:auto;object-fit:contain;object-position:bottom;filter:drop-shadow(0 -20px 40px rgba(0,0,0,.3));animation:fadeSlideIn .8s ease .3s both;}
 
 /* ══════════════════════════════════════
    GATE
@@ -533,24 +368,10 @@ input,textarea,select{font-family:inherit;}
    SELECT OVERLAY
 ══════════════════════════════════════ */
 .select-overlay{position:absolute;inset:0;z-index:5;cursor:pointer;}
-.select-checkbox{
-  position:absolute;top:10px;left:10px;z-index:6;
-  width:24px;height:24px;border-radius:6px;
-  border:2px solid rgba(255,255,255,.7);
-  background:rgba(0,0,0,.3);backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;
-  transition:all .2s;pointer-events:none;
-}
+.select-checkbox{position:absolute;top:10px;left:10px;z-index:6;width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.3);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;transition:all .2s;pointer-events:none;}
 .photo-card.selected .select-checkbox{background:var(--accent);border-color:var(--accent);}
-.photo-card.selected .select-checkbox::after{
-  content:'✓';color:#fff;font-size:13px;font-weight:900;
-  animation:checkPop .2s ease;
-}
-.photo-card.selected::after{
-  content:'';position:absolute;inset:0;
-  border:3px solid var(--accent);border-radius:inherit;
-  pointer-events:none;z-index:4;
-}
+.photo-card.selected .select-checkbox::after{content:'✓';color:#fff;font-size:13px;font-weight:900;animation:checkPop .2s ease;}
+.photo-card.selected::after{content:'';position:absolute;inset:0;border:3px solid var(--accent);border-radius:inherit;pointer-events:none;z-index:4;}
 
 /* ══════════════════════════════════════
    EMPTY STATE
@@ -562,15 +383,7 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  PROFESSIONAL TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-professional{
-  --bg:#f6f7fb;--bg2:#eceef6;--card:#fff;
-  --border:#dde1f0;--border2:#b8bdd8;
-  --text:#0c0e1a;--text2:#4a5068;--text3:#8890b0;
-  --accent:#3b4eff;--accent2:#6370ff;
-  --accent-dim:rgba(59,78,255,.08);--accent-glo:rgba(59,78,255,.2);
-  --r:10px;--r2:16px;--r3:24px;
-  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
-}
+.tpl-professional{--bg:#f6f7fb;--bg2:#eceef6;--card:#fff;--border:#dde1f0;--border2:#b8bdd8;--text:#0c0e1a;--text2:#4a5068;--text3:#8890b0;--accent:#3b4eff;--accent2:#6370ff;--accent-dim:rgba(59,78,255,.08);--accent-glo:rgba(59,78,255,.2);--r:10px;--r2:16px;--r3:24px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-professional .ev-nav{position:fixed;top:0;left:0;right:0;height:58px;z-index:100;background:rgba(246,247,251,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;}
 .tpl-professional .nav-logo{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;}
 .tpl-professional .nav-logo-mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
@@ -616,15 +429,7 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  WEDDING TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-wedding{
-  --bg:#fdfaf5;--bg2:#f5ede0;--card:#fff;
-  --border:#e8d6bc;--border2:#c4a882;
-  --text:#1a1208;--text2:#6b5030;--text3:#a8916a;
-  --accent:#9b7030;--accent2:#c4a050;
-  --accent-dim:rgba(155,112,48,.08);--accent-glo:rgba(155,112,48,.25);
-  --r:6px;--r2:12px;--r3:18px;
-  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
-}
+.tpl-wedding{--bg:#fdfaf5;--bg2:#f5ede0;--card:#fff;--border:#e8d6bc;--border2:#c4a882;--text:#1a1208;--text2:#6b5030;--text3:#a8916a;--accent:#9b7030;--accent2:#c4a050;--accent-dim:rgba(155,112,48,.08);--accent-glo:rgba(155,112,48,.25);--r:6px;--r2:12px;--r3:18px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-wedding .ev-nav{position:fixed;top:0;left:0;right:0;height:62px;z-index:100;background:rgba(253,250,245,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 36px;gap:16px;}
 .tpl-wedding .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.03em;}
 .tpl-wedding .nav-logo-mark{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
@@ -671,16 +476,7 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  BIRTHDAY / KIDS TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-birthday{
-  --bg:#fff8f0;--bg2:#ffe8cc;--card:#fff;
-  --border:#ffd4a0;--border2:#ff8c42;
-  --text:#1a0a00;--text2:#8a4010;
-  --accent:#ff5c00;--accent2:#ff8c42;
-  --accent-dim:rgba(255,92,0,.08);--accent-glo:rgba(255,92,0,.25);
-  --pink:#e91e8c;--purple:#7c3aed;
-  --r:16px;--r2:24px;--r3:32px;
-  background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;
-}
+.tpl-birthday{--bg:#fff8f0;--bg2:#ffe8cc;--card:#fff;--border:#ffd4a0;--border2:#ff8c42;--text:#1a0a00;--text2:#8a4010;--accent:#ff5c00;--accent2:#ff8c42;--accent-dim:rgba(255,92,0,.08);--accent-glo:rgba(255,92,0,.25);--pink:#e91e8c;--purple:#7c3aed;--r:16px;--r2:24px;--r3:32px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .tpl-birthday .ev-nav{position:fixed;top:0;left:0;right:0;height:66px;z-index:100;background:rgba(255,248,240,.97);backdrop-filter:blur(20px);border-bottom:3px solid var(--accent2);display:flex;align-items:center;padding:0 24px;gap:14px;}
 .tpl-birthday .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
 .tpl-birthday .nav-logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;}
@@ -724,15 +520,7 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  GALA / LUXURY TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-gala{
-  --bg:#06050a;--bg2:#0f0d17;--card:#17142a;
-  --border:rgba(212,170,40,.12);--border2:rgba(212,170,40,.3);
-  --text:#f2eddd;--text2:#a09060;--text3:#6a5a30;
-  --accent:#d4aa28;--accent2:#f5d060;
-  --accent-dim:rgba(212,170,40,.08);--accent-glo:rgba(212,170,40,.25);
-  --r:3px;--r2:8px;--r3:12px;
-  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
-}
+.tpl-gala{--bg:#06050a;--bg2:#0f0d17;--card:#17142a;--border:rgba(212,170,40,.12);--border2:rgba(212,170,40,.3);--text:#f2eddd;--text2:#a09060;--text3:#6a5a30;--accent:#d4aa28;--accent2:#f5d060;--accent-dim:rgba(212,170,40,.08);--accent-glo:rgba(212,170,40,.25);--r:3px;--r2:8px;--r3:12px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-gala .ev-nav{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;background:rgba(6,5,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 40px;gap:16px;}
 .tpl-gala .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;letter-spacing:.04em;}
 .tpl-gala .nav-logo-mark{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;}
@@ -780,16 +568,7 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  NIGHTLIFE TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-nightlife{
-  --bg:#040308;--bg2:#0c0a18;--card:#131025;
-  --border:rgba(130,80,255,.15);--border2:rgba(130,80,255,.35);
-  --text:#ede8ff;--text2:#9080d0;--text3:#5040a0;
-  --accent:#8050ff;--accent2:#b080ff;
-  --accent-dim:rgba(128,80,255,.12);--accent-glo:rgba(128,80,255,.4);
-  --pink:#ff4da6;--cyan:#00e5ff;
-  --r:8px;--r2:14px;--r3:20px;
-  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
-}
+.tpl-nightlife{--bg:#040308;--bg2:#0c0a18;--card:#131025;--border:rgba(130,80,255,.15);--border2:rgba(130,80,255,.35);--text:#ede8ff;--text2:#9080d0;--text3:#5040a0;--accent:#8050ff;--accent2:#b080ff;--accent-dim:rgba(128,80,255,.12);--accent-glo:rgba(128,80,255,.4);--pink:#ff4da6;--cyan:#00e5ff;--r:8px;--r2:14px;--r3:20px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
 .tpl-nightlife .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:rgba(4,3,8,.94);backdrop-filter:blur(24px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 28px;gap:16px;}
 .tpl-nightlife .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:var(--text);}
 .tpl-nightlife .nav-logo-mark{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
@@ -835,20 +614,12 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
-@media(max-width:900px){
-  .tpl-wedding .photo-grid,.tpl-gala .photo-grid{columns:2;}
-}
+@media(max-width:900px){.tpl-wedding .photo-grid,.tpl-gala .photo-grid{columns:2;}}
 @media(max-width:640px){
   .tpl-wedding .gate-box,.tpl-gala .gate-box{padding:36px 24px;}
   .tpl-gala .photo-grid{columns:2;}
-  .tpl-professional .hero-text-layer,
-  .tpl-wedding .hero-text-layer,
-  .tpl-birthday .hero-text-layer,
-  .tpl-gala .hero-text-layer,
-  .tpl-nightlife .hero-text-layer{padding-left:20px;padding-right:20px;}
-  .tpl-professional .gallery-wrap,
-  .tpl-birthday .gallery-wrap,
-  .tpl-nightlife .gallery-wrap{padding-left:16px;padding-right:16px;}
+  .tpl-professional .hero-text-layer,.tpl-wedding .hero-text-layer,.tpl-birthday .hero-text-layer,.tpl-gala .hero-text-layer,.tpl-nightlife .hero-text-layer{padding-left:20px;padding-right:20px;}
+  .tpl-professional .gallery-wrap,.tpl-birthday .gallery-wrap,.tpl-nightlife .gallery-wrap{padding-left:16px;padding-right:16px;}
   .tpl-wedding .gallery-wrap,.tpl-gala .gallery-wrap{padding-left:16px;padding-right:16px;}
   .gallery-header{gap:10px;}
   .gallery-actions{gap:6px;}
@@ -967,68 +738,85 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════ iOS BATCH DOWNLOAD MODAL ══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════
+     iOS BATCH DOWNLOAD MODAL — ROUND CIRCLE UI
+══════════════════════════════════════ -->
 <div class="ios-dl-backdrop hidden" id="iosDlModal">
   <div class="ios-dl-sheet" id="iosDlSheet">
-    <div class="ios-dl-handle-wrap"><div class="ios-dl-handle"></div></div>
 
-    <!-- Header -->
-    <div class="ios-dl-header">
-      <div class="ios-dl-title">
-        <div class="ios-dl-title-icon">📲</div>
-        <span id="iosDlTitle">Save Photos</span>
+    <!-- Big animated ring -->
+    <div class="ios-dl-ring-outer" id="iosDlRingOuter">
+
+      <!-- SVG ring -->
+      <svg class="ios-dl-ring-svg" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="iosDlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#22c55e"/>
+            <stop offset="100%" stop-color="#4ade80"/>
+          </linearGradient>
+        </defs>
+        <!-- Outer dashed track -->
+        <circle cx="110" cy="110" r="100"
+          stroke="rgba(255,255,255,0.04)" stroke-width="1"
+          stroke-dasharray="3 10" fill="none"
+          style="animation:spinSlow 30s linear infinite;transform-origin:110px 110px;"/>
+        <!-- BG ring -->
+        <circle cx="110" cy="110" r="100"
+          stroke="rgba(255,255,255,0.06)" stroke-width="5" fill="none"/>
+        <!-- Progress fill ring -->
+        <circle cx="110" cy="110" r="100"
+          stroke="url(#iosDlGrad)" stroke-width="5" fill="none"
+          stroke-linecap="round"
+          stroke-dasharray="628.3"
+          stroke-dashoffset="628.3"
+          id="iosDlRingFill"
+          style="transform:rotate(-90deg);transform-origin:110px 110px;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 6px rgba(34,197,94,.6));"/>
+        <!-- Broken/dashed overlay ring — always visible, creates "broken" feel -->
+        <circle cx="110" cy="110" r="100"
+          stroke="rgba(255,255,255,0.035)" stroke-width="5" fill="none"
+          stroke-dasharray="8 28"
+          style="animation:spinSlow 20s linear infinite reverse;transform-origin:110px 110px;"/>
+      </svg>
+
+      <!-- Orbiting dot (shows while fetching) -->
+      <div class="ios-dl-orbit hidden" id="iosDlOrbit">
+        <div class="ios-dl-orbit-dot"></div>
       </div>
-      <div class="ios-dl-subtitle" id="iosDlSubtitle">Saving in batches of 9 — tap the button after each share sheet</div>
+
+      <!-- Logo + status dot in the center -->
+      <div class="ios-dl-ring-inner">
+        <div class="ios-dl-logo" id="iosDlLogo">IG</div>
+        <div class="ios-dl-status-dot idle" id="iosDlStatusDot"></div>
+      </div>
     </div>
 
-    <!-- Progress ring -->
-    <div class="ios-dl-progress-area">
-      <div class="ios-dl-ring-wrap">
-        <svg class="ios-dl-ring-svg" width="72" height="72" viewBox="0 0 72 72">
-          <circle class="ios-dl-ring-bg" cx="36" cy="36" r="30"/>
-          <circle class="ios-dl-ring-fill" id="iosDlRingFill" cx="36" cy="36" r="30"/>
-        </svg>
-        <div class="ios-dl-ring-text">
-          <div class="ios-dl-ring-num" id="iosDlRingNum">0</div>
-          <div class="ios-dl-ring-label">saved</div>
-        </div>
-      </div>
-      <div class="ios-dl-progress-text">
-        <div class="ios-dl-batch-label" id="iosDlBatchLabel">Ready to start</div>
-        <div class="ios-dl-batch-sub" id="iosDlBatchSub">Tap the button below to begin</div>
-      </div>
+    <!-- Wordmark -->
+    <div class="ios-dl-wordmark">Impact<span>Grid</span></div>
+
+    <!-- Status tagline — only text users see, changes state -->
+    <div class="ios-dl-tagline" id="iosDlTagline">
+      Getting your photos ready…
     </div>
 
-    <!-- Instruction card -->
-    <div class="ios-dl-instruction" id="iosDlInstruction">
-      <div class="ios-dl-instruction-icon">👆</div>
-      <div class="ios-dl-instruction-text" id="iosDlInstructionText">
-        Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all photos in this batch to your Camera Roll.
+    <!-- Save prompt — appears once a batch is fetched and share sheet should open -->
+    <div class="ios-dl-save-prompt hidden" id="iosDlSavePrompt">
+      <div class="ios-dl-prompt-icon">📲</div>
+      <div class="ios-dl-prompt-text">
+        <strong id="iosDlPromptTitle">Tap "Save Image"</strong>
+        <span id="iosDlPromptBody">Your Share Sheet is opening — tap <strong>Save Image</strong> to add photos to your Camera Roll.</span>
       </div>
-    </div>
-
-    <!-- Thumbnail strip -->
-    <div class="ios-dl-thumbs" id="iosDlThumbs"></div>
-
-    <!-- Buttons -->
-    <div class="ios-dl-btn-area" id="iosDlBtnArea">
-      <button class="ios-dl-save-btn" id="iosDlSaveBtn" onclick="iosDlTriggerShare()">
-        <span id="iosDlSaveBtnIcon">📲</span>
-        <span id="iosDlSaveBtnText">Save to Device</span>
-      </button>
-      <button class="ios-dl-next-btn hidden" id="iosDlNextBtn" onclick="iosDlNextBatch()">
-        Next Batch → <span id="iosDlNextLabel"></span>
-      </button>
-      <button class="ios-dl-cancel-btn" id="iosDlCancelBtn" onclick="iosDlClose()">Cancel</button>
     </div>
 
     <!-- Done state -->
-    <div class="ios-dl-done hidden" id="iosDlDone">
-      <span class="ios-dl-done-icon">🎉</span>
+    <div class="ios-dl-done-area hidden" id="iosDlDoneArea">
+      <span class="ios-dl-done-emoji">🎉</span>
       <div class="ios-dl-done-title" id="iosDlDoneTitle">All Photos Saved!</div>
-      <div class="ios-dl-done-sub" id="iosDlDoneSub">Check your Camera Roll — all photos are there.</div>
+      <div class="ios-dl-done-sub" id="iosDlDoneSub">Check your Camera Roll — everything is there.</div>
       <button class="ios-dl-done-btn" onclick="iosDlClose()">Done ✓</button>
     </div>
+
+    <!-- Invisible cancel -->
+    <button class="ios-dl-cancel-link" id="iosDlCancelBtn" onclick="iosDlClose()">cancel</button>
   </div>
 </div>
 
@@ -1122,8 +910,6 @@ function isAndroid(){
 function isMobile(){
   return isIOS() || isAndroid() || /Mobi/.test(navigator.userAgent);
 }
-/* Safari on iOS is the ONLY browser that cannot do blob downloads.
-   Chrome on iPhone, Chrome on Android, Samsung Browser — all support it. */
 function isSafariIOS(){
   var ua = navigator.userAgent;
   var isiOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
@@ -1259,7 +1045,7 @@ async function loadPhotos(){
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
       if(isSafariIOS()){
-        dlSub.textContent = 'Photos save in batches — tap each share sheet to save';
+        dlSub.textContent = 'Photos save automatically — just tap Save Image on each sheet';
       } else {
         dlSub.textContent = 'Selected photos save directly to your Downloads / Gallery';
       }
@@ -1570,16 +1356,6 @@ function updateSelectionUI(){
 
 /* ══════════════════════════════════════════════════════════════
    ████  DOWNLOAD ENGINE  ████
-
-   Android / Desktop / Chrome iOS:
-     fetch() image as blob → createObjectURL → <a download> click
-     Saves directly to Downloads / Gallery automatically.
-
-   Safari on iOS ONLY:
-     Uses new batch modal with navigator.share({files}) API.
-     Groups photos into batches of 9, shows progress ring.
-     User taps "Save to Device" → Share Sheet → "Save Image" → Camera Roll.
-     Repeats per batch until all photos saved.
 ══════════════════════════════════════════════════════════════ */
 
 function blobDownload(url, filename){
@@ -1724,14 +1500,17 @@ function downloadAllPhotos(){
   downloadBatch(allPhotos);
 }
 
-/* ══════════════════════════════════════
-   iOS BATCH DOWNLOAD MODAL
-   Groups photos into batches of 9.
-   Each batch: fetch blobs → navigator.share({files}) →
-   Share Sheet opens → user taps "Save Image" → Camera Roll.
-   User taps "Next Batch" to continue.
-   Progress ring tracks total saved.
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   iOS BATCH DOWNLOAD — ROUND CIRCLE UI
+   ─────────────────────────────────────────────────────────────
+   Flow:
+   1. Modal opens → ring shows in "broken/loading" state
+   2. Silently fetch batch blobs in background
+   3. Automatically call navigator.share({files}) — Apple popup opens
+   4. User ONLY taps "Save Image" on the native iOS sheet
+   5. On dismiss (share resolved), advance ring, fetch next batch, repeat
+   6. No batch counts/numbers shown to user. Just ring + tagline text.
+══════════════════════════════════════════════════════════════ */
 
 var iosDl = {
   photos    : [],
@@ -1740,166 +1519,128 @@ var iosDl = {
   saved     : 0,
   total     : 0,
   BATCH_SIZE: 9,
-  fetching  : false,
+  running   : false,
   cancelled : false,
 };
 
+/* Helper: set tagline text with a brief fade */
+function iosDlSetTagline(html){
+  var el = document.getElementById('iosDlTagline');
+  if(!el) return;
+  el.classList.add('fade');
+  setTimeout(function(){
+    el.innerHTML = html;
+    el.classList.remove('fade');
+  }, 220);
+}
+
+/* Helper: advance the green ring to reflect progress */
+function iosDlSetRing(pct){
+  var fill = document.getElementById('iosDlRingFill');
+  if(!fill) return;
+  var circ   = 628.3;
+  var offset = circ * (1 - Math.min(1, Math.max(0, pct)));
+  fill.style.strokeDashoffset = offset;
+}
+
+/* Helper: show/hide orbiting dot */
+function iosDlSetOrbit(visible){
+  var el = document.getElementById('iosDlOrbit');
+  if(el) el.classList.toggle('hidden', !visible);
+  var logo = document.getElementById('iosDlLogo');
+  if(logo) logo.classList.toggle('pulsing', visible);
+  var dot = document.getElementById('iosDlStatusDot');
+  if(dot){
+    dot.className = 'ios-dl-status-dot ' + (visible ? 'active' : 'idle');
+  }
+}
+
 function showIosModal(photos){
-  /* If navigator.share + files supported → new modal */
+  /* If navigator.share + files not supported → fallback */
   if(!(navigator.share && navigator.canShare)){
     iosFallbackTabs(photos);
     return;
   }
 
-  iosDl.photos   = photos;
-  iosDl.total    = photos.length;
-  iosDl.saved    = 0;
-  iosDl.batchIdx = 0;
-  iosDl.cancelled= false;
-  iosDl.fetching = false;
+  iosDl.photos    = photos;
+  iosDl.total     = photos.length;
+  iosDl.saved     = 0;
+  iosDl.batchIdx  = 0;
+  iosDl.running   = false;
+  iosDl.cancelled = false;
 
-  iosDl.batches  = [];
+  /* Split into batches */
+  iosDl.batches = [];
   for(var i = 0; i < photos.length; i += iosDl.BATCH_SIZE){
     iosDl.batches.push(photos.slice(i, i + iosDl.BATCH_SIZE));
   }
 
   /* Reset UI */
-  document.getElementById('iosDlDone').classList.add('hidden');
-  document.getElementById('iosDlBtnArea').classList.remove('hidden');
-  document.getElementById('iosDlNextBtn').classList.add('hidden');
-  document.getElementById('iosDlInstruction').style.display = '';
+  document.getElementById('iosDlSavePrompt').classList.add('hidden');
+  document.getElementById('iosDlDoneArea').classList.add('hidden');
+  document.getElementById('iosDlCancelBtn').style.display = '';
 
-  var totalBatches = iosDl.batches.length;
-  document.getElementById('iosDlTitle').textContent =
-    'Save ' + photos.length + ' Photo' + (photos.length > 1 ? 's' : '');
-  document.getElementById('iosDlSubtitle').textContent =
-    totalBatches === 1
-      ? 'All ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' in one tap'
-      : photos.length + ' photos · ' + totalBatches + ' batches of up to ' + iosDl.BATCH_SIZE;
-
-  iosDlUpdateProgress();
-  iosDlRenderThumbs(0);
-
-  document.getElementById('iosDlSaveBtn').disabled = false;
-  document.getElementById('iosDlSaveBtn').className = 'ios-dl-save-btn';
-  document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
-  document.getElementById('iosDlSaveBtnText').textContent =
-    totalBatches === 1
-      ? 'Save All to Camera Roll'
-      : 'Save Batch 1 of ' + totalBatches;
-
-  document.getElementById('iosDlInstructionText').innerHTML =
-    'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all photos in this batch to your Camera Roll.';
+  /* Ring starts at 0, broken state */
+  iosDlSetRing(0);
+  iosDlSetOrbit(false);
+  iosDlSetTagline('Getting your photos ready…');
 
   document.getElementById('iosDlModal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
+
+  /* Start automatically after a short breath */
+  setTimeout(function(){ iosDlRunNext(); }, 600);
 }
 
-function iosDlUpdateProgress(){
-  var total   = iosDl.total;
-  var saved   = iosDl.saved;
-  var pct     = total > 0 ? saved / total : 0;
-  var circ    = 188.5;
-  var offset  = circ * (1 - pct);
-  var fill    = document.getElementById('iosDlRingFill');
-  if(fill) fill.style.strokeDashoffset = offset;
-
-  document.getElementById('iosDlRingNum').textContent = saved;
-
-  var batchIdx    = iosDl.batchIdx;
-  var totalBatches= iosDl.batches.length;
-  var batch       = iosDl.batches[batchIdx];
-
-  if(batch){
-    var batchStart = batchIdx * iosDl.BATCH_SIZE + 1;
-    var batchEnd   = Math.min((batchIdx + 1) * iosDl.BATCH_SIZE, total);
-    document.getElementById('iosDlBatchLabel').textContent =
-      totalBatches === 1
-        ? 'All ' + total + ' photos'
-        : 'Batch ' + (batchIdx + 1) + ' of ' + totalBatches;
-    document.getElementById('iosDlBatchSub').textContent =
-      totalBatches === 1
-        ? 'Tap to open your Share Sheet'
-        : 'Photos ' + batchStart + ' – ' + batchEnd + ' of ' + total;
+async function iosDlRunNext(){
+  if(iosDl.cancelled) return;
+  if(iosDl.batchIdx >= iosDl.batches.length){
+    iosDlShowDone();
+    return;
   }
-}
 
-function iosDlRenderThumbs(batchIdx){
-  var batch   = iosDl.batches[batchIdx];
-  if(!batch) return;
-  var container = document.getElementById('iosDlThumbs');
-  var offset    = batchIdx * iosDl.BATCH_SIZE;
+  iosDl.running = true;
+  var batch    = iosDl.batches[iosDl.batchIdx];
+  var offset   = iosDl.batchIdx * iosDl.BATCH_SIZE;
 
-  container.innerHTML = batch.map(function(p, i){
-    var globalIdx = offset + i;
-    var isSaved   = globalIdx < iosDl.saved;
-    return '<div class="ios-dl-thumb' + (isSaved ? ' saved' : '') + '" id="iosDlThumb-' + globalIdx + '">'
-      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy"/>'
-      + '<div class="ios-dl-thumb-check">✓</div>'
-      + '</div>';
-  }).join('');
-}
-
-async function iosDlTriggerShare(){
-  if(iosDl.fetching) return;
-  var batchIdx = iosDl.batchIdx;
-  var batch    = iosDl.batches[batchIdx];
-  if(!batch) return;
-
-  iosDl.fetching = true;
-  var btn = document.getElementById('iosDlSaveBtn');
-  btn.disabled = true;
-  btn.className = 'ios-dl-save-btn loading';
-  document.getElementById('iosDlSaveBtnIcon').textContent = '⏳';
-  document.getElementById('iosDlSaveBtnText').textContent = 'Fetching photos…';
-  document.getElementById('iosDlNextBtn').classList.add('hidden');
-  document.getElementById('iosDlInstructionText').innerHTML =
-    '⏳ Preparing ' + batch.length + ' photo' + (batch.length > 1 ? 's' : '') + ' for sharing…';
-
-  var offset = batchIdx * iosDl.BATCH_SIZE;
-
-  /* Mark thumbs as saving */
-  batch.forEach(function(_, i){
-    var el = document.getElementById('iosDlThumb-' + (offset + i));
-    if(el) el.classList.add('saving');
-  });
+  /* Show fetching state */
+  iosDlSetOrbit(true);
+  iosDlSetTagline('Preparing your photos…');
+  document.getElementById('iosDlSavePrompt').classList.add('hidden');
 
   /* Fetch blobs */
   var files = [];
   for(var i = 0; i < batch.length; i++){
+    if(iosDl.cancelled) return;
     try{
       var url = batch[i].original_url || batch[i].preview_url;
       var cleanUrl = url.split('?')[0]
         .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
         .replace('/storage/v1/object/sign/', '/storage/v1/object/public/');
-      var r = await fetch(cleanUrl, { mode: 'cors', cache: 'no-store', redirect: 'follow' });
+      var r = await fetch(cleanUrl, { mode:'cors', cache:'no-store', redirect:'follow' });
       if(!r.ok) throw new Error('HTTP ' + r.status);
       var blob = await r.blob();
       var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
       var ext  = mime === 'image/png' ? 'png' : 'jpg';
       files.push(new File(
         [blob],
-        'ImpactGrid-Photo-' + String(offset + i + 1).padStart(3, '0') + '.' + ext,
+        'ImpactGrid-Photo-' + String(offset + i + 1).padStart(3,'0') + '.' + ext,
         { type: mime }
       ));
+      /* Update ring fractionally as we fetch each file */
+      var fetchedSoFar = iosDl.saved + (i + 1);
+      iosDlSetRing(fetchedSoFar / iosDl.total * 0.85); /* up to 85% while fetching */
     }catch(e){
-      console.warn('Batch', batchIdx + 1, 'photo', i, 'failed:', e);
+      console.warn('iOS fetch failed photo', offset + i, e);
     }
   }
 
-  iosDl.fetching = false;
+  if(iosDl.cancelled) return;
 
   if(files.length === 0){
-    btn.disabled = false;
-    btn.className = 'ios-dl-save-btn';
-    document.getElementById('iosDlSaveBtnIcon').textContent = '🔄';
-    document.getElementById('iosDlSaveBtnText').textContent = 'Retry Batch';
-    document.getElementById('iosDlInstructionText').innerHTML =
-      '⚠️ Could not fetch photos. Check your connection and <strong>try again</strong>.';
-    batch.forEach(function(_, i){
-      var el = document.getElementById('iosDlThumb-' + (offset + i));
-      if(el) el.classList.remove('saving');
-    });
+    iosDlSetOrbit(false);
+    iosDlSetTagline('⚠️ Could not load photos.<br>Check connection and try again.');
+    /* Allow user to dismiss */
     return;
   }
 
@@ -1908,20 +1649,29 @@ async function iosDlTriggerShare(){
   try{ canShareFiles = navigator.canShare({ files: files }); }catch(e){}
 
   if(!canShareFiles){
-    iosFallbackTabs(iosDl.photos);
     iosDlClose();
+    iosFallbackTabs(iosDl.photos);
     return;
   }
 
-  /* Update status */
-  btn.disabled = false;
-  btn.className = 'ios-dl-save-btn';
-  document.getElementById('iosDlSaveBtnIcon').textContent = '📤';
-  document.getElementById('iosDlSaveBtnText').textContent = 'Opening Share Sheet…';
-  document.getElementById('iosDlInstructionText').innerHTML =
-    'Share Sheet opening — tap <strong>"Save Image"</strong> to save all ' + files.length + ' photos to Camera Roll.';
+  /* Stop orbit — files ready */
+  iosDlSetOrbit(false);
 
-  /* Trigger share */
+  /* Show save prompt card */
+  var savePrompt = document.getElementById('iosDlSavePrompt');
+  document.getElementById('iosDlPromptTitle').textContent = 'Tap "Save Image" below';
+  document.getElementById('iosDlPromptBody').innerHTML =
+    'Your Share Sheet is opening — tap <strong>Save Image</strong> to save to Camera Roll.';
+  savePrompt.classList.remove('hidden');
+
+  iosDlSetTagline('Share Sheet opening…');
+
+  /* Small delay so UI updates before share sheet blocks thread */
+  await new Promise(function(res){ setTimeout(res, 150); });
+
+  if(iosDl.cancelled) return;
+
+  /* Trigger share — this opens Apple's native popup */
   try{
     await navigator.share({
       files : files,
@@ -1929,91 +1679,65 @@ async function iosDlTriggerShare(){
       text  : 'Tap "Save Image" to save to Camera Roll'
     });
 
-    /* User completed share */
+    /* Share dismissed (user saved or dismissed) */
     iosDl.saved += files.length;
-    batch.forEach(function(_, i){
-      var el = document.getElementById('iosDlThumb-' + (offset + i));
-      if(el){ el.classList.remove('saving'); el.classList.add('saved'); }
-    });
+    iosDl.batchIdx++;
 
-    var totalBatches = iosDl.batches.length;
-    var isLast       = iosDl.batchIdx >= totalBatches - 1;
+    /* Update ring to reflect actual saved count */
+    iosDlSetRing(iosDl.saved / iosDl.total);
 
+    /* Hide prompt */
+    savePrompt.classList.add('hidden');
+
+    var isLast = iosDl.batchIdx >= iosDl.batches.length;
     if(isLast){
       iosDlShowDone();
     } else {
-      iosDl.batchIdx++;
-      iosDlUpdateProgress();
-      iosDlRenderThumbs(iosDl.batchIdx);
-
-      var nextBatchStart = iosDl.batchIdx * iosDl.BATCH_SIZE + 1;
-      var nextBatchEnd   = Math.min((iosDl.batchIdx + 1) * iosDl.BATCH_SIZE, iosDl.total);
-
-      btn.disabled = true;
-      btn.className = 'ios-dl-save-btn';
-      document.getElementById('iosDlSaveBtnIcon').textContent = '✅';
-      document.getElementById('iosDlSaveBtnText').textContent =
-        'Batch ' + iosDl.batchIdx + ' of ' + totalBatches + ' saved!';
-
-      var nextBtn = document.getElementById('iosDlNextBtn');
-      nextBtn.classList.remove('hidden');
-      document.getElementById('iosDlNextLabel').textContent =
-        'Photos ' + nextBatchStart + '–' + nextBatchEnd;
-
-      document.getElementById('iosDlInstructionText').innerHTML =
-        '✅ <strong>' + iosDl.saved + ' of ' + iosDl.total + '</strong> photos saved so far. '
-        + 'Tap <strong>"Next Batch"</strong> to continue.';
+      /* Brief success flash then auto-proceed to next batch */
+      iosDlSetTagline('✓ Saved! Getting next batch…');
+      iosDlSetOrbit(false);
+      var dot = document.getElementById('iosDlStatusDot');
+      if(dot) dot.className = 'ios-dl-status-dot done';
+      await new Promise(function(res){ setTimeout(res, 900); });
+      if(!iosDl.cancelled) iosDlRunNext();
     }
 
   }catch(e){
     if(e.name === 'AbortError'){
-      var totalBatches2 = iosDl.batches.length;
-      btn.disabled = false;
-      btn.className = 'ios-dl-save-btn';
-      document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
-      document.getElementById('iosDlSaveBtnText').textContent =
-        'Try Batch ' + (iosDl.batchIdx + 1) + ' Again';
-      document.getElementById('iosDlInstructionText').innerHTML =
-        'Looks like you cancelled. Tap the button again, then tap <strong>"Save Image"</strong> on the Share Sheet.';
-      batch.forEach(function(_, i){
-        var el = document.getElementById('iosDlThumb-' + (offset + i));
-        if(el) el.classList.remove('saving');
-      });
+      /* User cancelled the share sheet — stay open, let them try again by closing and reopening */
+      savePrompt.classList.add('hidden');
+      iosDlSetTagline('No worries — your photos are still queued.<br>Close and try again.');
+      iosDl.running = false;
     } else {
       console.warn('Share error:', e);
     }
   }
 }
 
-function iosDlNextBatch(){
-  var totalBatches = iosDl.batches.length;
-  var btn = document.getElementById('iosDlSaveBtn');
-  btn.disabled = false;
-  btn.className = 'ios-dl-save-btn';
-  document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
-  document.getElementById('iosDlSaveBtnText').textContent =
-    'Save Batch ' + (iosDl.batchIdx + 1) + ' of ' + totalBatches;
-  document.getElementById('iosDlNextBtn').classList.add('hidden');
-  document.getElementById('iosDlInstructionText').innerHTML =
-    'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save this batch to Camera Roll.';
-}
-
 function iosDlShowDone(){
-  document.getElementById('iosDlBtnArea').classList.add('hidden');
-  document.getElementById('iosDlInstruction').style.display = 'none';
-  document.getElementById('iosDlDone').classList.remove('hidden');
-  document.getElementById('iosDlDoneTitle').textContent = '🎉 All ' + iosDl.saved + ' Photos Saved!';
-  document.getElementById('iosDlDoneSub').textContent   = 'Check your Camera Roll — all your photos are there.';
-  iosDlUpdateProgress();
+  iosDlSetRing(1);
+  iosDlSetOrbit(false);
+  var dot = document.getElementById('iosDlStatusDot');
+  if(dot) dot.className = 'ios-dl-status-dot done';
+
+  document.getElementById('iosDlSavePrompt').classList.add('hidden');
+  document.getElementById('iosDlCancelBtn').style.display = 'none';
+  document.getElementById('iosDlDoneArea').classList.remove('hidden');
+  document.getElementById('iosDlDoneTitle').textContent =
+    iosDl.saved === 1 ? 'Photo Saved!' : 'All Photos Saved!';
+  document.getElementById('iosDlDoneSub').textContent =
+    'Check your Camera Roll — everything is there.';
+  iosDlSetTagline('Done 🎉');
 }
 
 function iosDlClose(){
+  iosDl.cancelled = true;
+  iosDl.running   = false;
   document.getElementById('iosDlModal').classList.add('hidden');
   document.body.style.overflow = '';
-  iosDl.cancelled = true;
 }
 
-/* Close when tapping backdrop */
+/* Close on backdrop tap */
 document.addEventListener('DOMContentLoaded', function(){
   var backdrop = document.getElementById('iosDlModal');
   if(backdrop){
