@@ -4,14 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>ImpactGrid — Event Gallery</title>
-<link rel="icon" href="https://impactgridgroup.com/logo.png"/>
-<!-- PWA manifest inline -->
-<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22ImpactGrid%20Events%22%2C%22short_name%22%3A%22IG%20Events%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0f%22%2C%22theme_color%22%3A%22%2322c55e%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimpactgridgroup.com%2Flogo.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D"/>
-<meta name="theme-color" content="#0a0a0f"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="IG Events"/>
-<link rel="apple-touch-icon" href="https://impactgridgroup.com/logo.png"/>
+<link rel="icon" href="favicon.ico"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&family=Italiana&family=Syne:wght@700;800;900&family=Nunito:wght@400;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="ig-supabase.js"></script>
@@ -31,115 +24,6 @@ input,textarea,select{font-family:inherit;}
 .section.active{display:block;}
 
 /* ══════════════════════════════════════
-   SPLASH SCREEN
-══════════════════════════════════════ */
-#splashScreen{
-  position:fixed;inset:0;z-index:99999;
-  background:#0a0a0f;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  transition:opacity .6s ease, visibility .6s ease;
-}
-#splashScreen.hide{opacity:0;visibility:hidden;pointer-events:none;}
-.splash-logo-wrap{
-  display:flex;flex-direction:column;align-items:center;gap:18px;
-  animation:splashIn .8s cubic-bezier(.34,1.56,.64,1) both;
-}
-@keyframes splashIn{from{opacity:0;transform:scale(.7) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
-.splash-logo-img{
-  width:80px;height:80px;border-radius:20px;
-  object-fit:contain;
-  background:#fff;
-  padding:8px;
-  box-shadow:0 0 0 1px rgba(255,255,255,.1), 0 20px 60px rgba(34,197,94,.25);
-  animation:splashGlow 2s ease-in-out infinite alternate;
-}
-@keyframes splashGlow{from{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 20px 60px rgba(34,197,94,.2);}to{box-shadow:0 0 0 1px rgba(255,255,255,.15),0 20px 80px rgba(34,197,94,.45);}}
-.splash-wordmark{
-  font-family:'Syne',sans-serif;font-weight:900;font-size:26px;
-  color:#fff;letter-spacing:-.01em;
-  display:flex;align-items:center;gap:8px;
-}
-.splash-wordmark span{color:#22c55e;}
-.splash-tagline{
-  font-family:'DM Sans',sans-serif;font-size:13px;
-  color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase;
-  margin-top:-8px;
-}
-.splash-bar-wrap{
-  margin-top:48px;width:160px;height:2px;
-  background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;
-}
-.splash-bar-fill{
-  height:100%;width:0%;
-  background:linear-gradient(90deg,#22c55e,#16a34a);
-  border-radius:2px;
-  transition:width .3s ease;
-}
-.splash-status{
-  margin-top:14px;font-family:'DM Mono',monospace;
-  font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.08em;
-  text-align:center;min-height:16px;
-}
-
-/* ══════════════════════════════════════
-   ADD TO HOME SCREEN BANNER
-══════════════════════════════════════ */
-#a2hsBanner{
-  position:fixed;top:0;left:0;right:0;z-index:9000;
-  transform:translateY(-100%);
-  transition:transform .45s cubic-bezier(.34,1.56,.64,1);
-  pointer-events:none;
-}
-#a2hsBanner.visible{transform:translateY(0);pointer-events:all;}
-.a2hs-inner{
-  margin:10px 12px;
-  background:linear-gradient(135deg,#0f1a12,#0d1f15);
-  border:1px solid rgba(34,197,94,.3);
-  border-radius:18px;
-  padding:14px 16px;
-  display:flex;align-items:center;gap:12px;
-  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(34,197,94,.1);
-  backdrop-filter:blur(20px);
-}
-.a2hs-logo{
-  width:42px;height:42px;border-radius:10px;
-  background:#fff;padding:5px;
-  flex-shrink:0;object-fit:contain;
-  box-shadow:0 4px 12px rgba(34,197,94,.2);
-}
-.a2hs-text{flex:1;}
-.a2hs-title{
-  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff;
-  margin-bottom:2px;
-}
-.a2hs-sub{font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(255,255,255,.5);}
-.a2hs-btn{
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;
-  font-size:12px;padding:8px 16px;border-radius:10px;
-  border:none;cursor:pointer;white-space:nowrap;
-  flex-shrink:0;
-  box-shadow:0 4px 14px rgba(22,163,74,.35);
-  transition:all .2s;
-  -webkit-tap-highlight-color:transparent;
-}
-.a2hs-btn:active{transform:scale(.95);}
-.a2hs-close{
-  background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.4);
-  width:26px;height:26px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;cursor:pointer;flex-shrink:0;
-  -webkit-tap-highlight-color:transparent;
-}
-/* iOS-specific A2HS instruction */
-.a2hs-ios-steps{
-  display:flex;align-items:center;gap:6px;
-  font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(255,255,255,.55);
-  margin-top:6px;flex-wrap:wrap;
-}
-.a2hs-ios-steps strong{color:#4ade80;}
-
-/* ══════════════════════════════════════
    ANIMATIONS
 ══════════════════════════════════════ */
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
@@ -154,8 +38,6 @@ input,textarea,select{font-family:inherit;}
 @keyframes skeletonPulse{0%,100%{opacity:.5;}50%{opacity:1;}}
 @keyframes barRise{from{transform:translateY(100%);}to{transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
-@keyframes batchPop{0%{transform:scale(.9);opacity:0;}60%{transform:scale(1.04);}100%{transform:scale(1);opacity:1;}}
-@keyframes countUp{from{transform:translateY(8px);opacity:0;}to{transform:translateY(0);opacity:1;}}
 
 /* ══════════════════════════════════════
    SKELETON LOADING
@@ -166,9 +48,19 @@ input,textarea,select{font-family:inherit;}
   animation:shimmer 1.4s infinite;
   border-radius:6px;
 }
-.skeleton-photo{aspect-ratio:3/2;border-radius:inherit;}
-.skeleton-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:3px;}
-.skeleton-grid .skeleton-photo{animation:skeletonPulse 1.4s ease-in-out infinite;background:rgba(128,128,128,.12);}
+.skeleton-photo{
+  aspect-ratio:3/2;
+  border-radius:inherit;
+}
+.skeleton-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:3px;
+}
+.skeleton-grid .skeleton-photo{
+  animation:skeletonPulse 1.4s ease-in-out infinite;
+  background:rgba(128,128,128,.12);
+}
 .skeleton-grid .skeleton-photo:nth-child(2n){animation-delay:.15s;}
 .skeleton-grid .skeleton-photo:nth-child(3n){animation-delay:.3s;}
 .skeleton-grid .skeleton-photo:nth-child(4n){animation-delay:.45s;}
@@ -193,199 +85,283 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    LIGHTBOX
 ══════════════════════════════════════ */
-.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;flex-direction:column;}
+.lightbox{
+  position:fixed;inset:0;background:rgba(0,0,0,.97);
+  z-index:1000;display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .2s ease;
+  flex-direction:column;
+}
 .lightbox-img-wrap{position:relative;max-width:90vw;max-height:82vh;display:flex;align-items:center;justify-content:center;}
 .lightbox img{max-width:90vw;max-height:82vh;object-fit:contain;border-radius:4px;}
-.lightbox-close{position:absolute;top:16px;right:20px;color:#fff;font-size:26px;cursor:pointer;opacity:.6;transition:opacity .2s,transform .2s;line-height:1;background:none;border:none;z-index:10;}
+.lightbox-close{
+  position:absolute;top:16px;right:20px;
+  color:#fff;font-size:26px;cursor:pointer;opacity:.6;
+  transition:opacity .2s,transform .2s;line-height:1;background:none;border:none;
+  z-index:10;
+}
 .lightbox-close:hover{opacity:1;transform:scale(1.1);}
-.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
+.lightbox-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.12);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.2);color:#fff;
+  width:44px;height:44px;border-radius:50%;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;
+}
 .lightbox-nav:hover{background:rgba(255,255,255,.25);}
 .lightbox-prev{left:-56px;}
 .lightbox-next{right:-56px;}
-.lightbox-actions{margin-top:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;padding:0 16px;}
-.lb-btn{padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:7px;transition:all .2s;text-decoration:none;}
+.lightbox-actions{
+  margin-top:20px;
+  display:flex;gap:10px;align-items:center;
+  flex-wrap:wrap;justify-content:center;
+  padding:0 16px;
+}
+.lb-btn{
+  padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;
+  cursor:pointer;border:none;display:inline-flex;align-items:center;gap:7px;
+  transition:all .2s;text-decoration:none;
+}
 .lb-btn-dl{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;}
 .lb-btn-dl:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(22,163,74,.4);}
 .lb-btn-ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;}
-.lb-counter{margin-top:12px;color:rgba(255,255,255,.45);font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.1em;text-align:center;}
-@media(max-width:640px){.lightbox-prev{left:-14px;}.lightbox-next{right:-14px;}.lightbox-nav{width:36px;height:36px;font-size:15px;}}
+.lb-counter{
+  margin-top:12px;
+  color:rgba(255,255,255,.45);font-size:11px;font-family:'DM Mono',monospace;
+  letter-spacing:.1em;text-align:center;
+}
+@media(max-width:640px){
+  .lightbox-prev{left:-14px;}
+  .lightbox-next{right:-14px;}
+  .lightbox-nav{width:36px;height:36px;font-size:15px;}
+}
 
 /* ══════════════════════════════════════
-   BATCH DOWNLOAD MODAL — REDESIGNED
+   iOS BATCH DOWNLOAD MODAL
 ══════════════════════════════════════ */
 .ios-dl-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.88);
-  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   z-index:3000;display:flex;align-items:flex-end;justify-content:center;
   animation:fadeIn .25s ease;
 }
 .ios-dl-sheet{
-  width:100%;max-width:600px;
-  background:#0d0d12;
-  border-radius:32px 32px 0 0;
-  border-top:1px solid rgba(34,197,94,.2);
-  padding:0 0 max(32px,env(safe-area-inset-bottom));
-  animation:batchPop .36s cubic-bezier(.32,1,.6,1);
+  width:100%;max-width:580px;
+  background:#111114;
+  border-radius:28px 28px 0 0;
+  border-top:1px solid rgba(255,255,255,.1);
+  padding:0 0 max(28px,env(safe-area-inset-bottom));
+  animation:slideUp .32s cubic-bezier(.32,1,.6,1);
   overflow:hidden;
-  max-height:95vh;
+  max-height:92vh;
   display:flex;flex-direction:column;
 }
-.ios-dl-handle-wrap{display:flex;justify-content:center;padding:14px 0 0;flex-shrink:0;}
-.ios-dl-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);}
-
-/* Header with logo */
-.ios-dl-header{
-  padding:20px 28px 18px;flex-shrink:0;
-  border-bottom:1px solid rgba(255,255,255,.06);
-}
-.ios-dl-logo-row{
-  display:flex;align-items:center;gap:12px;margin-bottom:12px;
-}
-.ios-dl-logo{
-  width:40px;height:40px;border-radius:10px;
-  background:#fff;padding:5px;object-fit:contain;
-  box-shadow:0 4px 16px rgba(34,197,94,.2);
+.ios-dl-handle-wrap{
+  display:flex;justify-content:center;padding:14px 0 0;
   flex-shrink:0;
 }
-.ios-dl-header-text{}
+.ios-dl-handle{
+  width:40px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,.2);
+}
+.ios-dl-header{
+  padding:16px 28px 20px;flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
 .ios-dl-title{
-  font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:#fff;
-  line-height:1.1;margin-bottom:3px;
+  font-size:20px;font-weight:800;color:#fff;
+  font-family:'DM Sans',sans-serif;margin-bottom:4px;
+  display:flex;align-items:center;gap:10px;
 }
-.ios-dl-subtitle{font-size:13px;color:rgba(255,255,255,.4);font-family:'DM Sans',sans-serif;}
-
-/* Big total counter */
-.ios-dl-total-counter{
-  background:rgba(34,197,94,.07);
-  border:1px solid rgba(34,197,94,.15);
-  border-radius:16px;
-  padding:14px 18px;
-  display:flex;align-items:center;gap:14px;
+.ios-dl-title-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
 }
-.ios-dl-total-num{
-  font-family:'Syne',sans-serif;font-size:36px;font-weight:900;
-  color:#4ade80;line-height:1;
-  animation:countUp .3s ease;
+.ios-dl-subtitle{
+  font-size:13px;color:rgba(255,255,255,.45);
+  font-family:'DM Sans',sans-serif;margin-top:6px;
+  line-height:1.5;
 }
-.ios-dl-total-label{font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,.5);}
-.ios-dl-total-saved{font-family:'DM Mono',monospace;font-size:11px;color:rgba(34,197,94,.6);margin-top:3px;}
-
-/* Progress bar */
-.ios-dl-progress-area{padding:20px 28px 0;flex-shrink:0;}
-.ios-dl-progress-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-.ios-dl-batch-label{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;}
-.ios-dl-batch-pct{font-family:'DM Mono',monospace;font-size:12px;color:#4ade80;}
-.ios-dl-prog-track{
-  height:8px;background:rgba(255,255,255,.08);border-radius:100px;overflow:hidden;
+.ios-dl-progress-area{
+  padding:24px 28px 20px;
+  display:flex;align-items:center;gap:20px;
+  flex-shrink:0;
 }
-.ios-dl-prog-fill{
-  height:100%;border-radius:100px;
-  background:linear-gradient(90deg,#22c55e,#4ade80);
-  transition:width .5s cubic-bezier(.4,0,.2,1);
-  box-shadow:0 0 12px rgba(34,197,94,.4);
+.ios-dl-ring-wrap{
+  position:relative;width:72px;height:72px;flex-shrink:0;
 }
-.ios-dl-batch-sub{font-size:12px;color:rgba(255,255,255,.35);margin-top:6px;font-family:'DM Sans',sans-serif;}
-
-/* Instruction card */
+.ios-dl-ring-svg{transform:rotate(-90deg);}
+.ios-dl-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:6;}
+.ios-dl-ring-fill{
+  fill:none;stroke:#22c55e;stroke-width:6;
+  stroke-linecap:round;
+  stroke-dasharray:188;stroke-dashoffset:188;
+  transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);
+}
+.ios-dl-ring-text{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.ios-dl-ring-num{font-size:18px;font-weight:800;color:#fff;line-height:1;}
+.ios-dl-ring-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-top:1px;}
+.ios-dl-progress-text{flex:1;}
+.ios-dl-batch-label{
+  font-size:16px;font-weight:700;color:#fff;
+  font-family:'DM Sans',sans-serif;margin-bottom:4px;
+}
+.ios-dl-batch-sub{
+  font-size:13px;color:rgba(255,255,255,.45);
+  font-family:'DM Sans',sans-serif;line-height:1.5;
+}
 .ios-dl-instruction{
-  margin:16px 28px 0;
-  background:rgba(34,197,94,.08);
-  border:1px solid rgba(34,197,94,.18);
-  border-radius:16px;padding:14px 16px;
-  display:flex;align-items:flex-start;gap:12px;flex-shrink:0;
+  margin:0 28px 20px;
+  background:rgba(34,197,94,.1);
+  border:1px solid rgba(34,197,94,.2);
+  border-radius:16px;padding:16px 18px;
+  display:flex;align-items:flex-start;gap:14px;
+  flex-shrink:0;
 }
-.ios-dl-instruction-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
-.ios-dl-instruction-text{font-size:13px;color:rgba(255,255,255,.75);font-family:'DM Sans',sans-serif;line-height:1.6;font-weight:500;}
+.ios-dl-instruction-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.ios-dl-instruction-text{
+  font-size:14px;color:rgba(255,255,255,.8);
+  font-family:'DM Sans',sans-serif;line-height:1.6;
+  font-weight:500;
+}
 .ios-dl-instruction-text strong{color:#4ade80;}
-
-/* Thumbnail strip */
-.ios-dl-thumbs{display:flex;gap:6px;padding:16px 28px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;}
+.ios-dl-thumbs{
+  display:flex;gap:6px;padding:0 28px 20px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  flex-shrink:0;
+}
 .ios-dl-thumbs::-webkit-scrollbar{display:none;}
 .ios-dl-thumb{
-  width:54px;height:54px;border-radius:10px;overflow:hidden;flex-shrink:0;
-  position:relative;border:2px solid rgba(255,255,255,.08);transition:all .25s;
+  width:56px;height:56px;border-radius:10px;
+  overflow:hidden;flex-shrink:0;position:relative;
+  border:2px solid rgba(255,255,255,.08);
+  transition:all .2s;
 }
 .ios-dl-thumb.saved{border-color:#22c55e;}
 .ios-dl-thumb.saving{border-color:rgba(34,197,94,.5);animation:pulse .8s ease-in-out infinite;}
 .ios-dl-thumb img{width:100%;height:100%;object-fit:cover;}
 .ios-dl-thumb-check{
-  position:absolute;inset:0;background:rgba(16,100,50,.7);
+  position:absolute;inset:0;background:rgba(22,163,74,.6);
   display:flex;align-items:center;justify-content:center;
-  font-size:18px;opacity:0;transition:opacity .25s;
+  font-size:18px;opacity:0;transition:opacity .2s;
 }
 .ios-dl-thumb.saved .ios-dl-thumb-check{opacity:1;}
-
-/* Buttons */
-.ios-dl-btn-area{padding:18px 28px 0;display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
+.ios-dl-btn-area{padding:0 28px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
 .ios-dl-save-btn{
-  width:100%;padding:17px;border-radius:18px;
+  width:100%;padding:16px;border-radius:16px;
   background:linear-gradient(135deg,#22c55e,#16a34a);
   color:#fff;font-size:16px;font-weight:800;
-  font-family:'Syne',sans-serif;border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  transition:all .2s;box-shadow:0 8px 32px rgba(22,163,74,.35);
+  font-family:'DM Sans',sans-serif;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:all .2s;box-shadow:0 8px 28px rgba(22,163,74,.3);
   -webkit-tap-highlight-color:transparent;
-  letter-spacing:-.01em;
 }
 .ios-dl-save-btn:active{transform:scale(.97);}
-.ios-dl-save-btn:disabled{background:rgba(255,255,255,.08);color:rgba(255,255,255,.25);box-shadow:none;cursor:not-allowed;}
-.ios-dl-save-btn.loading{background:rgba(255,255,255,.07);animation:pulse .9s ease-in-out infinite;}
+.ios-dl-save-btn:disabled{
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);
+  box-shadow:none;cursor:not-allowed;
+}
+.ios-dl-save-btn.loading{
+  background:rgba(255,255,255,.08);
+  animation:pulse .8s ease-in-out infinite;
+}
 .ios-dl-next-btn{
   width:100%;padding:14px;border-radius:16px;
-  background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);
-  color:#4ade80;font-size:14px;font-weight:700;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.7);font-size:14px;font-weight:700;
   font-family:'DM Sans',sans-serif;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:8px;
   transition:all .2s;-webkit-tap-highlight-color:transparent;
-  animation:batchPop .3s ease;
 }
-.ios-dl-next-btn:active{background:rgba(34,197,94,.18);}
+.ios-dl-next-btn:active{background:rgba(255,255,255,.12);}
 .ios-dl-cancel-btn{
-  width:100%;padding:12px;border-radius:14px;background:transparent;
-  color:rgba(255,255,255,.25);font-size:13px;font-weight:600;
+  width:100%;padding:13px;border-radius:16px;background:transparent;
+  color:rgba(255,255,255,.35);font-size:13px;font-weight:600;
   font-family:'DM Sans',sans-serif;cursor:pointer;border:none;
   transition:color .2s;-webkit-tap-highlight-color:transparent;
 }
-.ios-dl-cancel-btn:active{color:rgba(255,255,255,.5);}
-
-/* Done state */
-.ios-dl-done{padding:32px 28px 8px;text-align:center;flex-shrink:0;animation:batchPop .4s ease;}
-.ios-dl-done-check{
-  width:72px;height:72px;border-radius:50%;
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  display:flex;align-items:center;justify-content:center;
-  font-size:32px;margin:0 auto 18px;
-  box-shadow:0 8px 32px rgba(34,197,94,.4);
+.ios-dl-cancel-btn:active{color:rgba(255,255,255,.6);}
+.ios-dl-done{
+  padding:32px 28px;text-align:center;flex-shrink:0;
 }
-.ios-dl-done-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;}
+.ios-dl-done-icon{font-size:52px;margin-bottom:14px;display:block;}
+.ios-dl-done-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;font-family:'DM Sans',sans-serif;}
 .ios-dl-done-sub{font-size:14px;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;line-height:1.6;margin-bottom:24px;}
 .ios-dl-done-btn{
   width:100%;padding:15px;border-radius:16px;
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.6);font-size:15px;font-weight:700;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.7);font-size:15px;font-weight:700;
   font-family:'DM Sans',sans-serif;cursor:pointer;
   -webkit-tap-highlight-color:transparent;
 }
 
 /* ══════════════════════════════════════
-   iOS FALLBACK MODAL
+   iOS FALLBACK MODAL (old tab method)
 ══════════════════════════════════════ */
-.ios-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);z-index:2000;display:flex;align-items:flex-end;justify-content:center;padding:0;animation:fadeIn .2s ease;}
-.ios-modal-box{width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:28px 28px max(28px, env(safe-area-inset-bottom));animation:slideUp .3s ease;background:#1c1c1e;color:#fff;border-top:1px solid rgba(255,255,255,.1);}
-.ios-modal-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);margin:0 auto 20px;}
+.ios-modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  backdrop-filter:blur(12px);z-index:2000;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:0;animation:fadeIn .2s ease;
+}
+.ios-modal-box{
+  width:100%;max-width:560px;
+  border-radius:24px 24px 0 0;
+  padding:28px 28px max(28px, env(safe-area-inset-bottom));
+  animation:slideUp .3s ease;
+  background:#1c1c1e;color:#fff;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.ios-modal-handle{
+  width:36px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,.25);margin:0 auto 20px;
+}
 .ios-modal-title{font-size:18px;font-weight:700;margin-bottom:6px;text-align:center;}
 .ios-modal-sub{font-size:13px;color:rgba(255,255,255,.6);text-align:center;margin-bottom:24px;line-height:1.6;}
-.ios-step{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.06);margin-bottom:8px;}
-.ios-step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff;}
+.ios-step{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 16px;border-radius:14px;
+  background:rgba(255,255,255,.06);margin-bottom:8px;
+}
+.ios-step-num{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;color:#fff;
+}
 .ios-step-text{font-size:13px;color:rgba(255,255,255,.85);line-height:1.5;padding-top:4px;}
-.ios-photos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:20px;border-radius:12px;overflow:hidden;}
-.ios-photo-thumb{aspect-ratio:1;background:#333;overflow:hidden;cursor:pointer;position:relative;}
+.ios-photos-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  margin-bottom:20px;border-radius:12px;overflow:hidden;
+}
+.ios-photo-thumb{
+  aspect-ratio:1;background:#333;overflow:hidden;cursor:pointer;
+  position:relative;
+}
 .ios-photo-thumb img{width:100%;height:100%;object-fit:cover;}
-.ios-photo-thumb-open{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0;transition:opacity .2s;}
+.ios-photo-thumb-open{
+  position:absolute;inset:0;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;opacity:0;transition:opacity .2s;
+}
 .ios-photo-thumb:hover .ios-photo-thumb-open{opacity:1;}
-.ios-open-all-btn{width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
+.ios-open-all-btn{
+  width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;
+  background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;
+  cursor:pointer;margin-bottom:10px;display:flex;align-items:center;
+  justify-content:center;gap:8px;transition:all .2s;
+}
 .ios-open-all-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,.35);}
-.ios-cancel-btn{width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:none;cursor:pointer;transition:background .2s;}
+.ios-cancel-btn{
+  width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:none;
+  cursor:pointer;transition:background .2s;
+}
 .ios-cancel-btn:hover{background:rgba(255,255,255,.12);}
 
 /* ══════════════════════════════════════
@@ -403,14 +379,14 @@ input,textarea,select{font-family:inherit;}
 }
 .dl-bar.visible{transform:translateY(0);}
 .dl-bar-left{display:flex;align-items:center;gap:12px;min-width:0;}
-.dl-bar-icon{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.dl-bar-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
 .dl-bar-info{min-width:0;}
 .dl-bar-count{font-size:15px;font-weight:700;line-height:1.2;}
-.dl-bar-count-num{
-  display:inline-block;
-  transition:transform .15s ease;
-}
-.dl-bar-count-num.bump{animation:countUp .2s ease;}
 .dl-bar-sub{font-size:11px;opacity:.6;margin-top:2px;white-space:nowrap;}
 .dl-bar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
 @media(max-width:480px){
@@ -423,35 +399,81 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    DOWNLOAD PROGRESS OVERLAY
 ══════════════════════════════════════ */
-.dl-progress-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);z-index:3000;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;}
-.dl-progress-box{background:#1c1c1e;border-radius:24px;padding:36px 40px;max-width:360px;width:90%;text-align:center;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.dl-progress-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  backdrop-filter:blur(12px);z-index:3000;
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .2s ease;
+}
+.dl-progress-box{
+  background:#1c1c1e;border-radius:24px;
+  padding:36px 40px;max-width:360px;width:90%;
+  text-align:center;color:#fff;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+}
 .dl-progress-icon{font-size:40px;margin-bottom:16px;display:block;}
 .dl-progress-title{font-size:18px;font-weight:700;margin-bottom:6px;}
 .dl-progress-sub{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:24px;line-height:1.5;}
-.dl-progress-bar-wrap{background:rgba(255,255,255,.1);border-radius:100px;height:6px;overflow:hidden;margin-bottom:10px;}
-.dl-progress-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .3s ease;}
+.dl-progress-bar-wrap{
+  background:rgba(255,255,255,.1);border-radius:100px;
+  height:6px;overflow:hidden;margin-bottom:10px;
+}
+.dl-progress-bar-fill{
+  height:100%;border-radius:100px;
+  background:linear-gradient(90deg,#22c55e,#16a34a);
+  transition:width .3s ease;
+}
 .dl-progress-count{font-size:12px;color:rgba(255,255,255,.4);font-family:'DM Mono',monospace;}
-.dl-cancel-btn{margin-top:20px;padding:11px 24px;border-radius:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background .2s;}
+.dl-cancel-btn{
+  margin-top:20px;padding:11px 24px;border-radius:12px;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);
+  font-size:13px;font-weight:600;border:none;cursor:pointer;
+  transition:background .2s;
+}
 .dl-cancel-btn:hover{background:rgba(255,255,255,.14);}
-.dl-spinner{width:32px;height:32px;border-radius:50%;border:3px solid rgba(255,255,255,.1);border-top-color:#22c55e;animation:spin .7s linear infinite;margin:0 auto 16px;}
+.dl-spinner{
+  width:32px;height:32px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.1);
+  border-top-color:#22c55e;
+  animation:spin .7s linear infinite;
+  margin:0 auto 16px;
+}
 
 /* ══════════════════════════════════════
    PHOTO COUNT BADGE
 ══════════════════════════════════════ */
-.photo-count-badge{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.06em;padding:4px 10px;border-radius:100px;opacity:.7;}
+.photo-count-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+  letter-spacing:.06em;padding:4px 10px;border-radius:100px;opacity:.7;
+}
 
 /* ══════════════════════════════════════
-   SCROLL TO GALLERY
+   SCROLL TO GALLERY BUTTON
 ══════════════════════════════════════ */
-.scroll-to-gallery{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;opacity:.7;transition:opacity .2s;background:none;border:none;color:#fff;}
+.scroll-to-gallery{
+  position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
+  z-index:10;display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;opacity:.7;transition:opacity .2s;
+  background:none;border:none;color:#fff;
+}
 .scroll-to-gallery:hover{opacity:1;}
 .scroll-to-gallery-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;}
-.scroll-to-gallery-arrow{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:14px;animation:pulse 2s ease-in-out infinite;}
+.scroll-to-gallery-arrow{
+  width:28px;height:28px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;animation:pulse 2s ease-in-out infinite;
+}
 
 /* ══════════════════════════════════════
    SHARE BUTTON
 ══════════════════════════════════════ */
-.share-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;transition:all .2s;border:none;}
+.share-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;padding:8px 14px;
+  border-radius:8px;cursor:pointer;transition:all .2s;border:none;
+}
 
 /* ══════════════════════════════════════
    SLIDESHOW HERO
@@ -462,20 +484,43 @@ input,textarea,select{font-family:inherit;}
 .slide.active{opacity:1;z-index:2;}
 .slide img{width:100%;height:100%;object-fit:cover;animation:kenBurns 12s ease-in-out infinite;}
 .slide-overlay{position:absolute;inset:0;pointer-events:none;}
-.slideshow-dots{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;}
-.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:all .3s;}
+.slideshow-dots{
+  position:absolute;bottom:56px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;z-index:10;
+}
+.dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.4);cursor:pointer;transition:all .3s;
+}
 .dot.active{background:#fff;width:22px;border-radius:3px;}
-.slide-counter{position:absolute;bottom:56px;right:24px;font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);z-index:10;letter-spacing:.08em;}
-.slideshow-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.25);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;transition:all .2s;}
+.slide-counter{
+  position:absolute;bottom:56px;right:24px;
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:rgba(255,255,255,.6);z-index:10;letter-spacing:.08em;
+}
+.slideshow-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,.25);backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.2);color:#fff;
+  width:40px;height:40px;border-radius:50%;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:10;transition:all .2s;
+}
 .slideshow-nav:hover{background:rgba(255,255,255,.2);}
 .slideshow-prev{left:16px;}
 .slideshow-next{right:16px;}
 
 /* ══════════════════════════════════════
-   CELEBRANT PHOTO
+   CELEBRANT HERO PHOTO
 ══════════════════════════════════════ */
-.celebrant-photo{position:absolute;bottom:-1px;z-index:5;pointer-events:none;}
-.celebrant-photo img{width:100%;height:auto;object-fit:contain;object-position:bottom;filter:drop-shadow(0 -20px 40px rgba(0,0,0,.3));animation:fadeSlideIn .8s ease .3s both;}
+.celebrant-photo{
+  position:absolute;bottom:-1px;z-index:5;pointer-events:none;
+}
+.celebrant-photo img{
+  width:100%;height:auto;object-fit:contain;object-position:bottom;
+  filter:drop-shadow(0 -20px 40px rgba(0,0,0,.3));
+  animation:fadeSlideIn .8s ease .3s both;
+}
 
 /* ══════════════════════════════════════
    GATE
@@ -488,10 +533,24 @@ input,textarea,select{font-family:inherit;}
    SELECT OVERLAY
 ══════════════════════════════════════ */
 .select-overlay{position:absolute;inset:0;z-index:5;cursor:pointer;}
-.select-checkbox{position:absolute;top:10px;left:10px;z-index:6;width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.3);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;transition:all .2s;pointer-events:none;}
+.select-checkbox{
+  position:absolute;top:10px;left:10px;z-index:6;
+  width:24px;height:24px;border-radius:6px;
+  border:2px solid rgba(255,255,255,.7);
+  background:rgba(0,0,0,.3);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;pointer-events:none;
+}
 .photo-card.selected .select-checkbox{background:var(--accent);border-color:var(--accent);}
-.photo-card.selected .select-checkbox::after{content:'✓';color:#fff;font-size:13px;font-weight:900;animation:checkPop .2s ease;}
-.photo-card.selected::after{content:'';position:absolute;inset:0;border:3px solid var(--accent);border-radius:inherit;pointer-events:none;z-index:4;}
+.photo-card.selected .select-checkbox::after{
+  content:'✓';color:#fff;font-size:13px;font-weight:900;
+  animation:checkPop .2s ease;
+}
+.photo-card.selected::after{
+  content:'';position:absolute;inset:0;
+  border:3px solid var(--accent);border-radius:inherit;
+  pointer-events:none;z-index:4;
+}
 
 /* ══════════════════════════════════════
    EMPTY STATE
@@ -503,10 +562,17 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  PROFESSIONAL TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-professional{--bg:#f6f7fb;--bg2:#eceef6;--card:#fff;--border:#dde1f0;--border2:#b8bdd8;--text:#0c0e1a;--text2:#4a5068;--text3:#8890b0;--accent:#3b4eff;--accent2:#6370ff;--accent-dim:rgba(59,78,255,.08);--accent-glo:rgba(59,78,255,.2);--r:10px;--r2:16px;--r3:24px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.tpl-professional{
+  --bg:#f6f7fb;--bg2:#eceef6;--card:#fff;
+  --border:#dde1f0;--border2:#b8bdd8;
+  --text:#0c0e1a;--text2:#4a5068;--text3:#8890b0;
+  --accent:#3b4eff;--accent2:#6370ff;
+  --accent-dim:rgba(59,78,255,.08);--accent-glo:rgba(59,78,255,.2);
+  --r:10px;--r2:16px;--r3:24px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
 .tpl-professional .ev-nav{position:fixed;top:0;left:0;right:0;height:58px;z-index:100;background:rgba(246,247,251,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;}
 .tpl-professional .nav-logo{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;}
-.tpl-professional .nav-logo-img{width:28px;height:28px;border-radius:7px;object-fit:contain;background:#fff;padding:2px;}
 .tpl-professional .nav-logo-mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
 .tpl-professional .nav-divider{width:1px;height:18px;background:var(--border2);}
 .tpl-professional .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
@@ -550,10 +616,17 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  WEDDING TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-wedding{--bg:#fdfaf5;--bg2:#f5ede0;--card:#fff;--border:#e8d6bc;--border2:#c4a882;--text:#1a1208;--text2:#6b5030;--text3:#a8916a;--accent:#9b7030;--accent2:#c4a050;--accent-dim:rgba(155,112,48,.08);--accent-glo:rgba(155,112,48,.25);--r:6px;--r2:12px;--r3:18px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.tpl-wedding{
+  --bg:#fdfaf5;--bg2:#f5ede0;--card:#fff;
+  --border:#e8d6bc;--border2:#c4a882;
+  --text:#1a1208;--text2:#6b5030;--text3:#a8916a;
+  --accent:#9b7030;--accent2:#c4a050;
+  --accent-dim:rgba(155,112,48,.08);--accent-glo:rgba(155,112,48,.25);
+  --r:6px;--r2:12px;--r3:18px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
 .tpl-wedding .ev-nav{position:fixed;top:0;left:0;right:0;height:62px;z-index:100;background:rgba(253,250,245,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 36px;gap:16px;}
 .tpl-wedding .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.03em;}
-.tpl-wedding .nav-logo-img{width:28px;height:28px;border-radius:50%;object-fit:contain;background:#fff;padding:2px;}
 .tpl-wedding .nav-logo-mark{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
 .tpl-wedding .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-wedding .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
@@ -598,10 +671,18 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  BIRTHDAY / KIDS TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-birthday{--bg:#fff8f0;--bg2:#ffe8cc;--card:#fff;--border:#ffd4a0;--border2:#ff8c42;--text:#1a0a00;--text2:#8a4010;--accent:#ff5c00;--accent2:#ff8c42;--accent-dim:rgba(255,92,0,.08);--accent-glo:rgba(255,92,0,.25);--pink:#e91e8c;--purple:#7c3aed;--r:16px;--r2:24px;--r3:32px;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
+.tpl-birthday{
+  --bg:#fff8f0;--bg2:#ffe8cc;--card:#fff;
+  --border:#ffd4a0;--border2:#ff8c42;
+  --text:#1a0a00;--text2:#8a4010;
+  --accent:#ff5c00;--accent2:#ff8c42;
+  --accent-dim:rgba(255,92,0,.08);--accent-glo:rgba(255,92,0,.25);
+  --pink:#e91e8c;--purple:#7c3aed;
+  --r:16px;--r2:24px;--r3:32px;
+  background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;
+}
 .tpl-birthday .ev-nav{position:fixed;top:0;left:0;right:0;height:66px;z-index:100;background:rgba(255,248,240,.97);backdrop-filter:blur(20px);border-bottom:3px solid var(--accent2);display:flex;align-items:center;padding:0 24px;gap:14px;}
 .tpl-birthday .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
-.tpl-birthday .nav-logo-img{width:32px;height:32px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;}
 .tpl-birthday .nav-logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;}
 .tpl-birthday .nav-divider{width:3px;height:22px;background:var(--accent2);border-radius:2px;}
 .tpl-birthday .nav-event-name{font-size:14px;font-weight:700;color:var(--text2);}
@@ -643,10 +724,17 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  GALA / LUXURY TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-gala{--bg:#06050a;--bg2:#0f0d17;--card:#17142a;--border:rgba(212,170,40,.12);--border2:rgba(212,170,40,.3);--text:#f2eddd;--text2:#a09060;--text3:#6a5a30;--accent:#d4aa28;--accent2:#f5d060;--accent-dim:rgba(212,170,40,.08);--accent-glo:rgba(212,170,40,.25);--r:3px;--r2:8px;--r3:12px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.tpl-gala{
+  --bg:#06050a;--bg2:#0f0d17;--card:#17142a;
+  --border:rgba(212,170,40,.12);--border2:rgba(212,170,40,.3);
+  --text:#f2eddd;--text2:#a09060;--text3:#6a5a30;
+  --accent:#d4aa28;--accent2:#f5d060;
+  --accent-dim:rgba(212,170,40,.08);--accent-glo:rgba(212,170,40,.25);
+  --r:3px;--r2:8px;--r3:12px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
 .tpl-gala .ev-nav{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;background:rgba(6,5,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 40px;gap:16px;}
 .tpl-gala .nav-logo{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:18px;letter-spacing:.04em;}
-.tpl-gala .nav-logo-img{width:28px;height:28px;object-fit:contain;background:#fff;border-radius:4px;padding:2px;}
 .tpl-gala .nav-logo-mark{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;}
 .tpl-gala .nav-divider{width:1px;height:24px;background:var(--border2);}
 .tpl-gala .nav-event-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text2);}
@@ -692,10 +780,18 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    ████  NIGHTLIFE TEMPLATE  ████
 ══════════════════════════════════════ */
-.tpl-nightlife{--bg:#040308;--bg2:#0c0a18;--card:#131025;--border:rgba(130,80,255,.15);--border2:rgba(130,80,255,.35);--text:#ede8ff;--text2:#9080d0;--text3:#5040a0;--accent:#8050ff;--accent2:#b080ff;--accent-dim:rgba(128,80,255,.12);--accent-glo:rgba(128,80,255,.4);--pink:#ff4da6;--cyan:#00e5ff;--r:8px;--r2:14px;--r3:20px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.tpl-nightlife{
+  --bg:#040308;--bg2:#0c0a18;--card:#131025;
+  --border:rgba(130,80,255,.15);--border2:rgba(130,80,255,.35);
+  --text:#ede8ff;--text2:#9080d0;--text3:#5040a0;
+  --accent:#8050ff;--accent2:#b080ff;
+  --accent-dim:rgba(128,80,255,.12);--accent-glo:rgba(128,80,255,.4);
+  --pink:#ff4da6;--cyan:#00e5ff;
+  --r:8px;--r2:14px;--r3:20px;
+  background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+}
 .tpl-nightlife .ev-nav{position:fixed;top:0;left:0;right:0;height:60px;z-index:100;background:rgba(4,3,8,.94);backdrop-filter:blur(24px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 28px;gap:16px;}
 .tpl-nightlife .nav-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:var(--text);}
-.tpl-nightlife .nav-logo-img{width:28px;height:28px;border-radius:6px;object-fit:contain;background:#fff;padding:2px;}
 .tpl-nightlife .nav-logo-mark{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
 .tpl-nightlife .nav-divider{width:1px;height:18px;background:var(--border2);}
 .tpl-nightlife .nav-event-name{font-size:13px;font-weight:500;color:var(--text2);}
@@ -716,6 +812,7 @@ input,textarea,select{font-family:inherit;}
 .tpl-nightlife .photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;cursor:pointer;background:var(--bg2);}
 .tpl-nightlife .photo-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s;filter:saturate(1.2);}
 .tpl-nightlife .photo-card:hover img{transform:scale(1.07);}
+.tpl-nightlife .photo-card:hover{box-shadow:inset 0 0 30px rgba(128,80,255,.4);}
 .tpl-nightlife .photo-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(128,80,255,.65),transparent 50%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px;}
 .tpl-nightlife .photo-card:hover .photo-card-overlay{opacity:1;}
 .tpl-nightlife .btn-primary{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;font-weight:700;font-size:13px;padding:11px 22px;border-radius:var(--r);display:inline-flex;align-items:center;gap:7px;transition:all .2s;box-shadow:0 4px 20px var(--accent-glo);}
@@ -738,12 +835,20 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
-@media(max-width:900px){.tpl-wedding .photo-grid,.tpl-gala .photo-grid{columns:2;}}
+@media(max-width:900px){
+  .tpl-wedding .photo-grid,.tpl-gala .photo-grid{columns:2;}
+}
 @media(max-width:640px){
   .tpl-wedding .gate-box,.tpl-gala .gate-box{padding:36px 24px;}
   .tpl-gala .photo-grid{columns:2;}
-  .tpl-professional .hero-text-layer,.tpl-wedding .hero-text-layer,.tpl-birthday .hero-text-layer,.tpl-gala .hero-text-layer,.tpl-nightlife .hero-text-layer{padding-left:20px;padding-right:20px;}
-  .tpl-professional .gallery-wrap,.tpl-birthday .gallery-wrap,.tpl-nightlife .gallery-wrap{padding-left:16px;padding-right:16px;}
+  .tpl-professional .hero-text-layer,
+  .tpl-wedding .hero-text-layer,
+  .tpl-birthday .hero-text-layer,
+  .tpl-gala .hero-text-layer,
+  .tpl-nightlife .hero-text-layer{padding-left:20px;padding-right:20px;}
+  .tpl-professional .gallery-wrap,
+  .tpl-birthday .gallery-wrap,
+  .tpl-nightlife .gallery-wrap{padding-left:16px;padding-right:16px;}
   .tpl-wedding .gallery-wrap,.tpl-gala .gallery-wrap{padding-left:16px;padding-right:16px;}
   .gallery-header{gap:10px;}
   .gallery-actions{gap:6px;}
@@ -753,42 +858,11 @@ input,textarea,select{font-family:inherit;}
 </head>
 <body>
 
-<!-- ══════════════════════ SPLASH SCREEN ══════════════════════ -->
-<div id="splashScreen">
-  <div class="splash-logo-wrap">
-    <img class="splash-logo-img" src="https://impactgridgroup.com/logo.png" alt="ImpactGrid" onerror="this.style.display='none';document.getElementById('splashLogoFallback').style.display='flex'"/>
-    <div id="splashLogoFallback" style="display:none;width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#22c55e,#16a34a);align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:900;font-size:26px;color:#fff;">IG</div>
-    <div class="splash-wordmark">Impact<span>Grid</span></div>
-    <div class="splash-tagline">Event Gallery</div>
-  </div>
-  <div class="splash-bar-wrap">
-    <div class="splash-bar-fill" id="splashBarFill"></div>
-  </div>
-  <div class="splash-status" id="splashStatus">Loading…</div>
-</div>
-
-<!-- ══════════════════════ ADD TO HOME SCREEN BANNER ══════════════════════ -->
-<div id="a2hsBanner">
-  <div class="a2hs-inner">
-    <img class="a2hs-logo" src="https://impactgridgroup.com/logo.png" alt="ImpactGrid" onerror="this.style.display='none'"/>
-    <div class="a2hs-text">
-      <div class="a2hs-title">Add to Home Screen</div>
-      <div class="a2hs-sub" id="a2hsSubText">Install ImpactGrid Events for quick access</div>
-      <div class="a2hs-ios-steps hidden" id="a2hsIosSteps">
-        Tap <strong>Share ↑</strong> then <strong>"Add to Home Screen"</strong>
-      </div>
-    </div>
-    <button class="a2hs-btn" id="a2hsBtn" onclick="a2hsInstall()">Add</button>
-    <button class="a2hs-close" onclick="a2hsDismiss()" title="Dismiss">✕</button>
-  </div>
-</div>
-
-<!-- ══════════════════════ GATE ══════════════════════ -->
+<!-- ══════════════════════════════════════ GATE ══════════════════════════════════════ -->
 <div class="section" id="section-gate">
   <nav class="ev-nav">
     <a href="index.html" class="nav-logo">
-      <img class="nav-logo-img" src="https://impactgridgroup.com/logo.png" alt="IG" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="nav-logo-mark" style="display:none;">IG</div>
+      <div class="nav-logo-mark">IG</div>
       ImpactGrid
     </a>
   </nav>
@@ -810,12 +884,12 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════ GALLERY ══════════════════════ -->
+<!-- ══════════════════════════════════════ GALLERY ══════════════════════════════════════ -->
 <div class="section" id="section-gallery">
+
   <nav class="ev-nav" id="mainNav">
     <a href="index.html" class="nav-logo">
-      <img class="nav-logo-img" src="https://impactgridgroup.com/logo.png" alt="IG" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="nav-logo-mark" style="display:none;">IG</div>
+      <div class="nav-logo-mark">IG</div>
       ImpactGrid
     </a>
     <div class="nav-divider"></div>
@@ -878,7 +952,7 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════ LIGHTBOX ══════════════════════ -->
+<!-- ══════════════════════════════════════ LIGHTBOX ══════════════════════════════════════ -->
 <div class="lightbox hidden" id="lightbox" onclick="closeLightboxBg(event)">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
   <div class="lightbox-img-wrap">
@@ -893,49 +967,43 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════ BATCH DOWNLOAD MODAL ══════════════════════ -->
+<!-- ══════════════════════════════════════ iOS BATCH DOWNLOAD MODAL ══════════════════════════════════════ -->
 <div class="ios-dl-backdrop hidden" id="iosDlModal">
   <div class="ios-dl-sheet" id="iosDlSheet">
     <div class="ios-dl-handle-wrap"><div class="ios-dl-handle"></div></div>
 
-    <!-- Header with ImpactGrid logo -->
+    <!-- Header -->
     <div class="ios-dl-header">
-      <div class="ios-dl-logo-row">
-        <img class="ios-dl-logo" src="https://impactgridgroup.com/logo.png" alt="ImpactGrid" onerror="this.style.display='none'"/>
-        <div class="ios-dl-header-text">
-          <div class="ios-dl-title" id="iosDlTitle">Saving Photos</div>
-          <div class="ios-dl-subtitle" id="iosDlSubtitle">ImpactGrid Event Gallery</div>
-        </div>
+      <div class="ios-dl-title">
+        <div class="ios-dl-title-icon">📲</div>
+        <span id="iosDlTitle">Save Photos</span>
       </div>
-      <!-- Big total counter -->
-      <div class="ios-dl-total-counter">
-        <div>
-          <div class="ios-dl-total-num" id="iosDlTotalNum">0</div>
-          <div class="ios-dl-total-label">Total photos selected</div>
-        </div>
-        <div style="flex:1;text-align:right;">
-          <div class="ios-dl-total-saved" id="iosDlTotalSaved">0 saved so far</div>
-        </div>
-      </div>
+      <div class="ios-dl-subtitle" id="iosDlSubtitle">Saving in batches of 9 — tap the button after each share sheet</div>
     </div>
 
-    <!-- Progress -->
+    <!-- Progress ring -->
     <div class="ios-dl-progress-area">
-      <div class="ios-dl-progress-row">
-        <div class="ios-dl-batch-label" id="iosDlBatchLabel">Batch 1</div>
-        <div class="ios-dl-batch-pct" id="iosDlBatchPct">0%</div>
+      <div class="ios-dl-ring-wrap">
+        <svg class="ios-dl-ring-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="ios-dl-ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ios-dl-ring-fill" id="iosDlRingFill" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="ios-dl-ring-text">
+          <div class="ios-dl-ring-num" id="iosDlRingNum">0</div>
+          <div class="ios-dl-ring-label">saved</div>
+        </div>
       </div>
-      <div class="ios-dl-prog-track">
-        <div class="ios-dl-prog-fill" id="iosDlProgFill" style="width:0%"></div>
+      <div class="ios-dl-progress-text">
+        <div class="ios-dl-batch-label" id="iosDlBatchLabel">Ready to start</div>
+        <div class="ios-dl-batch-sub" id="iosDlBatchSub">Tap the button below to begin</div>
       </div>
-      <div class="ios-dl-batch-sub" id="iosDlBatchSub">Preparing…</div>
     </div>
 
-    <!-- Instruction -->
+    <!-- Instruction card -->
     <div class="ios-dl-instruction" id="iosDlInstruction">
-      <div class="ios-dl-instruction-icon">📲</div>
+      <div class="ios-dl-instruction-icon">👆</div>
       <div class="ios-dl-instruction-text" id="iosDlInstructionText">
-        Tap <strong>"Save to Camera Roll"</strong> below — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save this batch directly to your Camera Roll.
+        Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all photos in this batch to your Camera Roll.
       </div>
     </div>
 
@@ -946,53 +1014,64 @@ input,textarea,select{font-family:inherit;}
     <div class="ios-dl-btn-area" id="iosDlBtnArea">
       <button class="ios-dl-save-btn" id="iosDlSaveBtn" onclick="iosDlTriggerShare()">
         <span id="iosDlSaveBtnIcon">📲</span>
-        <span id="iosDlSaveBtnText">Save to Camera Roll</span>
+        <span id="iosDlSaveBtnText">Save to Device</span>
       </button>
       <button class="ios-dl-next-btn hidden" id="iosDlNextBtn" onclick="iosDlNextBatch()">
-        ⚡ Next Batch → <span id="iosDlNextLabel"></span>
+        Next Batch → <span id="iosDlNextLabel"></span>
       </button>
-      <button class="ios-dl-cancel-btn" id="iosDlCancelBtn" onclick="iosDlClose()">Dismiss</button>
+      <button class="ios-dl-cancel-btn" id="iosDlCancelBtn" onclick="iosDlClose()">Cancel</button>
     </div>
 
     <!-- Done state -->
     <div class="ios-dl-done hidden" id="iosDlDone">
-      <div class="ios-dl-done-check">✓</div>
-      <div class="ios-dl-done-title" id="iosDlDoneTitle">All Saved!</div>
+      <span class="ios-dl-done-icon">🎉</span>
+      <div class="ios-dl-done-title" id="iosDlDoneTitle">All Photos Saved!</div>
       <div class="ios-dl-done-sub" id="iosDlDoneSub">Check your Camera Roll — all photos are there.</div>
       <button class="ios-dl-done-btn" onclick="iosDlClose()">Done ✓</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════ iOS FALLBACK MODAL ══════════════════════ -->
+<!-- ══════════════════════════════════════ iOS FALLBACK MODAL ══════════════════════════════════════ -->
 <div class="ios-modal-backdrop hidden" id="iosModal" onclick="closeIosModal(event)">
   <div class="ios-modal-box" onclick="event.stopPropagation()">
     <div class="ios-modal-handle"></div>
     <div class="ios-modal-title" id="iosModalTitle">📱 Save Your Photos</div>
     <div class="ios-modal-sub" id="iosModalSub">Here's how to save photos on your device</div>
     <div id="iosSteps">
-      <div class="ios-step"><div class="ios-step-num">1</div><div class="ios-step-text">Tap each photo thumbnail below — it opens in a new tab</div></div>
-      <div class="ios-step"><div class="ios-step-num">2</div><div class="ios-step-text" id="iosStep2Text"><strong>Long-press</strong> the photo image until a menu appears</div></div>
-      <div class="ios-step"><div class="ios-step-num">3</div><div class="ios-step-text" id="iosStep3Text">Tap <strong>"Save to Photos"</strong> — saves directly to Camera Roll 📷</div></div>
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div class="ios-step-text">Tap each photo thumbnail below — it opens in a new tab</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div class="ios-step-text" id="iosStep2Text"><strong>Long-press</strong> the photo image until a menu appears</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div class="ios-step-text" id="iosStep3Text">Tap <strong>"Save to Photos"</strong> — saves directly to Camera Roll 📷</div>
+      </div>
     </div>
     <div class="ios-photos-grid" id="iosPhotosGrid"></div>
-    <button class="ios-open-all-btn" id="iosOpenAllBtn" onclick="iosOpenAll()">📂 Open All Photos</button>
+    <button class="ios-open-all-btn" id="iosOpenAllBtn" onclick="iosOpenAll()">
+      📂 Open All Photos
+    </button>
     <button class="ios-cancel-btn" onclick="closeIosModal()">Cancel</button>
   </div>
 </div>
 
-<!-- ══════════════════════ FLOATING DOWNLOAD BAR ══════════════════════ -->
+<!-- ══════════════════════════════════════ FLOATING DOWNLOAD BAR ══════════════════════════════════════ -->
 <div class="dl-bar" id="dlBar">
   <div class="dl-bar-left">
     <div class="dl-bar-icon">📥</div>
     <div class="dl-bar-info">
-      <div class="dl-bar-count"><span class="dl-bar-count-num" id="dlBarCount">0</span> selected</div>
+      <div class="dl-bar-count"><span id="dlBarCount">0</span> photos selected</div>
       <div class="dl-bar-sub" id="dlBarSub">Tap photos to select them</div>
     </div>
   </div>
   <div class="dl-bar-actions">
     <button class="btn-outline" onclick="clearSelection()" style="font-size:12px;padding:9px 16px;">✕ Clear</button>
-    <button class="btn-primary" onclick="downloadSelected()" style="padding:10px 20px;">⬇ Save <span id="dlBarSaveCount"></span></button>
+    <button class="btn-primary" onclick="downloadSelected()" style="padding:10px 20px;">⬇ Save</button>
   </div>
 </div>
 
@@ -1009,7 +1088,7 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    CONFIG & STATE
 ══════════════════════════════════════ */
-var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
+var EVENTS_API   = 'https://impactgrid-events-api.onrender.com';
 var TPL_MAP = {
   professional : { cls:'tpl-professional', icon:'📸', heroType:'dark-text'  },
   wedding      : { cls:'tpl-wedding',      icon:'💍', heroType:'elegant'    },
@@ -1032,106 +1111,30 @@ var iosPendingPhotos = [];
 var dlCancelled  = false;
 
 /* ══════════════════════════════════════
-   SPLASH SCREEN
-══════════════════════════════════════ */
-var splashProgress = 0;
-function splashSet(pct, msg){
-  splashProgress = pct;
-  var fill = document.getElementById('splashBarFill');
-  var status = document.getElementById('splashStatus');
-  if(fill) fill.style.width = pct + '%';
-  if(status && msg) status.textContent = msg;
-}
-function hideSplash(){
-  var sp = document.getElementById('splashScreen');
-  if(sp){ sp.classList.add('hide'); setTimeout(function(){ sp.style.display='none'; }, 700); }
-}
-
-/* ══════════════════════════════════════
-   ADD TO HOME SCREEN (PWA / A2HS)
-══════════════════════════════════════ */
-var a2hsEvent = null;
-var a2hsDismissed = false;
-
-// Chrome/Edge/Android — capture install prompt
-window.addEventListener('beforeinstallprompt', function(e){
-  e.preventDefault();
-  a2hsEvent = e;
-  // Show after a short delay so it's not intrusive
-  setTimeout(showA2HSBanner, 3000);
-});
-
-// Detect iOS Safari (no beforeinstallprompt)
-function isIOSSafari(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent)
-    && !window.MSStream
-    && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(navigator.userAgent);
-}
-
-function showA2HSBanner(){
-  if(a2hsDismissed) return;
-  // Don't show if already installed as PWA
-  if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return;
-  if(window.navigator.standalone) return;
-
-  var banner = document.getElementById('a2hsBanner');
-  if(!banner) return;
-
-  if(isIOSSafari()){
-    // iOS: show instructions, hide install button, show steps
-    document.getElementById('a2hsBtn').style.display = 'none';
-    document.getElementById('a2hsIosSteps').classList.remove('hidden');
-    document.getElementById('a2hsSubText').style.display = 'none';
-  }
-
-  banner.classList.add('visible');
-}
-
-function a2hsInstall(){
-  if(!a2hsEvent) return;
-  a2hsEvent.prompt();
-  a2hsEvent.userChoice.then(function(r){
-    if(r.outcome === 'accepted'){
-      toast('📱', 'Added to Home Screen!', 'ImpactGrid Events is now installed');
-      a2hsDismiss();
-    }
-    a2hsEvent = null;
-  });
-}
-
-function a2hsDismiss(){
-  a2hsDismissed = true;
-  var banner = document.getElementById('a2hsBanner');
-  if(banner) banner.classList.remove('visible');
-}
-
-// Show iOS banner after gallery loads (no install event on iOS)
-function maybeShowIOSBanner(){
-  if(isIOSSafari() && !a2hsDismissed){
-    // Check not already in standalone
-    if(!window.navigator.standalone){
-      setTimeout(showA2HSBanner, 4000);
-    }
-  }
-}
-
-/* ══════════════════════════════════════
    PLATFORM DETECTION
 ══════════════════════════════════════ */
-function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
-function isAndroid(){ return /Android/.test(navigator.userAgent); }
-function isMobile(){ return isIOS() || isAndroid() || /Mobi/.test(navigator.userAgent); }
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function isAndroid(){
+  return /Android/.test(navigator.userAgent);
+}
+function isMobile(){
+  return isIOS() || isAndroid() || /Mobi/.test(navigator.userAgent);
+}
+/* Safari on iOS is the ONLY browser that cannot do blob downloads.
+   Chrome on iPhone, Chrome on Android, Samsung Browser — all support it. */
 function isSafariIOS(){
   var ua = navigator.userAgent;
-  return /iPad|iPhone|iPod/.test(ua) && !window.MSStream
-    && /AppleWebKit/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua);
+  var isiOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  var isSafari = /AppleWebKit/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/OPiOS/.test(ua) && !/EdgiOS/.test(ua);
+  return isiOS && isSafari;
 }
 
 /* ══════════════════════════════════════
    BOOT
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async function(){
-  splashSet(10, 'Starting up…');
   fetch(EVENTS_API + '/ping').catch(function(){});
   setInterval(function(){ fetch(EVENTS_API + '/ping').catch(function(){}); }, 13 * 60 * 1000);
 
@@ -1139,13 +1142,7 @@ document.addEventListener('DOMContentLoaded', async function(){
   var slug   = params.get('event') || params.get('slug');
   var code   = params.get('code');
 
-  splashSet(30, 'Loading event…');
-
-  if(!slug){
-    hideSplash();
-    showError('No event specified in the URL.');
-    return;
-  }
+  if(!slug){ showError('No event specified in the URL.'); return; }
 
   try{
     var c = getSupabase();
@@ -1156,12 +1153,11 @@ document.addEventListener('DOMContentLoaded', async function(){
       .eq('is_active', true)
       .single();
 
-    splashSet(60, 'Setting up gallery…');
-
-    if(error || !ev){ hideSplash(); showError('This event was not found or has expired.'); return; }
+    if(error || !ev){ showError('This event was not found or has expired.'); return; }
 
     eventData = ev;
-    var settings = Array.isArray(ev.event_settings) ? ev.event_settings[0] : (ev.event_settings || {});
+    var settings = Array.isArray(ev.event_settings)
+      ? ev.event_settings[0] : (ev.event_settings || {});
 
     var type = ev.type || ev.template || 'professional';
     var tpl  = TPL_MAP[type] || TPL_MAP.professional;
@@ -1171,13 +1167,6 @@ document.addEventListener('DOMContentLoaded', async function(){
     document.getElementById('navCodeBadge').textContent = ev.event_code;
 
     styleGate(type, ev.name);
-    splashSet(80, 'Almost ready…');
-
-    await new Promise(function(r){ setTimeout(r, 400); });
-    splashSet(100, 'Welcome!');
-
-    await new Promise(function(r){ setTimeout(r, 300); });
-    hideSplash();
 
     if(settings.require_code === false){
       enterGallery();
@@ -1187,10 +1176,7 @@ document.addEventListener('DOMContentLoaded', async function(){
       showSection('section-gate');
     }
 
-  }catch(e){
-    hideSplash();
-    showError('Could not load event: ' + e.message);
-  }
+  }catch(e){ showError('Could not load event: ' + e.message); }
 });
 
 /* ══════════════════════════════════════
@@ -1198,7 +1184,16 @@ document.addEventListener('DOMContentLoaded', async function(){
 ══════════════════════════════════════ */
 function styleGate(type, name){
   var icons = { wedding:'💍', birthday:'🎂', kids:'🎉', gala:'✦', nightlife:'🎧', sports:'🏆', ceremony:'🎓', professional:'📸' };
-  var subs  = { wedding:'Please enter your access code to view the gallery.', birthday:'🎉 Enter your code to join the celebration!', kids:'🔑 Enter your magic code to see the photos!', gala:'Please present your access code to enter.', nightlife:'Enter your exclusive access code.', professional:'Enter your access code to view the event photos.', sports:'Enter your team access code.', ceremony:'Enter your access code to view the ceremony gallery.' };
+  var subs  = {
+    wedding    : 'Please enter your access code to view the gallery.',
+    birthday   : '🎉 Enter your code to join the celebration!',
+    kids       : '🔑 Enter your magic code to see the photos!',
+    gala       : 'Please present your access code to enter.',
+    nightlife  : 'Enter your exclusive access code.',
+    professional: 'Enter your access code to view the event photos.',
+    sports     : 'Enter your team access code.',
+    ceremony   : 'Enter your access code to view the ceremony gallery.',
+  };
   document.getElementById('gateIcon').textContent = icons[type] || '📸';
   document.getElementById('gateTitle').textContent = name;
   document.getElementById('gateSub').textContent   = subs[type] || subs.professional;
@@ -1225,7 +1220,6 @@ function showGateAlert(msg){
 ══════════════════════════════════════ */
 async function enterGallery(){
   showSection('section-gallery');
-  maybeShowIOSBanner();
   await loadPhotos();
 }
 
@@ -1264,9 +1258,11 @@ async function loadPhotos(){
 
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
-      dlSub.textContent = isSafariIOS()
-        ? 'Share sheet saves to Camera Roll automatically'
-        : 'Photos save directly to your Downloads / Gallery';
+      if(isSafariIOS()){
+        dlSub.textContent = 'Photos save in batches — tap each share sheet to save';
+      } else {
+        dlSub.textContent = 'Selected photos save directly to your Downloads / Gallery';
+      }
     }
 
     buildHero();
@@ -1281,7 +1277,11 @@ async function loadPhotos(){
     var pg = document.getElementById('photoGrid');
     if(pg){
       pg.style.display = '';
-      pg.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load photos</div><p style="font-size:14px;opacity:.6;">Please refresh the page and try again.</p></div>';
+      pg.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">'
+        + '<div class="empty-state-icon">⚠️</div>'
+        + '<div class="empty-state-title">Could not load photos</div>'
+        + '<p style="font-size:14px;opacity:.6;">Please refresh the page and try again.</p>'
+        + '</div>';
     }
   }
 }
@@ -1291,8 +1291,10 @@ async function loadPhotos(){
 ══════════════════════════════════════ */
 async function loadCelebrantPhoto(){
   try{
-    var settings = Array.isArray(eventData.event_settings) ? eventData.event_settings[0] : (eventData.event_settings || {});
+    var settings = Array.isArray(eventData.event_settings)
+      ? eventData.event_settings[0] : (eventData.event_settings || {});
     var celebUrl = settings.celebrant_photo_url || eventData.celebrant_photo_url || null;
+
     if(!celebUrl){
       var c = getSupabase();
       var { data: files } = await c.storage.from('events').list(eventData.id + '/celebrant');
@@ -1301,6 +1303,7 @@ async function loadCelebrantPhoto(){
         celebUrl = urlData.publicUrl;
       }
     }
+
     if(celebUrl){
       var wrap = document.getElementById('celebrantPhoto');
       var img  = document.getElementById('celebrantImg');
@@ -1315,9 +1318,18 @@ function positionCelebrantPhoto(){
   var type = eventData ? (eventData.type || eventData.template || 'professional') : 'professional';
   var wrap = document.getElementById('celebrantPhoto');
   if(!wrap) return;
-  wrap.style.right = '5%'; wrap.style.left = 'auto'; wrap.style.width = 'clamp(180px, 25vw, 380px)';
-  if(['wedding','gala','ceremony'].includes(type)){ wrap.style.right = '10%'; wrap.style.width = 'clamp(160px, 22vw, 340px)'; }
-  if(['birthday','kids'].includes(type)){ wrap.style.right = 'auto'; wrap.style.left = '5%'; wrap.style.width = 'clamp(150px, 22vw, 300px)'; }
+  wrap.style.right = '5%';
+  wrap.style.left  = 'auto';
+  wrap.style.width = 'clamp(180px, 25vw, 380px)';
+  if(['wedding','gala','ceremony'].includes(type)){
+    wrap.style.right = '10%';
+    wrap.style.width = 'clamp(160px, 22vw, 340px)';
+  }
+  if(['birthday','kids'].includes(type)){
+    wrap.style.right = 'auto';
+    wrap.style.left  = '5%';
+    wrap.style.width = 'clamp(150px, 22vw, 300px)';
+  }
 }
 
 /* ══════════════════════════════════════
@@ -1330,17 +1342,31 @@ function buildHero(){
   var days = Math.max(0, Math.ceil((new Date(ev.expiry_date) - new Date()) / (1000*60*60*24)));
   var hl   = document.getElementById('heroTextLayer');
   var html = '';
+
   if(tpl.heroType === 'elegant'){
-    html = '<div class="hero-ornament">❦ ' + esc(ev.name) + ' ❦</div><h1 class="hero-title"><em>' + esc(ev.name) + '</em></h1><div class="hero-divider"></div><p class="hero-sub">A collection of your finest moments · ' + days + ' days remaining</p>';
+    html = '<div class="hero-ornament">❦ ' + esc(ev.name) + ' ❦</div>'
+      + '<h1 class="hero-title"><em>' + esc(ev.name) + '</em></h1>'
+      + '<div class="hero-divider"></div>'
+      + '<p class="hero-sub">A collection of your finest moments · ' + days + ' days remaining</p>';
   } else if(tpl.heroType === 'colorful'){
-    html = '<span class="hero-emoji">' + tpl.icon + '</span><h1 class="hero-title">' + esc(ev.name) + '</h1><p class="hero-sub">Tap any photo to view &amp; download · ' + days + ' days remaining ✨</p>';
+    html = '<span class="hero-emoji">' + tpl.icon + '</span>'
+      + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
+      + '<p class="hero-sub">Tap any photo to view &amp; download · ' + days + ' days remaining ✨</p>';
   } else if(tpl.heroType === 'luxury'){
-    html = '<div class="hero-ornament">✦ ✦ ✦</div><h1 class="hero-title"><em>' + esc(ev.name) + '</em></h1><div class="hero-divider"></div><p class="hero-sub">An exclusive collection · ' + days + ' days remaining</p>';
+    html = '<div class="hero-ornament">✦ ✦ ✦</div>'
+      + '<h1 class="hero-title"><em>' + esc(ev.name) + '</em></h1>'
+      + '<div class="hero-divider"></div>'
+      + '<p class="hero-sub">An exclusive collection · ' + days + ' days remaining</p>';
   } else if(tpl.heroType === 'neon'){
-    html = '<div class="hero-label">LIVE GALLERY</div><h1 class="hero-title">' + esc(ev.name) + '</h1><p class="hero-sub">Browse your photos · ' + days + ' days to download</p>';
+    html = '<div class="hero-label">LIVE GALLERY</div>'
+      + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
+      + '<p class="hero-sub">Browse your photos · ' + days + ' days to download</p>';
   } else {
-    html = '<div class="hero-label">' + tpl.icon + ' Photo Gallery</div><h1 class="hero-title">' + esc(ev.name) + '</h1><p class="hero-sub">Browse &amp; download your event photos · ' + days + ' days remaining</p>';
+    html = '<div class="hero-label">' + tpl.icon + ' Photo Gallery</div>'
+      + '<h1 class="hero-title">' + esc(ev.name) + '</h1>'
+      + '<p class="hero-sub">Browse &amp; download your event photos · ' + days + ' days remaining</p>';
   }
+
   hl.innerHTML = html;
   document.getElementById('galleryTitle').textContent = ev.name;
 }
@@ -1353,18 +1379,51 @@ function buildSlideshow(photos){
   var dots    = document.getElementById('slideshowDots');
   var counter = document.getElementById('slideCounter');
   var wrap    = document.getElementById('slideshowWrap');
-  if(!photos.length){ wrap.style.display = 'none'; document.getElementById('galleryWrap').style.paddingTop = '80px'; return; }
-  if(photos.length < 2){ document.getElementById('slidePrev').style.display = 'none'; document.getElementById('slideNext').style.display = 'none'; }
-  track.innerHTML = photos.map(function(p, i){ return '<div class="slide' + (i===0?' active':'') + '" id="slide-'+i+'"><img src="' + esc(p.preview_url) + '" alt="" loading="' + (i===0?'eager':'lazy') + '"/></div>'; }).join('');
-  dots.innerHTML = photos.map(function(_,i){ return '<div class="dot' + (i===0?' active':'') + '" onclick="goSlide('+i+')"></div>'; }).join('');
+
+  if(!photos.length){
+    wrap.style.display = 'none';
+    document.getElementById('galleryWrap').style.paddingTop = '80px';
+    return;
+  }
+
+  if(photos.length < 2){
+    document.getElementById('slidePrev').style.display = 'none';
+    document.getElementById('slideNext').style.display = 'none';
+  }
+
+  track.innerHTML = photos.map(function(p, i){
+    return '<div class="slide' + (i===0?' active':'') + '" id="slide-'+i+'">'
+      + '<img src="' + esc(p.preview_url) + '" alt="" loading="' + (i===0?'eager':'lazy') + '"/>'
+      + '</div>';
+  }).join('');
+
+  dots.innerHTML = photos.map(function(_,i){
+    return '<div class="dot' + (i===0?' active':'') + '" onclick="goSlide('+i+')"></div>';
+  }).join('');
+
   counter.textContent = '1 / ' + photos.length;
   currentSlide = 0;
+
   clearInterval(slideTimer);
   slideTimer = setInterval(function(){ nextSlide(); }, 5000);
+
   var touchStartX = 0, touchStartY = 0, isSwiping = false;
-  wrap.addEventListener('touchstart', function(e){ touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; isSwiping = false; }, { passive:true });
-  wrap.addEventListener('touchmove', function(e){ var dx = Math.abs(e.touches[0].clientX - touchStartX); var dy = Math.abs(e.touches[0].clientY - touchStartY); if(dx > dy && dx > 8) isSwiping = true; }, { passive:true });
-  wrap.addEventListener('touchend', function(e){ if(!isSwiping) return; var dx = e.changedTouches[0].clientX - touchStartX; if(Math.abs(dx) > 40){ dx < 0 ? nextSlide() : prevSlide(); } isSwiping = false; }, { passive:true });
+  wrap.addEventListener('touchstart', function(e){
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    isSwiping   = false;
+  }, { passive:true });
+  wrap.addEventListener('touchmove', function(e){
+    var dx = Math.abs(e.touches[0].clientX - touchStartX);
+    var dy = Math.abs(e.touches[0].clientY - touchStartY);
+    if(dx > dy && dx > 8) isSwiping = true;
+  }, { passive:true });
+  wrap.addEventListener('touchend', function(e){
+    if(!isSwiping) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) > 40){ dx < 0 ? nextSlide() : prevSlide(); }
+    isSwiping = false;
+  }, { passive:true });
 }
 
 function goSlide(idx){
@@ -1382,7 +1441,11 @@ function goSlide(idx){
 }
 function nextSlide(){ goSlide(currentSlide + 1); }
 function prevSlide(){ goSlide(currentSlide - 1); }
-function scrollToGallery(){ var gw = document.getElementById('galleryWrap'); if(gw) gw.scrollIntoView({ behavior:'smooth', block:'start' }); }
+
+function scrollToGallery(){
+  var gw = document.getElementById('galleryWrap');
+  if(gw) gw.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 
 /* ══════════════════════════════════════
    SHARE
@@ -1392,10 +1455,31 @@ function shareEvent(){
   var slug   = params.get('event') || params.get('slug');
   var base   = window.location.origin + window.location.pathname;
   var url    = base + (slug ? '?event=' + encodeURIComponent(slug) : '');
-  if(navigator.share){ navigator.share({ title: (eventData ? eventData.name : 'Event') + ' — ImpactGrid Gallery', text: 'View photos from ' + (eventData ? eventData.name : 'this event'), url: url }).catch(function(){}); return; }
-  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ toast('🔗', 'Link copied!', 'Share it with your guests'); }).catch(function(){ fallbackCopy(url); }); } else { fallbackCopy(url); }
+  if(navigator.share){
+    navigator.share({
+      title: (eventData ? eventData.name : 'Event') + ' — ImpactGrid Gallery',
+      text : 'View photos from ' + (eventData ? eventData.name : 'this event'),
+      url  : url
+    }).catch(function(){});
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){
+      toast('🔗', 'Link copied!', 'Share it with your guests');
+    }).catch(function(){ fallbackCopy(url); });
+  } else {
+    fallbackCopy(url);
+  }
 }
-function fallbackCopy(text){ var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('🔗', 'Link copied!', 'Share it with your guests'); }catch(e){ toast('📋', 'Copy this link:', text.substring(0,40) + '…'); } document.body.removeChild(ta); }
+
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); toast('🔗', 'Link copied!', 'Share it with your guests'); }
+  catch(e){ toast('📋', 'Copy this link:', text.substring(0,40) + '…'); }
+  document.body.removeChild(ta);
+}
 
 /* ══════════════════════════════════════
    PHOTO GRID
@@ -1405,19 +1489,28 @@ function renderPhotos(photos){
   var grid    = document.getElementById('photoGrid');
   var masonry = ['wedding','gala'].includes(type);
   grid.style.display = masonry ? 'block' : '';
+
   if(!photos.length){
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;column-span:all;"><div class="empty-state-icon">📷</div><div class="empty-state-title">No photos yet</div><p style="font-size:14px;opacity:.6;">The photographer hasn\'t uploaded photos yet. Check back soon.</p></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;column-span:all;">'
+      + '<div class="empty-state-icon">📷</div>'
+      + '<div class="empty-state-title">No photos yet</div>'
+      + '<p style="font-size:14px;opacity:.6;">The photographer hasn\'t uploaded photos yet. Check back soon.</p>'
+      + '</div>';
     return;
   }
+
   grid.innerHTML = photos.map(function(p, i){
     var isSel = selectedIds.has(p.id);
     return '<div class="photo-card' + (isSel?' selected':'') + '" id="card-' + p.id + '" data-id="' + p.id + '" data-idx="' + i + '">'
       + '<div class="select-checkbox"></div>'
       + '<div class="select-overlay" onclick="toggleSelect(\'' + p.id + '\',event)"></div>'
       + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy" onclick="openLightbox(' + i + ',event)"/>'
-      + '<div class="photo-card-overlay"><button class="lb-btn lb-btn-dl" style="font-size:11px;padding:7px 14px;" onclick="event.stopPropagation();quickDownload(\'' + esc(p.original_url||p.preview_url) + '\',' + i + ')">⬇ Save</button></div>'
+      + '<div class="photo-card-overlay">'
+      + '<button class="lb-btn lb-btn-dl" style="font-size:11px;padding:7px 14px;" onclick="event.stopPropagation();quickDownload(\'' + esc(p.original_url||p.preview_url) + '\',' + i + ')">⬇ Save</button>'
+      + '</div>'
       + '</div>';
   }).join('');
+
   updateSelectionUI();
 }
 
@@ -1433,7 +1526,9 @@ function toggleSelect(id, event){
 }
 
 function toggleSelectAll(){
-  if(allSelected){ clearSelection(); } else {
+  if(allSelected){
+    clearSelection();
+  } else {
     allPhotos.forEach(function(p){ selectedIds.add(p.id); });
     document.querySelectorAll('.photo-card').forEach(function(c){ c.classList.add('selected'); });
     allSelected = true;
@@ -1443,7 +1538,8 @@ function toggleSelectAll(){
 }
 
 function clearSelection(){
-  selectedIds.clear(); allSelected = false;
+  selectedIds.clear();
+  allSelected = false;
   document.querySelectorAll('.photo-card').forEach(function(c){ c.classList.remove('selected'); });
   document.getElementById('selectAllBtn').textContent = '☐ Select All';
   updateSelectionUI();
@@ -1455,18 +1551,15 @@ function updateSelectionUI(){
   var dlBtn   = document.getElementById('downloadSelectedBtn');
   var countEl = document.getElementById('selectedCount');
   var barCount= document.getElementById('dlBarCount');
-  var barSave = document.getElementById('dlBarSaveCount');
   if(countEl)  countEl.textContent  = count;
-  if(barCount){
-    barCount.textContent = count;
-    barCount.classList.add('bump');
-    setTimeout(function(){ barCount.classList.remove('bump'); }, 250);
-  }
-  if(barSave) barSave.textContent = count > 0 ? '(' + count + ')' : '';
+  if(barCount) barCount.textContent = count;
   if(count > 0){
     dlBar.classList.add('visible');
     if(dlBtn) dlBtn.style.display = 'inline-flex';
-    if(count === allPhotos.length){ allSelected = true; document.getElementById('selectAllBtn').textContent = '☑ Deselect All'; }
+    if(count === allPhotos.length){
+      allSelected = true;
+      document.getElementById('selectAllBtn').textContent = '☑ Deselect All';
+    }
   } else {
     dlBar.classList.remove('visible');
     if(dlBtn) dlBtn.style.display = 'none';
@@ -1475,14 +1568,19 @@ function updateSelectionUI(){
   }
 }
 
-/* ══════════════════════════════════════
-   DOWNLOAD ENGINE
-   - Android/Desktop/Chrome iOS: blob download directly
-   - Safari iOS: batch modal with navigator.share({files})
-   - NO batch limit — processes ALL photos
-   - Keeps running in background via async/await even if user
-     navigates away (tab stays alive on mobile)
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   ████  DOWNLOAD ENGINE  ████
+
+   Android / Desktop / Chrome iOS:
+     fetch() image as blob → createObjectURL → <a download> click
+     Saves directly to Downloads / Gallery automatically.
+
+   Safari on iOS ONLY:
+     Uses new batch modal with navigator.share({files}) API.
+     Groups photos into batches of 9, shows progress ring.
+     User taps "Save to Device" → Share Sheet → "Save Image" → Camera Roll.
+     Repeats per batch until all photos saved.
+══════════════════════════════════════════════════════════════ */
 
 function blobDownload(url, filename){
   var directUrl = url
@@ -1491,95 +1589,148 @@ function blobDownload(url, filename){
   var qmark = directUrl.indexOf('?');
   if(qmark !== -1) directUrl = directUrl.substring(0, qmark);
 
-  return fetch(directUrl, { mode:'cors', cache:'no-store', redirect:'follow' })
-    .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+  return fetch(directUrl, { mode: 'cors', cache: 'no-store', redirect: 'follow' })
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.blob();
+    })
     .then(function(blob){
       var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
-      var safeBlob = (mime !== blob.type) ? new Blob([blob], { type:mime }) : blob;
+      var safeBlob = (mime !== blob.type) ? new Blob([blob], { type: mime }) : blob;
       return new Promise(function(resolve, reject){
         try{
           var objUrl = URL.createObjectURL(safeBlob);
           var a = document.createElement('a');
-          a.href = objUrl; a.download = filename || 'ImpactGrid-Photo.jpg';
+          a.href     = objUrl;
+          a.download = filename || 'ImpactGrid-Photo.jpg';
           a.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none;';
-          document.body.appendChild(a); a.click();
-          setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(objUrl); resolve(); }, 2500);
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function(){
+            document.body.removeChild(a);
+            URL.revokeObjectURL(objUrl);
+            resolve();
+          }, 2500);
         }catch(e){ reject(e); }
       });
     });
 }
 
-/* Progress overlay for non-iOS */
+/* ── Progress overlay (non-iOS) ── */
 function showDlProgress(total){
-  removeDlProgress(); dlCancelled = false;
+  removeDlProgress();
+  dlCancelled = false;
   var box = document.createElement('div');
-  box.className = 'dl-progress-overlay'; box.id = 'dlProgressOverlay';
+  box.className = 'dl-progress-overlay';
+  box.id = 'dlProgressOverlay';
   box.innerHTML =
     '<div class="dl-progress-box">'
-    + '<div class="dl-spinner"></div>'
-    + '<div class="dl-progress-title">Saving ' + total + ' Photo' + (total > 1 ? 's' : '') + '</div>'
-    + '<div class="dl-progress-sub">Running in background — you can keep browsing.</div>'
+    + '<span class="dl-progress-icon">⬇️</span>'
+    + '<div class="dl-progress-title">Saving Photos</div>'
+    + '<div class="dl-progress-sub">Files downloading to your device — keep this page open.</div>'
     + '<div class="dl-progress-bar-wrap"><div class="dl-progress-bar-fill" id="dlProgressFill" style="width:0%"></div></div>'
     + '<div class="dl-progress-count" id="dlProgressCount">0 / ' + total + '</div>'
     + '<button class="dl-cancel-btn" onclick="cancelDl()">Cancel</button>'
     + '</div>';
   document.body.appendChild(box);
 }
+
 function updateDlProgress(done, total){
   var fill  = document.getElementById('dlProgressFill');
   var count = document.getElementById('dlProgressCount');
-  if(fill)  fill.style.width = Math.round((done/total)*100) + '%';
+  if(fill)  fill.style.width = Math.round((done / total) * 100) + '%';
   if(count) count.textContent = done + ' / ' + total;
 }
-function removeDlProgress(){ var el = document.getElementById('dlProgressOverlay'); if(el) el.remove(); }
-function cancelDl(){ dlCancelled = true; removeDlProgress(); toast('✕', 'Download cancelled', ''); }
+
+function removeDlProgress(){
+  var el = document.getElementById('dlProgressOverlay');
+  if(el) el.remove();
+}
+
+function cancelDl(){
+  dlCancelled = true;
+  removeDlProgress();
+  toast('✕', 'Download cancelled', '');
+}
 
 function quickDownload(url, idx){
-  if(isSafariIOS()){ showIosModal([{ original_url:url, preview_url:url }]); return; }
-  var filename = 'ImpactGrid-Photo-' + (parseInt(idx)+1) + '.jpg';
+  if(isSafariIOS()){
+    showIosModal([{ original_url: url, preview_url: url }]);
+    return;
+  }
+  var filename = 'ImpactGrid-Photo-' + (parseInt(idx) + 1) + '.jpg';
   toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
   blobDownload(url, filename)
     .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
-    .catch(function(){ toast('⚠️', 'Download failed', 'Try again'); });
+    .catch(function(){ toast('⚠️', 'Download failed', 'Try again or check your connection'); });
 }
 
 async function downloadBatch(photos){
-  if(isSafariIOS()){ showIosModal(photos); return; }
+  if(isSafariIOS()){
+    showIosModal(photos);
+    return;
+  }
+
   if(photos.length === 1){
+    var url = photos[0].original_url || photos[0].preview_url;
     toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
-    blobDownload(photos[0].original_url || photos[0].preview_url, 'ImpactGrid-Photo-001.jpg')
-      .then(function(){ toast('✅', 'Photo saved!', ''); })
+    blobDownload(url, 'ImpactGrid-Photo-001.jpg')
+      .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
       .catch(function(){ toast('⚠️', 'Download failed', 'Try again'); });
     return;
   }
+
   showDlProgress(photos.length);
-  var done = 0, failed = 0;
+  var done = 0;
+  var failed = 0;
+
   for(var i = 0; i < photos.length; i++){
     if(dlCancelled) break;
     var url = photos[i].original_url || photos[i].preview_url;
-    var num = String(i+1).padStart(3,'0');
-    try{ await blobDownload(url, 'ImpactGrid-Photo-' + num + '.jpg'); done++; }
-    catch(e){ console.warn('Photo', i, 'failed:', e); failed++; done++; }
+    var num = String(i + 1).padStart(3, '0');
+    try{
+      await blobDownload(url, 'ImpactGrid-Photo-' + num + '.jpg');
+      done++;
+    }catch(e){
+      console.warn('Photo', i, 'failed:', e);
+      failed++;
+      done++;
+    }
     updateDlProgress(done, photos.length);
-    if(i < photos.length - 1 && !dlCancelled) await new Promise(function(r){ setTimeout(r, 350); });
+    if(i < photos.length - 1 && !dlCancelled){
+      await new Promise(function(res){ setTimeout(res, 400); });
+    }
   }
+
   removeDlProgress();
   if(!dlCancelled){
     var saved = photos.length - failed;
-    toast(failed === 0 ? '✅' : '⚠️', saved + ' of ' + photos.length + ' saved!', failed > 0 ? failed + ' failed — try again' : 'Check your Downloads / Gallery');
+    if(failed === 0){
+      toast('✅', 'All ' + photos.length + ' photos saved!', 'Check your Downloads / Gallery');
+    } else {
+      toast('⚠️', saved + ' of ' + photos.length + ' saved', failed + ' failed — try again');
+    }
   }
 }
 
-function downloadSelected(){ var toDownload = allPhotos.filter(function(p){ return selectedIds.has(p.id); }); if(!toDownload.length){ toast('⚠️', 'Select photos first', 'Tap photos to select them'); return; } downloadBatch(toDownload); }
-function downloadAllPhotos(){ if(!allPhotos.length){ toast('⚠️', 'No photos yet', ''); return; } downloadBatch(allPhotos); }
+function downloadSelected(){
+  var toDownload = allPhotos.filter(function(p){ return selectedIds.has(p.id); });
+  if(!toDownload.length){ toast('⚠️', 'Select photos first', 'Tap photos to select them'); return; }
+  downloadBatch(toDownload);
+}
+
+function downloadAllPhotos(){
+  if(!allPhotos.length){ toast('⚠️', 'No photos yet', ''); return; }
+  downloadBatch(allPhotos);
+}
 
 /* ══════════════════════════════════════
    iOS BATCH DOWNLOAD MODAL
-   - NO batch size limit (BATCH_SIZE = Infinity)
-   - Auto-pops when user taps save
-   - Auto-starts next batch immediately after share
-   - Keeps running — user can put phone away, comes back
-   - Shows real-time total selected count
+   Groups photos into batches of 9.
+   Each batch: fetch blobs → navigator.share({files}) →
+   Share Sheet opens → user taps "Save Image" → Camera Roll.
+   User taps "Next Batch" to continue.
+   Progress ring tracks total saved.
 ══════════════════════════════════════ */
 
 var iosDl = {
@@ -1588,88 +1739,88 @@ var iosDl = {
   batchIdx  : 0,
   saved     : 0,
   total     : 0,
-  BATCH_SIZE: 30,   // ← Large batches; effectively unlimited per session
+  BATCH_SIZE: 9,
   fetching  : false,
   cancelled : false,
-  autoNext  : false,
 };
 
 function showIosModal(photos){
-  if(!(navigator.share && navigator.canShare)){ iosFallbackTabs(photos); return; }
+  /* If navigator.share + files supported → new modal */
+  if(!(navigator.share && navigator.canShare)){
+    iosFallbackTabs(photos);
+    return;
+  }
 
-  iosDl.photos    = photos;
-  iosDl.total     = photos.length;
-  iosDl.saved     = 0;
-  iosDl.batchIdx  = 0;
-  iosDl.cancelled = false;
-  iosDl.fetching  = false;
-  iosDl.autoNext  = false;
+  iosDl.photos   = photos;
+  iosDl.total    = photos.length;
+  iosDl.saved    = 0;
+  iosDl.batchIdx = 0;
+  iosDl.cancelled= false;
+  iosDl.fetching = false;
 
-  // Build batches — use large size so it feels unlimited
-  iosDl.batches = [];
+  iosDl.batches  = [];
   for(var i = 0; i < photos.length; i += iosDl.BATCH_SIZE){
     iosDl.batches.push(photos.slice(i, i + iosDl.BATCH_SIZE));
   }
 
-  // Reset UI
+  /* Reset UI */
   document.getElementById('iosDlDone').classList.add('hidden');
   document.getElementById('iosDlBtnArea').classList.remove('hidden');
   document.getElementById('iosDlNextBtn').classList.add('hidden');
   document.getElementById('iosDlInstruction').style.display = '';
 
-  // Update total counter
-  document.getElementById('iosDlTotalNum').textContent = photos.length;
-  document.getElementById('iosDlTotalSaved').textContent = '0 saved so far';
-
   var totalBatches = iosDl.batches.length;
   document.getElementById('iosDlTitle').textContent =
-    'Save ' + photos.length + ' Photo' + (photos.length !== 1 ? 's' : '');
+    'Save ' + photos.length + ' Photo' + (photos.length > 1 ? 's' : '');
   document.getElementById('iosDlSubtitle').textContent =
-    totalBatches === 1 ? 'All in one tap' : totalBatches + ' batches — auto-continues';
+    totalBatches === 1
+      ? 'All ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' in one tap'
+      : photos.length + ' photos · ' + totalBatches + ' batches of up to ' + iosDl.BATCH_SIZE;
 
   iosDlUpdateProgress();
   iosDlRenderThumbs(0);
 
-  var btn = document.getElementById('iosDlSaveBtn');
-  btn.disabled = false;
-  btn.className = 'ios-dl-save-btn';
+  document.getElementById('iosDlSaveBtn').disabled = false;
+  document.getElementById('iosDlSaveBtn').className = 'ios-dl-save-btn';
   document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
-  document.getElementById('iosDlSaveBtnText').textContent = totalBatches === 1 ? 'Save All to Camera Roll' : 'Save Batch 1 of ' + totalBatches;
+  document.getElementById('iosDlSaveBtnText').textContent =
+    totalBatches === 1
+      ? 'Save All to Camera Roll'
+      : 'Save Batch 1 of ' + totalBatches;
 
   document.getElementById('iosDlInstructionText').innerHTML =
-    'Tap the button below — Share Sheet opens automatically. Tap <strong>"Save Image"</strong> to save to Camera Roll. Next batch starts automatically.';
+    'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all photos in this batch to your Camera Roll.';
 
   document.getElementById('iosDlModal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 }
 
 function iosDlUpdateProgress(){
-  var total     = iosDl.total;
-  var saved     = iosDl.saved;
-  var pct       = total > 0 ? Math.round((saved / total) * 100) : 0;
-  var batchIdx  = iosDl.batchIdx;
-  var totalBatches = iosDl.batches.length;
-  var batch     = iosDl.batches[batchIdx];
+  var total   = iosDl.total;
+  var saved   = iosDl.saved;
+  var pct     = total > 0 ? saved / total : 0;
+  var circ    = 188.5;
+  var offset  = circ * (1 - pct);
+  var fill    = document.getElementById('iosDlRingFill');
+  if(fill) fill.style.strokeDashoffset = offset;
 
-  // Update total counter
-  document.getElementById('iosDlTotalNum').textContent = total;
-  document.getElementById('iosDlTotalSaved').textContent = saved + ' of ' + total + ' saved';
+  document.getElementById('iosDlRingNum').textContent = saved;
 
-  // Update progress bar
-  var fill = document.getElementById('iosDlProgFill');
-  var pctEl = document.getElementById('iosDlBatchPct');
-  if(fill) fill.style.width = pct + '%';
-  if(pctEl) pctEl.textContent = pct + '%';
+  var batchIdx    = iosDl.batchIdx;
+  var totalBatches= iosDl.batches.length;
+  var batch       = iosDl.batches[batchIdx];
 
   if(batch){
     var batchStart = batchIdx * iosDl.BATCH_SIZE + 1;
     var batchEnd   = Math.min((batchIdx + 1) * iosDl.BATCH_SIZE, total);
     document.getElementById('iosDlBatchLabel').textContent =
-      totalBatches === 1 ? 'All ' + total + ' photos' : 'Batch ' + (batchIdx+1) + ' of ' + totalBatches;
+      totalBatches === 1
+        ? 'All ' + total + ' photos'
+        : 'Batch ' + (batchIdx + 1) + ' of ' + totalBatches;
     document.getElementById('iosDlBatchSub').textContent =
       totalBatches === 1
-        ? (saved > 0 ? saved + ' saved' : 'Ready to save')
-        : 'Photos ' + batchStart + '–' + batchEnd + ' · ' + saved + ' saved total';
+        ? 'Tap to open your Share Sheet'
+        : 'Photos ' + batchStart + ' – ' + batchEnd + ' of ' + total;
   }
 }
 
@@ -1678,6 +1829,7 @@ function iosDlRenderThumbs(batchIdx){
   if(!batch) return;
   var container = document.getElementById('iosDlThumbs');
   var offset    = batchIdx * iosDl.BATCH_SIZE;
+
   container.innerHTML = batch.map(function(p, i){
     var globalIdx = offset + i;
     var isSaved   = globalIdx < iosDl.saved;
@@ -1699,18 +1851,20 @@ async function iosDlTriggerShare(){
   btn.disabled = true;
   btn.className = 'ios-dl-save-btn loading';
   document.getElementById('iosDlSaveBtnIcon').textContent = '⏳';
-  document.getElementById('iosDlSaveBtnText').textContent = 'Preparing ' + batch.length + ' photo' + (batch.length > 1 ? 's' : '') + '…';
+  document.getElementById('iosDlSaveBtnText').textContent = 'Fetching photos…';
   document.getElementById('iosDlNextBtn').classList.add('hidden');
   document.getElementById('iosDlInstructionText').innerHTML =
-    '⏳ Fetching ' + batch.length + ' photo' + (batch.length > 1 ? 's' : '') + '… Keep this screen open.';
+    '⏳ Preparing ' + batch.length + ' photo' + (batch.length > 1 ? 's' : '') + ' for sharing…';
 
   var offset = batchIdx * iosDl.BATCH_SIZE;
+
+  /* Mark thumbs as saving */
   batch.forEach(function(_, i){
     var el = document.getElementById('iosDlThumb-' + (offset + i));
     if(el) el.classList.add('saving');
   });
 
-  // Fetch all blobs
+  /* Fetch blobs */
   var files = [];
   for(var i = 0; i < batch.length; i++){
     try{
@@ -1718,108 +1872,138 @@ async function iosDlTriggerShare(){
       var cleanUrl = url.split('?')[0]
         .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
         .replace('/storage/v1/object/sign/', '/storage/v1/object/public/');
-      var r = await fetch(cleanUrl, { mode:'cors', cache:'no-store', redirect:'follow' });
+      var r = await fetch(cleanUrl, { mode: 'cors', cache: 'no-store', redirect: 'follow' });
       if(!r.ok) throw new Error('HTTP ' + r.status);
       var blob = await r.blob();
       var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
       var ext  = mime === 'image/png' ? 'png' : 'jpg';
-      files.push(new File([blob], 'ImpactGrid-Photo-' + String(offset+i+1).padStart(3,'0') + '.' + ext, { type:mime }));
-    }catch(e){ console.warn('Batch photo', i, 'failed:', e); }
+      files.push(new File(
+        [blob],
+        'ImpactGrid-Photo-' + String(offset + i + 1).padStart(3, '0') + '.' + ext,
+        { type: mime }
+      ));
+    }catch(e){
+      console.warn('Batch', batchIdx + 1, 'photo', i, 'failed:', e);
+    }
   }
 
   iosDl.fetching = false;
 
   if(files.length === 0){
-    btn.disabled = false; btn.className = 'ios-dl-save-btn';
+    btn.disabled = false;
+    btn.className = 'ios-dl-save-btn';
     document.getElementById('iosDlSaveBtnIcon').textContent = '🔄';
-    document.getElementById('iosDlSaveBtnText').textContent = 'Retry';
-    document.getElementById('iosDlInstructionText').innerHTML = '⚠️ Could not fetch photos. Check your connection and <strong>try again</strong>.';
-    batch.forEach(function(_, i){ var el = document.getElementById('iosDlThumb-' + (offset+i)); if(el) el.classList.remove('saving'); });
+    document.getElementById('iosDlSaveBtnText').textContent = 'Retry Batch';
+    document.getElementById('iosDlInstructionText').innerHTML =
+      '⚠️ Could not fetch photos. Check your connection and <strong>try again</strong>.';
+    batch.forEach(function(_, i){
+      var el = document.getElementById('iosDlThumb-' + (offset + i));
+      if(el) el.classList.remove('saving');
+    });
     return;
   }
 
+  /* Check canShare */
   var canShareFiles = false;
-  try{ canShareFiles = navigator.canShare({ files:files }); }catch(e){}
-  if(!canShareFiles){ iosFallbackTabs(iosDl.photos); iosDlClose(); return; }
+  try{ canShareFiles = navigator.canShare({ files: files }); }catch(e){}
 
-  btn.disabled = false; btn.className = 'ios-dl-save-btn';
+  if(!canShareFiles){
+    iosFallbackTabs(iosDl.photos);
+    iosDlClose();
+    return;
+  }
+
+  /* Update status */
+  btn.disabled = false;
+  btn.className = 'ios-dl-save-btn';
   document.getElementById('iosDlSaveBtnIcon').textContent = '📤';
   document.getElementById('iosDlSaveBtnText').textContent = 'Opening Share Sheet…';
   document.getElementById('iosDlInstructionText').innerHTML =
     'Share Sheet opening — tap <strong>"Save Image"</strong> to save all ' + files.length + ' photos to Camera Roll.';
 
+  /* Trigger share */
   try{
-    await navigator.share({ files:files, title:'ImpactGrid Photos', text:'Tap "Save Image" to save to Camera Roll' });
+    await navigator.share({
+      files : files,
+      title : 'ImpactGrid Photos',
+      text  : 'Tap "Save Image" to save to Camera Roll'
+    });
 
-    // ── Success ──
+    /* User completed share */
     iosDl.saved += files.length;
     batch.forEach(function(_, i){
       var el = document.getElementById('iosDlThumb-' + (offset + i));
       if(el){ el.classList.remove('saving'); el.classList.add('saved'); }
     });
 
-    iosDlUpdateProgress();
-
     var totalBatches = iosDl.batches.length;
-    var isLast = iosDl.batchIdx >= totalBatches - 1;
+    var isLast       = iosDl.batchIdx >= totalBatches - 1;
 
     if(isLast){
       iosDlShowDone();
     } else {
-      // Auto-advance to next batch
       iosDl.batchIdx++;
       iosDlUpdateProgress();
       iosDlRenderThumbs(iosDl.batchIdx);
 
-      var nextBatchEnd = Math.min((iosDl.batchIdx + 1) * iosDl.BATCH_SIZE, iosDl.total);
       var nextBatchStart = iosDl.batchIdx * iosDl.BATCH_SIZE + 1;
+      var nextBatchEnd   = Math.min((iosDl.batchIdx + 1) * iosDl.BATCH_SIZE, iosDl.total);
 
-      btn.disabled = false; btn.className = 'ios-dl-save-btn';
-      document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+      btn.disabled = true;
+      btn.className = 'ios-dl-save-btn';
+      document.getElementById('iosDlSaveBtnIcon').textContent = '✅';
       document.getElementById('iosDlSaveBtnText').textContent =
-        'Save Batch ' + (iosDl.batchIdx+1) + ' of ' + totalBatches;
+        'Batch ' + iosDl.batchIdx + ' of ' + totalBatches + ' saved!';
 
-      document.getElementById('iosDlInstructionText').innerHTML =
-        '✅ <strong>' + iosDl.saved + ' of ' + iosDl.total + '</strong> saved! Next: photos '
-        + nextBatchStart + '–' + nextBatchEnd + '. Tap to continue.';
-
-      // Show next batch button as a secondary option
       var nextBtn = document.getElementById('iosDlNextBtn');
       nextBtn.classList.remove('hidden');
-      document.getElementById('iosDlNextLabel').textContent = 'Photos ' + nextBatchStart + '–' + nextBatchEnd;
+      document.getElementById('iosDlNextLabel').textContent =
+        'Photos ' + nextBatchStart + '–' + nextBatchEnd;
+
+      document.getElementById('iosDlInstructionText').innerHTML =
+        '✅ <strong>' + iosDl.saved + ' of ' + iosDl.total + '</strong> photos saved so far. '
+        + 'Tap <strong>"Next Batch"</strong> to continue.';
     }
 
   }catch(e){
     if(e.name === 'AbortError'){
-      btn.disabled = false; btn.className = 'ios-dl-save-btn';
+      var totalBatches2 = iosDl.batches.length;
+      btn.disabled = false;
+      btn.className = 'ios-dl-save-btn';
       document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
-      document.getElementById('iosDlSaveBtnText').textContent = 'Try Again';
+      document.getElementById('iosDlSaveBtnText').textContent =
+        'Try Batch ' + (iosDl.batchIdx + 1) + ' Again';
       document.getElementById('iosDlInstructionText').innerHTML =
-        'Cancelled. Tap again and then tap <strong>"Save Image"</strong> on the Share Sheet.';
-      batch.forEach(function(_, i){ var el = document.getElementById('iosDlThumb-' + (offset+i)); if(el) el.classList.remove('saving'); });
-    } else { console.warn('Share error:', e); }
+        'Looks like you cancelled. Tap the button again, then tap <strong>"Save Image"</strong> on the Share Sheet.';
+      batch.forEach(function(_, i){
+        var el = document.getElementById('iosDlThumb-' + (offset + i));
+        if(el) el.classList.remove('saving');
+      });
+    } else {
+      console.warn('Share error:', e);
+    }
   }
 }
 
 function iosDlNextBatch(){
-  // Triggered by "Next Batch" button (optional secondary action)
   var totalBatches = iosDl.batches.length;
   var btn = document.getElementById('iosDlSaveBtn');
-  btn.disabled = false; btn.className = 'ios-dl-save-btn';
+  btn.disabled = false;
+  btn.className = 'ios-dl-save-btn';
   document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
-  document.getElementById('iosDlSaveBtnText').textContent = 'Save Batch ' + (iosDl.batchIdx+1) + ' of ' + totalBatches;
+  document.getElementById('iosDlSaveBtnText').textContent =
+    'Save Batch ' + (iosDl.batchIdx + 1) + ' of ' + totalBatches;
   document.getElementById('iosDlNextBtn').classList.add('hidden');
   document.getElementById('iosDlInstructionText').innerHTML =
-    'Tap <strong>"Save to Camera Roll"</strong> — Share Sheet opens. Tap <strong>"Save Image"</strong> to continue.';
+    'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save this batch to Camera Roll.';
 }
 
 function iosDlShowDone(){
   document.getElementById('iosDlBtnArea').classList.add('hidden');
   document.getElementById('iosDlInstruction').style.display = 'none';
-  var doneEl = document.getElementById('iosDlDone');
-  doneEl.classList.remove('hidden');
-  document.getElementById('iosDlDoneTitle').textContent = 'All ' + iosDl.saved + ' Photos Saved!';
-  document.getElementById('iosDlDoneSub').textContent = 'Check your Camera Roll — all your ImpactGrid photos are there.';
+  document.getElementById('iosDlDone').classList.remove('hidden');
+  document.getElementById('iosDlDoneTitle').textContent = '🎉 All ' + iosDl.saved + ' Photos Saved!';
+  document.getElementById('iosDlDoneSub').textContent   = 'Check your Camera Roll — all your photos are there.';
   iosDlUpdateProgress();
 }
 
@@ -1829,71 +2013,174 @@ function iosDlClose(){
   iosDl.cancelled = true;
 }
 
+/* Close when tapping backdrop */
 document.addEventListener('DOMContentLoaded', function(){
   var backdrop = document.getElementById('iosDlModal');
-  if(backdrop) backdrop.addEventListener('click', function(e){ if(e.target === backdrop) iosDlClose(); });
+  if(backdrop){
+    backdrop.addEventListener('click', function(e){
+      if(e.target === backdrop) iosDlClose();
+    });
+  }
 });
 
 /* ══════════════════════════════════════
-   iOS FALLBACK
+   iOS FALLBACK (old Safari without share API)
 ══════════════════════════════════════ */
 function iosFallbackTabs(photos){
   iosPendingPhotos = photos;
+
   document.getElementById('iosModalTitle').textContent = '📱 Save Your Photos';
   document.getElementById('iosModalSub').textContent   = 'Save ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' to your Camera Roll';
   document.getElementById('iosStep2Text').innerHTML    = '<strong>Long-press</strong> the photo until a menu appears';
   document.getElementById('iosStep3Text').innerHTML    = 'Tap <strong>"Save to Photos"</strong> — saves to Camera Roll 📷';
+
   var grid  = document.getElementById('iosPhotosGrid');
   var shown = photos.slice(0, 8);
-  grid.innerHTML = shown.map(function(p, i){ return '<div class="ios-photo-thumb" onclick="iosTapThumb(' + i + ')"><img src="' + esc(p.preview_url) + '" alt="" loading="lazy"/><div class="ios-photo-thumb-open">↗</div></div>'; }).join('');
+  grid.innerHTML = shown.map(function(p, i){
+    return '<div class="ios-photo-thumb" onclick="iosTapThumb(' + i + ')">'
+      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy"/>'
+      + '<div class="ios-photo-thumb-open">↗</div>'
+      + '</div>';
+  }).join('');
   grid.style.display = 'grid';
-  document.getElementById('iosOpenAllBtn').textContent = photos.length > 1 ? '📂 Open All ' + photos.length + ' Photos' : '📂 Open Photo';
+
+  var btn = document.getElementById('iosOpenAllBtn');
+  btn.textContent = photos.length > 1 ? '📂 Open All ' + photos.length + ' Photos' : '📂 Open Photo';
+
   document.getElementById('iosModal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 }
-function iosTapThumb(idx){ var p = iosPendingPhotos[idx]; if(!p) return; window.open(p.original_url || p.preview_url, '_blank'); toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"'); }
-function iosOpenAll(){ if(!iosPendingPhotos.length) return; for(var i = 0; i < iosPendingPhotos.length; i++){ window.open(iosPendingPhotos[i].original_url || iosPendingPhotos[i].preview_url, '_blank'); } toast('📱', iosPendingPhotos.length + ' photos opened!', 'Long-press each → "Save to Photos"'); closeIosModal(); }
-function closeIosModal(event){ if(event && event.target !== document.getElementById('iosModal')) return; document.getElementById('iosModal').classList.add('hidden'); document.body.style.overflow = ''; }
+
+function iosTapThumb(idx){
+  var p = iosPendingPhotos[idx];
+  if(!p) return;
+  window.open(p.original_url || p.preview_url, '_blank');
+  toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
+}
+
+function iosOpenAll(){
+  if(!iosPendingPhotos.length) return;
+  for(var i = 0; i < iosPendingPhotos.length; i++){
+    window.open(iosPendingPhotos[i].original_url || iosPendingPhotos[i].preview_url, '_blank');
+  }
+  toast('📱', iosPendingPhotos.length + ' photos opened!', 'Long-press each → "Save to Photos"');
+  closeIosModal();
+}
+
+function closeIosModal(event){
+  if(event && event.target !== document.getElementById('iosModal')) return;
+  document.getElementById('iosModal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
 
 /* ══════════════════════════════════════
    LIGHTBOX
 ══════════════════════════════════════ */
-function openLightbox(idx, event){ if(event) event.stopPropagation(); lbIndex = idx; showLightboxAt(idx); document.getElementById('lightbox').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-function showLightboxAt(idx){ if(!allPhotos.length) return; lbIndex = (idx + allPhotos.length) % allPhotos.length; var p = allPhotos[lbIndex]; document.getElementById('lightboxImg').src = p.preview_url; document.getElementById('lbCounter').textContent = (lbIndex+1) + ' / ' + allPhotos.length; }
-function lbDownload(){ var p = allPhotos[lbIndex]; if(!p) return; var url = p.original_url || p.preview_url; if(isSafariIOS()){ showIosModal([p]); return; } toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery'); blobDownload(url, 'ImpactGrid-Photo-' + (lbIndex+1) + '.jpg').then(function(){ toast('✅', 'Photo saved!', ''); }).catch(function(){ toast('⚠️', 'Download failed', 'Try again'); }); }
-function closeLightbox(){ document.getElementById('lightbox').classList.add('hidden'); document.body.style.overflow = ''; }
-function closeLightboxBg(event){ if(event && event.target === document.getElementById('lightbox')){ closeLightbox(); } }
-function lbPrev(e){ if(e) e.stopPropagation(); showLightboxAt(lbIndex-1); }
-function lbNext(e){ if(e) e.stopPropagation(); showLightboxAt(lbIndex+1); }
+function openLightbox(idx, event){
+  if(event) event.stopPropagation();
+  lbIndex = idx;
+  showLightboxAt(idx);
+  document.getElementById('lightbox').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function showLightboxAt(idx){
+  if(!allPhotos.length) return;
+  lbIndex = (idx + allPhotos.length) % allPhotos.length;
+  var p = allPhotos[lbIndex];
+  document.getElementById('lightboxImg').src       = p.preview_url;
+  document.getElementById('lbCounter').textContent = (lbIndex+1) + ' / ' + allPhotos.length;
+}
+
+function lbDownload(){
+  var p = allPhotos[lbIndex];
+  if(!p) return;
+  var url = p.original_url || p.preview_url;
+  if(isSafariIOS()){
+    showIosModal([p]);
+    return;
+  }
+  toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+  blobDownload(url, 'ImpactGrid-Photo-' + (lbIndex + 1) + '.jpg')
+    .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
+    .catch(function(){ toast('⚠️', 'Download failed', 'Try again or check your connection'); });
+}
+
+function closeLightbox(){
+  document.getElementById('lightbox').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function closeLightboxBg(event){
+  if(event && event.target === document.getElementById('lightbox')){
+    closeLightbox();
+  }
+}
+
+function lbPrev(e){ if(e) e.stopPropagation(); showLightboxAt(lbIndex - 1); }
+function lbNext(e){ if(e) e.stopPropagation(); showLightboxAt(lbIndex + 1); }
+
 document.addEventListener('keydown', function(e){
   var lb = document.getElementById('lightbox');
-  if(!lb.classList.contains('hidden')){ if(e.key==='ArrowLeft') lbPrev(); if(e.key==='ArrowRight') lbNext(); if(e.key==='Escape') closeLightbox(); }
+  if(!lb.classList.contains('hidden')){
+    if(e.key === 'ArrowLeft')  lbPrev();
+    if(e.key === 'ArrowRight') lbNext();
+    if(e.key === 'Escape')     closeLightbox();
+  }
   var ios = document.getElementById('iosModal');
-  if(!ios.classList.contains('hidden') && e.key==='Escape') closeIosModal();
+  if(!ios.classList.contains('hidden') && e.key === 'Escape') closeIosModal();
   var iosDlM = document.getElementById('iosDlModal');
-  if(iosDlM && !iosDlM.classList.contains('hidden') && e.key==='Escape') iosDlClose();
+  if(iosDlM && !iosDlM.classList.contains('hidden') && e.key === 'Escape') iosDlClose();
 });
+
 (function(){
-  var lb = document.getElementById('lightbox'); var lbTouchX = 0;
+  var lb = document.getElementById('lightbox');
+  var lbTouchX = 0;
   lb.addEventListener('touchstart', function(e){ lbTouchX = e.touches[0].clientX; }, {passive:true});
-  lb.addEventListener('touchend', function(e){ var dx = e.changedTouches[0].clientX - lbTouchX; if(Math.abs(dx) > 50){ dx < 0 ? lbNext() : lbPrev(); } }, {passive:true});
+  lb.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - lbTouchX;
+    if(Math.abs(dx) > 50){ dx < 0 ? lbNext() : lbPrev(); }
+  }, {passive:true});
 })();
 
 /* ══════════════════════════════════════
    TOAST
 ══════════════════════════════════════ */
 var toastTimer = null;
-function toast(icon, msg, sub){ var t = document.getElementById('toast'); document.getElementById('toastIcon').textContent = icon; document.getElementById('toastMsg').textContent = msg; document.getElementById('toastSub').textContent = sub || ''; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4500); }
+function toast(icon, msg, sub){
+  var t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent  = msg;
+  document.getElementById('toastSub').textContent  = sub || '';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4500);
+}
 
 /* ══════════════════════════════════════
    ERROR PAGE
 ══════════════════════════════════════ */
-function showError(msg){ document.body.className = 'tpl-professional'; document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:\'DM Sans\',sans-serif;text-align:center;padding:40px;background:#f6f7fb;"><div><img src="https://impactgridgroup.com/logo.png" style="width:52px;height:52px;border-radius:12px;margin:0 auto 16px;object-fit:contain;background:#fff;padding:4px;" alt="IG"/><div style="font-size:22px;font-weight:700;margin-bottom:8px;color:#0c0e1a;">Event Not Found</div><div style="font-size:14px;color:#4a5068;margin-bottom:24px;">' + esc(msg) + '</div><a href="index.html" style="display:inline-block;padding:10px 24px;background:#3b4eff;color:#fff;border-radius:8px;font-weight:700;font-size:13px;">← Back to ImpactGrid</a></div></div>'; }
+function showError(msg){
+  document.body.className = 'tpl-professional';
+  document.body.innerHTML =
+    '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;'
+    + 'font-family:\'DM Sans\',sans-serif;text-align:center;padding:40px;background:#f6f7fb;">'
+    + '<div>'
+    + '<div style="font-size:48px;margin-bottom:16px;">🔍</div>'
+    + '<div style="font-size:22px;font-weight:700;margin-bottom:8px;color:#0c0e1a;">Event Not Found</div>'
+    + '<div style="font-size:14px;color:#4a5068;margin-bottom:24px;">' + esc(msg) + '</div>'
+    + '<a href="index.html" style="display:inline-block;padding:10px 24px;background:#3b4eff;'
+    + 'color:#fff;border-radius:8px;font-weight:700;font-size:13px;">← Back to ImpactGrid</a>'
+    + '</div></div>';
+}
 
 /* ══════════════════════════════════════
    HELPER
 ══════════════════════════════════════ */
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s){
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>
