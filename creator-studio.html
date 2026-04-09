@@ -47,27 +47,49 @@
   --red:#f75f4f; --red-dim:rgba(247,95,79,0.10);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* ─── CRITICAL: make the whole page fill the screen ─── */
+html{height:100%;height:100dvh;overflow:hidden;}
+body{
+  height:100%;height:100dvh;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--fb);
+  font-size:15px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
 a{color:inherit;text-decoration:none;}
 button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 h1,h2,h3,h4{font-family:var(--fd);font-weight:900;line-height:1.1;letter-spacing:-.025em;}
 img{display:block;max-width:100%;}
 
 /* ═══════════════════════════
-   APP SHELL
+   APP SHELL — fills viewport
 ═══════════════════════════ */
-.app{display:flex;height:100vh;height:100dvh;overflow:hidden;}
+.app{
+  display:flex;
+  width:100vw;
+  height:100vh;
+  height:100dvh;
+  overflow:hidden;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+}
 
 /* ═══════════════════════════
    SIDEBAR
 ═══════════════════════════ */
 .sidebar{
-  width:var(--sidebar-w);flex-shrink:0;
+  width:var(--sidebar-w);
+  flex-shrink:0;
   background:var(--card);
   border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  height:100%;overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  overflow:hidden;
   transition:transform .3s cubic-bezier(.4,0,.2,1);
   z-index:200;
 }
@@ -86,7 +108,6 @@ img{display:block;max-width:100%;}
 .sb-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
 .sb-badge{margin-left:auto;font-family:var(--fm);font-size:9px;padding:1px 6px;border-radius:4px;background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);}
 .sb-badge.soon{background:var(--blue-dim);color:var(--blue);border-color:rgba(45,110,219,.2);}
-/* bottom of sidebar */
 .sb-bottom{flex-shrink:0;border-top:1px solid var(--border);padding:10px 8px;}
 .sb-user{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .15s;position:relative;}
 .sb-user:hover{background:var(--bg2);}
@@ -111,10 +132,26 @@ img{display:block;max-width:100%;}
 /* ═══════════════════════════
    MAIN AREA
 ═══════════════════════════ */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden;}
+.main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  height:100%;
+  overflow:hidden;
+}
 
 /* topbar */
-.topbar{height:var(--topbar-h);flex-shrink:0;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 18px;}
+.topbar{
+  height:var(--topbar-h);
+  flex-shrink:0;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 18px;
+}
 .topbar-hamburger{display:none;flex-direction:column;gap:5px;padding:6px;cursor:pointer;margin-right:4px;}
 .topbar-hamburger span{display:block;width:18px;height:2px;background:var(--text2);border-radius:2px;}
 .topbar-title{font-family:var(--fd);font-size:15px;font-weight:900;letter-spacing:-.02em;flex:1;}
@@ -124,14 +161,20 @@ img{display:block;max-width:100%;}
 .topbar-live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 1.6s infinite;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 
-/* content area */
-.content{flex:1;overflow-y:auto;background:var(--bg);}
+/* content area — this scrolls */
+.content{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  background:var(--bg);
+  -webkit-overflow-scrolling:touch;
+}
 .content::-webkit-scrollbar{width:4px;}
 .content::-webkit-scrollbar-track{background:transparent;}
 .content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
 
 /* panels */
-.panel{display:none;padding:24px;max-width:1100px;}
+.panel{display:none;padding:24px;max-width:1100px;width:100%;}
 .panel.active{display:block;animation:fadeIn .2s ease both;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 
@@ -146,7 +189,6 @@ img{display:block;max-width:100%;}
 .dash-stat-label{font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
 .dash-stat-val{font-family:var(--fd);font-size:28px;font-weight:900;letter-spacing:-.03em;line-height:1;}
 .dash-stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
-/* briefing card */
 .briefing-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px;}
 .briefing-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .briefing-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;font-family:var(--fd);}
@@ -157,7 +199,6 @@ img{display:block;max-width:100%;}
 .briefing-scores{display:flex;gap:8px;flex-wrap:wrap;}
 .b-score{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;}
 .b-score-n{font-family:var(--fd);font-size:15px;font-weight:900;color:var(--gold);}
-/* top opportunities */
 .opps-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
 .opp-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;}
 .opp-card:hover{border-color:var(--border2);transform:translateY(-2px);}
@@ -167,7 +208,6 @@ img{display:block;max-width:100%;}
 .opp-score{margin-left:auto;flex-shrink:0;}
 .opp-score-n{font-family:var(--fd);font-size:18px;font-weight:900;color:var(--green);text-align:right;line-height:1;}
 .opp-score-l{font-size:10px;color:var(--text3);text-align:right;}
-/* quick actions */
 .quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
 .qa-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px 14px;text-align:center;cursor:pointer;transition:all .2s;}
 .qa-btn:hover{border-color:var(--border2);transform:translateY(-2px);}
@@ -178,7 +218,7 @@ img{display:block;max-width:100%;}
 /* ═══════════════════════════
    TREND FEED PANEL
 ═══════════════════════════ */
-.feed-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.feed-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
 .feed-head h2{font-size:20px;flex:1;}
 .feed-refresh{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--border2);color:var(--text2);display:flex;align-items:center;gap:6px;}
 .feed-refresh:hover{border-color:var(--gold);color:var(--gold);}
@@ -211,7 +251,6 @@ img{display:block;max-width:100%;}
 [data-theme="dark"] .btn-generate{color:#07090f;}
 .btn-generate:hover{box-shadow:0 6px 20px var(--gold-glo);transform:translateY(-1px);}
 .btn-generate:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
-/* output */
 .create-output{display:flex;flex-direction:column;gap:12px;}
 .output-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px;}
 .output-label{font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;}
@@ -251,7 +290,7 @@ img{display:block;max-width:100%;}
 /* ═══════════════════════════
    CONTENT PLAN PANEL
 ═══════════════════════════ */
-.plan-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.plan-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
 .plan-header h2{font-size:20px;flex:1;}
 .plan-week-nav{display:flex;align-items:center;gap:8px;}
 .plan-week-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2);transition:all .2s;}
@@ -298,7 +337,7 @@ img{display:block;max-width:100%;}
 .opp-tag{display:inline-flex;font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-bottom:10px;font-weight:600;}
 .opp-full-title{font-size:15px;font-weight:800;margin-bottom:6px;letter-spacing:-.02em;}
 .opp-full-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px;}
-.opp-full-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);}
+.opp-full-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);flex-wrap:wrap;}
 .opp-apply{margin-left:auto;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
 .opp-apply:hover{background:rgba(201,126,8,.15);}
 
@@ -346,12 +385,12 @@ img{display:block;max-width:100%;}
 /* ═══════════════════════════
    DIJO AI PANEL
 ═══════════════════════════ */
-.dijo-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - var(--topbar-h) - 48px);}
-.dijo-chat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;}
+.dijo-wrap{display:grid;grid-template-columns:1fr 280px;gap:16px;height:calc(100vh - var(--topbar-h) - 48px);min-height:400px;}
+.dijo-chat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
 .dijo-chat-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .dijo-chat-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;font-family:var(--fd);}
 [data-theme="dark"] .dijo-chat-av{color:#07090f;}
-.dijo-chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.dijo-chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0;}
 .dijo-chat-msgs::-webkit-scrollbar{width:3px;}
 .dijo-chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 .chat-msg{display:flex;gap:9px;align-items:flex-start;}
@@ -370,8 +409,7 @@ img{display:block;max-width:100%;}
 .dijo-send{padding:9px 16px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;}
 [data-theme="dark"] .dijo-send{color:#07090f;}
 .dijo-send:hover{box-shadow:0 3px 12px var(--gold-glo);}
-/* dijo sidebar */
-.dijo-sidebar{display:flex;flex-direction:column;gap:12px;}
+.dijo-sidebar-panel{display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
 .dijo-quick-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px;}
 .dijo-quick-card h4{font-size:13px;font-weight:800;margin-bottom:10px;}
 .dijo-quick-btn{width:100%;text-align:left;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text2);border:1px solid var(--border);margin-bottom:5px;transition:all .2s;}
@@ -395,8 +433,8 @@ img{display:block;max-width:100%;}
   .dash-grid{grid-template-columns:1fr 1fr;}
   .create-layout{grid-template-columns:1fr;}
   .carousel-layout{grid-template-columns:1fr;}
-  .dijo-layout{grid-template-columns:1fr;height:auto;}
-  .dijo-sidebar{display:none;}
+  .dijo-wrap{grid-template-columns:1fr;height:auto;}
+  .dijo-sidebar-panel{display:none;}
   .plan-grid{grid-template-columns:repeat(4,1fr);}
   .opps-grid-full{grid-template-columns:1fr;}
   .settings-grid{grid-template-columns:1fr;}
@@ -410,6 +448,9 @@ img{display:block;max-width:100%;}
   .plan-grid{grid-template-columns:repeat(3,1fr);}
   .quick-actions{grid-template-columns:repeat(2,1fr);}
   .slides-grid{grid-template-columns:repeat(2,1fr);}
+  .topbar{padding:0 12px;}
+  .t-right{gap:6px;}
+  .t-gen{display:none;}
 }
 </style>
 </head>
@@ -448,9 +489,7 @@ img{display:block;max-width:100%;}
       <div class="sb-item" onclick="showPanel('settings',this)"><span class="sb-icon">⚙️</span>Settings</div>
     </nav>
 
-    <!-- bottom: user / login -->
     <div class="sb-bottom">
-      <!-- logged in -->
       <div id="sbUserWrap" style="display:none;">
         <div class="sb-user" onclick="toggleSbDrop()">
           <div class="sb-av" id="sbAv">?</div>
@@ -460,7 +499,7 @@ img{display:block;max-width:100%;}
           </div>
           <span style="font-size:9px;color:var(--text3);">▲</span>
           <div class="sb-user-drop" id="sbDrop">
-            <div class="dd-email" style="padding:7px 10px;font-size:10px;color:var(--text3);font-family:var(--fm);" id="sbEmail"></div>
+            <div style="padding:7px 10px;font-size:10px;color:var(--text3);font-family:var(--fm);" id="sbEmail"></div>
             <div class="dd-div"></div>
             <a href="index.html">🏠 Home</a>
             <div class="dd-div"></div>
@@ -468,12 +507,10 @@ img{display:block;max-width:100%;}
           </div>
         </div>
       </div>
-      <!-- guest -->
       <div id="sbGuestWrap" class="sb-guest">
         <a href="login.html" class="sb-btn-login">Login</a>
         <a href="join.html" class="sb-btn-join">Join Free →</a>
       </div>
-      <!-- theme toggle always visible -->
       <div style="padding:6px 8px 0;">
         <button onclick="toggleTheme()" style="width:100%;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid var(--border2);color:var(--text2);display:flex;align-items:center;gap:7px;" id="sbThemeBtn">
           <span>🌙</span><span>Dark Mode</span>
@@ -484,9 +521,10 @@ img{display:block;max-width:100%;}
 
   <!-- ═══════════════ MAIN ═══════════════ -->
   <div class="main">
-    <!-- topbar -->
     <div class="topbar">
-      <button class="topbar-hamburger" id="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
+      <button class="topbar-hamburger" id="hamburger" onclick="openSidebar()">
+        <span></span><span></span><span></span>
+      </button>
       <div class="topbar-title" id="topbarTitle">Dashboard</div>
       <div class="topbar-right">
         <div class="topbar-live"><div class="topbar-live-dot"></div>Live</div>
@@ -494,7 +532,6 @@ img{display:block;max-width:100%;}
       </div>
     </div>
 
-    <!-- content -->
     <div class="content" id="contentArea">
 
       <!-- ══ DASHBOARD ══ -->
@@ -506,12 +543,12 @@ img{display:block;max-width:100%;}
         <div class="dash-grid">
           <div class="dash-stat">
             <div class="dash-stat-label">Top Trend Score</div>
-            <div class="dash-stat-val" style="color:var(--green);" id="dashTopScore">5.9</div>
+            <div class="dash-stat-val" style="color:var(--green);">5.9</div>
             <div class="dash-stat-sub">shorts · YouTube</div>
           </div>
           <div class="dash-stat">
             <div class="dash-stat-label">Trends Today</div>
-            <div class="dash-stat-val" id="dashTrendCount">12</div>
+            <div class="dash-stat-val">12</div>
             <div class="dash-stat-sub">UK + Global signals</div>
           </div>
           <div class="dash-stat">
@@ -520,7 +557,6 @@ img{display:block;max-width:100%;}
             <div class="dash-stat-sub">Most active right now</div>
           </div>
         </div>
-        <!-- Dijo briefing -->
         <div class="briefing-card">
           <div class="briefing-header">
             <div class="briefing-av">D</div>
@@ -537,7 +573,6 @@ img{display:block;max-width:100%;}
             <div class="b-score"><span class="b-score-n">5.8</span><span>inteligenciaartificial</span></div>
           </div>
         </div>
-        <!-- top opportunities -->
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">⚡ Top Opportunities</div>
         <div class="opps-row">
           <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
@@ -551,7 +586,6 @@ img{display:block;max-width:100%;}
             <div class="opp-score"><div class="opp-score-n">5.5</div><div class="opp-score-l">Score</div></div>
           </div>
         </div>
-        <!-- quick actions -->
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Quick Actions</div>
         <div class="quick-actions">
           <div class="qa-btn" onclick="showPanel('trendfeed',document.querySelector('[onclick*=trendfeed]'))"><div class="qa-icon">📡</div><div class="qa-label">View Trends</div><div class="qa-desc">See what's hot today</div></div>
@@ -701,7 +735,7 @@ img{display:block;max-width:100%;}
 
       <!-- ══ DIJO AI ══ -->
       <div class="panel" id="panel-dijo">
-        <div class="dijo-layout">
+        <div class="dijo-wrap">
           <div class="dijo-chat">
             <div class="dijo-chat-head">
               <div class="dijo-chat-av">D</div>
@@ -716,7 +750,7 @@ img{display:block;max-width:100%;}
               <button class="dijo-send" onclick="sendDijo()">Send</button>
             </div>
           </div>
-          <div class="dijo-sidebar">
+          <div class="dijo-sidebar-panel">
             <div class="dijo-quick-card">
               <h4>Quick prompts</h4>
               <button class="dijo-quick-btn" onclick="quickDijo('What should I post today?')">What should I post today?</button>
@@ -786,7 +820,6 @@ img{display:block;max-width:100%;}
   </div><!-- /main -->
 </div><!-- /app -->
 
-<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
 <script src="tiktok-auth.js"></script>
@@ -794,190 +827,240 @@ img{display:block;max-width:100%;}
 <script src="instagram-auth.js"></script>
 <script>
 /* ── THEME ── */
-var isDark=false;
-function applyTheme(dark){
-  isDark=dark;
-  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
-  var ico=dark?'☀️':'🌙';
-  var tbt=document.getElementById('topThemeBtn'); if(tbt) tbt.textContent=ico;
-  var sbt=document.getElementById('sbThemeBtn'); if(sbt) sbt.innerHTML='<span>'+(dark?'☀️':'🌙')+'</span><span>'+(dark?'Light Mode':'Dark Mode')+'</span>';
-  var tt=document.getElementById('themeToggle'); if(tt) tt.classList.toggle('on',dark);
-  try{ localStorage.setItem('ig_theme',dark?'dark':'light'); }catch(e){}
+var isDark = false;
+function applyTheme(dark) {
+  isDark = dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  var ico = dark ? '☀️' : '🌙';
+  var tbt = document.getElementById('topThemeBtn');
+  if (tbt) tbt.textContent = ico;
+  var sbt = document.getElementById('sbThemeBtn');
+  if (sbt) sbt.innerHTML = '<span>' + (dark ? '☀️' : '🌙') + '</span><span>' + (dark ? 'Light Mode' : 'Dark Mode') + '</span>';
+  var tt = document.getElementById('themeToggle');
+  if (tt) tt.classList.toggle('on', dark);
+  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
 }
-function toggleTheme(){ applyTheme(!isDark); }
-(function(){ try{ if(localStorage.getItem('ig_theme')==='dark') applyTheme(true); }catch(e){} })();
+function toggleTheme() { applyTheme(!isDark); }
+(function() {
+  try { if (localStorage.getItem('ig_theme') === 'dark') applyTheme(true); } catch(e) {}
+})();
 
 /* ── PANELS ── */
-function showPanel(name, item){
-  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.sb-item').forEach(function(i){ i.classList.remove('active'); });
-  var panel=document.getElementById('panel-'+name);
-  if(panel) panel.classList.add('active');
-  if(item) item.classList.add('active');
-  var titles={dashboard:'Dashboard',trendfeed:'Trend Feed',create:'Create',carousels:'Carousels',contentplan:'Content Plan',portfolio:'Portfolio',dijo:'Dijo AI',opportunities:'Opportunities',connect:'Connect Platforms',settings:'Settings'};
-  var t=document.getElementById('topbarTitle'); if(t) t.textContent=titles[name]||name;
+function showPanel(name, item) {
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.sb-item').forEach(function(i) { i.classList.remove('active'); });
+  var panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
+  if (item) item.classList.add('active');
+  var titles = {
+    dashboard: 'Dashboard',
+    trendfeed: 'Trend Feed',
+    create: 'Create',
+    carousels: 'Carousels',
+    contentplan: 'Content Plan',
+    portfolio: 'Portfolio',
+    dijo: 'Dijo AI',
+    opportunities: 'Opportunities',
+    connect: 'Connect Platforms',
+    settings: 'Settings'
+  };
+  var t = document.getElementById('topbarTitle');
+  if (t) t.textContent = titles[name] || name;
   closeSidebar();
-  document.getElementById('contentArea').scrollTop=0;
+  var ca = document.getElementById('contentArea');
+  if (ca) ca.scrollTop = 0;
 }
 
 /* ── SIDEBAR MOBILE ── */
-function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('mobOverlay').classList.add('open'); document.body.style.overflow='hidden'; }
-function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobOverlay').classList.remove('open'); document.body.style.overflow=''; }
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('mobOverlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobOverlay').classList.remove('open');
+}
 
 /* ── USER DROP ── */
-function toggleSbDrop(){ document.getElementById('sbDrop').classList.toggle('open'); }
-document.addEventListener('click',function(e){ var d=document.getElementById('sbDrop'); if(d&&!e.target.closest('.sb-user')) d.classList.remove('open'); });
+function toggleSbDrop() {
+  document.getElementById('sbDrop').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  var d = document.getElementById('sbDrop');
+  if (d && !e.target.closest('.sb-user')) d.classList.remove('open');
+});
 
 /* ── AUTH ── */
-function setUser(user){
-  if(!user) return;
-  var email=user.email||'';
-  var name=(user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||email.split('@')[0]||'Creator';
-  var init=(name.charAt(0)||'?').toUpperCase();
-  document.getElementById('sbGuestWrap').style.display='none';
-  document.getElementById('sbUserWrap').style.display='block';
-  document.getElementById('sbAv').textContent=init;
-  document.getElementById('sbName').textContent=name.split(' ')[0];
-  document.getElementById('sbEmail').textContent=email;
-  var se=document.getElementById('settingsEmail'); if(se) se.textContent=email;
-  /* greeting */
-  var hour=new Date().getHours();
-  var greet=hour<12?'Good morning':'hour<18?'Good afternoon':'Good evening';
-  var g=document.getElementById('dashGreeting'); if(g) g.textContent=greet+', '+name.split(' ')[0]+' 👋';
+function setUser(user) {
+  if (!user) return;
+  var email = user.email || '';
+  var name = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || email.split('@')[0] || 'Creator';
+  var init = (name.charAt(0) || '?').toUpperCase();
+  document.getElementById('sbGuestWrap').style.display = 'none';
+  document.getElementById('sbUserWrap').style.display = 'block';
+  document.getElementById('sbAv').textContent = init;
+  document.getElementById('sbName').textContent = name.split(' ')[0];
+  document.getElementById('sbEmail').textContent = email;
+  var se = document.getElementById('settingsEmail');
+  if (se) se.textContent = email;
+  var hour = new Date().getHours();
+  var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  var g = document.getElementById('dashGreeting');
+  if (g) g.textContent = greet + ', ' + name.split(' ')[0] + ' 👋';
 }
-function clearUser(){
-  document.getElementById('sbGuestWrap').style.display='block';
-  document.getElementById('sbUserWrap').style.display='none';
+function clearUser() {
+  document.getElementById('sbGuestWrap').style.display = 'block';
+  document.getElementById('sbUserWrap').style.display = 'none';
 }
-window.igOut=async function(){
-  try{ var c=getSupabase(); if(c) await c.auth.signOut(); }catch(e){}
-  window.location.href='index.html';
+window.igOut = async function() {
+  try { var c = getSupabase(); if (c) await c.auth.signOut(); } catch(e) {}
+  window.location.href = 'index.html';
 };
-function attachAuth(c){
-  c.auth.onAuthStateChange(function(ev,session){
-    if(session&&session.user) setUser(session.user);
-    else if(ev==='SIGNED_OUT'||ev==='USER_DELETED') clearUser();
+function attachAuth(c) {
+  c.auth.onAuthStateChange(function(ev, session) {
+    if (session && session.user) setUser(session.user);
+    else if (ev === 'SIGNED_OUT' || ev === 'USER_DELETED') clearUser();
   });
-  c.auth.getSession().then(function(r){ if(r&&r.data&&r.data.session&&r.data.session.user) setUser(r.data.session.user); }).catch(function(){});
+  c.auth.getSession().then(function(r) {
+    if (r && r.data && r.data.session && r.data.session.user) setUser(r.data.session.user);
+  }).catch(function() {});
 }
-function checkAuth(){
-  var c=null;
-  try{ if(window.getSupabase) c=getSupabase(); }catch(e){}
-  if(c){ attachAuth(c); return; }
-  var tries=0,t=setInterval(function(){
+function checkAuth() {
+  var c = null;
+  try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
+  if (c) { attachAuth(c); return; }
+  var tries = 0;
+  var t = setInterval(function() {
     tries++;
-    try{ if(window.getSupabase) c=getSupabase(); }catch(e){}
-    if(c){ clearInterval(t); attachAuth(c); }
-    else if(tries>=30) clearInterval(t);
-  },100);
+    try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
+    if (c) { clearInterval(t); attachAuth(c); }
+    else if (tries >= 30) clearInterval(t);
+  }, 100);
 }
 
-/* ── DASHBOARD DATE ── */
-function setDashDate(){
-  var d=new Date();
-  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var str=days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
-  var el=document.getElementById('dashDate'); if(el) el.textContent=str+' · Live data';
-  var bd=document.getElementById('briefingDate'); if(bd) bd.textContent=str+' · cached';
-  /* greeting time */
-  var hour=d.getHours();
-  var greet=hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
-  var g=document.getElementById('dashGreeting'); if(g&&g.textContent.indexOf('Creator')>-1) g.textContent=greet+', Creator 👋';
+/* ── DASHBOARD DATE + GREETING ── */
+function setDashDate() {
+  var d = new Date();
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var str = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  var el = document.getElementById('dashDate');
+  if (el) el.textContent = str + ' · Live data';
+  var bd = document.getElementById('briefingDate');
+  if (bd) bd.textContent = str + ' · cached';
+  var hour = d.getHours();
+  var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  var g = document.getElementById('dashGreeting');
+  if (g) g.textContent = greet + ', Creator 👋';
 }
 
 /* ── TREND CLICK → CREATE ── */
-function loadTopic(topic){
-  var input=document.getElementById('createTopic');
-  if(input) input.value=topic;
-  showPanel('create',document.querySelector('.sb-item:nth-child(4)'));
+function loadTopic(topic) {
+  var input = document.getElementById('createTopic');
+  if (input) input.value = topic;
+  var createItem = document.querySelector('.sb-item[onclick*="create"]');
+  showPanel('create', createItem);
 }
 
 /* ── GENERATE CONTENT ── */
-async function generateContent(){
-  var topic=document.getElementById('createTopic').value.trim();
-  if(!topic) return;
-  var btn=document.getElementById('generateBtn');
-  var out=document.getElementById('createOutput');
-  btn.disabled=true;
-  btn.textContent='Generating…';
-  out.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:20px;"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">Dijo is writing your content…</span></div>';
-  try{
-    var platform=document.getElementById('createPlatform').value;
-    var type=document.getElementById('createType').value;
-    var tone=document.getElementById('createTone').value;
-    var prompt='You are Dijo, an AI creator assistant. Generate a complete content package for a creator.\n\nTopic: '+topic+'\nPlatform: '+platform+'\nContent type: '+type+'\nTone: '+tone+'\n\nRespond ONLY with JSON (no markdown, no backticks):\n{"hook":"the hook","caption":"the caption","hashtags":["tag1","tag2","tag3","tag4","tag5"],"post_time":"best time to post","tip":"one quick tip"}';
-    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    var data=await res.json();
-    var text=data.content.map(function(i){return i.text||'';}).join('');
-    var clean=text.replace(/```json|```/g,'').trim();
-    var parsed=JSON.parse(clean);
-    out.innerHTML=
-      '<div class="output-card"><div class="output-label">Hook</div><div class="output-text">'+esc(parsed.hook||'')+'</div><button class="output-copy" onclick="copyText(\''+esc(parsed.hook||'')+'\')">Copy Hook</button></div>'+
-      '<div class="output-card"><div class="output-label">Caption</div><div class="output-text">'+esc(parsed.caption||'')+'</div><button class="output-copy" onclick="copyText(\''+esc(parsed.caption||'')+'\')">Copy Caption</button></div>'+
-      '<div class="output-card"><div class="output-label">Hashtags</div><div class="output-tags">'+(parsed.hashtags||[]).map(function(h){return '<span class="output-tag">#'+esc(h.replace('#',''))+'</span>';}).join('')+'</div></div>'+
-      '<div class="output-card" style="display:flex;gap:14px;"><div style="flex:1;"><div class="output-label">Best Post Time</div><div class="output-text" style="font-weight:700;color:var(--gold);">'+esc(parsed.post_time||'')+'</div></div><div style="flex:1;"><div class="output-label">Dijo\'s Tip</div><div class="output-text">'+esc(parsed.tip||'')+'</div></div></div>';
-  }catch(e){
-    out.innerHTML='<div class="output-card" style="border-color:var(--red-dim);"><div class="output-label" style="color:var(--red);">Error</div><div class="output-text" style="color:var(--text2);">Could not generate content. Check your connection and try again.</div></div>';
+async function generateContent() {
+  var topic = document.getElementById('createTopic').value.trim();
+  if (!topic) { alert('Please enter a topic first.'); return; }
+  var btn = document.getElementById('generateBtn');
+  var out = document.getElementById('createOutput');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  out.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px;"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">Dijo is writing your content…</span></div>';
+  try {
+    var platform = document.getElementById('createPlatform').value;
+    var type = document.getElementById('createType').value;
+    var tone = document.getElementById('createTone').value;
+    var prompt = 'You are Dijo, an AI creator assistant. Generate a complete content package for a creator.\n\nTopic: ' + topic + '\nPlatform: ' + platform + '\nContent type: ' + type + '\nTone: ' + tone + '\n\nRespond ONLY with JSON (no markdown, no backticks):\n{"hook":"the hook","caption":"the caption","hashtags":["tag1","tag2","tag3","tag4","tag5"],"post_time":"best time to post","tip":"one quick tip"}';
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    var data = await res.json();
+    var text = data.content.map(function(i) { return i.text || ''; }).join('');
+    var clean = text.replace(/```json|```/g, '').trim();
+    var parsed = JSON.parse(clean);
+    out.innerHTML =
+      '<div class="output-card"><div class="output-label">Hook</div><div class="output-text">' + esc(parsed.hook || '') + '</div><button class="output-copy" onclick="copyText(this.previousElementSibling.textContent)">Copy Hook</button></div>' +
+      '<div class="output-card"><div class="output-label">Caption</div><div class="output-text">' + esc(parsed.caption || '') + '</div><button class="output-copy" onclick="copyText(this.previousElementSibling.textContent)">Copy Caption</button></div>' +
+      '<div class="output-card"><div class="output-label">Hashtags</div><div class="output-tags">' + (parsed.hashtags || []).map(function(h) { return '<span class="output-tag">#' + esc(h.replace('#','')) + '</span>'; }).join('') + '</div></div>' +
+      '<div class="output-card" style="display:flex;gap:14px;"><div style="flex:1;"><div class="output-label">Best Post Time</div><div class="output-text" style="font-weight:700;color:var(--gold);">' + esc(parsed.post_time || '') + '</div></div><div style="flex:1;"><div class="output-label">Dijo\'s Tip</div><div class="output-text">' + esc(parsed.tip || '') + '</div></div></div>';
+  } catch(e) {
+    out.innerHTML = '<div class="output-card" style="border-color:var(--red-dim);"><div class="output-label" style="color:var(--red);">Error</div><div class="output-text" style="color:var(--text2);">Could not generate content. Check your connection and try again.</div></div>';
   }
-  btn.disabled=false;
-  btn.textContent='✨ Generate with Dijo';
+  btn.disabled = false;
+  btn.textContent = '✨ Generate with Dijo';
 }
 
 /* ── DIJO CHAT ── */
-async function sendDijo(){
-  var input=document.getElementById('dijoInput');
-  var val=input.value.trim();
-  if(!val) return;
-  var msgs=document.getElementById('dijoMsgs');
-  msgs.innerHTML+='<div class="chat-msg user"><div class="chat-av-sm you">Y</div><div class="chat-bubble you">'+esc(val)+'</div></div>';
-  input.value='';
-  msgs.scrollTop=msgs.scrollHeight;
-  msgs.innerHTML+='<div class="chat-msg" id="dijotyping"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo" style="color:var(--text3);">Thinking…</div></div>';
-  msgs.scrollTop=msgs.scrollHeight;
-  try{
-    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:'You are Dijo, an expert AI creator assistant for ImpactGrid. You help creators grow on TikTok, YouTube and Instagram. You give short, direct, actionable advice. Today\'s top trends: vikingtom (5.8), shorts (5.9), UK Street Style (5.5). User asks: '+val}]})});
-    var data=await res.json();
-    var reply=data.content.map(function(i){return i.text||'';}).join('');
-    var typing=document.getElementById('dijotyping');
-    if(typing) typing.remove();
-    msgs.innerHTML+='<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">'+esc(reply)+'</div></div>';
-    msgs.scrollTop=msgs.scrollHeight;
-  }catch(e){
-    var typing=document.getElementById('dijotyping');
-    if(typing) typing.remove();
-    msgs.innerHTML+='<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">Sorry, I couldn\'t connect right now. Try again in a moment.</div></div>';
-    msgs.scrollTop=msgs.scrollHeight;
+async function sendDijo() {
+  var input = document.getElementById('dijoInput');
+  var val = input.value.trim();
+  if (!val) return;
+  var msgs = document.getElementById('dijoMsgs');
+  msgs.innerHTML += '<div class="chat-msg user"><div class="chat-av-sm you">Y</div><div class="chat-bubble you">' + esc(val) + '</div></div>';
+  input.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+  msgs.innerHTML += '<div class="chat-msg" id="dijotyping"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo" style="color:var(--text3);">Thinking…</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: "You are Dijo, an expert AI creator assistant for ImpactGrid. You help creators grow on TikTok, YouTube and Instagram. You give short, direct, actionable advice. Today's top trends: vikingtom (5.8), shorts (5.9), UK Street Style (5.5). User asks: " + val }]
+      })
+    });
+    var data = await res.json();
+    var reply = data.content.map(function(i) { return i.text || ''; }).join('');
+    var typing = document.getElementById('dijotyping');
+    if (typing) typing.remove();
+    msgs.innerHTML += '<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">' + esc(reply) + '</div></div>';
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch(e) {
+    var typing = document.getElementById('dijotyping');
+    if (typing) typing.remove();
+    msgs.innerHTML += '<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">Sorry, I could not connect right now. Try again in a moment.</div></div>';
+    msgs.scrollTop = msgs.scrollHeight;
   }
 }
-function quickDijo(prompt){ document.getElementById('dijoInput').value=prompt; sendDijo(); }
+function quickDijo(prompt) {
+  document.getElementById('dijoInput').value = prompt;
+  sendDijo();
+}
 
 /* ── CAROUSEL GENERATE ── */
-function generateCarousel(){
-  var topic=document.getElementById('carouselTopic').value.trim()||'Your Topic';
-  var style=document.getElementById('carouselStyle').value;
-  var styleClass={'dark':'slide-dark','purple':'slide-purple','green':'slide-green','warm':'slide-warm','clean':'slide-clean'}[style]||'slide-dark';
-  var count=parseInt(document.getElementById('carouselSlides').value)||5;
-  var grid=document.getElementById('slidesGrid');
-  grid.innerHTML='';
-  var styles=['slide-dark','slide-mid','slide-purple','slide-green','slide-warm','slide-clean'];
-  for(var i=0;i<count;i++){
-    var s=document.createElement('div');
-    s.className='slide-thumb '+styles[i%styles.length];
-    s.innerHTML='<span class="slide-num">'+(i+1)+'/'+count+'</span>'+(i===0?topic+' 🔱':'Slide '+(i+1)+': '+topic.split(' ')[0]);
+function generateCarousel() {
+  var topic = document.getElementById('carouselTopic').value.trim() || 'Your Topic';
+  var style = document.getElementById('carouselStyle').value;
+  var count = parseInt(document.getElementById('carouselSlides').value) || 5;
+  var grid = document.getElementById('slidesGrid');
+  grid.innerHTML = '';
+  var styles = ['slide-dark','slide-mid','slide-purple','slide-green','slide-warm','slide-clean'];
+  for (var i = 0; i < count; i++) {
+    var s = document.createElement('div');
+    s.className = 'slide-thumb ' + styles[i % styles.length];
+    s.innerHTML = '<span class="slide-num">' + (i+1) + '/' + count + '</span>' + (i === 0 ? topic + ' 🔱' : 'Slide ' + (i+1) + ': ' + topic.split(' ')[0]);
     grid.appendChild(s);
   }
-  var add=document.createElement('div');
-  add.className='slide-add';
-  add.innerHTML='<div class="slide-add-icon">+</div>Add slide';
-  add.onclick=addSlide;
+  var add = document.createElement('div');
+  add.className = 'slide-thumb slide-add';
+  add.innerHTML = '<div class="slide-add-icon">+</div>Add slide';
+  add.onclick = addSlide;
   grid.appendChild(add);
 }
-function addSlide(){ alert('Add slide feature coming soon!'); }
+function addSlide() { alert('Add slide feature coming soon!'); }
 
 /* ── AUTO FILL PLAN ── */
-function autoFillPlan(){
-  var posts=[
+function autoFillPlan() {
+  var posts = [
     {day:'Mon',num:7,type:'yt',label:'Viking myths hook'},
     {day:'Tue',num:8,type:'ig',label:'UK Style carousel'},
     {day:'Wed',num:9,type:'tt',label:'AI tools short'},
@@ -986,63 +1069,72 @@ function autoFillPlan(){
     {day:'Sat',num:12,type:'ig',label:'Weekend lifestyle'},
     {day:'Sun',num:13,type:'yt',label:'Week wrap-up'}
   ];
-  var grid=document.getElementById('planGrid');
-  grid.innerHTML=posts.map(function(p){
-    return '<div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">'+p.day+'</div><div class="plan-day-num'+(p.num===9?' today':'')+'">'+p.num+'</div></div><div class="plan-day-body"><div class="plan-post '+p.type+'">'+p.label+'</div><div class="plan-add-slot">+ Add</div></div></div>';
+  var grid = document.getElementById('planGrid');
+  grid.innerHTML = posts.map(function(p) {
+    return '<div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">' + p.day + '</div><div class="plan-day-num' + (p.num === 9 ? ' today' : '') + '">' + p.num + '</div></div><div class="plan-day-body"><div class="plan-post ' + p.type + '">' + p.label + '</div><div class="plan-add-slot">+ Add</div></div></div>';
   }).join('');
 }
 
 /* ── REFRESH BRIEFING ── */
-function refreshBriefing(){
-  var el=document.getElementById('briefingText');
-  if(el){ el.style.opacity='.4'; setTimeout(function(){ el.style.opacity='1'; },600); }
+function refreshBriefing() {
+  var el = document.getElementById('briefingText');
+  if (el) { el.style.opacity = '.4'; setTimeout(function() { el.style.opacity = '1'; }, 600); }
 }
 
 /* ── COPY ── */
-function copyText(t){ try{ navigator.clipboard.writeText(t); }catch(e){} }
-
-/* ── PLATFORM SESSION CHECKS ── */
-function checkPlatformSessions(){
-  try{
-    if(typeof YouTubeAuth!=='undefined'){
-      var s=YouTubeAuth.getSession();
-      if(s){
-        var card=document.getElementById('yt-card');
-        var btn=document.getElementById('yt-btn-app');
-        var stxt=document.getElementById('yt-status-txt');
-        if(card) card.classList.add('connected');
-        var name=(s.channel&&s.channel.snippet&&s.channel.snippet.title)?s.channel.snippet.title:'YouTube';
-        if(stxt) stxt.textContent='Connected · '+name;
-        if(btn){ btn.className='cc-app-btn auto'; btn.textContent='Open Trends →'; btn.onclick=function(){ showPanel('trendfeed',null); }; }
-      }
-    }
-  }catch(e){}
-  try{
-    if(typeof TikTokAuth!=='undefined'){
-      var s=TikTokAuth.getSession();
-      if(s){
-        var card=document.getElementById('tt-card');
-        var btn=document.getElementById('tt-btn-app');
-        var stxt=document.getElementById('tt-status-txt');
-        if(card) card.classList.add('connected');
-        var name=(s.user&&s.user.display_name)?s.user.display_name:'TikTok';
-        if(stxt) stxt.textContent='Connected · '+name;
-        if(btn){ btn.className='cc-app-btn auto'; btn.textContent='Connected ✓'; }
-      }
-    }
-  }catch(e){}
+function copyText(t) {
+  try { navigator.clipboard.writeText(t); } catch(e) {}
 }
 
-/* ── HELPERS ── */
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+/* ── ESCAPE HTML ── */
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── PLATFORM SESSION CHECKS ── */
+function checkPlatformSessions() {
+  try {
+    if (typeof YouTubeAuth !== 'undefined') {
+      var s = YouTubeAuth.getSession();
+      if (s) {
+        var card = document.getElementById('yt-card');
+        var btn = document.getElementById('yt-btn-app');
+        var stxt = document.getElementById('yt-status-txt');
+        if (card) card.classList.add('connected');
+        var name = (s.channel && s.channel.snippet && s.channel.snippet.title) ? s.channel.snippet.title : 'YouTube';
+        if (stxt) stxt.textContent = 'Connected · ' + name;
+        if (btn) { btn.className = 'cc-app-btn auto'; btn.textContent = 'Open Trends →'; btn.onclick = function() { showPanel('trendfeed', null); }; }
+      }
+    }
+  } catch(e) {}
+  try {
+    if (typeof TikTokAuth !== 'undefined') {
+      var s = TikTokAuth.getSession();
+      if (s) {
+        var card = document.getElementById('tt-card');
+        var btn = document.getElementById('tt-btn-app');
+        var stxt = document.getElementById('tt-status-txt');
+        if (card) card.classList.add('connected');
+        var name = (s.user && s.user.display_name) ? s.user.display_name : 'TikTok';
+        if (stxt) stxt.textContent = 'Connected · ' + name;
+        if (btn) { btn.className = 'cc-app-btn auto'; btn.textContent = 'Connected ✓'; }
+      }
+    }
+  } catch(e) {}
+}
 
 /* ── INIT ── */
-window.addEventListener('load',function(){
+window.addEventListener('load', function() {
   checkAuth();
   setDashDate();
   checkPlatformSessions();
-  setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); },600000);
+  setInterval(function() { fetch('https://impactgrid-dijo.onrender.com/ping').catch(function() {}); }, 600000);
 });
+
+/* ── SERVICE WORKER ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function() {});
+}
 </script>
 </body>
 </html>
