@@ -137,7 +137,171 @@ input,textarea,select{font-family:inherit;}
 }
 
 /* ══════════════════════════════════════
-   iOS DOWNLOAD MODAL
+   iOS BATCH DOWNLOAD MODAL
+══════════════════════════════════════ */
+.ios-dl-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  z-index:3000;display:flex;align-items:flex-end;justify-content:center;
+  animation:fadeIn .25s ease;
+}
+.ios-dl-sheet{
+  width:100%;max-width:580px;
+  background:#111114;
+  border-radius:28px 28px 0 0;
+  border-top:1px solid rgba(255,255,255,.1);
+  padding:0 0 max(28px,env(safe-area-inset-bottom));
+  animation:slideUp .32s cubic-bezier(.32,1,.6,1);
+  overflow:hidden;
+  max-height:92vh;
+  display:flex;flex-direction:column;
+}
+.ios-dl-handle-wrap{
+  display:flex;justify-content:center;padding:14px 0 0;
+  flex-shrink:0;
+}
+.ios-dl-handle{
+  width:40px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,.2);
+}
+.ios-dl-header{
+  padding:16px 28px 20px;flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.ios-dl-title{
+  font-size:20px;font-weight:800;color:#fff;
+  font-family:'DM Sans',sans-serif;margin-bottom:4px;
+  display:flex;align-items:center;gap:10px;
+}
+.ios-dl-title-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.ios-dl-subtitle{
+  font-size:13px;color:rgba(255,255,255,.45);
+  font-family:'DM Sans',sans-serif;margin-top:6px;
+  line-height:1.5;
+}
+.ios-dl-progress-area{
+  padding:24px 28px 20px;
+  display:flex;align-items:center;gap:20px;
+  flex-shrink:0;
+}
+.ios-dl-ring-wrap{
+  position:relative;width:72px;height:72px;flex-shrink:0;
+}
+.ios-dl-ring-svg{transform:rotate(-90deg);}
+.ios-dl-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:6;}
+.ios-dl-ring-fill{
+  fill:none;stroke:#22c55e;stroke-width:6;
+  stroke-linecap:round;
+  stroke-dasharray:188;stroke-dashoffset:188;
+  transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);
+}
+.ios-dl-ring-text{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.ios-dl-ring-num{font-size:18px;font-weight:800;color:#fff;line-height:1;}
+.ios-dl-ring-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-top:1px;}
+.ios-dl-progress-text{flex:1;}
+.ios-dl-batch-label{
+  font-size:16px;font-weight:700;color:#fff;
+  font-family:'DM Sans',sans-serif;margin-bottom:4px;
+}
+.ios-dl-batch-sub{
+  font-size:13px;color:rgba(255,255,255,.45);
+  font-family:'DM Sans',sans-serif;line-height:1.5;
+}
+.ios-dl-instruction{
+  margin:0 28px 20px;
+  background:rgba(34,197,94,.1);
+  border:1px solid rgba(34,197,94,.2);
+  border-radius:16px;padding:16px 18px;
+  display:flex;align-items:flex-start;gap:14px;
+  flex-shrink:0;
+}
+.ios-dl-instruction-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.ios-dl-instruction-text{
+  font-size:14px;color:rgba(255,255,255,.8);
+  font-family:'DM Sans',sans-serif;line-height:1.6;
+  font-weight:500;
+}
+.ios-dl-instruction-text strong{color:#4ade80;}
+.ios-dl-thumbs{
+  display:flex;gap:6px;padding:0 28px 20px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  flex-shrink:0;
+}
+.ios-dl-thumbs::-webkit-scrollbar{display:none;}
+.ios-dl-thumb{
+  width:56px;height:56px;border-radius:10px;
+  overflow:hidden;flex-shrink:0;position:relative;
+  border:2px solid rgba(255,255,255,.08);
+  transition:all .2s;
+}
+.ios-dl-thumb.saved{border-color:#22c55e;}
+.ios-dl-thumb.saving{border-color:rgba(34,197,94,.5);animation:pulse .8s ease-in-out infinite;}
+.ios-dl-thumb img{width:100%;height:100%;object-fit:cover;}
+.ios-dl-thumb-check{
+  position:absolute;inset:0;background:rgba(22,163,74,.6);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;opacity:0;transition:opacity .2s;
+}
+.ios-dl-thumb.saved .ios-dl-thumb-check{opacity:1;}
+.ios-dl-btn-area{padding:0 28px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
+.ios-dl-save-btn{
+  width:100%;padding:16px;border-radius:16px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  color:#fff;font-size:16px;font-weight:800;
+  font-family:'DM Sans',sans-serif;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:all .2s;box-shadow:0 8px 28px rgba(22,163,74,.3);
+  -webkit-tap-highlight-color:transparent;
+}
+.ios-dl-save-btn:active{transform:scale(.97);}
+.ios-dl-save-btn:disabled{
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);
+  box-shadow:none;cursor:not-allowed;
+}
+.ios-dl-save-btn.loading{
+  background:rgba(255,255,255,.08);
+  animation:pulse .8s ease-in-out infinite;
+}
+.ios-dl-next-btn{
+  width:100%;padding:14px;border-radius:16px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.7);font-size:14px;font-weight:700;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .2s;-webkit-tap-highlight-color:transparent;
+}
+.ios-dl-next-btn:active{background:rgba(255,255,255,.12);}
+.ios-dl-cancel-btn{
+  width:100%;padding:13px;border-radius:16px;background:transparent;
+  color:rgba(255,255,255,.35);font-size:13px;font-weight:600;
+  font-family:'DM Sans',sans-serif;cursor:pointer;border:none;
+  transition:color .2s;-webkit-tap-highlight-color:transparent;
+}
+.ios-dl-cancel-btn:active{color:rgba(255,255,255,.6);}
+.ios-dl-done{
+  padding:32px 28px;text-align:center;flex-shrink:0;
+}
+.ios-dl-done-icon{font-size:52px;margin-bottom:14px;display:block;}
+.ios-dl-done-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;font-family:'DM Sans',sans-serif;}
+.ios-dl-done-sub{font-size:14px;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;line-height:1.6;margin-bottom:24px;}
+.ios-dl-done-btn{
+  width:100%;padding:15px;border-radius:16px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.7);font-size:15px;font-weight:700;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ══════════════════════════════════════
+   iOS FALLBACK MODAL (old tab method)
 ══════════════════════════════════════ */
 .ios-modal-backdrop{
   position:fixed;inset:0;background:rgba(0,0,0,.7);
@@ -803,7 +967,72 @@ input,textarea,select{font-family:inherit;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════ iOS SAVE MODAL ══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════ iOS BATCH DOWNLOAD MODAL ══════════════════════════════════════ -->
+<div class="ios-dl-backdrop hidden" id="iosDlModal">
+  <div class="ios-dl-sheet" id="iosDlSheet">
+    <div class="ios-dl-handle-wrap"><div class="ios-dl-handle"></div></div>
+
+    <!-- Header -->
+    <div class="ios-dl-header">
+      <div class="ios-dl-title">
+        <div class="ios-dl-title-icon">📲</div>
+        <span id="iosDlTitle">Save Photos</span>
+      </div>
+      <div class="ios-dl-subtitle" id="iosDlSubtitle">Saving in batches of 9 — tap the button after each share sheet</div>
+    </div>
+
+    <!-- Progress ring -->
+    <div class="ios-dl-progress-area">
+      <div class="ios-dl-ring-wrap">
+        <svg class="ios-dl-ring-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="ios-dl-ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ios-dl-ring-fill" id="iosDlRingFill" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="ios-dl-ring-text">
+          <div class="ios-dl-ring-num" id="iosDlRingNum">0</div>
+          <div class="ios-dl-ring-label">saved</div>
+        </div>
+      </div>
+      <div class="ios-dl-progress-text">
+        <div class="ios-dl-batch-label" id="iosDlBatchLabel">Ready to start</div>
+        <div class="ios-dl-batch-sub" id="iosDlBatchSub">Tap the button below to begin</div>
+      </div>
+    </div>
+
+    <!-- Instruction card -->
+    <div class="ios-dl-instruction" id="iosDlInstruction">
+      <div class="ios-dl-instruction-icon">👆</div>
+      <div class="ios-dl-instruction-text" id="iosDlInstructionText">
+        Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all photos in this batch to your Camera Roll.
+      </div>
+    </div>
+
+    <!-- Thumbnail strip -->
+    <div class="ios-dl-thumbs" id="iosDlThumbs"></div>
+
+    <!-- Buttons -->
+    <div class="ios-dl-btn-area" id="iosDlBtnArea">
+      <button class="ios-dl-save-btn" id="iosDlSaveBtn" onclick="iosDlTriggerShare()">
+        <span id="iosDlSaveBtnIcon">📲</span>
+        <span id="iosDlSaveBtnText">Save to Device</span>
+      </button>
+      <button class="ios-dl-next-btn hidden" id="iosDlNextBtn" onclick="iosDlNextBatch()">
+        Next Batch → <span id="iosDlNextLabel"></span>
+      </button>
+      <button class="ios-dl-cancel-btn" id="iosDlCancelBtn" onclick="iosDlClose()">Cancel</button>
+    </div>
+
+    <!-- Done state -->
+    <div class="ios-dl-done hidden" id="iosDlDone">
+      <span class="ios-dl-done-icon">🎉</span>
+      <div class="ios-dl-done-title" id="iosDlDoneTitle">All Photos Saved!</div>
+      <div class="ios-dl-done-sub" id="iosDlDoneSub">Check your Camera Roll — all photos are there.</div>
+      <button class="ios-dl-done-btn" onclick="iosDlClose()">Done ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ iOS FALLBACK MODAL ══════════════════════════════════════ -->
 <div class="ios-modal-backdrop hidden" id="iosModal" onclick="closeIosModal(event)">
   <div class="ios-modal-box" onclick="event.stopPropagation()">
     <div class="ios-modal-handle"></div>
@@ -894,8 +1123,7 @@ function isMobile(){
   return isIOS() || isAndroid() || /Mobi/.test(navigator.userAgent);
 }
 /* Safari on iOS is the ONLY browser that cannot do blob downloads.
-   Chrome on iPhone, Chrome on Android, Samsung Browser — all support it.
-   We detect Safari specifically: has AppleWebKit but NOT Chrome/CriOS/Firefox */
+   Chrome on iPhone, Chrome on Android, Samsung Browser — all support it. */
 function isSafariIOS(){
   var ua = navigator.userAgent;
   var isiOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
@@ -1028,11 +1256,10 @@ async function loadPhotos(){
       badge.style.display = allPhotos.length ? 'inline-flex' : 'none';
     }
 
-    /* Update dl-bar subtitle based on platform capability */
     var dlSub = document.getElementById('dlBarSub');
     if(dlSub){
       if(isSafariIOS()){
-        dlSub.textContent = 'Photos open in tabs — long-press each to save to Camera Roll';
+        dlSub.textContent = 'Photos save in batches — tap each share sheet to save';
       } else {
         dlSub.textContent = 'Selected photos save directly to your Downloads / Gallery';
       }
@@ -1344,32 +1571,21 @@ function updateSelectionUI(){
 /* ══════════════════════════════════════════════════════════════
    ████  DOWNLOAD ENGINE  ████
 
-   Android / Desktop:
+   Android / Desktop / Chrome iOS:
      fetch() image as blob → createObjectURL → <a download> click
      Saves directly to Downloads / Gallery automatically.
-     No tabs opened. No "hold to save". No dialogs.
 
-   iOS / iPadOS:
-     Safari blocks all programmatic saves from web pages.
-     We open each photo in a new tab — user long-presses
-     the image and taps "Save to Photos".
+   Safari on iOS ONLY:
+     Uses new batch modal with navigator.share({files}) API.
+     Groups photos into batches of 9, shows progress ring.
+     User taps "Save to Device" → Share Sheet → "Save Image" → Camera Roll.
+     Repeats per batch until all photos saved.
 ══════════════════════════════════════════════════════════════ */
 
-/**
- * Fetch image as blob then trigger a real automatic file download.
- * Works on Android Chrome, Samsung Browser, Firefox, Desktop.
- */
 function blobDownload(url, filename){
-  /*
-   * Supabase public bucket URLs sometimes redirect to a CDN.
-   * Using redirect:'follow' ensures fetch() follows that redirect.
-   * We also rewrite the URL to the direct /object/public/ path
-   * which skips the redirect entirely and avoids Android CORS blocks.
-   */
   var directUrl = url
     .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
     .replace('/storage/v1/object/sign/', '/storage/v1/object/public/');
-  /* Strip query params (transform params etc) for clean blob fetch */
   var qmark = directUrl.indexOf('?');
   if(qmark !== -1) directUrl = directUrl.substring(0, qmark);
 
@@ -1379,7 +1595,6 @@ function blobDownload(url, filename){
       return r.blob();
     })
     .then(function(blob){
-      /* Force image/jpeg mime if browser returns octet-stream */
       var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
       var safeBlob = (mime !== blob.type) ? new Blob([blob], { type: mime }) : blob;
       return new Promise(function(resolve, reject){
@@ -1401,7 +1616,7 @@ function blobDownload(url, filename){
     });
 }
 
-/* ── Progress overlay ── */
+/* ── Progress overlay (non-iOS) ── */
 function showDlProgress(total){
   removeDlProgress();
   dlCancelled = false;
@@ -1438,13 +1653,9 @@ function cancelDl(){
   toast('✕', 'Download cancelled', '');
 }
 
-/**
- * Single photo quick-save from the card hover button.
- */
 function quickDownload(url, idx){
   if(isSafariIOS()){
-    window.open(url, '_blank');
-    toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
+    showIosModal([{ original_url: url, preview_url: url }]);
     return;
   }
   var filename = 'ImpactGrid-Photo-' + (parseInt(idx) + 1) + '.jpg';
@@ -1454,13 +1665,7 @@ function quickDownload(url, idx){
     .catch(function(){ toast('⚠️', 'Download failed', 'Try again or check your connection'); });
 }
 
-/**
- * Batch download — sequential blob downloads, unlimited count.
- * iOS → iOS modal. Everyone else → automatic saves with progress bar.
- */
 async function downloadBatch(photos){
-  /* Only Safari on iOS cannot auto-download. Chrome iOS, Chrome Android,
-     Samsung Browser, Firefox mobile — all get real blob downloads. */
   if(isSafariIOS()){
     showIosModal(photos);
     return;
@@ -1520,120 +1725,307 @@ function downloadAllPhotos(){
 }
 
 /* ══════════════════════════════════════
-   iOS SAVE — Web Share API
-   Uses navigator.share() with File objects.
-   Opens native iOS Share Sheet → user taps
-   "Save Image" → saves directly to Camera Roll.
-   No long-press needed. Same as creator-studio.html.
+   iOS BATCH DOWNLOAD MODAL
+   Groups photos into batches of 9.
+   Each batch: fetch blobs → navigator.share({files}) →
+   Share Sheet opens → user taps "Save Image" → Camera Roll.
+   User taps "Next Batch" to continue.
+   Progress ring tracks total saved.
 ══════════════════════════════════════ */
 
-/**
- * iOS Save: fetch photos in batches of 10, share each batch via
- * navigator.share() — opens native iOS Share Sheet per batch.
- * User taps "Save Image" for each batch → straight to Camera Roll.
- * Batching prevents memory crashes on large sets (100+ photos).
- * Max supported: 500 photos (50 batches of 10).
- */
-async function showIosModal(photos){
+var iosDl = {
+  photos    : [],
+  batches   : [],
+  batchIdx  : 0,
+  saved     : 0,
+  total     : 0,
+  BATCH_SIZE: 9,
+  fetching  : false,
+  cancelled : false,
+};
+
+function showIosModal(photos){
+  /* If navigator.share + files supported → new modal */
   if(!(navigator.share && navigator.canShare)){
     iosFallbackTabs(photos);
     return;
   }
 
-  var BATCH = 10;
-  var total  = photos.length;
-  var batches = Math.ceil(total / BATCH);
-  var saved   = 0;
-  var cancelled = false;
+  iosDl.photos   = photos;
+  iosDl.total    = photos.length;
+  iosDl.saved    = 0;
+  iosDl.batchIdx = 0;
+  iosDl.cancelled= false;
+  iosDl.fetching = false;
 
-  for(var b = 0; b < batches; b++){
-    if(cancelled) break;
+  iosDl.batches  = [];
+  for(var i = 0; i < photos.length; i += iosDl.BATCH_SIZE){
+    iosDl.batches.push(photos.slice(i, i + iosDl.BATCH_SIZE));
+  }
 
-    var batchPhotos = photos.slice(b * BATCH, (b + 1) * BATCH);
-    var batchNum    = b + 1;
-    var batchStart  = b * BATCH + 1;
-    var batchEnd    = Math.min((b + 1) * BATCH, total);
+  /* Reset UI */
+  document.getElementById('iosDlDone').classList.add('hidden');
+  document.getElementById('iosDlBtnArea').classList.remove('hidden');
+  document.getElementById('iosDlNextBtn').classList.add('hidden');
+  document.getElementById('iosDlInstruction').style.display = '';
 
-    toast('📲',
-      'Batch ' + batchNum + ' of ' + batches,
-      'Fetching photos ' + batchStart + '–' + batchEnd + ' of ' + total + '…'
-    );
+  var totalBatches = iosDl.batches.length;
+  document.getElementById('iosDlTitle').textContent =
+    'Save ' + photos.length + ' Photo' + (photos.length > 1 ? 's' : '');
+  document.getElementById('iosDlSubtitle').textContent =
+    totalBatches === 1
+      ? 'All ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' in one tap'
+      : photos.length + ' photos · ' + totalBatches + ' batches of up to ' + iosDl.BATCH_SIZE;
 
-    /* Fetch this batch as blobs */
-    var files = [];
-    for(var i = 0; i < batchPhotos.length; i++){
-      try{
-        var photoIdx = b * BATCH + i;
-        var url = batchPhotos[i].original_url || batchPhotos[i].preview_url;
-        /* Strip query params for clean Supabase fetch */
-        var cleanUrl = url.split('?')[0]
-          .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
-          .replace('/storage/v1/object/sign/', '/storage/v1/object/public/');
-        var r = await fetch(cleanUrl, { mode: 'cors', cache: 'no-store', redirect: 'follow' });
-        if(!r.ok) throw new Error('HTTP ' + r.status);
-        var blob = await r.blob();
-        var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
-        var ext  = mime === 'image/png' ? 'png' : 'jpg';
-        files.push(new File(
-          [blob],
-          'ImpactGrid-Photo-' + String(photoIdx + 1).padStart(3, '0') + '.' + ext,
-          { type: mime }
-        ));
-      }catch(e){
-        console.warn('Batch', batchNum, 'photo', i, 'failed:', e);
-      }
-    }
+  iosDlUpdateProgress();
+  iosDlRenderThumbs(0);
 
-    if(files.length === 0) continue;
+  document.getElementById('iosDlSaveBtn').disabled = false;
+  document.getElementById('iosDlSaveBtn').className = 'ios-dl-save-btn';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+  document.getElementById('iosDlSaveBtnText').textContent =
+    totalBatches === 1
+      ? 'Save All to Camera Roll'
+      : 'Save Batch 1 of ' + totalBatches;
 
-    /* Check if sharing files is supported */
-    var canShareFiles = false;
-    try{ canShareFiles = navigator.canShare({ files: files }); }catch(e){}
+  document.getElementById('iosDlInstructionText').innerHTML =
+    'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all photos in this batch to your Camera Roll.';
 
-    if(!canShareFiles){
-      iosFallbackTabs(photos);
-      return;
-    }
+  document.getElementById('iosDlModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
 
-    /* Open share sheet for this batch */
+function iosDlUpdateProgress(){
+  var total   = iosDl.total;
+  var saved   = iosDl.saved;
+  var pct     = total > 0 ? saved / total : 0;
+  var circ    = 188.5;
+  var offset  = circ * (1 - pct);
+  var fill    = document.getElementById('iosDlRingFill');
+  if(fill) fill.style.strokeDashoffset = offset;
+
+  document.getElementById('iosDlRingNum').textContent = saved;
+
+  var batchIdx    = iosDl.batchIdx;
+  var totalBatches= iosDl.batches.length;
+  var batch       = iosDl.batches[batchIdx];
+
+  if(batch){
+    var batchStart = batchIdx * iosDl.BATCH_SIZE + 1;
+    var batchEnd   = Math.min((batchIdx + 1) * iosDl.BATCH_SIZE, total);
+    document.getElementById('iosDlBatchLabel').textContent =
+      totalBatches === 1
+        ? 'All ' + total + ' photos'
+        : 'Batch ' + (batchIdx + 1) + ' of ' + totalBatches;
+    document.getElementById('iosDlBatchSub').textContent =
+      totalBatches === 1
+        ? 'Tap to open your Share Sheet'
+        : 'Photos ' + batchStart + ' – ' + batchEnd + ' of ' + total;
+  }
+}
+
+function iosDlRenderThumbs(batchIdx){
+  var batch   = iosDl.batches[batchIdx];
+  if(!batch) return;
+  var container = document.getElementById('iosDlThumbs');
+  var offset    = batchIdx * iosDl.BATCH_SIZE;
+
+  container.innerHTML = batch.map(function(p, i){
+    var globalIdx = offset + i;
+    var isSaved   = globalIdx < iosDl.saved;
+    return '<div class="ios-dl-thumb' + (isSaved ? ' saved' : '') + '" id="iosDlThumb-' + globalIdx + '">'
+      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy"/>'
+      + '<div class="ios-dl-thumb-check">✓</div>'
+      + '</div>';
+  }).join('');
+}
+
+async function iosDlTriggerShare(){
+  if(iosDl.fetching) return;
+  var batchIdx = iosDl.batchIdx;
+  var batch    = iosDl.batches[batchIdx];
+  if(!batch) return;
+
+  iosDl.fetching = true;
+  var btn = document.getElementById('iosDlSaveBtn');
+  btn.disabled = true;
+  btn.className = 'ios-dl-save-btn loading';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '⏳';
+  document.getElementById('iosDlSaveBtnText').textContent = 'Fetching photos…';
+  document.getElementById('iosDlNextBtn').classList.add('hidden');
+  document.getElementById('iosDlInstructionText').innerHTML =
+    '⏳ Preparing ' + batch.length + ' photo' + (batch.length > 1 ? 's' : '') + ' for sharing…';
+
+  var offset = batchIdx * iosDl.BATCH_SIZE;
+
+  /* Mark thumbs as saving */
+  batch.forEach(function(_, i){
+    var el = document.getElementById('iosDlThumb-' + (offset + i));
+    if(el) el.classList.add('saving');
+  });
+
+  /* Fetch blobs */
+  var files = [];
+  for(var i = 0; i < batch.length; i++){
     try{
-      await navigator.share({
-        files : files,
-        title : 'ImpactGrid Photos (' + batchStart + '–' + batchEnd + ' of ' + total + ')',
-        text  : 'Tap "Save Image" to save to your Camera Roll'
-      });
-      saved += files.length;
-
-      if(b < batches - 1){
-        toast('✅',
-          saved + ' of ' + total + ' saved so far',
-          'Next batch coming — tap Save Image on each'
-        );
-        /* Small pause between batches so iOS can process */
-        await new Promise(function(res){ setTimeout(res, 800); });
-      } else {
-        toast('✅', 'All ' + saved + ' photos saved!', 'Check your Camera Roll');
-      }
-
+      var url = batch[i].original_url || batch[i].preview_url;
+      var cleanUrl = url.split('?')[0]
+        .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+        .replace('/storage/v1/object/sign/', '/storage/v1/object/public/');
+      var r = await fetch(cleanUrl, { mode: 'cors', cache: 'no-store', redirect: 'follow' });
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      var blob = await r.blob();
+      var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
+      var ext  = mime === 'image/png' ? 'png' : 'jpg';
+      files.push(new File(
+        [blob],
+        'ImpactGrid-Photo-' + String(offset + i + 1).padStart(3, '0') + '.' + ext,
+        { type: mime }
+      ));
     }catch(e){
-      if(e.name === 'AbortError'){
-        /* User cancelled this batch — ask if they want to continue */
-        cancelled = true;
-        toast('ℹ️',
-          'Stopped at batch ' + batchNum,
-          saved + ' of ' + total + ' photos saved'
-        );
-      } else {
-        console.warn('Share batch', batchNum, 'error:', e);
-        /* Try next batch anyway */
-      }
+      console.warn('Batch', batchIdx + 1, 'photo', i, 'failed:', e);
+    }
+  }
+
+  iosDl.fetching = false;
+
+  if(files.length === 0){
+    btn.disabled = false;
+    btn.className = 'ios-dl-save-btn';
+    document.getElementById('iosDlSaveBtnIcon').textContent = '🔄';
+    document.getElementById('iosDlSaveBtnText').textContent = 'Retry Batch';
+    document.getElementById('iosDlInstructionText').innerHTML =
+      '⚠️ Could not fetch photos. Check your connection and <strong>try again</strong>.';
+    batch.forEach(function(_, i){
+      var el = document.getElementById('iosDlThumb-' + (offset + i));
+      if(el) el.classList.remove('saving');
+    });
+    return;
+  }
+
+  /* Check canShare */
+  var canShareFiles = false;
+  try{ canShareFiles = navigator.canShare({ files: files }); }catch(e){}
+
+  if(!canShareFiles){
+    iosFallbackTabs(iosDl.photos);
+    iosDlClose();
+    return;
+  }
+
+  /* Update status */
+  btn.disabled = false;
+  btn.className = 'ios-dl-save-btn';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '📤';
+  document.getElementById('iosDlSaveBtnText').textContent = 'Opening Share Sheet…';
+  document.getElementById('iosDlInstructionText').innerHTML =
+    'Share Sheet opening — tap <strong>"Save Image"</strong> to save all ' + files.length + ' photos to Camera Roll.';
+
+  /* Trigger share */
+  try{
+    await navigator.share({
+      files : files,
+      title : 'ImpactGrid Photos',
+      text  : 'Tap "Save Image" to save to Camera Roll'
+    });
+
+    /* User completed share */
+    iosDl.saved += files.length;
+    batch.forEach(function(_, i){
+      var el = document.getElementById('iosDlThumb-' + (offset + i));
+      if(el){ el.classList.remove('saving'); el.classList.add('saved'); }
+    });
+
+    var totalBatches = iosDl.batches.length;
+    var isLast       = iosDl.batchIdx >= totalBatches - 1;
+
+    if(isLast){
+      iosDlShowDone();
+    } else {
+      iosDl.batchIdx++;
+      iosDlUpdateProgress();
+      iosDlRenderThumbs(iosDl.batchIdx);
+
+      var nextBatchStart = iosDl.batchIdx * iosDl.BATCH_SIZE + 1;
+      var nextBatchEnd   = Math.min((iosDl.batchIdx + 1) * iosDl.BATCH_SIZE, iosDl.total);
+
+      btn.disabled = true;
+      btn.className = 'ios-dl-save-btn';
+      document.getElementById('iosDlSaveBtnIcon').textContent = '✅';
+      document.getElementById('iosDlSaveBtnText').textContent =
+        'Batch ' + iosDl.batchIdx + ' of ' + totalBatches + ' saved!';
+
+      var nextBtn = document.getElementById('iosDlNextBtn');
+      nextBtn.classList.remove('hidden');
+      document.getElementById('iosDlNextLabel').textContent =
+        'Photos ' + nextBatchStart + '–' + nextBatchEnd;
+
+      document.getElementById('iosDlInstructionText').innerHTML =
+        '✅ <strong>' + iosDl.saved + ' of ' + iosDl.total + '</strong> photos saved so far. '
+        + 'Tap <strong>"Next Batch"</strong> to continue.';
+    }
+
+  }catch(e){
+    if(e.name === 'AbortError'){
+      var totalBatches2 = iosDl.batches.length;
+      btn.disabled = false;
+      btn.className = 'ios-dl-save-btn';
+      document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+      document.getElementById('iosDlSaveBtnText').textContent =
+        'Try Batch ' + (iosDl.batchIdx + 1) + ' Again';
+      document.getElementById('iosDlInstructionText').innerHTML =
+        'Looks like you cancelled. Tap the button again, then tap <strong>"Save Image"</strong> on the Share Sheet.';
+      batch.forEach(function(_, i){
+        var el = document.getElementById('iosDlThumb-' + (offset + i));
+        if(el) el.classList.remove('saving');
+      });
+    } else {
+      console.warn('Share error:', e);
     }
   }
 }
 
-/**
- * Fallback for older iOS: show modal with tabs + long-press instructions.
- */
+function iosDlNextBatch(){
+  var totalBatches = iosDl.batches.length;
+  var btn = document.getElementById('iosDlSaveBtn');
+  btn.disabled = false;
+  btn.className = 'ios-dl-save-btn';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+  document.getElementById('iosDlSaveBtnText').textContent =
+    'Save Batch ' + (iosDl.batchIdx + 1) + ' of ' + totalBatches;
+  document.getElementById('iosDlNextBtn').classList.add('hidden');
+  document.getElementById('iosDlInstructionText').innerHTML =
+    'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save this batch to Camera Roll.';
+}
+
+function iosDlShowDone(){
+  document.getElementById('iosDlBtnArea').classList.add('hidden');
+  document.getElementById('iosDlInstruction').style.display = 'none';
+  document.getElementById('iosDlDone').classList.remove('hidden');
+  document.getElementById('iosDlDoneTitle').textContent = '🎉 All ' + iosDl.saved + ' Photos Saved!';
+  document.getElementById('iosDlDoneSub').textContent   = 'Check your Camera Roll — all your photos are there.';
+  iosDlUpdateProgress();
+}
+
+function iosDlClose(){
+  document.getElementById('iosDlModal').classList.add('hidden');
+  document.body.style.overflow = '';
+  iosDl.cancelled = true;
+}
+
+/* Close when tapping backdrop */
+document.addEventListener('DOMContentLoaded', function(){
+  var backdrop = document.getElementById('iosDlModal');
+  if(backdrop){
+    backdrop.addEventListener('click', function(e){
+      if(e.target === backdrop) iosDlClose();
+    });
+  }
+});
+
+/* ══════════════════════════════════════
+   iOS FALLBACK (old Safari without share API)
+══════════════════════════════════════ */
 function iosFallbackTabs(photos){
   iosPendingPhotos = photos;
 
@@ -1705,8 +2097,7 @@ function lbDownload(){
   if(!p) return;
   var url = p.original_url || p.preview_url;
   if(isSafariIOS()){
-    window.open(url, '_blank');
-    toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
+    showIosModal([p]);
     return;
   }
   toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
@@ -1738,6 +2129,8 @@ document.addEventListener('keydown', function(e){
   }
   var ios = document.getElementById('iosModal');
   if(!ios.classList.contains('hidden') && e.key === 'Escape') closeIosModal();
+  var iosDlM = document.getElementById('iosDlModal');
+  if(iosDlM && !iosDlM.classList.contains('hidden') && e.key === 'Escape') iosDlClose();
 });
 
 (function(){
