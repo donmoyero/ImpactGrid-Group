@@ -1528,55 +1528,107 @@ function downloadAllPhotos(){
 ══════════════════════════════════════ */
 
 /**
- * iOS Save: fetch each photo as a blob, convert to File objects,
- * then trigger navigator.share() — opens the iOS native Share Sheet.
- * User taps "Save Image" and it goes straight to Camera Roll.
+ * iOS Save: fetch photos in batches of 10, share each batch via
+ * navigator.share() — opens native iOS Share Sheet per batch.
+ * User taps "Save Image" for each batch → straight to Camera Roll.
+ * Batching prevents memory crashes on large sets (100+ photos).
+ * Max supported: 500 photos (50 batches of 10).
  */
 async function showIosModal(photos){
-  /* If Web Share API with files is supported — use it (iOS 15+, iPadOS 15+) */
-  if(navigator.share && navigator.canShare){
-    toast('📲', 'Preparing photos…', 'This may take a moment');
+  if(!(navigator.share && navigator.canShare)){
+    iosFallbackTabs(photos);
+    return;
+  }
 
+  var BATCH = 10;
+  var total  = photos.length;
+  var batches = Math.ceil(total / BATCH);
+  var saved   = 0;
+  var cancelled = false;
+
+  for(var b = 0; b < batches; b++){
+    if(cancelled) break;
+
+    var batchPhotos = photos.slice(b * BATCH, (b + 1) * BATCH);
+    var batchNum    = b + 1;
+    var batchStart  = b * BATCH + 1;
+    var batchEnd    = Math.min((b + 1) * BATCH, total);
+
+    toast('📲',
+      'Batch ' + batchNum + ' of ' + batches,
+      'Fetching photos ' + batchStart + '–' + batchEnd + ' of ' + total + '…'
+    );
+
+    /* Fetch this batch as blobs */
     var files = [];
-    for(var i = 0; i < photos.length; i++){
+    for(var i = 0; i < batchPhotos.length; i++){
       try{
-        var url = photos[i].original_url || photos[i].preview_url;
-        var r   = await fetch(url, { mode: 'cors', cache: 'no-store', redirect: 'follow' });
+        var photoIdx = b * BATCH + i;
+        var url = batchPhotos[i].original_url || batchPhotos[i].preview_url;
+        /* Strip query params for clean Supabase fetch */
+        var cleanUrl = url.split('?')[0]
+          .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+          .replace('/storage/v1/object/sign/', '/storage/v1/object/public/');
+        var r = await fetch(cleanUrl, { mode: 'cors', cache: 'no-store', redirect: 'follow' });
         if(!r.ok) throw new Error('HTTP ' + r.status);
         var blob = await r.blob();
         var mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/jpeg';
         var ext  = mime === 'image/png' ? 'png' : 'jpg';
-        files.push(new File([blob], 'ImpactGrid-Photo-' + String(i+1).padStart(3,'0') + '.' + ext, { type: mime }));
+        files.push(new File(
+          [blob],
+          'ImpactGrid-Photo-' + String(photoIdx + 1).padStart(3, '0') + '.' + ext,
+          { type: mime }
+        ));
       }catch(e){
-        console.warn('Failed to fetch photo', i, e);
+        console.warn('Batch', batchNum, 'photo', i, 'failed:', e);
       }
     }
 
-    if(files.length === 0){
-      toast('⚠️', 'Could not load photos', 'Check your connection and try again');
+    if(files.length === 0) continue;
+
+    /* Check if sharing files is supported */
+    var canShareFiles = false;
+    try{ canShareFiles = navigator.canShare({ files: files }); }catch(e){}
+
+    if(!canShareFiles){
+      iosFallbackTabs(photos);
       return;
     }
 
-    if(navigator.canShare({ files: files })){
-      try{
-        await navigator.share({
-          files : files,
-          title : 'ImpactGrid Photos',
-          text  : 'Your event photos from ImpactGrid'
-        });
-        toast('✅', 'Saved!', 'Tap "Save Image" in the share sheet if not auto-saved');
-      }catch(e){
-        if(e.name !== 'AbortError'){
-          /* Share failed — fall back to tab method */
-          iosFallbackTabs(photos);
-        }
+    /* Open share sheet for this batch */
+    try{
+      await navigator.share({
+        files : files,
+        title : 'ImpactGrid Photos (' + batchStart + '–' + batchEnd + ' of ' + total + ')',
+        text  : 'Tap "Save Image" to save to your Camera Roll'
+      });
+      saved += files.length;
+
+      if(b < batches - 1){
+        toast('✅',
+          saved + ' of ' + total + ' saved so far',
+          'Next batch coming — tap Save Image on each'
+        );
+        /* Small pause between batches so iOS can process */
+        await new Promise(function(res){ setTimeout(res, 800); });
+      } else {
+        toast('✅', 'All ' + saved + ' photos saved!', 'Check your Camera Roll');
       }
-      return;
+
+    }catch(e){
+      if(e.name === 'AbortError'){
+        /* User cancelled this batch — ask if they want to continue */
+        cancelled = true;
+        toast('ℹ️',
+          'Stopped at batch ' + batchNum,
+          saved + ' of ' + total + ' photos saved'
+        );
+      } else {
+        console.warn('Share batch', batchNum, 'error:', e);
+        /* Try next batch anyway */
+      }
     }
   }
-
-  /* Fallback for older iOS (< 15) that doesn't support file sharing */
-  iosFallbackTabs(photos);
 }
 
 /**
