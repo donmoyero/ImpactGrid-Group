@@ -1333,89 +1333,47 @@ function updateSelectionUI(){
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ████  AUTOMATIC DOWNLOAD ENGINE — ALL PLATFORMS  ████
+   ████  DOWNLOAD ENGINE  ████
 
-   STRATEGY (in priority order):
-   ─────────────────────────────────────────────────────────────
-   iOS / iPadOS
-     Safari blocks ALL programmatic file saves. The only
-     reliable method is opening the image URL in a new tab
-     and telling the user to long-press → Save to Photos.
-     We show a clean modal that opens each tab synchronously.
+   Android / Desktop:
+     fetch() image as blob → createObjectURL → <a download> click
+     Saves directly to Downloads / Gallery automatically.
+     No tabs opened. No "hold to save". No dialogs.
 
-   Android / Desktop Chrome & Firefox
-     1. Try File System Access API (showSaveFilePicker) — gives
-        a "Save As" dialog, then writes the blob directly.
-        Supported: Android Chrome 86+, Desktop Chrome/Edge 86+.
-     2. Fall back to classic blob + <a download> click.
-        Works on all modern Android/Desktop browsers.
-     Both paths fetch the image as a blob first so the file
-     always saves with the correct .jpg name and no redirect.
-
-   For BATCH downloads (multiple photos):
-     • iOS    → open all tabs synchronously in one loop
-     • Others → sequential blob downloads, one at a time,
-                with a progress overlay. No limit on count.
+   iOS / iPadOS:
+     Safari blocks all programmatic saves from web pages.
+     We open each photo in a new tab — user long-presses
+     the image and taps "Save to Photos".
 ══════════════════════════════════════════════════════════════ */
 
 /**
- * Fetch a URL as a Blob, retrying once with no-cache on failure.
+ * Fetch image as blob then trigger a real automatic file download.
+ * Works on Android Chrome, Samsung Browser, Firefox, Desktop.
  */
-async function fetchBlob(url){
-  var r = await fetch(url, { mode:'cors', cache:'no-store' });
-  if(!r.ok) throw new Error('HTTP ' + r.status);
-  return r.blob();
-}
-
-/**
- * Save a single photo automatically.
- * Returns a Promise that resolves when done (or rejects on failure).
- *
- * @param {string} url      - Direct URL to the image
- * @param {string} filename - Desired filename, e.g. "ImpactGrid-Photo-001.jpg"
- */
-async function savePhoto(url, filename){
-  filename = filename || 'ImpactGrid-Photo.jpg';
-
-  /* ── Path 1: File System Access API (Android Chrome 86+, Desktop Chrome/Edge) ── */
-  if(window.showSaveFilePicker && !isIOS()){
-    try{
-      var blob = await fetchBlob(url);
-      var ext  = (blob.type === 'image/png') ? 'png' : 'jpg';
-      var safeName = filename.replace(/\.[^.]+$/, '') + '.' + ext;
-
-      var handle = await window.showSaveFilePicker({
-        suggestedName: safeName,
-        types:[{ description:'Image', accept:{ 'image/*':['.jpg','.jpeg','.png','.webp'] } }]
+function blobDownload(url, filename){
+  return fetch(url, { mode: 'cors', cache: 'no-store' })
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.blob();
+    })
+    .then(function(blob){
+      return new Promise(function(resolve, reject){
+        try{
+          var objUrl = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href     = objUrl;
+          a.download = filename || 'ImpactGrid-Photo.jpg';
+          a.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function(){
+            document.body.removeChild(a);
+            URL.revokeObjectURL(objUrl);
+            resolve();
+          }, 2500);
+        }catch(e){ reject(e); }
       });
-      var writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return; /* success */
-    }catch(e){
-      /* User cancelled (AbortError) or API unavailable — fall through */
-      if(e.name === 'AbortError') throw e; /* user cancelled — propagate so we don't double-save */
-    }
-  }
-
-  /* ── Path 2: Classic blob + <a download> — works on Android & Desktop ── */
-  var blob = await fetchBlob(url);
-  var objUrl = URL.createObjectURL(blob);
-  return new Promise(function(resolve){
-    var a = document.createElement('a');
-    a.href     = objUrl;
-    a.download = filename;
-    a.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
-    document.body.appendChild(a);
-    requestAnimationFrame(function(){
-      a.click();
-      setTimeout(function(){
-        document.body.removeChild(a);
-        URL.revokeObjectURL(objUrl);
-        resolve();
-      }, 2000);
     });
-  });
 }
 
 /* ── Progress overlay ── */
@@ -1429,7 +1387,7 @@ function showDlProgress(total){
     '<div class="dl-progress-box">'
     + '<span class="dl-progress-icon">⬇️</span>'
     + '<div class="dl-progress-title">Saving Photos</div>'
-    + '<div class="dl-progress-sub">Downloading to your device — please keep this page open.</div>'
+    + '<div class="dl-progress-sub">Files downloading to your device — keep this page open.</div>'
     + '<div class="dl-progress-bar-wrap"><div class="dl-progress-bar-fill" id="dlProgressFill" style="width:0%"></div></div>'
     + '<div class="dl-progress-count" id="dlProgressCount">0 / ' + total + '</div>'
     + '<button class="dl-cancel-btn" onclick="cancelDl()">Cancel</button>'
@@ -1440,7 +1398,7 @@ function showDlProgress(total){
 function updateDlProgress(done, total){
   var fill  = document.getElementById('dlProgressFill');
   var count = document.getElementById('dlProgressCount');
-  if(fill)  fill.style.width = Math.round((done/total)*100) + '%';
+  if(fill)  fill.style.width = Math.round((done / total) * 100) + '%';
   if(count) count.textContent = done + ' / ' + total;
 }
 
@@ -1456,127 +1414,81 @@ function cancelDl(){
 }
 
 /**
- * Quick-save a single photo from the card hover button.
+ * Single photo quick-save from the card hover button.
  */
-async function quickDownload(url, idx){
-  /* iOS: open tab, show instructions */
+function quickDownload(url, idx){
   if(isIOS()){
     window.open(url, '_blank');
-    toast('📱', 'Photo opened!', 'Long-press the photo → "Save to Photos"');
+    toast('📱', 'Photo opened!', 'Long-press → "Save to Photos"');
     return;
   }
-
-  toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
   var filename = 'ImpactGrid-Photo-' + (parseInt(idx) + 1) + '.jpg';
-  try{
-    await savePhoto(url, filename);
-    toast('✅', 'Photo saved!', 'Check your Downloads or Gallery');
-  }catch(e){
-    if(e && e.name === 'AbortError') return; /* user cancelled Save As dialog */
-    /* Final fallback: open in new tab */
-    window.open(url, '_blank');
-    toast('📥', 'Photo opened in new tab', 'Save it from your browser');
-  }
+  toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
+  blobDownload(url, filename)
+    .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
+    .catch(function(){ toast('⚠️', 'Download failed', 'Try again or check your connection'); });
 }
 
 /**
- * Batch download dispatcher.
- * iOS    → modal (open tabs, long-press to save)
- * Others → sequential automatic downloads with progress bar, no limit
+ * Batch download — sequential blob downloads, unlimited count.
+ * iOS → iOS modal. Everyone else → automatic saves with progress bar.
  */
 async function downloadBatch(photos){
-  /* iOS / iPadOS — Safari cannot auto-download; show the save modal */
   if(isIOS()){
     showIosModal(photos);
     return;
   }
 
-  /* Single photo — no progress bar needed */
   if(photos.length === 1){
     var url = photos[0].original_url || photos[0].preview_url;
     toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
-    try{
-      await savePhoto(url, 'ImpactGrid-Photo-001.jpg');
-      toast('✅', 'Photo saved!', 'Check your Downloads or Gallery');
-    }catch(e){
-      if(e && e.name === 'AbortError') return;
-      window.open(url, '_blank');
-      toast('📥', 'Photo opened in new tab', 'Save it from your browser');
-    }
+    blobDownload(url, 'ImpactGrid-Photo-001.jpg')
+      .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
+      .catch(function(){ toast('⚠️', 'Download failed', 'Try again'); });
     return;
   }
 
-  /* Multiple photos — sequential with progress overlay, no limit */
   showDlProgress(photos.length);
   var done = 0;
   var failed = 0;
 
   for(var i = 0; i < photos.length; i++){
     if(dlCancelled) break;
-
     var url = photos[i].original_url || photos[i].preview_url;
     var num = String(i + 1).padStart(3, '0');
-    var filename = 'ImpactGrid-Photo-' + num + '.jpg';
-
     try{
-      await savePhoto(url, filename);
+      await blobDownload(url, 'ImpactGrid-Photo-' + num + '.jpg');
       done++;
     }catch(e){
-      if(e && e.name === 'AbortError'){
-        /* User cancelled the Save As dialog on the first one —
-           switch to classic blob mode for rest of batch */
-        try{
-          var blob = await fetchBlob(url);
-          var objUrl = URL.createObjectURL(blob);
-          await new Promise(function(res){
-            var a = document.createElement('a');
-            a.href = objUrl; a.download = filename;
-            a.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
-            document.body.appendChild(a);
-            requestAnimationFrame(function(){
-              a.click();
-              setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(objUrl); res(); }, 2000);
-            });
-          });
-          done++;
-        }catch(e2){
-          window.open(url, '_blank');
-          failed++;
-        }
-      } else {
-        /* Other error — try opening in tab as last resort */
-        window.open(url, '_blank');
-        failed++;
-      }
+      console.warn('Photo', i, 'failed:', e);
+      failed++;
       done++;
     }
-
     updateDlProgress(done, photos.length);
-
-    /* Small pause between downloads so the browser isn't flooded */
     if(i < photos.length - 1 && !dlCancelled){
-      await new Promise(function(res){ setTimeout(res, 300); });
+      await new Promise(function(res){ setTimeout(res, 400); });
     }
   }
 
   removeDlProgress();
   if(!dlCancelled){
+    var saved = photos.length - failed;
     if(failed === 0){
-      toast('✅', 'All ' + (photos.length) + ' photos saved!', 'Check your Downloads or Gallery');
+      toast('✅', 'All ' + photos.length + ' photos saved!', 'Check your Downloads / Gallery');
     } else {
-      toast('⚠️', (photos.length - failed) + ' of ' + photos.length + ' saved', failed + ' opened in tabs as fallback');
+      toast('⚠️', saved + ' of ' + photos.length + ' saved', failed + ' failed — try again');
     }
   }
 }
 
 function downloadSelected(){
   var toDownload = allPhotos.filter(function(p){ return selectedIds.has(p.id); });
-  if(!toDownload.length){ toast('⚠️','Select photos first','Tap photos to select them'); return; }
+  if(!toDownload.length){ toast('⚠️', 'Select photos first', 'Tap photos to select them'); return; }
   downloadBatch(toDownload);
 }
 
 function downloadAllPhotos(){
-  if(!allPhotos.length){ toast('⚠️','No photos yet',''); return; }
+  if(!allPhotos.length){ toast('⚠️', 'No photos yet', ''); return; }
   downloadBatch(allPhotos);
 }
 
