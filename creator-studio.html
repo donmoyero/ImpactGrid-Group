@@ -14,533 +14,20 @@
 <link rel="apple-touch-icon" href="logo.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-/* ═══════════════════════════
-   TOKENS
-═══════════════════════════ */
-:root {
-  --bg:#f2f4fb; --bg2:#e6eaf5; --bg3:#d9dff0;
-  --card:#ffffff; --card2:#f4f6fc;
-  --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.13);
-  --text:#0d1017; --text2:#4a5068; --text3:#9099b8;
-  --gold:#c97e08; --gold2:#a86505;
-  --gold-dim:rgba(201,126,8,0.09); --gold-glo:rgba(201,126,8,0.22);
-  --blue:#2d6edb; --blue-dim:rgba(45,110,219,0.08);
-  --green:#0fa876; --green-dim:rgba(15,168,118,0.10);
-  --purple:#7c3aed; --purple-dim:rgba(124,58,237,0.08);
-  --red:#d94f3b; --red-dim:rgba(217,79,59,0.08);
-  --sidebar-w:220px;
-  --topbar-h:56px;
-  --r:12px; --r2:16px;
-  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
-}
-[data-theme="dark"] {
-  --bg:#07090f; --bg2:#0d1017; --bg3:#111520;
-  --card:#151a28; --card2:#1c2235;
-  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
-  --text:#eef0f6; --text2:#8a91a8; --text3:#4a5068;
-  --gold:#f0b429; --gold2:#ffd166;
-  --gold-dim:rgba(240,180,41,0.10); --gold-glo:rgba(240,180,41,0.25);
-  --blue:#4f8ef7; --blue-dim:rgba(79,142,247,0.10);
-  --green:#2dd4a0; --green-dim:rgba(45,212,160,0.10);
-  --purple:#a78bfa; --purple-dim:rgba(167,139,250,0.10);
-  --red:#f75f4f; --red-dim:rgba(247,95,79,0.10);
-}
-
-/* ═══════════════════════════
-   FULL-SCREEN RESET
-═══════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { width: 100%; height: 100%; overflow: hidden; }
-body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--fb); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
-a { color: inherit; text-decoration: none; }
-button { cursor: pointer; font-family: var(--fb); border: none; background: none; }
-h1,h2,h3,h4 { font-family: var(--fd); font-weight: 900; line-height: 1.1; letter-spacing: -.025em; }
-img { display: block; max-width: 100%; }
-
-/* ═══════════════════════════
-   APP SHELL
-═══════════════════════════ */
-.app { display: flex; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
-
-/* ═══════════════════════════
-   SIDEBAR
-═══════════════════════════ */
-.sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 200; }
-.sb-head { padding: 16px 14px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.sb-logo { display: flex; align-items: center; gap: 8px; font-family: var(--fd); font-weight: 900; font-size: 14px; letter-spacing: -.03em; }
-.sb-logo-img { width: 26px; height: 26px; object-fit: contain; border-radius: 6px; }
-.sb-logo-mark { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg,var(--gold),var(--gold2)); display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: #fff; }
-.sb-nav { flex: 1; overflow-y: auto; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; }
-.sb-nav::-webkit-scrollbar { width: 3px; }
-.sb-nav::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-.sb-label { font-family: var(--fm); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--text3); padding: 10px 8px 4px; margin-top: 4px; }
-.sb-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 10px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all .15s; border: 1px solid transparent; user-select: none; }
-.sb-item:hover { background: var(--bg2); color: var(--text); }
-.sb-item.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold-glo); font-weight: 700; }
-.sb-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
-.sb-badge { margin-left: auto; font-family: var(--fm); font-size: 9px; padding: 1px 6px; border-radius: 4px; background: var(--green-dim); color: var(--green); border: 1px solid rgba(15,168,118,.2); }
-.sb-badge.soon { background: var(--blue-dim); color: var(--blue); border-color: rgba(45,110,219,.2); }
-.sb-bottom { flex-shrink: 0; border-top: 1px solid var(--border); padding: 10px 8px; }
-.sb-user { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 10px; cursor: pointer; transition: background .15s; position: relative; }
-.sb-user:hover { background: var(--bg2); }
-.sb-av { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg,var(--gold),var(--gold2)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #fff; flex-shrink: 0; font-family: var(--fd); }
-[data-theme="dark"] .sb-av { color: #07090f; }
-.sb-user-info { flex: 1; min-width: 0; }
-.sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sb-user-role { font-size: 10px; color: var(--text3); }
-.sb-user-drop { position: absolute; bottom: calc(100% + 4px); left: 8px; right: 8px; background: var(--card); border: 1px solid var(--border2); border-radius: var(--r); padding: 6px; box-shadow: 0 -10px 32px rgba(0,0,0,.12); display: none; flex-direction: column; gap: 2px; z-index: 300; }
-[data-theme="dark"] .sb-user-drop { box-shadow: 0 -10px 32px rgba(0,0,0,.4); }
-.sb-user-drop.open { display: flex; }
-.sb-user-drop a, .sb-user-drop button { padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--text2); display: block; width: 100%; text-align: left; transition: background .15s; }
-.sb-user-drop a:hover, .sb-user-drop button:hover { background: var(--bg2); color: var(--text); }
-.sb-user-drop .dd-div { height: 1px; background: var(--border); margin: 3px 0; }
-.sb-guest { padding: 8px; }
-.sb-btn-login { display: block; width: 100%; padding: 9px; border-radius: 9px; font-size: 12px; font-weight: 600; text-align: center; border: 1px solid var(--border2); color: var(--text2); margin-bottom: 6px; transition: all .2s; }
-.sb-btn-login:hover { border-color: var(--gold); color: var(--gold); }
-.sb-btn-join { display: block; width: 100%; padding: 9px; border-radius: 9px; font-size: 12px; font-weight: 700; text-align: center; background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; }
-[data-theme="dark"] .sb-btn-join { color: #07090f; }
-.sb-btn-join:hover { box-shadow: 0 4px 14px var(--gold-glo); }
-
-/* ═══════════════════════════
-   MAIN AREA
-═══════════════════════════ */
-.main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; overflow: hidden; width: calc(100vw - var(--sidebar-w)); }
-.topbar { height: var(--topbar-h); flex-shrink: 0; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; padding: 0 18px; width: 100%; }
-.topbar-hamburger { display: none; flex-direction: column; gap: 5px; padding: 6px; cursor: pointer; margin-right: 4px; }
-.topbar-hamburger span { display: block; width: 18px; height: 2px; background: var(--text2); border-radius: 2px; }
-.topbar-title { font-family: var(--fd); font-size: 15px; font-weight: 900; letter-spacing: -.02em; flex: 1; }
-.topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.topbar-theme { width: 30px; height: 30px; border-radius: 8px; background: var(--bg2); display: flex; align-items: center; justify-content: center; font-size: 13px; }
-.topbar-live { display: flex; align-items: center; gap: 5px; font-family: var(--fm); font-size: 10px; color: var(--green); padding: 4px 10px; border-radius: 6px; background: var(--green-dim); border: 1px solid rgba(15,168,118,.2); }
-.topbar-live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: blink 1.6s infinite; flex-shrink: 0; }
-@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-.content { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg); -webkit-overflow-scrolling: touch; height: calc(100vh - var(--topbar-h)); }
-.content::-webkit-scrollbar { width: 4px; }
-.content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-.panel { display: none; padding: 24px; width: 100%; }
-.panel.active { display: block; animation: fadeIn .2s ease both; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
-
-/* ═══════════════════════════
-   DASHBOARD
-═══════════════════════════ */
-.dash-greeting { margin-bottom: 24px; }
-.dash-greeting h2 { font-size: clamp(20px,2.5vw,26px); margin-bottom: 4px; }
-.dash-greeting p { font-size: 13px; color: var(--text2); }
-.dash-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-.dash-stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px 20px; }
-.dash-stat-label { font-family: var(--fm); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
-.dash-stat-val { font-family: var(--fd); font-size: 28px; font-weight: 900; letter-spacing: -.03em; line-height: 1; }
-.dash-stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
-.briefing-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 20px; }
-.briefing-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.briefing-av { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg,var(--gold),var(--gold2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: #fff; flex-shrink: 0; font-family: var(--fd); }
-[data-theme="dark"] .briefing-av { color: #07090f; }
-.briefing-title { font-size: 13px; font-weight: 700; }
-.briefing-meta { font-size: 11px; color: var(--text3); }
-.briefing-text { font-size: 13px; color: var(--text2); line-height: 1.75; margin-bottom: 14px; }
-.briefing-scores { display: flex; gap: 8px; flex-wrap: wrap; }
-.b-score { display: flex; align-items: center; gap: 6px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; }
-.b-score-n { font-family: var(--fd); font-size: 15px; font-weight: 900; color: var(--gold); }
-.opps-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-.opp-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px 18px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all .2s; }
-.opp-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-.opp-icon { font-size: 20px; flex-shrink: 0; }
-.opp-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-.opp-meta { font-size: 11px; color: var(--text3); }
-.opp-score { margin-left: auto; flex-shrink: 0; }
-.opp-score-n { font-family: var(--fd); font-size: 18px; font-weight: 900; color: var(--green); text-align: right; line-height: 1; }
-.opp-score-l { font-size: 10px; color: var(--text3); text-align: right; }
-.quick-actions { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
-.qa-btn { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px 14px; text-align: center; cursor: pointer; transition: all .2s; }
-.qa-btn:hover { border-color: var(--border2); transform: translateY(-2px); }
-.qa-icon { font-size: 20px; margin-bottom: 8px; }
-.qa-label { font-size: 12px; font-weight: 700; color: var(--text); }
-.qa-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
-
-/* ═══════════════════════════
-   TREND FEED
-═══════════════════════════ */
-.feed-head { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-.feed-head h2 { font-size: 20px; flex: 1; }
-.feed-refresh { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--border2); color: var(--text2); display: flex; align-items: center; gap: 6px; }
-.feed-refresh:hover { border-color: var(--gold); color: var(--gold); }
-.trend-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all .2s; }
-.trend-card:hover { border-color: var(--border2); transform: translateX(4px); }
-.trend-card.top { border-left: 3px solid var(--gold); }
-.t-rank { font-family: var(--fm); font-size: 11px; color: var(--text3); width: 22px; flex-shrink: 0; }
-.t-info { flex: 1; min-width: 0; }
-.t-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.t-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
-.t-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.t-score { font-family: var(--fd); font-size: 18px; font-weight: 900; color: var(--green); }
-.t-score.mid { color: var(--gold); }
-.t-plat { font-size: 10px; font-family: var(--fm); color: var(--text3); background: var(--bg2); padding: 2px 7px; border-radius: 4px; }
-.t-gen { padding: 6px 12px; border-radius: 7px; font-size: 11px; font-weight: 700; background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
-.t-gen:hover { background: rgba(201,126,8,.15); }
-
-/* ═══════════════════════════
-   CREATE
-═══════════════════════════ */
-.create-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.create-form { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; }
-.create-form h3 { font-size: 16px; margin-bottom: 16px; }
-.form-group { margin-bottom: 14px; }
-.form-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; display: block; font-family: var(--fm); letter-spacing: .05em; text-transform: uppercase; }
-.form-input,.form-select { width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-size: 13px; font-family: var(--fb); transition: border-color .2s; }
-.form-input:focus,.form-select:focus { outline: none; border-color: var(--gold); }
-.form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239099b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
-.btn-generate { width: 100%; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; transition: all .2s; margin-top: 4px; }
-[data-theme="dark"] .btn-generate { color: #07090f; }
-.btn-generate:hover { box-shadow: 0 6px 20px var(--gold-glo); transform: translateY(-1px); }
-.btn-generate:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
-.create-output { display: flex; flex-direction: column; gap: 12px; }
-.output-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px; }
-.output-label { font-family: var(--fm); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 8px; }
-.output-text { font-size: 13px; color: var(--text); line-height: 1.7; }
-.output-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-.output-tag { font-family: var(--fm); font-size: 11px; padding: 3px 8px; border-radius: 5px; background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
-.output-copy { width: 100%; margin-top: 10px; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--border2); color: var(--text2); transition: all .2s; }
-.output-copy:hover { border-color: var(--gold); color: var(--gold); }
-.output-empty { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; min-height: 200px; color: var(--text3); font-size: 13px; text-align: center; }
-.output-empty-icon { font-size: 32px; opacity: .4; }
-.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border2); border-top-color: var(--gold); animation: spin .8s linear infinite; }
-@keyframes spin { to{transform:rotate(360deg);} }
-
-/* ═══════════════════════════
-   CAROUSELS
-═══════════════════════════ */
-.carousel-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
-.carousel-controls { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; height: fit-content; }
-.carousel-controls h3 { font-size: 15px; margin-bottom: 16px; }
-.carousel-preview-area { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; }
-.carousel-preview-area h3 { font-size: 15px; margin-bottom: 16px; }
-.slides-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
-.slide-thumb { aspect-ratio: 1; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 12px; text-align: center; font-size: 11px; font-weight: 700; line-height: 1.4; position: relative; overflow: hidden; cursor: pointer; transition: transform .2s; border: 2px solid transparent; }
-.slide-thumb:hover { transform: scale(1.03); }
-.slide-thumb.selected { border-color: var(--gold); }
-.slide-num { position: absolute; top: 7px; right: 8px; font-family: var(--fm); font-size: 9px; opacity: .6; }
-.slide-dark { background: linear-gradient(135deg,#1a1a2e,#16213e); color: #f0b429; }
-.slide-mid { background: linear-gradient(135deg,#0f3460,#533483); color: #e2e8f0; }
-.slide-add { background: var(--bg2); border: 2px dashed var(--border2); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text3); font-size: 11px; gap: 4px; }
-.slide-add-icon { font-size: 20px; }
-.carousel-launch-card { background: linear-gradient(135deg,#1a1814 0%,#2a2318 100%); border: 1px solid rgba(201,126,8,.3); border-radius: var(--r2); padding: 32px; display: flex; align-items: center; gap: 24px; margin-bottom: 20px; cursor: pointer; transition: all .2s; }
-.carousel-launch-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,126,8,.2); }
-.clc-icon { font-size: 48px; flex-shrink: 0; }
-.clc-text h3 { font-size: 20px; color: #fff; margin-bottom: 6px; }
-.clc-text p { font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.6; margin-bottom: 14px; }
-.clc-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 10px; background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #07090f; font-size: 13px; font-weight: 700; font-family: var(--fd); transition: all .2s; }
-.clc-btn:hover { box-shadow: 0 4px 16px rgba(201,126,8,.5); }
-.clc-features { display: flex; gap: 8px; flex-wrap: wrap; }
-.clc-feat { font-size: 10px; font-family: var(--fm); padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
-
-/* ═══════════════════════════
-   CONTENT PLAN
-═══════════════════════════ */
-.plan-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-.plan-header h2 { font-size: 20px; flex: 1; }
-.plan-week-nav { display: flex; align-items: center; gap: 8px; }
-.plan-week-btn { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text2); transition: all .2s; }
-.plan-week-btn:hover { border-color: var(--gold); color: var(--gold); }
-.plan-week-label { font-size: 12px; font-weight: 700; font-family: var(--fm); }
-.plan-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 10px; margin-bottom: 20px; }
-.plan-day-col { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; min-height: 160px; }
-.plan-day-head { padding: 10px 10px 8px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; }
-.plan-day-name { font-family: var(--fm); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; }
-.plan-day-num { font-family: var(--fd); font-size: 18px; font-weight: 900; line-height: 1.1; }
-.plan-day-num.today { color: var(--gold); }
-.plan-day-body { padding: 8px; }
-.plan-post { padding: 6px 8px; border-radius: 7px; margin-bottom: 5px; font-size: 11px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
-.plan-post:hover { opacity: .8; }
-.plan-post.yt { background: rgba(255,0,0,.08); color: #cc3300; border: 1px solid rgba(255,0,0,.12); }
-[data-theme="dark"] .plan-post.yt { color: #ff6666; }
-.plan-post.tt { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
-.plan-post.ig { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(124,58,237,.15); }
-.plan-add-slot { padding: 6px 8px; border-radius: 7px; border: 1px dashed var(--border2); font-size: 10px; color: var(--text3); text-align: center; cursor: pointer; transition: all .2s; }
-.plan-add-slot:hover { border-color: var(--gold); color: var(--gold); }
-.plan-gen-btn { width: 100%; padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; margin-top: 4px; }
-[data-theme="dark"] .plan-gen-btn { color: #07090f; }
-.plan-gen-btn:hover { box-shadow: 0 5px 18px var(--gold-glo); }
-
-/* ═══════════════════════════
-   PORTFOLIO PANEL — FULL
-═══════════════════════════ */
-.portfolio-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-.portfolio-header h2 { font-size: 20px; flex: 1; }
-.pf-header-btn { padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; transition: all .2s; }
-[data-theme="dark"] .pf-header-btn { color: #07090f; }
-.pf-header-btn:hover { box-shadow: 0 4px 14px var(--gold-glo); }
-.pf-header-btn.secondary { background: var(--card); border: 1px solid var(--border2); color: var(--text2); }
-.pf-header-btn.secondary:hover { border-color: var(--gold); color: var(--gold); box-shadow: none; }
-
-.pf-setup { display: none; }
-.pf-setup.show { display: block; }
-.pf-builder { display: none; }
-.pf-builder.show { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
-
-.pf-setup-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-.pf-step-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; }
-.pf-step-num { font-family: var(--fm); font-size: 10px; color: var(--text3); margin-bottom: 8px; }
-.pf-step-title { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
-.pf-step-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
-
-.pf-form-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; }
-.pf-section { margin-bottom: 24px; }
-.pf-section-title { font-family: var(--fm); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-.pf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.pf-form-textarea { width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-size: 13px; font-family: var(--fb); resize: vertical; min-height: 80px; transition: border-color .2s; }
-.pf-form-textarea:focus { outline: none; border-color: var(--gold); }
-
-/* Dijo AI bio helper */
-.pf-ai-bio-row { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
-.pf-ai-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); transition: all .2s; white-space: nowrap; }
-.pf-ai-btn:hover { background: rgba(201,126,8,.15); }
-.pf-ai-btn:disabled { opacity: .5; cursor: not-allowed; }
-
-.pf-platforms { display: flex; flex-wrap: wrap; gap: 8px; }
-.pf-plat-btn { display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 9px; border: 1.5px solid var(--border2); background: var(--bg); font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all .15s; }
-.pf-plat-btn:hover { border-color: var(--gold); color: var(--gold); }
-.pf-plat-btn.on { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
-.pf-plat-icon { font-size: 15px; }
-
-.pf-themes { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
-.pf-theme-opt { border: 2px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; cursor: pointer; transition: all .15s; }
-.pf-theme-opt:hover { border-color: var(--gold); }
-.pf-theme-opt.active { border-color: var(--gold); background: var(--gold-dim); }
-.pf-theme-swatch { height: 36px; border-radius: 6px; margin-bottom: 6px; }
-.pf-theme-name { font-size: 10px; font-weight: 700; color: var(--text2); font-family: var(--fm); }
-
-.pf-link-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-.pf-link-prefix { font-size: 14px; width: 22px; text-align: center; flex-shrink: 0; }
-.pf-add-link { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--gold); padding: 6px 0; margin-top: 4px; }
-
-/* Rate card / media kit section */
-.pf-rate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pf-rate-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
-.pf-rate-label { font-family: var(--fm); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
-
-/* SEO section */
-.pf-seo-info { background: var(--blue-dim); border: 1px solid rgba(45,110,219,.15); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; }
-.pf-seo-info-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-.pf-seo-info-text { font-size: 12px; color: var(--blue); line-height: 1.5; }
-.pf-seo-info-text strong { font-weight: 700; }
-
-/* Preview side */
-.pf-preview-wrap { position: sticky; top: 0; max-height: calc(100vh - var(--topbar-h) - 48px); overflow-y: auto; padding-bottom: 20px; }
-.pf-preview-wrap::-webkit-scrollbar { width: 3px; }
-.pf-preview-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-.pf-preview-label { font-family: var(--fm); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.pf-preview-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.6s infinite; }
-
-/* Phone frame */
-.pf-phone-frame { width: 100%; max-width: 340px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.12); min-height: 560px; }
-[data-theme="dark"] .pf-phone-frame { box-shadow: 0 20px 60px rgba(0,0,0,.5); }
-
-/* Portfolio preview inner content */
-.pfp-hero { padding: 28px 20px 20px; text-align: center; position: relative; overflow: hidden; }
-.pfp-hero-bg { position: absolute; inset: 0; opacity: .15; background-size: cover; background-position: center; }
-.pfp-avatar-ring { width: 80px; height: 80px; border-radius: 50%; padding: 3px; margin: 0 auto 12px; position: relative; z-index: 1; }
-.pfp-avatar { width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-family: var(--fd); font-weight: 900; color: #fff; }
-.pfp-name { font-family: var(--fd); font-size: 19px; font-weight: 900; margin-bottom: 3px; position: relative; z-index: 1; }
-.pfp-niche-badge { display: inline-block; font-size: 10px; font-family: var(--fm); letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; position: relative; z-index: 1; }
-.pfp-bio { font-size: 12px; line-height: 1.55; margin-bottom: 14px; max-width: 280px; margin-left: auto; margin-right: auto; position: relative; z-index: 1; }
-.pfp-plats { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; position: relative; z-index: 1; }
-.pfp-plat { font-size: 16px; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.pfp-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid; border-bottom: 1px solid; }
-.pfp-stat { text-align: center; padding: 12px 6px; border-right: 1px solid; }
-.pfp-stat:last-child { border-right: none; }
-.pfp-stat-val { font-family: var(--fd); font-size: 15px; font-weight: 900; }
-.pfp-stat-lbl { font-size: 9px; font-family: var(--fm); letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; }
-.pfp-links { padding: 14px; display: flex; flex-direction: column; gap: 7px; }
-.pfp-link-item { display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-radius: 12px; border: 1px solid; font-size: 12px; font-weight: 600; transition: all .15s; }
-.pfp-link-icon { font-size: 15px; }
-.pfp-link-arrow { margin-left: auto; font-size: 11px; }
-.pfp-rates { padding: 0 14px 14px; }
-.pfp-rates-title { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
-.pfp-rate-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 9px; margin-bottom: 5px; font-size: 11px; }
-.pfp-rate-type { font-weight: 600; }
-.pfp-rate-price { font-family: var(--fd); font-size: 13px; font-weight: 900; }
-.pfp-cta { padding: 14px; }
-.pfp-cta-btn { display: block; width: 100%; padding: 13px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: 700; font-family: var(--fd); letter-spacing: -.01em; }
-.pfp-featured { padding: 0 14px 14px; }
-.pfp-featured-title { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
-.pfp-carousel-thumb { border-radius: 10px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-.pfp-footer { padding: 10px; text-align: center; font-size: 10px; font-family: var(--fm); border-top: 1px solid; }
-
-/* Stats under preview */
-.pf-preview-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-.pf-prev-stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
-.pf-prev-stat-val { font-family: var(--fd); font-size: 18px; font-weight: 900; color: var(--gold); }
-.pf-prev-stat-lbl { font-size: 10px; color: var(--text3); font-family: var(--fm); }
-
-/* Share row */
-.pf-publish-row { display: flex; gap: 8px; align-items: center; }
-.pf-publish-url { flex: 1; padding: 10px 14px; border-radius: 9px; background: var(--bg2); border: 1px solid var(--border); font-size: 12px; color: var(--text2); font-family: var(--fm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf-copy-url { padding: 10px 16px; border-radius: 9px; border: 1px solid var(--border2); font-size: 12px; font-weight: 600; color: var(--text2); transition: all .2s; white-space: nowrap; }
-.pf-copy-url:hover { border-color: var(--gold); color: var(--gold); }
-
-/* SEO meta preview */
-.pf-seo-preview { background: #fff; border: 1px solid #dadce0; border-radius: 10px; padding: 14px; margin-top: 12px; }
-[data-theme="dark"] .pf-seo-preview { background: #1c2235; border-color: rgba(255,255,255,.1); }
-.pf-seo-url { font-size: 11px; color: #0d652d; font-family: var(--fm); margin-bottom: 3px; }
-[data-theme="dark"] .pf-seo-url { color: #81c784; }
-.pf-seo-title { font-size: 14px; color: #1a0dab; font-weight: 600; margin-bottom: 4px; line-height: 1.3; }
-[data-theme="dark"] .pf-seo-title { color: #8ab4f8; }
-.pf-seo-desc { font-size: 12px; color: #545454; line-height: 1.5; }
-[data-theme="dark"] .pf-seo-desc { color: #9aa0a6; }
-.pf-seo-label { font-family: var(--fm); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-.pf-seo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
-
-/* ═══════════════════════════
-   OPPORTUNITIES
-═══════════════════════════ */
-.opps-grid-full { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
-.opp-full-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; }
-.opp-full-card:hover { border-color: var(--border2); }
-.opp-tag { display: inline-flex; font-family: var(--fm); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; margin-bottom: 10px; font-weight: 600; }
-.opp-full-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; letter-spacing: -.02em; }
-.opp-full-desc { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 14px; }
-.opp-full-meta { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text3); flex-wrap: wrap; }
-.opp-apply { margin-left: auto; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
-.opp-apply:hover { background: rgba(201,126,8,.15); }
-
-/* ═══════════════════════════
-   CONNECT PLATFORMS
-═══════════════════════════ */
-.connect-grid-app { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-top: 20px; }
-.connect-card-app { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px 20px; transition: all .3s; position: relative; overflow: hidden; }
-.connect-card-app::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--cc-a,var(--gold)); transform: scaleX(0); transition: transform .3s; transform-origin: left; }
-.connect-card-app:hover::before { transform: scaleX(1); }
-.connect-card-app.connected { border-color: rgba(45,212,160,.25); }
-.connect-card-app.connected::before { transform: scaleX(1); background: var(--green); }
-.cc-app-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 20px; }
-.cc-app-name { font-family: var(--fd); font-size: 15px; font-weight: 800; margin-bottom: 4px; }
-.cc-app-desc { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; }
-.cc-app-status { display: inline-flex; align-items: center; gap: 5px; font-family: var(--fm); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; padding: 3px 9px; border-radius: 20px; margin-bottom: 12px; }
-.cc-app-status.live { background: var(--green-dim); color: var(--green); border: 1px solid rgba(45,212,160,.2); }
-.cc-app-status.soon { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(45,110,219,.2); }
-.cc-app-status.auto { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
-.cc-app-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: blink 1.6s infinite; }
-.cc-app-btn { display: block; width: 100%; padding: 9px; border-radius: 9px; font-size: 12px; font-weight: 700; text-align: center; border: none; cursor: pointer; font-family: var(--fb); transition: all .2s; }
-.cc-app-btn.yt { background: linear-gradient(135deg,#ff4040,#ff6060); color: #fff; }
-.cc-app-btn.yt:hover { box-shadow: 0 4px 14px rgba(255,64,64,.3); }
-.cc-app-btn.tt { background: linear-gradient(135deg,#111,#2a2a2a); color: #fff; }
-[data-theme="dark"] .cc-app-btn.tt { background: linear-gradient(135deg,#2a2a2a,#3a3a3a); }
-.cc-app-btn.tt:hover { box-shadow: 0 4px 14px rgba(0,0,0,.4); }
-.cc-app-btn.disabled { background: var(--bg3); color: var(--text3); cursor: not-allowed; }
-.cc-app-btn.auto { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
-
-/* ═══════════════════════════
-   SETTINGS
-═══════════════════════════ */
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.settings-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; }
-.settings-card h3 { font-size: 14px; font-weight: 800; margin-bottom: 14px; }
-.setting-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.setting-row:last-child { border-bottom: none; }
-.setting-label { font-size: 13px; font-weight: 600; }
-.setting-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.toggle { width: 38px; height: 22px; border-radius: 11px; background: var(--bg3); border: 1px solid var(--border2); position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0; }
-.toggle.on { background: var(--gold); border-color: var(--gold); }
-.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
-.toggle.on::after { transform: translateX(16px); }
-
-/* ═══════════════════════════
-   DIJO AI
-═══════════════════════════ */
-.dijo-wrap { display: grid; grid-template-columns: 1fr 280px; gap: 16px; height: calc(100vh - var(--topbar-h) - 48px); min-height: 400px; }
-.dijo-chat { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-.dijo-chat-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.dijo-chat-av { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg,var(--gold),var(--gold2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: #fff; font-family: var(--fd); }
-[data-theme="dark"] .dijo-chat-av { color: #07090f; }
-.dijo-chat-msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.dijo-chat-msgs::-webkit-scrollbar { width: 3px; }
-.dijo-chat-msgs::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-.chat-msg { display: flex; gap: 9px; align-items: flex-start; }
-.chat-msg.user { flex-direction: row-reverse; }
-.chat-av-sm { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
-.chat-av-sm.dijo { background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; }
-[data-theme="dark"] .chat-av-sm.dijo { color: #07090f; }
-.chat-av-sm.you { background: var(--bg2); color: var(--text2); }
-.chat-bubble { padding: 10px 13px; border-radius: 11px; font-size: 13px; line-height: 1.65; max-width: 78%; }
-.chat-bubble.dijo { background: var(--card2); border: 1px solid var(--border); }
-.chat-bubble.you { background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; }
-[data-theme="dark"] .chat-bubble.you { color: #07090f; }
-.dijo-input-row { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
-.dijo-input { flex: 1; padding: 9px 13px; border-radius: 9px; border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-size: 13px; font-family: var(--fb); }
-.dijo-input:focus { outline: none; border-color: var(--gold); }
-.dijo-send { padding: 9px 16px; border-radius: 9px; background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; font-size: 13px; font-weight: 700; }
-[data-theme="dark"] .dijo-send { color: #07090f; }
-.dijo-send:hover { box-shadow: 0 3px 12px var(--gold-glo); }
-.dijo-sidebar-panel { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-.dijo-quick-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px; }
-.dijo-quick-card h4 { font-size: 13px; font-weight: 800; margin-bottom: 10px; }
-.dijo-quick-btn { width: 100%; text-align: left; padding: 8px 10px; border-radius: 8px; font-size: 12px; color: var(--text2); border: 1px solid var(--border); margin-bottom: 5px; transition: all .2s; }
-.dijo-quick-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
-.dijo-quick-btn:last-child { margin-bottom: 0; }
-
-/* ═══════════════════════════
-   MOBILE OVERLAY
-═══════════════════════════ */
-.mob-overlay { display: none; position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); }
-.mob-overlay.open { display: block; }
-
-/* ═══════════════════════════
-   RESPONSIVE
-═══════════════════════════ */
-@media (max-width:1200px) {
-  .pf-builder.show { grid-template-columns: 1fr 320px; }
-}
-@media (max-width:900px) {
-  :root { --sidebar-w: 220px; }
-  .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); box-shadow: 8px 0 40px rgba(0,0,0,.15); }
-  [data-theme="dark"] .sidebar { box-shadow: 8px 0 40px rgba(0,0,0,.6); }
-  .sidebar.open { transform: translateX(0); }
-  .main { width: 100vw; }
-  .topbar-hamburger { display: flex; }
-  .dash-grid { grid-template-columns: 1fr 1fr; }
-  .create-layout { grid-template-columns: 1fr; }
-  .carousel-layout { grid-template-columns: 1fr; }
-  .dijo-wrap { grid-template-columns: 1fr; height: auto; }
-  .dijo-sidebar-panel { display: none; }
-  .plan-grid { grid-template-columns: repeat(4,1fr); }
-  .opps-grid-full { grid-template-columns: 1fr; }
-  .settings-grid { grid-template-columns: 1fr; }
-  .connect-grid-app { grid-template-columns: 1fr; }
-  .quick-actions { grid-template-columns: repeat(2,1fr); }
-  .pf-builder.show { grid-template-columns: 1fr; }
-  .pf-preview-wrap { display: none; }
-  .pf-setup-steps { grid-template-columns: 1fr; }
-  .pf-themes { grid-template-columns: repeat(3,1fr); }
-  .pf-rate-grid { grid-template-columns: 1fr; }
-}
-@media (max-width:560px) {
-  .panel { padding: 14px; }
-  .dash-grid { grid-template-columns: 1fr; }
-  .opps-row { grid-template-columns: 1fr; }
-  .plan-grid { grid-template-columns: repeat(3,1fr); }
-  .quick-actions { grid-template-columns: repeat(2,1fr); }
-  .slides-grid { grid-template-columns: repeat(2,1fr); }
-  .topbar { padding: 0 12px; }
-  .t-right { gap: 6px; }
-  .t-gen { display: none; }
-  .pf-row { grid-template-columns: 1fr; }
-  .pf-themes { grid-template-columns: repeat(2,1fr); }
-  .carousel-launch-card { flex-direction: column; text-align: center; }
-}
-</style>
+<link rel="stylesheet" href="creator-studio.css"/>
 </head>
 <body>
 
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 
 <div class="app">
+
   <!-- ═══════════════ SIDEBAR ═══════════════ -->
   <aside class="sidebar" id="sidebar">
     <div class="sb-head">
       <div class="sb-logo">
-        <img src="logo.png" class="sb-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <img src="logo.png" class="sb-logo-img" alt="ImpactGrid"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
         <div class="sb-logo-mark">IG</div>
         <span>ImpactGrid</span>
       </div>
@@ -552,7 +39,7 @@ img { display: block; max-width: 100%; }
       <div class="sb-item" onclick="showPanel('create',this)"><span class="sb-icon">✍️</span>Create</div>
       <div class="sb-item" onclick="window.location.href='carousel.html'"><span class="sb-icon">🎨</span>Carousel Studio</div>
       <div class="sb-label">Planning</div>
-      <div class="sb-item" onclick="showPanel('contentplan',this)"><span class="sb-icon">📅</span>Content Plan</div>
+      <div class="sb-item" onclick="showPanel('contentcalendar',this);initCalendar()"><span class="sb-icon">📅</span>Content Calendar</div>
       <div class="sb-item" onclick="showPanel('portfolio',this)"><span class="sb-icon">🌐</span>Portfolio</div>
       <div class="sb-item" onclick="showPanel('dijo',this)"><span class="sb-icon">🤖</span>Dijo AI</div>
       <div class="sb-label">Grow</div>
@@ -613,14 +100,29 @@ img { display: block; max-width: 100%; }
           <p id="dashDate">Loading today's intelligence…</p>
         </div>
         <div class="dash-grid">
-          <div class="dash-stat"><div class="dash-stat-label">Top Trend Score</div><div class="dash-stat-val" style="color:var(--green);">5.9</div><div class="dash-stat-sub">shorts · YouTube</div></div>
-          <div class="dash-stat"><div class="dash-stat-label">Trends Today</div><div class="dash-stat-val">12</div><div class="dash-stat-sub">UK + Global signals</div></div>
-          <div class="dash-stat"><div class="dash-stat-label">Best Platform</div><div class="dash-stat-val" style="font-size:20px;color:var(--gold);">YouTube</div><div class="dash-stat-sub">Most active right now</div></div>
+          <div class="dash-stat">
+            <div class="dash-stat-label">Top Trend Score</div>
+            <div class="dash-stat-val" style="color:var(--green);">5.9</div>
+            <div class="dash-stat-sub">shorts · YouTube</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-label">Trends Today</div>
+            <div class="dash-stat-val">12</div>
+            <div class="dash-stat-sub">UK + Global signals</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-label">Best Platform</div>
+            <div class="dash-stat-val" style="font-size:20px;color:var(--gold);">YouTube</div>
+            <div class="dash-stat-sub">Most active right now</div>
+          </div>
         </div>
         <div class="briefing-card">
           <div class="briefing-header">
             <div class="briefing-av">D</div>
-            <div><div class="briefing-title">Dijo Daily Briefing</div><div class="briefing-meta" id="briefingDate">Thursday, 9 April 2026 · cached</div></div>
+            <div>
+              <div class="briefing-title">Dijo Daily Briefing</div>
+              <div class="briefing-meta" id="briefingDate">Loading…</div>
+            </div>
             <button onclick="refreshBriefing()" style="margin-left:auto;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);">Refresh</button>
           </div>
           <p class="briefing-text" id="briefingText">Good morning, creator. Today's hottest topics are all about Viking history with "vikingtom" leading the charge, along with the rising popularity of "shorts" and the emerging interest in "inteligenciaartificial" on YouTube. I recommend creating a short, engaging video about a fascinating Viking myth and publishing it as a YouTube Short today. YouTube is the best platform play right now — stay consistent and ride this wave.</p>
@@ -632,14 +134,22 @@ img { display: block; max-width: 100%; }
         </div>
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">⚡ Top Opportunities</div>
         <div class="opps-row">
-          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><span class="opp-icon">🔱</span><div><div class="opp-name">Viking history myths</div><div class="opp-meta">TikTok · emerging · 5 videos</div></div><div class="opp-score"><div class="opp-score-n">5.8</div><div class="opp-score-l">Score</div></div></div>
-          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><span class="opp-icon">🇬🇧</span><div><div class="opp-name">UK Street Style</div><div class="opp-meta">TikTok · rising fast</div></div><div class="opp-score"><div class="opp-score-n">5.5</div><div class="opp-score-l">Score</div></div></div>
+          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
+            <span class="opp-icon">🔱</span>
+            <div><div class="opp-name">Viking history myths</div><div class="opp-meta">TikTok · emerging · 5 videos</div></div>
+            <div class="opp-score"><div class="opp-score-n">5.8</div><div class="opp-score-l">Score</div></div>
+          </div>
+          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
+            <span class="opp-icon">🇬🇧</span>
+            <div><div class="opp-name">UK Street Style</div><div class="opp-meta">TikTok · rising fast</div></div>
+            <div class="opp-score"><div class="opp-score-n">5.5</div><div class="opp-score-l">Score</div></div>
+          </div>
         </div>
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Quick Actions</div>
         <div class="quick-actions">
           <div class="qa-btn" onclick="showPanel('trendfeed',document.querySelector('[onclick*=trendfeed]'))"><div class="qa-icon">📡</div><div class="qa-label">View Trends</div><div class="qa-desc">See what's hot today</div></div>
           <div class="qa-btn" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><div class="qa-icon">✍️</div><div class="qa-label">Generate Content</div><div class="qa-desc">Hook, caption, hashtags</div></div>
-          <div class="qa-btn" onclick="showPanel('contentplan',document.querySelector('[onclick*=contentplan]'))"><div class="qa-icon">📅</div><div class="qa-label">Plan My Week</div><div class="qa-desc">Fill your content calendar</div></div>
+          <div class="qa-btn" onclick="showPanel('contentcalendar',document.querySelector('[onclick*=contentcalendar]'));initCalendar()"><div class="qa-icon">📅</div><div class="qa-label">Content Calendar</div><div class="qa-desc">Plan your week</div></div>
           <div class="qa-btn" onclick="window.location.href='carousel.html'"><div class="qa-icon">🎨</div><div class="qa-label">Carousel Studio</div><div class="qa-desc">Build carousel slides</div></div>
         </div>
       </div>
@@ -674,32 +184,74 @@ img { display: block; max-width: 100%; }
             <button class="btn-generate" id="generateBtn" onclick="generateContent()">✨ Generate with Dijo</button>
           </div>
           <div class="create-output" id="createOutput">
-            <div class="output-empty"><div class="output-empty-icon">✨</div><p>Fill in the form and hit generate.<br/>Dijo will write your content package.</p></div>
+            <div class="output-empty">
+              <div class="output-empty-icon">✨</div>
+              <p>Fill in the form and hit generate.<br/>Dijo will write your content package.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- ══ CONTENT PLAN ══ -->
-      <div class="panel" id="panel-contentplan">
-        <div class="plan-header">
-          <h2>Content Plan</h2>
-          <div class="plan-week-nav">
-            <button class="plan-week-btn">←</button>
-            <span class="plan-week-label">7–13 Apr 2026</span>
-            <button class="plan-week-btn">→</button>
+      <!-- ══ CONTENT CALENDAR ══ -->
+      <div class="panel" id="panel-contentcalendar">
+
+        <!-- Header -->
+        <div class="cal-header">
+          <h2>Content Calendar</h2>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="cal-nav-btn" onclick="calPrevWeek()">←</button>
+            <span class="cal-week-label" id="calWeekLabel">Loading…</span>
+            <button class="cal-nav-btn" onclick="calNextWeek()">→</button>
+            <button onclick="calGoToday()" style="padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);">Today</button>
           </div>
-          <button class="plan-gen-btn" style="width:auto;padding:8px 16px;margin-top:0;margin-left:10px;font-size:12px;" onclick="autoFillPlan()">✨ Auto-Fill with Dijo</button>
+          <button class="cal-auto-btn" id="calAutoBtn" onclick="calAutoFill()">
+            <div class="spinner" style="display:none;width:12px;height:12px;border-width:1.5px;" id="calAutoSpinner"></div>
+            ✨ Auto-Fill with Dijo
+          </button>
         </div>
-        <div class="plan-grid" id="planGrid">
-          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Mon</div><div class="plan-day-num today">7</div></div><div class="plan-day-body"><div class="plan-post yt">Viking myths hook</div><div class="plan-add-slot">+ Add</div></div></div>
-          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Tue</div><div class="plan-day-num">8</div></div><div class="plan-day-body"><div class="plan-post ig">UK Style carousel</div><div class="plan-add-slot">+ Add</div></div></div>
-          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Wed</div><div class="plan-day-num">9</div></div><div class="plan-day-body"><div class="plan-post tt">AI tools short</div><div class="plan-add-slot">+ Add</div></div></div>
-          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Thu</div><div class="plan-day-num">10</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
-          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Fri</div><div class="plan-day-num">11</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
-          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Sat</div><div class="plan-day-num">12</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
-          <div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">Sun</div><div class="plan-day-num">13</div></div><div class="plan-day-body"><div class="plan-add-slot">+ Add</div></div></div>
+
+        <!-- Platform filter -->
+        <div class="cal-plat-row">
+          <span style="font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;">Filter:</span>
+          <button class="cal-plat-btn active-all" onclick="calSetFilter('all',this)">All</button>
+          <button class="cal-plat-btn" onclick="calSetFilter('yt',this)">▶️ YouTube</button>
+          <button class="cal-plat-btn" onclick="calSetFilter('tt',this)">🎵 TikTok</button>
+          <button class="cal-plat-btn" onclick="calSetFilter('ig',this)">📸 Instagram</button>
+          <button class="cal-plat-btn" onclick="calSetFilter('li',this)">💼 LinkedIn</button>
         </div>
-      </div>
+
+        <!-- Week grid -->
+        <div class="cal-week-grid" id="calWeekGrid">
+          <!-- Rendered by calendar.js -->
+        </div>
+
+        <!-- Ideas bank + stats -->
+        <div class="cal-ideas-row">
+          <div class="cal-ideas-bank">
+            <h3>💡 Ideas Bank — click to add</h3>
+            <div id="calIdeasBank"><!-- Rendered by calendar.js --></div>
+          </div>
+          <div class="cal-stats-card">
+            <h3>📊 This Week</h3>
+            <div class="cal-stat-row">
+              <span class="cal-stat-label">Total posts</span>
+              <span class="cal-stat-val" id="calStatTotal">0</span>
+            </div>
+            <div class="cal-stat-row">
+              <span class="cal-stat-label">▶️ YouTube</span>
+              <span class="cal-stat-val" id="calStatYt">0</span>
+            </div>
+            <div class="cal-stat-row">
+              <span class="cal-stat-label">🎵 TikTok</span>
+              <span class="cal-stat-val" id="calStatTt">0</span>
+            </div>
+            <div class="cal-stat-row">
+              <span class="cal-stat-label">📸 Instagram</span>
+              <span class="cal-stat-val" id="calStatIg">0</span>
+            </div>
+          </div>
+        </div>
+      </div><!-- /panel-contentcalendar -->
 
       <!-- ══ PORTFOLIO ══ -->
       <div class="panel" id="panel-portfolio">
@@ -714,7 +266,7 @@ img { display: block; max-width: 100%; }
             <div class="clc-icon">🌐</div>
             <div class="clc-text">
               <h3>Your Creator Portfolio</h3>
-              <p>Build a beautiful link-in-bio page in minutes. Add your platforms, showcase your best carousels, and share one link that does everything — optimised for Google search too.</p>
+              <p>Build a beautiful link-in-bio page in minutes. Add your platforms, showcase your best content, and share one link that does everything — optimised for Google too.</p>
               <div class="clc-features">
                 <span class="clc-feat">Link in bio</span>
                 <span class="clc-feat">Platform stats</span>
@@ -730,7 +282,7 @@ img { display: block; max-width: 100%; }
           <div class="pf-setup-steps">
             <div class="pf-step-card"><div class="pf-step-num">STEP 01</div><div class="pf-step-title">Fill Your Profile</div><div class="pf-step-desc">Add your name, bio, platforms, and follower counts. Takes 2 minutes.</div></div>
             <div class="pf-step-card"><div class="pf-step-num">STEP 02</div><div class="pf-step-title">Pick a Theme</div><div class="pf-step-desc">Choose from Dark Gold, Deep Navy, Clean White, or Forest. Matches your brand.</div></div>
-            <div class="pf-step-card"><div class="pf-step-num">STEP 03</div><div class="pf-step-title">Add Your Links + Rates</div><div class="pf-step-desc">Drop in your TikTok, YouTube, Instagram — plus optional rate card for brands.</div></div>
+            <div class="pf-step-card"><div class="pf-step-num">STEP 03</div><div class="pf-step-title">Add Your Links + Rates</div><div class="pf-step-desc">Drop in your socials and optional rate card for brands.</div></div>
             <div class="pf-step-card"><div class="pf-step-num">STEP 04</div><div class="pf-step-title">Publish & Share</div><div class="pf-step-desc">Dijo writes your SEO bio. Copy your link and add it to every profile. Done.</div></div>
           </div>
         </div>
@@ -740,7 +292,7 @@ img { display: block; max-width: 100%; }
           <div class="portfolio-header" style="grid-column:1/-1;">
             <h2>Portfolio Builder</h2>
             <button class="pf-header-btn secondary" onclick="resetPortfolio()">← Back</button>
-            <button class="pf-header-btn" onclick="publishPortfolio()" id="pfPublishBtn">🚀 Publish</button>
+            <button class="pf-header-btn" onclick="publishPortfolio()">🚀 Publish</button>
           </div>
 
           <!-- LEFT: Form -->
@@ -781,9 +333,25 @@ img { display: block; max-width: 100%; }
               </div>
             </div>
 
+            <!-- Social accounts (manual — no OAuth) -->
+            <div class="pf-section">
+              <div class="pf-section-title">Social Accounts <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — enter manually</span></div>
+              <div class="pf-social-row">
+                <span class="pf-social-icon">📸</span>
+                <span class="pf-social-label">Instagram</span>
+                <input class="form-input" id="pfInstagram" placeholder="@yourusername or URL" style="flex:1;" oninput="updatePreview()"/>
+              </div>
+              <div class="pf-social-row">
+                <span class="pf-social-icon">💼</span>
+                <span class="pf-social-label">LinkedIn</span>
+                <input class="form-input" id="pfLinkedIn" placeholder="linkedin.com/in/yourname" style="flex:1;" oninput="updatePreview()"/>
+              </div>
+              <p class="pf-social-note">ℹ️ Enter your handles manually. These are shown on your portfolio so brands can find you.</p>
+            </div>
+
             <!-- Stats -->
             <div class="pf-section">
-              <div class="pf-section-title">Stats (optional — shown to brands)</div>
+              <div class="pf-section-title">Stats <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — optional, shown to brands</span></div>
               <div class="pf-row">
                 <div class="form-group" style="margin-bottom:0;">
                   <label class="form-label">Total Followers</label>
@@ -802,24 +370,12 @@ img { display: block; max-width: 100%; }
 
             <!-- Rate Card -->
             <div class="pf-section">
-              <div class="pf-section-title">Rate Card (optional — for brand deals)</div>
+              <div class="pf-section-title">Rate Card <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — optional, for brand deals</span></div>
               <div class="pf-rate-grid">
-                <div class="pf-rate-item">
-                  <div class="pf-rate-label">Story / Short</div>
-                  <input class="form-input" id="pfRateStory" placeholder="e.g. £150" style="margin-top:4px;" oninput="updatePreview()"/>
-                </div>
-                <div class="pf-rate-item">
-                  <div class="pf-rate-label">Dedicated Post</div>
-                  <input class="form-input" id="pfRatePost" placeholder="e.g. £350" style="margin-top:4px;" oninput="updatePreview()"/>
-                </div>
-                <div class="pf-rate-item">
-                  <div class="pf-rate-label">Long-form Video</div>
-                  <input class="form-input" id="pfRateVideo" placeholder="e.g. £600" style="margin-top:4px;" oninput="updatePreview()"/>
-                </div>
-                <div class="pf-rate-item">
-                  <div class="pf-rate-label">Monthly Package</div>
-                  <input class="form-input" id="pfRatePackage" placeholder="e.g. £1,200" style="margin-top:4px;" oninput="updatePreview()"/>
-                </div>
+                <div class="pf-rate-item"><div class="pf-rate-label">Story / Short</div><input class="form-input" id="pfRateStory" placeholder="e.g. £150" style="margin-top:4px;" oninput="updatePreview()"/></div>
+                <div class="pf-rate-item"><div class="pf-rate-label">Dedicated Post</div><input class="form-input" id="pfRatePost" placeholder="e.g. £350" style="margin-top:4px;" oninput="updatePreview()"/></div>
+                <div class="pf-rate-item"><div class="pf-rate-label">Long-form Video</div><input class="form-input" id="pfRateVideo" placeholder="e.g. £600" style="margin-top:4px;" oninput="updatePreview()"/></div>
+                <div class="pf-rate-item"><div class="pf-rate-label">Monthly Package</div><input class="form-input" id="pfRatePackage" placeholder="e.g. £1,200" style="margin-top:4px;" oninput="updatePreview()"/></div>
               </div>
             </div>
 
@@ -830,7 +386,8 @@ img { display: block; max-width: 100%; }
                 <div class="pf-link-row"><span class="pf-link-prefix">🎵</span><input class="form-input" placeholder="TikTok URL" style="flex:1" oninput="updatePreview()"/></div>
                 <div class="pf-link-row"><span class="pf-link-prefix">▶️</span><input class="form-input" placeholder="YouTube URL" style="flex:1" oninput="updatePreview()"/></div>
                 <div class="pf-link-row"><span class="pf-link-prefix">📸</span><input class="form-input" placeholder="Instagram URL" style="flex:1" oninput="updatePreview()"/></div>
-                <div class="pf-link-row"><span class="pf-link-prefix">📧</span><input class="form-input" placeholder="Email / contact (for brands)" style="flex:1" oninput="updatePreview()"/></div>
+                <div class="pf-link-row"><span class="pf-link-prefix">💼</span><input class="form-input" placeholder="LinkedIn URL" style="flex:1" oninput="updatePreview()"/></div>
+                <div class="pf-link-row"><span class="pf-link-prefix">📧</span><input class="form-input" placeholder="Email / contact for brands" style="flex:1" oninput="updatePreview()"/></div>
               </div>
               <button class="pf-add-link" onclick="addCustomLink()">+ Add custom link</button>
             </div>
@@ -851,13 +408,13 @@ img { display: block; max-width: 100%; }
               <div class="pf-section-title">SEO Preview</div>
               <div class="pf-seo-info">
                 <div class="pf-seo-info-icon">🔍</div>
-                <div class="pf-seo-info-text"><strong>Dijo optimises your portfolio for Google.</strong> Brands searching for creators in your niche will find your page. Fill in your name and niche above to see your search preview.</div>
+                <div class="pf-seo-info-text"><strong>Dijo optimises your portfolio for Google.</strong> Brands searching for creators in your niche will find your page.</div>
               </div>
               <div class="pf-seo-label"><div class="pf-seo-dot"></div>Google Search Preview</div>
               <div class="pf-seo-preview">
                 <div class="pf-seo-url" id="pfSeoUrl">impactgrid.app/p/yourcreatorname</div>
                 <div class="pf-seo-title" id="pfSeoTitle">Your Name — Creator Portfolio | ImpactGrid</div>
-                <div class="pf-seo-desc" id="pfSeoDesc">Creator in your niche. TikTok · YouTube · Instagram. View stats, collabs, and contact for brand deals. Powered by ImpactGrid.</div>
+                <div class="pf-seo-desc" id="pfSeoDesc">Creator in your niche. TikTok · YouTube · Instagram. View stats, collabs, and contact for brand deals.</div>
               </div>
             </div>
 
@@ -868,7 +425,7 @@ img { display: block; max-width: 100%; }
                 <div class="pf-publish-url" id="pfUrl">impactgrid.app/p/yourcreatorname</div>
                 <button class="pf-copy-url" onclick="copyPortfolioUrl()">Copy</button>
               </div>
-              <button class="btn-generate" style="margin-top:12px;" onclick="publishPortfolio()" id="pfPublishBtn2">🚀 Publish Portfolio</button>
+              <button class="btn-generate" style="margin-top:12px;" onclick="publishPortfolio()">🚀 Publish Portfolio</button>
             </div>
 
           </div><!-- /pf-form-card -->
@@ -888,12 +445,41 @@ img { display: block; max-width: 100%; }
               </div>
             </div>
             <div class="pf-preview-stats">
-              <div class="pf-prev-stat"><div class="pf-prev-stat-val" id="pfStatViews">—</div><div class="pf-prev-stat-lbl">Profile Views</div></div>
-              <div class="pf-prev-stat"><div class="pf-prev-stat-val" id="pfStatClicks">—</div><div class="pf-prev-stat-lbl">Link Clicks</div></div>
+              <div class="pf-prev-stat"><div class="pf-prev-stat-val">—</div><div class="pf-prev-stat-lbl">Profile Views</div></div>
+              <div class="pf-prev-stat"><div class="pf-prev-stat-val">—</div><div class="pf-prev-stat-lbl">Link Clicks</div></div>
             </div>
           </div>
 
         </div><!-- /pfBuilder -->
+
+        <!-- PUBLISHED STATE -->
+        <div id="pfPublished" class="pf-published">
+          <div class="portfolio-header">
+            <h2>Portfolio</h2>
+            <button class="pf-header-btn secondary" onclick="editPortfolio()">✏️ Edit</button>
+          </div>
+          <div class="pf-published-card">
+            <div class="pf-pub-success-icon">🚀</div>
+            <h2 class="pf-pub-title">Portfolio Published!</h2>
+            <p class="pf-pub-desc">
+              <strong id="pfPubName">Your</strong> portfolio is live as <strong id="pfPubNiche">Creator</strong>.<br/>
+              Share your link everywhere — put it in your TikTok bio, Instagram, and LinkedIn.
+            </p>
+            <div class="pf-pub-link-box">
+              <span class="pf-pub-link-text" id="pfPubLink">https://impactgrid.app/p/creator</span>
+              <button class="pf-pub-copy-btn" onclick="copyPublishedLink()">📋 Copy Link</button>
+            </div>
+            <div class="pf-pub-actions">
+              <button class="pf-pub-action-btn" onclick="shareToInstagram()">📸 Add to Instagram</button>
+              <button class="pf-pub-action-btn" onclick="shareToLinkedIn()">💼 Share on LinkedIn</button>
+              <button class="pf-pub-action-btn" onclick="editPortfolio()">✏️ Edit Portfolio</button>
+            </div>
+            <div style="margin-top:20px;padding:14px;background:var(--green-dim);border:1px solid rgba(15,168,118,.2);border-radius:10px;font-size:12px;color:var(--green);">
+              ✓ SEO optimised · ✓ Mobile-friendly · ✓ Brand-ready
+            </div>
+          </div>
+        </div><!-- /pfPublished -->
+
       </div><!-- /panel-portfolio -->
 
       <!-- ══ DIJO AI ══ -->
@@ -902,11 +488,17 @@ img { display: block; max-width: 100%; }
           <div class="dijo-chat">
             <div class="dijo-chat-head">
               <div class="dijo-chat-av">D</div>
-              <div><div style="font-size:13px;font-weight:700;">Dijo AI</div><div style="font-size:11px;color:var(--text3);">Your creator intelligence engine</div></div>
+              <div>
+                <div style="font-size:13px;font-weight:700;">Dijo AI</div>
+                <div style="font-size:11px;color:var(--text3);">Your creator intelligence engine</div>
+              </div>
               <div style="margin-left:auto;" class="topbar-live"><div class="topbar-live-dot"></div>Active</div>
             </div>
             <div class="dijo-chat-msgs" id="dijoMsgs">
-              <div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">Hey! I'm Dijo — your always-on creator brain. Ask me anything: what to post, how to write a hook, which trends to chase, or how to grow faster. What's on your mind?</div></div>
+              <div class="chat-msg">
+                <div class="chat-av-sm dijo">D</div>
+                <div class="chat-bubble dijo">Hey! I'm Dijo — your always-on creator brain. Ask me anything: what to post, how to write a hook, which trends to chase, or how to grow faster. What's on your mind?</div>
+              </div>
             </div>
             <div class="dijo-input-row">
               <input class="dijo-input" id="dijoInput" placeholder="Ask Dijo anything…" onkeydown="if(event.key==='Enter')sendDijo()"/>
@@ -983,392 +575,47 @@ img { display: block; max-width: 100%; }
   </div><!-- /main -->
 </div><!-- /app -->
 
+<!-- ══ CALENDAR ADD POST MODAL ══ -->
+<div class="cal-modal-overlay" id="calModalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="cal-modal">
+    <h3 id="calModalTitle">Add Post</h3>
+    <div class="form-group">
+      <label class="form-label">Post Title / Idea</label>
+      <input class="form-input" id="calModalInput" placeholder="e.g. Viking myths hook…"/>
+      <button class="cal-dijo-suggest" id="calDijoSuggestBtn" onclick="calSuggestIdea()">✨ Suggest with Dijo</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Platform</label>
+      <div class="cal-modal-plats">
+        <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')">🎵 TikTok</button>
+        <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')">▶️ YouTube</button>
+        <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')">📸 Instagram</button>
+        <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')">💼 LinkedIn</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-select" id="calModalStatus">
+        <option value="draft">Draft</option>
+        <option value="scheduled">Scheduled ⏰</option>
+        <option value="published">Published ✓</option>
+      </select>
+    </div>
+    <div class="cal-modal-actions">
+      <button class="cal-modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="cal-modal-save" onclick="savePost()">Save Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts — order matters -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
 <script src="tiktok-auth.js"></script>
 <script src="youtube-auth.js"></script>
 <script src="instagram-auth.js"></script>
-<script>
-
-/* ── THEME ── */
-var isDark = false;
-function applyTheme(dark) {
-  isDark = dark;
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  var ico = dark ? '☀️' : '🌙';
-  var tbt = document.getElementById('topThemeBtn'); if (tbt) tbt.textContent = ico;
-  var sbt = document.getElementById('sbThemeBtn'); if (sbt) sbt.innerHTML = '<span>'+(dark?'☀️':'🌙')+'</span><span>'+(dark?'Light Mode':'Dark Mode')+'</span>';
-  var tt = document.getElementById('themeToggle'); if (tt) tt.classList.toggle('on', dark);
-  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
-}
-function toggleTheme() { applyTheme(!isDark); }
-(function() { try { if (localStorage.getItem('ig_theme') === 'dark') applyTheme(true); } catch(e) {} })();
-
-/* ── PANELS ── */
-function showPanel(name, item) {
-  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.sb-item').forEach(function(i) { i.classList.remove('active'); });
-  var panel = document.getElementById('panel-' + name);
-  if (panel) panel.classList.add('active');
-  if (item) item.classList.add('active');
-  var titles = { dashboard:'Dashboard', trendfeed:'Trend Feed', create:'Create', contentplan:'Content Plan', portfolio:'Portfolio', dijo:'Dijo AI', opportunities:'Opportunities', connect:'Connect Platforms', settings:'Settings' };
-  var t = document.getElementById('topbarTitle'); if (t) t.textContent = titles[name] || name;
-  closeSidebar();
-  var ca = document.getElementById('contentArea'); if (ca) ca.scrollTop = 0;
-}
-
-/* ── SIDEBAR MOBILE ── */
-function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('mobOverlay').classList.add('open'); }
-function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobOverlay').classList.remove('open'); }
-
-/* ── USER DROP ── */
-function toggleSbDrop() { document.getElementById('sbDrop').classList.toggle('open'); }
-document.addEventListener('click', function(e) { var d = document.getElementById('sbDrop'); if (d && !e.target.closest('.sb-user')) d.classList.remove('open'); });
-
-/* ── AUTH ── */
-function setUser(user) {
-  if (!user) return;
-  var email = user.email || '';
-  var name = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || email.split('@')[0] || 'Creator';
-  var init = (name.charAt(0) || '?').toUpperCase();
-  document.getElementById('sbGuestWrap').style.display = 'none';
-  document.getElementById('sbUserWrap').style.display = 'block';
-  document.getElementById('sbAv').textContent = init;
-  document.getElementById('sbName').textContent = name.split(' ')[0];
-  document.getElementById('sbEmail').textContent = email;
-  var se = document.getElementById('settingsEmail'); if (se) se.textContent = email;
-  var hour = new Date().getHours();
-  var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  var g = document.getElementById('dashGreeting'); if (g) g.textContent = greet + ', ' + name.split(' ')[0] + ' 👋';
-  // Pre-fill portfolio name
-  var pfNameEl = document.getElementById('pfName');
-  if (pfNameEl && !pfNameEl.value) { pfNameEl.value = name; updatePreview(); }
-  var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  var urlEl = document.getElementById('pfUrl'); if (urlEl) urlEl.textContent = 'impactgrid.app/p/' + slug;
-  updateSEOPreview(name, '', slug);
-}
-function clearUser() { document.getElementById('sbGuestWrap').style.display = 'block'; document.getElementById('sbUserWrap').style.display = 'none'; }
-window.igOut = async function() { try { var c = getSupabase(); if (c) await c.auth.signOut(); } catch(e) {} window.location.href = 'index.html'; };
-function attachAuth(c) {
-  c.auth.onAuthStateChange(function(ev, session) { if (session && session.user) setUser(session.user); else if (ev === 'SIGNED_OUT' || ev === 'USER_DELETED') clearUser(); });
-  c.auth.getSession().then(function(r) { if (r && r.data && r.data.session && r.data.session.user) setUser(r.data.session.user); }).catch(function() {});
-}
-function checkAuth() {
-  var c = null; try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
-  if (c) { attachAuth(c); return; }
-  var tries = 0;
-  var t = setInterval(function() { tries++; try { if (window.getSupabase) c = getSupabase(); } catch(e) {} if (c) { clearInterval(t); attachAuth(c); } else if (tries >= 30) clearInterval(t); }, 100);
-}
-
-/* ── DASHBOARD ── */
-function setDashDate() {
-  var d = new Date();
-  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var str = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-  var el = document.getElementById('dashDate'); if (el) el.textContent = str + ' · Live data';
-  var bd = document.getElementById('briefingDate'); if (bd) bd.textContent = str + ' · cached';
-  var hour = d.getHours();
-  var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  var g = document.getElementById('dashGreeting'); if (g) g.textContent = greet + ', Creator 👋';
-}
-
-function loadTopic(topic) {
-  var input = document.getElementById('createTopic'); if (input) input.value = topic;
-  showPanel('create', document.querySelector('.sb-item[onclick*="create"]'));
-}
-
-/* ── GENERATE CONTENT ── */
-async function generateContent() {
-  var topic = document.getElementById('createTopic').value.trim();
-  if (!topic) { alert('Please enter a topic first.'); return; }
-  var btn = document.getElementById('generateBtn');
-  var out = document.getElementById('createOutput');
-  btn.disabled = true; btn.textContent = 'Generating…';
-  out.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px;"><div class="spinner"></div><span style="font-size:13px;color:var(--text2);">Dijo is writing your content…</span></div>';
-  try {
-    var platform = document.getElementById('createPlatform').value;
-    var type = document.getElementById('createType').value;
-    var tone = document.getElementById('createTone').value;
-    var prompt = 'You are Dijo, an AI creator assistant. Generate a complete content package.\n\nTopic: ' + topic + '\nPlatform: ' + platform + '\nContent type: ' + type + '\nTone: ' + tone + '\n\nRespond ONLY with JSON:\n{"hook":"","caption":"","hashtags":["tag1","tag2","tag3","tag4","tag5"],"post_time":"","tip":""}';
-    var res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }) });
-    var data = await res.json();
-    var text = data.content.map(function(i) { return i.text || ''; }).join('');
-    var clean = text.replace(/```json|```/g, '').trim();
-    var parsed = JSON.parse(clean);
-    out.innerHTML =
-      '<div class="output-card"><div class="output-label">Hook</div><div class="output-text">' + esc(parsed.hook||'') + '</div><button class="output-copy" onclick="copyText(this.previousElementSibling.textContent)">Copy Hook</button></div>' +
-      '<div class="output-card"><div class="output-label">Caption</div><div class="output-text">' + esc(parsed.caption||'') + '</div><button class="output-copy" onclick="copyText(this.previousElementSibling.textContent)">Copy Caption</button></div>' +
-      '<div class="output-card"><div class="output-label">Hashtags</div><div class="output-tags">' + (parsed.hashtags||[]).map(function(h){return '<span class="output-tag">#'+esc(h.replace('#',''))+'</span>';}).join('') + '</div></div>' +
-      '<div class="output-card" style="display:flex;gap:14px;"><div style="flex:1;"><div class="output-label">Best Post Time</div><div class="output-text" style="font-weight:700;color:var(--gold);">'+esc(parsed.post_time||'')+'</div></div><div style="flex:1;"><div class="output-label">Dijo\'s Tip</div><div class="output-text">'+esc(parsed.tip||'')+'</div></div></div>';
-  } catch(e) {
-    out.innerHTML = '<div class="output-card" style="border-color:var(--red-dim);"><div class="output-label" style="color:var(--red);">Error</div><div class="output-text" style="color:var(--text2);">Could not generate. Check connection and try again.</div></div>';
-  }
-  btn.disabled = false; btn.textContent = '✨ Generate with Dijo';
-}
-
-/* ── DIJO CHAT ── */
-async function sendDijo() {
-  var input = document.getElementById('dijoInput');
-  var val = input.value.trim(); if (!val) return;
-  var msgs = document.getElementById('dijoMsgs');
-  msgs.innerHTML += '<div class="chat-msg user"><div class="chat-av-sm you">Y</div><div class="chat-bubble you">' + esc(val) + '</div></div>';
-  input.value = ''; msgs.scrollTop = msgs.scrollHeight;
-  msgs.innerHTML += '<div class="chat-msg" id="dijotyping"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo" style="color:var(--text3);">Thinking…</div></div>';
-  msgs.scrollTop = msgs.scrollHeight;
-  try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: "You are Dijo, expert AI creator assistant for ImpactGrid. Give short, direct, actionable advice. Today's top trends: vikingtom (5.8), shorts (5.9), UK Street Style (5.5). User asks: " + val }] }) });
-    var data = await res.json();
-    var reply = data.content.map(function(i){return i.text||'';}).join('');
-    var typing = document.getElementById('dijotyping'); if (typing) typing.remove();
-    msgs.innerHTML += '<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">' + esc(reply) + '</div></div>';
-    msgs.scrollTop = msgs.scrollHeight;
-  } catch(e) {
-    var typing = document.getElementById('dijotyping'); if (typing) typing.remove();
-    msgs.innerHTML += '<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">Sorry, could not connect right now. Try again in a moment.</div></div>';
-    msgs.scrollTop = msgs.scrollHeight;
-  }
-}
-function quickDijo(prompt) { document.getElementById('dijoInput').value = prompt; sendDijo(); }
-
-/* ── AUTO FILL PLAN ── */
-function autoFillPlan() {
-  var posts = [{day:'Mon',num:7,type:'yt',label:'Viking myths hook'},{day:'Tue',num:8,type:'ig',label:'UK Style carousel'},{day:'Wed',num:9,type:'tt',label:'AI tools short'},{day:'Thu',num:10,type:'yt',label:'Bible verse short'},{day:'Fri',num:11,type:'tt',label:'Trending audio'},{day:'Sat',num:12,type:'ig',label:'Weekend lifestyle'},{day:'Sun',num:13,type:'yt',label:'Week wrap-up'}];
-  document.getElementById('planGrid').innerHTML = posts.map(function(p) { return '<div class="plan-day-col"><div class="plan-day-head"><div class="plan-day-name">'+p.day+'</div><div class="plan-day-num'+(p.num===9?' today':'')+'">'+p.num+'</div></div><div class="plan-day-body"><div class="plan-post '+p.type+'">'+p.label+'</div><div class="plan-add-slot">+ Add</div></div></div>'; }).join('');
-}
-
-/* ── REFRESH BRIEFING ── */
-function refreshBriefing() { var el = document.getElementById('briefingText'); if (el) { el.style.opacity='.4'; setTimeout(function(){el.style.opacity='1';},600); } }
-
-/* ── COPY / ESC ── */
-function copyText(t) { try { navigator.clipboard.writeText(t); } catch(e) {} }
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-/* ── PLATFORM SESSION CHECKS ── */
-function checkPlatformSessions() {
-  try { if (typeof YouTubeAuth !== 'undefined') { var s = YouTubeAuth.getSession(); if (s) { var card = document.getElementById('yt-card'); var btn = document.getElementById('yt-btn-app'); var stxt = document.getElementById('yt-status-txt'); if (card) card.classList.add('connected'); var name = (s.channel&&s.channel.snippet&&s.channel.snippet.title)?s.channel.snippet.title:'YouTube'; if (stxt) stxt.textContent='Connected · '+name; if (btn){btn.className='cc-app-btn auto';btn.textContent='Open Trends →';btn.onclick=function(){showPanel('trendfeed',null);};} } } } catch(e) {}
-  try { if (typeof TikTokAuth !== 'undefined') { var s = TikTokAuth.getSession(); if (s) { var card = document.getElementById('tt-card'); var btn = document.getElementById('tt-btn-app'); var stxt = document.getElementById('tt-status-txt'); if (card) card.classList.add('connected'); var name = (s.user&&s.user.display_name)?s.user.display_name:'TikTok'; if (stxt) stxt.textContent='Connected · '+name; if (btn){btn.className='cc-app-btn auto';btn.textContent='Connected ✓';} } } } catch(e) {}
-}
-
-/* ══════════════════════════════════════════
-   PORTFOLIO BUILDER
-══════════════════════════════════════════ */
-var pfState = {
-  theme: 'dark',
-  platforms: [],
-  themeConfigs: {
-    dark:   { bg:'linear-gradient(160deg,#1a1814 0%,#2a2318 100%)', heroBg:'#1a1814', accent:'#c97e08', accentGlow:'rgba(201,126,8,0.3)', text:'#fff', sub:'rgba(255,255,255,0.55)', border:'rgba(255,255,255,0.08)', linkBg:'rgba(255,255,255,0.06)', linkBorder:'rgba(255,255,255,0.1)', avatarBg:'linear-gradient(135deg,#c97e08,#a86505)', statBorder:'rgba(255,255,255,0.06)', rateBg:'rgba(255,255,255,0.04)', ctaBg:'linear-gradient(135deg,#c97e08,#a86505)', ctaText:'#fff' },
-    navy:   { bg:'linear-gradient(160deg,#0f172a 0%,#1e3a5f 100%)', heroBg:'#0f172a', accent:'#4f8ef7', accentGlow:'rgba(79,142,247,0.3)', text:'#fff', sub:'rgba(255,255,255,0.55)', border:'rgba(255,255,255,0.08)', linkBg:'rgba(255,255,255,0.05)', linkBorder:'rgba(255,255,255,0.1)', avatarBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', statBorder:'rgba(255,255,255,0.06)', rateBg:'rgba(255,255,255,0.04)', ctaBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', ctaText:'#fff' },
-    clean:  { bg:'linear-gradient(160deg,#f8fafc 0%,#e2e8f0 100%)', heroBg:'#f8fafc', accent:'#2d6edb', accentGlow:'rgba(45,110,219,0.2)', text:'#0d1017', sub:'#4a5068', border:'rgba(0,0,0,0.07)', linkBg:'#ffffff', linkBorder:'rgba(0,0,0,0.08)', avatarBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', statBorder:'rgba(0,0,0,0.07)', rateBg:'rgba(0,0,0,0.03)', ctaBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', ctaText:'#fff' },
-    forest: { bg:'linear-gradient(160deg,#14532d 0%,#166534 50%,#15803d 100%)', heroBg:'#14532d', accent:'#4ade80', accentGlow:'rgba(74,222,128,0.3)', text:'#fff', sub:'rgba(255,255,255,0.6)', border:'rgba(255,255,255,0.1)', linkBg:'rgba(255,255,255,0.07)', linkBorder:'rgba(255,255,255,0.12)', avatarBg:'linear-gradient(135deg,#0fa876,#4ade80)', statBorder:'rgba(255,255,255,0.08)', rateBg:'rgba(255,255,255,0.05)', ctaBg:'linear-gradient(135deg,#0fa876,#4ade80)', ctaText:'#fff' },
-  }
-};
-
-function startPortfolioBuilder() {
-  document.getElementById('pfSetup').classList.remove('show');
-  document.getElementById('pfBuilder').classList.add('show');
-  document.getElementById('topbarTitle').textContent = 'Portfolio Builder';
-  updatePreview();
-}
-
-function resetPortfolio() {
-  document.getElementById('pfSetup').classList.add('show');
-  document.getElementById('pfBuilder').classList.remove('show');
-  document.getElementById('topbarTitle').textContent = 'Portfolio';
-}
-
-function togglePlat(btn, id, icon, label) {
-  btn.classList.toggle('on');
-  if (btn.classList.contains('on')) {
-    if (!pfState.platforms.find(function(p){return p.id===id;}))
-      pfState.platforms.push({id:id, icon:icon, label:label});
-  } else {
-    pfState.platforms = pfState.platforms.filter(function(p){return p.id!==id;});
-  }
-  updatePreview();
-}
-
-function setTheme(el, themeId) {
-  pfState.theme = themeId;
-  document.querySelectorAll('.pf-theme-opt').forEach(function(o){o.classList.remove('active');});
-  el.classList.add('active');
-  updatePreview();
-}
-
-function addCustomLink() {
-  var container = document.getElementById('pfLinksContainer');
-  var row = document.createElement('div');
-  row.className = 'pf-link-row';
-  row.innerHTML = '<span class="pf-link-prefix">🔗</span><input class="form-input" placeholder="https://…" style="flex:1" oninput="updatePreview()"/>';
-  container.appendChild(row);
-}
-
-function updateSEOPreview(name, niche, slug) {
-  name = name || 'Your Name';
-  niche = niche || 'Content Creator';
-  slug = slug || 'yourcreatorname';
-  var urlEl = document.getElementById('pfSeoUrl');
-  var titleEl = document.getElementById('pfSeoTitle');
-  var descEl = document.getElementById('pfSeoDesc');
-  var platforms = pfState.platforms.map(function(p){return p.label;}).join(' · ') || 'TikTok · YouTube · Instagram';
-  if (urlEl) urlEl.textContent = 'impactgrid.app/p/' + slug;
-  if (titleEl) titleEl.textContent = name + ' — ' + niche + ' | ImpactGrid';
-  if (descEl) descEl.textContent = niche + ' creator. ' + platforms + '. View stats, media kit, and contact for brand deals. Based in UK.';
-  var pfUrlEl = document.getElementById('pfUrl');
-  if (pfUrlEl) pfUrlEl.textContent = 'impactgrid.app/p/' + slug;
-}
-
-function updatePreview() {
-  var phone = document.getElementById('pfPhone');
-  if (!phone) return;
-
-  var name = document.getElementById('pfName').value || 'Your Name';
-  var niche = document.getElementById('pfNiche').value || 'Content Creator';
-  var bio = document.getElementById('pfBio').value || 'Creating content that connects and converts.';
-  var followers = document.getElementById('pfFollowers').value;
-  var engagement = document.getElementById('pfEngagement').value;
-  var views = document.getElementById('pfViews').value;
-  var rateStory = document.getElementById('pfRateStory').value;
-  var ratePost = document.getElementById('pfRatePost').value;
-  var rateVideo = document.getElementById('pfRateVideo').value;
-  var ratePackage = document.getElementById('pfRatePackage').value;
-
-  var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'creator';
-  updateSEOPreview(name, niche, slug);
-
-  var cfg = pfState.themeConfigs[pfState.theme];
-  var initials = name.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || 'YN';
-
-  // Platforms
-  var platHtml = (pfState.platforms.length ? pfState.platforms : [{icon:'🎵'},{icon:'▶️'},{icon:'📸'}])
-    .map(function(p){ return '<div class="pfp-plat" style="background:'+cfg.linkBg+';border:1px solid '+cfg.linkBorder+';">'+p.icon+'</div>'; }).join('');
-
-  // Stats — only show if at least one is filled
-  var hasStats = followers || engagement || views;
-  var statsHtml = hasStats
-    ? '<div class="pfp-stats" style="border-color:'+cfg.statBorder+';">' +
-        '<div class="pfp-stat" style="border-color:'+cfg.statBorder+';"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(followers||'—')+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">FOLLOWERS</div></div>' +
-        '<div class="pfp-stat" style="border-color:'+cfg.statBorder+';"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(engagement||'—')+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">ENGAGEMENT</div></div>' +
-        '<div class="pfp-stat" style="border-color:'+cfg.statBorder+';"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(views||'—')+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">VIEWS/MO</div></div>' +
-      '</div>'
-    : '';
-
-  // Links
-  var linkInputs = document.querySelectorAll('#pfLinksContainer input');
-  var defaultLinks = [{icon:'🎵',label:'TikTok'},{icon:'▶️',label:'YouTube'},{icon:'📸',label:'Instagram'},{icon:'📧',label:'Contact'}];
-  var linksHtml = '';
-  linkInputs.forEach(function(inp, i) {
-    var val = inp.value.trim();
-    var def = defaultLinks[i] || {icon:'🔗', label:'Link'};
-    if (val || i < 3) {
-      linksHtml += '<div class="pfp-link-item" style="background:'+cfg.linkBg+';border-color:'+cfg.linkBorder+';color:'+cfg.text+';"><span class="pfp-link-icon">'+def.icon+'</span>'+esc(def.label)+'<span class="pfp-link-arrow" style="color:'+cfg.sub+'">→</span></div>';
-    }
-  });
-
-  // Rate card
-  var hasRates = rateStory || ratePost || rateVideo || ratePackage;
-  var ratesHtml = '';
-  if (hasRates) {
-    ratesHtml = '<div class="pfp-rates"><div class="pfp-rates-title" style="color:'+cfg.sub+'">RATE CARD</div>';
-    if (rateStory) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Story / Short</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(rateStory)+'</span></div>';
-    if (ratePost) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Dedicated Post</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(ratePost)+'</span></div>';
-    if (rateVideo) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Long-form Video</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(rateVideo)+'</span></div>';
-    if (ratePackage) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Monthly Package</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(ratePackage)+'</span></div>';
-    ratesHtml += '</div>';
-  }
-
-  phone.innerHTML =
-    '<div style="background:'+cfg.bg+';min-height:560px;border-radius:24px;">' +
-      '<div class="pfp-hero" style="background:'+cfg.heroBg+';border-radius:24px 24px 0 0;">' +
-        '<div class="pfp-avatar-ring" style="background:'+cfg.accentGlow+';padding:3px;">' +
-          '<div class="pfp-avatar" style="background:'+cfg.avatarBg+';">'+esc(initials)+'</div>' +
-        '</div>' +
-        '<div class="pfp-name" style="color:'+cfg.text+';">'+esc(name)+'</div>' +
-        '<div class="pfp-niche-badge" style="background:'+cfg.linkBg+';color:'+cfg.accent+';border:1px solid '+cfg.linkBorder+';">'+esc(niche)+'</div>' +
-        '<div class="pfp-bio" style="color:'+cfg.sub+';">'+esc(bio)+'</div>' +
-        '<div class="pfp-plats">'+platHtml+'</div>' +
-      '</div>' +
-      statsHtml +
-      '<div class="pfp-links" style="background:'+cfg.heroBg+';">'+linksHtml+'</div>' +
-      ratesHtml +
-      '<div class="pfp-cta" style="background:'+cfg.heroBg+';">'+
-        '<div class="pfp-cta-btn" style="background:'+cfg.ctaBg+';color:'+cfg.ctaText+';">Work With Me →</div>' +
-      '</div>' +
-      '<div class="pfp-featured" style="background:'+cfg.heroBg+';">'+
-        '<div class="pfp-featured-title" style="color:'+cfg.sub+';">FEATURED</div>'+
-        '<div class="pfp-carousel-thumb" style="background:linear-gradient(135deg,'+cfg.heroBg+',rgba(201,126,8,0.2));border:1px solid '+cfg.linkBorder+';">🎨</div>'+
-      '</div>' +
-      '<div class="pfp-footer" style="background:'+cfg.heroBg+';border-color:'+cfg.statBorder+';color:'+cfg.sub+';">Made with ImpactGrid ✦</div>' +
-    '</div>';
-}
-
-/* ── DIJO AI Bio Generator ── */
-async function generateAIBio() {
-  var name = document.getElementById('pfName').value.trim();
-  var niche = document.getElementById('pfNiche').value.trim();
-  var followers = document.getElementById('pfFollowers').value.trim();
-  var platforms = pfState.platforms.map(function(p){return p.label;}).join(', ') || 'TikTok, YouTube, Instagram';
-
-  if (!name && !niche) {
-    showToastPF('Fill in your name and niche first.');
-    return;
-  }
-
-  var btn = document.getElementById('pfAiBioBtn');
-  btn.disabled = true;
-  btn.textContent = '✨ Writing…';
-
-  try {
-    var prompt = 'Write a short, punchy creator bio for a link-in-bio portfolio page. It should be 1-2 sentences, SEO-friendly, and written in first person. Make it sound human, not corporate.\n\nName: ' + (name||'Creator') + '\nNiche: ' + (niche||'Content Creator') + '\nPlatforms: ' + platforms + (followers ? '\nFollowers: ' + followers : '') + '\n\nRespond with ONLY the bio text. No quotes. No extra text.';
-    var res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200, messages: [{ role: 'user', content: prompt }] }) });
-    var data = await res.json();
-    var bio = data.content.map(function(i){return i.text||'';}).join('').trim();
-    document.getElementById('pfBio').value = bio;
-    updatePreview();
-    showToastPF('✨ Bio written by Dijo!');
-  } catch(e) {
-    showToastPF('Could not connect. Try again.');
-  }
-  btn.disabled = false;
-  btn.textContent = '✨ Write with Dijo';
-}
-
-/* ── Publish ── */
-function publishPortfolio() {
-  var name = document.getElementById('pfName').value.trim() || 'creator';
-  var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'creator';
-  var url = 'impactgrid.app/p/' + slug;
-  document.getElementById('pfUrl').textContent = url;
-  showToastPF('🚀 Portfolio published! Link copied to clipboard.');
-  try { navigator.clipboard.writeText('https://' + url); } catch(e) {}
-}
-
-function copyPortfolioUrl() {
-  var url = document.getElementById('pfUrl').textContent;
-  try { navigator.clipboard.writeText('https://' + url); showToastPF('✓ Link copied!'); } catch(e) {}
-}
-
-function showToastPF(msg) {
-  var old = document.getElementById('igToast'); if (old) old.remove();
-  var t = document.createElement('div');
-  t.id = 'igToast';
-  t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeIn .3s ease;';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(function(){ t.remove(); }, 3000);
-}
-
-/* ── INIT ── */
-window.addEventListener('load', function() {
-  checkAuth();
-  setDashDate();
-  checkPlatformSessions();
-  setInterval(function() { fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); }, 600000);
-});
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function(){});
-}
-</script>
+<script src="creator-studio.js"></script>
+<script src="portfolio.js"></script>
+<script src="calendar.js"></script>
 </body>
 </html>
