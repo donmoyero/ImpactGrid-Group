@@ -51,62 +51,22 @@
    FULL-SCREEN RESET
 ═══════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--fb);
-  font-size: 15px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  /* Force full screen on all devices including large monitors */
-  margin: 0;
-  padding: 0;
-}
-
+html { width: 100%; height: 100%; overflow: hidden; }
+body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--fb); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: var(--fb); border: none; background: none; }
 h1,h2,h3,h4 { font-family: var(--fd); font-weight: 900; line-height: 1.1; letter-spacing: -.025em; }
 img { display: block; max-width: 100%; }
 
 /* ═══════════════════════════
-   APP SHELL — TRUE FULL SCREEN
+   APP SHELL
 ═══════════════════════════ */
-.app {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  /* Use dvh for mobile browsers that have address bars */
-  height: 100dvh;
-  overflow: hidden;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-}
+.app { display: flex; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
 
 /* ═══════════════════════════
    SIDEBAR
 ═══════════════════════════ */
-.sidebar {
-  width: var(--sidebar-w);
-  flex-shrink: 0;
-  background: var(--card);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  transition: transform .3s cubic-bezier(.4,0,.2,1);
-  z-index: 200;
-}
+.sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 200; }
 .sb-head { padding: 16px 14px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .sb-logo { display: flex; align-items: center; gap: 8px; font-family: var(--fd); font-weight: 900; font-size: 14px; letter-spacing: -.03em; }
 .sb-logo-img { width: 26px; height: 26px; object-fit: contain; border-radius: 6px; }
@@ -143,31 +103,10 @@ img { display: block; max-width: 100%; }
 .sb-btn-join:hover { box-shadow: 0 4px 14px var(--gold-glo); }
 
 /* ═══════════════════════════
-   MAIN AREA — fills remaining width
+   MAIN AREA
 ═══════════════════════════ */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  height: 100%;
-  overflow: hidden;
-  /* Ensure it fills all remaining space */
-  width: calc(100vw - var(--sidebar-w));
-}
-
-/* topbar */
-.topbar {
-  height: var(--topbar-h);
-  flex-shrink: 0;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 18px;
-  width: 100%;
-}
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; overflow: hidden; width: calc(100vw - var(--sidebar-w)); }
+.topbar { height: var(--topbar-h); flex-shrink: 0; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; padding: 0 18px; width: 100%; }
 .topbar-hamburger { display: none; flex-direction: column; gap: 5px; padding: 6px; cursor: pointer; margin-right: 4px; }
 .topbar-hamburger span { display: block; width: 18px; height: 2px; background: var(--text2); border-radius: 2px; }
 .topbar-title { font-family: var(--fd); font-size: 15px; font-weight: 900; letter-spacing: -.02em; flex: 1; }
@@ -176,27 +115,15 @@ img { display: block; max-width: 100%; }
 .topbar-live { display: flex; align-items: center; gap: 5px; font-family: var(--fm); font-size: 10px; color: var(--green); padding: 4px 10px; border-radius: 6px; background: var(--green-dim); border: 1px solid rgba(15,168,118,.2); }
 .topbar-live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: blink 1.6s infinite; flex-shrink: 0; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-
-/* content area — scrolls */
-.content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--bg);
-  -webkit-overflow-scrolling: touch;
-  /* Fill all available height */
-  height: calc(100vh - var(--topbar-h));
-}
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg); -webkit-overflow-scrolling: touch; height: calc(100vh - var(--topbar-h)); }
 .content::-webkit-scrollbar { width: 4px; }
 .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-/* panels */
 .panel { display: none; padding: 24px; width: 100%; }
 .panel.active { display: block; animation: fadeIn .2s ease both; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
 
 /* ═══════════════════════════
-   DASHBOARD PANEL
+   DASHBOARD
 ═══════════════════════════ */
 .dash-greeting { margin-bottom: 24px; }
 .dash-greeting h2 { font-size: clamp(20px,2.5vw,26px); margin-bottom: 4px; }
@@ -233,7 +160,7 @@ img { display: block; max-width: 100%; }
 .qa-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
 /* ═══════════════════════════
-   TREND FEED PANEL
+   TREND FEED
 ═══════════════════════════ */
 .feed-head { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .feed-head h2 { font-size: 20px; flex: 1; }
@@ -254,7 +181,7 @@ img { display: block; max-width: 100%; }
 .t-gen:hover { background: rgba(201,126,8,.15); }
 
 /* ═══════════════════════════
-   CREATE PANEL
+   CREATE
 ═══════════════════════════ */
 .create-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .create-form { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; }
@@ -282,7 +209,7 @@ img { display: block; max-width: 100%; }
 @keyframes spin { to{transform:rotate(360deg);} }
 
 /* ═══════════════════════════
-   CAROUSELS PANEL
+   CAROUSELS
 ═══════════════════════════ */
 .carousel-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
 .carousel-controls { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; height: fit-content; }
@@ -296,27 +223,9 @@ img { display: block; max-width: 100%; }
 .slide-num { position: absolute; top: 7px; right: 8px; font-family: var(--fm); font-size: 9px; opacity: .6; }
 .slide-dark { background: linear-gradient(135deg,#1a1a2e,#16213e); color: #f0b429; }
 .slide-mid { background: linear-gradient(135deg,#0f3460,#533483); color: #e2e8f0; }
-.slide-purple { background: linear-gradient(135deg,#533483,#7c3aed); color: #fff; }
-.slide-green { background: linear-gradient(135deg,#0f3460,#0a7c5c); color: #2dd4a0; }
-.slide-warm { background: linear-gradient(135deg,#3d1a00,#8b3a00); color: #f0b429; }
-.slide-clean { background: linear-gradient(135deg,#f8f9fa,#e9ecef); color: #1a1a2e; }
-[data-theme="dark"] .slide-clean { background: linear-gradient(135deg,#1c2235,#151a28); color: #eef0f6; }
 .slide-add { background: var(--bg2); border: 2px dashed var(--border2); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text3); font-size: 11px; gap: 4px; }
 .slide-add-icon { font-size: 20px; }
-
-/* Carousel Studio launch card */
-.carousel-launch-card {
-  background: linear-gradient(135deg,#1a1814 0%,#2a2318 100%);
-  border: 1px solid rgba(201,126,8,.3);
-  border-radius: var(--r2);
-  padding: 32px;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  margin-bottom: 20px;
-  cursor: pointer;
-  transition: all .2s;
-}
+.carousel-launch-card { background: linear-gradient(135deg,#1a1814 0%,#2a2318 100%); border: 1px solid rgba(201,126,8,.3); border-radius: var(--r2); padding: 32px; display: flex; align-items: center; gap: 24px; margin-bottom: 20px; cursor: pointer; transition: all .2s; }
 .carousel-launch-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,126,8,.2); }
 .clc-icon { font-size: 48px; flex-shrink: 0; }
 .clc-text h3 { font-size: 20px; color: #fff; margin-bottom: 6px; }
@@ -327,7 +236,7 @@ img { display: block; max-width: 100%; }
 .clc-feat { font-size: 10px; font-family: var(--fm); padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
 
 /* ═══════════════════════════
-   CONTENT PLAN PANEL
+   CONTENT PLAN
 ═══════════════════════════ */
 .plan-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .plan-header h2 { font-size: 20px; flex: 1; }
@@ -365,22 +274,17 @@ img { display: block; max-width: 100%; }
 .pf-header-btn.secondary { background: var(--card); border: 1px solid var(--border2); color: var(--text2); }
 .pf-header-btn.secondary:hover { border-color: var(--gold); color: var(--gold); box-shadow: none; }
 
-/* Setup / empty state */
 .pf-setup { display: none; }
 .pf-setup.show { display: block; }
-
-/* Builder layout */
 .pf-builder { display: none; }
-.pf-builder.show { display: grid; grid-template-columns: 1fr 360px; gap: 20px; }
+.pf-builder.show { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
 
-/* Setup stepper */
 .pf-setup-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
 .pf-step-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; }
 .pf-step-num { font-family: var(--fm); font-size: 10px; color: var(--text3); margin-bottom: 8px; }
 .pf-step-title { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
 .pf-step-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
 
-/* Builder left — form */
 .pf-form-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; }
 .pf-section { margin-bottom: 24px; }
 .pf-section-title { font-family: var(--fm); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
@@ -388,83 +292,108 @@ img { display: block; max-width: 100%; }
 .pf-form-textarea { width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-size: 13px; font-family: var(--fb); resize: vertical; min-height: 80px; transition: border-color .2s; }
 .pf-form-textarea:focus { outline: none; border-color: var(--gold); }
 
-/* Platform checkboxes */
+/* Dijo AI bio helper */
+.pf-ai-bio-row { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+.pf-ai-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); transition: all .2s; white-space: nowrap; }
+.pf-ai-btn:hover { background: rgba(201,126,8,.15); }
+.pf-ai-btn:disabled { opacity: .5; cursor: not-allowed; }
+
 .pf-platforms { display: flex; flex-wrap: wrap; gap: 8px; }
-.pf-plat-btn {
-  display: flex; align-items: center; gap: 7px;
-  padding: 8px 14px; border-radius: 9px;
-  border: 1.5px solid var(--border2); background: var(--bg);
-  font-size: 12px; font-weight: 600; color: var(--text2);
-  cursor: pointer; transition: all .15s;
-}
+.pf-plat-btn { display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 9px; border: 1.5px solid var(--border2); background: var(--bg); font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all .15s; }
 .pf-plat-btn:hover { border-color: var(--gold); color: var(--gold); }
 .pf-plat-btn.on { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
 .pf-plat-icon { font-size: 15px; }
 
-/* Theme selector */
 .pf-themes { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
-.pf-theme-opt {
-  border: 2px solid var(--border); border-radius: 10px; padding: 10px 8px;
-  text-align: center; cursor: pointer; transition: all .15s;
-}
+.pf-theme-opt { border: 2px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; cursor: pointer; transition: all .15s; }
 .pf-theme-opt:hover { border-color: var(--gold); }
 .pf-theme-opt.active { border-color: var(--gold); background: var(--gold-dim); }
 .pf-theme-swatch { height: 36px; border-radius: 6px; margin-bottom: 6px; }
 .pf-theme-name { font-size: 10px; font-weight: 700; color: var(--text2); font-family: var(--fm); }
 
-/* Link rows */
 .pf-link-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-.pf-link-prefix { font-size: 12px; color: var(--text3); font-family: var(--fm); white-space: nowrap; }
+.pf-link-prefix { font-size: 14px; width: 22px; text-align: center; flex-shrink: 0; }
 .pf-add-link { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--gold); padding: 6px 0; margin-top: 4px; }
 
-/* Builder right — preview */
-.pf-preview-wrap { position: sticky; top: 0; }
+/* Rate card / media kit section */
+.pf-rate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pf-rate-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
+.pf-rate-label { font-family: var(--fm); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+
+/* SEO section */
+.pf-seo-info { background: var(--blue-dim); border: 1px solid rgba(45,110,219,.15); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; }
+.pf-seo-info-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.pf-seo-info-text { font-size: 12px; color: var(--blue); line-height: 1.5; }
+.pf-seo-info-text strong { font-weight: 700; }
+
+/* Preview side */
+.pf-preview-wrap { position: sticky; top: 0; max-height: calc(100vh - var(--topbar-h) - 48px); overflow-y: auto; padding-bottom: 20px; }
+.pf-preview-wrap::-webkit-scrollbar { width: 3px; }
+.pf-preview-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 .pf-preview-label { font-family: var(--fm); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 .pf-preview-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.6s infinite; }
-.pf-phone-frame {
-  width: 100%; max-width: 360px; margin: 0 auto;
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 20px; overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,.12);
-  min-height: 520px;
-}
-[data-theme="dark"] .pf-phone-frame { box-shadow: 0 20px 60px rgba(0,0,0,.4); }
 
-/* Portfolio page preview content */
-.pfp-hero { padding: 32px 24px 24px; text-align: center; }
-.pfp-avatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-family: var(--fd); font-weight: 900; color: #fff; }
-.pfp-name { font-family: var(--fd); font-size: 20px; font-weight: 900; margin-bottom: 4px; }
-.pfp-bio { font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 14px; max-width: 280px; margin-left: auto; margin-right: auto; }
-.pfp-plats { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.pfp-plat { font-size: 18px; width: 36px; height: 36px; border-radius: 10px; background: var(--bg2); display: flex; align-items: center; justify-content: center; }
-.pfp-stats { display: flex; justify-content: center; gap: 16px; padding: 16px 24px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.pfp-stat { text-align: center; }
-.pfp-stat-val { font-family: var(--fd); font-size: 16px; font-weight: 900; color: var(--gold); }
-.pfp-stat-lbl { font-size: 10px; color: var(--text3); font-family: var(--fm); }
-.pfp-links { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-.pfp-link-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); font-size: 13px; font-weight: 600; color: var(--text); transition: all .15s; }
-.pfp-link-item:hover { border-color: var(--gold); color: var(--gold); }
-.pfp-link-icon { font-size: 16px; }
-.pfp-link-arrow { margin-left: auto; font-size: 12px; color: var(--text3); }
-.pfp-featured { padding: 0 16px 16px; }
-.pfp-featured-title { font-family: var(--fm); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 10px; }
-.pfp-carousel-thumb { border-radius: 10px; height: 80px; background: linear-gradient(135deg,#1a1a2e,#16213e); display: flex; align-items: center; justify-content: center; font-size: 24px; }
-.pfp-footer { padding: 12px; text-align: center; font-size: 10px; color: var(--text3); font-family: var(--fm); border-top: 1px solid var(--border); }
+/* Phone frame */
+.pf-phone-frame { width: 100%; max-width: 340px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.12); min-height: 560px; }
+[data-theme="dark"] .pf-phone-frame { box-shadow: 0 20px 60px rgba(0,0,0,.5); }
 
-/* Publish row */
-.pf-publish-row { display: flex; gap: 10px; align-items: center; margin-top: 20px; }
-.pf-publish-url { flex: 1; padding: 10px 14px; border-radius: 9px; background: var(--bg2); border: 1px solid var(--border); font-size: 12px; color: var(--text2); font-family: var(--fm); }
-.pf-copy-url { padding: 10px 16px; border-radius: 9px; border: 1px solid var(--border2); font-size: 12px; font-weight: 600; color: var(--text2); transition: all .2s; }
-.pf-copy-url:hover { border-color: var(--gold); color: var(--gold); }
+/* Portfolio preview inner content */
+.pfp-hero { padding: 28px 20px 20px; text-align: center; position: relative; overflow: hidden; }
+.pfp-hero-bg { position: absolute; inset: 0; opacity: .15; background-size: cover; background-position: center; }
+.pfp-avatar-ring { width: 80px; height: 80px; border-radius: 50%; padding: 3px; margin: 0 auto 12px; position: relative; z-index: 1; }
+.pfp-avatar { width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-family: var(--fd); font-weight: 900; color: #fff; }
+.pfp-name { font-family: var(--fd); font-size: 19px; font-weight: 900; margin-bottom: 3px; position: relative; z-index: 1; }
+.pfp-niche-badge { display: inline-block; font-size: 10px; font-family: var(--fm); letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; position: relative; z-index: 1; }
+.pfp-bio { font-size: 12px; line-height: 1.55; margin-bottom: 14px; max-width: 280px; margin-left: auto; margin-right: auto; position: relative; z-index: 1; }
+.pfp-plats { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; position: relative; z-index: 1; }
+.pfp-plat { font-size: 16px; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.pfp-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid; border-bottom: 1px solid; }
+.pfp-stat { text-align: center; padding: 12px 6px; border-right: 1px solid; }
+.pfp-stat:last-child { border-right: none; }
+.pfp-stat-val { font-family: var(--fd); font-size: 15px; font-weight: 900; }
+.pfp-stat-lbl { font-size: 9px; font-family: var(--fm); letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; }
+.pfp-links { padding: 14px; display: flex; flex-direction: column; gap: 7px; }
+.pfp-link-item { display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-radius: 12px; border: 1px solid; font-size: 12px; font-weight: 600; transition: all .15s; }
+.pfp-link-icon { font-size: 15px; }
+.pfp-link-arrow { margin-left: auto; font-size: 11px; }
+.pfp-rates { padding: 0 14px 14px; }
+.pfp-rates-title { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.pfp-rate-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 9px; margin-bottom: 5px; font-size: 11px; }
+.pfp-rate-type { font-weight: 600; }
+.pfp-rate-price { font-family: var(--fd); font-size: 13px; font-weight: 900; }
+.pfp-cta { padding: 14px; }
+.pfp-cta-btn { display: block; width: 100%; padding: 13px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: 700; font-family: var(--fd); letter-spacing: -.01em; }
+.pfp-featured { padding: 0 14px 14px; }
+.pfp-featured-title { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.pfp-carousel-thumb { border-radius: 10px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.pfp-footer { padding: 10px; text-align: center; font-size: 10px; font-family: var(--fm); border-top: 1px solid; }
 
-/* Stats row under preview */
+/* Stats under preview */
 .pf-preview-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
 .pf-prev-stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
 .pf-prev-stat-val { font-family: var(--fd); font-size: 18px; font-weight: 900; color: var(--gold); }
 .pf-prev-stat-lbl { font-size: 10px; color: var(--text3); font-family: var(--fm); }
 
+/* Share row */
+.pf-publish-row { display: flex; gap: 8px; align-items: center; }
+.pf-publish-url { flex: 1; padding: 10px 14px; border-radius: 9px; background: var(--bg2); border: 1px solid var(--border); font-size: 12px; color: var(--text2); font-family: var(--fm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-copy-url { padding: 10px 16px; border-radius: 9px; border: 1px solid var(--border2); font-size: 12px; font-weight: 600; color: var(--text2); transition: all .2s; white-space: nowrap; }
+.pf-copy-url:hover { border-color: var(--gold); color: var(--gold); }
+
+/* SEO meta preview */
+.pf-seo-preview { background: #fff; border: 1px solid #dadce0; border-radius: 10px; padding: 14px; margin-top: 12px; }
+[data-theme="dark"] .pf-seo-preview { background: #1c2235; border-color: rgba(255,255,255,.1); }
+.pf-seo-url { font-size: 11px; color: #0d652d; font-family: var(--fm); margin-bottom: 3px; }
+[data-theme="dark"] .pf-seo-url { color: #81c784; }
+.pf-seo-title { font-size: 14px; color: #1a0dab; font-weight: 600; margin-bottom: 4px; line-height: 1.3; }
+[data-theme="dark"] .pf-seo-title { color: #8ab4f8; }
+.pf-seo-desc { font-size: 12px; color: #545454; line-height: 1.5; }
+[data-theme="dark"] .pf-seo-desc { color: #9aa0a6; }
+.pf-seo-label { font-family: var(--fm); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.pf-seo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
 /* ═══════════════════════════
-   OPPORTUNITIES PANEL
+   OPPORTUNITIES
 ═══════════════════════════ */
 .opps-grid-full { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
 .opp-full-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; }
@@ -477,7 +406,7 @@ img { display: block; max-width: 100%; }
 .opp-apply:hover { background: rgba(201,126,8,.15); }
 
 /* ═══════════════════════════
-   CONNECT PLATFORMS PANEL
+   CONNECT PLATFORMS
 ═══════════════════════════ */
 .connect-grid-app { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-top: 20px; }
 .connect-card-app { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px 20px; transition: all .3s; position: relative; overflow: hidden; }
@@ -503,7 +432,7 @@ img { display: block; max-width: 100%; }
 .cc-app-btn.auto { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
 
 /* ═══════════════════════════
-   SETTINGS PANEL
+   SETTINGS
 ═══════════════════════════ */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .settings-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; }
@@ -518,7 +447,7 @@ img { display: block; max-width: 100%; }
 .toggle.on::after { transform: translateX(16px); }
 
 /* ═══════════════════════════
-   DIJO AI PANEL
+   DIJO AI
 ═══════════════════════════ */
 .dijo-wrap { display: grid; grid-template-columns: 1fr 280px; gap: 16px; height: calc(100vh - var(--topbar-h) - 48px); min-height: 400px; }
 .dijo-chat { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
@@ -561,7 +490,7 @@ img { display: block; max-width: 100%; }
    RESPONSIVE
 ═══════════════════════════ */
 @media (max-width:1200px) {
-  .pf-builder.show { grid-template-columns: 1fr 300px; }
+  .pf-builder.show { grid-template-columns: 1fr 320px; }
 }
 @media (max-width:900px) {
   :root { --sidebar-w: 220px; }
@@ -584,6 +513,7 @@ img { display: block; max-width: 100%; }
   .pf-preview-wrap { display: none; }
   .pf-setup-steps { grid-template-columns: 1fr; }
   .pf-themes { grid-template-columns: repeat(3,1fr); }
+  .pf-rate-grid { grid-template-columns: 1fr; }
 }
 @media (max-width:560px) {
   .panel { padding: 14px; }
@@ -615,28 +545,22 @@ img { display: block; max-width: 100%; }
         <span>ImpactGrid</span>
       </div>
     </div>
-
     <nav class="sb-nav">
       <div class="sb-label">Main</div>
       <div class="sb-item active" onclick="showPanel('dashboard',this)"><span class="sb-icon">🏠</span>Dashboard</div>
       <div class="sb-item" onclick="showPanel('trendfeed',this)"><span class="sb-icon">📡</span>Trend Feed<span class="sb-badge">Live</span></div>
       <div class="sb-item" onclick="showPanel('create',this)"><span class="sb-icon">✍️</span>Create</div>
-      <!-- FIXED: Carousel Studio links to carousel.html -->
       <div class="sb-item" onclick="window.location.href='carousel.html'"><span class="sb-icon">🎨</span>Carousel Studio</div>
-
       <div class="sb-label">Planning</div>
       <div class="sb-item" onclick="showPanel('contentplan',this)"><span class="sb-icon">📅</span>Content Plan</div>
       <div class="sb-item" onclick="showPanel('portfolio',this)"><span class="sb-icon">🌐</span>Portfolio</div>
       <div class="sb-item" onclick="showPanel('dijo',this)"><span class="sb-icon">🤖</span>Dijo AI</div>
-
       <div class="sb-label">Grow</div>
       <div class="sb-item" onclick="showPanel('opportunities',this)"><span class="sb-icon">💼</span>Opportunities</div>
       <div class="sb-item" onclick="showPanel('connect',this)"><span class="sb-icon">🔗</span>Connect Platforms</div>
-
       <div class="sb-label">Account</div>
       <div class="sb-item" onclick="showPanel('settings',this)"><span class="sb-icon">⚙️</span>Settings</div>
     </nav>
-
     <div class="sb-bottom">
       <div id="sbUserWrap" style="display:none;">
         <div class="sb-user" onclick="toggleSbDrop()">
@@ -689,29 +613,14 @@ img { display: block; max-width: 100%; }
           <p id="dashDate">Loading today's intelligence…</p>
         </div>
         <div class="dash-grid">
-          <div class="dash-stat">
-            <div class="dash-stat-label">Top Trend Score</div>
-            <div class="dash-stat-val" style="color:var(--green);">5.9</div>
-            <div class="dash-stat-sub">shorts · YouTube</div>
-          </div>
-          <div class="dash-stat">
-            <div class="dash-stat-label">Trends Today</div>
-            <div class="dash-stat-val">12</div>
-            <div class="dash-stat-sub">UK + Global signals</div>
-          </div>
-          <div class="dash-stat">
-            <div class="dash-stat-label">Best Platform</div>
-            <div class="dash-stat-val" style="font-size:20px;color:var(--gold);">YouTube</div>
-            <div class="dash-stat-sub">Most active right now</div>
-          </div>
+          <div class="dash-stat"><div class="dash-stat-label">Top Trend Score</div><div class="dash-stat-val" style="color:var(--green);">5.9</div><div class="dash-stat-sub">shorts · YouTube</div></div>
+          <div class="dash-stat"><div class="dash-stat-label">Trends Today</div><div class="dash-stat-val">12</div><div class="dash-stat-sub">UK + Global signals</div></div>
+          <div class="dash-stat"><div class="dash-stat-label">Best Platform</div><div class="dash-stat-val" style="font-size:20px;color:var(--gold);">YouTube</div><div class="dash-stat-sub">Most active right now</div></div>
         </div>
         <div class="briefing-card">
           <div class="briefing-header">
             <div class="briefing-av">D</div>
-            <div>
-              <div class="briefing-title">Dijo Daily Briefing</div>
-              <div class="briefing-meta" id="briefingDate">Thursday, 9 April 2026 · cached</div>
-            </div>
+            <div><div class="briefing-title">Dijo Daily Briefing</div><div class="briefing-meta" id="briefingDate">Thursday, 9 April 2026 · cached</div></div>
             <button onclick="refreshBriefing()" style="margin-left:auto;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);">Refresh</button>
           </div>
           <p class="briefing-text" id="briefingText">Good morning, creator. Today's hottest topics are all about Viking history with "vikingtom" leading the charge, along with the rising popularity of "shorts" and the emerging interest in "inteligenciaartificial" on YouTube. I recommend creating a short, engaging video about a fascinating Viking myth and publishing it as a YouTube Short today. YouTube is the best platform play right now — stay consistent and ride this wave.</p>
@@ -723,16 +632,8 @@ img { display: block; max-width: 100%; }
         </div>
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">⚡ Top Opportunities</div>
         <div class="opps-row">
-          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
-            <span class="opp-icon">🔱</span>
-            <div><div class="opp-name">Viking history myths</div><div class="opp-meta">TikTok · emerging · 5 videos</div></div>
-            <div class="opp-score"><div class="opp-score-n">5.8</div><div class="opp-score-l">Score</div></div>
-          </div>
-          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
-            <span class="opp-icon">🇬🇧</span>
-            <div><div class="opp-name">UK Street Style</div><div class="opp-meta">TikTok · rising fast</div></div>
-            <div class="opp-score"><div class="opp-score-n">5.5</div><div class="opp-score-l">Score</div></div>
-          </div>
+          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><span class="opp-icon">🔱</span><div><div class="opp-name">Viking history myths</div><div class="opp-meta">TikTok · emerging · 5 videos</div></div><div class="opp-score"><div class="opp-score-n">5.8</div><div class="opp-score-l">Score</div></div></div>
+          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><span class="opp-icon">🇬🇧</span><div><div class="opp-name">UK Street Style</div><div class="opp-meta">TikTok · rising fast</div></div><div class="opp-score"><div class="opp-score-n">5.5</div><div class="opp-score-l">Score</div></div></div>
         </div>
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Quick Actions</div>
         <div class="quick-actions">
@@ -766,28 +667,10 @@ img { display: block; max-width: 100%; }
         <div class="create-layout">
           <div class="create-form">
             <h3>What do you want to create?</h3>
-            <div class="form-group">
-              <label class="form-label">Topic</label>
-              <input class="form-input" id="createTopic" placeholder="e.g. Viking myths, UK Street Style…"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Platform</label>
-              <select class="form-select" id="createPlatform">
-                <option>TikTok</option><option>YouTube</option><option>Instagram</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Content Type</label>
-              <select class="form-select" id="createType">
-                <option>Short / Reel</option><option>Long-form video</option><option>Carousel post</option><option>Story / Status</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Tone</label>
-              <select class="form-select" id="createTone">
-                <option>Educational</option><option>Entertaining</option><option>Inspirational</option><option>Controversial / Hot take</option>
-              </select>
-            </div>
+            <div class="form-group"><label class="form-label">Topic</label><input class="form-input" id="createTopic" placeholder="e.g. Viking myths, UK Street Style…"/></div>
+            <div class="form-group"><label class="form-label">Platform</label><select class="form-select" id="createPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option></select></div>
+            <div class="form-group"><label class="form-label">Content Type</label><select class="form-select" id="createType"><option>Short / Reel</option><option>Long-form video</option><option>Carousel post</option><option>Story / Status</option></select></div>
+            <div class="form-group"><label class="form-label">Tone</label><select class="form-select" id="createTone"><option>Educational</option><option>Entertaining</option><option>Inspirational</option><option>Controversial / Hot take</option></select></div>
             <button class="btn-generate" id="generateBtn" onclick="generateContent()">✨ Generate with Dijo</button>
           </div>
           <div class="create-output" id="createOutput">
@@ -795,9 +678,6 @@ img { display: block; max-width: 100%; }
           </div>
         </div>
       </div>
-
-      <!-- ══ CAROUSEL STUDIO — redirects ══ -->
-      <!-- Sidebar item now links directly to carousel.html — no panel needed -->
 
       <!-- ══ CONTENT PLAN ══ -->
       <div class="panel" id="panel-contentplan">
@@ -824,58 +704,43 @@ img { display: block; max-width: 100%; }
       <!-- ══ PORTFOLIO ══ -->
       <div class="panel" id="panel-portfolio">
 
-        <!-- SETUP STATE (shown first) -->
+        <!-- SETUP STATE -->
         <div id="pfSetup" class="pf-setup show">
           <div class="portfolio-header">
             <h2>Portfolio</h2>
             <button class="pf-header-btn" onclick="startPortfolioBuilder()">✨ Build My Portfolio</button>
           </div>
-          <div class="carousel-launch-card" onclick="startPortfolioBuilder()" style="cursor:pointer;">
+          <div class="carousel-launch-card" onclick="startPortfolioBuilder()">
             <div class="clc-icon">🌐</div>
             <div class="clc-text">
               <h3>Your Creator Portfolio</h3>
-              <p>Build a beautiful link-in-bio page in minutes. Add your platforms, showcase your best carousels, and share one link that does everything.</p>
+              <p>Build a beautiful link-in-bio page in minutes. Add your platforms, showcase your best carousels, and share one link that does everything — optimised for Google search too.</p>
               <div class="clc-features">
                 <span class="clc-feat">Link in bio</span>
                 <span class="clc-feat">Platform stats</span>
-                <span class="clc-feat">Carousel showcase</span>
+                <span class="clc-feat">Media kit</span>
                 <span class="clc-feat">Brand contact</span>
-                <span class="clc-feat">Custom theme</span>
+                <span class="clc-feat">SEO optimised</span>
+                <span class="clc-feat">AI-written bio</span>
               </div>
               <br/>
               <span class="clc-btn">Get Started →</span>
             </div>
           </div>
           <div class="pf-setup-steps">
-            <div class="pf-step-card">
-              <div class="pf-step-num">STEP 01</div>
-              <div class="pf-step-title">Fill Your Profile</div>
-              <div class="pf-step-desc">Add your name, bio, platforms, and follower counts. Takes 2 minutes.</div>
-            </div>
-            <div class="pf-step-card">
-              <div class="pf-step-num">STEP 02</div>
-              <div class="pf-step-title">Pick a Theme</div>
-              <div class="pf-step-desc">Choose from Dark, Gold, Clean, or Minimal. Matches your brand.</div>
-            </div>
-            <div class="pf-step-card">
-              <div class="pf-step-num">STEP 03</div>
-              <div class="pf-step-title">Add Your Links</div>
-              <div class="pf-step-desc">Drop in your TikTok, YouTube, Instagram, or any custom links.</div>
-            </div>
-            <div class="pf-step-card">
-              <div class="pf-step-num">STEP 04</div>
-              <div class="pf-step-title">Publish & Share</div>
-              <div class="pf-step-desc">Copy your portfolio link and add it to every bio. Done.</div>
-            </div>
+            <div class="pf-step-card"><div class="pf-step-num">STEP 01</div><div class="pf-step-title">Fill Your Profile</div><div class="pf-step-desc">Add your name, bio, platforms, and follower counts. Takes 2 minutes.</div></div>
+            <div class="pf-step-card"><div class="pf-step-num">STEP 02</div><div class="pf-step-title">Pick a Theme</div><div class="pf-step-desc">Choose from Dark Gold, Deep Navy, Clean White, or Forest. Matches your brand.</div></div>
+            <div class="pf-step-card"><div class="pf-step-num">STEP 03</div><div class="pf-step-title">Add Your Links + Rates</div><div class="pf-step-desc">Drop in your TikTok, YouTube, Instagram — plus optional rate card for brands.</div></div>
+            <div class="pf-step-card"><div class="pf-step-num">STEP 04</div><div class="pf-step-title">Publish & Share</div><div class="pf-step-desc">Dijo writes your SEO bio. Copy your link and add it to every profile. Done.</div></div>
           </div>
         </div>
 
-        <!-- BUILDER STATE (shown after clicking Build) -->
+        <!-- BUILDER STATE -->
         <div id="pfBuilder" class="pf-builder">
           <div class="portfolio-header" style="grid-column:1/-1;">
             <h2>Portfolio Builder</h2>
             <button class="pf-header-btn secondary" onclick="resetPortfolio()">← Back</button>
-            <button class="pf-header-btn" onclick="publishPortfolio()">🚀 Publish</button>
+            <button class="pf-header-btn" onclick="publishPortfolio()" id="pfPublishBtn">🚀 Publish</button>
           </div>
 
           <!-- LEFT: Form -->
@@ -897,6 +762,10 @@ img { display: block; max-width: 100%; }
               <div class="form-group" style="margin-top:12px;">
                 <label class="form-label">Bio</label>
                 <textarea class="pf-form-textarea" id="pfBio" placeholder="One line about what you create and who it's for…" oninput="updatePreview()"></textarea>
+                <div class="pf-ai-bio-row">
+                  <button class="pf-ai-btn" id="pfAiBioBtn" onclick="generateAIBio()">✨ Write with Dijo</button>
+                  <span style="font-size:11px;color:var(--text3);padding-top:6px;">Dijo will write an SEO-optimised bio based on your details</span>
+                </div>
               </div>
             </div>
 
@@ -908,13 +777,13 @@ img { display: block; max-width: 100%; }
                 <button class="pf-plat-btn" onclick="togglePlat(this,'youtube','▶️','YouTube')"><span class="pf-plat-icon">▶️</span>YouTube</button>
                 <button class="pf-plat-btn" onclick="togglePlat(this,'instagram','📸','Instagram')"><span class="pf-plat-icon">📸</span>Instagram</button>
                 <button class="pf-plat-btn" onclick="togglePlat(this,'linkedin','💼','LinkedIn')"><span class="pf-plat-icon">💼</span>LinkedIn</button>
-                <button class="pf-plat-btn" onclick="togglePlat(this,'twitter','𝕏','Twitter / X')"><span class="pf-plat-icon">𝕏</span>Twitter/X</button>
+                <button class="pf-plat-btn" onclick="togglePlat(this,'twitter','𝕏','Twitter/X')"><span class="pf-plat-icon">𝕏</span>Twitter/X</button>
               </div>
             </div>
 
             <!-- Stats -->
             <div class="pf-section">
-              <div class="pf-section-title">Stats (optional)</div>
+              <div class="pf-section-title">Stats (optional — shown to brands)</div>
               <div class="pf-row">
                 <div class="form-group" style="margin-bottom:0;">
                   <label class="form-label">Total Followers</label>
@@ -926,8 +795,31 @@ img { display: block; max-width: 100%; }
                 </div>
               </div>
               <div class="form-group" style="margin-top:12px;margin-bottom:0;">
-                <label class="form-label">Total Views / Month</label>
+                <label class="form-label">Views / Month</label>
                 <input class="form-input" id="pfViews" placeholder="e.g. 1.2M" oninput="updatePreview()"/>
+              </div>
+            </div>
+
+            <!-- Rate Card -->
+            <div class="pf-section">
+              <div class="pf-section-title">Rate Card (optional — for brand deals)</div>
+              <div class="pf-rate-grid">
+                <div class="pf-rate-item">
+                  <div class="pf-rate-label">Story / Short</div>
+                  <input class="form-input" id="pfRateStory" placeholder="e.g. £150" style="margin-top:4px;" oninput="updatePreview()"/>
+                </div>
+                <div class="pf-rate-item">
+                  <div class="pf-rate-label">Dedicated Post</div>
+                  <input class="form-input" id="pfRatePost" placeholder="e.g. £350" style="margin-top:4px;" oninput="updatePreview()"/>
+                </div>
+                <div class="pf-rate-item">
+                  <div class="pf-rate-label">Long-form Video</div>
+                  <input class="form-input" id="pfRateVideo" placeholder="e.g. £600" style="margin-top:4px;" oninput="updatePreview()"/>
+                </div>
+                <div class="pf-rate-item">
+                  <div class="pf-rate-label">Monthly Package</div>
+                  <input class="form-input" id="pfRatePackage" placeholder="e.g. £1,200" style="margin-top:4px;" oninput="updatePreview()"/>
+                </div>
               </div>
             </div>
 
@@ -935,18 +827,10 @@ img { display: block; max-width: 100%; }
             <div class="pf-section">
               <div class="pf-section-title">Links</div>
               <div id="pfLinksContainer">
-                <div class="pf-link-row">
-                  <span class="pf-link-prefix">🎵</span>
-                  <input class="form-input" placeholder="TikTok URL" style="flex:1" oninput="updatePreview()"/>
-                </div>
-                <div class="pf-link-row">
-                  <span class="pf-link-prefix">▶️</span>
-                  <input class="form-input" placeholder="YouTube URL" style="flex:1" oninput="updatePreview()"/>
-                </div>
-                <div class="pf-link-row">
-                  <span class="pf-link-prefix">📸</span>
-                  <input class="form-input" placeholder="Instagram URL" style="flex:1" oninput="updatePreview()"/>
-                </div>
+                <div class="pf-link-row"><span class="pf-link-prefix">🎵</span><input class="form-input" placeholder="TikTok URL" style="flex:1" oninput="updatePreview()"/></div>
+                <div class="pf-link-row"><span class="pf-link-prefix">▶️</span><input class="form-input" placeholder="YouTube URL" style="flex:1" oninput="updatePreview()"/></div>
+                <div class="pf-link-row"><span class="pf-link-prefix">📸</span><input class="form-input" placeholder="Instagram URL" style="flex:1" oninput="updatePreview()"/></div>
+                <div class="pf-link-row"><span class="pf-link-prefix">📧</span><input class="form-input" placeholder="Email / contact (for brands)" style="flex:1" oninput="updatePreview()"/></div>
               </div>
               <button class="pf-add-link" onclick="addCustomLink()">+ Add custom link</button>
             </div>
@@ -955,22 +839,25 @@ img { display: block; max-width: 100%; }
             <div class="pf-section">
               <div class="pf-section-title">Theme</div>
               <div class="pf-themes" id="pfThemes">
-                <div class="pf-theme-opt active" onclick="setTheme(this,'dark')" data-theme="dark">
-                  <div class="pf-theme-swatch" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);"></div>
-                  <div class="pf-theme-name">Dark Gold</div>
-                </div>
-                <div class="pf-theme-opt" onclick="setTheme(this,'navy')" data-theme="navy">
-                  <div class="pf-theme-swatch" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);"></div>
-                  <div class="pf-theme-name">Deep Navy</div>
-                </div>
-                <div class="pf-theme-opt" onclick="setTheme(this,'clean')" data-theme="clean">
-                  <div class="pf-theme-swatch" style="background:linear-gradient(135deg,#f8fafc,#e2e8f0);border:1px solid #e2e8f0;"></div>
-                  <div class="pf-theme-name">Clean White</div>
-                </div>
-                <div class="pf-theme-opt" onclick="setTheme(this,'forest')" data-theme="forest">
-                  <div class="pf-theme-swatch" style="background:linear-gradient(135deg,#14532d,#166534);"></div>
-                  <div class="pf-theme-name">Forest</div>
-                </div>
+                <div class="pf-theme-opt active" onclick="setTheme(this,'dark')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);"></div><div class="pf-theme-name">Dark Gold</div></div>
+                <div class="pf-theme-opt" onclick="setTheme(this,'navy')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);"></div><div class="pf-theme-name">Deep Navy</div></div>
+                <div class="pf-theme-opt" onclick="setTheme(this,'clean')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#f8fafc,#e2e8f0);border:1px solid #e2e8f0;"></div><div class="pf-theme-name">Clean White</div></div>
+                <div class="pf-theme-opt" onclick="setTheme(this,'forest')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#14532d,#166534);"></div><div class="pf-theme-name">Forest</div></div>
+              </div>
+            </div>
+
+            <!-- SEO -->
+            <div class="pf-section">
+              <div class="pf-section-title">SEO Preview</div>
+              <div class="pf-seo-info">
+                <div class="pf-seo-info-icon">🔍</div>
+                <div class="pf-seo-info-text"><strong>Dijo optimises your portfolio for Google.</strong> Brands searching for creators in your niche will find your page. Fill in your name and niche above to see your search preview.</div>
+              </div>
+              <div class="pf-seo-label"><div class="pf-seo-dot"></div>Google Search Preview</div>
+              <div class="pf-seo-preview">
+                <div class="pf-seo-url" id="pfSeoUrl">impactgrid.app/p/yourcreatorname</div>
+                <div class="pf-seo-title" id="pfSeoTitle">Your Name — Creator Portfolio | ImpactGrid</div>
+                <div class="pf-seo-desc" id="pfSeoDesc">Creator in your niche. TikTok · YouTube · Instagram. View stats, collabs, and contact for brand deals. Powered by ImpactGrid.</div>
               </div>
             </div>
 
@@ -981,7 +868,7 @@ img { display: block; max-width: 100%; }
                 <div class="pf-publish-url" id="pfUrl">impactgrid.app/p/yourcreatorname</div>
                 <button class="pf-copy-url" onclick="copyPortfolioUrl()">Copy</button>
               </div>
-              <button class="btn-generate" style="margin-top:12px;" onclick="publishPortfolio()">🚀 Publish Portfolio</button>
+              <button class="btn-generate" style="margin-top:12px;" onclick="publishPortfolio()" id="pfPublishBtn2">🚀 Publish Portfolio</button>
             </div>
 
           </div><!-- /pf-form-card -->
@@ -993,17 +880,16 @@ img { display: block; max-width: 100%; }
               Live Preview
             </div>
             <div class="pf-phone-frame" id="pfPhone">
-              <!-- populated by updatePreview() -->
+              <div style="display:flex;align-items:center;justify-content:center;height:560px;color:#9099b8;font-size:13px;text-align:center;padding:20px;">
+                <div>
+                  <div style="font-size:32px;margin-bottom:10px;">🌐</div>
+                  Fill in your profile details<br/>to see your live preview
+                </div>
+              </div>
             </div>
             <div class="pf-preview-stats">
-              <div class="pf-prev-stat">
-                <div class="pf-prev-stat-val" id="pfStatViews">—</div>
-                <div class="pf-prev-stat-lbl">Profile Views</div>
-              </div>
-              <div class="pf-prev-stat">
-                <div class="pf-prev-stat-val" id="pfStatClicks">—</div>
-                <div class="pf-prev-stat-lbl">Link Clicks</div>
-              </div>
+              <div class="pf-prev-stat"><div class="pf-prev-stat-val" id="pfStatViews">—</div><div class="pf-prev-stat-lbl">Profile Views</div></div>
+              <div class="pf-prev-stat"><div class="pf-prev-stat-val" id="pfStatClicks">—</div><div class="pf-prev-stat-lbl">Link Clicks</div></div>
             </div>
           </div>
 
@@ -1154,9 +1040,12 @@ function setUser(user) {
   var hour = new Date().getHours();
   var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   var g = document.getElementById('dashGreeting'); if (g) g.textContent = greet + ', ' + name.split(' ')[0] + ' 👋';
-  // Update portfolio URL
+  // Pre-fill portfolio name
+  var pfNameEl = document.getElementById('pfName');
+  if (pfNameEl && !pfNameEl.value) { pfNameEl.value = name; updatePreview(); }
   var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
   var urlEl = document.getElementById('pfUrl'); if (urlEl) urlEl.textContent = 'impactgrid.app/p/' + slug;
+  updateSEOPreview(name, '', slug);
 }
 function clearUser() { document.getElementById('sbGuestWrap').style.display = 'block'; document.getElementById('sbUserWrap').style.display = 'none'; }
 window.igOut = async function() { try { var c = getSupabase(); if (c) await c.auth.signOut(); } catch(e) {} window.location.href = 'index.html'; };
@@ -1251,10 +1140,8 @@ function autoFillPlan() {
 /* ── REFRESH BRIEFING ── */
 function refreshBriefing() { var el = document.getElementById('briefingText'); if (el) { el.style.opacity='.4'; setTimeout(function(){el.style.opacity='1';},600); } }
 
-/* ── COPY ── */
+/* ── COPY / ESC ── */
 function copyText(t) { try { navigator.clipboard.writeText(t); } catch(e) {} }
-
-/* ── ESCAPE HTML ── */
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 /* ── PLATFORM SESSION CHECKS ── */
@@ -1270,10 +1157,10 @@ var pfState = {
   theme: 'dark',
   platforms: [],
   themeConfigs: {
-    dark:   { bg: 'linear-gradient(135deg,#1a1814,#2a2318)', heroBg: '#1a1814', accent: '#c97e08', text: '#fff', sub: 'rgba(255,255,255,0.6)', border: 'rgba(255,255,255,0.1)', linkBg: 'rgba(255,255,255,0.06)', avatarBg: 'linear-gradient(135deg,#c97e08,#a86505)' },
-    navy:   { bg: 'linear-gradient(135deg,#0f172a,#1e3a5f)', heroBg: '#0f172a', accent: '#4f8ef7', text: '#fff', sub: 'rgba(255,255,255,0.6)', border: 'rgba(255,255,255,0.1)', linkBg: 'rgba(255,255,255,0.06)', avatarBg: 'linear-gradient(135deg,#2d6edb,#4f8ef7)' },
-    clean:  { bg: 'linear-gradient(135deg,#f8fafc,#e2e8f0)', heroBg: '#f8fafc', accent: '#2d6edb', text: '#0d1017', sub: '#4a5068', border: 'rgba(0,0,0,0.08)', linkBg: '#ffffff', avatarBg: 'linear-gradient(135deg,#2d6edb,#4f8ef7)' },
-    forest: { bg: 'linear-gradient(135deg,#14532d,#166534)', heroBg: '#14532d', accent: '#4ade80', text: '#fff', sub: 'rgba(255,255,255,0.6)', border: 'rgba(255,255,255,0.1)', linkBg: 'rgba(255,255,255,0.08)', avatarBg: 'linear-gradient(135deg,#0fa876,#4ade80)' },
+    dark:   { bg:'linear-gradient(160deg,#1a1814 0%,#2a2318 100%)', heroBg:'#1a1814', accent:'#c97e08', accentGlow:'rgba(201,126,8,0.3)', text:'#fff', sub:'rgba(255,255,255,0.55)', border:'rgba(255,255,255,0.08)', linkBg:'rgba(255,255,255,0.06)', linkBorder:'rgba(255,255,255,0.1)', avatarBg:'linear-gradient(135deg,#c97e08,#a86505)', statBorder:'rgba(255,255,255,0.06)', rateBg:'rgba(255,255,255,0.04)', ctaBg:'linear-gradient(135deg,#c97e08,#a86505)', ctaText:'#fff' },
+    navy:   { bg:'linear-gradient(160deg,#0f172a 0%,#1e3a5f 100%)', heroBg:'#0f172a', accent:'#4f8ef7', accentGlow:'rgba(79,142,247,0.3)', text:'#fff', sub:'rgba(255,255,255,0.55)', border:'rgba(255,255,255,0.08)', linkBg:'rgba(255,255,255,0.05)', linkBorder:'rgba(255,255,255,0.1)', avatarBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', statBorder:'rgba(255,255,255,0.06)', rateBg:'rgba(255,255,255,0.04)', ctaBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', ctaText:'#fff' },
+    clean:  { bg:'linear-gradient(160deg,#f8fafc 0%,#e2e8f0 100%)', heroBg:'#f8fafc', accent:'#2d6edb', accentGlow:'rgba(45,110,219,0.2)', text:'#0d1017', sub:'#4a5068', border:'rgba(0,0,0,0.07)', linkBg:'#ffffff', linkBorder:'rgba(0,0,0,0.08)', avatarBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', statBorder:'rgba(0,0,0,0.07)', rateBg:'rgba(0,0,0,0.03)', ctaBg:'linear-gradient(135deg,#2d6edb,#4f8ef7)', ctaText:'#fff' },
+    forest: { bg:'linear-gradient(160deg,#14532d 0%,#166534 50%,#15803d 100%)', heroBg:'#14532d', accent:'#4ade80', accentGlow:'rgba(74,222,128,0.3)', text:'#fff', sub:'rgba(255,255,255,0.6)', border:'rgba(255,255,255,0.1)', linkBg:'rgba(255,255,255,0.07)', linkBorder:'rgba(255,255,255,0.12)', avatarBg:'linear-gradient(135deg,#0fa876,#4ade80)', statBorder:'rgba(255,255,255,0.08)', rateBg:'rgba(255,255,255,0.05)', ctaBg:'linear-gradient(135deg,#0fa876,#4ade80)', ctaText:'#fff' },
   }
 };
 
@@ -1316,67 +1203,143 @@ function addCustomLink() {
   container.appendChild(row);
 }
 
+function updateSEOPreview(name, niche, slug) {
+  name = name || 'Your Name';
+  niche = niche || 'Content Creator';
+  slug = slug || 'yourcreatorname';
+  var urlEl = document.getElementById('pfSeoUrl');
+  var titleEl = document.getElementById('pfSeoTitle');
+  var descEl = document.getElementById('pfSeoDesc');
+  var platforms = pfState.platforms.map(function(p){return p.label;}).join(' · ') || 'TikTok · YouTube · Instagram';
+  if (urlEl) urlEl.textContent = 'impactgrid.app/p/' + slug;
+  if (titleEl) titleEl.textContent = name + ' — ' + niche + ' | ImpactGrid';
+  if (descEl) descEl.textContent = niche + ' creator. ' + platforms + '. View stats, media kit, and contact for brand deals. Based in UK.';
+  var pfUrlEl = document.getElementById('pfUrl');
+  if (pfUrlEl) pfUrlEl.textContent = 'impactgrid.app/p/' + slug;
+}
+
 function updatePreview() {
   var phone = document.getElementById('pfPhone');
   if (!phone) return;
+
   var name = document.getElementById('pfName').value || 'Your Name';
-  var niche = document.getElementById('pfNiche').value || 'Creator';
+  var niche = document.getElementById('pfNiche').value || 'Content Creator';
   var bio = document.getElementById('pfBio').value || 'Creating content that connects and converts.';
-  var followers = document.getElementById('pfFollowers').value || '—';
-  var engagement = document.getElementById('pfEngagement').value || '—';
-  var views = document.getElementById('pfViews').value || '—';
+  var followers = document.getElementById('pfFollowers').value;
+  var engagement = document.getElementById('pfEngagement').value;
+  var views = document.getElementById('pfViews').value;
+  var rateStory = document.getElementById('pfRateStory').value;
+  var ratePost = document.getElementById('pfRatePost').value;
+  var rateVideo = document.getElementById('pfRateVideo').value;
+  var ratePackage = document.getElementById('pfRatePackage').value;
+
+  var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'creator';
+  updateSEOPreview(name, niche, slug);
+
   var cfg = pfState.themeConfigs[pfState.theme];
   var initials = name.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || 'YN';
 
-  // Platform icons
-  var platHtml = pfState.platforms.length
-    ? pfState.platforms.map(function(p){return '<div class="pfp-plat" style="background:'+cfg.linkBg+';color:'+cfg.text+'">'+p.icon+'</div>';}).join('')
-    : '<div class="pfp-plat" style="background:'+cfg.linkBg+';color:'+cfg.text+'">🎵</div><div class="pfp-plat" style="background:'+cfg.linkBg+';color:'+cfg.text+'">▶️</div>';
+  // Platforms
+  var platHtml = (pfState.platforms.length ? pfState.platforms : [{icon:'🎵'},{icon:'▶️'},{icon:'📸'}])
+    .map(function(p){ return '<div class="pfp-plat" style="background:'+cfg.linkBg+';border:1px solid '+cfg.linkBorder+';">'+p.icon+'</div>'; }).join('');
 
-  // Links from inputs
+  // Stats — only show if at least one is filled
+  var hasStats = followers || engagement || views;
+  var statsHtml = hasStats
+    ? '<div class="pfp-stats" style="border-color:'+cfg.statBorder+';">' +
+        '<div class="pfp-stat" style="border-color:'+cfg.statBorder+';"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(followers||'—')+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">FOLLOWERS</div></div>' +
+        '<div class="pfp-stat" style="border-color:'+cfg.statBorder+';"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(engagement||'—')+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">ENGAGEMENT</div></div>' +
+        '<div class="pfp-stat" style="border-color:'+cfg.statBorder+';"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(views||'—')+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">VIEWS/MO</div></div>' +
+      '</div>'
+    : '';
+
+  // Links
   var linkInputs = document.querySelectorAll('#pfLinksContainer input');
-  var links = [];
-  var defaultLinks = [{icon:'🎵',label:'TikTok'},{icon:'▶️',label:'YouTube'},{icon:'📸',label:'Instagram'}];
+  var defaultLinks = [{icon:'🎵',label:'TikTok'},{icon:'▶️',label:'YouTube'},{icon:'📸',label:'Instagram'},{icon:'📧',label:'Contact'}];
+  var linksHtml = '';
   linkInputs.forEach(function(inp, i) {
     var val = inp.value.trim();
     var def = defaultLinks[i] || {icon:'🔗', label:'Link'};
-    links.push({icon: def.icon, label: val ? def.label : def.label, url: val || '#'});
+    if (val || i < 3) {
+      linksHtml += '<div class="pfp-link-item" style="background:'+cfg.linkBg+';border-color:'+cfg.linkBorder+';color:'+cfg.text+';"><span class="pfp-link-icon">'+def.icon+'</span>'+esc(def.label)+'<span class="pfp-link-arrow" style="color:'+cfg.sub+'">→</span></div>';
+    }
   });
 
-  var linksHtml = links.map(function(l) {
-    return '<div class="pfp-link-item" style="background:'+cfg.linkBg+';border-color:'+cfg.border+';color:'+cfg.text+';"><span class="pfp-link-icon">'+l.icon+'</span>'+esc(l.label)+'<span class="pfp-link-arrow" style="color:'+cfg.sub+'">→</span></div>';
-  }).join('');
+  // Rate card
+  var hasRates = rateStory || ratePost || rateVideo || ratePackage;
+  var ratesHtml = '';
+  if (hasRates) {
+    ratesHtml = '<div class="pfp-rates"><div class="pfp-rates-title" style="color:'+cfg.sub+'">RATE CARD</div>';
+    if (rateStory) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Story / Short</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(rateStory)+'</span></div>';
+    if (ratePost) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Dedicated Post</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(ratePost)+'</span></div>';
+    if (rateVideo) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Long-form Video</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(rateVideo)+'</span></div>';
+    if (ratePackage) ratesHtml += '<div class="pfp-rate-row" style="background:'+cfg.rateBg+';"><span class="pfp-rate-type" style="color:'+cfg.sub+'">Monthly Package</span><span class="pfp-rate-price" style="color:'+cfg.accent+'">'+esc(ratePackage)+'</span></div>';
+    ratesHtml += '</div>';
+  }
 
   phone.innerHTML =
-    '<div style="background:'+cfg.bg+';min-height:520px;">' +
-      '<div class="pfp-hero" style="background:'+cfg.heroBg+'">' +
-        '<div class="pfp-avatar" style="background:'+cfg.avatarBg+'">'+esc(initials)+'</div>' +
-        '<div class="pfp-name" style="color:'+cfg.text+'">'+esc(name)+'</div>' +
-        '<div style="font-size:11px;font-family:var(--fm);color:'+cfg.accent+';margin-bottom:8px;letter-spacing:.08em;">'+esc(niche.toUpperCase())+'</div>' +
-        '<div class="pfp-bio" style="color:'+cfg.sub+'">'+esc(bio)+'</div>' +
+    '<div style="background:'+cfg.bg+';min-height:560px;border-radius:24px;">' +
+      '<div class="pfp-hero" style="background:'+cfg.heroBg+';border-radius:24px 24px 0 0;">' +
+        '<div class="pfp-avatar-ring" style="background:'+cfg.accentGlow+';padding:3px;">' +
+          '<div class="pfp-avatar" style="background:'+cfg.avatarBg+';">'+esc(initials)+'</div>' +
+        '</div>' +
+        '<div class="pfp-name" style="color:'+cfg.text+';">'+esc(name)+'</div>' +
+        '<div class="pfp-niche-badge" style="background:'+cfg.linkBg+';color:'+cfg.accent+';border:1px solid '+cfg.linkBorder+';">'+esc(niche)+'</div>' +
+        '<div class="pfp-bio" style="color:'+cfg.sub+';">'+esc(bio)+'</div>' +
         '<div class="pfp-plats">'+platHtml+'</div>' +
       '</div>' +
-      '<div class="pfp-stats" style="background:'+cfg.heroBg+';border-color:'+cfg.border+'">' +
-        '<div class="pfp-stat"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(followers)+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">FOLLOWERS</div></div>' +
-        '<div class="pfp-stat"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(engagement)+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">ENGAGEMENT</div></div>' +
-        '<div class="pfp-stat"><div class="pfp-stat-val" style="color:'+cfg.accent+'">'+esc(views)+'</div><div class="pfp-stat-lbl" style="color:'+cfg.sub+'">VIEWS/MO</div></div>' +
+      statsHtml +
+      '<div class="pfp-links" style="background:'+cfg.heroBg+';">'+linksHtml+'</div>' +
+      ratesHtml +
+      '<div class="pfp-cta" style="background:'+cfg.heroBg+';">'+
+        '<div class="pfp-cta-btn" style="background:'+cfg.ctaBg+';color:'+cfg.ctaText+';">Work With Me →</div>' +
       '</div>' +
-      '<div class="pfp-links" style="background:'+cfg.heroBg+'">'+linksHtml+'</div>' +
-      '<div class="pfp-featured" style="background:'+cfg.heroBg+'">' +
-        '<div class="pfp-featured-title" style="color:'+cfg.sub+'">FEATURED CAROUSEL</div>' +
-        '<div class="pfp-carousel-thumb">🎨</div>' +
+      '<div class="pfp-featured" style="background:'+cfg.heroBg+';">'+
+        '<div class="pfp-featured-title" style="color:'+cfg.sub+';">FEATURED</div>'+
+        '<div class="pfp-carousel-thumb" style="background:linear-gradient(135deg,'+cfg.heroBg+',rgba(201,126,8,0.2));border:1px solid '+cfg.linkBorder+';">🎨</div>'+
       '</div>' +
-      '<div class="pfp-footer" style="background:'+cfg.heroBg+';border-color:'+cfg.border+';color:'+cfg.sub+'">Made with ImpactGrid ✦</div>' +
+      '<div class="pfp-footer" style="background:'+cfg.heroBg+';border-color:'+cfg.statBorder+';color:'+cfg.sub+';">Made with ImpactGrid ✦</div>' +
     '</div>';
 }
 
+/* ── DIJO AI Bio Generator ── */
+async function generateAIBio() {
+  var name = document.getElementById('pfName').value.trim();
+  var niche = document.getElementById('pfNiche').value.trim();
+  var followers = document.getElementById('pfFollowers').value.trim();
+  var platforms = pfState.platforms.map(function(p){return p.label;}).join(', ') || 'TikTok, YouTube, Instagram';
+
+  if (!name && !niche) {
+    showToastPF('Fill in your name and niche first.');
+    return;
+  }
+
+  var btn = document.getElementById('pfAiBioBtn');
+  btn.disabled = true;
+  btn.textContent = '✨ Writing…';
+
+  try {
+    var prompt = 'Write a short, punchy creator bio for a link-in-bio portfolio page. It should be 1-2 sentences, SEO-friendly, and written in first person. Make it sound human, not corporate.\n\nName: ' + (name||'Creator') + '\nNiche: ' + (niche||'Content Creator') + '\nPlatforms: ' + platforms + (followers ? '\nFollowers: ' + followers : '') + '\n\nRespond with ONLY the bio text. No quotes. No extra text.';
+    var res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200, messages: [{ role: 'user', content: prompt }] }) });
+    var data = await res.json();
+    var bio = data.content.map(function(i){return i.text||'';}).join('').trim();
+    document.getElementById('pfBio').value = bio;
+    updatePreview();
+    showToastPF('✨ Bio written by Dijo!');
+  } catch(e) {
+    showToastPF('Could not connect. Try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = '✨ Write with Dijo';
+}
+
+/* ── Publish ── */
 function publishPortfolio() {
   var name = document.getElementById('pfName').value.trim() || 'creator';
   var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'creator';
   var url = 'impactgrid.app/p/' + slug;
   document.getElementById('pfUrl').textContent = url;
-  // Show success state
-  showToastPF('🚀 Portfolio published! Sharing link copied.');
+  showToastPF('🚀 Portfolio published! Link copied to clipboard.');
   try { navigator.clipboard.writeText('https://' + url); } catch(e) {}
 }
 
@@ -1386,7 +1349,9 @@ function copyPortfolioUrl() {
 }
 
 function showToastPF(msg) {
+  var old = document.getElementById('igToast'); if (old) old.remove();
   var t = document.createElement('div');
+  t.id = 'igToast';
   t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeIn .3s ease;';
   t.textContent = msg;
   document.body.appendChild(t);
