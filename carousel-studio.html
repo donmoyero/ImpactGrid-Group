@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="carousel-studio.css"/>
+<link rel="stylesheet" href="carousel-studio-additions.css"/>
 </head>
 <body>
 <div class="shell">
@@ -225,6 +226,10 @@
         <!-- LAYOUT: GRID_POINTS -->
         <div class="s-grid-wrap hidden" id="sGrid"></div>
 
+        <!-- LAYOUT: TOP_STRIP / BOTTOM_STRIP (PATCH 4) -->
+        <div class="hidden" id="sTopStrip"></div>
+        <div class="hidden" id="sBottomStrip"></div>
+
         <!-- Always-on UI chrome -->
         <div class="s-slide-num" id="sNum">1 / 7</div>
         <div class="s-brand" id="sBrand"></div>
@@ -239,7 +244,7 @@
 
 </main>
 
-<!-- ══════════════ RIGHT EDIT PANEL ══════════════ -->
+<!-- ══════════════ RIGHT EDIT PANEL (PATCH 1) ══════════════ -->
 <aside class="right">
   <div class="rh">
     <span class="rh-title">Edit Slide</span>
@@ -250,6 +255,20 @@
     <div class="esec">
       <div class="esec-title">Layout</div>
       <div class="layout-badge" id="layoutBadge">—</div>
+      <div class="layout-switcher">
+        <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
+        <button class="layout-btn" onclick="changeLayout('SPLIT_LEFT')">Split L</button>
+        <button class="layout-btn" onclick="changeLayout('SPLIT_RIGHT')">Split R</button>
+        <button class="layout-btn" onclick="changeLayout('CORNER_FLOAT')">Corner</button>
+        <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
+        <button class="layout-btn" onclick="changeLayout('TOP_STRIP')">Top Strip</button>
+        <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')">Band</button>
+        <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')">Dual Img</button>
+        <button class="layout-btn" onclick="changeLayout('STAT_HERO')">Stat</button>
+        <button class="layout-btn" onclick="changeLayout('QUOTE_PULL')">Quote</button>
+        <button class="layout-btn" onclick="changeLayout('GRID_POINTS')">Grid</button>
+        <button class="layout-btn" onclick="changeLayout('MAGAZINE_SPLIT')">Magazine</button>
+      </div>
     </div>
 
     <div class="esec">
@@ -260,6 +279,18 @@
     <div class="esec">
       <div class="esec-title">Body Copy</div>
       <textarea class="ftextarea" id="eBody" style="min-height:80px" oninput="liveEdit()"></textarea>
+    </div>
+
+    <!-- Stat field — shows only when layout = STAT_HERO -->
+    <div class="esec" id="eStatSection">
+      <div class="esec-title">Stat / Number</div>
+      <input type="text" class="finput" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
+    </div>
+
+    <!-- Quote field — shows only when layout = QUOTE_PULL -->
+    <div class="esec" id="eQuoteSection">
+      <div class="esec-title">Quote Text</div>
+      <textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
     </div>
 
     <div class="esec">
@@ -294,6 +325,7 @@
         <div class="cdot" style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
         <div class="cdot" style="background:#0891b2" onclick="setAccent('#0891b2',this)"></div>
         <div class="cdot" style="background:#ea580c" onclick="setAccent('#ea580c',this)"></div>
+        <div class="cdot" style="background:#e91e8c" onclick="setAccent('#e91e8c',this)"></div>
         <div class="cdot" style="background:#fff;border-color:var(--border)" onclick="setAccent('#ffffff',this)"></div>
       </div>
     </div>
@@ -308,7 +340,7 @@
 
 </div><!-- /shell -->
 
-<!-- ══════════════ EXPORT MODAL ══════════════ -->
+<!-- ══════════════ EXPORT MODAL (PATCH 2) ══════════════ -->
 <div class="modal-bg" id="exportModal">
   <div class="modal">
     <div class="mh">
@@ -318,17 +350,22 @@
     <div class="mc">
       <div class="exp-opt sel" id="eoPng" onclick="selExport('png')">
         <span class="exp-icon">🖼️</span>
-        <div><div class="exp-title">PNG Images</div><div class="exp-sub">High-quality images, one per slide</div></div>
+        <div><div class="exp-title">PNG Images</div><div class="exp-sub">Capture current slide as PNG (needs HTTPS)</div></div>
         <div class="exp-radio"></div>
       </div>
       <div class="exp-opt" id="eoCopy" onclick="selExport('copy')">
         <span class="exp-icon">📋</span>
-        <div><div class="exp-title">Copy &amp; Captions</div><div class="exp-sub">All slide copy + trending hashtags as text</div></div>
+        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + trending hashtags as text</div></div>
         <div class="exp-radio"></div>
       </div>
       <div class="exp-opt" id="eoJson" onclick="selExport('json')">
         <span class="exp-icon">{ }</span>
-        <div><div class="exp-title">JSON Data</div><div class="exp-sub">Raw slide data for developers</div></div>
+        <div><div class="exp-title">JSON Data</div><div class="exp-sub">Full structured slide data — import into other tools</div></div>
+        <div class="exp-radio"></div>
+      </div>
+      <div class="exp-opt" id="eoVideo" onclick="selExport('video')">
+        <span class="exp-icon">🎬</span>
+        <div><div class="exp-title">Animated Video</div><div class="exp-sub">MP4 video carousel export (coming soon)</div></div>
         <div class="exp-radio"></div>
       </div>
     </div>
