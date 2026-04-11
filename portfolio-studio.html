@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Portfolio Studio · ImpactGrid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="portfolio-studio.css"/>
+</head>
+<body>
+
+<!-- ══════════════ NAV ══════════════ -->
+<nav class="ps-nav">
+  <div class="ps-logo">Impact<em>Grid</em></div>
+  <div class="ps-sep"></div>
+  <span class="ps-crumb">portfolio-studio</span>
+  <div class="ps-nav-sp"></div>
+  <button class="ps-nb" onclick="toggleTheme()">🌙</button>
+  <a class="ps-nb" href="creator-studio.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Studio
+  </a>
+</nav>
+
+<!-- ══════════════ SHELL ══════════════ -->
+<div class="ps-shell">
+
+  <!-- ══ SCREEN 1: DASHBOARD (list of portfolios) ══ -->
+  <div class="ps-screen active" id="screenDash">
+    <div class="dash-hero">
+      <div class="dash-hero-text">
+        <div class="dash-eyebrow">✦ Dijo AI</div>
+        <h1 class="dash-headline">Your Portfolio<br/><em>Studio</em></h1>
+        <p class="dash-sub">Dijo picks visuals, writes your copy, builds your brand.<br/>One link. Every brand deal opportunity.</p>
+        <button class="dash-create-btn" onclick="showScreen('screenOnboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New Portfolio
+        </button>
+      </div>
+      <div class="dash-hero-visual">
+        <div class="dash-orb dash-orb-1"></div>
+        <div class="dash-orb dash-orb-2"></div>
+        <div class="dash-orb dash-orb-3"></div>
+        <div class="dash-card-float">
+          <div class="dcf-dot"></div>
+          <div class="dcf-line"></div>
+          <div class="dcf-line short"></div>
+          <div class="dcf-stat-row">
+            <div class="dcf-stat"></div>
+            <div class="dcf-stat"></div>
+            <div class="dcf-stat"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio list -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <span class="dash-section-title">Your Portfolios</span>
+        <span class="dash-section-count" id="dashCount">0 portfolios</span>
+      </div>
+      <div class="dash-grid" id="dashGrid">
+        <!-- Populated by JS -->
+        <div class="dash-empty" id="dashEmpty">
+          <div class="dash-empty-icon">✦</div>
+          <div class="dash-empty-title">No portfolios yet</div>
+          <div class="dash-empty-sub">Create your first AI-powered portfolio in minutes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 2: ONBOARDING (AI intake) ══ -->
+  <div class="ps-screen" id="screenOnboard">
+    <div class="onboard-wrap">
+      <button class="ps-back-btn" onclick="showScreen('screenDash')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
+
+      <div class="ob-header">
+        <div class="ob-step-track">
+          <div class="ob-step active" id="obStep1">1</div>
+          <div class="ob-step-line"></div>
+          <div class="ob-step" id="obStep2">2</div>
+          <div class="ob-step-line"></div>
+          <div class="ob-step" id="obStep3">3</div>
+          <div class="ob-step-line"></div>
+          <div class="ob-step" id="obStep4">4</div>
+        </div>
+        <div class="ob-title" id="obTitle">Tell Dijo about yourself</div>
+        <div class="ob-sub" id="obSub">The more detail you give, the better Dijo builds.</div>
+      </div>
+
+      <!-- Step 1: Identity -->
+      <div class="ob-step-content active" id="obContent1">
+        <div class="ob-grid">
+          <div class="ob-field">
+            <label class="ob-lbl">Your name *</label>
+            <input class="ob-input" id="obName" placeholder="e.g. Sarah Johnson" oninput="obValidate()"/>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Your niche / title *</label>
+            <input class="ob-input" id="obNiche" placeholder="e.g. Fitness & Lifestyle Creator" oninput="obValidate()"/>
+          </div>
+          <div class="ob-field ob-full">
+            <label class="ob-lbl">What do you do? Tell Dijo everything.</label>
+            <textarea class="ob-textarea" id="obAbout" placeholder="I create fitness content for women over 30, I specialise in home workouts, nutrition tips and mindset. I work with supplement brands and activewear. I've been creating for 3 years and have built a highly engaged community..."></textarea>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Location</label>
+            <input class="ob-input" id="obLocation" placeholder="e.g. Manchester, UK"/>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Contact email</label>
+            <input class="ob-input" id="obEmail" type="email" placeholder="hello@yoursite.com"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Social platforms -->
+      <div class="ob-step-content" id="obContent2">
+        <div class="ob-platforms-grid">
+
+          <!-- YouTube — CONNECTED -->
+          <div class="ob-plat-card connected" id="platCardYT">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon yt">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5 12 5 12 5s-4.8 0-7 .1c-.4 0-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.7 2.2.8C6.8 19 12 19 12 19s4.8 0 7-.2c.4 0 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 9.6 21.8 8 21.8 8zM10 15V9l5.2 3-5.2 3z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">YouTube</div>
+                <div class="ob-plat-status connected-badge">✓ Connected</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obYTUrl" placeholder="Channel URL or @handle" oninput="updatePreviewLive()"/>
+            <input class="ob-input sm" id="obYTSubs" placeholder="Subscriber count (e.g. 45K)" style="margin-top:6px" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- TikTok — CONNECTED -->
+          <div class="ob-plat-card connected" id="platCardTT">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon tt">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">TikTok</div>
+                <div class="ob-plat-status connected-badge">✓ Connected</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obTTUrl" placeholder="TikTok URL or @handle" oninput="updatePreviewLive()"/>
+            <input class="ob-input sm" id="obTTFollowers" placeholder="Follower count (e.g. 120K)" style="margin-top:6px" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- Instagram — COMING SOON -->
+          <div class="ob-plat-card coming-soon">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon ig">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">Instagram</div>
+                <div class="ob-plat-status soon-badge">Coming Soon</div>
+              </div>
+            </div>
+            <div class="ob-coming-msg">Instagram API integration is in progress. Your profile link will still display.</div>
+            <input class="ob-input sm" id="obIGUrl" placeholder="Instagram profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- LinkedIn -->
+          <div class="ob-plat-card optional">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon li">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">LinkedIn</div>
+                <div class="ob-plat-status opt-badge">Optional</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obLIUrl" placeholder="LinkedIn profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- Twitter/X -->
+          <div class="ob-plat-card optional">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon tw">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">Twitter / X</div>
+                <div class="ob-plat-status opt-badge">Optional</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obTWUrl" placeholder="Twitter/X profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- Pinterest -->
+          <div class="ob-plat-card optional">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon pin">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 0C5.4 0 0 5.4 0 12c0 5.1 3.2 9.5 7.7 11.3-.1-.9-.2-2.4 0-3.4.2-.9 1.4-5.9 1.4-5.9s-.4-.7-.4-1.8c0-1.7.9-2.9 2.3-2.9 1.1 0 1.6.8 1.6 1.8 0 1.1-.7 2.7-1 4.2-.3 1.2.6 2.2 1.8 2.2 2.1 0 3.7-2.2 3.7-5.4 0-2.8-2-4.8-4.9-4.8-3.3 0-5.3 2.5-5.3 5.1 0 1 .4 2.1.9 2.7.1.1.1.2 0 .4l-.3 1.4c-.1.3-.3.4-.5.3-2-.9-3.2-3.8-3.2-6.1 0-5 3.6-9.5 10.4-9.5 5.5 0 9.7 3.9 9.7 9.1 0 5.4-3.4 9.8-8.2 9.8-1.6 0-3.1-.8-3.6-1.8l-1 3.7c-.4 1.4-1.3 3.1-1.9 4.2.7.2 1.4.3 2.2.3 6.6 0 12-5.4 12-12S18.6 0 12 0z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">Pinterest</div>
+                <div class="ob-plat-status opt-badge">Optional</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obPINUrl" placeholder="Pinterest profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+        </div>
+
+        <div class="ob-field ob-full" style="margin-top:20px">
+          <label class="ob-lbl">Total following across all platforms</label>
+          <input class="ob-input" id="obTotalFollowers" placeholder="e.g. 285K" oninput="updatePreviewLive()"/>
+        </div>
+        <div class="ob-two-col" style="margin-top:10px">
+          <div class="ob-field">
+            <label class="ob-lbl">Avg engagement rate</label>
+            <input class="ob-input" id="obEngagement" placeholder="e.g. 4.7%" oninput="updatePreviewLive()"/>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Monthly views / plays</label>
+            <input class="ob-input" id="obMonthlyViews" placeholder="e.g. 2.1M" oninput="updatePreviewLive()"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Services & rates -->
+      <div class="ob-step-content" id="obContent3">
+        <div class="ob-section-intro">What services do you offer? Dijo will format this into a beautiful rate card and services section.</div>
+
+        <div class="ob-services-list" id="obServicesList">
+          <!-- Rows added by JS -->
+        </div>
+        <button class="ob-add-btn" onclick="addServiceRow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add service
+        </button>
+
+        <div class="ob-divider"></div>
+        <div class="ob-section-intro">Work examples / projects (optional but recommended)</div>
+        <div class="ob-projects-list" id="obProjectsList"></div>
+        <button class="ob-add-btn" onclick="addProjectRow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add project / collaboration
+        </button>
+
+        <div class="ob-divider"></div>
+        <div class="ob-section-intro">Testimonials (optional)</div>
+        <div class="ob-testimonials-list" id="obTestimonialsList"></div>
+        <button class="ob-add-btn" onclick="addTestimonialRow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add testimonial
+        </button>
+      </div>
+
+      <!-- Step 4: Design & AI generate -->
+      <div class="ob-step-content" id="obContent4">
+        <div class="ob-section-intro">Choose a visual style. Dijo will pick images and videos that match your niche and build your entire portfolio.</div>
+
+        <div class="ob-theme-grid">
+          <div class="ob-theme-opt active" data-theme="dark" onclick="selectTheme(this,'dark')">
+            <div class="ob-theme-preview dark-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Dark Gold</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="navy" onclick="selectTheme(this,'navy')">
+            <div class="ob-theme-preview navy-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Navy Pro</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="clean" onclick="selectTheme(this,'clean')">
+            <div class="ob-theme-preview clean-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Clean Light</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="midnight" onclick="selectTheme(this,'midnight')">
+            <div class="ob-theme-preview midnight-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Midnight</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="rose" onclick="selectTheme(this,'rose')">
+            <div class="ob-theme-preview rose-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Rose Edit</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="forest" onclick="selectTheme(this,'forest')">
+            <div class="ob-theme-preview forest-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Forest</div>
+          </div>
+        </div>
+
+        <div class="ob-field" style="margin-top:20px">
+          <label class="ob-lbl">Custom accent colour</label>
+          <div class="ob-color-row">
+            <input type="color" class="ob-color-pick" id="obAccentColor" value="#c97e08" oninput="updatePreviewLive()"/>
+            <span class="ob-color-val" id="obColorVal">#c97e08</span>
+          </div>
+        </div>
+
+        <div class="ob-ai-generate-box" id="obAIBox">
+          <div class="ob-ai-icon">✦</div>
+          <div class="ob-ai-text">
+            <div class="ob-ai-title">Dijo is ready to build</div>
+            <div class="ob-ai-sub">AI will write your headline, bio, T&Cs, privacy policy, pick your hero visuals and design every section based on your niche.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav buttons -->
+      <div class="ob-nav">
+        <button class="ob-btn-back" id="obBackBtn" onclick="obBack()" style="display:none">← Back</button>
+        <div style="flex:1"></div>
+        <button class="ob-btn-next" id="obNextBtn" onclick="obNext()" disabled>Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 3: BUILDER / EDITOR ══ -->
+  <div class="ps-screen" id="screenBuilder">
+    <div class="builder-shell">
+
+      <!-- Left: Edit panel -->
+      <aside class="builder-left">
+        <div class="bl-header">
+          <button class="ps-back-btn" onclick="confirmBackToDash()">← Portfolios</button>
+          <div class="bl-title">Edit Portfolio</div>
+        </div>
+        <div class="bl-tabs">
+          <button class="bl-tab active" onclick="setEditTab(this,'tabContent')">Content</button>
+          <button class="bl-tab" onclick="setEditTab(this,'tabDesign')">Design</button>
+          <button class="bl-tab" onclick="setEditTab(this,'tabSocial')">Social</button>
+          <button class="bl-tab" onclick="setEditTab(this,'tabLegal')">Legal</button>
+        </div>
+        <div class="bl-body">
+
+          <!-- TAB: Content -->
+          <div class="bl-tab-content active" id="tabContent">
+            <div class="be-sec">
+              <div class="be-sec-title">Headline</div>
+              <textarea class="ob-input" id="ePortHeadline" style="min-height:56px" oninput="updatePreviewLive()"></textarea>
+              <button class="ob-ai-mini-btn" onclick="regenSection('headline')">✦ Rewrite with Dijo</button>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Bio / About</div>
+              <textarea class="ob-input" id="ePortBio" style="min-height:90px" oninput="updatePreviewLive()"></textarea>
+              <button class="ob-ai-mini-btn" onclick="regenSection('bio')">✦ Rewrite with Dijo</button>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Tagline</div>
+              <input class="ob-input" id="ePortTagline" oninput="updatePreviewLive()"/>
+              <button class="ob-ai-mini-btn" onclick="regenSection('tagline')">✦ Rewrite with Dijo</button>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Hero Visuals</div>
+              <div class="hero-media-strip" id="heroMediaStrip">
+                <!-- thumbnails populated by JS -->
+              </div>
+              <button class="ob-ai-mini-btn" onclick="regenSection('media')">✦ Repick visuals with Dijo</button>
+              <div class="dzone-sm" id="dzoneHero" onclick="document.getElementById('heroUpload').click()" ondragover="dzOver(event,this)" ondragleave="dzLeave(this)" ondrop="dzDrop(event,'hero')">
+                <span>🖼️ Upload your own</span>
+              </div>
+              <input type="file" id="heroUpload" accept="image/*,video/*" multiple style="display:none" onchange="handleHeroUpload(event)"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Services</div>
+              <div id="eServicesEdit"></div>
+              <button class="ob-add-btn sm" onclick="addEditServiceRow()">+ Add service</button>
+            </div>
+          </div>
+
+          <!-- TAB: Design -->
+          <div class="bl-tab-content" id="tabDesign">
+            <div class="be-sec">
+              <div class="be-sec-title">Theme</div>
+              <div class="ob-theme-grid compact">
+                <div class="ob-theme-opt active" data-theme="dark" onclick="selectEditTheme(this,'dark')">
+                  <div class="ob-theme-preview dark-prev"></div>
+                  <div class="ob-theme-name">Dark Gold</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="navy" onclick="selectEditTheme(this,'navy')">
+                  <div class="ob-theme-preview navy-prev"></div>
+                  <div class="ob-theme-name">Navy Pro</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="clean" onclick="selectEditTheme(this,'clean')">
+                  <div class="ob-theme-preview clean-prev"></div>
+                  <div class="ob-theme-name">Clean</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="midnight" onclick="selectEditTheme(this,'midnight')">
+                  <div class="ob-theme-preview midnight-prev"></div>
+                  <div class="ob-theme-name">Midnight</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="rose" onclick="selectEditTheme(this,'rose')">
+                  <div class="ob-theme-preview rose-prev"></div>
+                  <div class="ob-theme-name">Rose</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="forest" onclick="selectEditTheme(this,'forest')">
+                  <div class="ob-theme-preview forest-prev"></div>
+                  <div class="ob-theme-name">Forest</div>
+                </div>
+              </div>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Accent Colour</div>
+              <div class="ob-color-row">
+                <input type="color" class="ob-color-pick" id="eAccentColor" value="#c97e08" oninput="updatePreviewLive()"/>
+                <span class="ob-color-val" id="eColorVal">#c97e08</span>
+              </div>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Font Style</div>
+              <select class="ob-input" id="eFontStyle" onchange="updatePreviewLive()">
+                <option value="syne">Syne — Bold Editorial</option>
+                <option value="playfair">Playfair — Luxury Serif</option>
+                <option value="mono">Space Mono — Tech</option>
+                <option value="dm">DM Sans — Clean Modern</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- TAB: Social -->
+          <div class="bl-tab-content" id="tabSocial">
+            <div class="be-sec">
+              <div class="be-sec-title">YouTube</div>
+              <input class="ob-input" id="eSocYT" placeholder="Channel URL" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocYTSubs" placeholder="Subscribers" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">TikTok</div>
+              <input class="ob-input" id="eSocTT" placeholder="TikTok URL" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocTTFollowers" placeholder="Followers" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Instagram <span class="soon-pill">Coming Soon</span></div>
+              <input class="ob-input" id="eSocIG" placeholder="Profile URL (display only)" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Other links</div>
+              <input class="ob-input" id="eSocLI" placeholder="LinkedIn URL" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocTW" placeholder="Twitter/X URL" style="margin-top:6px" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocPIN" placeholder="Pinterest URL" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Analytics</div>
+              <input class="ob-input" id="eSocFollowers" placeholder="Total followers" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocEngagement" placeholder="Avg engagement rate" style="margin-top:6px" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocViews" placeholder="Monthly views" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
+          </div>
+
+          <!-- TAB: Legal -->
+          <div class="bl-tab-content" id="tabLegal">
+            <div class="be-sec">
+              <div class="be-sec-title">Terms & Conditions</div>
+              <div class="legal-ai-banner">
+                <span>✦ AI-generated based on your niche &amp; services</span>
+                <button onclick="regenSection('terms')">Regenerate</button>
+              </div>
+              <textarea class="ob-input" id="eLegalTerms" style="min-height:160px;font-size:11px;line-height:1.6" oninput="updatePreviewLive()"></textarea>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Privacy Policy</div>
+              <div class="legal-ai-banner">
+                <span>✦ AI-generated based on data you collect</span>
+                <button onclick="regenSection('privacy')">Regenerate</button>
+              </div>
+              <textarea class="ob-input" id="eLegalPrivacy" style="min-height:160px;font-size:11px;line-height:1.6" oninput="updatePreviewLive()"></textarea>
+            </div>
+          </div>
+
+        </div><!-- /bl-body -->
+
+        <!-- Bottom actions -->
+        <div class="bl-footer">
+          <button class="bl-save-btn" onclick="savePortfolio()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save
+          </button>
+          <button class="bl-publish-btn" id="blPublishBtn" onclick="publishPortfolio()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Publish &amp; Get Link
+          </button>
+        </div>
+      </aside>
+
+      <!-- Center: Live preview -->
+      <div class="builder-center">
+        <div class="preview-toolbar">
+          <div class="preview-device-btns">
+            <button class="pdb active" id="pdbDesktop" onclick="setPreviewDevice('desktop')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Desktop
+            </button>
+            <button class="pdb" id="pdbMobile" onclick="setPreviewDevice('mobile')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>Mobile
+            </button>
+          </div>
+          <div style="flex:1"></div>
+          <div class="preview-url-pill" id="previewUrlPill">impactgrid.app/p/—</div>
+          <button class="preview-open-btn" onclick="openPreviewTab()">Open Preview ↗</button>
+        </div>
+
+        <!-- Loading overlay during AI generation -->
+        <div class="gen-overlay" id="genOverlay">
+          <div class="gen-inner">
+            <div class="gen-ring"></div>
+            <div class="gen-title" id="genTitle">Dijo is building your portfolio…</div>
+            <div class="gen-steps" id="genSteps">
+              <div class="gen-step active" id="gs1">✦ Analysing your niche</div>
+              <div class="gen-step" id="gs2">✦ Selecting hero visuals</div>
+              <div class="gen-step" id="gs3">✦ Writing your headline & bio</div>
+              <div class="gen-step" id="gs4">✦ Generating T&Cs & Privacy Policy</div>
+              <div class="gen-step" id="gs5">✦ Building your portfolio</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-wrap" id="previewWrap">
+          <div class="preview-frame desktop" id="previewFrame">
+            <iframe id="previewIframe" title="Portfolio Preview" sandbox="allow-scripts allow-same-origin"></iframe>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 4: PUBLISH SUCCESS ══ -->
+  <div class="ps-screen" id="screenPublished">
+    <div class="pub-success-wrap">
+      <div class="pub-confetti" id="pubConfetti"></div>
+      <div class="pub-card">
+        <div class="pub-icon">🚀</div>
+        <div class="pub-title">You're Live!</div>
+        <div class="pub-sub">Your portfolio is published and ready to share.</div>
+
+        <div class="pub-link-box">
+          <span class="pub-link-icon">🔗</span>
+          <span class="pub-link-text" id="pubLinkText">impactgrid.app/p/—</span>
+          <button class="pub-copy-btn" onclick="copyPublishedLink()">Copy</button>
+        </div>
+
+        <div class="pub-share-row">
+          <div class="pub-share-label">Share to</div>
+          <div class="pub-share-btns">
+            <button class="pub-share-btn yt" onclick="shareToYouTube()">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5 12 5 12 5s-4.8 0-7 .1c-.4 0-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.7 2.2.8C6.8 19 12 19 12 19s4.8 0 7-.2c.4 0 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 9.6 21.8 8 21.8 8zM10 15V9l5.2 3-5.2 3z"/></svg>
+              YouTube
+            </button>
+            <button class="pub-share-btn tt" onclick="shareToTikTok()">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg>
+              TikTok
+            </button>
+            <button class="pub-share-btn ig" onclick="shareToInstagram()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+              Instagram <span class="soon-pill mini">Copy link</span>
+            </button>
+            <button class="pub-share-btn li" onclick="shareToLinkedIn()">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </button>
+          </div>
+        </div>
+
+        <div class="pub-stats-row">
+          <div class="pub-stat">
+            <div class="pub-stat-val" id="pubViewCount">0</div>
+            <div class="pub-stat-lbl">Views</div>
+          </div>
+          <div class="pub-stat">
+            <div class="pub-stat-val" id="pubEnqCount">0</div>
+            <div class="pub-stat-lbl">Enquiries</div>
+          </div>
+          <div class="pub-stat">
+            <div class="pub-stat-val" id="pubDaysLive">0</div>
+            <div class="pub-stat-lbl">Days live</div>
+          </div>
+        </div>
+
+        <div class="pub-actions">
+          <button class="pub-edit-btn" onclick="showScreen('screenBuilder')">Edit Portfolio</button>
+          <button class="pub-new-btn" onclick="showScreen('screenDash')">← All Portfolios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /ps-shell -->
+
+<!-- Toast shelf -->
+<div class="ps-toast-shelf" id="psToastShelf"></div>
+
+<script src="portfolio-studio.js"></script>
+</body>
+</html>
