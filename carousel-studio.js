@@ -10,7 +10,7 @@
    5.  State
    6.  Topic input → intel detection
    7.  AI generation (callAI → server, fallback)
-   8.  Slide parsing
+   8.  Slide parsing  ← FIX: maps sl.image / sl.image2 correctly
    9.  Render engine (all 10 layouts)
    10. Strip builder
    11. Navigation
@@ -143,7 +143,6 @@ function pickAsset(theme, slideType, slideIndex, offset){
   return {url:chosen.url,id:chosen.id,tone:chosen.tone,brightness:chosen.brightness,layout_hints:chosen.layout_hints};
 }
 
-/* Pick a secondary asset (different from primary) */
 function pickSecondAsset(theme, excludeId, slideIndex){
   var T=DA[theme]; if(!T) return null;
   var pool=T.assets.filter(function(a){ return a.id!==excludeId && a.layout_hints.indexOf('thumbnail')!==-1; });
@@ -270,8 +269,9 @@ async function generate(){
   try{
     var data=await callAI(topic,platform,tone,count);
     ST.slides=parseServerSlides(data,topic,platform,tone,count);
-    // Update theme from server response if provided
     if(data.theme && DA[data.theme]) ST.theme=data.theme;
+    // Use accent colour from AI if provided
+    if(data.accentColor) ST.accent=data.accentColor;
   }catch(e){
     console.warn('[Carousel] Server error, using fallback:',e);
     ST.slides=fallbackSlides(topic,platform,tone,count);
@@ -300,41 +300,63 @@ async function callAI(topic,platform,tone,count){
    8. SLIDE PARSING
    ───────────────────────────────────────────────────────── */
 
-/* Parse rich response from /carousel/generate (carousel-engine.js format) */
+/* Parse rich response from /carousel/generate (carousel-engine.js format)
+   FIX: carousel-engine.js returns sl.image and sl.image2 (plain URL strings),
+   not sl.primaryImage / sl.secondImage objects. Map both formats here. */
 function parseServerSlides(data, topic, platform, tone, count){
   try{
     if(!data.slides||!Array.isArray(data.slides)) throw new Error('no slides');
     return data.slides.map(function(sl,i){
+      // ── Image mapping: handle both server format (sl.image) and legacy format ──
+      var primaryImage = null;
+      if(sl.image){
+        // New format from carousel-engine.js — plain URL string
+        primaryImage = { url: sl.image, tone: sl.imageMood||'neutral', brightness: 'medium' };
+      } else if(sl.primaryImage){
+        // Legacy format — already an object
+        primaryImage = sl.primaryImage;
+      }
+
+      var secondImage = null;
+      if(sl.image2){
+        secondImage = { url: sl.image2, tone: 'neutral', brightness: 'medium' };
+      } else if(sl.secondImage){
+        secondImage = sl.secondImage;
+      }
+
       return {
         type:       sl.type||(i===0?'hook':i===data.slides.length-1?'cta':'value'),
-        layout:     sl.layout||assignLayout(sl.type||'value',i,data.slides.length),
+        layout:     sl.aiLayout||sl.layout||assignLayout(sl.type||'value',i,data.slides.length),
         tag:        sl.tag||'',
         headline:   sl.headline||'Slide '+(i+1),
-        body:       sl.body||'',
+        subline:    sl.subline||'',
+        body:       sl.body||sl.subline||'',
         stat:       sl.stat||null,
         quote:      sl.quote||null,
-        gridPoints: sl.gridPoints||null,
+        gridPoints: sl.points ? sl.points.map(function(p,pi){
+          var glyphs=['→','★','◆','✦','●','▲'];
+          return {glyph:glyphs[pi%glyphs.length],text:p};
+        }) : (sl.gridPoints||null),
         cta:        sl.cta||'',
         caption:    buildCaption(sl,i),
         hashtags:   sl.hashtags||[],
-        // Image data from vision-scored server response
-        primaryImage: sl.primaryImage||null,
-        secondImage:  sl.secondImage||null,
+        primaryImage: primaryImage,
+        secondImage:  secondImage,
         video:        sl.video||null,
-        useVideo:     sl.useVideo||false
+        useVideo:     !!(sl.video&&sl.video.url)
       };
     });
   }catch(e){
+    console.warn('[parseServerSlides] Parse error:',e.message);
     return fallbackSlides(topic,platform,tone,count);
   }
 }
 
-/* Build a clean caption from slide data */
 function buildCaption(sl, idx){
   if(sl.caption) return sl.caption;
-  if(idx!==0) return ''; // only slide 1 gets full caption
+  if(idx!==0) return '';
   var tags=(sl.hashtags||[]).join(' ');
-  return (sl.headline||'')+'\n\n'+(sl.body||'')+'\n\n'+tags;
+  return (sl.headline||'')+'\n\n'+(sl.body||sl.subline||'')+'\n\n'+tags;
 }
 
 function fallbackSlides(topic,platform,tone,count){
@@ -373,8 +395,17 @@ function renderSlide(){
   var layout=slide.layout||assignLayout(slide.type,ST.cur,ST.slides.length);
 
   /* Resolve image URLs — prefer server vision-picked, fall back to local pick */
-  var primaryUrl=ST.userImages[ST.cur]||(slide.primaryImage?slide.primaryImage.url:null)||(function(){var a=pickAsset(theme,slide.type,ST.cur,ST.assetOffset);return a?a.url:null;})();
-  var secondUrl=(slide.secondImage?slide.secondImage.url:null)||(function(){var a=primaryUrl?pickSecondAsset(theme,slide.primaryImage?slide.primaryImage.id:'',ST.cur):null;return a?a.url:null;})();
+  var primaryUrl=ST.userImages[ST.cur]||
+    (slide.primaryImage?slide.primaryImage.url:null)||
+    (function(){var a=pickAsset(theme,slide.type,ST.cur,ST.assetOffset);return a?a.url:null;})();
+
+  var secondUrl=(slide.secondImage?slide.secondImage.url:null)||
+    (function(){
+      var excludeId=slide.primaryImage?slide.primaryImage.id:'';
+      var a=pickSecondAsset(theme,excludeId,ST.cur);
+      return a?a.url:null;
+    })();
+
   var videoData=slide.video||null;
 
   /* Tone/brightness for overlay logic */
@@ -400,7 +431,9 @@ function renderSlide(){
   var sStat=document.getElementById('sStat');
   var sGrid=document.getElementById('sGrid');
 
-  [sContent,sSplit,sCorner,sDual,sBand,sEditorial,sQuote,sStat,sGrid].forEach(function(el){if(el){el.className=el.className.replace(/\bhidden\b/g,'').trim()+' hidden';el.innerHTML='';}});
+  [sContent,sSplit,sCorner,sDual,sBand,sEditorial,sQuote,sStat,sGrid].forEach(function(el){
+    if(el){el.className=el.className.replace(/\bhidden\b/g,'').trim()+' hidden';el.innerHTML='';}
+  });
 
   /* Background: video takes priority over image */
   if(videoData&&videoData.url&&(layout==='FULL_BLEED'||layout==='OVERLAP_BAND')){
@@ -411,7 +444,7 @@ function renderSlide(){
     }
     sBg.style.background='#111';
   } else {
-    if(sVideo) sVideo.innerHTML='';
+    if(sVideo){sVideo.innerHTML='';sVideo.style.display='none';}
     if(primaryUrl){
       sBgImg.style.backgroundImage='url('+primaryUrl+')';
       sBgImg.style.opacity='1';
@@ -423,7 +456,8 @@ function renderSlide(){
   }
 
   /* Overlay */
-  sOverlay.style.background=getOverlay(tone2,bri,layout)==='none'?'none':getOverlay(tone2,bri,layout);
+  var ov=getOverlay(tone2,bri,layout);
+  sOverlay.style.background=ov==='none'?'none':ov;
 
   /* Texture */
   sTexture.className='s-texture';
@@ -495,14 +529,32 @@ function renderSlide(){
       sBand.className='s-band-wrap';
       var band=document.getElementById('sBandInner');
       if(band){
-        var bandPct=34;
-        band.style.cssText='position:absolute;left:0;right:0;top:'+bandPct+'%;padding:18px 32px;background:'+accent2+';display:flex;flex-direction:column;gap:6px;';
+        band.style.cssText='position:absolute;left:0;right:0;top:34%;padding:18px 32px;background:'+accent2+';display:flex;flex-direction:column;gap:6px;';
         var bh='';
         if(slide.tag) bh+='<div style="font-size:9px;font-weight:700;font-family:var(--fm);letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:4px">'+slide.tag+'</div>';
         bh+='<div style="font-family:var(--fh);font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.15;color:#fff">'+slide.headline+'</div>';
         if(slide.body) bh+='<div style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.8);margin-top:2px">'+slide.body+'</div>';
         band.innerHTML=bh;
       }
+      break;
+    }
+
+    case 'MAGAZINE_SPLIT': {
+      /* Magazine editorial — image right 55%, ruled text left */
+      sSplit.className='s-split-wrap';
+      var msImg=document.getElementById('sSplitImg');
+      var msText=document.getElementById('sSplitText');
+      if(primaryUrl) msImg.style.backgroundImage='url('+primaryUrl+')';
+      msImg.style.order='2'; msImg.style.flex='0 0 55%';
+      msText.style.order='1';
+      var mgBg={workspace:'#0f172a',luxury:'#1a1209',minimal:'#f7f7f5','cozy-home':'#f5e6d3',lifestyle:'#1e3a5f'}[theme]||'#1a1814';
+      var mgText=(['minimal','cozy-home'].indexOf(theme)!==-1)?'#1a1814':'#f0ede8';
+      msText.style.cssText='display:flex;flex-direction:column;justify-content:center;padding:28px 22px;gap:8px;background:'+mgBg+';color:'+mgText+';border-right:3px solid '+accent2;
+      var mgh='';
+      if(slide.tag) mgh+='<div style="font-size:8px;font-weight:700;font-family:var(--fm);letter-spacing:3px;text-transform:uppercase;color:'+accent2+'">'+slide.tag+'</div>';
+      mgh+='<div style="font-family:var(--fh);font-size:'+Math.min(22,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:'+mgText+'">'+slide.headline+'</div>';
+      if(slide.body) mgh+='<div style="font-size:11px;line-height:1.6;color:'+mgText+';opacity:.7;margin-top:2px">'+slide.body+'</div>';
+      msText.innerHTML=mgh;
       break;
     }
 
@@ -575,7 +627,6 @@ function renderSlide(){
       if(slide.body) fc+='<div class="s-body" style="color:'+tc.body+'">'+slide.body+'</div>';
       if(slide.cta) fc+='<div class="s-cta" style="background:'+accent2+';color:#fff">'+slide.cta+' <span>→</span></div>';
       if(slide.hashtags&&slide.hashtags.length) fc+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:10px">'+slide.hashtags.slice(0,5).map(function(t){return '<span style="font-size:10px;font-family:var(--fm);color:rgba(255,255,255,.55)">'+t+'</span>';}).join('')+'</div>';
-      /* Decorative background number */
       var n=String(ST.cur+1).padStart(2,'0');
       fc+='<div class="s-giant-num" style="color:'+(tc.head==='#ffffff'?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)')+'">'+n+'</div>';
       sContent.innerHTML=fc;
@@ -587,11 +638,9 @@ function renderSlide(){
   document.getElementById('sBrand').textContent=ST.brand;
   document.getElementById('sBrand').style.color=tc.head;
 
-  /* Update layout badge in edit panel */
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=layout.replace(/_/g,' ');
 
-  /* Update hashtag chips */
   var chips=document.getElementById('hashtagChips');
   if(chips&&slide.hashtags&&slide.hashtags.length){
     chips.innerHTML=slide.hashtags.map(function(t){return '<span class="hashtag-chip">'+t+'</span>';}).join('');
@@ -609,7 +658,8 @@ function buildStrip(){
   strip.innerHTML=ST.slides.map(function(s,i){
     var theme=ST.theme||'lifestyle';
     var T=DA[theme];
-    var imgUrl=ST.userImages[i]||(s.primaryImage?s.primaryImage.url.replace('w=1080&h=1080','w=120&h=120'):null);
+    var imgUrl=ST.userImages[i]||
+      (s.primaryImage?s.primaryImage.url.replace('w=1080&h=1080','w=120&h=120').replace(/\?w=\d+/,'?w=120'):null);
     if(!imgUrl){var a=pickAsset(theme,s.type,i,ST.assetOffset);if(a) imgUrl=a.url.replace('w=1080&h=1080','w=120&h=120');}
     var col=T.palette[0];
     var html='<div class="sthumb '+(i===ST.cur?'active':'')+'" onclick="goTo('+i+')" title="Slide '+(i+1)+'">';
@@ -724,6 +774,5 @@ document.addEventListener('keydown',function(e){
    ───────────────────────────────────────────────────────── */
 (function(){
   updateCounter();
-  // Keep server warm
   setInterval(function(){fetch(DIJO_SERVER+'/ping').catch(function(){});},600000);
 })();
