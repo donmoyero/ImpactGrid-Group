@@ -37,7 +37,8 @@
       <div class="sb-item active" onclick="showPanel('dashboard',this)"><span class="sb-icon">🏠</span>Dashboard</div>
       <div class="sb-item" onclick="showPanel('trendfeed',this)"><span class="sb-icon">📡</span>Trend Feed<span class="sb-badge">Live</span></div>
       <div class="sb-item" onclick="showPanel('create',this)"><span class="sb-icon">✍️</span>Create</div>
-      <div class="sb-item" onclick="window.location.href='carousel.html'"><span class="sb-icon">🎨</span>Carousel Studio</div>
+      <!-- FIX 1: carousel.html → carousel-studio.html -->
+      <div class="sb-item" onclick="window.location.href='carousel-studio.html'"><span class="sb-icon">🎨</span>Carousel Studio</div>
       <div class="sb-label">Planning</div>
       <div class="sb-item" onclick="showPanel('contentcalendar',this);initCalendar()"><span class="sb-icon">📅</span>Content Calendar</div>
       <div class="sb-item" onclick="showPanel('portfolio',this)"><span class="sb-icon">🌐</span>Portfolio</div>
@@ -99,20 +100,21 @@
           <h2 id="dashGreeting">Good morning, Creator 👋</h2>
           <p id="dashDate">Loading today's intelligence…</p>
         </div>
-        <div class="dash-grid">
+        <!-- FIX 2: stat cards cleared — JS will populate from live data -->
+        <div class="dash-grid" id="dashStatGrid">
           <div class="dash-stat">
             <div class="dash-stat-label">Top Trend Score</div>
-            <div class="dash-stat-val" style="color:var(--green);">5.9</div>
-            <div class="dash-stat-sub">shorts · YouTube</div>
+            <div class="dash-stat-val" id="dashStatScore" style="color:var(--green);">—</div>
+            <div class="dash-stat-sub" id="dashStatScoreSub">Loading…</div>
           </div>
           <div class="dash-stat">
             <div class="dash-stat-label">Trends Today</div>
-            <div class="dash-stat-val">12</div>
+            <div class="dash-stat-val" id="dashStatCount">—</div>
             <div class="dash-stat-sub">UK + Global signals</div>
           </div>
           <div class="dash-stat">
             <div class="dash-stat-label">Best Platform</div>
-            <div class="dash-stat-val" style="font-size:20px;color:var(--gold);">YouTube</div>
+            <div class="dash-stat-val" id="dashStatPlatform" style="font-size:20px;color:var(--gold);">—</div>
             <div class="dash-stat-sub">Most active right now</div>
           </div>
         </div>
@@ -125,32 +127,21 @@
             </div>
             <button onclick="refreshBriefing()" style="margin-left:auto;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);">Refresh</button>
           </div>
-          <p class="briefing-text" id="briefingText">Good morning, creator. Today's hottest topics are all about Viking history with "vikingtom" leading the charge, along with the rising popularity of "shorts" and the emerging interest in "inteligenciaartificial" on YouTube. I recommend creating a short, engaging video about a fascinating Viking myth and publishing it as a YouTube Short today. YouTube is the best platform play right now — stay consistent and ride this wave.</p>
-          <div class="briefing-scores">
-            <div class="b-score"><span class="b-score-n">5.9</span><span>shorts</span></div>
-            <div class="b-score"><span class="b-score-n">5.8</span><span>vikingtom</span></div>
-            <div class="b-score"><span class="b-score-n">5.8</span><span>inteligenciaartificial</span></div>
-          </div>
+          <p class="briefing-text" id="briefingText">Loading today's briefing from Dijo…</p>
+          <div class="briefing-scores" id="briefingScores"></div>
         </div>
+        <!-- FIX 3: opps-row cleared — JS will populate from live trend data -->
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">⚡ Top Opportunities</div>
-        <div class="opps-row">
-          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
-            <span class="opp-icon">🔱</span>
-            <div><div class="opp-name">Viking history myths</div><div class="opp-meta">TikTok · emerging · 5 videos</div></div>
-            <div class="opp-score"><div class="opp-score-n">5.8</div><div class="opp-score-l">Score</div></div>
-          </div>
-          <div class="opp-card" onclick="showPanel('create',document.querySelector('[onclick*=create]'))">
-            <span class="opp-icon">🇬🇧</span>
-            <div><div class="opp-name">UK Street Style</div><div class="opp-meta">TikTok · rising fast</div></div>
-            <div class="opp-score"><div class="opp-score-n">5.5</div><div class="opp-score-l">Score</div></div>
-          </div>
+        <div class="opps-row" id="dashOpps">
+          <div style="padding:14px;color:var(--text3);font-size:12px;">Loading opportunities…</div>
         </div>
         <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Quick Actions</div>
         <div class="quick-actions">
           <div class="qa-btn" onclick="showPanel('trendfeed',document.querySelector('[onclick*=trendfeed]'))"><div class="qa-icon">📡</div><div class="qa-label">View Trends</div><div class="qa-desc">See what's hot today</div></div>
           <div class="qa-btn" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><div class="qa-icon">✍️</div><div class="qa-label">Generate Content</div><div class="qa-desc">Hook, caption, hashtags</div></div>
           <div class="qa-btn" onclick="showPanel('contentcalendar',document.querySelector('[onclick*=contentcalendar]'));initCalendar()"><div class="qa-icon">📅</div><div class="qa-label">Content Calendar</div><div class="qa-desc">Plan your week</div></div>
-          <div class="qa-btn" onclick="window.location.href='carousel.html'"><div class="qa-icon">🎨</div><div class="qa-label">Carousel Studio</div><div class="qa-desc">Build carousel slides</div></div>
+          <!-- FIX 1: carousel.html → carousel-studio.html -->
+          <div class="qa-btn" onclick="window.location.href='carousel-studio.html'"><div class="qa-icon">🎨</div><div class="qa-label">Carousel Studio</div><div class="qa-desc">Build carousel slides</div></div>
         </div>
       </div>
 
@@ -159,15 +150,11 @@
         <div class="feed-head">
           <h2>Trend Feed</h2>
           <div style="font-family:var(--fm);font-size:11px;color:var(--text3);">UK · Real Google Trends</div>
-          <button class="feed-refresh" style="margin-left:auto;">🔄 Refresh</button>
+          <button class="feed-refresh" style="margin-left:auto;" onclick="loadTrendFeed()">🔄 Refresh</button>
         </div>
+        <!-- FIX 2: hardcoded trend cards cleared — JS populates via loadTrendFeed() -->
         <div id="trendFeedList">
-          <div class="trend-card top" onclick="loadTopic('shorts')"><span class="t-rank">#1</span><div class="t-info"><div class="t-name">shorts</div><div class="t-meta">4 videos · 641,924 views · Google Trends</div></div><div class="t-right"><span class="t-score">5.9</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
-          <div class="trend-card top" onclick="loadTopic('vikingtom')"><span class="t-rank">#2</span><div class="t-info"><div class="t-name">vikingtom</div><div class="t-meta">5 videos · 126,349 views · YouTube</div></div><div class="t-right"><span class="t-score">5.8</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
-          <div class="trend-card" onclick="loadTopic('inteligenciaartificial')"><span class="t-rank">#3</span><div class="t-info"><div class="t-name">inteligenciaartificial</div><div class="t-meta">3 videos · 5,548 views · YouTube</div></div><div class="t-right"><span class="t-score">5.8</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
-          <div class="trend-card" onclick="loadTopic('UK Street Style')"><span class="t-rank">#4</span><div class="t-info"><div class="t-name">UK Street Style</div><div class="t-meta">Google Trends · Trend Score™</div></div><div class="t-right"><span class="t-score mid">5.5</span><span class="t-plat">TikTok</span><button class="t-gen">Generate →</button></div></div>
-          <div class="trend-card" onclick="loadTopic('James 14:3 bible')"><span class="t-rank">#5</span><div class="t-info"><div class="t-name">James 14:3 Bible verse</div><div class="t-meta">Google Trends · viral · UK</div></div><div class="t-right"><span class="t-score mid">5.5</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
-          <div class="trend-card" onclick="loadTopic('Wellingborough UK 2026')"><span class="t-rank">#6</span><div class="t-info"><div class="t-name">Wellingborough UK 2026</div><div class="t-meta">Trending shorts · viral · UK</div></div><div class="t-right"><span class="t-score mid">4.9</span><span class="t-plat">YouTube</span><button class="t-gen">Generate →</button></div></div>
+          <div style="padding:20px;color:var(--text3);font-size:13px;">Loading live trends…</div>
         </div>
       </div>
 
@@ -194,8 +181,6 @@
 
       <!-- ══ CONTENT CALENDAR ══ -->
       <div class="panel" id="panel-contentcalendar">
-
-        <!-- Header -->
         <div class="cal-header">
           <h2>Content Calendar</h2>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -209,8 +194,6 @@
             ✨ Auto-Fill with Dijo
           </button>
         </div>
-
-        <!-- Platform filter -->
         <div class="cal-plat-row">
           <span style="font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;">Filter:</span>
           <button class="cal-plat-btn active-all" onclick="calSetFilter('all',this)">All</button>
@@ -219,44 +202,24 @@
           <button class="cal-plat-btn" onclick="calSetFilter('ig',this)">📸 Instagram</button>
           <button class="cal-plat-btn" onclick="calSetFilter('li',this)">💼 LinkedIn</button>
         </div>
-
-        <!-- Week grid -->
-        <div class="cal-week-grid" id="calWeekGrid">
-          <!-- Rendered by calendar.js -->
-        </div>
-
-        <!-- Ideas bank + stats -->
+        <div class="cal-week-grid" id="calWeekGrid"></div>
         <div class="cal-ideas-row">
           <div class="cal-ideas-bank">
             <h3>💡 Ideas Bank — click to add</h3>
-            <div id="calIdeasBank"><!-- Rendered by calendar.js --></div>
+            <div id="calIdeasBank"></div>
           </div>
           <div class="cal-stats-card">
             <h3>📊 This Week</h3>
-            <div class="cal-stat-row">
-              <span class="cal-stat-label">Total posts</span>
-              <span class="cal-stat-val" id="calStatTotal">0</span>
-            </div>
-            <div class="cal-stat-row">
-              <span class="cal-stat-label">▶️ YouTube</span>
-              <span class="cal-stat-val" id="calStatYt">0</span>
-            </div>
-            <div class="cal-stat-row">
-              <span class="cal-stat-label">🎵 TikTok</span>
-              <span class="cal-stat-val" id="calStatTt">0</span>
-            </div>
-            <div class="cal-stat-row">
-              <span class="cal-stat-label">📸 Instagram</span>
-              <span class="cal-stat-val" id="calStatIg">0</span>
-            </div>
+            <div class="cal-stat-row"><span class="cal-stat-label">Total posts</span><span class="cal-stat-val" id="calStatTotal">0</span></div>
+            <div class="cal-stat-row"><span class="cal-stat-label">▶️ YouTube</span><span class="cal-stat-val" id="calStatYt">0</span></div>
+            <div class="cal-stat-row"><span class="cal-stat-label">🎵 TikTok</span><span class="cal-stat-val" id="calStatTt">0</span></div>
+            <div class="cal-stat-row"><span class="cal-stat-label">📸 Instagram</span><span class="cal-stat-val" id="calStatIg">0</span></div>
           </div>
         </div>
-      </div><!-- /panel-contentcalendar -->
+      </div>
 
       <!-- ══ PORTFOLIO ══ -->
       <div class="panel" id="panel-portfolio">
-
-        <!-- SETUP STATE -->
         <div id="pfSetup" class="pf-setup show">
           <div class="portfolio-header">
             <h2>Portfolio</h2>
@@ -286,30 +249,18 @@
             <div class="pf-step-card"><div class="pf-step-num">STEP 04</div><div class="pf-step-title">Publish & Share</div><div class="pf-step-desc">Dijo writes your SEO bio. Copy your link and add it to every profile. Done.</div></div>
           </div>
         </div>
-
-        <!-- BUILDER STATE -->
         <div id="pfBuilder" class="pf-builder">
           <div class="portfolio-header" style="grid-column:1/-1;">
             <h2>Portfolio Builder</h2>
             <button class="pf-header-btn secondary" onclick="resetPortfolio()">← Back</button>
             <button class="pf-header-btn" onclick="publishPortfolio()">🚀 Publish</button>
           </div>
-
-          <!-- LEFT: Form -->
           <div class="pf-form-card">
-
-            <!-- Profile -->
             <div class="pf-section">
               <div class="pf-section-title">Profile</div>
               <div class="pf-row">
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label">Display Name</label>
-                  <input class="form-input" id="pfName" placeholder="Your Name" oninput="updatePreview()"/>
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label">Niche / Title</label>
-                  <input class="form-input" id="pfNiche" placeholder="Creator · Finance" oninput="updatePreview()"/>
-                </div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Display Name</label><input class="form-input" id="pfName" placeholder="Your Name" oninput="updatePreview()"/></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Niche / Title</label><input class="form-input" id="pfNiche" placeholder="Creator · Finance" oninput="updatePreview()"/></div>
               </div>
               <div class="form-group" style="margin-top:12px;">
                 <label class="form-label">Bio</label>
@@ -320,8 +271,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Platforms -->
             <div class="pf-section">
               <div class="pf-section-title">Platforms</div>
               <div class="pf-platforms" id="pfPlatforms">
@@ -332,43 +281,20 @@
                 <button class="pf-plat-btn" onclick="togglePlat(this,'twitter','𝕏','Twitter/X')"><span class="pf-plat-icon">𝕏</span>Twitter/X</button>
               </div>
             </div>
-
-            <!-- Social accounts (manual — no OAuth) -->
             <div class="pf-section">
               <div class="pf-section-title">Social Accounts <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — enter manually</span></div>
-              <div class="pf-social-row">
-                <span class="pf-social-icon">📸</span>
-                <span class="pf-social-label">Instagram</span>
-                <input class="form-input" id="pfInstagram" placeholder="@yourusername or URL" style="flex:1;" oninput="updatePreview()"/>
-              </div>
-              <div class="pf-social-row">
-                <span class="pf-social-icon">💼</span>
-                <span class="pf-social-label">LinkedIn</span>
-                <input class="form-input" id="pfLinkedIn" placeholder="linkedin.com/in/yourname" style="flex:1;" oninput="updatePreview()"/>
-              </div>
+              <div class="pf-social-row"><span class="pf-social-icon">📸</span><span class="pf-social-label">Instagram</span><input class="form-input" id="pfInstagram" placeholder="@yourusername or URL" style="flex:1;" oninput="updatePreview()"/></div>
+              <div class="pf-social-row"><span class="pf-social-icon">💼</span><span class="pf-social-label">LinkedIn</span><input class="form-input" id="pfLinkedIn" placeholder="linkedin.com/in/yourname" style="flex:1;" oninput="updatePreview()"/></div>
               <p class="pf-social-note">ℹ️ Enter your handles manually. These are shown on your portfolio so brands can find you.</p>
             </div>
-
-            <!-- Stats -->
             <div class="pf-section">
               <div class="pf-section-title">Stats <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — optional, shown to brands</span></div>
               <div class="pf-row">
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label">Total Followers</label>
-                  <input class="form-input" id="pfFollowers" placeholder="e.g. 24.5K" oninput="updatePreview()"/>
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label">Avg Engagement</label>
-                  <input class="form-input" id="pfEngagement" placeholder="e.g. 8.4%" oninput="updatePreview()"/>
-                </div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Total Followers</label><input class="form-input" id="pfFollowers" placeholder="e.g. 24.5K" oninput="updatePreview()"/></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Avg Engagement</label><input class="form-input" id="pfEngagement" placeholder="e.g. 8.4%" oninput="updatePreview()"/></div>
               </div>
-              <div class="form-group" style="margin-top:12px;margin-bottom:0;">
-                <label class="form-label">Views / Month</label>
-                <input class="form-input" id="pfViews" placeholder="e.g. 1.2M" oninput="updatePreview()"/>
-              </div>
+              <div class="form-group" style="margin-top:12px;margin-bottom:0;"><label class="form-label">Views / Month</label><input class="form-input" id="pfViews" placeholder="e.g. 1.2M" oninput="updatePreview()"/></div>
             </div>
-
-            <!-- Rate Card -->
             <div class="pf-section">
               <div class="pf-section-title">Rate Card <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — optional, for brand deals</span></div>
               <div class="pf-rate-grid">
@@ -378,8 +304,6 @@
                 <div class="pf-rate-item"><div class="pf-rate-label">Monthly Package</div><input class="form-input" id="pfRatePackage" placeholder="e.g. £1,200" style="margin-top:4px;" oninput="updatePreview()"/></div>
               </div>
             </div>
-
-            <!-- Links -->
             <div class="pf-section">
               <div class="pf-section-title">Links</div>
               <div id="pfLinksContainer">
@@ -391,8 +315,6 @@
               </div>
               <button class="pf-add-link" onclick="addCustomLink()">+ Add custom link</button>
             </div>
-
-            <!-- Theme -->
             <div class="pf-section">
               <div class="pf-section-title">Theme</div>
               <div class="pf-themes" id="pfThemes">
@@ -402,14 +324,9 @@
                 <div class="pf-theme-opt" onclick="setTheme(this,'forest')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#14532d,#166534);"></div><div class="pf-theme-name">Forest</div></div>
               </div>
             </div>
-
-            <!-- SEO -->
             <div class="pf-section">
               <div class="pf-section-title">SEO Preview</div>
-              <div class="pf-seo-info">
-                <div class="pf-seo-info-icon">🔍</div>
-                <div class="pf-seo-info-text"><strong>Dijo optimises your portfolio for Google.</strong> Brands searching for creators in your niche will find your page.</div>
-              </div>
+              <div class="pf-seo-info"><div class="pf-seo-info-icon">🔍</div><div class="pf-seo-info-text"><strong>Dijo optimises your portfolio for Google.</strong> Brands searching for creators in your niche will find your page.</div></div>
               <div class="pf-seo-label"><div class="pf-seo-dot"></div>Google Search Preview</div>
               <div class="pf-seo-preview">
                 <div class="pf-seo-url" id="pfSeoUrl">impactgrid.app/p/yourcreatorname</div>
@@ -417,8 +334,6 @@
                 <div class="pf-seo-desc" id="pfSeoDesc">Creator in your niche. TikTok · YouTube · Instagram. View stats, collabs, and contact for brand deals.</div>
               </div>
             </div>
-
-            <!-- Publish -->
             <div class="pf-section" style="margin-bottom:0;">
               <div class="pf-section-title">Your Portfolio URL</div>
               <div class="pf-publish-row">
@@ -427,21 +342,12 @@
               </div>
               <button class="btn-generate" style="margin-top:12px;" onclick="publishPortfolio()">🚀 Publish Portfolio</button>
             </div>
-
-          </div><!-- /pf-form-card -->
-
-          <!-- RIGHT: Live Preview -->
+          </div>
           <div class="pf-preview-wrap">
-            <div class="pf-preview-label">
-              <div class="pf-preview-live-dot"></div>
-              Live Preview
-            </div>
+            <div class="pf-preview-label"><div class="pf-preview-live-dot"></div>Live Preview</div>
             <div class="pf-phone-frame" id="pfPhone">
               <div style="display:flex;align-items:center;justify-content:center;height:560px;color:#9099b8;font-size:13px;text-align:center;padding:20px;">
-                <div>
-                  <div style="font-size:32px;margin-bottom:10px;">🌐</div>
-                  Fill in your profile details<br/>to see your live preview
-                </div>
+                <div><div style="font-size:32px;margin-bottom:10px;">🌐</div>Fill in your profile details<br/>to see your live preview</div>
               </div>
             </div>
             <div class="pf-preview-stats">
@@ -449,10 +355,7 @@
               <div class="pf-prev-stat"><div class="pf-prev-stat-val">—</div><div class="pf-prev-stat-lbl">Link Clicks</div></div>
             </div>
           </div>
-
-        </div><!-- /pfBuilder -->
-
-        <!-- PUBLISHED STATE -->
+        </div>
         <div id="pfPublished" class="pf-published">
           <div class="portfolio-header">
             <h2>Portfolio</h2>
@@ -461,26 +364,17 @@
           <div class="pf-published-card">
             <div class="pf-pub-success-icon">🚀</div>
             <h2 class="pf-pub-title">Portfolio Published!</h2>
-            <p class="pf-pub-desc">
-              <strong id="pfPubName">Your</strong> portfolio is live as <strong id="pfPubNiche">Creator</strong>.<br/>
-              Share your link everywhere — put it in your TikTok bio, Instagram, and LinkedIn.
-            </p>
-            <div class="pf-pub-link-box">
-              <span class="pf-pub-link-text" id="pfPubLink">https://impactgrid.app/p/creator</span>
-              <button class="pf-pub-copy-btn" onclick="copyPublishedLink()">📋 Copy Link</button>
-            </div>
+            <p class="pf-pub-desc"><strong id="pfPubName">Your</strong> portfolio is live as <strong id="pfPubNiche">Creator</strong>.<br/>Share your link everywhere — put it in your TikTok bio, Instagram, and LinkedIn.</p>
+            <div class="pf-pub-link-box"><span class="pf-pub-link-text" id="pfPubLink">https://impactgrid.app/p/creator</span><button class="pf-pub-copy-btn" onclick="copyPublishedLink()">📋 Copy Link</button></div>
             <div class="pf-pub-actions">
               <button class="pf-pub-action-btn" onclick="shareToInstagram()">📸 Add to Instagram</button>
               <button class="pf-pub-action-btn" onclick="shareToLinkedIn()">💼 Share on LinkedIn</button>
               <button class="pf-pub-action-btn" onclick="editPortfolio()">✏️ Edit Portfolio</button>
             </div>
-            <div style="margin-top:20px;padding:14px;background:var(--green-dim);border:1px solid rgba(15,168,118,.2);border-radius:10px;font-size:12px;color:var(--green);">
-              ✓ SEO optimised · ✓ Mobile-friendly · ✓ Brand-ready
-            </div>
+            <div style="margin-top:20px;padding:14px;background:var(--green-dim);border:1px solid rgba(15,168,118,.2);border-radius:10px;font-size:12px;color:var(--green);">✓ SEO optimised · ✓ Mobile-friendly · ✓ Brand-ready</div>
           </div>
-        </div><!-- /pfPublished -->
-
-      </div><!-- /panel-portfolio -->
+        </div>
+      </div>
 
       <!-- ══ DIJO AI ══ -->
       <div class="panel" id="panel-dijo">
