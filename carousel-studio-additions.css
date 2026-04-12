@@ -1,68 +1,103 @@
 /* ═══════════════════════════════════════════════════════════
-   IMPACTGRID — Carousel Studio ADDITIONS
-   carousel-studio-additions.css
-   Add these rules to the bottom of carousel-studio.css
+   IMPACTGRID — Carousel Studio ADDITIONS  v3.1
+   New layout containers for editorial & habit styles
+   Append these rules to carousel-studio-additions.css
    ═══════════════════════════════════════════════════════════ */
 
-/* ── BOTTOM STRIP (image top, text bottom) ── */
-#sBottomStrip{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;}
+/* ── EDITORIAL_COVER (Salford & Co. cover style) ── */
+#sEditorialCover{
+  position:absolute;inset:0;z-index:4;
+}
+#sEditorialCover.hidden{display:none!important;}
 
-/* ── TOP STRIP (text top, image bottom) ── */
+/* ── EDITORIAL_COLLAGE (shared container for COLLAGE + COLLAGE_3) ── */
+#sEditorialCollage{
+  position:absolute;inset:0;z-index:4;
+  background:#f5e6d3;
+}
+#sEditorialCollage.hidden{display:none!important;}
+
+/* ── HABIT_COVER (Thynk Unlimited cover style) ── */
+#sHabitCover{
+  position:absolute;inset:0;z-index:4;
+}
+#sHabitCover.hidden{display:none!important;}
+
+/* ── HABIT_SLIDE (Thynk Unlimited habit slide style) ── */
+#sHabitSlide{
+  position:absolute;inset:0;z-index:4;
+}
+#sHabitSlide.hidden{display:none!important;}
+
+/* ── Ensure the background image shows through for dark editorial layouts ── */
+#sEditorialCover ~ #sOverlay,
+#sHabitCover ~ #sOverlay,
+#sHabitSlide ~ #sOverlay{
+  display:none;
+}
+
+/* ── Bottom & Top strip (ensure dynamic els respect hidden) ── */
+#sBottomStrip.hidden,#sTopStrip.hidden{display:none!important;}
+#sBottomStrip{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;}
 #sTopStrip{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;}
 
-/* ── Hidden utility (ensure clearLayouts works on dynamic els) ── */
-#sBottomStrip.hidden,#sTopStrip.hidden{display:none!important;}
-
-/* ── Stat section in edit panel ── */
+/* ── Stat / Quote edit sections ── */
 #eStatSection,#eQuoteSection{display:none;flex-direction:column;gap:6px;}
 
-/* ── Layout switcher dropdown in edit panel ── */
-.layout-switcher{
-  display:flex;flex-wrap:wrap;gap:4px;
-}
+/* ── Layout switcher buttons (existing + new) ── */
+.layout-switcher{display:flex;flex-wrap:wrap;gap:4px;}
 .layout-btn{
   font-size:9px;font-family:var(--fm);font-weight:700;
   letter-spacing:.4px;text-transform:uppercase;
   padding:4px 8px;border-radius:5px;
   border:1.5px solid var(--border);
   color:var(--text3);background:var(--surface2);
-  cursor:pointer;transition:.15s;
-  white-space:nowrap;
+  cursor:pointer;transition:.15s;white-space:nowrap;
 }
 .layout-btn:hover{border-color:var(--accent);color:var(--accent);}
 .layout-btn.active{background:rgba(37,99,235,.12);border-color:var(--accent);color:var(--accent);}
 
-/* ── Export modal — video option ── */
-#eoVideo .exp-radio{border-color:var(--border);}
-#eoVideo.sel .exp-radio{border-color:var(--accent);background:var(--accent);}
+/* ── Editorial layout buttons get a warm tint to distinguish them ── */
+.layout-btn[onclick*="EDITORIAL"]{
+  border-color:#c4956a44;
+  color:#c4956a;
+}
+.layout-btn[onclick*="EDITORIAL"]:hover{
+  border-color:#c4956a;
+  background:rgba(196,149,106,.08);
+}
+
+/* ── Habit layout buttons get a yellow tint ── */
+.layout-btn[onclick*="HABIT"]{
+  border-color:#d4c84a44;
+  color:#b5a93a;
+}
+.layout-btn[onclick*="HABIT"]:hover{
+  border-color:#d4c84a;
+  background:rgba(212,200,74,.08);
+}
+
+/* ── Slide canvas hover ── */
+.slide-canvas::after{
+  content:'';position:absolute;inset:0;z-index:20;
+  pointer-events:none;border-radius:var(--border-radius-lg, 16px);
+  border:2px solid transparent;transition:border-color .2s;
+}
+.slide-canvas:hover::after{border-color:rgba(37,99,235,.2);}
 
 /* ── Download progress toast ── */
 .dl-progress-toast{
   position:fixed;bottom:80px;right:22px;z-index:9999;
   background:var(--surface);border:1.5px solid var(--border);
   border-radius:var(--r-lg);padding:14px 18px;
-  display:flex;flex-direction:column;gap:8px;
-  min-width:220px;box-shadow:var(--sh-lg);
-  animation:slideUp .3s ease;
+  display:flex;flex-direction:column;gap:8px;min-width:220px;
+  box-shadow:var(--sh-lg);animation:slideUp .3s ease;
 }
 .dl-progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
 .dl-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
 .dl-progress-label{font-size:11px;color:var(--text2);font-family:var(--fm);}
 
-/* ── Slide canvas click hint ── */
-.slide-canvas::after{
-  content:'';
-  position:absolute;inset:0;z-index:20;
-  pointer-events:none;
-  border-radius:var(--r-lg);
-  border:2px solid transparent;
-  transition:border-color .2s;
-}
-.slide-canvas:hover::after{
-  border-color:rgba(37,99,235,.2);
-}
-
-/* ── Mobile: show panels as bottom sheet on small screens ── */
+/* ── Mobile ── */
 @media(max-width:900px){
   #eStatSection,#eQuoteSection{display:none!important;}
 }
