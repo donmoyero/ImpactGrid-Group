@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    IMPACTGRID — Carousel Studio
-   carousel-studio.js  v3.0
+   carousel-studio.js  v3.1
 
    Sections:
    1.  Asset library (DA)
@@ -12,6 +12,8 @@
    7.  AI generation (callAI → server, fallback)
    8.  Slide parsing
    9.  Render engine — ALL layouts guaranteed text + creative image placement
+       NEW v3.1: EDITORIAL_COVER, EDITORIAL_COLLAGE, EDITORIAL_COLLAGE_3
+                 HABIT_COVER, HABIT_SLIDE
    10. Strip builder
    11. Navigation
    12. Edit panel — full inline editing
@@ -152,6 +154,7 @@ function pickSecondAsset(theme, excludeId, slideIndex){
 
 function getOverlay(tone,brightness,layout){
   if(layout==='SPLIT_LEFT'||layout==='SPLIT_RIGHT'||layout==='MAGAZINE_SPLIT') return 'none';
+  if(['EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','STAT_HERO','QUOTE_PULL','GRID_POINTS'].indexOf(layout)!==-1) return 'none';
   if(brightness==='low') return 'linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.5) 50%,rgba(0,0,0,.15) 100%)';
   if(tone==='neutral'&&brightness==='high') return 'linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.25) 55%,transparent 100%)';
   if(tone==='warm') return 'linear-gradient(to top,rgba(12,7,3,.9) 0%,rgba(12,7,3,.4) 55%,rgba(12,7,3,.08) 100%)';
@@ -180,23 +183,25 @@ function getPanelText(theme){
 var LAYOUT_SEQUENCE = [
   'FULL_BLEED','SPLIT_LEFT','CORNER_FLOAT','OVERLAP_BAND','SPLIT_RIGHT',
   'BOTTOM_STRIP','STAT_HERO','QUOTE_PULL','DUAL_IMAGE','GRID_POINTS',
-  'TOP_STRIP','MAGAZINE_SPLIT'
+  'TOP_STRIP','MAGAZINE_SPLIT',
+  'EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3',
+  'HABIT_COVER','HABIT_SLIDE'
 ];
 
 function assignLayout(slideType,idx,total){
   var sets={
-    hook:['FULL_BLEED','CORNER_FLOAT','OVERLAP_BAND'],
+    hook:['FULL_BLEED','CORNER_FLOAT','OVERLAP_BAND','EDITORIAL_COVER','HABIT_COVER'],
     cta:['SPLIT_RIGHT','CORNER_FLOAT','FULL_BLEED'],
     stat:['STAT_HERO','SPLIT_RIGHT','SPLIT_LEFT'],
-    value:['SPLIT_LEFT','FULL_BLEED','CORNER_FLOAT','SPLIT_RIGHT','OVERLAP_BAND','BOTTOM_STRIP'],
-    insight:['OVERLAP_BAND','SPLIT_RIGHT','FULL_BLEED','TOP_STRIP'],
-    lesson:['SPLIT_LEFT','BOTTOM_STRIP','FULL_BLEED','MAGAZINE_SPLIT'],
+    value:['SPLIT_LEFT','FULL_BLEED','CORNER_FLOAT','SPLIT_RIGHT','OVERLAP_BAND','BOTTOM_STRIP','EDITORIAL_COLLAGE'],
+    insight:['OVERLAP_BAND','SPLIT_RIGHT','FULL_BLEED','TOP_STRIP','HABIT_SLIDE'],
+    lesson:['SPLIT_LEFT','BOTTOM_STRIP','FULL_BLEED','MAGAZINE_SPLIT','EDITORIAL_COLLAGE_3'],
     proof:['SPLIT_RIGHT','DUAL_IMAGE','CORNER_FLOAT'],
     quote:['QUOTE_PULL','FULL_BLEED'],
     story:['FULL_BLEED','CORNER_FLOAT','TOP_STRIP'],
     problem:['FULL_BLEED','OVERLAP_BAND','SPLIT_LEFT'],
-    list:['GRID_POINTS','SPLIT_LEFT','BOTTOM_STRIP'],
-    tip:['SPLIT_LEFT','CORNER_FLOAT','OVERLAP_BAND','BOTTOM_STRIP']
+    list:['GRID_POINTS','SPLIT_LEFT','BOTTOM_STRIP','EDITORIAL_COLLAGE_3'],
+    tip:['SPLIT_LEFT','CORNER_FLOAT','OVERLAP_BAND','BOTTOM_STRIP','HABIT_SLIDE']
   };
   var set=sets[slideType]||LAYOUT_SEQUENCE;
   return set[idx%set.length];
@@ -283,7 +288,6 @@ async function generate(){
     ST.slides=parseServerSlides(data,topic,platform,tone,count);
     if(data.theme&&DA[data.theme]) ST.theme=data.theme;
     if(data.accentColor) ST.accent=data.accentColor;
-    // Update accent dot UI
     document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});
   }catch(e){
     console.warn('[Carousel] Server error, using fallback:',e);
@@ -325,11 +329,9 @@ function parseServerSlides(data,topic,platform,tone,count){
       if(sl.image2) secondImage={url:sl.image2,tone:'neutral',brightness:'medium'};
       else if(sl.secondImage) secondImage=sl.secondImage;
 
-      // Determine layout — prefer AI suggestion, fall back to assignment
       var rawLayout=sl.aiLayout||sl.layout||'';
       var layout=LAYOUT_SEQUENCE.indexOf(rawLayout)!==-1?rawLayout:assignLayout(sl.type||'value',i,total);
 
-      // Guarantee text — never allow empty headline
       var headline=sl.headline||sl.title||'';
       if(!headline||headline.length<3){
         headline=i===0?'Everything changes when you know this':
@@ -402,21 +404,31 @@ function fallbackSlides(topic,platform,tone,count){
 }
 
 /* ─────────────────────────────────────────────────────────
-   9. RENDER ENGINE — every layout guaranteed text + image
+   9. RENDER ENGINE
    ───────────────────────────────────────────────────────── */
 
-/* Helper: clear all layout containers */
 function clearLayouts(){
-  ['sContent','sSplit','sCorner','sDual','sBand','sEditorial','sQuote','sStat','sGrid','sTopStrip','sBottomStrip'].forEach(function(id){
+  ['sContent','sSplit','sCorner','sDual','sBand','sEditorial','sQuote','sStat','sGrid','sTopStrip','sBottomStrip',
+   'sEditorialCover','sEditorialCollage','sHabitCover','sHabitSlide'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.innerHTML='';el.className=el.className.replace(/\bhidden\b/g,'').trim()+' hidden';}
   });
 }
 
-/* Helper: show a layout container */
 function showLayout(id){
   var el=document.getElementById(id);
   if(el) el.className=el.className.replace(/\bhidden\b/g,'').trim();
+}
+
+/* ── Ensure a dynamic container exists inside slideCanvas ── */
+function ensureContainer(id){
+  var el=document.getElementById(id);
+  if(!el){
+    el=document.createElement('div');
+    el.id=id;
+    document.getElementById('slideCanvas').appendChild(el);
+  }
+  return el;
 }
 
 function renderSlide(){
@@ -449,7 +461,6 @@ function renderSlide(){
   var pBg=getPanelBg(theme);
   var pText=getPanelText(theme);
 
-  /* ── DOM refs ── */
   var sBgImg=document.getElementById('sBgImg');
   var sVideo=document.getElementById('sBgVideo');
   var sOverlay=document.getElementById('sOverlay');
@@ -458,8 +469,8 @@ function renderSlide(){
 
   clearLayouts();
 
-  /* ── Background: video takes priority on full-bleed layouts ── */
-  var useVideo=videoData&&videoData.url&&(layout==='FULL_BLEED'||layout==='OVERLAP_BAND');
+  /* ── Video background ── */
+  var useVideo=videoData&&videoData.url&&(layout==='FULL_BLEED'||layout==='OVERLAP_BAND'||layout==='HABIT_COVER'||layout==='HABIT_SLIDE');
   if(useVideo){
     sBgImg.style.opacity='0';
     sVideo.innerHTML='<video autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;opacity:.85"><source src="'+videoData.url+'" type="video/mp4"></video>';
@@ -467,7 +478,8 @@ function renderSlide(){
     sBg.style.background='#111';
   } else {
     sVideo.innerHTML='';sVideo.style.display='none';
-    var needsBg=['FULL_BLEED','CORNER_FLOAT','DUAL_IMAGE','OVERLAP_BAND','TOP_STRIP','BOTTOM_STRIP'].indexOf(layout)!==-1;
+    var needsBg=['FULL_BLEED','CORNER_FLOAT','DUAL_IMAGE','OVERLAP_BAND','TOP_STRIP','BOTTOM_STRIP',
+                 'EDITORIAL_COVER','HABIT_COVER','HABIT_SLIDE'].indexOf(layout)!==-1;
     if(primaryUrl&&needsBg){
       sBgImg.style.backgroundImage='url('+primaryUrl+')';
       sBgImg.style.opacity='1';
@@ -492,10 +504,12 @@ function renderSlide(){
   else if(theme==='workspace') sTexture.classList.add('tex-lines');
   else if(theme==='minimal') sTexture.classList.add('tex-dots');
 
-  /* ─── RENDER EACH LAYOUT ─── */
+  /* ══════════════════════════════════════════════════════
+     RENDER EACH LAYOUT
+  ══════════════════════════════════════════════════════ */
   switch(layout){
 
-    /* ── FULL_BLEED: image fills bg, text overlay bottom/center ── */
+    /* ── FULL_BLEED ── */
     case 'FULL_BLEED':
     default:{
       var sContent=document.getElementById('sContent');
@@ -505,7 +519,7 @@ function renderSlide(){
       break;
     }
 
-    /* ── SPLIT_LEFT: image right 50%, text left 50% on solid bg ── */
+    /* ── SPLIT_LEFT ── */
     case 'SPLIT_LEFT':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
@@ -517,14 +531,13 @@ function renderSlide(){
       var st=document.getElementById('sSplitText');
       if(primaryUrl){si.style.backgroundImage='url('+primaryUrl+')';si.style.backgroundSize='cover';si.style.backgroundPosition='center';}
       else{si.style.background=T.palette[1];}
-      si.style.order='2';
-      st.style.order='1';
+      si.style.order='2'; st.style.order='1';
       st.style.cssText='display:flex;flex-direction:column;justify-content:center;padding:32px 28px;gap:10px;background:'+pBg+';color:'+pText;
       st.innerHTML=buildSplitTextHTML(slide,accent2,pText,pBg);
       break;
     }
 
-    /* ── SPLIT_RIGHT: image left 50%, text right 50% ── */
+    /* ── SPLIT_RIGHT ── */
     case 'SPLIT_RIGHT':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
@@ -536,14 +549,13 @@ function renderSlide(){
       var st2=document.getElementById('sSplitText');
       if(primaryUrl){si2.style.backgroundImage='url('+primaryUrl+')';si2.style.backgroundSize='cover';si2.style.backgroundPosition='center';}
       else{si2.style.background=T.palette[1];}
-      si2.style.order='1';
-      st2.style.order='2';
+      si2.style.order='1'; st2.style.order='2';
       st2.style.cssText='display:flex;flex-direction:column;justify-content:center;padding:32px 28px;gap:10px;background:'+pBg+';color:'+pText;
       st2.innerHTML=buildSplitTextHTML(slide,accent2,pText,pBg);
       break;
     }
 
-    /* ── CORNER_FLOAT: image top-right corner ~38%, text bottom-left ── */
+    /* ── CORNER_FLOAT ── */
     case 'CORNER_FLOAT':{
       showLayout('sCorner');
       var sCorner=document.getElementById('sCorner');
@@ -563,7 +575,7 @@ function renderSlide(){
       break;
     }
 
-    /* ── DUAL_IMAGE: full-bleed faded bg + sharp thumbnail top-right + text ── */
+    /* ── DUAL_IMAGE ── */
     case 'DUAL_IMAGE':{
       showLayout('sDual');
       var sDual=document.getElementById('sDual');
@@ -584,7 +596,7 @@ function renderSlide(){
       break;
     }
 
-    /* ── OVERLAP_BAND: full bg + bold colour band across middle ── */
+    /* ── OVERLAP_BAND ── */
     case 'OVERLAP_BAND':{
       showLayout('sBand');
       var sBandEl=document.getElementById('sBand');
@@ -598,17 +610,11 @@ function renderSlide(){
       break;
     }
 
-    /* ── BOTTOM_STRIP: image top 60%, text panel bottom 40% ── */
+    /* ── BOTTOM_STRIP ── */
     case 'BOTTOM_STRIP':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
-      var bsEl=document.getElementById('sBottomStrip');
-      if(!bsEl){
-        // Create dynamically if not in HTML
-        bsEl=document.createElement('div');
-        bsEl.id='sBottomStrip';
-        document.getElementById('slideCanvas').appendChild(bsEl);
-      }
+      var bsEl=ensureContainer('sBottomStrip');
       showLayout('sBottomStrip');
       bsEl.innerHTML='';
       bsEl.style.cssText='position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;';
@@ -622,16 +628,11 @@ function renderSlide(){
       break;
     }
 
-    /* ── TOP_STRIP: text top 40%, image bottom 60% ── */
+    /* ── TOP_STRIP ── */
     case 'TOP_STRIP':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
-      var tsEl=document.getElementById('sTopStrip');
-      if(!tsEl){
-        tsEl=document.createElement('div');
-        tsEl.id='sTopStrip';
-        document.getElementById('slideCanvas').appendChild(tsEl);
-      }
+      var tsEl=ensureContainer('sTopStrip');
       showLayout('sTopStrip');
       tsEl.innerHTML='';
       tsEl.style.cssText='position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;';
@@ -645,7 +646,7 @@ function renderSlide(){
       break;
     }
 
-    /* ── MAGAZINE_SPLIT: editorial — image right 55%, ruled text left 45% ── */
+    /* ── MAGAZINE_SPLIT ── */
     case 'MAGAZINE_SPLIT':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
@@ -657,8 +658,7 @@ function renderSlide(){
       var msText=document.getElementById('sSplitText');
       if(primaryUrl){msImg.style.backgroundImage='url('+primaryUrl+')';msImg.style.backgroundSize='cover';msImg.style.backgroundPosition='center';}
       else{msImg.style.background=T.palette[1];}
-      msImg.style.order='2';
-      msText.style.order='1';
+      msImg.style.order='2'; msText.style.order='1';
       msText.style.cssText='display:flex;flex-direction:column;justify-content:center;padding:28px 22px;gap:8px;background:'+pBg+';color:'+pText+';border-right:3px solid '+accent2;
       var mgh='';
       if(slide.tag) mgh+='<div style="font-size:8px;font-weight:700;font-family:var(--fm);letter-spacing:3px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
@@ -669,7 +669,7 @@ function renderSlide(){
       break;
     }
 
-    /* ── STAT_HERO: giant stat center, flat colour bg, optional strip image ── */
+    /* ── STAT_HERO ── */
     case 'STAT_HERO':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
@@ -690,7 +690,7 @@ function renderSlide(){
       break;
     }
 
-    /* ── QUOTE_PULL: large decorative quote, centred, flat bg ── */
+    /* ── QUOTE_PULL ── */
     case 'QUOTE_PULL':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
@@ -709,7 +709,7 @@ function renderSlide(){
       break;
     }
 
-    /* ── GRID_POINTS: 2×2 icon grid, flat colour ── */
+    /* ── GRID_POINTS ── */
     case 'GRID_POINTS':{
       sBgImg.style.opacity='0';
       sBg.style.background=T.palette[0];
@@ -739,18 +739,355 @@ function renderSlide(){
       break;
     }
 
+    /* ══════════════════════════════════════════════════════
+       NEW LAYOUTS v3.1
+    ══════════════════════════════════════════════════════ */
+
+    /* ── EDITORIAL_COVER (Salford & Co. style)
+       Warm full-bleed photo, gradient overlay, oval page badge top-left,
+       brand name top-right, giant serif italic title bottom-left,
+       handle watermark bottom-left, decorative snowflake stars bottom-right
+    ── */
+    case 'EDITORIAL_COVER':{
+      var ecEl=ensureContainer('sEditorialCover');
+      showLayout('sEditorialCover');
+      ecEl.innerHTML='';
+      ecEl.style.cssText='position:absolute;inset:0;z-index:4;';
+
+      // Overlay gradient for readability
+      var ecOv=document.createElement('div');
+      ecOv.style.cssText='position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.2) 55%,rgba(0,0,0,.08) 100%);z-index:1;pointer-events:none;';
+      ecEl.appendChild(ecOv);
+
+      // Oval page badge top-left
+      var ecBadge=document.createElement('div');
+      ecBadge.textContent='Page '+(String(ST.cur+1).padStart(2,'0'));
+      ecBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:var(--fb);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.55);border-radius:20px;padding:3px 12px;letter-spacing:.5px;';
+      ecEl.appendChild(ecBadge);
+
+      // Brand name top-right
+      var ecBrand=document.createElement('div');
+      ecBrand.textContent=ST.brand||'Salford & Co.';
+      ecBrand.style.cssText='position:absolute;top:14px;right:16px;z-index:2;font-size:10px;font-family:var(--fb);color:rgba(255,255,255,.85);letter-spacing:.8px;';
+      ecEl.appendChild(ecBrand);
+
+      // Giant serif italic title bottom
+      var ecTitle=document.createElement('div');
+      ecTitle.style.cssText='position:absolute;bottom:48px;left:20px;right:20px;z-index:2;';
+      var titleLines=slide.headline.split(' ');
+      var midpoint=Math.ceil(titleLines.length/2);
+      var line1=titleLines.slice(0,midpoint).join(' ');
+      var line2=titleLines.slice(midpoint).join(' ');
+      ecTitle.innerHTML='<div style="font-family:var(--fh);font-size:'+Math.min(54,Math.max(36,Math.round(420/Math.max(slide.headline.length,8))))+'px;font-weight:800;color:#fff;line-height:1;text-shadow:0 2px 20px rgba(0,0,0,.5);">'+esc(line1)+'</div>'
+        +'<div style="font-family:Georgia,serif;font-size:'+Math.min(54,Math.max(32,Math.round(400/Math.max(slide.headline.length,8))))+'px;font-style:italic;font-weight:400;color:#fff;line-height:1;text-shadow:0 2px 20px rgba(0,0,0,.5);">'+esc(line2||line1)+'</div>';
+      ecEl.appendChild(ecTitle);
+
+      // Handle watermark bottom-left
+      var ecHandle=document.createElement('div');
+      ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s/g,''):'reallygreatsite');
+      ecHandle.style.cssText='position:absolute;bottom:16px;left:20px;z-index:2;font-size:10px;font-family:var(--fb);color:rgba(255,255,255,.6);letter-spacing:.3px;';
+      ecEl.appendChild(ecHandle);
+
+      // Decorative stars bottom-right
+      var ecStars=document.createElement('div');
+      ecStars.innerHTML='✦ ✦ ✦';
+      ecStars.style.cssText='position:absolute;bottom:16px;right:16px;z-index:2;font-size:11px;color:rgba(255,255,255,.4);letter-spacing:4px;';
+      ecEl.appendChild(ecStars);
+
+      break;
+    }
+
+    /* ── EDITORIAL_COLLAGE (Salford & Co. style)
+       Beige solid bg, large italic number top-right, 2-photo vertical stack left 42%,
+       text right side. Warm editorial feel.
+    ── */
+    case 'EDITORIAL_COLLAGE':{
+      sBgImg.style.opacity='0';
+      sBg.style.background='#f5e6d3';
+      var ecolEl=ensureContainer('sEditorialCollage');
+      showLayout('sEditorialCollage');
+      ecolEl.innerHTML='';
+      ecolEl.style.cssText='position:absolute;inset:0;z-index:4;background:#f5e6d3;';
+
+      // Page badge top-left
+      var ecolBadge=document.createElement('div');
+      ecolBadge.textContent='Page '+(String(ST.cur+1).padStart(2,'0'));
+      ecolBadge.style.cssText='position:absolute;top:12px;left:12px;font-size:9px;font-family:var(--fb);color:#888;border:1px solid #bbb;border-radius:20px;padding:2px 10px;letter-spacing:.4px;';
+      ecolEl.appendChild(ecolBadge);
+
+      // Brand name top-right
+      var ecolBrand=document.createElement('div');
+      ecolBrand.textContent=ST.brand||'Salford & Co.';
+      ecolBrand.style.cssText='position:absolute;top:12px;right:14px;font-size:9px;font-family:var(--fb);color:#888;letter-spacing:.6px;';
+      ecolEl.appendChild(ecolBrand);
+
+      // Large italic slide number top-right (behind content)
+      var ecolNum=document.createElement('div');
+      ecolNum.textContent=String(ST.cur+1).padStart(2,'0');
+      ecolNum.style.cssText='position:absolute;top:28px;right:14px;font-family:Georgia,serif;font-size:72px;font-style:italic;font-weight:400;color:#1a1814;line-height:1;';
+      ecolEl.appendChild(ecolNum);
+
+      // Left photo stack — 2 photos stacked vertically
+      var ecolPhotos=document.createElement('div');
+      ecolPhotos.style.cssText='position:absolute;left:14px;top:50px;bottom:36px;width:42%;display:flex;flex-direction:column;gap:6px;';
+
+      var p1=document.createElement('div');
+      p1.style.cssText='flex:1;border-radius:4px;background-size:cover;background-position:center;background-color:#c8b89a;'+(primaryUrl?'background-image:url('+primaryUrl+')':'');
+      ecolPhotos.appendChild(p1);
+
+      var p2=document.createElement('div');
+      var s2url=secondUrl||(primaryUrl?primaryUrl.replace('w=1080','w=400'):'');
+      p2.style.cssText='flex:1;border-radius:4px;background-size:cover;background-position:center top;background-color:#a89070;'+(s2url?'background-image:url('+s2url+')':'');
+      ecolPhotos.appendChild(p2);
+
+      ecolEl.appendChild(ecolPhotos);
+
+      // Right text panel
+      var ecolText=document.createElement('div');
+      ecolText.style.cssText='position:absolute;left:47%;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;';
+
+      var ecolH='';
+      ecolH+='<div style="font-family:var(--fh);font-size:'+Math.min(22,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:#1a1814;margin-bottom:4px;">'+esc(slide.headline)+'</div>';
+      if(slide.body) ecolH+='<div style="font-size:11px;line-height:1.65;color:#555;text-align:justify;">'+esc(slide.body)+'</div>';
+      if(slide.hashtags&&slide.hashtags.length) ecolH+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">'+slide.hashtags.slice(0,4).map(function(t){return '<span style="font-size:9px;font-family:var(--fm);color:'+accent2+';">'+esc(t)+'</span>';}).join('')+'</div>';
+      ecolText.innerHTML=ecolH;
+      ecolEl.appendChild(ecolText);
+
+      // Footer
+      var ecolFoot=document.createElement('div');
+      ecolFoot.style.cssText='position:absolute;bottom:10px;left:12px;font-size:9px;font-family:var(--fb);color:#bbb;';
+      ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s/g,''):'reallygreatsite');
+      ecolEl.appendChild(ecolFoot);
+
+      // Stars
+      var ecolStars=document.createElement('div');
+      ecolStars.innerHTML='✦ ✦ ✦';
+      ecolStars.style.cssText='position:absolute;bottom:10px;right:12px;font-size:10px;color:#c8b89a;letter-spacing:3px;';
+      ecolEl.appendChild(ecolStars);
+
+      break;
+    }
+
+    /* ── EDITORIAL_COLLAGE_3 (Salford & Co. style)
+       Beige bg, italic number top-left, text left 45%, 3-photo grid right:
+       1 wide photo top + 2 equal photos bottom row.
+    ── */
+    case 'EDITORIAL_COLLAGE_3':{
+      sBgImg.style.opacity='0';
+      sBg.style.background='#f5e6d3';
+      var ec3El=ensureContainer('sEditorialCollage');
+      showLayout('sEditorialCollage');
+      ec3El.innerHTML='';
+      ec3El.style.cssText='position:absolute;inset:0;z-index:4;background:#f5e6d3;';
+
+      // Page badge
+      var ec3Badge=document.createElement('div');
+      ec3Badge.textContent='Page '+(String(ST.cur+1).padStart(2,'0'));
+      ec3Badge.style.cssText='position:absolute;top:12px;left:12px;font-size:9px;font-family:var(--fb);color:#888;border:1px solid #bbb;border-radius:20px;padding:2px 10px;';
+      ec3El.appendChild(ec3Badge);
+
+      var ec3Brand=document.createElement('div');
+      ec3Brand.textContent=ST.brand||'Salford & Co.';
+      ec3Brand.style.cssText='position:absolute;top:12px;right:14px;font-size:9px;font-family:var(--fb);color:#888;letter-spacing:.6px;';
+      ec3El.appendChild(ec3Brand);
+
+      // Large italic number top-left
+      var ec3Num=document.createElement('div');
+      ec3Num.textContent=String(ST.cur+1).padStart(2,'0');
+      ec3Num.style.cssText='position:absolute;top:28px;left:12px;font-family:Georgia,serif;font-size:72px;font-style:italic;font-weight:400;color:#1a1814;line-height:1;';
+      ec3El.appendChild(ec3Num);
+
+      // Left text panel
+      var ec3Text=document.createElement('div');
+      ec3Text.style.cssText='position:absolute;left:12px;right:52%;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;';
+      var ec3H='';
+      ec3H+='<div style="font-family:var(--fh);font-size:'+Math.min(20,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:#1a1814;margin-bottom:4px;">'+esc(slide.headline)+'</div>';
+      if(slide.body) ec3H+='<div style="font-size:11px;line-height:1.65;color:#555;text-align:justify;">'+esc(slide.body)+'</div>';
+      if(slide.hashtags&&slide.hashtags.length) ec3H+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">'+slide.hashtags.slice(0,3).map(function(t){return '<span style="font-size:9px;font-family:var(--fm);color:'+accent2+';">'+esc(t)+'</span>';}).join('')+'</div>';
+      ec3Text.innerHTML=ec3H;
+      ec3El.appendChild(ec3Text);
+
+      // Right 3-photo grid
+      var ec3Grid=document.createElement('div');
+      ec3Grid.style.cssText='position:absolute;left:50%;right:12px;top:44px;bottom:36px;display:flex;flex-direction:column;gap:5px;';
+
+      var imgUrls=[primaryUrl||'',secondUrl||'',primaryUrl||''];
+      var ec3Wide=document.createElement('div');
+      ec3Wide.style.cssText='flex:0 0 50%;border-radius:4px;background-size:cover;background-position:center;background-color:#c8b89a;'+(imgUrls[0]?'background-image:url('+imgUrls[0]+')':'');
+      ec3Grid.appendChild(ec3Wide);
+
+      var ec3Bottom=document.createElement('div');
+      ec3Bottom.style.cssText='flex:1;display:flex;gap:5px;';
+
+      var ec3b1=document.createElement('div');
+      ec3b1.style.cssText='flex:1;border-radius:4px;background-size:cover;background-position:center;background-color:#a89070;'+(imgUrls[1]?'background-image:url('+imgUrls[1]+')':'');
+      var ec3b2=document.createElement('div');
+      ec3b2.style.cssText='flex:1;border-radius:4px;background-size:cover;background-position:center top;background-color:#8a7258;'+(imgUrls[2]?'background-image:url('+imgUrls[2]+')':'');
+      ec3Bottom.appendChild(ec3b1);
+      ec3Bottom.appendChild(ec3b2);
+      ec3Grid.appendChild(ec3Bottom);
+      ec3El.appendChild(ec3Grid);
+
+      // Footer
+      var ec3Foot=document.createElement('div');
+      ec3Foot.style.cssText='position:absolute;bottom:10px;left:12px;font-size:9px;font-family:var(--fb);color:#bbb;';
+      ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s/g,''):'reallygreatsite');
+      ec3El.appendChild(ec3Foot);
+      var ec3Stars=document.createElement('div');
+      ec3Stars.innerHTML='✦ ✦ ✦';
+      ec3Stars.style.cssText='position:absolute;bottom:10px;right:12px;font-size:10px;color:#c8b89a;letter-spacing:3px;';
+      ec3El.appendChild(ec3Stars);
+
+      break;
+    }
+
+    /* ── HABIT_COVER (Thynk Unlimited style)
+       Dark moody full-bleed photo (opacity .7), thin top bar (brand | handle),
+       giant bold yellow/accent title bottom-left, small yellow subtitle,
+       thin bottom bar (url | slide number).
+    ── */
+    case 'HABIT_COVER':{
+      var hcEl=ensureContainer('sHabitCover');
+      showLayout('sHabitCover');
+      hcEl.innerHTML='';
+      hcEl.style.cssText='position:absolute;inset:0;z-index:4;';
+
+      // Dark tint overlay
+      var hcOv=document.createElement('div');
+      hcOv.style.cssText='position:absolute;inset:0;background:rgba(10,10,8,.45);z-index:1;pointer-events:none;';
+      hcEl.appendChild(hcOv);
+
+      // Top bar
+      var hcTop=document.createElement('div');
+      hcTop.style.cssText='position:absolute;top:0;left:0;right:0;z-index:2;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.15);';
+      hcTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:var(--fb);color:rgba(255,255,255,.7);letter-spacing:.12em;">'+(ST.brand?ST.brand.toUpperCase():'THYNK UNLIMITED')+'</span>'
+        +'<span style="font-size:9px;font-weight:700;font-family:var(--fb);color:rgba(255,255,255,.7);letter-spacing:.12em;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s/g,''):'REALLYGREATSITE')+'</span>';
+      hcEl.appendChild(hcTop);
+
+      // Giant title bottom
+      var hcTitle=document.createElement('div');
+      hcTitle.style.cssText='position:absolute;left:16px;right:16px;bottom:52px;z-index:2;';
+      var hcTitleLines=slide.headline.split(' ');
+      var hcMid=Math.ceil(hcTitleLines.length/3);
+      hcTitle.innerHTML='<div style="font-family:var(--fh);font-size:'+Math.min(58,Math.max(36,Math.round(480/Math.max(slide.headline.length,6))))+'px;font-weight:800;color:'+accent2+';line-height:.9;letter-spacing:-.5px;">'+esc(slide.headline)+'</div>';
+      hcEl.appendChild(hcTitle);
+
+      // Subtitle
+      if(slide.body||slide.subline){
+        var hcSub=document.createElement('div');
+        hcSub.style.cssText='position:absolute;left:16px;right:16px;bottom:52px;z-index:2;margin-top:4px;';
+        // Position below title dynamically — use a simpler approach
+        hcTitle.style.bottom='72px';
+        hcSub.style.cssText='position:absolute;left:16px;right:60%;bottom:46px;z-index:2;font-size:9px;font-weight:600;font-family:var(--fb);color:'+accent2+';line-height:1.5;letter-spacing:.04em;text-transform:uppercase;';
+        hcSub.textContent=esc(slide.body||slide.subline||'');
+        hcEl.appendChild(hcSub);
+      }
+
+      // Bottom bar
+      var hcBot=document.createElement('div');
+      hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;';
+      hcBot.innerHTML='<span style="font-size:9px;font-family:var(--fb);color:rgba(255,255,255,.6);letter-spacing:.06em;">'+(ST.brand?ST.brand.toUpperCase():'WWW.REALLYGREATSITE.COM')+'</span>'
+        +'<span style="font-size:9px;font-family:var(--fb);color:rgba(255,255,255,.6);letter-spacing:.06em;">SLIDE '+(String(ST.cur+1).padStart(2,'0'))+'</span>';
+      hcEl.appendChild(hcBot);
+
+      break;
+    }
+
+    /* ── HABIT_SLIDE (Thynk Unlimited style)
+       Dark moody photo bg, "Habit 0X" italic label, bold accent heading,
+       decorative swirl SVG, two-line body text centered, brand bars top/bottom.
+    ── */
+    case 'HABIT_SLIDE':{
+      var hsEl=ensureContainer('sHabitSlide');
+      showLayout('sHabitSlide');
+      hsEl.innerHTML='';
+      hsEl.style.cssText='position:absolute;inset:0;z-index:4;';
+
+      // Dark tint overlay
+      var hsOv=document.createElement('div');
+      hsOv.style.cssText='position:absolute;inset:0;background:rgba(10,10,8,.48);z-index:1;pointer-events:none;';
+      hsEl.appendChild(hsOv);
+
+      // Top bar
+      var hsTop=document.createElement('div');
+      hsTop.style.cssText='position:absolute;top:0;left:0;right:0;z-index:2;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.15);';
+      hsTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:var(--fb);color:rgba(255,255,255,.7);letter-spacing:.12em;">'+(ST.brand?ST.brand.toUpperCase():'THYNK UNLIMITED')+'</span>'
+        +'<span style="font-size:9px;font-weight:700;font-family:var(--fb);color:rgba(255,255,255,.7);letter-spacing:.12em;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s/g,''):'REALLYGREATSITE')+'</span>';
+      hsEl.appendChild(hsTop);
+
+      // Content block — centered vertically
+      var hsContent=document.createElement('div');
+      hsContent.style.cssText='position:absolute;inset:36px 16px 44px;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;';
+
+      // Habit label (italic serif)
+      var hsLabel=document.createElement('div');
+      var labelText=slide.tag&&slide.tag.toLowerCase().indexOf('habit')!==-1?slide.tag:('Habit '+(String(ST.cur+1).padStart(2,'0')));
+      hsLabel.style.cssText='font-family:Georgia,serif;font-size:14px;font-style:italic;color:'+accent2+';margin-bottom:4px;';
+      hsLabel.textContent=labelText;
+      hsContent.appendChild(hsLabel);
+
+      // Big bold heading
+      var hsHead=document.createElement('div');
+      hsHead.style.cssText='font-family:var(--fh);font-size:'+Math.min(56,Math.max(30,Math.round(360/Math.max(slide.headline.length,4))))+'px;font-weight:800;color:'+accent2+';line-height:.95;margin-bottom:10px;';
+      hsHead.innerHTML=esc(slide.headline).replace(/ /g,'<br>');
+      hsContent.appendChild(hsHead);
+
+      // Decorative swirl SVG
+      var hsSvg=document.createElement('div');
+      hsSvg.style.cssText='position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);width:60px;height:60px;opacity:.35;pointer-events:none;';
+      hsSvg.innerHTML='<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><path d="M40 10 C20 10 10 25 20 40 C30 55 50 55 60 40 C70 25 60 10 40 10" fill="none" stroke="white" stroke-width="1.5"/><path d="M60 40 L50 60" stroke="white" stroke-width="1.5" fill="none"/><circle cx="38" cy="38" r="8" fill="none" stroke="white" stroke-width="1.5"/><path d="M30 30 L20 55" stroke="white" stroke-width="1" fill="none"/></svg>';
+      hsEl.appendChild(hsSvg);
+
+      // Body text — two sentences, centred
+      if(slide.body){
+        var bodyLines=slide.body.split(/\n|(?<=\. )/).filter(function(l){return l.trim();});
+        bodyLines.slice(0,2).forEach(function(line){
+          var hsBLine=document.createElement('div');
+          hsBLine.style.cssText='font-size:12px;line-height:1.5;color:'+accent2+';text-align:center;margin-bottom:4px;padding:0 8px;';
+          hsBLine.textContent=line.trim();
+          hsContent.appendChild(hsBLine);
+        });
+        // If body has no newlines, split on midpoint
+        if(bodyLines.length<=1&&slide.body.length>30){
+          var words=slide.body.split(' ');
+          var mid=Math.ceil(words.length/2);
+          hsContent.lastChild&&hsContent.removeChild(hsContent.lastChild);
+          var hsBLine1=document.createElement('div');
+          hsBLine1.style.cssText='font-size:12px;line-height:1.5;color:'+accent2+';text-align:center;margin-bottom:2px;';
+          hsBLine1.textContent=words.slice(0,mid).join(' ')+'.';
+          var hsBLine2=document.createElement('div');
+          hsBLine2.style.cssText='font-size:12px;line-height:1.5;color:'+accent2+';text-align:center;margin-bottom:4px;';
+          hsBLine2.textContent=words.slice(mid).join(' ');
+          hsContent.appendChild(hsBLine1);
+          hsContent.appendChild(hsBLine2);
+        }
+      }
+
+      hsEl.appendChild(hsContent);
+
+      // Bottom bar
+      var hsBot=document.createElement('div');
+      hsBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;';
+      hsBot.innerHTML='<span style="font-size:9px;font-family:var(--fb);color:rgba(255,255,255,.6);letter-spacing:.06em;">'+(ST.brand?ST.brand.toUpperCase():'WWW.REALLYGREATSITE.COM')+'</span>'
+        +'<span style="font-size:9px;font-family:var(--fb);color:rgba(255,255,255,.6);letter-spacing:.06em;">SLIDE '+(String(ST.cur+1).padStart(2,'0'))+'</span>';
+      hsEl.appendChild(hsBot);
+
+      break;
+    }
+
   } /* end switch */
 
   /* ── Always-on chrome ── */
   document.getElementById('sNum').textContent=(ST.cur+1)+' / '+ST.slides.length;
   var brandEl=document.getElementById('sBrand');
-  brandEl.textContent=ST.brand;
+  // Hide default brand overlay for editorial layouts (they handle it internally)
+  var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER','HABIT_SLIDE'];
+  brandEl.textContent=editorialLayouts.indexOf(layout)===-1?(ST.brand||''):'';
   brandEl.style.color=tc.head;
 
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=layout.replace(/_/g,' ');
 
-  /* ── Hashtag chips in right panel ── */
   var chips=document.getElementById('hashtagChips');
   var hashSec=document.getElementById('hashtagSection');
   if(chips&&slide.hashtags&&slide.hashtags.length){
@@ -828,7 +1165,7 @@ function setFmt(f){ST.format=f;['square','portrait','landscape'].forEach(functio
 function shuffleAssets(){ST.assetOffset=(ST.assetOffset+1)%8;buildStrip();renderSlide();toast('🔀 New assets selected');}
 
 /* ─────────────────────────────────────────────────────────
-   12. EDIT PANEL — full inline editing, live re-render
+   12. EDIT PANEL
    ───────────────────────────────────────────────────────── */
 function fillEdit(){
   if(!ST.slides.length) return;
@@ -837,17 +1174,12 @@ function fillEdit(){
   document.getElementById('eBody').value=s.body||s.subline||'';
   document.getElementById('eCap').value=s.caption||'';
   document.getElementById('editNum').textContent='Slide '+(ST.cur+1);
-
-  // Show layout picker
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=(s.layout||'').replace(/_/g,' ');
-
-  // Show stat / quote fields if relevant
   var statSec=document.getElementById('eStatSection');
   var quoteSec=document.getElementById('eQuoteSection');
   if(statSec) statSec.style.display=(s.layout==='STAT_HERO')?'flex':'none';
   if(quoteSec) quoteSec.style.display=(s.layout==='QUOTE_PULL')?'flex':'none';
-
   var statInput=document.getElementById('eStat');
   if(statInput) statInput.value=s.stat||'';
   var quoteInput=document.getElementById('eQuote');
@@ -859,7 +1191,6 @@ function liveEdit(){
   ST.slides[ST.cur].headline=document.getElementById('eHead').value;
   ST.slides[ST.cur].body=document.getElementById('eBody').value;
   renderSlide();
-  // Also update strip thumb title
   var thumb=document.querySelectorAll('.sthumb')[ST.cur];
   if(thumb) thumb.title='Slide '+(ST.cur+1)+': '+ST.slides[ST.cur].headline.slice(0,30);
 }
@@ -881,7 +1212,6 @@ function liveEditQuote(){
 function updateCap(){if(!ST.slides.length) return;ST.slides[ST.cur].caption=document.getElementById('eCap').value;}
 function updateBrand(){ST.brand=document.getElementById('brandInput').value;if(ST.slides.length) renderSlide();}
 
-/* Layout switcher — lets user manually change slide layout */
 function changeLayout(newLayout){
   if(!ST.slides.length) return;
   ST.slides[ST.cur].layout=newLayout;
@@ -905,9 +1235,7 @@ function setAccent(c,el){ST.accent=c;document.querySelectorAll('.cdot').forEach(
 function toggleTheme(){var isDark=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',isDark?'light':'dark');document.querySelector('[onclick="toggleTheme()"]').textContent=isDark?'🌙':'☀️';}
 
 /* ─────────────────────────────────────────────────────────
-   15. COPY & EXPORT — cross-device download
-       Desktop/Android: blob → <a download>
-       Safari iOS: navigator.share({files}) with fallback
+   15. COPY & EXPORT
    ───────────────────────────────────────────────────────── */
 function isSafariIOS(){
   var ua=navigator.userAgent;
@@ -957,7 +1285,6 @@ function doExport(){
   }
 }
 
-/* Export current slide as PNG using html2canvas if available, else screenshot tip */
 function exportSlidesAsPNG(){
   if(typeof html2canvas==='undefined'){
     toast('💡 Screenshot each slide using your device screenshot, or use the JSON export for editing.');
@@ -975,7 +1302,6 @@ function exportSlidesAsPNG(){
   });
 }
 
-/* Cross-device blob download */
 function triggerBlobDownload(blob,filename){
   try{
     var url=URL.createObjectURL(blob);
@@ -991,7 +1317,6 @@ function triggerBlobDownload(blob,filename){
   }
 }
 
-/* iOS Share for downloading images */
 async function shareSlideOnIOS(url,filename){
   try{
     var res=await fetch(url,{mode:'cors',cache:'no-store'});
@@ -1033,6 +1358,5 @@ document.addEventListener('keydown',function(e){
    ───────────────────────────────────────────────────────── */
 (function(){
   updateCounter();
-  // Keep server warm
   setInterval(function(){fetch(DIJO_SERVER+'/ping').catch(function(){});},600000);
 })();
