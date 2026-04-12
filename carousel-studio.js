@@ -1,31 +1,11 @@
 /* ═══════════════════════════════════════════════════════════
    IMPACTGRID — Carousel Studio
-   carousel-studio.js  v4.0
+   carousel-studio.js  v4.1
 
-   Sections:
-   1.  Asset library (DA)
-   2.  Theme detection
-   3.  Asset picking & overlay helpers
-   4.  Layout assignment
-   5.  State
-   6.  Topic input → intel detection
-   7.  AI generation (callAI → server, fallback)
-   8.  Slide parsing
-   9.  Render engine
-       - FULL_BLEED, SPLIT_LEFT/RIGHT, CORNER_FLOAT, DUAL_IMAGE
-       - OVERLAP_BAND, BOTTOM_STRIP, TOP_STRIP, MAGAZINE_SPLIT
-       - STAT_HERO, QUOTE_PULL, GRID_POINTS
-       - EDITORIAL_COVER, EDITORIAL_COLLAGE, EDITORIAL_COLLAGE_3  (Salford & Co. — v4 pixel-accurate)
-       - HABIT_COVER, HABIT_SLIDE  (Thynk Unlimited — v4 pixel-accurate)
-   10. Strip builder
-   11. Navigation
-   12. Edit panel
-   13. Image upload
-   14. Accent / brand / theme
-   15. Copy & Export
-   16. Toast
-   17. Keyboard
-   18. Init
+   v4.1 fixes:
+   - parseServerSlides: layout now trusted unconditionally from server
+   - parseServerSlides: mediaType carried through from server
+   - renderSlide: video uses slide.mediaType check, not layout name list
    ═══════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────
@@ -291,7 +271,6 @@ function headlineSize(text){
    ───────────────────────────────────────────────────────── */
 var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#2563eb',brand:'',userImages:{},assetOffset:0,exportType:'png',fontPair:'syne'};
 
-/* Font pairs */
 var FONT_PAIRS={
   syne:{head:"'Syne',sans-serif",body:"'DM Sans',sans-serif",mono:"'Space Mono',monospace"},
   cormorant:{head:"'Cormorant Garant',Georgia,serif",body:"'DM Sans',sans-serif",mono:"'Space Mono',monospace"},
@@ -401,49 +380,60 @@ async function callAI(topic,platform,tone,count){
 }
 
 /* ─────────────────────────────────────────────────────────
-   8. SLIDE PARSING
+   8. SLIDE PARSING  (v4.1 — layout locked, mediaType carried through)
    ───────────────────────────────────────────────────────── */
 function parseServerSlides(data,topic,platform,tone,count){
   try{
     if(!data.slides||!Array.isArray(data.slides)) throw new Error('no slides');
     var total=data.slides.length;
     return data.slides.map(function(sl,i){
+
       var primaryImage=null;
       if(sl.image) primaryImage={url:sl.image,tone:sl.imageMood||'neutral',brightness:'medium'};
       else if(sl.primaryImage) primaryImage=sl.primaryImage;
+
       var secondImage=null;
       if(sl.image2) secondImage={url:sl.image2,tone:'neutral',brightness:'medium'};
       else if(sl.secondImage) secondImage=sl.secondImage;
-      var rawLayout=sl.aiLayout||sl.layout||'';
-      var layout=LAYOUT_SEQUENCE.indexOf(rawLayout)!==-1?rawLayout:assignLayout(sl.type||'value',i,total);
+
+      // v4.1 FIX: Layout is locked by the server via getLayoutSequence().
+      // Trust sl.layout unconditionally. Only fall back to assignLayout()
+      // if the server somehow sends nothing at all.
+      var layout=sl.layout||assignLayout(sl.type||'value',i,total);
+
       var headline=sl.headline||sl.title||'';
       if(!headline||headline.length<3){
-        headline=i===0?'Everything changes when you know this':i===total-1?'Ready to take action?':'Slide '+(i+1)+': '+topic;
+        headline=i===0?'Everything changes when you know this':i===total-1?'Ready to take action?':'Step '+(i+1)+': '+topic;
       }
+
       var body=sl.body||sl.subline||sl.description||'';
       var caption=sl.caption||buildCaption(sl,i,data.trendHashtags||[]);
       var hashtags=sl.hashtags||data.trendHashtags||[];
+
       return {
-        type:sl.type||(i===0?'hook':i===total-1?'cta':'value'),
-        layout:layout,
-        tag:sl.tag||String(i+1).padStart(2,'0'),
-        headline:headline,
-        subline:sl.subline||'',
-        body:body,
-        stat:sl.stat||null,
-        quote:sl.quote||null,
-        points:sl.points||null,
-        gridPoints:sl.gridPoints||(sl.points?sl.points.map(function(p,pi){
+        type:       sl.type||(i===0?'hook':i===total-1?'cta':'value'),
+        layout:     layout,
+        // v4.1 FIX: carry mediaType from server so renderSlide knows
+        // whether to show video or image without guessing from layout name
+        mediaType:  sl.mediaType||'image',
+        tag:        sl.tag||String(i+1).padStart(2,'0'),
+        headline:   headline,
+        subline:    sl.subline||'',
+        body:       body,
+        stat:       sl.stat||null,
+        quote:      sl.quote||null,
+        points:     sl.points||null,
+        gridPoints: sl.gridPoints||(sl.points?sl.points.map(function(p,pi){
           var glyphs=['→','★','◆','✦','●','▲'];
           return {glyph:glyphs[pi%glyphs.length],text:p};
         }):null),
-        cta:sl.cta||'',
-        caption:caption,
-        hashtags:Array.isArray(hashtags)?hashtags.slice(0,8):[],
-        primaryImage:primaryImage,
-        secondImage:secondImage,
-        video:sl.video||null,
-        useVideo:!!(sl.video&&sl.video.url)
+        cta:        sl.cta||'',
+        caption:    caption,
+        hashtags:   Array.isArray(hashtags)?hashtags.slice(0,8):[],
+        primaryImage: primaryImage,
+        secondImage:  secondImage,
+        video:      sl.video||null,
+        useVideo:   sl.mediaType==='video'&&!!(sl.video&&sl.video.url)
       };
     });
   }catch(e){
@@ -464,22 +454,22 @@ function fallbackSlides(topic,platform,tone,count){
   var hook=hooks[Math.floor(Math.random()*hooks.length)];
   var vals=[
     {type:'value',headline:'The problem nobody admits',body:'Most people focus on the wrong thing entirely. Here\'s what actually moves the needle.',layout:'SPLIT_LEFT'},
-    {type:'insight',headline:'The shift that changes everything',body:'Once you understand this, you can\'t go back.',layout:'OVERLAP_BAND'},
-    {type:'stat',headline:'The numbers don\'t lie',body:'Creators who do this consistently outperform those who don\'t.',layout:'STAT_HERO',stat:'87%'},
+    {type:'insight',headline:'The shift that changes everything',body:'Once you understand this, you cannot go back. The difference is immediate.',layout:'OVERLAP_BAND'},
+    {type:'stat',headline:'The numbers do not lie',body:'Creators who do this consistently outperform those who do not. Every single time.',layout:'STAT_HERO',stat:'87%'},
     {type:'quote',headline:'',body:'',quote:'The secret was never the strategy. It was the consistency.',layout:'QUOTE_PULL'},
-    {type:'lesson',headline:'What I wish I\'d known sooner',body:'Three years in, I finally understood this.',layout:'BOTTOM_STRIP'},
-    {type:'proof',headline:'Here\'s what happened next',body:'The results weren\'t overnight. But they were real.',layout:'DUAL_IMAGE'},
+    {type:'lesson',headline:'What I wish I had known sooner',body:'Three years in, I finally understood this. It changed the trajectory completely.',layout:'BOTTOM_STRIP'},
+    {type:'proof',headline:'Here is what happened next',body:'The results were not overnight. But they were real and they compounded fast.',layout:'DUAL_IMAGE'},
     {type:'list',headline:'Four things to do today',body:'',layout:'GRID_POINTS',gridPoints:[{glyph:'→',text:'Start before you\'re ready'},{glyph:'★',text:'Ship consistently'},{glyph:'◆',text:'Study what works'},{glyph:'✦',text:'Double down fast'}]},
-    {type:'value',headline:'The counterintuitive truth',body:'Everything you\'ve been told is backwards.',layout:'CORNER_FLOAT'},
-    {type:'insight',headline:'Nobody will tell you this',body:'It\'s not about working harder. Order matters.',layout:'SPLIT_RIGHT'},
-    {type:'tip',headline:'Start here, not there',body:'This single action creates the most momentum.',layout:'TOP_STRIP'}
+    {type:'value',headline:'The counterintuitive truth',body:'Everything you have been told is backwards. Here is why that matters.',layout:'CORNER_FLOAT'},
+    {type:'insight',headline:'Nobody will tell you this',body:'It is not about working harder. The order you do things in changes everything.',layout:'SPLIT_RIGHT'},
+    {type:'tip',headline:'Start here, not there',body:'This single action creates the most momentum. Everything else follows from it.',layout:'TOP_STRIP'}
   ];
-  var slides=[{type:'hook',tag:'01',headline:hook,body:'Swipe through — breaking it all down. →',cta:'',layout:'FULL_BLEED',caption:hook+'\n\nSave this — you\'ll want it.\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy','#digitalmarketing','#socialmediatips']}];
+  var slides=[{type:'hook',tag:'01',headline:hook,body:'Swipe through — breaking it all down. →',mediaType:'image',cta:'',layout:'FULL_BLEED',caption:hook+'\n\nSave this — you\'ll want it.\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy','#digitalmarketing','#socialmediatips']}];
   for(var i=1;i<count-1;i++){
     var v=vals[(i-1)%vals.length];
-    slides.push({type:v.type,tag:String(i+1).padStart(2,'0'),headline:v.headline,body:v.body,cta:'',layout:v.layout,stat:v.stat||null,quote:v.quote||null,gridPoints:v.gridPoints||null,caption:'',hashtags:[]});
+    slides.push({type:v.type,tag:String(i+1).padStart(2,'0'),headline:v.headline,body:v.body,mediaType:'image',cta:'',layout:v.layout,stat:v.stat||null,quote:v.quote||null,gridPoints:v.gridPoints||null,caption:'',hashtags:[]});
   }
-  slides.push({type:'cta',tag:String(count).padStart(2,'0'),headline:'Ready to make this real?',body:'Follow for more. Save this post.',cta:'Follow for more →',layout:'SPLIT_RIGHT',caption:'Which slide hit hardest? Drop a number 👇\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy']});
+  slides.push({type:'cta',tag:String(count).padStart(2,'0'),headline:'Ready to make this real?',body:'Follow for more. Save this post. Apply one thing today.',mediaType:'image',cta:'Follow for more →',layout:'SPLIT_RIGHT',caption:'Which slide hit hardest? Drop a number 👇\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy']});
   return slides.slice(0,count);
 }
 
@@ -551,9 +541,12 @@ function renderSlide(){
 
   clearLayouts();
 
-  /* Video background */
+  /* ── v4.1 FIX: Video background ─────────────────────────
+     Check slide.mediaType === 'video' FIRST (set by server).
+     Do not guess from layout name. Fall back to image if URL missing. */
   var videoData=slide.video||null;
-  var useVideo=videoData&&videoData.url&&(layout==='FULL_BLEED'||layout==='OVERLAP_BAND'||layout==='HABIT_COVER'||layout==='HABIT_SLIDE');
+  var useVideo=(slide.mediaType==='video'||slide.useVideo)&&videoData&&videoData.url;
+
   if(useVideo){
     sBgImg.style.opacity='0';
     sVideo.innerHTML='<video autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;opacity:.85"><source src="'+videoData.url+'" type="video/mp4"></video>';
@@ -576,6 +569,7 @@ function renderSlide(){
       sBg.style.background=primaryUrl?'#111':T.palette[0];
     }
   }
+  /* ── End video block ──────────────────────────────────── */
 
   var ov=getOverlay(tone2,bri,layout);
   sOverlay.style.background=ov==='none'?'none':ov;
@@ -585,9 +579,6 @@ function renderSlide(){
   else if(theme==='workspace') sTexture.classList.add('tex-lines');
   else if(theme==='minimal') sTexture.classList.add('tex-dots');
 
-  /* ════════════════════════════════════════════════════════
-     RENDER EACH LAYOUT
-  ════════════════════════════════════════════════════════ */
   switch(layout){
 
     case 'FULL_BLEED':
@@ -780,49 +771,30 @@ function renderSlide(){
       break;
     }
 
-    /* ══════════════════════════════════════════════════════
-       THYNK UNLIMITED — HABIT_COVER  (v4 pixel-accurate)
-       Full-bleed moody photo · thin hairline top bar with brand + handle
-       Giant bold yellow/accent display title (mid-left, 2–3 lines)
-       Italic serif subtitle below title · Decorative swirl arrow SVG
-       Bottom bar: URL left · SLIDE 0X right
-    ══════════════════════════════════════════════════════ */
     case 'HABIT_COVER':{
-      /* bg image shows through from sBgImg */
       var hcEl=ensureContainer('sHabitCover');
       showLayout('sHabitCover');
       hcEl.innerHTML='';
       hcEl.style.cssText='position:absolute;inset:0;z-index:4;';
-
-      /* Dark tint — moody, not black */
       var hcOv=document.createElement('div');
       hcOv.style.cssText='position:absolute;inset:0;background:rgba(8,8,6,.38);z-index:1;pointer-events:none;';
       hcEl.appendChild(hcOv);
-
-      /* Top hairline bar */
       var hcTop=document.createElement('div');
       hcTop.style.cssText='position:absolute;top:0;left:0;right:0;z-index:2;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.22);';
       hcTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">'+(ST.brand?ST.brand.toUpperCase():'THYNK UNLIMITED')+'</span>'
         +'<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'REALLYGREATSITE')+'</span>';
       hcEl.appendChild(hcTop);
-
-      /* Main title block — left-aligned, mid-to-bottom */
       var hcTitle=document.createElement('div');
       hcTitle.style.cssText='position:absolute;left:16px;right:16px;bottom:80px;z-index:2;';
-
-      /* Split headline into words for big display */
       var words=(slide.headline||'Habits That Changed My Life').split(' ');
       var mid=Math.ceil(words.length/2);
       var line1=words.slice(0,mid).join(' ');
       var line2=words.slice(mid).join(' ');
       var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max(slide.headline.length,6))));
-
       hcTitle.innerHTML=
         '<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
         +'<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(line2||line1)+'</div>';
       hcEl.appendChild(hcTitle);
-
-      /* Italic subtitle */
       if(slide.body||slide.subline){
         var hcSub=document.createElement('div');
         var subText=slide.body||slide.subline||'';
@@ -830,17 +802,10 @@ function renderSlide(){
         hcSub.textContent=subText;
         hcEl.appendChild(hcSub);
       }
-
-      /* Decorative swirl arrow — signature Thynk Unlimited element */
       var hcSwirl=document.createElement('div');
       hcSwirl.style.cssText='position:absolute;right:24px;bottom:120px;z-index:2;width:70px;height:70px;opacity:.9;';
-      hcSwirl.innerHTML='<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none">'
-        +'<path d="M55 20 C55 20 70 30 62 48 C54 66 30 62 22 46 C14 30 28 14 44 18" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/>'
-        +'<path d="M44 18 L38 10 M44 18 L52 14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
-        +'</svg>';
+      hcSwirl.innerHTML='<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M55 20 C55 20 70 30 62 48 C54 66 30 62 22 46 C14 30 28 14 44 18" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M44 18 L38 10 M44 18 L52 14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       hcEl.appendChild(hcSwirl);
-
-      /* Bottom bar */
       var hcBot=document.createElement('div');
       hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;';
       hcBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.REALLYGREATSITE.COM')+'</span>'
@@ -849,56 +814,37 @@ function renderSlide(){
       break;
     }
 
-    /* ══════════════════════════════════════════════════════
-       THYNK UNLIMITED — HABIT_SLIDE  (v4 pixel-accurate)
-       Full-bleed photo · top hairline bar · italic "Habit 0X" label
-       Giant bold accent headline (2 lines) · Decorative loop-arrow SVG
-       Body copy below in accent colour, centred · Bottom bar
-    ══════════════════════════════════════════════════════ */
     case 'HABIT_SLIDE':{
       var hsEl=ensureContainer('sHabitSlide');
       showLayout('sHabitSlide');
       hsEl.innerHTML='';
       hsEl.style.cssText='position:absolute;inset:0;z-index:4;';
-
-      /* Dark tint */
       var hsOv=document.createElement('div');
       hsOv.style.cssText='position:absolute;inset:0;background:rgba(8,8,6,.4);z-index:1;pointer-events:none;';
       hsEl.appendChild(hsOv);
-
-      /* Top bar */
       var hsTop=document.createElement('div');
       hsTop.style.cssText='position:absolute;top:0;left:0;right:0;z-index:2;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.22);';
       hsTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">'+(ST.brand?ST.brand.toUpperCase():'THYNK UNLIMITED')+'</span>'
         +'<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'REALLYGREATSITE')+'</span>';
       hsEl.appendChild(hsTop);
-
-      /* Content block — bottom half */
       var hsContent=document.createElement('div');
       hsContent.style.cssText='position:absolute;left:16px;right:16px;bottom:48px;z-index:2;';
-
-      /* Italic serif "Habit 01" label */
       var labelNum=slide.tag||String(ST.cur+1).padStart(2,'0');
       var labelText='Habit '+labelNum;
       var hsLabel=document.createElement('div');
       hsLabel.style.cssText='font-family:Georgia,"Times New Roman",serif;font-size:16px;font-style:italic;font-weight:400;color:rgba(255,255,255,.9);margin-bottom:4px;';
       hsLabel.textContent=labelText;
       hsContent.appendChild(hsLabel);
-
-      /* Big bold accent headline — break into 2 lines */
       var hsWords=(slide.headline||'Morning Clarity').split(' ');
       var hsMid=Math.ceil(hsWords.length/2);
       var hsLine1=hsWords.slice(0,hsMid).join(' ');
       var hsLine2=hsWords.slice(hsMid).join(' ');
       var hsFontSize=Math.min(68,Math.max(36,Math.round(440/Math.max(slide.headline.length,4))));
-
       var hsHead=document.createElement('div');
       hsHead.innerHTML='<div style="font-family:'+getFont('head')+';font-size:'+hsFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(hsLine1)+'</div>'
         +(hsLine2?'<div style="font-family:'+getFont('head')+';font-size:'+hsFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(hsLine2)+'</div>':'');
       hsHead.style.cssText='margin-bottom:14px;';
       hsContent.appendChild(hsHead);
-
-      /* Body copy — centred, 2 lines in accent colour */
       if(slide.body){
         var bodyWords=slide.body.split(' ');
         var bMid=Math.ceil(bodyWords.length/2);
@@ -910,19 +856,11 @@ function renderSlide(){
           +(bLine2?'<div style="font-size:13px;line-height:1.55;color:'+accent2+';font-weight:400;">'+esc(bLine2)+'</div>':'');
         hsContent.appendChild(hsBody);
       }
-
       hsEl.appendChild(hsContent);
-
-      /* Decorative loop arrow SVG — overlaps text block, left-center */
       var hsSwirl=document.createElement('div');
       hsSwirl.style.cssText='position:absolute;left:16px;bottom:160px;z-index:2;width:64px;height:64px;opacity:.88;';
-      hsSwirl.innerHTML='<svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg" fill="none">'
-        +'<path d="M20 50 C10 30 20 10 38 12 C56 14 60 32 50 44 C40 56 24 54 20 50 Z" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
-        +'<path d="M16 38 L22 50 M22 50 L32 46" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
-        +'</svg>';
+      hsSwirl.innerHTML='<svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M20 50 C10 30 20 10 38 12 C56 14 60 32 50 44 C40 56 24 54 20 50 Z" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M16 38 L22 50 M22 50 L32 46" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       hsEl.appendChild(hsSwirl);
-
-      /* Bottom bar */
       var hsBot=document.createElement('div');
       hsBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;';
       hsBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.REALLYGREATSITE.COM')+'</span>'
@@ -931,56 +869,36 @@ function renderSlide(){
       break;
     }
 
-    /* ══════════════════════════════════════════════════════
-       SALFORD & CO. — EDITORIAL_COVER  (v4 pixel-accurate)
-       Full-bleed photo · oval pill badge top-left · plain brand name top-right
-       Mixed-serif giant title: sans-serif lines + italic script last word
-       @handle bottom-left · decorative snowflake ✽✽✽ bottom-right
-    ══════════════════════════════════════════════════════ */
     case 'EDITORIAL_COVER':{
       var ecEl=ensureContainer('sEditorialCover');
       showLayout('sEditorialCover');
       ecEl.innerHTML='';
       ecEl.style.cssText='position:absolute;inset:0;z-index:4;';
-
-      /* Gradient overlay — lighter than Thynk */
       var ecOv=document.createElement('div');
       ecOv.style.cssText='position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.04) 100%);z-index:1;pointer-events:none;';
       ecEl.appendChild(ecOv);
-
-      /* Oval pill badge top-left */
       var ecBadge=document.createElement('div');
       ecBadge.textContent='Page '+String(ST.cur+1).padStart(2,'0');
       ecBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';font-weight:400;color:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.6);border-radius:40px;padding:4px 14px;letter-spacing:.3px;';
       ecEl.appendChild(ecBadge);
-
-      /* Plain brand name top-right — no border, just text */
       var ecBrand=document.createElement('div');
       ecBrand.textContent=ST.brand||'Salford & Co.';
       ecBrand.style.cssText='position:absolute;top:16px;right:16px;z-index:2;font-size:11px;font-family:'+getFont('body')+';font-weight:400;color:rgba(255,255,255,.88);letter-spacing:.4px;';
       ecEl.appendChild(ecBrand);
-
-      /* Mixed-serif title — bottom left */
       var words2=(slide.headline||'3 Ways to Style Your Own Home').split(' ');
-      /* Last 2 words get the italic script treatment */
       var scriptWordCount=Math.min(2,Math.ceil(words2.length/3));
       var normalWords=words2.slice(0,-scriptWordCount);
       var scriptWords=words2.slice(-scriptWordCount);
       var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max(slide.headline.length,6))));
-
       var ecTitle=document.createElement('div');
       ecTitle.style.cssText='position:absolute;bottom:50px;left:18px;right:18px;z-index:2;';
       ecTitle.innerHTML='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
         +'<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(titleFontSz+4)+'px;font-style:italic;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(scriptWords.join(' '))+'</div>';
       ecEl.appendChild(ecTitle);
-
-      /* @handle bottom-left */
       var ecHandle=document.createElement('div');
       ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
       ecHandle.style.cssText='position:absolute;bottom:16px;left:18px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:rgba(255,255,255,.65);letter-spacing:.2px;';
       ecEl.appendChild(ecHandle);
-
-      /* Snowflake decorative ✽✽✽ bottom-right */
       var ecStars=document.createElement('div');
       ecStars.innerHTML='✽ ✽ ✽';
       ecStars.style.cssText='position:absolute;bottom:14px;right:16px;z-index:2;font-size:13px;color:rgba(255,255,255,.55);letter-spacing:5px;';
@@ -988,13 +906,6 @@ function renderSlide(){
       break;
     }
 
-    /* ══════════════════════════════════════════════════════
-       SALFORD & CO. — EDITORIAL_COLLAGE  (v4 pixel-accurate)
-       Linen #f0ebe1 bg · oval badge top-left · brand name top-right
-       Giant italic number top-right (black, ~100px)
-       2 photos LEFT side — overlapping/staggered (not just stacked)
-       RIGHT side: mixed-serif headline + justified body · ✽✽✽ + @handle footer
-    ══════════════════════════════════════════════════════ */
     case 'EDITORIAL_COLLAGE':{
       sBgImg.style.opacity='0';
       sBg.style.background='#f0ebe1';
@@ -1002,61 +913,42 @@ function renderSlide(){
       showLayout('sEditorialCollage');
       ecolEl.innerHTML='';
       ecolEl.style.cssText='position:absolute;inset:0;z-index:4;background:#f0ebe1;';
-
-      /* Oval badge top-left */
       var ecolBadge=document.createElement('div');
       ecolBadge.textContent='Page '+String(ST.cur+1).padStart(2,'0');
       ecolBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;letter-spacing:.3px;';
       ecolEl.appendChild(ecolBadge);
-
-      /* Brand name top-right */
       var ecolBrand=document.createElement('div');
       ecolBrand.textContent=ST.brand||'Salford & Co.';
       ecolBrand.style.cssText='position:absolute;top:16px;right:14px;z-index:2;font-size:11px;font-family:'+getFont('body')+';color:#888;letter-spacing:.3px;';
       ecolEl.appendChild(ecolBrand);
-
-      /* Giant italic number top-right — big, black, proper weight */
       var ecolNum=document.createElement('div');
       ecolNum.textContent=String(ST.cur+1).padStart(2,'0');
       ecolNum.style.cssText='position:absolute;top:36px;right:14px;z-index:2;font-family:Georgia,"Times New Roman",serif;font-size:108px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.9;';
       ecolEl.appendChild(ecolNum);
-
-      /* LEFT: 2 overlapping/staggered photos */
-      /* Photo 1 — taller, sits top-left of the photo area */
       var ecolP1=document.createElement('div');
       ecolP1.style.cssText='position:absolute;left:14px;top:54px;width:44%;height:48%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;'+(primaryUrl?'background-image:url('+primaryUrl+')':'');
       ecolEl.appendChild(ecolP1);
-
-      /* Photo 2 — overlaps photo 1, shifted right and down */
       var ecolP2=document.createElement('div');
       var p2url=secondUrl||(primaryUrl||'');
       ecolP2.style.cssText='position:absolute;left:26%;top:42%;width:40%;height:46%;background-size:cover;background-position:center top;background-color:#a89070;border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.15);'+(p2url?'background-image:url('+p2url+')':'');
       ecolEl.appendChild(ecolP2);
-
-      /* RIGHT text panel — vertically centred */
       var ecolText=document.createElement('div');
       ecolText.style.cssText='position:absolute;left:52%;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:3;';
-
-      /* Mixed-serif headline */
       var ecWords=(slide.headline||'Create a Cozy & Functional Space').split(' ');
       var ecScriptCount=Math.min(1,ecWords.length-1);
       var ecNormal=ecWords.slice(0,-ecScriptCount||undefined).join(' ');
       var ecScript=ecScriptCount?ecWords.slice(-ecScriptCount).join(' '):'';
       var ecFontSz=Math.min(24,headlineSize(slide.headline));
-
       var ecolH='';
       ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ecFontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;margin-bottom:0;">'+esc(ecNormal)+'</div>';
       if(ecScript) ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ecFontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ecScript)+'</div>';
       if(slide.body) ecolH+='<div style="font-size:11px;line-height:1.7;color:#555;text-align:justify;margin-top:6px;">'+esc(slide.body)+'</div>';
       ecolText.innerHTML=ecolH;
       ecolEl.appendChild(ecolText);
-
-      /* Footer */
       var ecolFoot=document.createElement('div');
       ecolFoot.style.cssText='position:absolute;bottom:12px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
       ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
       ecolEl.appendChild(ecolFoot);
-
       var ecolStars=document.createElement('div');
       ecolStars.innerHTML='✽ ✽ ✽';
       ecolStars.style.cssText='position:absolute;bottom:12px;right:14px;z-index:2;font-size:14px;color:#b0a090;letter-spacing:4px;';
@@ -1064,12 +956,6 @@ function renderSlide(){
       break;
     }
 
-    /* ══════════════════════════════════════════════════════
-       SALFORD & CO. — EDITORIAL_COLLAGE_3  (v4 pixel-accurate)
-       Linen bg · badge + brand · italic number top-LEFT this time
-       LEFT text panel · RIGHT: 3-photo grid (1 wide top + 2 bottom)
-       Photos have slight stagger for visual interest
-    ══════════════════════════════════════════════════════ */
     case 'EDITORIAL_COLLAGE_3':{
       sBgImg.style.opacity='0';
       sBg.style.background='#f0ebe1';
@@ -1077,65 +963,45 @@ function renderSlide(){
       showLayout('sEditorialCollage');
       ec3El.innerHTML='';
       ec3El.style.cssText='position:absolute;inset:0;z-index:4;background:#f0ebe1;';
-
-      /* Badge top-left */
       var ec3Badge=document.createElement('div');
       ec3Badge.textContent='Page '+String(ST.cur+1).padStart(2,'0');
       ec3Badge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;';
       ec3El.appendChild(ec3Badge);
-
       var ec3Brand=document.createElement('div');
       ec3Brand.textContent=ST.brand||'Salford & Co.';
       ec3Brand.style.cssText='position:absolute;top:16px;right:14px;z-index:2;font-size:11px;font-family:'+getFont('body')+';color:#888;';
       ec3El.appendChild(ec3Brand);
-
-      /* Giant italic number — top LEFT (different from COLLAGE) */
       var ec3Num=document.createElement('div');
       ec3Num.textContent=String(ST.cur+1).padStart(2,'0');
       ec3Num.style.cssText='position:absolute;top:36px;left:12px;z-index:2;font-family:Georgia,"Times New Roman",serif;font-size:108px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.9;';
       ec3El.appendChild(ec3Num);
-
-      /* LEFT text panel — vertically centred, below the big number */
       var ec3Text=document.createElement('div');
       ec3Text.style.cssText='position:absolute;left:12px;right:52%;top:55%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:3;';
-
       var ec3Words=(slide.headline||'Keep It Clean & Organized').split(' ');
       var ec3ScriptCount=Math.min(1,ec3Words.length-1);
       var ec3Normal=ec3Words.slice(0,-ec3ScriptCount||undefined).join(' ');
       var ec3Script=ec3ScriptCount?ec3Words.slice(-ec3ScriptCount).join(' '):'';
       var ec3FontSz=Math.min(22,headlineSize(slide.headline));
-
       var ec3H='';
       ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ec3FontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;">'+esc(ec3Normal)+'</div>';
       if(ec3Script) ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ec3FontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ec3Script)+'</div>';
       if(slide.body) ec3H+='<div style="font-size:11px;line-height:1.7;color:#555;text-align:justify;margin-top:6px;">'+esc(slide.body)+'</div>';
       ec3Text.innerHTML=ec3H;
       ec3El.appendChild(ec3Text);
-
-      /* RIGHT: 3-photo grid */
       var imgUrls=[primaryUrl||'',secondUrl||'',thirdUrl||primaryUrl||''];
-
-      /* Wide top photo */
       var ec3Wide=document.createElement('div');
       ec3Wide.style.cssText='position:absolute;left:50%;right:12px;top:44px;height:46%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;'+(imgUrls[0]?'background-image:url('+imgUrls[0]+')':'');
       ec3El.appendChild(ec3Wide);
-
-      /* Bottom-left photo */
       var ec3b1=document.createElement('div');
       ec3b1.style.cssText='position:absolute;left:50%;right:calc(26% + 8px);bottom:36px;height:44%;background-size:cover;background-position:center;background-color:#a89070;border-radius:3px;'+(imgUrls[1]?'background-image:url('+imgUrls[1]+')':'');
       ec3El.appendChild(ec3b1);
-
-      /* Bottom-right photo — slight top offset for stagger */
       var ec3b2=document.createElement('div');
       ec3b2.style.cssText='position:absolute;right:12px;width:24%;bottom:28px;height:46%;background-size:cover;background-position:center top;background-color:#8a7258;border-radius:3px;box-shadow:0 4px 16px rgba(0,0,0,.12);'+(imgUrls[2]?'background-image:url('+imgUrls[2]+')':'');
       ec3El.appendChild(ec3b2);
-
-      /* Footer */
       var ec3Foot=document.createElement('div');
       ec3Foot.style.cssText='position:absolute;bottom:12px;left:12px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
       ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
       ec3El.appendChild(ec3Foot);
-
       var ec3Stars=document.createElement('div');
       ec3Stars.innerHTML='✽ ✽ ✽';
       ec3Stars.style.cssText='position:absolute;bottom:12px;right:12px;z-index:2;font-size:14px;color:#b0a090;letter-spacing:4px;';
@@ -1145,7 +1011,6 @@ function renderSlide(){
 
   } /* end switch */
 
-  /* ── Always-on chrome ── */
   document.getElementById('sNum').textContent=(ST.cur+1)+' / '+ST.slides.length;
   var brandEl=document.getElementById('sBrand');
   var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER','HABIT_SLIDE'];
@@ -1155,7 +1020,6 @@ function renderSlide(){
   var badge2=document.getElementById('layoutBadge');
   if(badge2) badge2.textContent=layout.replace(/_/g,' ');
 
-  /* Active layout button highlight */
   document.querySelectorAll('.layout-btn').forEach(function(btn){
     var match=btn.getAttribute('onclick')||'';
     btn.classList.toggle('active',match.indexOf("'"+layout+"'")!==-1||match.indexOf('"'+layout+'"')!==-1);
@@ -1173,7 +1037,6 @@ function renderSlide(){
   updateThumbActive();
 }
 
-/* ── Full-bleed HTML builder ── */
 function buildFullBleedHTML(slide,tc,accent2){
   var fc='';
   if(slide.tag) fc+='<div class="s-tag" style="background:'+tc.tagBg+';color:'+tc.tagColor+';border:1px solid rgba(255,255,255,.12)">'+esc(slide.tag)+'</div>';
@@ -1186,7 +1049,6 @@ function buildFullBleedHTML(slide,tc,accent2){
   return fc;
 }
 
-/* ── Split/strip text panel builder ── */
 function buildSplitTextHTML(slide,accent2,pText,pBg){
   var h='';
   if(slide.tag) h+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
@@ -1289,7 +1151,6 @@ function changeLayout(newLayout){
   toast('Layout → '+newLayout.replace(/_/g,' '));
 }
 
-/* Font pair switcher — called from right panel */
 function setFontPair(pair){
   ST.fontPair=pair;
   document.querySelectorAll('.font-btn').forEach(function(b){b.classList.toggle('active',b.dataset.pair===pair);});
