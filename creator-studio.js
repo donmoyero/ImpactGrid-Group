@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════
    IMPACTGRID CREATOR STUDIO — creator-studio.js
    Merged & deduplicated — aligned to HTML IDs
+   v2.1 — Mobile fixes: hamburger X animation,
+           sidebar close button, swipe-to-close
 ═══════════════════════════════════════════════ */
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
@@ -52,16 +54,25 @@ function switchTab(name, sidebarItem) {
 
 /* ─────────────────────────────────────────────
    SIDEBAR (mobile drawer)
+   openSidebar / closeSidebar are also called
+   from HTML onclick attributes.
 ───────────────────────────────────────────── */
 function openSidebar() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('mobOverlay').classList.add('open');
-  // Prevent body scroll while drawer is open
+  var sb  = document.getElementById('sidebar');
+  var ov  = document.getElementById('mobOverlay');
+  var ham = document.querySelector('.hamburger');
+  if (sb)  sb.classList.add('open');
+  if (ov)  ov.classList.add('open');
+  if (ham) ham.classList.add('is-open');
   document.body.style.overflow = 'hidden';
 }
 function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('mobOverlay').classList.remove('open');
+  var sb  = document.getElementById('sidebar');
+  var ov  = document.getElementById('mobOverlay');
+  var ham = document.querySelector('.hamburger');
+  if (sb)  sb.classList.remove('open');
+  if (ov)  ov.classList.remove('open');
+  if (ham) ham.classList.remove('is-open');
   document.body.style.overflow = '';
 }
 
@@ -186,7 +197,6 @@ function trendItemHTML(t) {
     + '</div>';
 }
 
-// Render top 5 trends in dashboard panel
 function renderDashTrends() {
   var el = document.getElementById('dashTrendList');
   if (!el) return;
@@ -195,7 +205,6 @@ function renderDashTrends() {
     : '<div style="padding:16px;color:var(--text3);font-size:13px">No trends yet — check back shortly.</div>';
 }
 
-// Render all trends in Trend Feed panel
 function renderFullTrends() {
   var el = document.getElementById('fullTrendList');
   if (!el) return;
@@ -321,7 +330,6 @@ async function fullGenerate() {
   var errEl = document.getElementById('genError');
 
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating…';
-  // CSS class-based show/hide
   loadEl.classList.add('visible');
   errEl.classList.remove('visible');
   document.getElementById('genLoadingMsg').textContent = 'Dijo is building your content package for "' + topic + '"…';
@@ -855,28 +863,25 @@ function toast(msg) {
 }
 
 /* ─────────────────────────────────────────────
-   KEYBOARD SHORTCUTS (sidebar items)
+   KEYBOARD SHORTCUTS
 ───────────────────────────────────────────── */
 document.addEventListener('keydown', function(e) {
-  // Allow Enter/Space to trigger sidebar items (accessibility)
   if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('sb-item')) {
     e.preventDefault();
     e.target.click();
   }
-  // Escape closes sidebar drawer on mobile
   if (e.key === 'Escape') closeSidebar();
 });
 
 /* ─────────────────────────────────────────────
-   SWIPE TO CLOSE SIDEBAR on mobile
+   SWIPE TO CLOSE SIDEBAR (touch devices)
 ───────────────────────────────────────────── */
 (function() {
   var startX = 0, startY = 0, isDragging = false;
-  var sidebar = null;
 
   document.addEventListener('touchstart', function(e) {
-    sidebar = document.getElementById('sidebar');
-    if (!sidebar || !sidebar.classList.contains('open')) return;
+    var sb = document.getElementById('sidebar');
+    if (!sb || !sb.classList.contains('open')) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     isDragging = true;
@@ -886,7 +891,6 @@ document.addEventListener('keydown', function(e) {
     if (!isDragging) return;
     var dx = e.touches[0].clientX - startX;
     var dy = Math.abs(e.touches[0].clientY - startY);
-    // Only intercept horizontal swipes
     if (dx < -30 && dy < 60) {
       closeSidebar();
       isDragging = false;
@@ -907,6 +911,5 @@ window.addEventListener('load', async function() {
   renderDashTrends();
   renderDashOpps();
   loadBriefing();
-  // Keep Dijo server warm
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 });
