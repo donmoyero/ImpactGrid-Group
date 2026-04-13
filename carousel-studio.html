@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
@@ -28,8 +28,6 @@ nav {
 .logo-wrap { display:flex; align-items:center; gap:9px; }
 .logo-img {
   width:30px; height:30px; object-fit:contain;
-  /* invert to white for dark nav */
-  filter: brightness(0) invert(1);
   display:block;
 }
 .logo-text { font-family:'Syne',sans-serif; font-weight:800; font-size:14px; letter-spacing:-.3px; color:#fff; }
@@ -153,7 +151,6 @@ nav {
   outline:2px solid var(--ig-yellow); background:rgba(245,228,0,.06);
   cursor:text; min-width:40px; min-height:20px;
 }
-/* edit hint tooltip */
 .edit-hint {
   position:absolute; top:-28px; left:50%; transform:translateX(-50%);
   background:var(--ig-yellow); color:var(--ig-black);
@@ -214,8 +211,8 @@ nav {
   <button class="nb" onclick="copyAll()" title="Copy all slide copy to clipboard">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All
   </button>
-  <button class="nb" onclick="toggleTheme()" style="font-size:14px;padding:6px 9px" title="Toggle light/dark">🌙</button>
-  <a class="nb" href="portfolio-studio.html" title="Back to Studio">
+  <button class="nb" onclick="toggleTheme()" id="themeToggleBtn" style="font-size:14px;padding:6px 9px" title="Toggle light/dark">🌙</button>
+  <a class="nb" href="creator-studio.html" title="Back to Creator Studio">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>Studio
   </a>
 </nav>
@@ -579,21 +576,26 @@ nav {
 <script>
 /* ══ V3.0 PATCHES ══ */
 
+// 0. THEME TOGGLE — light default, dark on demand
+window.toggleTheme = function(){
+  var html = document.documentElement;
+  var isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  var btn = document.getElementById('themeToggleBtn');
+  if(btn) btn.textContent = isDark ? '🌙' : '☀️';
+};
+
 // 1. HARDCODE BRAND — always www.impactgridgroup.com, never editable
 (function patchBrand(){
   var BRAND = 'www.impactgridgroup.com';
   if(typeof ST !== 'undefined') {
     ST.brand = BRAND;
   }
-  // Override updateBrand to be a no-op
   window.updateBrand = function(){ };
-  // Patch getBrand used in render
   window.getIGBrand = function(){ return BRAND; };
 })();
 
 // 2. FIX "Habit Habit 01" — duplicate label bug
-// Patch happens inside carousel-studio.js layout renderer
-// We override the label construction after load
 var _origRender = window.renderSlide;
 
 // 3. DEFAULT ACCENT = IG Yellow
@@ -629,7 +631,6 @@ window.changeLayout = function(newLayout){
 };
 
 // 5. INLINE CLICK-TO-EDIT on slide canvas
-// After renderSlide, make headline and body elements contenteditable
 var _rsOrig = window.renderSlide;
 window.renderSlide = function(){
   if(_rsOrig) _rsOrig.apply(this, arguments);
@@ -641,8 +642,6 @@ function injectInlineEditors(){
   var canvas = document.getElementById('slideCanvas');
   if(!canvas) return;
 
-  // Find headline and body elements rendered inside the active layout
-  // They have known classes: s-headline, s-body
   canvas.querySelectorAll('.s-headline').forEach(function(el){
     if(el.dataset.editable) return;
     el.dataset.editable = '1';
@@ -693,7 +692,6 @@ function injectInlineEditors(){
 var _origGenerate = window.generate;
 window.generate = async function(){
   if(_origGenerate) await _origGenerate.apply(this, arguments);
-  // After generation, fix any video containers
   fixVideoLayer();
 };
 
@@ -709,7 +707,6 @@ function fixVideoLayer(){
 }
 
 // 7. FIX empty slide — enforce content after parse
-// This runs after the JS has loaded and wraps parseServerSlides
 var _parsedOrig = window.parseServerSlides;
 if(typeof window.parseServerSlides === 'function'){
   window.parseServerSlides = function(data, topic, platform, tone, count){
@@ -735,7 +732,6 @@ function showGuide(){
   setTimeout(function(){ tip.remove(); }, 4500);
 }
 
-// Hook into generate completion
 var __gen2 = window.generate;
 window.generate = async function(){
   await __gen2.apply(this, arguments);
