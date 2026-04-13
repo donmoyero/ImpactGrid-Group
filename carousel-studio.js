@@ -1,11 +1,14 @@
 /* ═══════════════════════════════════════════════════════════
    IMPACTGRID — Carousel Studio
-   carousel-studio.js  v4.1
+   carousel-studio.js  v4.2
 
-   v4.1 fixes:
-   - parseServerSlides: layout now trusted unconditionally from server
-   - parseServerSlides: mediaType carried through from server
-   - renderSlide: video uses slide.mediaType check, not layout name list
+   v4.2 fixes:
+   - Hashtags removed from slide renders (FullBleed + SplitText)
+   - QUOTE_PULL redesigned with decorative rule, large quote mark, clean type
+   - EDITORIAL_COLLAGE text panel uses solid background — never writes on image
+   - Removed broken layouts: CORNER_FLOAT, SPLIT_L, SPLIT_R, MAGAZINE_SPLIT, GRID_POINTS, HABIT_SLIDE
+     from LAYOUT_SEQUENCE and assignLayout defaults
+   - v4.1: layout trusted from server, mediaType carried through
    ═══════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────
@@ -207,8 +210,8 @@ function pickThirdAsset(theme, excludeIds, slideIndex){
 }
 
 function getOverlay(tone,brightness,layout){
-  if(layout==='SPLIT_LEFT'||layout==='SPLIT_RIGHT'||layout==='MAGAZINE_SPLIT') return 'none';
-  if(['EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','STAT_HERO','QUOTE_PULL','GRID_POINTS'].indexOf(layout)!==-1) return 'none';
+  if(layout==='SPLIT_LEFT'||layout==='SPLIT_RIGHT') return 'none';
+  if(['EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','STAT_HERO','QUOTE_PULL'].indexOf(layout)!==-1) return 'none';
   if(brightness==='low') return 'linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.5) 50%,rgba(0,0,0,.15) 100%)';
   if(tone==='neutral'&&brightness==='high') return 'linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.25) 55%,transparent 100%)';
   if(tone==='warm') return 'linear-gradient(to top,rgba(12,7,3,.9) 0%,rgba(12,7,3,.4) 55%,rgba(12,7,3,.08) 100%)';
@@ -233,29 +236,30 @@ function getPanelText(theme){
 
 /* ─────────────────────────────────────────────────────────
    4. LAYOUT ASSIGNMENT
+   v4.2: Removed CORNER_FLOAT, SPLIT_LEFT, SPLIT_RIGHT, MAGAZINE_SPLIT,
+         GRID_POINTS, HABIT_SLIDE from default sequences
    ───────────────────────────────────────────────────────── */
 var LAYOUT_SEQUENCE = [
-  'FULL_BLEED','SPLIT_LEFT','CORNER_FLOAT','OVERLAP_BAND','SPLIT_RIGHT',
-  'BOTTOM_STRIP','STAT_HERO','QUOTE_PULL','DUAL_IMAGE','GRID_POINTS',
-  'TOP_STRIP','MAGAZINE_SPLIT',
+  'FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE',
+  'TOP_STRIP','STAT_HERO','QUOTE_PULL',
   'EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3',
-  'HABIT_COVER','HABIT_SLIDE'
+  'HABIT_COVER'
 ];
 
 function assignLayout(slideType,idx,total){
   var sets={
-    hook:['FULL_BLEED','CORNER_FLOAT','OVERLAP_BAND','EDITORIAL_COVER','HABIT_COVER'],
-    cta:['SPLIT_RIGHT','CORNER_FLOAT','FULL_BLEED'],
-    stat:['STAT_HERO','SPLIT_RIGHT','SPLIT_LEFT'],
-    value:['SPLIT_LEFT','FULL_BLEED','CORNER_FLOAT','SPLIT_RIGHT','OVERLAP_BAND','BOTTOM_STRIP','EDITORIAL_COLLAGE'],
-    insight:['OVERLAP_BAND','SPLIT_RIGHT','FULL_BLEED','TOP_STRIP','HABIT_SLIDE'],
-    lesson:['SPLIT_LEFT','BOTTOM_STRIP','FULL_BLEED','MAGAZINE_SPLIT','EDITORIAL_COLLAGE_3'],
-    proof:['SPLIT_RIGHT','DUAL_IMAGE','CORNER_FLOAT'],
+    hook:['FULL_BLEED','OVERLAP_BAND','EDITORIAL_COVER','HABIT_COVER'],
+    cta:['FULL_BLEED','BOTTOM_STRIP','OVERLAP_BAND'],
+    stat:['STAT_HERO','OVERLAP_BAND','BOTTOM_STRIP'],
+    value:['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE','EDITORIAL_COLLAGE'],
+    insight:['OVERLAP_BAND','FULL_BLEED','TOP_STRIP','BOTTOM_STRIP'],
+    lesson:['BOTTOM_STRIP','FULL_BLEED','EDITORIAL_COLLAGE_3','TOP_STRIP'],
+    proof:['DUAL_IMAGE','OVERLAP_BAND','BOTTOM_STRIP'],
     quote:['QUOTE_PULL','FULL_BLEED'],
-    story:['FULL_BLEED','CORNER_FLOAT','TOP_STRIP'],
-    problem:['FULL_BLEED','OVERLAP_BAND','SPLIT_LEFT'],
-    list:['GRID_POINTS','SPLIT_LEFT','BOTTOM_STRIP','EDITORIAL_COLLAGE_3'],
-    tip:['SPLIT_LEFT','CORNER_FLOAT','OVERLAP_BAND','BOTTOM_STRIP','HABIT_SLIDE']
+    story:['FULL_BLEED','TOP_STRIP','OVERLAP_BAND'],
+    problem:['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP'],
+    list:['BOTTOM_STRIP','EDITORIAL_COLLAGE_3','OVERLAP_BAND'],
+    tip:['OVERLAP_BAND','BOTTOM_STRIP','TOP_STRIP','FULL_BLEED']
   };
   var set=sets[slideType]||LAYOUT_SEQUENCE;
   return set[idx%set.length];
@@ -347,7 +351,7 @@ async function generate(){
   document.getElementById('emptyState').style.display='none';
   document.getElementById('slideWrap').style.display='block';
   document.getElementById('loadingOv').classList.add('show');
-  var hints=['Detecting theme…','Scoring images with AI vision…','Writing copy & hashtags…','Designing layouts…','Polishing your carousel…'];
+  var hints=['Detecting theme…','Scoring images with AI vision…','Writing copy…','Designing layouts…','Polishing your carousel…'];
   var hi=0,hTimer=setInterval(function(){hi=(hi+1)%hints.length;document.getElementById('loadingHint').textContent=hints[hi];},1800);
   try{
     var data=await callAI(topic,platform,tone,count);
@@ -380,7 +384,7 @@ async function callAI(topic,platform,tone,count){
 }
 
 /* ─────────────────────────────────────────────────────────
-   8. SLIDE PARSING  (v4.1 — layout locked, mediaType carried through)
+   8. SLIDE PARSING
    ───────────────────────────────────────────────────────── */
 function parseServerSlides(data,topic,platform,tone,count){
   try{
@@ -396,9 +400,6 @@ function parseServerSlides(data,topic,platform,tone,count){
       if(sl.image2) secondImage={url:sl.image2,tone:'neutral',brightness:'medium'};
       else if(sl.secondImage) secondImage=sl.secondImage;
 
-      // v4.1 FIX: Layout is locked by the server via getLayoutSequence().
-      // Trust sl.layout unconditionally. Only fall back to assignLayout()
-      // if the server somehow sends nothing at all.
       var layout=sl.layout||assignLayout(sl.type||'value',i,total);
 
       var headline=sl.headline||sl.title||'';
@@ -413,8 +414,6 @@ function parseServerSlides(data,topic,platform,tone,count){
       return {
         type:       sl.type||(i===0?'hook':i===total-1?'cta':'value'),
         layout:     layout,
-        // v4.1 FIX: carry mediaType from server so renderSlide knows
-        // whether to show video or image without guessing from layout name
         mediaType:  sl.mediaType||'image',
         tag:        sl.tag||String(i+1).padStart(2,'0'),
         headline:   headline,
@@ -453,23 +452,22 @@ function fallbackSlides(topic,platform,tone,count){
   var hooks=['Nobody talks about this — but it changed everything.','I spent years getting this wrong. Here\'s the truth.','Most people skip this. That\'s why they struggle.','One shift. Everything clicks.'];
   var hook=hooks[Math.floor(Math.random()*hooks.length)];
   var vals=[
-    {type:'value',headline:'The problem nobody admits',body:'Most people focus on the wrong thing entirely. Here\'s what actually moves the needle.',layout:'SPLIT_LEFT'},
-    {type:'insight',headline:'The shift that changes everything',body:'Once you understand this, you cannot go back. The difference is immediate.',layout:'OVERLAP_BAND'},
-    {type:'stat',headline:'The numbers do not lie',body:'Creators who do this consistently outperform those who do not. Every single time.',layout:'STAT_HERO',stat:'87%'},
+    {type:'value',headline:'The problem nobody admits',body:'Most people focus on the wrong thing entirely.',layout:'FULL_BLEED'},
+    {type:'insight',headline:'The shift that changes everything',body:'Once you understand this, you cannot go back.',layout:'OVERLAP_BAND'},
+    {type:'stat',headline:'The numbers do not lie',body:'Creators who do this consistently outperform. Every time.',layout:'STAT_HERO',stat:'87%'},
     {type:'quote',headline:'',body:'',quote:'The secret was never the strategy. It was the consistency.',layout:'QUOTE_PULL'},
-    {type:'lesson',headline:'What I wish I had known sooner',body:'Three years in, I finally understood this. It changed the trajectory completely.',layout:'BOTTOM_STRIP'},
-    {type:'proof',headline:'Here is what happened next',body:'The results were not overnight. But they were real and they compounded fast.',layout:'DUAL_IMAGE'},
-    {type:'list',headline:'Four things to do today',body:'',layout:'GRID_POINTS',gridPoints:[{glyph:'→',text:'Start before you\'re ready'},{glyph:'★',text:'Ship consistently'},{glyph:'◆',text:'Study what works'},{glyph:'✦',text:'Double down fast'}]},
-    {type:'value',headline:'The counterintuitive truth',body:'Everything you have been told is backwards. Here is why that matters.',layout:'CORNER_FLOAT'},
-    {type:'insight',headline:'Nobody will tell you this',body:'It is not about working harder. The order you do things in changes everything.',layout:'SPLIT_RIGHT'},
-    {type:'tip',headline:'Start here, not there',body:'This single action creates the most momentum. Everything else follows from it.',layout:'TOP_STRIP'}
+    {type:'lesson',headline:'What I wish I had known sooner',body:'Three years in, I finally understood this.',layout:'BOTTOM_STRIP'},
+    {type:'proof',headline:'Here is what happened next',body:'The results were real and they compounded fast.',layout:'DUAL_IMAGE'},
+    {type:'value',headline:'The counterintuitive truth',body:'Everything you have been told is backwards.',layout:'TOP_STRIP'},
+    {type:'insight',headline:'Nobody will tell you this',body:'It is not about working harder. Order matters.',layout:'OVERLAP_BAND'},
+    {type:'tip',headline:'Start here, not there',body:'This single action creates the most momentum.',layout:'BOTTOM_STRIP'}
   ];
-  var slides=[{type:'hook',tag:'01',headline:hook,body:'Swipe through — breaking it all down. →',mediaType:'image',cta:'',layout:'FULL_BLEED',caption:hook+'\n\nSave this — you\'ll want it.\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy','#digitalmarketing','#socialmediatips']}];
+  var slides=[{type:'hook',tag:'01',headline:hook,body:'Swipe through — breaking it all down. →',mediaType:'image',cta:'',layout:'FULL_BLEED',caption:hook+'\n\nSave this.\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy','#digitalmarketing','#socialmediatips']}];
   for(var i=1;i<count-1;i++){
     var v=vals[(i-1)%vals.length];
     slides.push({type:v.type,tag:String(i+1).padStart(2,'0'),headline:v.headline,body:v.body,mediaType:'image',cta:'',layout:v.layout,stat:v.stat||null,quote:v.quote||null,gridPoints:v.gridPoints||null,caption:'',hashtags:[]});
   }
-  slides.push({type:'cta',tag:String(count).padStart(2,'0'),headline:'Ready to make this real?',body:'Follow for more. Save this post. Apply one thing today.',mediaType:'image',cta:'Follow for more →',layout:'SPLIT_RIGHT',caption:'Which slide hit hardest? Drop a number 👇\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy']});
+  slides.push({type:'cta',tag:String(count).padStart(2,'0'),headline:'Ready to make this real?',body:'Follow for more. Save this post. Apply one thing today.',mediaType:'image',cta:'Follow for more →',layout:'FULL_BLEED',caption:'Which slide hit hardest? Drop a number 👇\n\n#contentcreator #growthmindset #creatoreconomy',hashtags:['#contentcreator','#growthmindset','#creatoreconomy']});
   return slides.slice(0,count);
 }
 
@@ -541,9 +539,7 @@ function renderSlide(){
 
   clearLayouts();
 
-  /* ── v4.1 FIX: Video background ─────────────────────────
-     Check slide.mediaType === 'video' FIRST (set by server).
-     Do not guess from layout name. Fall back to image if URL missing. */
+  /* ── Video background ── */
   var videoData=slide.video||null;
   var useVideo=(slide.mediaType==='video'||slide.useVideo)&&videoData&&videoData.url;
 
@@ -554,7 +550,7 @@ function renderSlide(){
     sBg.style.background='#111';
   } else {
     sVideo.innerHTML='';sVideo.style.display='none';
-    var needsBg=['FULL_BLEED','CORNER_FLOAT','DUAL_IMAGE','OVERLAP_BAND','TOP_STRIP','BOTTOM_STRIP',
+    var needsBg=['FULL_BLEED','DUAL_IMAGE','OVERLAP_BAND','TOP_STRIP','BOTTOM_STRIP',
                  'EDITORIAL_COVER','HABIT_COVER','HABIT_SLIDE'].indexOf(layout)!==-1;
     if(primaryUrl&&needsBg){
       sBgImg.style.backgroundImage='url('+primaryUrl+')';
@@ -569,7 +565,6 @@ function renderSlide(){
       sBg.style.background=primaryUrl?'#111':T.palette[0];
     }
   }
-  /* ── End video block ──────────────────────────────────── */
 
   var ov=getOverlay(tone2,bri,layout);
   sOverlay.style.background=ov==='none'?'none':ov;
@@ -615,24 +610,6 @@ function renderSlide(){
       si2.style.order='1'; st2.style.order='2';
       st2.style.cssText='display:flex;flex-direction:column;justify-content:center;padding:32px 28px;gap:10px;background:'+pBg+';color:'+pText;
       st2.innerHTML=buildSplitTextHTML(slide,accent2,pText,pBg);
-      break;
-    }
-
-    case 'CORNER_FLOAT':{
-      showLayout('sCorner');
-      var sCorner=document.getElementById('sCorner');
-      sCorner.className='s-corner-float';
-      var cImg=document.getElementById('sCornerImg');
-      var cText=document.getElementById('sCornerText');
-      if(cImg&&primaryUrl) cImg.innerHTML='<img src="'+primaryUrl+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"/>';
-      if(cText){
-        var ch='';
-        if(slide.tag) ch+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';margin-bottom:10px">'+esc(slide.tag)+'</div>';
-        ch+='<div style="font-family:'+getFont('head')+';font-size:'+headlineSize(slide.headline)+'px;font-weight:800;line-height:1.15;color:'+tc.head+';text-shadow:0 2px 16px rgba(0,0,0,.5);margin-bottom:10px">'+esc(slide.headline)+'</div>';
-        if(slide.body) ch+='<div style="font-size:13px;line-height:1.6;color:'+tc.body+';margin-bottom:10px">'+esc(slide.body)+'</div>';
-        if(slide.cta) ch+='<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:#fff;width:fit-content">'+esc(slide.cta)+' →</div>';
-        cText.innerHTML=ch;
-      }
       break;
     }
 
@@ -698,24 +675,6 @@ function renderSlide(){
       break;
     }
 
-    case 'MAGAZINE_SPLIT':{
-      sBgImg.style.opacity='0'; sBg.style.background=T.palette[0];
-      showLayout('sSplit');
-      var msSplit=document.getElementById('sSplit');
-      msSplit.className='s-split-wrap'; msSplit.style.gridTemplateColumns='45% 55%';
-      var msImg=document.getElementById('sSplitImg'); var msText=document.getElementById('sSplitText');
-      if(primaryUrl){msImg.style.backgroundImage='url('+primaryUrl+')';msImg.style.backgroundSize='cover';msImg.style.backgroundPosition='center';}
-      else{msImg.style.background=T.palette[1];}
-      msImg.style.order='2'; msText.style.order='1';
-      msText.style.cssText='display:flex;flex-direction:column;justify-content:center;padding:28px 22px;gap:8px;background:'+pBg+';color:'+pText+';border-right:3px solid '+accent2;
-      var mgh='';
-      if(slide.tag) mgh+='<div style="font-size:8px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:3px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
-      mgh+='<div style="font-family:'+getFont('head')+';font-size:'+Math.min(22,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:'+pText+';margin-bottom:6px">'+esc(slide.headline)+'</div>';
-      if(slide.body) mgh+='<div style="font-size:11px;line-height:1.65;color:'+pText+';opacity:.75;margin-bottom:8px">'+esc(slide.body)+'</div>';
-      msText.innerHTML=mgh;
-      break;
-    }
-
     case 'STAT_HERO':{
       sBgImg.style.opacity='0'; sBg.style.background=T.palette[0];
       showLayout('sStat');
@@ -733,41 +692,36 @@ function renderSlide(){
       break;
     }
 
+    /* ── v4.2: QUOTE_PULL — redesigned with decorative rule + large quote glyph ── */
     case 'QUOTE_PULL':{
-      sBgImg.style.opacity='0'; sBg.style.background=T.palette[0];
+      sBgImg.style.opacity='0';
+      var qPalette=(['minimal','cozy-home','health'].indexOf(theme)!==-1);
+      sBg.style.background=qPalette?'#f7f4ef':T.palette[0];
       showLayout('sQuote');
       var sQuote=document.getElementById('sQuote');
-      sQuote.className='s-quote-wrap'; sQuote.style.background=T.palette[0];
-      var qColor=(['minimal','cozy-home','health'].indexOf(theme)!==-1)?T.textColors.primary:'#f0ede8';
+      sQuote.className='s-quote-wrap';
+      sQuote.style.cssText='position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 40px;text-align:center;gap:0;background:'+(qPalette?'#f7f4ef':T.palette[0]);
+      var qColor=qPalette?'#1a1814':'#f0ede8';
       var qText=slide.quote||slide.headline||'';
-      var qh='<div class="s-quote-marks" style="color:'+accent2+'">"</div>';
-      qh+='<div class="s-quote-text" style="font-family:'+getFont('head')+';color:'+qColor+';font-size:'+Math.min(22,headlineSize(qText))+'px">'+esc(qText)+'</div>';
-      if(slide.tag) qh+='<div class="s-quote-attr" style="color:'+accent2+'">'+esc(slide.tag)+'</div>';
-      if(slide.body&&!slide.quote) qh+='<div style="font-size:12px;color:'+qColor+';opacity:.65;margin-top:6px">'+esc(slide.body)+'</div>';
+      var qFontSize=Math.min(24,Math.max(16,headlineSize(qText)));
+      var qh='';
+      /* Decorative top rule */
+      qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-bottom:28px;"></div>';
+      /* Large open-quote glyph */
+      qh+='<div style="font-family:Georgia,serif;font-size:72px;line-height:0.5;color:'+accent2+';opacity:0.55;margin-bottom:20px;align-self:flex-start;">\u201C</div>';
+      /* Quote text */
+      qh+='<div style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
+      /* Decorative bottom rule */
+      qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-top:28px;"></div>';
+      /* Attribution / tag */
+      if(slide.tag){
+        qh+='<div style="margin-top:16px;font-size:10px;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';opacity:0.8;">'+esc(slide.tag)+'</div>';
+      }
+      /* Supporting body only if not a pure quote slide */
+      if(slide.body&&!slide.quote){
+        qh+='<div style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
+      }
       sQuote.innerHTML=qh;
-      break;
-    }
-
-    case 'GRID_POINTS':{
-      sBgImg.style.opacity='0'; sBg.style.background=T.palette[0];
-      showLayout('sGrid');
-      var sGrid=document.getElementById('sGrid');
-      sGrid.className='s-grid-wrap'; sGrid.style.background=T.palette[0];
-      var gColor=(['minimal','cozy-home','health'].indexOf(theme)!==-1)?T.textColors.primary:'#f0ede8';
-      var pts=slide.gridPoints||[{glyph:'→',text:'First point'},{glyph:'★',text:'Second point'},{glyph:'◆',text:'Third point'},{glyph:'✦',text:'Fourth point'}];
-      var gh='';
-      if(slide.tag) gh+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
-      gh+='<div class="s-grid-header" style="font-family:'+getFont('head')+';color:'+gColor+'">'+esc(slide.headline)+'</div>';
-      if(slide.body) gh+='<div style="font-size:11px;color:'+gColor+';opacity:.65;margin-top:-6px;margin-bottom:4px">'+esc(slide.body)+'</div>';
-      gh+='<div class="s-grid-points">';
-      pts.forEach(function(p){
-        gh+='<div class="s-grid-point" style="background:rgba(128,128,128,.1)">';
-        gh+='<div class="s-grid-glyph" style="color:'+accent2+'">'+esc(p.glyph||'→')+'</div>';
-        gh+='<div class="s-grid-ptxt" style="color:'+gColor+'">'+esc(p.text||p)+'</div>';
-        gh+='</div>';
-      });
-      gh+='</div>';
-      sGrid.innerHTML=gh;
       break;
     }
 
@@ -814,61 +768,6 @@ function renderSlide(){
       break;
     }
 
-    case 'HABIT_SLIDE':{
-      var hsEl=ensureContainer('sHabitSlide');
-      showLayout('sHabitSlide');
-      hsEl.innerHTML='';
-      hsEl.style.cssText='position:absolute;inset:0;z-index:4;';
-      var hsOv=document.createElement('div');
-      hsOv.style.cssText='position:absolute;inset:0;background:rgba(8,8,6,.4);z-index:1;pointer-events:none;';
-      hsEl.appendChild(hsOv);
-      var hsTop=document.createElement('div');
-      hsTop.style.cssText='position:absolute;top:0;left:0;right:0;z-index:2;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.22);';
-      hsTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">'+(ST.brand?ST.brand.toUpperCase():'THYNK UNLIMITED')+'</span>'
-        +'<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'REALLYGREATSITE')+'</span>';
-      hsEl.appendChild(hsTop);
-      var hsContent=document.createElement('div');
-      hsContent.style.cssText='position:absolute;left:16px;right:16px;bottom:48px;z-index:2;';
-      var labelNum=slide.tag||String(ST.cur+1).padStart(2,'0');
-      var labelText='Habit '+labelNum;
-      var hsLabel=document.createElement('div');
-      hsLabel.style.cssText='font-family:Georgia,"Times New Roman",serif;font-size:16px;font-style:italic;font-weight:400;color:rgba(255,255,255,.9);margin-bottom:4px;';
-      hsLabel.textContent=labelText;
-      hsContent.appendChild(hsLabel);
-      var hsWords=(slide.headline||'Morning Clarity').split(' ');
-      var hsMid=Math.ceil(hsWords.length/2);
-      var hsLine1=hsWords.slice(0,hsMid).join(' ');
-      var hsLine2=hsWords.slice(hsMid).join(' ');
-      var hsFontSize=Math.min(68,Math.max(36,Math.round(440/Math.max(slide.headline.length,4))));
-      var hsHead=document.createElement('div');
-      hsHead.innerHTML='<div style="font-family:'+getFont('head')+';font-size:'+hsFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(hsLine1)+'</div>'
-        +(hsLine2?'<div style="font-family:'+getFont('head')+';font-size:'+hsFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(hsLine2)+'</div>':'');
-      hsHead.style.cssText='margin-bottom:14px;';
-      hsContent.appendChild(hsHead);
-      if(slide.body){
-        var bodyWords=slide.body.split(' ');
-        var bMid=Math.ceil(bodyWords.length/2);
-        var bLine1=bodyWords.slice(0,bMid).join(' ');
-        var bLine2=bodyWords.slice(bMid).join(' ');
-        var hsBody=document.createElement('div');
-        hsBody.style.cssText='font-family:'+getFont('body')+';text-align:center;margin-bottom:4px;';
-        hsBody.innerHTML='<div style="font-size:13px;line-height:1.55;color:'+accent2+';font-weight:400;">'+esc(bLine1)+'</div>'
-          +(bLine2?'<div style="font-size:13px;line-height:1.55;color:'+accent2+';font-weight:400;">'+esc(bLine2)+'</div>':'');
-        hsContent.appendChild(hsBody);
-      }
-      hsEl.appendChild(hsContent);
-      var hsSwirl=document.createElement('div');
-      hsSwirl.style.cssText='position:absolute;left:16px;bottom:160px;z-index:2;width:64px;height:64px;opacity:.88;';
-      hsSwirl.innerHTML='<svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M20 50 C10 30 20 10 38 12 C56 14 60 32 50 44 C40 56 24 54 20 50 Z" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M16 38 L22 50 M22 50 L32 46" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      hsEl.appendChild(hsSwirl);
-      var hsBot=document.createElement('div');
-      hsBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;';
-      hsBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.REALLYGREATSITE.COM')+'</span>'
-        +'<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.08em;">SLIDE '+String(ST.cur+1).padStart(2,'0')+'</span>';
-      hsEl.appendChild(hsBot);
-      break;
-    }
-
     case 'EDITORIAL_COVER':{
       var ecEl=ensureContainer('sEditorialCover');
       showLayout('sEditorialCover');
@@ -906,6 +805,7 @@ function renderSlide(){
       break;
     }
 
+    /* ── v4.2: EDITORIAL_COLLAGE — text panel has solid opaque background, never on image ── */
     case 'EDITORIAL_COLLAGE':{
       sBgImg.style.opacity='0';
       sBg.style.background='#f0ebe1';
@@ -913,27 +813,37 @@ function renderSlide(){
       showLayout('sEditorialCollage');
       ecolEl.innerHTML='';
       ecolEl.style.cssText='position:absolute;inset:0;z-index:4;background:#f0ebe1;';
+
+      /* Badge + brand */
       var ecolBadge=document.createElement('div');
       ecolBadge.textContent='Page '+String(ST.cur+1).padStart(2,'0');
-      ecolBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;letter-spacing:.3px;';
+      ecolBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;letter-spacing:.3px;';
       ecolEl.appendChild(ecolBadge);
       var ecolBrand=document.createElement('div');
       ecolBrand.textContent=ST.brand||'Salford & Co.';
-      ecolBrand.style.cssText='position:absolute;top:16px;right:14px;z-index:2;font-size:11px;font-family:'+getFont('body')+';color:#888;letter-spacing:.3px;';
+      ecolBrand.style.cssText='position:absolute;top:16px;right:14px;z-index:6;font-size:11px;font-family:'+getFont('body')+';color:#888;letter-spacing:.3px;';
       ecolEl.appendChild(ecolBrand);
+
+      /* Large italic page number — behind photos */
       var ecolNum=document.createElement('div');
       ecolNum.textContent=String(ST.cur+1).padStart(2,'0');
       ecolNum.style.cssText='position:absolute;top:36px;right:14px;z-index:2;font-family:Georgia,"Times New Roman",serif;font-size:108px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.9;';
       ecolEl.appendChild(ecolNum);
+
+      /* Photo 1 — left column top */
       var ecolP1=document.createElement('div');
-      ecolP1.style.cssText='position:absolute;left:14px;top:54px;width:44%;height:48%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;'+(primaryUrl?'background-image:url('+primaryUrl+')':'');
+      ecolP1.style.cssText='position:absolute;left:14px;top:54px;width:44%;height:48%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;z-index:3;'+(primaryUrl?'background-image:url('+primaryUrl+')':'');
       ecolEl.appendChild(ecolP1);
+
+      /* Photo 2 — overlapping center */
       var ecolP2=document.createElement('div');
       var p2url=secondUrl||(primaryUrl||'');
-      ecolP2.style.cssText='position:absolute;left:26%;top:42%;width:40%;height:46%;background-size:cover;background-position:center top;background-color:#a89070;border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.15);'+(p2url?'background-image:url('+p2url+')':'');
+      ecolP2.style.cssText='position:absolute;left:26%;top:42%;width:40%;height:46%;background-size:cover;background-position:center top;background-color:#a89070;border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:4;'+(p2url?'background-image:url('+p2url+')':'');
       ecolEl.appendChild(ecolP2);
+
+      /* ── v4.2 FIX: Text panel — solid opaque background, right column, z-index above photos ── */
       var ecolText=document.createElement('div');
-      ecolText.style.cssText='position:absolute;left:52%;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:3;';
+      ecolText.style.cssText='position:absolute;left:52%;right:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;padding:24px 18px 24px 14px;gap:10px;z-index:5;background:#f0ebe1;border-left:2px solid rgba(180,160,130,.25);';
       var ecWords=(slide.headline||'Create a Cozy & Functional Space').split(' ');
       var ecScriptCount=Math.min(1,ecWords.length-1);
       var ecNormal=ecWords.slice(0,-ecScriptCount||undefined).join(' ');
@@ -942,16 +852,18 @@ function renderSlide(){
       var ecolH='';
       ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ecFontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;margin-bottom:0;">'+esc(ecNormal)+'</div>';
       if(ecScript) ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ecFontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ecScript)+'</div>';
-      if(slide.body) ecolH+='<div style="font-size:11px;line-height:1.7;color:#555;text-align:justify;margin-top:6px;">'+esc(slide.body)+'</div>';
+      if(slide.body) ecolH+='<div style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ecolText.innerHTML=ecolH;
       ecolEl.appendChild(ecolText);
+
+      /* Footer */
       var ecolFoot=document.createElement('div');
-      ecolFoot.style.cssText='position:absolute;bottom:12px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
+      ecolFoot.style.cssText='position:absolute;bottom:12px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
       ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
       ecolEl.appendChild(ecolFoot);
       var ecolStars=document.createElement('div');
       ecolStars.innerHTML='✽ ✽ ✽';
-      ecolStars.style.cssText='position:absolute;bottom:12px;right:14px;z-index:2;font-size:14px;color:#b0a090;letter-spacing:4px;';
+      ecolStars.style.cssText='position:absolute;bottom:12px;right:14px;z-index:6;font-size:14px;color:#b0a090;letter-spacing:4px;';
       ecolEl.appendChild(ecolStars);
       break;
     }
@@ -965,18 +877,20 @@ function renderSlide(){
       ec3El.style.cssText='position:absolute;inset:0;z-index:4;background:#f0ebe1;';
       var ec3Badge=document.createElement('div');
       ec3Badge.textContent='Page '+String(ST.cur+1).padStart(2,'0');
-      ec3Badge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;';
+      ec3Badge.style.cssText='position:absolute;top:14px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;';
       ec3El.appendChild(ec3Badge);
       var ec3Brand=document.createElement('div');
       ec3Brand.textContent=ST.brand||'Salford & Co.';
-      ec3Brand.style.cssText='position:absolute;top:16px;right:14px;z-index:2;font-size:11px;font-family:'+getFont('body')+';color:#888;';
+      ec3Brand.style.cssText='position:absolute;top:16px;right:14px;z-index:6;font-size:11px;font-family:'+getFont('body')+';color:#888;';
       ec3El.appendChild(ec3Brand);
       var ec3Num=document.createElement('div');
       ec3Num.textContent=String(ST.cur+1).padStart(2,'0');
       ec3Num.style.cssText='position:absolute;top:36px;left:12px;z-index:2;font-family:Georgia,"Times New Roman",serif;font-size:108px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.9;';
       ec3El.appendChild(ec3Num);
+
+      /* ── v4.2 FIX: Text panel solid background, left column, z-index 5 ── */
       var ec3Text=document.createElement('div');
-      ec3Text.style.cssText='position:absolute;left:12px;right:52%;top:55%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:3;';
+      ec3Text.style.cssText='position:absolute;left:0;right:52%;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;padding:24px 14px 24px 14px;gap:8px;z-index:5;background:#f0ebe1;border-right:2px solid rgba(180,160,130,.25);';
       var ec3Words=(slide.headline||'Keep It Clean & Organized').split(' ');
       var ec3ScriptCount=Math.min(1,ec3Words.length-1);
       var ec3Normal=ec3Words.slice(0,-ec3ScriptCount||undefined).join(' ');
@@ -985,26 +899,29 @@ function renderSlide(){
       var ec3H='';
       ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ec3FontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;">'+esc(ec3Normal)+'</div>';
       if(ec3Script) ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ec3FontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ec3Script)+'</div>';
-      if(slide.body) ec3H+='<div style="font-size:11px;line-height:1.7;color:#555;text-align:justify;margin-top:6px;">'+esc(slide.body)+'</div>';
+      if(slide.body) ec3H+='<div style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ec3Text.innerHTML=ec3H;
       ec3El.appendChild(ec3Text);
+
+      /* Three photos — right column */
       var imgUrls=[primaryUrl||'',secondUrl||'',thirdUrl||primaryUrl||''];
       var ec3Wide=document.createElement('div');
-      ec3Wide.style.cssText='position:absolute;left:50%;right:12px;top:44px;height:46%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;'+(imgUrls[0]?'background-image:url('+imgUrls[0]+')':'');
+      ec3Wide.style.cssText='position:absolute;left:50%;right:12px;top:44px;height:46%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;z-index:3;'+(imgUrls[0]?'background-image:url('+imgUrls[0]+')':'');
       ec3El.appendChild(ec3Wide);
       var ec3b1=document.createElement('div');
-      ec3b1.style.cssText='position:absolute;left:50%;right:calc(26% + 8px);bottom:36px;height:44%;background-size:cover;background-position:center;background-color:#a89070;border-radius:3px;'+(imgUrls[1]?'background-image:url('+imgUrls[1]+')':'');
+      ec3b1.style.cssText='position:absolute;left:50%;right:calc(26% + 8px);bottom:36px;height:44%;background-size:cover;background-position:center;background-color:#a89070;border-radius:3px;z-index:3;'+(imgUrls[1]?'background-image:url('+imgUrls[1]+')':'');
       ec3El.appendChild(ec3b1);
       var ec3b2=document.createElement('div');
-      ec3b2.style.cssText='position:absolute;right:12px;width:24%;bottom:28px;height:46%;background-size:cover;background-position:center top;background-color:#8a7258;border-radius:3px;box-shadow:0 4px 16px rgba(0,0,0,.12);'+(imgUrls[2]?'background-image:url('+imgUrls[2]+')':'');
+      ec3b2.style.cssText='position:absolute;right:12px;width:24%;bottom:28px;height:46%;background-size:cover;background-position:center top;background-color:#8a7258;border-radius:3px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:3;'+(imgUrls[2]?'background-image:url('+imgUrls[2]+')':'');
       ec3El.appendChild(ec3b2);
+
       var ec3Foot=document.createElement('div');
-      ec3Foot.style.cssText='position:absolute;bottom:12px;left:12px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
+      ec3Foot.style.cssText='position:absolute;bottom:12px;left:12px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
       ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
       ec3El.appendChild(ec3Foot);
       var ec3Stars=document.createElement('div');
       ec3Stars.innerHTML='✽ ✽ ✽';
-      ec3Stars.style.cssText='position:absolute;bottom:12px;right:12px;z-index:2;font-size:14px;color:#b0a090;letter-spacing:4px;';
+      ec3Stars.style.cssText='position:absolute;bottom:12px;right:12px;z-index:6;font-size:14px;color:#b0a090;letter-spacing:4px;';
       ec3El.appendChild(ec3Stars);
       break;
     }
@@ -1037,24 +954,24 @@ function renderSlide(){
   updateThumbActive();
 }
 
+/* ── v4.2: buildFullBleedHTML — hashtags REMOVED from slide render ── */
 function buildFullBleedHTML(slide,tc,accent2){
   var fc='';
   if(slide.tag) fc+='<div class="s-tag" style="background:'+tc.tagBg+';color:'+tc.tagColor+';border:1px solid rgba(255,255,255,.12)">'+esc(slide.tag)+'</div>';
   fc+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+headlineSize(slide.headline)+'px;color:'+tc.head+'">'+esc(slide.headline)+'</div>';
   if(slide.body) fc+='<div class="s-body" style="color:'+tc.body+'">'+esc(slide.body)+'</div>';
-  if(slide.hashtags&&slide.hashtags.length) fc+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:10px">'+slide.hashtags.slice(0,5).map(function(t){return '<span style="font-size:10px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55)">'+esc(t)+'</span>';}).join('')+'</div>';
   if(slide.cta) fc+='<div class="s-cta" style="background:'+accent2+';color:#fff">'+esc(slide.cta)+' <span>→</span></div>';
   var n=String(ST.cur+1).padStart(2,'0');
   fc+='<div class="s-giant-num" style="color:'+(tc.head==='#ffffff'?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)')+'">'+n+'</div>';
   return fc;
 }
 
+/* ── v4.2: buildSplitTextHTML — hashtags REMOVED from slide render ── */
 function buildSplitTextHTML(slide,accent2,pText,pBg){
   var h='';
   if(slide.tag) h+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
   h+='<div style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:'+pText+';margin-bottom:6px">'+esc(slide.headline)+'</div>';
   if(slide.body) h+='<div style="font-size:12px;line-height:1.65;color:'+pText+';opacity:.75;margin-bottom:8px">'+esc(slide.body)+'</div>';
-  if(slide.hashtags&&slide.hashtags.length) h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">'+slide.hashtags.slice(0,4).map(function(t){return '<span style="font-size:9px;font-family:'+getFont('mono')+';color:'+accent2+';opacity:.85">'+esc(t)+'</span>';}).join('')+'</div>';
   if(slide.cta) h+='<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:'+pBg+';width:fit-content">'+esc(slide.cta)+' →</div>';
   return h;
 }
