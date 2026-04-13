@@ -36,8 +36,18 @@ function showPanel(name, item) {
   var t = document.getElementById('topbarTitle'); if (t) t.textContent = titles[name] || name;
   closeSidebar();
   var ca = document.getElementById('contentArea'); if (ca) ca.scrollTop = 0;
-  if (name === 'trendfeed') renderFullTrendFeed();
+
+  /* FIX 1: Reload dashboard data every time you switch back to it */
   if (name === 'dashboard') loadDashboardData();
+
+  /* FIX 2: Trend feed — render with the correct element ID (#trendFeedList) */
+  if (name === 'trendfeed') {
+    if (_allTrends.length) {
+      renderFullTrendFeed();
+    } else {
+      fetchLiveTrends().then(function() { renderFullTrendFeed(); });
+    }
+  }
 }
 
 /* ── SIDEBAR MOBILE ── */
@@ -196,6 +206,7 @@ function renderTrendCard(t, isTop) {
     + '</div></div>';
 }
 
+/* FIX 3: Dashboard trend preview — renders into #trendFeedList (the dashboard's preview list) */
 function renderDashTrends() {
   var el = document.getElementById('trendFeedList');
   if (!el) return;
@@ -208,15 +219,24 @@ function renderDashTrends() {
   }).join('');
 }
 
+/* FIX 2: Full trend feed — was targeting #fullTrendFeedList which doesn't exist.
+   The Trend Feed panel in creator-studio.html uses #trendFeedList — same ID as dashboard.
+   So we need to check which panel is active and render accordingly. */
 function renderFullTrendFeed() {
-  var el = document.getElementById('fullTrendFeedList');
+  /* When on the trendfeed panel, #trendFeedList is inside panel-trendfeed (visible),
+     so we just render all trends into it */
+  var el = document.getElementById('trendFeedList');
   if (!el) return;
   if (!_allTrends.length) {
     el.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px;">Loading live trends…</div>';
     return;
   }
-  el.innerHTML = _allTrends.map(function(t, i) {
-    return renderTrendCard(t, i < 3);
+  /* If we're on the dashboard, only show 6. If on trendfeed panel, show all. */
+  var dashPanel = document.getElementById('panel-dashboard');
+  var isDashActive = dashPanel && dashPanel.classList.contains('active');
+  var list = isDashActive ? _allTrends.slice(0, 6) : _allTrends;
+  el.innerHTML = list.map(function(t, i) {
+    return renderTrendCard(t, i < (isDashActive ? 2 : 3));
   }).join('');
 }
 
@@ -234,15 +254,21 @@ function renderDashOpps() {
   }).join('');
 }
 
+/* FIX 4: Dashboard stat IDs — HTML uses dashStatScore/dashStatScoreSub/dashStatCount/dashStatPlatform */
 function renderDashStats() {
   if (!_allTrends.length) return;
   var top = _allTrends[0];
-  var el1 = document.getElementById('dashTopScore');
-  var el2 = document.getElementById('dashTopTopic');
-  var el3 = document.getElementById('dashTrendCount');
-  if (el1) { el1.textContent = top.score.toFixed(1); el1.style.color = 'var(--green)'; }
-  if (el2) el2.textContent = top.topic + ' · ' + top.platLabel;
-  if (el3) el3.textContent = _allTrends.length;
+
+  /* These match the actual IDs in creator-studio.html */
+  var scoreEl   = document.getElementById('dashStatScore');
+  var scoreSubEl= document.getElementById('dashStatScoreSub');
+  var countEl   = document.getElementById('dashStatCount');
+  var platEl    = document.getElementById('dashStatPlatform');
+
+  if (scoreEl)    { scoreEl.textContent = top.score.toFixed(1); scoreEl.style.color = 'var(--green)'; }
+  if (scoreSubEl) scoreSubEl.textContent = top.topic + ' · ' + top.platLabel;
+  if (countEl)    countEl.textContent = _allTrends.length;
+  if (platEl)     platEl.textContent = top.platLabel;
 }
 
 /* ── DAILY BRIEFING ── */
@@ -268,13 +294,21 @@ async function loadDailyBriefing() {
   }
 }
 
-/* ── LOAD DASHBOARD DATA ── */
+/* ── LOAD DASHBOARD DATA — called every time dashboard panel is shown ── */
 async function loadDashboardData() {
   var trends = await fetchLiveTrends();
   renderDashTrends();
   renderDashOpps();
   renderDashStats();
   await loadDailyBriefing();
+}
+
+/* ── LOAD TREND FEED — called when Trend Feed panel is shown ── */
+async function loadTrendFeed() {
+  var el = document.getElementById('trendFeedList');
+  if (el) el.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px;">Loading live trends…</div>';
+  await fetchLiveTrends();
+  renderFullTrendFeed();
 }
 
 /* ── DASHBOARD DATE & GREETING ── */
@@ -316,7 +350,6 @@ async function generateContent() {
     var type = document.getElementById('createType').value;
     var tone = document.getElementById('createTone').value;
 
-    /* Get trending hashtags from our stored trends */
     var trendTags = [];
     if (_allTrends.length) {
       var matched = _allTrends.filter(function(t) {
@@ -339,7 +372,6 @@ async function generateContent() {
 
     var reply = await callDijo(prompt, 'creator');
 
-    /* Parse JSON from reply */
     var clean = reply.replace(/```json/g, '').replace(/```/g, '').trim();
     var start = clean.indexOf('{'); var end = clean.lastIndexOf('}');
     if (start === -1 || end === -1) throw new Error('No JSON in response');
@@ -390,17 +422,14 @@ async function sendDijo() {
   var val = input.value.trim(); if (!val) return;
   var msgs = document.getElementById('dijoMsgs');
 
-  /* Add user message */
   msgs.innerHTML += '<div class="chat-msg user"><div class="chat-av-sm you">Y</div><div class="chat-bubble you">' + esc(val) + '</div></div>';
   input.value = '';
   msgs.scrollTop = msgs.scrollHeight;
 
-  /* Typing indicator */
   var typingId = 'typing-' + Date.now();
   msgs.innerHTML += '<div class="chat-msg" id="' + typingId + '"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo" style="color:var(--text3);">Thinking…</div></div>';
   msgs.scrollTop = msgs.scrollHeight;
 
-  /* Build context with trend data */
   var trendCtx = '';
   if (_allTrends.length) {
     trendCtx = 'Current top trends: ' + _allTrends.slice(0, 5).map(function(t) {
@@ -454,9 +483,6 @@ function checkPlatformSessions() {
           btn.textContent = 'Open Trends →';
           btn.onclick = function() { showPanel('trendfeed', null); };
         }
-        /* Update dashboard stat */
-        var ytStat = document.getElementById('dashYtStat');
-        if (ytStat) ytStat.textContent = name;
       }
     }
   } catch(e) {}
@@ -476,8 +502,6 @@ function checkPlatformSessions() {
           btn2.className = 'cc-app-btn auto';
           btn2.textContent = 'Connected ✓';
         }
-        var ttStat = document.getElementById('dashTtStat');
-        if (ttStat) ttStat.textContent = name2;
       }
     }
   } catch(e) {}
