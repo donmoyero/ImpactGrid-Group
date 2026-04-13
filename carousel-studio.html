@@ -3,38 +3,294 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<title>Carousel Studio · ImpactGrid</title>
+<title>Carousel Studio v3.0 · Impact Grid Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="carousel-studio.css"/>
 <link rel="stylesheet" href="carousel-studio-additions.css"/>
+<style>
+/* ══ V3.0 UPGRADE STYLES ══ */
+:root {
+  --ig-yellow: #f5e400;
+  --ig-black: #0e0e0c;
+  --ig-yellow-dim: rgba(245,228,0,.10);
+  --ig-yellow-glow: rgba(245,228,0,.22);
+}
+
+/* NAV v3.0 */
+nav {
+  background: var(--ig-black) !important;
+  border-bottom: 1.5px solid rgba(245,228,0,.18) !important;
+  padding: 0 20px !important;
+}
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  /* shows logo mark in white against dark nav */
+}
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -.3px;
+  color: #fff;
+  line-height: 1;
+}
+.logo-text span {
+  color: var(--ig-yellow);
+}
+.version-badge {
+  font-size: 8px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--ig-yellow);
+  color: var(--ig-black);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.nb {
+  border-radius: 8px !important;
+  font-size: 11px !important;
+}
+.nb:hover {
+  background: rgba(245,228,0,.1) !important;
+  color: var(--ig-yellow) !important;
+}
+.nb.primary {
+  background: var(--ig-yellow) !important;
+  color: var(--ig-black) !important;
+  font-weight: 700 !important;
+}
+.nb.primary:hover {
+  background: #ffe800 !important;
+  opacity: 1 !important;
+}
+
+/* LEFT PANEL v3.0 */
+.left {
+  background: #111109 !important;
+  border-right: 1px solid rgba(245,228,0,.1) !important;
+}
+.ph {
+  background: linear-gradient(135deg, rgba(245,228,0,.06) 0%, transparent 60%);
+  border-bottom: 1px solid rgba(245,228,0,.12) !important;
+}
+.ph-title {
+  color: var(--ig-yellow) !important;
+  font-size: 12px !important;
+  letter-spacing: .5px !important;
+}
+.ph-sub { color: rgba(255,255,255,.4) !important; }
+
+.gen-btn {
+  background: var(--ig-yellow) !important;
+  color: var(--ig-black) !important;
+  font-weight: 800 !important;
+  letter-spacing: .3px !important;
+  border-radius: 10px !important;
+  padding: 14px !important;
+  position: relative;
+  overflow: hidden;
+}
+.gen-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.gen-btn:hover:not(:disabled) {
+  background: #ffe800 !important;
+  box-shadow: 0 6px 28px rgba(245,228,0,.35) !important;
+  transform: translateY(-1px) !important;
+}
+.gen-btn:disabled { background: rgba(245,228,0,.25) !important; color: rgba(14,14,12,.5) !important; }
+
+.intel-card {
+  background: rgba(255,255,255,.03) !important;
+  border: 1.5px solid rgba(245,228,0,.15) !important;
+}
+.intel-card.active {
+  border-color: var(--ig-yellow) !important;
+  background: rgba(245,228,0,.05) !important;
+}
+.intel-card.active .intel-lbl { color: var(--ig-yellow) !important; }
+.intel-seg.on { background: var(--ig-yellow) !important; }
+.intel-dot { background: rgba(255,255,255,.15) !important; }
+.intel-card.active .intel-dot { background: #4ade80 !important; }
+
+.finput, .fselect, .ftextarea {
+  background: rgba(255,255,255,.04) !important;
+  border: 1.5px solid rgba(255,255,255,.08) !important;
+  color: #f0ede8 !important;
+  border-radius: 8px !important;
+}
+.finput:focus, .fselect:focus, .ftextarea:focus {
+  border-color: var(--ig-yellow) !important;
+  background: rgba(245,228,0,.04) !important;
+}
+.lbl { color: rgba(255,255,255,.35) !important; }
+.cnt-btn { border-color: rgba(255,255,255,.1) !important; color: rgba(255,255,255,.4) !important; }
+.cnt-btn:hover { border-color: var(--ig-yellow) !important; color: var(--ig-yellow) !important; }
+.cnt-val { color: var(--ig-yellow) !important; }
+
+/* TOOLBAR v3.0 */
+.toolbar {
+  background: #0e0e0c !important;
+  border-bottom: 1px solid rgba(245,228,0,.1) !important;
+}
+.tb:hover { background: rgba(245,228,0,.08) !important; color: var(--ig-yellow) !important; }
+.tb.on { background: rgba(245,228,0,.12) !important; color: var(--ig-yellow) !important; }
+.snb:hover { border-color: var(--ig-yellow) !important; color: var(--ig-yellow) !important; }
+
+/* CANVAS AREA */
+.canvas-wrap {
+  background: radial-gradient(ellipse at center, #1a1a14 0%, #0a0a08 100%) !important;
+}
+.canvas-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(245,228,0,.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+/* SLIDE STRIP */
+.strip {
+  background: #0e0e0c !important;
+  border-top: 1px solid rgba(245,228,0,.1) !important;
+}
+.sthumb.active { border-color: var(--ig-yellow) !important; }
+.sthumb:hover:not(.active) { border-color: rgba(245,228,0,.4) !important; }
+
+/* EMPTY STATE */
+.empty-icon { border-color: rgba(245,228,0,.25) !important; background: rgba(245,228,0,.04) !important; }
+.empty-title { color: #f0ede8; }
+.empty-sub { color: rgba(255,255,255,.35) !important; }
+.qp { background: rgba(255,255,255,.03) !important; border-color: rgba(255,255,255,.07) !important; }
+.qp:hover { border-color: var(--ig-yellow) !important; background: rgba(245,228,0,.05) !important; }
+.qp-text strong { color: #f0ede8; }
+.qp-text span { color: rgba(255,255,255,.4) !important; }
+
+/* RIGHT PANEL */
+.right {
+  background: #111109 !important;
+  border-left: 1px solid rgba(245,228,0,.1) !important;
+}
+.rh { border-bottom: 1px solid rgba(245,228,0,.1) !important; }
+.rh-title { color: var(--ig-yellow) !important; }
+.esec { border-bottom-color: rgba(255,255,255,.06) !important; }
+.layout-btn:hover { border-color: var(--ig-yellow) !important; color: var(--ig-yellow) !important; }
+.layout-btn.active { background: rgba(245,228,0,.12) !important; border-color: var(--ig-yellow) !important; color: var(--ig-yellow) !important; }
+.copy-btn:hover { border-color: var(--ig-yellow) !important; color: var(--ig-yellow) !important; }
+.layout-badge { background: rgba(245,228,0,.12) !important; color: var(--ig-yellow) !important; }
+.cdot.on { border-color: var(--ig-yellow) !important; box-shadow: 0 0 0 2px rgba(245,228,0,.3); }
+.dzone { border-color: rgba(255,255,255,.08) !important; }
+.dzone:hover { border-color: var(--ig-yellow) !important; background: rgba(245,228,0,.04) !important; }
+
+/* MODAL */
+.modal { background: #111109 !important; border-color: rgba(245,228,0,.15) !important; }
+.exp-opt:hover, .exp-opt.sel { border-color: var(--ig-yellow) !important; background: rgba(245,228,0,.05) !important; }
+.exp-opt.sel .exp-radio { border-color: var(--ig-yellow) !important; background: var(--ig-yellow) !important; }
+.btn-pri { background: var(--ig-yellow) !important; color: var(--ig-black) !important; font-weight: 700 !important; }
+.btn-pri:hover { opacity: .9 !important; }
+
+/* TOAST */
+.toast { background: var(--ig-yellow) !important; color: var(--ig-black) !important; font-weight: 700 !important; }
+
+/* SLIDE canvas: add IG yellow glow on active */
+.slide-canvas {
+  box-shadow: 0 24px 80px rgba(0,0,0,.8), 0 0 0 1px rgba(245,228,0,.08) !important;
+}
+
+/* LOADING */
+.loading-ring { border-top-color: var(--ig-yellow) !important; border-color: rgba(245,228,0,.2) !important; border-top-color: var(--ig-yellow) !important; }
+.loading-title { color: var(--ig-yellow) !important; }
+
+/* HASHTAG CHIP */
+.hashtag-chip { border-color: rgba(245,228,0,.15) !important; color: rgba(245,228,0,.6) !important; background: rgba(245,228,0,.04) !important; }
+
+/* SCROLLBARS */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(245,228,0,.2); border-radius: 2px; }
+
+/* QUICK PROMPT ICONS */
+.qp-icon { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: rgba(245,228,0,.08); border-radius: 8px; font-size: 16px; flex-shrink: 0; }
+
+/* ASSET PREVIEW */
+.ath.loaded { border-color: rgba(245,228,0,.3) !important; }
+
+/* SLIDE SLIDE NUMBER BADGE */
+.s-slide-num { background: rgba(14,14,12,.7) !important; border: 1px solid rgba(245,228,0,.2) !important; }
+
+/* PANEL HEADER IG mark */
+.ph-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ph-mark img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(91%) sepia(90%) saturate(800%) hue-rotate(5deg) brightness(105%);
+  /* renders logo in IG yellow */
+}
+
+/* STAT SECTION toggle */
+#eStatSection, #eQuoteSection { display: none; flex-direction: column; gap: 6px; }
+
+/* ACCENT default override to IG yellow */
+</style>
 </head>
 <body>
 <div class="shell">
 
 <!-- ══════════════ NAV ══════════════ -->
 <nav>
-  <div class="logo">Impact<em>Grid</em></div>
-  <div class="sep"></div>
+  <div class="logo-wrap">
+    <img class="logo-img" src="logo.png" alt="Impact Grid Group" onerror="this.style.display='none'"/>
+    <div>
+      <div class="logo-text">Impact<span>Grid</span> <span class="version-badge">v3.0</span></div>
+    </div>
+  </div>
+  <div class="sep" style="margin:0 8px"></div>
   <span class="crumb">carousel-studio</span>
   <div class="nav-sp"></div>
   <button class="nb" onclick="openExport()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
   </button>
   <button class="nb" onclick="copyAll()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All
   </button>
-  <button class="nb" onclick="toggleTheme()" style="font-size:15px;padding:6px 9px">🌙</button>
+  <button class="nb" onclick="toggleTheme()" style="font-size:15px;padding:6px 9px" title="Toggle theme">🌙</button>
   <a class="nb" href="portfolio-studio.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Studio
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Studio
   </a>
 </nav>
 
 <!-- ══════════════ LEFT PANEL ══════════════ -->
 <aside class="left">
   <div class="ph">
-    <div class="ph-title">✦ AI Carousel Creator</div>
+    <div class="ph-mark">
+      <img src="logo.png" alt="" onerror="this.style.display='none'"/>
+      <span style="font-size:9px;font-family:'Space Mono',monospace;color:rgba(245,228,0,.6);letter-spacing:1px;text-transform:uppercase;">Dijo AI Engine</span>
+    </div>
+    <div class="ph-title">✦ Carousel Creator</div>
     <div class="ph-sub">Describe your content. Dijo picks the theme, scores images with AI vision &amp; designs every slide.</div>
   </div>
   <div class="pb">
@@ -73,7 +329,7 @@
         <button class="cnt-btn" onclick="chgCount(-1)">−</button>
         <div class="cnt-inner">
           <div class="cnt-val" id="cntVal">7</div>
-          <div class="cnt-sub">slides</div>
+          <div class="cnt-sub" style="color:rgba(255,255,255,.25)">slides</div>
         </div>
         <button class="cnt-btn" onclick="chgCount(1)">+</button>
       </div>
@@ -83,7 +339,7 @@
       <div class="intel-top">
         <div class="intel-dot" id="intelDot"></div>
         <span class="intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span>
-        <span class="intel-val" id="intelVal">Waiting for topic…</span>
+        <span class="intel-val" id="intelVal" style="color:rgba(255,255,255,.4)">Waiting for topic…</span>
       </div>
       <div class="intel-bar">
         <div class="intel-seg" id="iseg0"></div>
@@ -100,7 +356,8 @@
     </div>
 
     <button class="gen-btn" id="genBtn" onclick="generate()" disabled>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Generate with Dijo
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Generate with Dijo
     </button>
 
   </div>
@@ -111,34 +368,37 @@
 
   <div class="toolbar">
     <div class="tgrp">
-      <button class="tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-      <span class="tlbl" id="zoomLbl">100%</span>
-      <button class="tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+      <button class="tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+      <span class="tlbl" id="zoomLbl" style="color:rgba(255,255,255,.3)">100%</span>
+      <button class="tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
     </div>
     <div class="tgrp">
-      <button class="tb on" id="fmtSquare" onclick="setFmt('square')" title="Square 1:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
-      <button class="tb" id="fmtPortrait" onclick="setFmt('portrait')" title="Portrait 4:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
-      <button class="tb" id="fmtLandscape" onclick="setFmt('landscape')" title="Landscape 16:9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></button>
+      <button class="tb on" id="fmtSquare" onclick="setFmt('square')" title="Square 1:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
+      <button class="tb" id="fmtPortrait" onclick="setFmt('portrait')" title="Portrait 4:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
+      <button class="tb" id="fmtLandscape" onclick="setFmt('landscape')" title="Landscape 16:9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></button>
     </div>
     <div class="tgrp">
-      <button class="tb" title="Shuffle assets" onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
-      <button class="tb" title="Regenerate" onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+      <button class="tb" title="Shuffle assets" onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
+      <button class="tb" title="Regenerate" onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
     </div>
     <div class="tsp"></div>
-    <div class="slide-nav">
-      <button class="snb" onclick="prevSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <span class="sctr" id="slideCtr">0 / 0</span>
-      <button class="snb" onclick="nextSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <!-- SLIDE COUNTER -->
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(245,228,0,.07);border-radius:8px;border:1px solid rgba(245,228,0,.12)">
+      <button class="snb" onclick="prevSlide()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;display:flex;align-items:center;padding:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="sctr" id="slideCtr" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.5);min-width:42px;text-align:center">0 / 0</span>
+      <button class="snb" onclick="nextSlide()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;display:flex;align-items:center;padding:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg></button>
     </div>
   </div>
 
-  <div class="canvas-wrap" id="canvasWrap">
+  <div class="canvas-wrap" id="canvasWrap" style="position:relative">
 
     <!-- Empty state -->
     <div class="empty" id="emptyState">
-      <div class="empty-icon">✦</div>
-      <div class="empty-title">Carousel Studio</div>
-      <div class="empty-sub">Tell Dijo what you want. AI vision scores every image. 10 unique layouts per carousel.</div>
+      <div class="empty-icon" style="border-color:rgba(245,228,0,.25);background:rgba(245,228,0,.04)">
+        <img src="logo.png" alt="" style="width:36px;height:36px;object-fit:contain;filter:brightness(0) saturate(100%) invert(91%) sepia(90%) saturate(800%) hue-rotate(5deg) brightness(105%)" onerror="this.outerHTML='✦'"/>
+      </div>
+      <div class="empty-title" style="font-family:'Syne',sans-serif;font-weight:800">Carousel Studio <span style="color:var(--ig-yellow)">v3.0</span></div>
+      <div class="empty-sub">Tell Dijo what you want. AI vision scores every image.<br/>10 unique layouts · Video backgrounds · Trending hashtags.</div>
       <div class="quick-prompts">
         <div class="qp" onclick="prefill('5 habits that helped me hit £10K per month as a creator')">
           <span class="qp-icon">💰</span>
@@ -175,30 +435,26 @@
         <!-- Background layer -->
         <div class="s-bg" id="sBg">
           <div class="s-bg-img" id="sBgImg"></div>
-          <div class="s-bg-video" id="sBgVideo" style="display:none"></div>
         </div>
 
-        <!-- Overlay & texture -->
-        <div class="s-overlay" id="sOverlay"></div>
-        <div class="s-texture" id="sTexture"></div>
+        <!-- Video layer — sits ABOVE s-bg, BELOW content -->
+        <div class="s-bg-video" id="sBgVideo" style="display:none;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;"></div>
 
-        <!-- LAYOUT: FULL_BLEED (default content container) -->
-        <div class="s-content layout-bottom hidden" id="sContent"></div>
+        <!-- Overlay & texture — z-index 3 when no video, 5 when video active -->
+        <div class="s-overlay" id="sOverlay" style="position:absolute;inset:0;z-index:3;"></div>
+        <div class="s-texture" id="sTexture" style="position:absolute;inset:0;z-index:4;pointer-events:none;"></div>
+
+        <!-- LAYOUT: FULL_BLEED -->
+        <div class="s-content layout-bottom hidden" id="sContent" style="z-index:5"></div>
 
         <!-- LAYOUT: SPLIT_LEFT / SPLIT_RIGHT -->
-        <div class="s-split-wrap hidden" id="sSplit">
-          <div class="s-split-img" id="sSplitImg"></div>
-          <div class="s-split-text" id="sSplitText"></div>
-        </div>
+        <div class="s-split-wrap hidden" id="sSplit" style="z-index:5"></div>
 
         <!-- LAYOUT: CORNER_FLOAT -->
-        <div class="s-corner-float hidden" id="sCorner">
-          <div class="s-corner-img" id="sCornerImg"></div>
-          <div class="s-corner-text" id="sCornerText"></div>
-        </div>
+        <div class="s-corner-float hidden" id="sCorner" style="z-index:5"></div>
 
         <!-- LAYOUT: DUAL_IMAGE -->
-        <div class="s-dual-wrap hidden" id="sDual">
+        <div class="s-dual-wrap hidden" id="sDual" style="z-index:5">
           <div class="s-dual-main" id="sDualMain"></div>
           <div class="s-dual-overlay"></div>
           <div class="s-dual-thumb" id="sDualThumb"></div>
@@ -206,48 +462,53 @@
         </div>
 
         <!-- LAYOUT: OVERLAP_BAND -->
-        <div class="s-band-wrap hidden" id="sBand">
+        <div class="s-band-wrap hidden" id="sBand" style="z-index:5">
           <div id="sBandInner"></div>
         </div>
 
         <!-- LAYOUT: EDITORIAL_NUM -->
-        <div class="s-editorial hidden" id="sEditorial">
+        <div class="s-editorial hidden" id="sEditorial" style="z-index:5">
           <div class="s-editorial-bg-num" id="sEditorialBgNum"></div>
         </div>
 
         <!-- LAYOUT: QUOTE_PULL -->
-        <div class="s-quote-wrap hidden" id="sQuote"></div>
+        <div class="s-quote-wrap hidden" id="sQuote" style="z-index:5"></div>
 
         <!-- LAYOUT: STAT_HERO -->
-        <div class="s-stat-wrap hidden" id="sStat">
+        <div class="s-stat-wrap hidden" id="sStat" style="z-index:5">
           <div class="s-stat-strip" id="sStatStrip" style="display:none"></div>
         </div>
 
         <!-- LAYOUT: GRID_POINTS -->
-        <div class="s-grid-wrap hidden" id="sGrid"></div>
+        <div class="s-grid-wrap hidden" id="sGrid" style="z-index:5"></div>
 
-        <!-- LAYOUT: TOP_STRIP / BOTTOM_STRIP (PATCH 4) -->
-        <div class="hidden" id="sTopStrip"></div>
-        <div class="hidden" id="sBottomStrip"></div>
+        <!-- LAYOUT: TOP_STRIP / BOTTOM_STRIP -->
+        <div class="hidden" id="sTopStrip" style="z-index:5"></div>
+        <div class="hidden" id="sBottomStrip" style="z-index:5"></div>
 
-        <!-- LAYOUT: EDITORIAL_COVER (Salford & Co. cover) -->
-        <div class="hidden" id="sEditorialCover"></div>
+        <!-- LAYOUT: EDITORIAL_COVER -->
+        <div class="hidden" id="sEditorialCover" style="z-index:5"></div>
 
-        <!-- LAYOUT: EDITORIAL_COLLAGE / EDITORIAL_COLLAGE_3 (shared container) -->
-        <div class="hidden" id="sEditorialCollage"></div>
+        <!-- LAYOUT: EDITORIAL_COLLAGE / EDITORIAL_COLLAGE_3 -->
+        <div class="hidden" id="sEditorialCollage" style="z-index:5"></div>
 
-        <!-- LAYOUT: HABIT_COVER (Thynk Unlimited cover) -->
-        <div class="hidden" id="sHabitCover"></div>
+        <!-- LAYOUT: HABIT_COVER -->
+        <div class="hidden" id="sHabitCover" style="z-index:5"></div>
 
-        <!-- LAYOUT: HABIT_SLIDE (Thynk Unlimited habit slide) -->
-        <div class="hidden" id="sHabitSlide"></div>
+        <!-- LAYOUT: HABIT_SLIDE -->
+        <div class="hidden" id="sHabitSlide" style="z-index:5"></div>
 
         <!-- Always-on UI chrome -->
-        <div class="s-slide-num" id="sNum">1 / 7</div>
-        <div class="s-brand" id="sBrand"></div>
+        <div class="s-slide-num" id="sNum" style="z-index:10">1 / 7</div>
+        <div class="s-brand" id="sBrand" style="z-index:10"></div>
 
-      </div><!-- /slide-canvas -->
-    </div><!-- /slide-wrap -->
+        <!-- IG watermark on canvas -->
+        <div id="igWatermark" style="position:absolute;bottom:12px;right:12px;z-index:10;opacity:.18;pointer-events:none;display:none">
+          <img src="logo.png" alt="" style="width:22px;height:22px;object-fit:contain;filter:brightness(10)" onerror="this.style.display='none'"/>
+        </div>
+
+      </div>
+    </div>
 
   </div><!-- /canvas-wrap -->
 
@@ -256,11 +517,11 @@
 
 </main>
 
-<!-- ══════════════ RIGHT EDIT PANEL (PATCH 1) ══════════════ -->
+<!-- ══════════════ RIGHT EDIT PANEL ══════════════ -->
 <aside class="right">
   <div class="rh">
-    <span class="rh-title">Edit Slide</span>
-    <span class="rh-num" id="editNum">—</span>
+    <span class="rh-title">✦ Edit Slide</span>
+    <span class="rh-num" id="editNum" style="color:rgba(245,228,0,.5);font-family:'Space Mono',monospace;font-size:10px">—</span>
   </div>
   <div class="rb">
 
@@ -268,7 +529,6 @@
       <div class="esec-title">Layout</div>
       <div class="layout-badge" id="layoutBadge">—</div>
       <div class="layout-switcher">
-        <!-- Original layouts -->
         <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
         <button class="layout-btn" onclick="changeLayout('SPLIT_LEFT')">Split L</button>
         <button class="layout-btn" onclick="changeLayout('SPLIT_RIGHT')">Split R</button>
@@ -281,11 +541,9 @@
         <button class="layout-btn" onclick="changeLayout('QUOTE_PULL')">Quote</button>
         <button class="layout-btn" onclick="changeLayout('GRID_POINTS')">Grid</button>
         <button class="layout-btn" onclick="changeLayout('MAGAZINE_SPLIT')">Magazine</button>
-        <!-- NEW v3.1 — Salford & Co. editorial style -->
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')">Ed. Cover</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')">Ed. Collage</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')">Ed. Col×3</button>
-        <!-- NEW v3.1 — Thynk Unlimited habit style -->
         <button class="layout-btn" onclick="changeLayout('HABIT_COVER')">Habit Cover</button>
         <button class="layout-btn" onclick="changeLayout('HABIT_SLIDE')">Habit Slide</button>
       </div>
@@ -301,13 +559,11 @@
       <textarea class="ftextarea" id="eBody" style="min-height:80px" oninput="liveEdit()"></textarea>
     </div>
 
-    <!-- Stat field — shows only when layout = STAT_HERO -->
     <div class="esec" id="eStatSection">
       <div class="esec-title">Stat / Number</div>
       <input type="text" class="finput" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
     </div>
 
-    <!-- Quote field — shows only when layout = QUOTE_PULL -->
     <div class="esec" id="eQuoteSection">
       <div class="esec-title">Quote Text</div>
       <textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
@@ -330,7 +586,7 @@
       <div class="esec-title">Override Background</div>
       <div class="dzone" id="dzone" onclick="document.getElementById('imgUp').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
         <div class="dzone-icon">🖼️</div>
-        <p><strong>Upload image</strong> or drag &amp; drop<br/><span style="font-size:10px;color:var(--text3)">Overrides AI auto-selected asset</span></p>
+        <p><strong style="color:var(--ig-yellow)">Upload image</strong> or drag &amp; drop<br/><span style="font-size:10px;color:rgba(255,255,255,.25)">Overrides AI auto-selected asset</span></p>
       </div>
       <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
     </div>
@@ -338,7 +594,8 @@
     <div class="esec">
       <div class="esec-title">Accent Colour</div>
       <div class="cdots" id="cdots">
-        <div class="cdot on" style="background:#2563eb" onclick="setAccent('#2563eb',this)"></div>
+        <div class="cdot on" style="background:#f5e400" onclick="setAccent('#f5e400',this)" title="IG Yellow"></div>
+        <div class="cdot" style="background:#2563eb" onclick="setAccent('#2563eb',this)"></div>
         <div class="cdot" style="background:#c9a84c" onclick="setAccent('#c9a84c',this)"></div>
         <div class="cdot" style="background:#ef4444" onclick="setAccent('#ef4444',this)"></div>
         <div class="cdot" style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
@@ -346,13 +603,23 @@
         <div class="cdot" style="background:#0891b2" onclick="setAccent('#0891b2',this)"></div>
         <div class="cdot" style="background:#ea580c" onclick="setAccent('#ea580c',this)"></div>
         <div class="cdot" style="background:#e91e8c" onclick="setAccent('#e91e8c',this)"></div>
-        <div class="cdot" style="background:#fff;border-color:var(--border)" onclick="setAccent('#ffffff',this)"></div>
+        <div class="cdot" style="background:#fff;border-color:rgba(255,255,255,.2)" onclick="setAccent('#ffffff',this)"></div>
       </div>
     </div>
 
     <div class="esec">
       <div class="esec-title">Brand Name</div>
-      <input type="text" class="finput" id="brandInput" placeholder="Your Brand" oninput="updateBrand()"/>
+      <input type="text" class="finput" id="brandInput" placeholder="Impact Grid Group" oninput="updateBrand()"/>
+    </div>
+
+    <div class="esec">
+      <div class="esec-title">Font Style</div>
+      <div class="font-switcher">
+        <button class="font-btn active" data-pair="syne" onclick="setFontPair('syne')">Syne</button>
+        <button class="font-btn" data-pair="cormorant" onclick="setFontPair('cormorant')">Serif</button>
+        <button class="font-btn" data-pair="playfair" onclick="setFontPair('playfair')">Playfair</button>
+        <button class="font-btn" data-pair="inter" onclick="setFontPair('inter')">Inter</button>
+      </div>
     </div>
 
   </div>
@@ -360,12 +627,12 @@
 
 </div><!-- /shell -->
 
-<!-- ══════════════ EXPORT MODAL (PATCH 2) ══════════════ -->
+<!-- ══════════════ EXPORT MODAL ══════════════ -->
 <div class="modal-bg" id="exportModal">
   <div class="modal">
     <div class="mh">
-      <span class="mh-title">Export Carousel</span>
-      <button onclick="closeExport()" style="width:26px;height:26px;border-radius:7px;background:var(--surface2);color:var(--text2)">✕</button>
+      <span class="mh-title" style="color:var(--ig-yellow)">Export Carousel</span>
+      <button onclick="closeExport()" style="width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5)">✕</button>
     </div>
     <div class="mc">
       <div class="exp-opt sel" id="eoPng" onclick="selExport('png')">
@@ -399,7 +666,39 @@
 <!-- Toast shelf -->
 <div class="toast-shelf" id="toastShelf"></div>
 
-<!-- External JS -->
 <script src="carousel-studio.js"></script>
+
+<script>
+// ── V3.0 INIT OVERRIDES ──
+// Default accent to IG yellow
+document.addEventListener('DOMContentLoaded', function() {
+  // Set default accent
+  if (typeof ST !== 'undefined') {
+    ST.accent = '#f5e400';
+    ST.brand = 'Impact Grid Group';
+    var brandInput = document.getElementById('brandInput');
+    if (brandInput) brandInput.value = 'Impact Grid Group';
+  }
+});
+
+// Show IG watermark on slides when brand is set
+var _origRenderSlide = typeof renderSlide === 'function' ? renderSlide : null;
+
+// Override to show watermark
+function showWatermark(show) {
+  var wm = document.getElementById('igWatermark');
+  if (wm) wm.style.display = show ? 'block' : 'none';
+}
+
+// Patch generate to show watermark after render
+var _genOrig = window.generate;
+if (typeof window.generate === 'function') {
+  var _origGen = window.generate;
+  window.generate = async function() {
+    await _origGen.apply(this, arguments);
+    showWatermark(true);
+  };
+}
+</script>
 </body>
 </html>
