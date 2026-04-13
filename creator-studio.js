@@ -1,129 +1,120 @@
 /* ═══════════════════════════════════════════════
    IMPACTGRID CREATOR STUDIO — creator-studio.js
-   Fixed: real Dijo server calls, live trend data
+   Merged & deduplicated — aligned to HTML IDs
 ═══════════════════════════════════════════════ */
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
+var _allTrends = [];
+var _selectedStyle = 'Educational';
+var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
 
-/* ── THEME ── */
-var isDark = false;
-function applyTheme(dark) {
-  isDark = dark;
+/* ─────────────────────────────────────────────
+   THEME
+───────────────────────────────────────────── */
+function toggleTheme() {
+  var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  var ico = dark ? '☀️' : '🌙';
-  var tbt = document.getElementById('topThemeBtn'); if (tbt) tbt.textContent = ico;
-  var sbt = document.getElementById('sbThemeBtn');
-  if (sbt) sbt.innerHTML = '<span>' + (dark ? '☀️' : '🌙') + '</span><span>' + (dark ? 'Light Mode' : 'Dark Mode') + '</span>';
-  var tt = document.getElementById('themeToggle'); if (tt) tt.classList.toggle('on', dark);
+  document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
   try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
 }
-function toggleTheme() { applyTheme(!isDark); }
-(function() { try { if (localStorage.getItem('ig_theme') === 'dark') applyTheme(true); } catch(e) {} })();
+(function() {
+  try {
+    if (localStorage.getItem('ig_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      var btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = '☀️';
+    }
+  } catch(e) {}
+})();
 
-/* ── PANELS ── */
-function showPanel(name, item) {
+/* ─────────────────────────────────────────────
+   TABS — matches HTML's switchTab(name, sidebarItem)
+───────────────────────────────────────────── */
+function switchTab(name, sidebarItem) {
   document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn:not(.tab-soon)').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('.sb-item').forEach(function(i) { i.classList.remove('active'); });
+
   var panel = document.getElementById('panel-' + name);
   if (panel) panel.classList.add('active');
-  if (item) item.classList.add('active');
-  var titles = {
-    dashboard: 'Dashboard', trendfeed: 'Trend Feed', create: 'Create',
-    contentcalendar: 'Content Calendar', portfolio: 'Portfolio',
-    dijo: 'Dijo AI', opportunities: 'Opportunities',
-    connect: 'Connect Platforms', settings: 'Settings'
-  };
-  var t = document.getElementById('topbarTitle'); if (t) t.textContent = titles[name] || name;
+  var tb = document.getElementById('tab-' + name);
+  if (tb) tb.classList.add('active');
+  if (sidebarItem) sidebarItem.classList.add('active');
+
+  var ca = document.getElementById('contentArea');
+  if (ca) ca.scrollTop = 0;
+
   closeSidebar();
-  var ca = document.getElementById('contentArea'); if (ca) ca.scrollTop = 0;
 
-  /* FIX 1: Reload dashboard data every time you switch back to it */
-  if (name === 'dashboard') loadDashboardData();
-
-  /* FIX 2: Trend feed — render with the correct element ID (#trendFeedList) */
-  if (name === 'trendfeed') {
-    if (_allTrends.length) {
-      renderFullTrendFeed();
-    } else {
-      fetchLiveTrends().then(function() { renderFullTrendFeed(); });
-    }
-  }
+  if (name === 'trends' && _allTrends.length) renderFullTrends();
+  if (name === 'evaluator') initEvaluator();
 }
 
-/* ── SIDEBAR MOBILE ── */
+/* ─────────────────────────────────────────────
+   SIDEBAR (mobile drawer)
+───────────────────────────────────────────── */
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('mobOverlay').classList.add('open');
+  // Prevent body scroll while drawer is open
+  document.body.style.overflow = 'hidden';
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mobOverlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
-/* ── USER DROP ── */
-function toggleSbDrop() { document.getElementById('sbDrop').classList.toggle('open'); }
+/* ─────────────────────────────────────────────
+   USER MENU
+───────────────────────────────────────────── */
+function toggleUserMenu() {
+  document.getElementById('userDrop').classList.toggle('open');
+}
 document.addEventListener('click', function(e) {
-  var d = document.getElementById('sbDrop');
-  if (d && !e.target.closest('.sb-user')) d.classList.remove('open');
+  var d = document.getElementById('userDrop');
+  if (d && !e.target.closest('.user-btn')) d.classList.remove('open');
 });
 
-/* ── AUTH ── */
-function setUser(user) {
+/* ─────────────────────────────────────────────
+   AUTH
+───────────────────────────────────────────── */
+function setNavUser(user) {
   if (!user) return;
   var email = user.email || '';
-  var name = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || email.split('@')[0] || 'Creator';
-  var init = (name.charAt(0) || '?').toUpperCase();
-  var gw = document.getElementById('sbGuestWrap'); if (gw) gw.style.display = 'none';
-  var uw = document.getElementById('sbUserWrap'); if (uw) uw.style.display = 'block';
-  var av = document.getElementById('sbAv'); if (av) av.textContent = init;
-  var sn = document.getElementById('sbName'); if (sn) sn.textContent = name.split(' ')[0];
-  var se = document.getElementById('sbEmail'); if (se) se.textContent = email;
-  var se2 = document.getElementById('settingsEmail'); if (se2) se2.textContent = email;
-  var hour = new Date().getHours();
-  var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  var g = document.getElementById('dashGreeting'); if (g) g.textContent = greet + ', ' + name.split(' ')[0] + ' 👋';
-  var pfNameEl = document.getElementById('pfName');
-  if (pfNameEl && !pfNameEl.value) { pfNameEl.value = name; if (window.updatePreview) updatePreview(); }
-  var slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  var urlEl = document.getElementById('pfUrl'); if (urlEl) urlEl.textContent = 'impactgrid.app/p/' + slug;
-  if (window.updateSEOPreview) updateSEOPreview(name, '', slug);
+  var name = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name))
+    || email.split('@')[0] || 'Creator';
+  document.getElementById('navGuest').style.display = 'none';
+  document.getElementById('navUser').style.display = 'block';
+  document.getElementById('userAv').textContent = (name.charAt(0) || '?').toUpperCase();
+  document.getElementById('userName').textContent = name.split(' ')[0];
+  document.getElementById('userEmail').textContent = email;
 }
-function clearUser() {
-  var gw = document.getElementById('sbGuestWrap'); if (gw) gw.style.display = 'block';
-  var uw = document.getElementById('sbUserWrap'); if (uw) uw.style.display = 'none';
-}
-window.igOut = async function() {
+window.igSignOut = async function() {
   try { var c = getSupabase(); if (c) await c.auth.signOut(); } catch(e) {}
   window.location.href = 'index.html';
 };
-function attachAuth(c) {
-  c.auth.onAuthStateChange(function(ev, session) {
-    if (session && session.user) setUser(session.user);
-    else if (ev === 'SIGNED_OUT' || ev === 'USER_DELETED') clearUser();
-  });
-  c.auth.getSession().then(function(r) {
-    if (r && r.data && r.data.session && r.data.session.user) setUser(r.data.session.user);
-  }).catch(function() {});
-}
 function checkAuth() {
   var c = null;
   try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
-  if (c) { attachAuth(c); return; }
-  var tries = 0;
-  var t = setInterval(function() {
-    tries++;
-    try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
-    if (c) { clearInterval(t); attachAuth(c); }
-    else if (tries >= 30) clearInterval(t);
-  }, 100);
+  if (!c) return;
+  c.auth.getSession().then(function(r) {
+    if (r && r.data && r.data.session) setNavUser(r.data.session.user);
+  });
+  c.auth.onAuthStateChange(function(ev, session) {
+    if (session && session.user) setNavUser(session.user);
+  });
 }
 
-/* ── CORE DIJO API CALL ── */
+/* ─────────────────────────────────────────────
+   DIJO API — 3-sentence max enforced
+───────────────────────────────────────────── */
 async function callDijo(message, mode) {
+  var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
   var res = await fetch(DIJO + '/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: message, mode: mode || 'creator' })
+    body: JSON.stringify({ message: shortPrefix + message, mode: mode || 'creator' })
   });
   if (!res.ok) {
     var e = await res.json().catch(function() { return {}; });
@@ -133,148 +124,121 @@ async function callDijo(message, mode) {
   return data.reply || '';
 }
 
-/* ── TREND DATA ── */
-var _allTrends = [];
+/* ─────────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────────── */
+function escH(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function escJ(s) {
+  return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+function fmtN(n) { return n ? Number(n).toLocaleString() : '—'; }
+function toScore(s) { return Math.min(9.9, parseFloat((s / 10).toFixed(1))); }
 
-function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function fmtNum(n) {
-  return n ? Number(n).toLocaleString() : '—';
-}
-function platLabel(src) {
-  return src === 'youtube' ? 'YouTube' : src === 'tiktok' ? 'TikTok' : src === 'cross' ? 'Cross' : 'Google';
-}
-function platCls(src) {
-  return src === 'youtube' || src === 'yt' ? 'plat-yt' : src === 'tiktok' || src === 'tt' ? 'plat-tt' : 'plat-gt';
-}
-function toDisplayScore(s) {
-  return Math.min(9.9, parseFloat((s / 10).toFixed(1)));
-}
-
-async function fetchLiveTrends() {
+/* ─────────────────────────────────────────────
+   TREND DATA
+───────────────────────────────────────────── */
+async function fetchTrends() {
   try {
     var res = await fetch(DIJO + '/trends/live?limit=20');
     var data = await res.json();
-    var live = data.trends || [];
-    if (live.length) {
-      _allTrends = live.map(function(t, i) {
+    if (data.trends && data.trends.length) {
+      _allTrends = data.trends.map(function(t, i) {
+        var plat = t.platform_source === 'youtube' ? 'yt'
+          : t.platform_source === 'tiktok' ? 'tt'
+          : t.platform_source === 'cross' ? 'cross' : 'gt';
+        var platLbl = t.platform_source === 'youtube' ? 'YouTube'
+          : t.platform_source === 'tiktok' ? 'TikTok'
+          : t.platform_source === 'cross' ? 'Cross' : 'Google';
         return {
-          topic: t.topic,
-          score: toDisplayScore(t.trend_score),
-          fullScore: t.trend_score,
-          plat: t.platform_source === 'youtube' ? 'yt' : t.platform_source === 'tiktok' ? 'tt' : t.platform_source === 'cross' ? 'cross' : 'gt',
-          platLabel: platLabel(t.platform_source),
-          rank: i + 1,
-          hashtags: t.hashtags || [],
-          videoCount: t.video_count || 0,
-          totalViews: t.total_views || 0,
-          status: t.status || 'rising',
-          igPrediction: t.instagram_prediction || 0
+          topic: t.topic, score: toScore(t.trend_score), plat: plat, platLabel: platLbl,
+          rank: i + 1, hashtags: t.hashtags || [], videoCount: t.video_count || 0,
+          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0
         };
       });
-      return _allTrends;
+      return;
     }
-    /* Fallback to Google RSS */
+  } catch(e) {}
+  // RSS fallback
+  try {
     var rss = await fetch(DIJO + '/trends/google?geo=GB');
-    var rssData = await rss.json();
-    _allTrends = (rssData.trends || []).slice(0, 20).map(function(topic, i) {
+    var rd = await rss.json();
+    _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 };
     });
-    return _allTrends;
-  } catch(e) {
-    return [];
-  }
+  } catch(e) {}
 }
 
-function renderTrendCard(t, isTop) {
+function trendItemHTML(t) {
   var pct = Math.round((t.score / 10) * 100);
-  var cls = platCls(t.plat);
+  var platCls = t.plat === 'yt' ? 'plat-yt' : t.plat === 'tt' ? 'plat-tt' : 'plat-gt';
   var meta = t.videoCount > 0
-    ? t.videoCount + ' videos · ' + fmtNum(t.totalViews) + ' views · ' + t.platLabel
-    : t.platLabel + ' · Trend Score™ · click to generate';
-  return '<div class="trend-card' + (isTop ? ' top' : '') + '" onclick="loadTopic(\'' + esc(t.topic) + '\')">'
-    + '<span class="t-rank">#' + t.rank + '</span>'
-    + '<div class="t-info"><div class="t-name">' + escHtml(t.topic) + '</div><div class="t-meta">' + escHtml(meta) + '</div></div>'
-    + '<div class="t-right">'
-    + '<span class="t-score' + (t.score < 7 ? ' mid' : '') + '">' + t.score.toFixed(1) + '</span>'
-    + '<span class="t-plat">' + escHtml(t.platLabel) + '</span>'
-    + '<button class="t-gen">Generate →</button>'
-    + '</div></div>';
+    ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
+    : t.platLabel + ' · click to generate';
+  return '<div class="trend-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
+    + '<div class="ti-rank">#' + t.rank + '</div>'
+    + '<div class="ti-info"><div class="ti-topic">' + escH(t.topic) + '</div><div class="ti-meta">' + escH(meta) + '</div></div>'
+    + '<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%"></div></div><div class="ti-score">' + t.score.toFixed(1) + '/10</div></div>'
+    + '<div class="ti-plat ' + platCls + '">' + escH(t.platLabel) + '</div>'
+    + '</div>';
 }
 
-/* FIX 3: Dashboard trend preview — renders into #trendFeedList (the dashboard's preview list) */
+// Render top 5 trends in dashboard panel
 function renderDashTrends() {
-  var el = document.getElementById('trendFeedList');
+  var el = document.getElementById('dashTrendList');
   if (!el) return;
-  if (!_allTrends.length) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px;">Loading live trends…</div>';
-    return;
-  }
-  el.innerHTML = _allTrends.slice(0, 6).map(function(t, i) {
-    return renderTrendCard(t, i < 2);
-  }).join('');
+  el.innerHTML = _allTrends.length
+    ? _allTrends.slice(0, 5).map(trendItemHTML).join('')
+    : '<div style="padding:16px;color:var(--text3);font-size:13px">No trends yet — check back shortly.</div>';
 }
 
-/* FIX 2: Full trend feed — was targeting #fullTrendFeedList which doesn't exist.
-   The Trend Feed panel in creator-studio.html uses #trendFeedList — same ID as dashboard.
-   So we need to check which panel is active and render accordingly. */
-function renderFullTrendFeed() {
-  /* When on the trendfeed panel, #trendFeedList is inside panel-trendfeed (visible),
-     so we just render all trends into it */
-  var el = document.getElementById('trendFeedList');
+// Render all trends in Trend Feed panel
+function renderFullTrends() {
+  var el = document.getElementById('fullTrendList');
   if (!el) return;
-  if (!_allTrends.length) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px;">Loading live trends…</div>';
-    return;
-  }
-  /* If we're on the dashboard, only show 6. If on trendfeed panel, show all. */
-  var dashPanel = document.getElementById('panel-dashboard');
-  var isDashActive = dashPanel && dashPanel.classList.contains('active');
-  var list = isDashActive ? _allTrends.slice(0, 6) : _allTrends;
-  el.innerHTML = list.map(function(t, i) {
-    return renderTrendCard(t, i < (isDashActive ? 2 : 3));
-  }).join('');
+  el.innerHTML = _allTrends.length
+    ? _allTrends.map(trendItemHTML).join('')
+    : '<div style="padding:16px;color:var(--text3)">No trends yet.</div>';
+}
+
+function filterTrends(btn, plat) {
+  document.querySelectorAll('[data-plat]').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  var el = document.getElementById('fullTrendList');
+  if (!el) return;
+  var list = plat === 'all' ? _allTrends : _allTrends.filter(function(t) { return t.plat === plat; });
+  el.innerHTML = list.length
+    ? list.map(trendItemHTML).join('')
+    : '<div style="padding:16px;color:var(--text3)">No trends for this filter.</div>';
 }
 
 function renderDashOpps() {
-  var el = document.getElementById('dashOpps');
+  var el = document.getElementById('dashOppList');
   if (!el || !_allTrends.length) return;
-  el.innerHTML = _allTrends.slice(0, 2).map(function(t) {
-    var icons = { yt: '▶️', tt: '🎵', gt: '📈', cross: '✕' };
-    return '<div class="opp-card" onclick="loadTopic(\'' + esc(t.topic) + '\')">'
-      + '<span class="opp-icon">' + (icons[t.plat] || '📡') + '</span>'
-      + '<div><div class="opp-name">' + escHtml(t.topic) + '</div>'
-      + '<div class="opp-meta">' + escHtml(t.platLabel) + ' · ' + t.status + (t.videoCount ? ' · ' + t.videoCount + ' videos' : '') + '</div></div>'
-      + '<div class="opp-score"><div class="opp-score-n">' + t.score.toFixed(1) + '</div><div class="opp-score-l">Score</div></div>'
+  el.innerHTML = _allTrends.slice(0, 3).map(function(t) {
+    return '<div class="opp-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
+      + '<div class="opp-header"><span class="opp-topic">' + escH(t.topic) + '</span><span class="opp-score">' + t.score.toFixed(1) + '</span></div>'
+      + '<div class="opp-meta">' + escH(t.platLabel) + ' · ' + t.status + (t.videoCount ? ' · ' + t.videoCount + ' videos' : '') + '</div>'
       + '</div>';
   }).join('');
 }
 
-/* FIX 4: Dashboard stat IDs — HTML uses dashStatScore/dashStatScoreSub/dashStatCount/dashStatPlatform */
-function renderDashStats() {
-  if (!_allTrends.length) return;
-  var top = _allTrends[0];
-
-  /* These match the actual IDs in creator-studio.html */
-  var scoreEl   = document.getElementById('dashStatScore');
-  var scoreSubEl= document.getElementById('dashStatScoreSub');
-  var countEl   = document.getElementById('dashStatCount');
-  var platEl    = document.getElementById('dashStatPlatform');
-
-  if (scoreEl)    { scoreEl.textContent = top.score.toFixed(1); scoreEl.style.color = 'var(--green)'; }
-  if (scoreSubEl) scoreSubEl.textContent = top.topic + ' · ' + top.platLabel;
-  if (countEl)    countEl.textContent = _allTrends.length;
-  if (platEl)     platEl.textContent = top.platLabel;
+function loadTopic(topic) {
+  var i1 = document.getElementById('quickTopic'); if (i1) i1.value = topic;
+  var i2 = document.getElementById('genTopic'); if (i2) i2.value = topic;
+  switchTab('generator', null);
+  toast('💡 Topic loaded — hit Generate!');
 }
 
-/* ── DAILY BRIEFING ── */
-async function loadDailyBriefing() {
+/* ─────────────────────────────────────────────
+   BRIEFING
+───────────────────────────────────────────── */
+async function loadBriefing(forceRefresh) {
   var el = document.getElementById('briefingText');
-  var scoresEl = document.getElementById('briefingScores');
+  var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
   if (!el) return;
   try {
@@ -282,258 +246,667 @@ async function loadDailyBriefing() {
     var data = await res.json();
     if (data.briefing) {
       el.textContent = data.briefing;
-      if (dateEl && data.date) dateEl.textContent = data.date + (data.cached ? ' · cached' : ' · live');
-      if (scoresEl && data.top_trends && data.top_trends.length) {
-        scoresEl.innerHTML = data.top_trends.map(function(t) {
-          return '<div class="b-score"><span class="b-score-n">' + (t.score / 10).toFixed(1) + '</span><span>' + escHtml(t.topic) + '</span></div>';
+      if (dateEl) dateEl.textContent = (data.date || '') + (data.cached ? ' · cached' : ' · live');
+      if (tagsEl && data.top_trends) {
+        tagsEl.innerHTML = data.top_trends.map(function(t) {
+          return '<span class="b-tag">' + escH(t.topic) + ' ' + Math.round(t.score) + '</span>';
         }).join('');
       }
+      if (forceRefresh) toast('🧠 Briefing refreshed!');
     }
   } catch(e) {
-    if (el) el.textContent = 'Dijo briefing unavailable — trend data loading in background.';
+    if (el) el.textContent = 'Dijo briefing unavailable — check back shortly.';
   }
 }
 
-/* ── LOAD DASHBOARD DATA — called every time dashboard panel is shown ── */
-async function loadDashboardData() {
-  var trends = await fetchLiveTrends();
-  renderDashTrends();
-  renderDashOpps();
-  renderDashStats();
-  await loadDailyBriefing();
+/* ─────────────────────────────────────────────
+   QUICK GENERATE (dashboard widget)
+───────────────────────────────────────────── */
+async function quickGenerate() {
+  var topic = document.getElementById('quickTopic').value.trim();
+  if (!topic) { toast('⚠️ Enter a topic first'); return; }
+  var outEl = document.getElementById('quickOutput');
+  outEl.style.display = 'flex';
+  document.getElementById('quickHook').textContent = 'Generating…';
+  document.getElementById('quickCaption').textContent = '';
+  document.getElementById('quickTags').innerHTML = '';
+  try {
+    var reply = await callDijo(
+      'Write a hook, caption, and 6 hashtags for: "' + topic + '". Format:\nHOOK: ...\nCAPTION: ...\nHASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6',
+      'creator'
+    );
+    var lines = reply.split('\n');
+    var hook = '', caption = '', tags = [];
+    lines.forEach(function(l) {
+      if (l.toLowerCase().startsWith('hook:')) hook = l.replace(/^hook:\s*/i, '').trim();
+      else if (l.toLowerCase().startsWith('caption:')) caption = l.replace(/^caption:\s*/i, '').trim();
+      else if (l.toLowerCase().startsWith('hashtags:')) { tags = (l.replace(/^hashtags:\s*/i, '').match(/#[a-zA-Z0-9]+/g) || []); }
+    });
+    if (!tags.length) tags = (reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []).slice(0, 6);
+    document.getElementById('quickHook').textContent = hook || lines[0] || reply.slice(0, 120);
+    document.getElementById('quickCaption').textContent = caption || reply.slice(0, 200);
+    var te = document.getElementById('quickTags'); te.innerHTML = '';
+    tags.forEach(function(t) { var s = document.createElement('span'); s.className = 'ob-tag'; s.textContent = t; te.appendChild(s); });
+    toast('✅ Generated!');
+  } catch(e) {
+    document.getElementById('quickHook').textContent = 'Dijo unavailable — try again.';
+  }
 }
 
-/* ── LOAD TREND FEED — called when Trend Feed panel is shown ── */
-async function loadTrendFeed() {
-  var el = document.getElementById('trendFeedList');
-  if (el) el.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px;">Loading live trends…</div>';
-  await fetchLiveTrends();
-  renderFullTrendFeed();
+/* ─────────────────────────────────────────────
+   FULL GENERATE
+───────────────────────────────────────────── */
+function selectStyle(el) {
+  document.querySelectorAll('.style-chip').forEach(function(c) { c.classList.remove('active'); });
+  el.classList.add('active');
+  _selectedStyle = el.textContent.trim();
 }
 
-/* ── DASHBOARD DATE & GREETING ── */
-function setDashDate() {
-  var d = new Date();
-  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var str = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-  var el = document.getElementById('dashDate'); if (el) el.textContent = str + ' · Live data';
-  var bd = document.getElementById('briefingDate'); if (bd) bd.textContent = str;
-  var hour = d.getHours();
-  var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  var g = document.getElementById('dashGreeting'); if (g) g.textContent = greet + ', Creator 👋';
+function calcScore(topic) {
+  var tl = topic.toLowerCase(); var s = 6.8;
+  if (tl.match(/ai|chatgpt|automation|tech|llm/)) s += 1.3;
+  if (tl.match(/money|finance|invest|income|business/)) s += 1.0;
+  if (tl.match(/viral|trending|2026|growth/)) s += 0.6;
+  if (tl.length < 20) s += 0.3;
+  return Math.min(9.9, parseFloat(s.toFixed(1)));
 }
 
-function loadTopic(topic) {
-  var input = document.getElementById('createTopic'); if (input) input.value = topic;
-  var dijoInput = document.getElementById('genTopic'); if (dijoInput) dijoInput.value = topic;
-  showPanel('create', null);
-  document.querySelectorAll('.sb-item').forEach(function(i) {
-    if (i.textContent.indexOf('Create') !== -1) i.classList.add('active');
+async function fullGenerate() {
+  var topic = document.getElementById('genTopic').value.trim();
+  if (!topic) { toast('⚠️ Enter a topic first'); return; }
+  var platform = document.getElementById('genPlatform').value;
+  var niche = document.getElementById('genNiche').value.trim();
+  var btn = document.getElementById('fullGenBtn');
+  var loadEl = document.getElementById('genLoading');
+  var errEl = document.getElementById('genError');
+
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating…';
+  // CSS class-based show/hide
+  loadEl.classList.add('visible');
+  errEl.classList.remove('visible');
+  document.getElementById('genLoadingMsg').textContent = 'Dijo is building your content package for "' + topic + '"…';
+
+  var score = calcScore(topic);
+  var scColor = score >= 9 ? 'var(--green)' : score >= 8 ? 'var(--gold)' : score >= 7 ? 'var(--blue2)' : 'var(--text2)';
+  var verdict = score >= 9 ? '🔥 Exceptional' : score >= 8 ? '⚡ Strong opportunity' : score >= 7 ? '📈 Good momentum' : '💡 Emerging';
+  document.getElementById('previewScore').textContent = score.toFixed(1);
+  document.getElementById('previewScore').style.color = scColor;
+  document.getElementById('previewVerdict').textContent = verdict;
+  document.getElementById('previewVerdict').style.color = scColor;
+
+  ['outHook', 'outCaption', 'outOutline'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el.classList.remove('ob-placeholder'); el.textContent = 'Generating…';
   });
-  showToast('💡 Topic loaded — hit Generate!');
-}
-
-/* ── GENERATE CONTENT — uses real Dijo server ── */
-async function generateContent() {
-  var topic = document.getElementById('createTopic').value.trim();
-  if (!topic) { showToast('⚠️ Please enter a topic first.'); return; }
-  var btn = document.getElementById('generateBtn');
-  var out = document.getElementById('createOutput');
-  btn.disabled = true; btn.textContent = 'Generating…';
-  out.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px 0;">'
-    + '<div class="spinner"></div>'
-    + '<span style="font-size:13px;color:var(--text2);">Dijo is writing your content…</span></div>';
+  document.getElementById('outHashtags').innerHTML = '<span style="color:var(--text3);font-style:italic;font-size:12px">Generating…</span>';
 
   try {
-    var platform = document.getElementById('createPlatform').value;
-    var type = document.getElementById('createType').value;
-    var tone = document.getElementById('createTone').value;
-
-    var trendTags = [];
-    if (_allTrends.length) {
-      var matched = _allTrends.filter(function(t) {
-        return t.topic.toLowerCase().split(' ').some(function(w) {
-          return topic.toLowerCase().includes(w) || w.length > 4 && topic.toLowerCase().includes(w.slice(0, 4));
-        });
-      });
-      matched.slice(0, 3).forEach(function(t) {
-        (t.hashtags || []).forEach(function(h) { if (trendTags.indexOf(h) === -1) trendTags.push(h); });
-      });
-    }
-    var trendCtx = trendTags.length ? '\nCurrently trending hashtags to include: ' + trendTags.slice(0, 6).join(', ') : '';
-
-    var prompt = 'Generate a complete content package.\n\nTopic: ' + topic
-      + '\nPlatform: ' + platform
-      + '\nContent type: ' + type
-      + '\nTone: ' + tone
-      + trendCtx
-      + '\n\nRespond ONLY with valid JSON, no markdown:\n{"hook":"","caption":"","hashtags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"],"post_time":"","tip":""}';
-
+    var nicheCtx = niche ? ' Niche: ' + niche + '.' : '';
+    var prompt = 'Content package for: "' + topic + '" | Platform: ' + platform + ' | Style: ' + _selectedStyle + nicheCtx
+      + '\n\nReply in this exact format:\nHOOK: [1-2 sentence stop-scroll hook]\nCAPTION: [full caption with emojis and CTA]\nOUTLINE:\n1. [0-3s hook]\n2. [setup]\n3. [core value]\n4. [proof]\n5. [CTA]\nHASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6 #tag7 #tag8\nBEST TIME: [day and time for ' + platform + ']';
     var reply = await callDijo(prompt, 'creator');
+    var lines = reply.split('\n');
 
-    var clean = reply.replace(/```json/g, '').replace(/```/g, '').trim();
-    var start = clean.indexOf('{'); var end = clean.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error('No JSON in response');
-    var parsed = JSON.parse(clean.slice(start, end + 1));
+    function extract(label) {
+      var idx = lines.findIndex(function(l) { return l.toLowerCase().startsWith(label.toLowerCase()); });
+      if (idx === -1) return '';
+      return lines[idx].replace(new RegExp('^' + label + '\\s*', 'i'), '').trim();
+    }
+    function extractBlock(label, nextLabel) {
+      var start = lines.findIndex(function(l) { return l.toLowerCase().startsWith(label.toLowerCase()); });
+      if (start === -1) return '';
+      var out = [];
+      for (var i = start + 1; i < lines.length; i++) {
+        if (nextLabel && lines[i].toLowerCase().startsWith(nextLabel.toLowerCase())) break;
+        if (lines[i].match(/^[A-Z ]+:/)) break;
+        out.push(lines[i]);
+      }
+      return out.join('\n').trim();
+    }
 
-    out.innerHTML =
-      '<div class="output-card">'
-      + '<div class="output-label">Hook</div>'
-      + '<div class="output-text" id="outHook">' + esc(parsed.hook || '') + '</div>'
-      + '<button class="output-copy" onclick="copyText(document.getElementById(\'outHook\').textContent)">Copy Hook</button>'
-      + '</div>'
-      + '<div class="output-card">'
-      + '<div class="output-label">Caption</div>'
-      + '<div class="output-text" id="outCaption">' + esc(parsed.caption || '').replace(/\n/g, '<br>') + '</div>'
-      + '<button class="output-copy" onclick="copyText(document.getElementById(\'outCaption\').innerText)">Copy Caption</button>'
-      + '</div>'
-      + '<div class="output-card">'
-      + '<div class="output-label">Hashtags</div>'
-      + '<div class="output-tags">'
-      + (parsed.hashtags || []).map(function(h) {
-          return '<span class="output-tag">' + esc(h.startsWith('#') ? h : '#' + h.replace('#', '')) + '</span>';
-        }).join('')
-      + '</div>'
-      + '</div>'
-      + '<div class="output-card" style="display:flex;gap:14px;">'
-      + '<div style="flex:1;"><div class="output-label">Best Post Time</div>'
-      + '<div class="output-text" style="font-weight:700;color:var(--gold);">' + esc(parsed.post_time || '') + '</div></div>'
-      + '<div style="flex:1;"><div class="output-label">Dijo\'s Tip</div>'
-      + '<div class="output-text">' + esc(parsed.tip || '') + '</div></div>'
-      + '</div>';
+    var hook = extract('HOOK:');
+    var caption = extract('CAPTION:');
+    var outline = extractBlock('OUTLINE:', 'HASHTAGS:');
+    var hashLine = extract('HASHTAGS:');
+    var bestTime = extract('BEST TIME:');
+    var tags = (hashLine.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []).concat(reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []);
+    var uniqueTags = []; var seen = {};
+    tags.forEach(function(t) { if (!seen[t]) { seen[t] = 1; uniqueTags.push(t); } });
 
-    showToast('✅ Content generated!');
+    document.getElementById('outHook').textContent = hook || lines[0] || '';
+    document.getElementById('outCaption').innerHTML = escH(caption || '').replace(/\n/g, '<br>');
+    document.getElementById('outOutline').innerHTML = escH(outline || '').replace(/\n/g, '<br>');
+    var he = document.getElementById('outHashtags'); he.innerHTML = '';
+    uniqueTags.slice(0, 10).forEach(function(t) { var s = document.createElement('span'); s.className = 'ob-tag'; s.textContent = t; he.appendChild(s); });
+    var tg = document.getElementById('outTiming'); tg.innerHTML = '';
+    ['Today', 'Thursday', 'Saturday'].forEach(function(d) {
+      var slot = document.createElement('div'); slot.className = 'timing-slot';
+      slot.innerHTML = '<div class="timing-day">' + d + '</div><div class="timing-time">' + (d === 'Today' && bestTime ? bestTime : '7–9pm') + '</div>';
+      tg.appendChild(slot);
+    });
+
+    var dsc = document.getElementById('dashLastScore'); if (dsc) { dsc.textContent = score.toFixed(1); dsc.style.color = scColor; }
+    var dsl = document.getElementById('dashLastLabel'); if (dsl) { dsl.textContent = verdict; dsl.style.color = scColor; }
+    toast('✅ Package generated!');
   } catch(e) {
-    out.innerHTML = '<div class="output-card" style="border-color:var(--red-dim);">'
-      + '<div class="output-label" style="color:var(--red);">Error</div>'
-      + '<div class="output-text" style="color:var(--text2);">Could not generate. Check connection and try again. (' + esc(e.message) + ')</div>'
-      + '</div>';
-    showToast('⚠️ Generation failed — try again');
+    errEl.classList.add('visible');
+    errEl.textContent = '⚠ ' + (e.message || 'Request failed');
+    toast('⚠️ Dijo unavailable — try again');
   }
-  btn.disabled = false; btn.textContent = '✨ Generate with Dijo';
+
+  loadEl.classList.remove('visible');
+  btn.disabled = false; btn.innerHTML = '⚡ Generate Full Package';
 }
 
-/* ── DIJO CHAT — uses real Dijo server ── */
-var _dijoHistory = [];
-
-async function sendDijo() {
-  var input = document.getElementById('dijoInput');
-  var val = input.value.trim(); if (!val) return;
-  var msgs = document.getElementById('dijoMsgs');
-
-  msgs.innerHTML += '<div class="chat-msg user"><div class="chat-av-sm you">Y</div><div class="chat-bubble you">' + esc(val) + '</div></div>';
-  input.value = '';
-  msgs.scrollTop = msgs.scrollHeight;
-
-  var typingId = 'typing-' + Date.now();
-  msgs.innerHTML += '<div class="chat-msg" id="' + typingId + '"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo" style="color:var(--text3);">Thinking…</div></div>';
-  msgs.scrollTop = msgs.scrollHeight;
-
-  var trendCtx = '';
-  if (_allTrends.length) {
-    trendCtx = 'Current top trends: ' + _allTrends.slice(0, 5).map(function(t) {
-      return t.topic + ' (' + t.score.toFixed(1) + ')';
-    }).join(', ') + '. ';
-  }
-
+/* ─────────────────────────────────────────────
+   AUDIENCE
+───────────────────────────────────────────── */
+async function loadAudience() {
+  var topic = document.getElementById('audTopic').value.trim();
+  if (!topic) { toast('⚠️ Enter a topic'); return; }
+  var btn = document.getElementById('audBtn');
+  btn.disabled = true; btn.textContent = 'Analysing…';
+  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
   try {
-    var reply = await callDijo(trendCtx + val, 'creator');
-    var el = document.getElementById(typingId); if (el) el.remove();
-    msgs.innerHTML += '<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">'
-      + esc(reply).replace(/\n/g, '<br>')
-      + '</div></div>';
-    msgs.scrollTop = msgs.scrollHeight;
-    _dijoHistory.push({ role: 'user', content: val }, { role: 'assistant', content: reply });
+    var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
+    var reply = await callDijo(prompt, 'creator');
+    var ages = extractAges(reply) || [{ label: '18–24', pct: 30 }, { label: '25–34', pct: 40 }, { label: '35–44', pct: 20 }, { label: '45+', pct: 10 }];
+    var pa = extractPA(reply) || { YouTube: 72, TikTok: 65, Instagram: 58, Google: 78 };
+    var html = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px">'
+      + '<h3 style="font-size:15px;font-weight:800;margin-bottom:8px">👥 ' + escH(topic) + ' — Audience</h3>'
+      + '<div style="font-size:13px;color:var(--text2);line-height:1.75">' + escH(reply.slice(0, 500)) + '</div></div>';
+    html += '<div class="aud-grid"><div class="aud-card"><div class="aud-head">Age Breakdown</div><div class="aud-body">';
+    ages.forEach(function(ag) {
+      html += '<div class="demo-bar"><span class="demo-label">' + ag.label + '</span>'
+        + '<div class="demo-track"><div class="demo-fill" style="width:' + ag.pct + '%"></div></div>'
+        + '<span class="demo-pct">' + ag.pct + '%</span></div>';
+    });
+    html += '</div></div><div class="aud-card"><div class="aud-head">Platform Affinity</div><div class="aud-body">';
+    [{ k: 'YouTube', cls: 'pa-yt' }, { k: 'TikTok', cls: 'pa-tt' }, { k: 'Instagram', cls: 'pa-ig' }, { k: 'Google', cls: 'pa-gt' }].forEach(function(p) {
+      html += '<div class="pa-item"><span class="pa-label">' + p.k + '</span>'
+        + '<div class="pa-track"><div class="pa-fill ' + p.cls + '" style="width:' + (pa[p.k] || 0) + '%"></div></div>'
+        + '<span class="pa-pct">' + (pa[p.k] || 0) + '%</span></div>';
+    });
+    html += '</div></div></div>';
+    document.getElementById('audOutput').innerHTML = html;
+    toast('✅ Analysis done!');
   } catch(e) {
-    var el2 = document.getElementById(typingId); if (el2) el2.remove();
-    msgs.innerHTML += '<div class="chat-msg"><div class="chat-av-sm dijo">D</div><div class="chat-bubble dijo">Sorry — couldn\'t connect right now. Try again in a moment.</div></div>';
-    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
+    toast('⚠️ Error — try again');
+  }
+  btn.disabled = false; btn.textContent = 'Analyse';
+}
+
+function extractAges(text) {
+  var groups = [];
+  var m = text.match(/(\d{2}[-–]\d{2,3}\+?)[^\d]{0,8}(\d{1,3})\s*%/g);
+  if (m && m.length >= 3) {
+    m.forEach(function(x) {
+      var p = x.match(/(\d{2}[-–]\d{2,3}\+?).*?(\d{1,3})/);
+      if (p) groups.push({ label: p[1], pct: Math.min(99, parseInt(p[2] || 50)) });
+    });
+    return groups.length >= 3 ? groups : null;
+  }
+  return null;
+}
+function extractPA(text) {
+  var tl = text.toLowerCase();
+  function p(n) { var m = new RegExp(n + '[^0-9]*(\\d{1,3})\\s*%', 'i').exec(tl); return m ? Math.min(100, parseInt(m[1])) : null; }
+  var yt = p('youtube'), tt = p('tiktok'), ig = p('instagram'), gt = p('google');
+  return (yt || tt || ig || gt) ? { YouTube: yt || 70, TikTok: tt || 65, Instagram: ig || 55, Google: gt || 75 } : null;
+}
+
+/* ─────────────────────────────────────────────
+   YOUTUBE
+───────────────────────────────────────────── */
+function initYouTube() {
+  try {
+    if (typeof YouTubeAuth === 'undefined') return;
+    var s = YouTubeAuth.getSession();
+    if (s) showYtConnected(s);
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('yt_connected') === '1') {
+      var s2 = YouTubeAuth.getSession();
+      if (s2) showYtConnected(s2);
+      history.replaceState({}, '', 'creator-studio.html');
+    }
+  } catch(e) {}
+}
+
+function showYtConnected(session) {
+  document.getElementById('ytDisconnected').style.display = 'none';
+  document.getElementById('ytConnected').style.display = 'block';
+  var dot = document.getElementById('ytSpDot'); if (dot) dot.className = 'sp-dot live';
+  var label = document.getElementById('ytSpLabel'); if (label) label.innerHTML = '<span style="color:var(--green)">Connected</span>';
+  var badge = document.getElementById('ytSidebarBadge'); if (badge) badge.style.display = 'inline-flex';
+  var ch = session.channel;
+  var name = (ch && ch.snippet && ch.snippet.title) ? ch.snippet.title : 'YouTube';
+  var handle = (ch && ch.snippet && ch.snippet.customUrl) ? ch.snippet.customUrl : '';
+  document.getElementById('ytChannelName').textContent = name;
+  document.getElementById('ytChannelHandle').textContent = handle;
+  var dv = document.getElementById('dashYtVal'); if (dv) { dv.textContent = name; dv.style.color = 'var(--green)'; }
+  if (ch && ch.snippet && ch.snippet.thumbnails && ch.snippet.thumbnails.default) {
+    var av = document.getElementById('ytAv');
+    av.innerHTML = '<img src="' + ch.snippet.thumbnails.default.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+  }
+  if (ch && ch.statistics) {
+    document.getElementById('ytSubs').textContent = fmtN(ch.statistics.subscriberCount);
+    document.getElementById('ytViews').textContent = fmtN(ch.statistics.viewCount);
+    document.getElementById('ytVcount').textContent = fmtN(ch.statistics.videoCount);
+    document.getElementById('evalSubs').textContent = fmtN(ch.statistics.subscriberCount);
+    document.getElementById('evalViews').textContent = fmtN(ch.statistics.viewCount);
+    document.getElementById('evalVcount').textContent = fmtN(ch.statistics.videoCount);
+  }
+  loadYtVideos(session.accessToken);
+}
+
+async function loadYtVideos(token) {
+  var el = document.getElementById('ytVideosList'); if (!el) return;
+  try {
+    var res = await YouTubeAuth.fetchVideos(token, 8);
+    var videos = (res && res.items) ? res.items : [];
+    if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
+    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">'
+      + videos.map(function(v) {
+        var sn = v.snippet || {}; var st = v.statistics || {};
+        var thumb = sn.thumbnails && sn.thumbnails.medium ? sn.thumbnails.medium.url : '';
+        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">▶️</div>')
+          + '<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sn.title || 'Untitled') + '</div>'
+          + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 ' + fmtN(st.viewCount) + ' · ❤️ ' + fmtN(st.likeCount) + ' · 💬 ' + fmtN(st.commentCount) + '</div></div></div>';
+      }).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
   }
 }
 
-function quickDijo(prompt) {
-  document.getElementById('dijoInput').value = prompt;
-  sendDijo();
+function disconnectYouTube() {
+  try { YouTubeAuth.clearSession(); } catch(e) {}
+  document.getElementById('ytDisconnected').style.display = 'block';
+  document.getElementById('ytConnected').style.display = 'none';
+  var dot = document.getElementById('ytSpDot'); if (dot) dot.className = 'sp-dot off';
+  var label = document.getElementById('ytSpLabel'); if (label) label.innerHTML = '<span class="connect-link" onclick="switchTab(\'youtube\',null)">Connect</span>';
+  var badge = document.getElementById('ytSidebarBadge'); if (badge) badge.style.display = 'none';
+  var dv = document.getElementById('dashYtVal'); if (dv) { dv.textContent = 'Not connected'; dv.style.color = ''; }
+  _evalChannelData = null; _evalScoreData = null;
+  document.getElementById('evalMain').style.display = 'none';
+  document.getElementById('evalNoAccount').style.display = 'block';
+  toast('👋 YouTube disconnected');
 }
 
-/* ── REFRESH BRIEFING ── */
-async function refreshBriefing() {
-  var el = document.getElementById('briefingText');
-  if (el) { el.style.opacity = '.4'; el.textContent = 'Refreshing…'; }
-  await loadDailyBriefing();
-  if (el) el.style.opacity = '1';
-  showToast('🧠 Briefing refreshed!');
+/* ─────────────────────────────────────────────
+   TIKTOK
+───────────────────────────────────────────── */
+function initTikTok() {
+  try {
+    if (typeof TikTokAuth === 'undefined') return;
+    var s = TikTokAuth.getSession();
+    if (s) showTtConnected(s);
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('tt_connected') === '1') {
+      var s2 = TikTokAuth.getSession();
+      if (s2) showTtConnected(s2);
+      history.replaceState({}, '', 'creator-studio.html');
+    }
+  } catch(e) {}
 }
 
-/* ── PLATFORM SESSION CHECKS ── */
-function checkPlatformSessions() {
+function showTtConnected(session) {
+  document.getElementById('ttDisconnected').style.display = 'none';
+  document.getElementById('ttConnected').style.display = 'block';
+  var dot = document.getElementById('ttSpDot'); if (dot) dot.className = 'sp-dot tt';
+  var badge = document.getElementById('ttSidebarBadge'); if (badge) badge.style.display = 'inline-flex';
+  var pill = document.getElementById('ttTopbarPill'); if (pill) pill.style.display = 'flex';
+  var profile = session.profile || {};
+  var name = profile.display_name || profile.username || 'TikTok';
+  document.getElementById('ttDisplayName').textContent = name;
+  var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = name; dv.style.color = 'var(--tt)'; }
+  var sub = document.getElementById('dashTtSub'); if (sub) sub.innerHTML = '';
+  var label = document.getElementById('ttSpLabel'); if (label) label.innerHTML = '<span style="color:var(--tt)">Connected</span>';
+  fetchTtProfile(session.accessToken);
+  loadTtVideos(session.accessToken);
+}
+
+async function fetchTtProfile(token) {
+  try {
+    var res = await fetch(DIJO + '/tiktok/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: token }) });
+    var data = await res.json();
+    var user = data && data.data && data.data.user ? data.data.user : null;
+    if (!user) return;
+    document.getElementById('ttDisplayName').textContent = user.display_name || 'TikTok';
+    document.getElementById('ttUsername').textContent = user.bio_description ? user.bio_description.slice(0, 40) : '';
+    document.getElementById('ttFollowers').textContent = fmtN(user.follower_count);
+    document.getElementById('ttFollowing').textContent = fmtN(user.following_count);
+    document.getElementById('ttLikes').textContent = fmtN(user.likes_count);
+    document.getElementById('ttVcount').textContent = fmtN(user.video_count);
+    var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = user.display_name || 'TikTok'; dv.style.color = 'var(--tt)'; }
+    if (user.avatar_url) {
+      var av = document.getElementById('ttAv');
+      av.innerHTML = '<img src="' + user.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""/>';
+    }
+    document.getElementById('evalSubs').textContent = fmtN(user.follower_count);
+    document.getElementById('evalSubs').style.color = 'var(--tt)';
+    document.getElementById('evalViews').textContent = fmtN(user.likes_count);
+    document.getElementById('evalVcount').textContent = fmtN(user.video_count);
+    _evalChannelData = { _platform: 'tiktok', snippet: { title: user.display_name || 'TikTok' }, statistics: { subscriberCount: user.follower_count || 0, viewCount: user.likes_count || 0, videoCount: user.video_count || 0 } };
+    try { localStorage.setItem('tt_profile', JSON.stringify(user)); } catch(e) {}
+  } catch(e) { console.warn('[TikTok] Profile fetch failed:', e.message); }
+}
+
+async function loadTtVideos(token) {
+  var el = document.getElementById('ttVideosList'); if (!el) return;
+  try {
+    var res = await fetch(DIJO + '/tiktok/videos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: token, max_count: 12 }) });
+    var data = await res.json();
+    var videos = (data && data.data && data.data.videos) ? data.data.videos : [];
+    if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
+    el.innerHTML = '<div class="video-grid">' + videos.map(function(v) {
+      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '🎵') + '</div>'
+        + '<div class="video-info"><div class="video-title">' + escH(v.title || v.video_description || 'Untitled') + '</div>'
+        + '<div class="video-stats">👁 ' + fmtN(v.view_count) + ' · ❤️ ' + fmtN(v.like_count) + ' · 💬 ' + fmtN(v.comment_count) + '</div></div></div>';
+    }).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
+  }
+}
+
+function disconnectTikTok() {
+  try { TikTokAuth.clearSession(); } catch(e) {}
+  document.getElementById('ttDisconnected').style.display = 'block';
+  document.getElementById('ttConnected').style.display = 'none';
+  var dot = document.getElementById('ttSpDot'); if (dot) dot.className = 'sp-dot off';
+  var badge = document.getElementById('ttSidebarBadge'); if (badge) badge.style.display = 'none';
+  var pill = document.getElementById('ttTopbarPill'); if (pill) pill.style.display = 'none';
+  var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = 'Not connected'; dv.style.color = ''; }
+  var sub = document.getElementById('dashTtSub'); if (sub) sub.innerHTML = '<span class="sc-link" onclick="switchTab(\'tiktok\',null)">Connect →</span>';
+  var label = document.getElementById('ttSpLabel'); if (label) label.innerHTML = '<span class="connect-link" onclick="switchTab(\'tiktok\',null)">Connect</span>';
+  _evalChannelData = null; _evalScoreData = null;
+  document.getElementById('evalMain').style.display = 'none';
+  document.getElementById('evalNoAccount').style.display = 'block';
+  toast('👋 TikTok disconnected — connect a new account');
+}
+
+/* ─────────────────────────────────────────────
+   EVALUATOR
+───────────────────────────────────────────── */
+function initEvaluator() {
   try {
     if (typeof YouTubeAuth !== 'undefined') {
       var s = YouTubeAuth.getSession();
-      if (s) {
-        var card = document.getElementById('yt-card');
-        var btn = document.getElementById('yt-btn-app');
-        var stxt = document.getElementById('yt-status-txt');
-        if (card) card.classList.add('connected');
-        var name = (s.channel && s.channel.snippet && s.channel.snippet.title) ? s.channel.snippet.title : 'YouTube';
-        if (stxt) stxt.textContent = 'Connected · ' + name;
-        if (btn) {
-          btn.className = 'cc-app-btn auto';
-          btn.textContent = 'Open Trends →';
-          btn.onclick = function() { showPanel('trendfeed', null); };
-        }
-      }
+      if (s && s.channel) { _evalChannelData = s.channel; showEvalMain(s.channel, 'youtube'); return; }
     }
-  } catch(e) {}
-
-  try {
     if (typeof TikTokAuth !== 'undefined') {
       var s2 = TikTokAuth.getSession();
-      if (s2) {
-        var card2 = document.getElementById('tt-card');
-        var btn2 = document.getElementById('tt-btn-app');
-        var stxt2 = document.getElementById('tt-status-txt');
-        if (card2) card2.classList.add('connected');
-        var profile = s2.profile || {};
-        var name2 = profile.display_name || profile.username || 'TikTok';
-        if (stxt2) stxt2.textContent = 'Connected · ' + name2;
-        if (btn2) {
-          btn2.className = 'cc-app-btn auto';
-          btn2.textContent = 'Connected ✓';
-        }
-      }
+      if (s2) { showEvalMainTt(s2); return; }
     }
   } catch(e) {}
 }
 
-/* ── COPY ── */
-function copyText(t) {
-  navigator.clipboard.writeText(t).then(function() { showToast('📋 Copied!'); }).catch(function() {
-    try { var el = document.createElement('textarea'); el.value = t; document.body.appendChild(el); el.select(); document.execCommand('copy'); el.remove(); showToast('📋 Copied!'); } catch(e) {}
-  });
+function showEvalMain(channel, platform) {
+  document.getElementById('evalNoAccount').style.display = 'none';
+  document.getElementById('evalLoading').style.display = 'none';
+  document.getElementById('evalMain').style.display = 'block';
+  var name = (channel && channel.snippet && channel.snippet.title) || 'Channel';
+  var handle = (channel && channel.snippet && channel.snippet.customUrl) || platform;
+  document.getElementById('evalChannelName').textContent = name;
+  document.getElementById('evalChannelHandle').textContent = handle;
+  if (channel && channel.snippet && channel.snippet.thumbnails && channel.snippet.thumbnails.default) {
+    document.getElementById('evalAv').innerHTML = '<img src="' + channel.snippet.thumbnails.default.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+  }
+  if (channel && channel.statistics) {
+    document.getElementById('evalSubs').textContent = fmtN(channel.statistics.subscriberCount);
+    document.getElementById('evalViews').textContent = fmtN(channel.statistics.viewCount);
+    document.getElementById('evalVcount').textContent = fmtN(channel.statistics.videoCount);
+  }
 }
 
-/* ── TOAST ── */
-function showToast(msg) {
-  var old = document.getElementById('igToast'); if (old) old.remove();
-  var t = document.createElement('div');
-  t.id = 'igToast';
-  t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeIn .3s ease;pointer-events:none;';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(function() { if (t.parentNode) t.remove(); }, 3200);
+function showEvalMainTt(session) {
+  document.getElementById('evalNoAccount').style.display = 'none';
+  document.getElementById('evalLoading').style.display = 'none';
+  document.getElementById('evalMain').style.display = 'block';
+  var profile = session.profile || {};
+  var name = profile.display_name || profile.username || 'TikTok';
+  document.getElementById('evalChannelName').textContent = name;
+  document.getElementById('evalChannelHandle').textContent = 'TikTok';
+  if (profile.avatar_url) document.getElementById('evalAv').innerHTML = '<img src="' + profile.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+  document.getElementById('evalSubs').textContent = fmtN(profile.follower_count);
+  document.getElementById('evalSubs').style.color = 'var(--tt)';
+  document.getElementById('evalViews').textContent = fmtN(profile.likes_count);
+  document.getElementById('evalVcount').textContent = fmtN(profile.video_count);
+  _evalChannelData = { _platform: 'tiktok', snippet: { title: name }, statistics: { subscriberCount: profile.follower_count || 0, viewCount: profile.likes_count || 0, videoCount: profile.video_count || 0 } };
 }
 
-/* ── INIT ── */
-window.addEventListener('load', function() {
-  checkAuth();
-  setDashDate();
-  loadDashboardData();
-  checkPlatformSessions();
-  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
+function computeScore(channel, videos) {
+  var st = (channel && channel.statistics) || {};
+  var subs = parseInt(st.subscriberCount || 0), views = parseInt(st.viewCount || 0), vcount = parseInt(st.videoCount || 0);
+  var aScore = subs >= 1000000 ? 20 : subs >= 100000 ? 16 : subs >= 10000 ? 12 : subs >= 1000 ? 8 : subs >= 100 ? 5 : 2;
+  var vpr = subs > 0 ? views / subs : 0;
+  var eScore = vpr >= 200 ? 20 : vpr >= 100 ? 16 : vpr >= 50 ? 12 : vpr >= 20 ? 8 : vpr >= 5 ? 5 : 2;
+  var cScore = vcount >= 200 ? 20 : vcount >= 100 ? 17 : vcount >= 50 ? 14 : vcount >= 20 ? 10 : vcount >= 5 ? 6 : 2;
+  var rScore = 10, lScore = 10;
+  if (videos && videos.length) {
+    var avg = videos.slice(0, 5).reduce(function(s, v) { return s + parseInt((v.statistics && v.statistics.viewCount) || 0); }, 0) / Math.min(5, videos.length);
+    var ratio = subs > 0 ? avg / subs : 0;
+    rScore = ratio >= .5 ? 20 : ratio >= .2 ? 17 : ratio >= .1 ? 13 : ratio >= .05 ? 9 : ratio >= .01 ? 5 : 2;
+    var tv = 0, tl = 0;
+    videos.slice(0, 5).forEach(function(v) { tv += parseInt((v.statistics && v.statistics.viewCount) || 0); tl += parseInt((v.statistics && v.statistics.likeCount) || 0); });
+    var lr = tv > 0 ? tl / tv : 0;
+    lScore = lr >= .06 ? 20 : lr >= .04 ? 17 : lr >= .02 ? 13 : lr >= .01 ? 9 : lr >= .005 ? 5 : 2;
+  }
+  var total = aScore + eScore + cScore + rScore + lScore;
+  return {
+    total: total,
+    ring: total >= 80 ? 'var(--green)' : total >= 65 ? 'var(--gold)' : total >= 50 ? 'var(--blue2)' : 'var(--text2)',
+    verdict: total >= 80 ? '🔥 Top Tier' : total >= 65 ? '⚡ Established' : total >= 50 ? '📈 Growing' : total >= 35 ? '🌱 Early Stage' : '🚀 Just Starting',
+    tier: total >= 80 ? 'Elite' : total >= 65 ? 'Established' : total >= 50 ? 'Growth Stage' : total >= 35 ? 'Emerging' : 'Beginner',
+    metrics: [{ l: 'Audience Size', s: aScore, m: 20 }, { l: 'Engagement', s: eScore, m: 20 }, { l: 'Content Volume', s: cScore, m: 20 }, { l: 'Recent Performance', s: rScore, m: 20 }, { l: 'Like Rate', s: lScore, m: 20 }],
+    raw: { subs: subs, views: views, vcount: vcount, vpr: vpr.toFixed(1) }
+  };
+}
+
+function renderScore(sd) {
+  var ring = document.getElementById('evalRing');
+  var circumference = 314.16;
+  ring.style.stroke = sd.ring;
+  setTimeout(function() { ring.style.strokeDashoffset = circumference - (sd.total / 100) * circumference; }, 80);
+  document.getElementById('evalScoreNum').textContent = sd.total;
+  document.getElementById('evalScoreNum').style.color = sd.ring;
+  document.getElementById('evalVerdict').textContent = sd.verdict;
+  document.getElementById('evalVerdict').style.color = sd.ring;
+  document.getElementById('evalTier').textContent = sd.tier + ' · ' + sd.total + '/100';
+  var barsEl = document.getElementById('evalBars');
+  barsEl.innerHTML = sd.metrics.map(function(m) {
+    var pct = Math.round((m.s / m.m) * 100);
+    return '<div class="eval-metric-row"><div class="eval-metric-label"><span>' + m.l + '</span><span>' + m.s + '/' + m.m + '</span></div>'
+      + '<div class="eval-metric-track"><div class="eval-metric-fill" style="width:0%" data-pct="' + pct + '%"></div></div></div>';
+  }).join('');
+  setTimeout(function() { barsEl.querySelectorAll('.eval-metric-fill').forEach(function(el) { el.style.width = el.dataset.pct; }); }, 200);
+}
+
+async function runEvaluation() {
+  document.getElementById('evalMain').style.display = 'none';
+  document.getElementById('evalNoAccount').style.display = 'none';
+  document.getElementById('evalLoading').style.display = 'block';
+  var ytS = null, ttS = null;
+  try { ytS = YouTubeAuth.getSession(); } catch(e) {}
+  try { ttS = TikTokAuth.getSession(); } catch(e) {}
+
+  if (ytS && ytS.channel) {
+    document.getElementById('evalLoadingMsg').textContent = 'Fetching your YouTube data…';
+    var videos = null;
+    try { var vr = await YouTubeAuth.fetchVideos(ytS.accessToken, 10); videos = vr && vr.items ? vr.items : []; } catch(e) {}
+    var sd = computeScore(ytS.channel, videos); _evalScoreData = sd; _evalChannelData = ytS.channel; _evalVideosData = videos;
+    document.getElementById('evalLoading').style.display = 'none';
+    showEvalMain(ytS.channel, 'youtube'); renderScore(sd);
+    await evalGetIntro(ytS.channel, videos, sd, 'YouTube');
+    toast('✅ Evaluation complete!');
+  } else if (ttS) {
+    document.getElementById('evalLoadingMsg').textContent = 'Fetching your TikTok data…';
+    var ttProfile = ttS.profile || {};
+    try { var pr = await fetch(DIJO + '/tiktok/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: ttS.accessToken }) }); var pd = await pr.json(); if (pd && pd.data && pd.data.user) ttProfile = pd.data.user; } catch(e) {}
+    var ttVids = [];
+    try { var vr2 = await fetch(DIJO + '/tiktok/videos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: ttS.accessToken, max_count: 10 }) }); var vd = await vr2.json(); ttVids = (vd && vd.data && vd.data.videos) || []; } catch(e) {}
+    var ttCh = { _platform: 'tiktok', snippet: { title: ttProfile.display_name || 'TikTok' }, statistics: { subscriberCount: ttProfile.follower_count || 0, viewCount: ttProfile.likes_count || 0, videoCount: ttProfile.video_count || 0 } };
+    var ttVidsForScore = ttVids.map(function(v) { return { statistics: { viewCount: v.view_count || 0, likeCount: v.like_count || 0 } }; });
+    var sd2 = computeScore(ttCh, ttVidsForScore); _evalScoreData = sd2; _evalChannelData = ttCh;
+    document.getElementById('evalLoading').style.display = 'none';
+    showEvalMainTt(ttS); renderScore(sd2);
+    await evalGetIntroTt(ttProfile, ttVids, sd2);
+    toast('✅ TikTok evaluation complete!');
+  } else {
+    document.getElementById('evalLoading').style.display = 'none';
+    document.getElementById('evalNoAccount').style.display = 'block';
+    toast('⚠️ Connect YouTube or TikTok first');
+  }
+}
+
+async function evalGetIntro(channel, videos, score, platform) {
+  var st = (channel && channel.statistics) || {};
+  var name = (channel && channel.snippet && channel.snippet.title) || 'Channel';
+  var topVids = videos ? videos.slice(0, 3).map(function(v, i) {
+    var s = v.statistics || {}; var t = (v.snippet && v.snippet.title) || 'Video';
+    return (i + 1) + '. "' + t + '" — ' + fmtN(s.viewCount) + ' views, ' + fmtN(s.likeCount) + ' likes';
+  }).join('\n') : 'N/A';
+  var prompt = 'Evaluate this ' + platform + ' channel in 3 sentences max. Then 3 bullet action points.\n\nChannel: ' + name + '\nSubscribers: ' + fmtN(st.subscriberCount) + '\nViews: ' + fmtN(st.viewCount) + '\nVideos: ' + (st.videoCount || 0) + '\nScore: ' + score.total + '/100 (' + score.tier + ')\nTop videos:\n' + topVids;
+  try {
+    var reply = await callDijo(prompt, 'creator');
+    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
+    _evalChatHistory = [{ role: 'dijo', content: reply }];
+  } catch(e) {
+    addEvalMsg('dijo', 'Score: <strong>' + score.total + '/100</strong> (' + score.tier + '). Ask me anything about your growth strategy.');
+  }
+}
+
+async function evalGetIntroTt(profile, videos, score) {
+  var name = profile.display_name || 'TikTok account';
+  var topVids = videos.slice(0, 3).map(function(v, i) { return (i + 1) + '. ' + fmtN(v.view_count) + ' views, ' + fmtN(v.like_count) + ' likes'; }).join('\n');
+  var prompt = 'Evaluate this TikTok account in 3 sentences max. Then 3 bullet action points.\n\nAccount: ' + name + '\nFollowers: ' + fmtN(profile.follower_count) + '\nLikes: ' + fmtN(profile.likes_count) + '\nVideos: ' + (profile.video_count || 0) + '\nScore: ' + score.total + '/100 (' + score.tier + ')\nTop videos:\n' + (topVids || 'N/A');
+  try {
+    var reply = await callDijo(prompt, 'creator');
+    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
+    _evalChatHistory = [{ role: 'dijo', content: reply }];
+  } catch(e) {
+    addEvalMsg('dijo', 'TikTok score: <strong>' + score.total + '/100</strong> (' + score.tier + '). Ask me anything.');
+  }
+}
+
+function evalSend() {
+  var i = document.getElementById('evalInput'); var msg = i.value.trim(); if (!msg) return;
+  i.value = ''; evalAsk(msg);
+  document.getElementById('evalChips').style.display = 'none';
+}
+
+async function evalAsk(question) {
+  addEvalMsg('user', escH(question));
+  var ctx = '';
+  if (_evalScoreData && _evalChannelData) {
+    var st = (_evalChannelData.statistics) || {}; var nm = (_evalChannelData.snippet && _evalChannelData.snippet.title) || 'channel';
+    ctx = '[' + nm + ': ' + fmtN(st.subscriberCount) + ' subs/followers, ' + fmtN(st.viewCount) + ' views, ' + (st.videoCount || 0) + ' videos, Score: ' + _evalScoreData.total + '/100 (' + _evalScoreData.tier + ')] ';
+  }
+  var typId = 'typ-' + Date.now();
+  var typEl = document.createElement('div'); typEl.className = 'eval-msg'; typEl.id = typId;
+  typEl.innerHTML = '<div class="eval-av">DJ</div><div class="eval-bubble dijo" style="color:var(--text3);font-style:italic"><span class="spinner spinner-gold" style="width:10px;height:10px;border-width:1.5px"></span> Thinking…</div>';
+  document.getElementById('evalMsgs').appendChild(typEl); scrollEval();
+  try {
+    var reply = await callDijo(ctx + question, 'creator');
+    var te = document.getElementById(typId); if (te) te.remove();
+    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
+    _evalChatHistory.push({ role: 'user', content: question }, { role: 'dijo', content: reply });
+  } catch(e) {
+    var te2 = document.getElementById(typId); if (te2) te2.remove();
+    addEvalMsg('dijo', 'Dijo unavailable — try again in a moment.');
+  }
+}
+
+function addEvalMsg(from, html) {
+  var msgs = document.getElementById('evalMsgs');
+  var div = document.createElement('div'); div.className = 'eval-msg' + (from === 'user' ? ' user' : '');
+  var avHtml = from === 'user' ? '<div class="eval-av you">You</div>' : '<div class="eval-av">DJ</div>';
+  div.innerHTML = avHtml + '<div class="eval-bubble ' + (from === 'user' ? 'user' : 'dijo') + '">' + html + '</div>';
+  msgs.appendChild(div); scrollEval();
+}
+function scrollEval() { var m = document.getElementById('evalMsgs'); if (m) m.scrollTop = m.scrollHeight; }
+function clearEvalChat() {
+  document.getElementById('evalMsgs').innerHTML = '<div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Chat cleared. What would you like to know?</div></div>';
+  _evalChatHistory = []; document.getElementById('evalChips').style.display = 'flex';
+}
+
+/* ─────────────────────────────────────────────
+   COPY HELPERS
+───────────────────────────────────────────── */
+function copyEl(id) {
+  var el = document.getElementById(id); if (!el) return;
+  navigator.clipboard.writeText(el.innerText || el.textContent).then(function() { toast('📋 Copied!'); }).catch(function() {});
+}
+function copyTags(id) {
+  var el = document.getElementById(id); if (!el) return;
+  var text = Array.from(el.querySelectorAll('.ob-tag')).map(function(s) { return s.textContent; }).join(' ');
+  navigator.clipboard.writeText(text).then(function() { toast('📋 Hashtags copied!'); }).catch(function() {});
+}
+
+/* ─────────────────────────────────────────────
+   TOAST
+───────────────────────────────────────────── */
+function toast(msg) {
+  var shelf = document.getElementById('toastShelf');
+  var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  shelf.appendChild(el);
+  setTimeout(function() { el.remove(); }, 3400);
+}
+
+/* ─────────────────────────────────────────────
+   KEYBOARD SHORTCUTS (sidebar items)
+───────────────────────────────────────────── */
+document.addEventListener('keydown', function(e) {
+  // Allow Enter/Space to trigger sidebar items (accessibility)
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('sb-item')) {
+    e.preventDefault();
+    e.target.click();
+  }
+  // Escape closes sidebar drawer on mobile
+  if (e.key === 'Escape') closeSidebar();
 });
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function() {});
-}
+/* ─────────────────────────────────────────────
+   SWIPE TO CLOSE SIDEBAR on mobile
+───────────────────────────────────────────── */
+(function() {
+  var startX = 0, startY = 0, isDragging = false;
+  var sidebar = null;
+
+  document.addEventListener('touchstart', function(e) {
+    sidebar = document.getElementById('sidebar');
+    if (!sidebar || !sidebar.classList.contains('open')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!isDragging) return;
+    var dx = e.touches[0].clientX - startX;
+    var dy = Math.abs(e.touches[0].clientY - startY);
+    // Only intercept horizontal swipes
+    if (dx < -30 && dy < 60) {
+      closeSidebar();
+      isDragging = false;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', function() { isDragging = false; }, { passive: true });
+})();
+
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
+window.addEventListener('load', async function() {
+  checkAuth();
+  initYouTube();
+  initTikTok();
+  await fetchTrends();
+  renderDashTrends();
+  renderDashOpps();
+  loadBriefing();
+  // Keep Dijo server warm
+  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
+});
