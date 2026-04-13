@@ -4,512 +4,1399 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>Creator Studio — ImpactGrid</title>
-<meta name="description" content="ImpactGrid Creator Studio — your daily content intelligence app."/>
+<meta name="description" content="ImpactGrid Creator Studio — intelligence dashboard, trend feed, AI generator, YouTube & TikTok analytics."/>
 <link rel="icon" href="favicon.ico"/>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#c97e08"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="ImpactGrid"/>
 <link rel="apple-touch-icon" href="logo.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="creator-studio.css"/>
+<style>
+:root{
+  --bg:#f0f3fa;--bg2:#e4e8f4;--bg3:#d8ddef;
+  --card:#ffffff;--card2:#f5f7fc;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#0d1017;--text2:#4a5068;--text3:#9099b8;
+  --gold:#c97e08;--gold2:#a86505;
+  --gold-dim:rgba(201,126,8,0.09);--gold-glo:rgba(201,126,8,0.22);
+  --blue:#2d6edb;--blue2:#1a52b0;--blue-dim:rgba(45,110,219,0.08);
+  --green:#0fa876;--green-dim:rgba(15,168,118,0.10);
+  --purple:#7c3aed;--red:#d94f3b;
+  --tt:#ff2d55;--yt:#ff6060;--ig:#e1306c;--gt:#4285f4;
+  --sidebar-w:240px;--topbar-h:60px;--tick-h:34px;
+}
+[data-theme="dark"]{
+  --bg:#07090f;--bg2:#0d1017;--bg3:#111520;
+  --card:#151a28;--card2:#1c2235;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eef0f6;--text2:#8a91a8;--text3:#4a5068;
+  --gold:#f0b429;--gold2:#ffd166;
+  --gold-dim:rgba(240,180,41,0.10);--gold-glo:rgba(240,180,41,0.22);
+  --blue:#4f8ef7;--blue2:#7eb3ff;--blue-dim:rgba(79,142,247,0.10);
+  --green:#2dd4a0;--green-dim:rgba(45,212,160,0.10);
+  --purple:#a855f7;--red:#f75f4f;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;border:none;background:none}
+h1,h2,h3,h4{font-family:'Syne',sans-serif;font-weight:800;line-height:1.1;letter-spacing:-.02em}
+
+/* TICKER */
+.ticker{flex-shrink:0;height:var(--tick-h);background:var(--gold-dim);border-bottom:1px solid var(--gold-glo);display:flex;align-items:center;overflow:hidden;z-index:100}
+.ticker-badge{flex-shrink:0;padding:0 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border-right:1px solid var(--gold-glo);height:100%;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite}
+.ticker-track{overflow:hidden;flex:1}
+.ticker-scroll{display:flex;align-items:center;animation:tickScroll 48s linear infinite;white-space:nowrap;padding-left:30px}
+.ticker-scroll:hover{animation-play-state:paused}
+.t-item{display:inline-flex;align-items:center;gap:8px;padding:0 32px;font-size:12px;font-weight:500;color:var(--text2);border-right:1px solid var(--border)}
+.t-tag{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;flex-shrink:0}
+.tag-live{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.25)}
+.tag-soon{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,.2)}
+@keyframes tickScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TOPBAR */
+.topbar{flex-shrink:0;height:var(--topbar-h);background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;z-index:100}
+.tb-logo{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;letter-spacing:-.03em}
+.tb-logo-img{width:26px;height:26px;object-fit:contain;border-radius:5px}
+.tb-logo-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff}
+.tb-div{width:1px;height:24px;background:var(--border2);flex-shrink:0}
+.tb-crumb{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-pill{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase}
+.tb-pill.green{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2)}
+.tb-pill.gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo)}
+.tb-pill.tt{background:rgba(255,45,85,.1);color:var(--tt);border:1px solid rgba(255,45,85,.2);display:none}
+.live-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:livePulse 1.5s infinite}
+@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
+.tb-theme{width:32px;height:32px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px}
+.tb-back{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--text2);padding:6px 12px;border-radius:8px;border:1px solid var(--border2);transition:all .2s}
+.tb-back:hover{border-color:var(--gold);color:var(--gold)}
+.tb-join{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff}
+[data-theme="dark"] .tb-join{color:#07090f}
+
+/* USER MENU */
+.user-btn{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:8px;background:var(--card);border:1px solid var(--border2);cursor:pointer;position:relative}
+.user-btn:hover{border-color:var(--gold)}
+.user-av{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;flex-shrink:0;font-family:'Syne',sans-serif}
+[data-theme="dark"] .user-av{color:#07090f}
+.user-name{font-size:12px;font-weight:600;color:var(--text);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-drop{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:6px;min-width:190px;box-shadow:0 12px 40px rgba(0,0,0,.15);z-index:1100;display:none;flex-direction:column;gap:2px}
+[data-theme="dark"] .user-drop{box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.user-drop.open{display:flex}
+.user-drop a,.user-drop button{padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-align:left;width:100%;display:block;transition:background .15s;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.user-drop a:hover,.user-drop button:hover{background:var(--bg2);color:var(--text)}
+.user-drop .dd-div{height:1px;background:var(--border);margin:3px 0}
+.user-drop .dd-email{padding:8px 12px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* SHELL */
+.shell{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+.sb-sec{padding:14px 12px 6px}
+.sb-sec-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);padding:0 6px;margin-bottom:6px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:1px solid transparent}
+.sb-item:hover{background:var(--bg2);color:var(--text)}
+.sb-item.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-glo);font-weight:700}
+.sb-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.sb-badge{margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:1px 6px;border-radius:4px}
+.sb-badge.live{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2)}
+.sb-badge.soon{background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(45,110,219,.2)}
+.sb-badge.tt{background:rgba(255,45,85,.12);color:var(--tt);border:1px solid rgba(255,45,85,.25)}
+.sb-platforms{padding:14px 12px;border-top:1px solid var(--border);margin-top:auto}
+.sb-plat-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.sb-plat-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)}
+.sb-plat-item:last-child{border-bottom:none}
+.sp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sp-dot.live{background:var(--green);animation:livePulse 2s infinite}
+.sp-dot.tt{background:var(--tt);animation:livePulse 2s infinite}
+.sp-dot.off{background:var(--text3)}
+.sp-dot.soon{background:var(--blue2);opacity:.5}
+.sp-name{display:flex;align-items:center;gap:6px}
+.connect-link{color:var(--blue2);text-decoration:underline;cursor:pointer;font-size:11px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* TABS */
+.tabs-bar{display:flex;gap:3px;padding:14px 20px 0;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;flex-shrink:0}
+.tab-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px 8px 0 0;font-size:13px;font-weight:500;color:var(--text2);border:1px solid transparent;border-bottom:none;cursor:pointer;transition:all .15s;background:transparent}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{background:var(--bg);color:var(--text);border-color:var(--border);border-bottom-color:var(--bg);margin-bottom:-1px}
+.tab-soon{opacity:.4;cursor:not-allowed}
+.soon-badge{font-family:'DM Mono',monospace;font-size:9px;background:var(--blue-dim);color:var(--blue2);border:1px solid rgba(79,142,247,.2);border-radius:4px;padding:1px 5px;margin-left:4px}
+
+/* CONTENT AREA */
+.content-area{flex:1;overflow-y:auto;background:var(--bg)}
+.content-area::-webkit-scrollbar{width:4px}
+.content-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.panel{display:none;padding:24px}
+.panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:800}
+.card-tag{font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.1em}
+.tag-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.25)}
+.tag-gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo)}
+.tag-tt{background:rgba(255,45,85,.12);color:var(--tt);border:1px solid rgba(255,45,85,.25)}
+.card-body{padding:20px}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.sc-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.sc-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:900;letter-spacing:-.03em;line-height:1}
+.sc-val-sm{font-size:14px;font-weight:700;line-height:1.4}
+.sc-delta{font-size:12px;margin-top:5px;color:var(--text3)}
+.sc-link{color:var(--blue2);text-decoration:underline;cursor:pointer}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 360px;gap:20px}
+
+/* TREND LIST */
+.trend-list{display:flex;flex-direction:column;gap:8px}
+.trend-item{display:grid;grid-template-columns:28px 1fr 80px 60px;gap:12px;align-items:center;padding:11px 14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.trend-item:hover{border-color:var(--gold-glo);background:var(--card2)}
+.ti-rank{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);text-align:center}
+.ti-info{min-width:0}
+.ti-topic{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.ti-bar-wrap{display:flex;flex-direction:column;gap:3px}
+.ti-bar{background:var(--bg3);border-radius:3px;height:4px;overflow:hidden}
+.ti-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px}
+.ti-score{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold)}
+.ti-plat{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.08em;text-align:center}
+.plat-gt{background:rgba(66,133,244,.12);color:var(--gt);border:1px solid rgba(66,133,244,.2)}
+.plat-yt{background:rgba(255,96,96,.12);color:var(--yt);border:1px solid rgba(255,96,96,.2)}
+.plat-tt{background:rgba(255,45,85,.12);color:var(--tt);border:1px solid rgba(255,45,85,.25)}
+
+/* OPPORTUNITY CARDS */
+.opp-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.opp-card:hover{border-color:var(--gold-glo);background:var(--card2)}
+.opp-card:last-child{margin-bottom:0}
+.opp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.opp-topic{font-size:13px;font-weight:700;flex:1;margin-right:8px}
+.opp-score{font-family:'Syne',sans-serif;font-size:18px;font-weight:900;color:var(--gold)}
+.opp-meta{font-size:11px;color:var(--text3);margin-bottom:6px}
+
+/* GENERATOR */
+.gen-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.gen-input-area{display:flex;flex-direction:column;gap:12px}
+.input-group{display:flex;flex-direction:column;gap:5px}
+.input-label{font-size:12px;font-weight:600;color:var(--text2)}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;transition:border-color .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--gold)}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.55}
+.style-chips{display:flex;flex-wrap:wrap;gap:6px}
+.style-chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;background:var(--card);border:1px solid var(--border2);color:var(--text2);cursor:pointer;transition:all .2s}
+.style-chip.active{background:var(--gold-dim);border-color:var(--gold-glo);color:var(--gold)}
+.gen-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:10px;font-size:14px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;width:100%;border:none;cursor:pointer;transition:all .2s}
+[data-theme="dark"] .gen-btn{color:#07090f}
+.gen-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glo)}
+.gen-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.score-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+.score-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.score-num{font-family:'Syne',sans-serif;font-size:44px;font-weight:900;color:var(--text3);letter-spacing:-.04em;line-height:1}
+.score-verdict{font-size:12px;color:var(--text3);margin-top:4px}
+.gen-output{display:flex;flex-direction:column;gap:10px}
+.output-block{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.ob-header{padding:8px 14px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
+.ob-body{padding:14px;font-size:13px;color:var(--text);line-height:1.7;min-height:48px}
+.ob-placeholder{color:var(--text3);font-style:italic}
+.copy-btn{font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer}
+.copy-btn:hover{color:var(--gold);border-color:var(--gold-glo)}
+.ob-tags{padding:14px;display:flex;flex-wrap:wrap;gap:5px;min-height:48px}
+.ob-tag{font-family:'DM Mono',monospace;font-size:11px;padding:3px 9px;border-radius:5px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo)}
+.timing-grid{padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.timing-slot{background:var(--bg3);border-radius:8px;padding:10px;text-align:center}
+.timing-day{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.timing-time{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--gold)}
+
+/* AUDIENCE */
+.aud-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.aud-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.aud-head{padding:10px 16px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.aud-body{padding:14px}
+.demo-bar{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.demo-bar:last-child{margin-bottom:0}
+.demo-label{font-size:12px;color:var(--text2);width:70px;flex-shrink:0}
+.demo-track{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.demo-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.demo-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);width:32px;text-align:right}
+.pa-item{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.pa-item:last-child{margin-bottom:0}
+.pa-label{font-size:12px;font-weight:600;width:80px;flex-shrink:0}
+.pa-track{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.pa-fill{height:100%;border-radius:4px}
+.pa-yt{background:linear-gradient(90deg,#ff4040,#ff6060)}
+.pa-tt{background:linear-gradient(90deg,#ff2d55,#ff6688)}
+.pa-ig{background:linear-gradient(90deg,#e1306c,#f06292)}
+.pa-gt{background:linear-gradient(90deg,#4285f4,#74aaf9)}
+.pa-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);width:32px;text-align:right}
+
+/* EVALUATOR */
+.eval-layout{display:grid;grid-template-columns:320px 1fr;gap:16px}
+.eval-chat{background:var(--card);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;height:540px}
+.eval-chat-head{padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.eval-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.eval-msgs::-webkit-scrollbar{width:3px}
+.eval-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.eval-msg{display:flex;gap:8px;align-items:flex-start}
+.eval-msg.user{flex-direction:row-reverse}
+.eval-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:900;color:#fff;flex-shrink:0}
+[data-theme="dark"] .eval-av{color:#07090f}
+.eval-av.you{background:var(--bg2);color:var(--text2);font-size:11px}
+.eval-bubble{padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.65;max-width:88%}
+.eval-bubble.dijo{background:var(--bg2);border:1px solid var(--border);border-bottom-left-radius:3px}
+.eval-bubble.user{background:var(--gold-dim);border:1px solid var(--gold-glo);border-bottom-right-radius:3px}
+.eval-chips{padding:10px 12px 0;border-top:1px solid var(--border);background:var(--bg2);display:flex;flex-wrap:wrap;gap:5px;flex-shrink:0}
+.eval-chip{padding:5px 11px;border-radius:16px;font-size:11px;font-weight:500;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);cursor:pointer}
+.eval-chip:hover{border-color:var(--gold);color:var(--gold)}
+.eval-input-row{padding:10px 12px 12px;background:var(--bg2);display:flex;gap:8px;flex-shrink:0}
+.eval-input{flex:1;padding:9px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif}
+.eval-input:focus{outline:none;border-color:var(--gold)}
+.eval-send{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+[data-theme="dark"] .eval-send{color:#07090f}
+.eval-metric-row{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.eval-metric-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text2)}
+.eval-metric-label span:last-child{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold)}
+.eval-metric-track{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.eval-metric-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width 1s}
+
+/* PLATFORM PANELS */
+.connect-wrap{max-width:520px;margin:0 auto;text-align:center;padding:48px 24px}
+.connect-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;border-radius:10px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;transition:all .2s}
+.connect-btn.yt{background:linear-gradient(135deg,#ff4040,#ff6060)}
+.connect-btn.tt{background:linear-gradient(135deg,#ff2d55,#ff6688)}
+.connect-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:28px;text-align:left}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+.feat-card h4{font-size:13px;font-weight:700;margin-bottom:4px}
+.feat-card p{font-size:12px;color:var(--text2);line-height:1.6}
+.connected-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.disconnect-btn{font-size:11px;color:var(--red);cursor:pointer;border:1px solid rgba(217,79,59,.3);background:rgba(217,79,59,.08);border-radius:6px;padding:3px 10px;font-family:'DM Mono',monospace}
+[data-theme="dark"] .disconnect-btn{color:#f75f4f;border-color:rgba(247,95,79,.3);background:rgba(247,95,79,.08)}
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.video-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .2s}
+.video-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.video-thumb{width:100%;aspect-ratio:9/16;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;overflow:hidden}
+.video-thumb img{width:100%;height:100%;object-fit:cover}
+.video-info{padding:9px}
+.video-title{font-size:11px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.video-stats{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+
+/* BRIEFING CARD */
+.briefing-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:20px}
+.briefing-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.briefing-av{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;font-family:'Syne',sans-serif;flex-shrink:0}
+[data-theme="dark"] .briefing-av{color:#07090f}
+.briefing-title{font-size:13px;font-weight:700}
+.briefing-meta{font-size:11px;color:var(--text3)}
+.briefing-text{font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:12px}
+.briefing-tags{display:flex;gap:6px;flex-wrap:wrap}
+.b-tag{font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:5px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo)}
+
+/* SPINNER */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.spinner-gold{border:2px solid var(--gold-dim);border-top-color:var(--gold)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast-shelf{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--text);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:12px;font-weight:600;animation:slideUp .3s ease,fadeOut .3s ease 2.8s forwards;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+@keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(-4px)}}
+
+/* MOBILE */
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150}
+.mob-overlay.open{display:block}
+.hamburger{display:none;flex-direction:column;gap:5px;padding:6px;cursor:pointer}
+.hamburger span{display:block;width:18px;height:2px;background:var(--text2);border-radius:2px}
+
+@media(max-width:1100px){.two-col,.gen-layout,.eval-layout,.aud-grid{grid-template-columns:1fr}}
+@media(max-width:860px){
+  .sidebar{position:fixed;top:0;bottom:0;left:0;transform:translateX(-100%);z-index:200;box-shadow:8px 0 40px rgba(0,0,0,.2);transition:transform .3s}
+  [data-theme="dark"] .sidebar{box-shadow:8px 0 40px rgba(0,0,0,.6)}
+  .sidebar.open{transform:translateX(0)}
+  .hamburger{display:flex}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .feat-grid{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .panel{padding:14px}
+  .stat-grid{grid-template-columns:1fr}
+  .tabs-bar{padding:10px 14px 0}
+}
+</style>
 </head>
 <body>
 
-<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
+  <div class="ticker-track">
+    <div class="ticker-scroll" id="tickerScroll">
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
+      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
+      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
+    </div>
+  </div>
+</div>
 
-<div class="app">
-
-  <!-- ═══════════════ SIDEBAR ═══════════════ -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sb-head">
-      <div class="sb-logo">
-        <img src="logo.png" class="sb-logo-img" alt="ImpactGrid"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-        <div class="sb-logo-mark">IG</div>
-        <span>ImpactGrid</span>
+<!-- TOPBAR -->
+<div class="topbar">
+  <button class="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
+  <a href="index.html" class="tb-logo">
+    <img src="logo.png" class="tb-logo-img" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+    <div class="tb-logo-mark" style="display:none">IG</div>
+    ImpactGrid
+  </a>
+  <div class="tb-div"></div>
+  <span class="tb-crumb">Creator Studio</span>
+  <div class="tb-right">
+    <div class="tb-pill green"><span class="live-dot"></span>Google Trends</div>
+    <div class="tb-pill gold"><span class="live-dot"></span>Dijo AI</div>
+    <div class="tb-pill tt" id="ttTopbarPill"><span class="live-dot"></span>TikTok</div>
+    <button class="tb-theme" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    <div id="navGuest" style="display:flex;align-items:center;gap:8px">
+      <a href="login.html" style="font-size:12px;font-weight:500;color:var(--text2);padding:6px 12px;border-radius:8px;border:1px solid var(--border2)">Login</a>
+      <a href="join.html" class="tb-join">Join Free</a>
+    </div>
+    <div id="navUser" style="display:none;position:relative">
+      <button class="user-btn" onclick="toggleUserMenu()">
+        <div class="user-av" id="userAv">?</div>
+        <span class="user-name" id="userName">Account</span>
+        <span style="font-size:9px;color:var(--text3)">▾</span>
+      </button>
+      <div class="user-drop" id="userDrop">
+        <div class="dd-email" id="userEmail"></div>
+        <div class="dd-div"></div>
+        <a href="dashboard.html">My Dashboard</a>
+        <a href="join.html">Profile</a>
+        <div class="dd-div"></div>
+        <button onclick="igSignOut()">Sign Out</button>
       </div>
     </div>
-    <nav class="sb-nav">
-      <div class="sb-label">Main</div>
-      <div class="sb-item active" onclick="showPanel('dashboard',this)"><span class="sb-icon">🏠</span>Dashboard</div>
-      <div class="sb-item" onclick="showPanel('trendfeed',this)"><span class="sb-icon">📡</span>Trend Feed<span class="sb-badge">Live</span></div>
-      <div class="sb-item" onclick="showPanel('create',this)"><span class="sb-icon">✍️</span>Create</div>
-      <!-- FIX 1: carousel.html → carousel-studio.html -->
+    <a href="index.html" class="tb-back">← Home</a>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-sec">
+      <div class="sb-sec-title">Intelligence</div>
+      <div class="sb-item active" onclick="switchTab('dashboard',this)"><span class="sb-icon">📊</span>Dashboard<span class="sb-badge live">Live</span></div>
+      <div class="sb-item" onclick="switchTab('trends',this)"><span class="sb-icon">📡</span>Trend Feed</div>
+      <div class="sb-item" onclick="switchTab('generator',this)"><span class="sb-icon">✍️</span>AI Generator</div>
+      <div class="sb-item" onclick="switchTab('audience',this)"><span class="sb-icon">👥</span>Audience</div>
+      <div class="sb-item" onclick="switchTab('evaluator',this)"><span class="sb-icon">🎯</span>Dijo Evaluator<span class="sb-badge live">AI</span></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-title">Create</div>
       <div class="sb-item" onclick="window.location.href='carousel-studio.html'"><span class="sb-icon">🎨</span>Carousel Studio</div>
-      <div class="sb-label">Planning</div>
-      <div class="sb-item" onclick="showPanel('contentcalendar',this);initCalendar()"><span class="sb-icon">📅</span>Content Calendar</div>
-      <div class="sb-item" onclick="showPanel('portfolio',this)"><span class="sb-icon">🌐</span>Portfolio</div>
-      <div class="sb-item" onclick="showPanel('dijo',this)"><span class="sb-icon">🤖</span>Dijo AI</div>
-      <div class="sb-label">Grow</div>
-      <div class="sb-item" onclick="showPanel('opportunities',this)"><span class="sb-icon">💼</span>Opportunities</div>
-      <div class="sb-item" onclick="showPanel('connect',this)"><span class="sb-icon">🔗</span>Connect Platforms</div>
-      <div class="sb-label">Account</div>
-      <div class="sb-item" onclick="showPanel('settings',this)"><span class="sb-icon">⚙️</span>Settings</div>
-    </nav>
-    <div class="sb-bottom">
-      <div id="sbUserWrap" style="display:none;">
-        <div class="sb-user" onclick="toggleSbDrop()">
-          <div class="sb-av" id="sbAv">?</div>
-          <div class="sb-user-info">
-            <div class="sb-user-name" id="sbName">Creator</div>
-            <div class="sb-user-role">Creator Account</div>
-          </div>
-          <span style="font-size:9px;color:var(--text3);">▲</span>
-          <div class="sb-user-drop" id="sbDrop">
-            <div style="padding:7px 10px;font-size:10px;color:var(--text3);font-family:var(--fm);" id="sbEmail"></div>
-            <div class="dd-div"></div>
-            <a href="index.html">🏠 Home</a>
-            <div class="dd-div"></div>
-            <button onclick="igOut()">↩ Sign Out</button>
-          </div>
-        </div>
-      </div>
-      <div id="sbGuestWrap" class="sb-guest">
-        <a href="login.html" class="sb-btn-login">Login</a>
-        <a href="join.html" class="sb-btn-join">Join Free →</a>
-      </div>
-      <div style="padding:6px 8px 0;">
-        <button onclick="toggleTheme()" style="width:100%;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid var(--border2);color:var(--text2);display:flex;align-items:center;gap:7px;" id="sbThemeBtn">
-          <span>🌙</span><span>Dark Mode</span>
-        </button>
-      </div>
+      <div class="sb-item" onclick="window.location.href='portfolio-studio.html'"><span class="sb-icon">🌐</span>Portfolio Studio</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-title">Platforms</div>
+      <div class="sb-item" onclick="switchTab('youtube',this)"><span class="sb-icon">▶️</span>YouTube<span class="sb-badge live" id="ytSidebarBadge" style="display:none">Live</span></div>
+      <div class="sb-item" onclick="switchTab('tiktok',this)"><span class="sb-icon">🎵</span>TikTok<span class="sb-badge tt" id="ttSidebarBadge" style="display:none">Live</span></div>
+      <div class="sb-item" style="opacity:.45;cursor:not-allowed"><span class="sb-icon">📸</span>Instagram<span class="sb-badge soon">Soon</span></div>
+    </div>
+    <div class="sb-platforms">
+      <div class="sb-plat-title">Platform Status</div>
+      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Dijo AI</span><span style="font-size:11px;color:var(--green)">Active</span></div>
+      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Google Trends</span><span style="font-size:11px;color:var(--green)">Live</span></div>
+      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ytSpDot"></span>YouTube</span><span style="font-size:11px" id="ytSpLabel"><span class="connect-link" onclick="switchTab('youtube',null)">Connect</span></span></div>
+      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ttSpDot"></span>TikTok</span><span style="font-size:11px" id="ttSpLabel"><span class="connect-link" onclick="switchTab('tiktok',null)">Connect</span></span></div>
+      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot soon"></span>Instagram</span><span style="font-size:11px;color:var(--blue2)">Coming Soon</span></div>
     </div>
   </aside>
 
-  <!-- ═══════════════ MAIN ═══════════════ -->
+  <!-- MAIN -->
   <div class="main">
-    <div class="topbar">
-      <button class="topbar-hamburger" id="hamburger" onclick="openSidebar()">
-        <span></span><span></span><span></span>
-      </button>
-      <div class="topbar-title" id="topbarTitle">Dashboard</div>
-      <div class="topbar-right">
-        <div class="topbar-live"><div class="topbar-live-dot"></div>Live</div>
-        <button class="topbar-theme" onclick="toggleTheme()" id="topThemeBtn">🌙</button>
-      </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" id="tab-dashboard" onclick="switchTab('dashboard',null)">📊 Dashboard</button>
+      <button class="tab-btn" id="tab-trends" onclick="switchTab('trends',null)">📡 Trend Feed</button>
+      <button class="tab-btn" id="tab-generator" onclick="switchTab('generator',null)">✍️ Generator</button>
+      <button class="tab-btn" id="tab-audience" onclick="switchTab('audience',null)">👥 Audience</button>
+      <button class="tab-btn" id="tab-evaluator" onclick="switchTab('evaluator',null)">🎯 Evaluator</button>
+      <button class="tab-btn" id="tab-youtube" onclick="switchTab('youtube',null)">▶️ YouTube</button>
+      <button class="tab-btn" id="tab-tiktok" onclick="switchTab('tiktok',null)">🎵 TikTok</button>
+      <button class="tab-btn tab-soon">📸 Instagram<span class="soon-badge">Soon</span></button>
     </div>
 
-    <div class="content" id="contentArea">
+    <div class="content-area" id="contentArea">
 
-      <!-- ══ DASHBOARD ══ -->
+      <!-- DASHBOARD -->
       <div class="panel active" id="panel-dashboard">
-        <div class="dash-greeting">
-          <h2 id="dashGreeting">Good morning, Creator 👋</h2>
-          <p id="dashDate">Loading today's intelligence…</p>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="sc-label">Dijo AI</div>
+            <div class="sc-val" style="font-size:16px;color:var(--gold)">Active</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">Last Trend Score</div>
+            <div class="sc-val" id="dashLastScore" style="color:var(--text3)">—</div>
+            <div class="sc-delta" id="dashLastLabel">Generate a topic to score</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">YouTube</div>
+            <div class="sc-val-sm" id="dashYtVal" style="color:var(--text2)">Not connected</div>
+            <div class="sc-delta"><span class="sc-link" onclick="switchTab('youtube',null)">Connect →</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">TikTok</div>
+            <div class="sc-val-sm" id="dashTtVal" style="color:var(--text2)">Not connected</div>
+            <div class="sc-delta" id="dashTtSub"><span class="sc-link" onclick="switchTab('tiktok',null)">Connect →</span></div>
+          </div>
         </div>
-        <!-- FIX 2: stat cards cleared — JS will populate from live data -->
-        <div class="dash-grid" id="dashStatGrid">
-          <div class="dash-stat">
-            <div class="dash-stat-label">Top Trend Score</div>
-            <div class="dash-stat-val" id="dashStatScore" style="color:var(--green);">—</div>
-            <div class="dash-stat-sub" id="dashStatScoreSub">Loading…</div>
-          </div>
-          <div class="dash-stat">
-            <div class="dash-stat-label">Trends Today</div>
-            <div class="dash-stat-val" id="dashStatCount">—</div>
-            <div class="dash-stat-sub">UK + Global signals</div>
-          </div>
-          <div class="dash-stat">
-            <div class="dash-stat-label">Best Platform</div>
-            <div class="dash-stat-val" id="dashStatPlatform" style="font-size:20px;color:var(--gold);">—</div>
-            <div class="dash-stat-sub">Most active right now</div>
-          </div>
-        </div>
+
         <div class="briefing-card">
-          <div class="briefing-header">
+          <div class="briefing-head">
             <div class="briefing-av">D</div>
             <div>
               <div class="briefing-title">Dijo Daily Briefing</div>
               <div class="briefing-meta" id="briefingDate">Loading…</div>
             </div>
-            <button onclick="refreshBriefing()" style="margin-left:auto;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);">Refresh</button>
+            <button onclick="loadBriefing(true)" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Refresh</button>
           </div>
-          <p class="briefing-text" id="briefingText">Loading today's briefing from Dijo…</p>
-          <div class="briefing-scores" id="briefingScores"></div>
+          <p class="briefing-text" id="briefingText"><span class="spinner spinner-gold"></span> Loading briefing…</p>
+          <div class="briefing-tags" id="briefingTags"></div>
         </div>
-        <!-- FIX 3: opps-row cleared — JS will populate from live trend data -->
-        <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">⚡ Top Opportunities</div>
-        <div class="opps-row" id="dashOpps">
-          <div style="padding:14px;color:var(--text3);font-size:12px;">Loading opportunities…</div>
-        </div>
-        <div style="font-family:var(--fm);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Quick Actions</div>
-        <div class="quick-actions">
-          <div class="qa-btn" onclick="showPanel('trendfeed',document.querySelector('[onclick*=trendfeed]'))"><div class="qa-icon">📡</div><div class="qa-label">View Trends</div><div class="qa-desc">See what's hot today</div></div>
-          <div class="qa-btn" onclick="showPanel('create',document.querySelector('[onclick*=create]'))"><div class="qa-icon">✍️</div><div class="qa-label">Generate Content</div><div class="qa-desc">Hook, caption, hashtags</div></div>
-          <div class="qa-btn" onclick="showPanel('contentcalendar',document.querySelector('[onclick*=contentcalendar]'));initCalendar()"><div class="qa-icon">📅</div><div class="qa-label">Content Calendar</div><div class="qa-desc">Plan your week</div></div>
-          <!-- FIX 1: carousel.html → carousel-studio.html -->
-          <div class="qa-btn" onclick="window.location.href='carousel-studio.html'"><div class="qa-icon">🎨</div><div class="qa-label">Carousel Studio</div><div class="qa-desc">Build carousel slides</div></div>
-        </div>
-      </div>
 
-      <!-- ══ TREND FEED ══ -->
-      <div class="panel" id="panel-trendfeed">
-        <div class="feed-head">
-          <h2>Trend Feed</h2>
-          <div style="font-family:var(--fm);font-size:11px;color:var(--text3);">UK · Real Google Trends</div>
-          <button class="feed-refresh" style="margin-left:auto;" onclick="loadTrendFeed()">🔄 Refresh</button>
-        </div>
-        <!-- FIX 2: hardcoded trend cards cleared — JS populates via loadTrendFeed() -->
-        <div id="trendFeedList">
-          <div style="padding:20px;color:var(--text3);font-size:13px;">Loading live trends…</div>
-        </div>
-      </div>
-
-      <!-- ══ CREATE ══ -->
-      <div class="panel" id="panel-create">
-        <h2 style="margin-bottom:20px;font-size:20px;">Create Content</h2>
-        <div class="create-layout">
-          <div class="create-form">
-            <h3>What do you want to create?</h3>
-            <div class="form-group"><label class="form-label">Topic</label><input class="form-input" id="createTopic" placeholder="e.g. Viking myths, UK Street Style…"/></div>
-            <div class="form-group"><label class="form-label">Platform</label><select class="form-select" id="createPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option></select></div>
-            <div class="form-group"><label class="form-label">Content Type</label><select class="form-select" id="createType"><option>Short / Reel</option><option>Long-form video</option><option>Carousel post</option><option>Story / Status</option></select></div>
-            <div class="form-group"><label class="form-label">Tone</label><select class="form-select" id="createTone"><option>Educational</option><option>Entertaining</option><option>Inspirational</option><option>Controversial / Hot take</option></select></div>
-            <button class="btn-generate" id="generateBtn" onclick="generateContent()">✨ Generate with Dijo</button>
-          </div>
-          <div class="create-output" id="createOutput">
-            <div class="output-empty">
-              <div class="output-empty-icon">✨</div>
-              <p>Fill in the form and hit generate.<br/>Dijo will write your content package.</p>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📡 Top Trends</span>
+              <span class="card-tag tag-green">Live · Google Trends</span>
+            </div>
+            <div class="card-body">
+              <div class="trend-list" id="dashTrendList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner spinner-gold"></span> Fetching trends…</div></div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- ══ CONTENT CALENDAR ══ -->
-      <div class="panel" id="panel-contentcalendar">
-        <div class="cal-header">
-          <h2>Content Calendar</h2>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button class="cal-nav-btn" onclick="calPrevWeek()">←</button>
-            <span class="cal-week-label" id="calWeekLabel">Loading…</span>
-            <button class="cal-nav-btn" onclick="calNextWeek()">→</button>
-            <button onclick="calGoToday()" style="padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);">Today</button>
-          </div>
-          <button class="cal-auto-btn" id="calAutoBtn" onclick="calAutoFill()">
-            <div class="spinner" style="display:none;width:12px;height:12px;border-width:1.5px;" id="calAutoSpinner"></div>
-            ✨ Auto-Fill with Dijo
-          </button>
-        </div>
-        <div class="cal-plat-row">
-          <span style="font-family:var(--fm);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;">Filter:</span>
-          <button class="cal-plat-btn active-all" onclick="calSetFilter('all',this)">All</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('yt',this)">▶️ YouTube</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('tt',this)">🎵 TikTok</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('ig',this)">📸 Instagram</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('li',this)">💼 LinkedIn</button>
-        </div>
-        <div class="cal-week-grid" id="calWeekGrid"></div>
-        <div class="cal-ideas-row">
-          <div class="cal-ideas-bank">
-            <h3>💡 Ideas Bank — click to add</h3>
-            <div id="calIdeasBank"></div>
-          </div>
-          <div class="cal-stats-card">
-            <h3>📊 This Week</h3>
-            <div class="cal-stat-row"><span class="cal-stat-label">Total posts</span><span class="cal-stat-val" id="calStatTotal">0</span></div>
-            <div class="cal-stat-row"><span class="cal-stat-label">▶️ YouTube</span><span class="cal-stat-val" id="calStatYt">0</span></div>
-            <div class="cal-stat-row"><span class="cal-stat-label">🎵 TikTok</span><span class="cal-stat-val" id="calStatTt">0</span></div>
-            <div class="cal-stat-row"><span class="cal-stat-label">📸 Instagram</span><span class="cal-stat-val" id="calStatIg">0</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ PORTFOLIO ══ -->
-      <div class="panel" id="panel-portfolio">
-        <div id="pfSetup" class="pf-setup show">
-          <div class="portfolio-header">
-            <h2>Portfolio</h2>
-            <button class="pf-header-btn" onclick="startPortfolioBuilder()">✨ Build My Portfolio</button>
-          </div>
-          <div class="carousel-launch-card" onclick="startPortfolioBuilder()">
-            <div class="clc-icon">🌐</div>
-            <div class="clc-text">
-              <h3>Your Creator Portfolio</h3>
-              <p>Build a beautiful link-in-bio page in minutes. Add your platforms, showcase your best content, and share one link that does everything — optimised for Google too.</p>
-              <div class="clc-features">
-                <span class="clc-feat">Link in bio</span>
-                <span class="clc-feat">Platform stats</span>
-                <span class="clc-feat">Media kit</span>
-                <span class="clc-feat">Brand contact</span>
-                <span class="clc-feat">SEO optimised</span>
-                <span class="clc-feat">AI-written bio</span>
-              </div>
-              <br/>
-              <span class="clc-btn">Get Started →</span>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">⚡ Top Opportunities</span><span class="card-tag tag-gold">Highest Scored</span></div>
+              <div class="card-body" id="dashOppList"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
             </div>
-          </div>
-          <div class="pf-setup-steps">
-            <div class="pf-step-card"><div class="pf-step-num">STEP 01</div><div class="pf-step-title">Fill Your Profile</div><div class="pf-step-desc">Add your name, bio, platforms, and follower counts. Takes 2 minutes.</div></div>
-            <div class="pf-step-card"><div class="pf-step-num">STEP 02</div><div class="pf-step-title">Pick a Theme</div><div class="pf-step-desc">Choose from Dark Gold, Deep Navy, Clean White, or Forest. Matches your brand.</div></div>
-            <div class="pf-step-card"><div class="pf-step-num">STEP 03</div><div class="pf-step-title">Add Your Links + Rates</div><div class="pf-step-desc">Drop in your socials and optional rate card for brands.</div></div>
-            <div class="pf-step-card"><div class="pf-step-num">STEP 04</div><div class="pf-step-title">Publish & Share</div><div class="pf-step-desc">Dijo writes your SEO bio. Copy your link and add it to every profile. Done.</div></div>
-          </div>
-        </div>
-        <div id="pfBuilder" class="pf-builder">
-          <div class="portfolio-header" style="grid-column:1/-1;">
-            <h2>Portfolio Builder</h2>
-            <button class="pf-header-btn secondary" onclick="resetPortfolio()">← Back</button>
-            <button class="pf-header-btn" onclick="publishPortfolio()">🚀 Publish</button>
-          </div>
-          <div class="pf-form-card">
-            <div class="pf-section">
-              <div class="pf-section-title">Profile</div>
-              <div class="pf-row">
-                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Display Name</label><input class="form-input" id="pfName" placeholder="Your Name" oninput="updatePreview()"/></div>
-                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Niche / Title</label><input class="form-input" id="pfNiche" placeholder="Creator · Finance" oninput="updatePreview()"/></div>
-              </div>
-              <div class="form-group" style="margin-top:12px;">
-                <label class="form-label">Bio</label>
-                <textarea class="pf-form-textarea" id="pfBio" placeholder="One line about what you create and who it's for…" oninput="updatePreview()"></textarea>
-                <div class="pf-ai-bio-row">
-                  <button class="pf-ai-btn" id="pfAiBioBtn" onclick="generateAIBio()">✨ Write with Dijo</button>
-                  <span style="font-size:11px;color:var(--text3);padding-top:6px;">Dijo will write an SEO-optimised bio based on your details</span>
+            <div class="card">
+              <div class="card-header"><span class="card-title">✍️ Quick Generate</span><span style="font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo)">Dijo AI</span></div>
+              <div class="card-body">
+                <input type="text" class="form-input" id="quickTopic" placeholder="Enter a topic…" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')quickGenerate()"/>
+                <button class="gen-btn" onclick="quickGenerate()" style="padding:10px">Generate with Dijo</button>
+                <div id="quickOutput" style="display:none;flex-direction:column;gap:8px;margin-top:12px">
+                  <div class="output-block"><div class="ob-header"><span>Hook</span><button class="copy-btn" onclick="copyEl('quickHook')">Copy</button></div><div class="ob-body" id="quickHook"></div></div>
+                  <div class="output-block"><div class="ob-header"><span>Caption</span><button class="copy-btn" onclick="copyEl('quickCaption')">Copy</button></div><div class="ob-body" id="quickCaption"></div></div>
+                  <div class="output-block"><div class="ob-header"><span>Hashtags</span><button class="copy-btn" onclick="copyTags('quickTags')">Copy</button></div><div class="ob-tags" id="quickTags"></div></div>
                 </div>
               </div>
             </div>
-            <div class="pf-section">
-              <div class="pf-section-title">Platforms</div>
-              <div class="pf-platforms" id="pfPlatforms">
-                <button class="pf-plat-btn" onclick="togglePlat(this,'tiktok','🎵','TikTok')"><span class="pf-plat-icon">🎵</span>TikTok</button>
-                <button class="pf-plat-btn" onclick="togglePlat(this,'youtube','▶️','YouTube')"><span class="pf-plat-icon">▶️</span>YouTube</button>
-                <button class="pf-plat-btn" onclick="togglePlat(this,'instagram','📸','Instagram')"><span class="pf-plat-icon">📸</span>Instagram</button>
-                <button class="pf-plat-btn" onclick="togglePlat(this,'linkedin','💼','LinkedIn')"><span class="pf-plat-icon">💼</span>LinkedIn</button>
-                <button class="pf-plat-btn" onclick="togglePlat(this,'twitter','𝕏','Twitter/X')"><span class="pf-plat-icon">𝕏</span>Twitter/X</button>
-              </div>
-            </div>
-            <div class="pf-section">
-              <div class="pf-section-title">Social Accounts <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — enter manually</span></div>
-              <div class="pf-social-row"><span class="pf-social-icon">📸</span><span class="pf-social-label">Instagram</span><input class="form-input" id="pfInstagram" placeholder="@yourusername or URL" style="flex:1;" oninput="updatePreview()"/></div>
-              <div class="pf-social-row"><span class="pf-social-icon">💼</span><span class="pf-social-label">LinkedIn</span><input class="form-input" id="pfLinkedIn" placeholder="linkedin.com/in/yourname" style="flex:1;" oninput="updatePreview()"/></div>
-              <p class="pf-social-note">ℹ️ Enter your handles manually. These are shown on your portfolio so brands can find you.</p>
-            </div>
-            <div class="pf-section">
-              <div class="pf-section-title">Stats <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — optional, shown to brands</span></div>
-              <div class="pf-row">
-                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Total Followers</label><input class="form-input" id="pfFollowers" placeholder="e.g. 24.5K" oninput="updatePreview()"/></div>
-                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Avg Engagement</label><input class="form-input" id="pfEngagement" placeholder="e.g. 8.4%" oninput="updatePreview()"/></div>
-              </div>
-              <div class="form-group" style="margin-top:12px;margin-bottom:0;"><label class="form-label">Views / Month</label><input class="form-input" id="pfViews" placeholder="e.g. 1.2M" oninput="updatePreview()"/></div>
-            </div>
-            <div class="pf-section">
-              <div class="pf-section-title">Rate Card <span style="font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:none;letter-spacing:0;"> — optional, for brand deals</span></div>
-              <div class="pf-rate-grid">
-                <div class="pf-rate-item"><div class="pf-rate-label">Story / Short</div><input class="form-input" id="pfRateStory" placeholder="e.g. £150" style="margin-top:4px;" oninput="updatePreview()"/></div>
-                <div class="pf-rate-item"><div class="pf-rate-label">Dedicated Post</div><input class="form-input" id="pfRatePost" placeholder="e.g. £350" style="margin-top:4px;" oninput="updatePreview()"/></div>
-                <div class="pf-rate-item"><div class="pf-rate-label">Long-form Video</div><input class="form-input" id="pfRateVideo" placeholder="e.g. £600" style="margin-top:4px;" oninput="updatePreview()"/></div>
-                <div class="pf-rate-item"><div class="pf-rate-label">Monthly Package</div><input class="form-input" id="pfRatePackage" placeholder="e.g. £1,200" style="margin-top:4px;" oninput="updatePreview()"/></div>
-              </div>
-            </div>
-            <div class="pf-section">
-              <div class="pf-section-title">Links</div>
-              <div id="pfLinksContainer">
-                <div class="pf-link-row"><span class="pf-link-prefix">🎵</span><input class="form-input" placeholder="TikTok URL" style="flex:1" oninput="updatePreview()"/></div>
-                <div class="pf-link-row"><span class="pf-link-prefix">▶️</span><input class="form-input" placeholder="YouTube URL" style="flex:1" oninput="updatePreview()"/></div>
-                <div class="pf-link-row"><span class="pf-link-prefix">📸</span><input class="form-input" placeholder="Instagram URL" style="flex:1" oninput="updatePreview()"/></div>
-                <div class="pf-link-row"><span class="pf-link-prefix">💼</span><input class="form-input" placeholder="LinkedIn URL" style="flex:1" oninput="updatePreview()"/></div>
-                <div class="pf-link-row"><span class="pf-link-prefix">📧</span><input class="form-input" placeholder="Email / contact for brands" style="flex:1" oninput="updatePreview()"/></div>
-              </div>
-              <button class="pf-add-link" onclick="addCustomLink()">+ Add custom link</button>
-            </div>
-            <div class="pf-section">
-              <div class="pf-section-title">Theme</div>
-              <div class="pf-themes" id="pfThemes">
-                <div class="pf-theme-opt active" onclick="setTheme(this,'dark')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);"></div><div class="pf-theme-name">Dark Gold</div></div>
-                <div class="pf-theme-opt" onclick="setTheme(this,'navy')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);"></div><div class="pf-theme-name">Deep Navy</div></div>
-                <div class="pf-theme-opt" onclick="setTheme(this,'clean')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#f8fafc,#e2e8f0);border:1px solid #e2e8f0;"></div><div class="pf-theme-name">Clean White</div></div>
-                <div class="pf-theme-opt" onclick="setTheme(this,'forest')"><div class="pf-theme-swatch" style="background:linear-gradient(135deg,#14532d,#166534);"></div><div class="pf-theme-name">Forest</div></div>
-              </div>
-            </div>
-            <div class="pf-section">
-              <div class="pf-section-title">SEO Preview</div>
-              <div class="pf-seo-info"><div class="pf-seo-info-icon">🔍</div><div class="pf-seo-info-text"><strong>Dijo optimises your portfolio for Google.</strong> Brands searching for creators in your niche will find your page.</div></div>
-              <div class="pf-seo-label"><div class="pf-seo-dot"></div>Google Search Preview</div>
-              <div class="pf-seo-preview">
-                <div class="pf-seo-url" id="pfSeoUrl">impactgrid.app/p/yourcreatorname</div>
-                <div class="pf-seo-title" id="pfSeoTitle">Your Name — Creator Portfolio | ImpactGrid</div>
-                <div class="pf-seo-desc" id="pfSeoDesc">Creator in your niche. TikTok · YouTube · Instagram. View stats, collabs, and contact for brand deals.</div>
-              </div>
-            </div>
-            <div class="pf-section" style="margin-bottom:0;">
-              <div class="pf-section-title">Your Portfolio URL</div>
-              <div class="pf-publish-row">
-                <div class="pf-publish-url" id="pfUrl">impactgrid.app/p/yourcreatorname</div>
-                <button class="pf-copy-url" onclick="copyPortfolioUrl()">Copy</button>
-              </div>
-              <button class="btn-generate" style="margin-top:12px;" onclick="publishPortfolio()">🚀 Publish Portfolio</button>
-            </div>
-          </div>
-          <div class="pf-preview-wrap">
-            <div class="pf-preview-label"><div class="pf-preview-live-dot"></div>Live Preview</div>
-            <div class="pf-phone-frame" id="pfPhone">
-              <div style="display:flex;align-items:center;justify-content:center;height:560px;color:#9099b8;font-size:13px;text-align:center;padding:20px;">
-                <div><div style="font-size:32px;margin-bottom:10px;">🌐</div>Fill in your profile details<br/>to see your live preview</div>
-              </div>
-            </div>
-            <div class="pf-preview-stats">
-              <div class="pf-prev-stat"><div class="pf-prev-stat-val">—</div><div class="pf-prev-stat-lbl">Profile Views</div></div>
-              <div class="pf-prev-stat"><div class="pf-prev-stat-val">—</div><div class="pf-prev-stat-lbl">Link Clicks</div></div>
-            </div>
           </div>
         </div>
-        <div id="pfPublished" class="pf-published">
-          <div class="portfolio-header">
-            <h2>Portfolio</h2>
-            <button class="pf-header-btn secondary" onclick="editPortfolio()">✏️ Edit</button>
+
+        <!-- Quick launch cards -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px">
+          <div onclick="window.location.href='carousel-studio.html'" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            <div style="font-size:28px;margin-bottom:8px">🎨</div>
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff;margin-bottom:4px">Carousel Studio</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.5)">AI-designed carousel slides</div>
           </div>
-          <div class="pf-published-card">
-            <div class="pf-pub-success-icon">🚀</div>
-            <h2 class="pf-pub-title">Portfolio Published!</h2>
-            <p class="pf-pub-desc"><strong id="pfPubName">Your</strong> portfolio is live as <strong id="pfPubNiche">Creator</strong>.<br/>Share your link everywhere — put it in your TikTok bio, Instagram, and LinkedIn.</p>
-            <div class="pf-pub-link-box"><span class="pf-pub-link-text" id="pfPubLink">https://impactgrid.app/p/creator</span><button class="pf-pub-copy-btn" onclick="copyPublishedLink()">📋 Copy Link</button></div>
-            <div class="pf-pub-actions">
-              <button class="pf-pub-action-btn" onclick="shareToInstagram()">📸 Add to Instagram</button>
-              <button class="pf-pub-action-btn" onclick="shareToLinkedIn()">💼 Share on LinkedIn</button>
-              <button class="pf-pub-action-btn" onclick="editPortfolio()">✏️ Edit Portfolio</button>
-            </div>
-            <div style="margin-top:20px;padding:14px;background:var(--green-dim);border:1px solid rgba(15,168,118,.2);border-radius:10px;font-size:12px;color:var(--green);">✓ SEO optimised · ✓ Mobile-friendly · ✓ Brand-ready</div>
+          <div onclick="window.location.href='portfolio-studio.html'" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border:1px solid rgba(79,142,247,.2);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            <div style="font-size:28px;margin-bottom:8px">🌐</div>
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff;margin-bottom:4px">Portfolio Studio</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.5)">Your creator link-in-bio</div>
+          </div>
+          <div onclick="switchTab('evaluator',null)" style="background:linear-gradient(135deg,#0a0f0a,#1a3a1a);border:1px solid rgba(15,168,118,.2);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            <div style="font-size:28px;margin-bottom:8px">🎯</div>
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff;margin-bottom:4px">Dijo Evaluator</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.5)">Score your channel with AI</div>
           </div>
         </div>
       </div>
 
-      <!-- ══ DIJO AI ══ -->
-      <div class="panel" id="panel-dijo">
-        <div class="dijo-wrap">
-          <div class="dijo-chat">
-            <div class="dijo-chat-head">
-              <div class="dijo-chat-av">D</div>
-              <div>
-                <div style="font-size:13px;font-weight:700;">Dijo AI</div>
-                <div style="font-size:11px;color:var(--text3);">Your creator intelligence engine</div>
+      <!-- TREND FEED -->
+      <div class="panel" id="panel-trends">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+          <div><h2 style="font-size:20px;margin-bottom:3px">Trend Intelligence Feed</h2><p style="font-size:13px;color:var(--text2)">Real Google Trends · Scored by Trend Score™ · Click any topic to generate</p></div>
+          <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+            <button class="style-chip active" data-plat="all" onclick="filterTrends(this,'all')">All</button>
+            <button class="style-chip" data-plat="gt" onclick="filterTrends(this,'gt')" style="color:var(--gt)">Google</button>
+            <button class="style-chip" data-plat="yt" onclick="filterTrends(this,'yt')" style="color:var(--yt)">YouTube</button>
+            <button class="style-chip" data-plat="tt" onclick="filterTrends(this,'tt')" style="color:var(--tt)">TikTok</button>
+          </div>
+        </div>
+        <div class="card"><div class="card-body"><div class="trend-list" id="fullTrendList"><div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div></div></div>
+      </div>
+
+      <!-- GENERATOR -->
+      <div class="panel" id="panel-generator">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <h2 style="font-size:20px">AI Content Generator</h2>
+          <span style="font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo)">Dijo AI</span>
+        </div>
+        <div id="genLoading" style="display:none;align-items:center;gap:10px;padding:12px 16px;background:var(--gold-dim);border:1px solid var(--gold-glo);border-radius:10px;margin-bottom:14px;font-size:13px;color:var(--gold)"><span class="spinner"></span><span id="genLoadingMsg">Generating…</span></div>
+        <div class="gen-layout">
+          <div class="gen-input-area">
+            <div class="input-group"><label class="input-label">Topic</label><input type="text" class="form-input" id="genTopic" placeholder="e.g. AI productivity tools, UK street style…" onkeydown="if(event.key==='Enter')fullGenerate()"/></div>
+            <div class="input-group"><label class="input-label">Platform</label><select class="form-select" id="genPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option><option>All Platforms</option></select></div>
+            <div class="input-group"><label class="input-label">Style</label><div class="style-chips"><button class="style-chip active" onclick="selectStyle(this)">Educational</button><button class="style-chip" onclick="selectStyle(this)">Entertaining</button><button class="style-chip" onclick="selectStyle(this)">Motivational</button><button class="style-chip" onclick="selectStyle(this)">Hot Take</button></div></div>
+            <div class="input-group"><label class="input-label">Niche (optional)</label><input type="text" class="form-input" id="genNiche" placeholder="e.g. finance, fitness, fashion…"/></div>
+            <button class="gen-btn" onclick="fullGenerate()" id="fullGenBtn">⚡ Generate Full Package</button>
+            <div id="genError" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red);font-family:'DM Mono',monospace"></div>
+            <div class="score-card">
+              <div class="score-label">Trend Score™</div>
+              <div class="score-num" id="previewScore">—</div>
+              <div class="score-verdict" id="previewVerdict">Enter a topic to score</div>
+            </div>
+          </div>
+          <div class="gen-output">
+            <div class="output-block"><div class="ob-header"><span>Video Hook</span><button class="copy-btn" onclick="copyEl('outHook')">Copy</button></div><div class="ob-body ob-placeholder" id="outHook">Your hook appears here…</div></div>
+            <div class="output-block"><div class="ob-header"><span>Caption</span><button class="copy-btn" onclick="copyEl('outCaption')">Copy</button></div><div class="ob-body ob-placeholder" id="outCaption">Your caption appears here…</div></div>
+            <div class="output-block"><div class="ob-header"><span>Content Outline</span><button class="copy-btn" onclick="copyEl('outOutline')">Copy</button></div><div class="ob-body ob-placeholder" id="outOutline">Your outline appears here…</div></div>
+            <div class="output-block"><div class="ob-header"><span>Hashtags</span><button class="copy-btn" onclick="copyTags('outHashtags')">Copy</button></div><div class="ob-tags" id="outHashtags"><span style="color:var(--text3);font-style:italic;font-size:12px">Hashtags appear here…</span></div></div>
+            <div class="output-block"><div class="ob-header"><span>Best Posting Time</span></div><div class="timing-grid" id="outTiming"><div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIENCE -->
+      <div class="panel" id="panel-audience">
+        <h2 style="font-size:20px;margin-bottom:6px">Audience Intelligence</h2>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
+          <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
+        </div>
+        <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
+      </div>
+
+      <!-- EVALUATOR -->
+      <div class="panel" id="panel-evaluator">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <h2 style="font-size:20px">Dijo Evaluator</h2>
+          <span style="font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo)">AI · Real Data</span>
+        </div>
+        <div id="evalNoAccount">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:40px;text-align:center">
+            <div style="font-size:44px;margin-bottom:14px">🔌</div>
+            <h3 style="font-size:18px;margin-bottom:8px">Connect an Account First</h3>
+            <p style="font-size:14px;color:var(--text2);max-width:380px;margin:0 auto 20px">Dijo needs your real channel data to evaluate and advise you.</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+              <button onclick="switchTab('youtube',null)" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff4040,#ff6060);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect YouTube →</button>
+              <button onclick="switchTab('tiktok',null)" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff2d55,#ff6688);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect TikTok →</button>
+            </div>
+          </div>
+        </div>
+        <div id="evalLoading" style="display:none;text-align:center;padding:48px"><span class="spinner spinner-gold" style="width:22px;height:22px;border-width:3px"></span><p style="margin-top:14px;font-size:14px;color:var(--text3)" id="evalLoadingMsg">Analysing your channel…</p></div>
+        <div id="evalMain" style="display:none">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+            <div id="evalAv" style="width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">▶️</div>
+            <div style="flex:1;min-width:0"><div id="evalChannelName" style="font-weight:700;font-size:14px;margin-bottom:1px">—</div><div id="evalChannelHandle" style="font-size:11px;color:var(--text3)">—</div></div>
+            <button onclick="runEvaluation()" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0">⚡ Re-evaluate</button>
+          </div>
+          <div class="eval-layout">
+            <div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:12px;text-align:center">
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Creator Score</div>
+                <div style="position:relative;width:120px;height:120px;margin:0 auto 14px">
+                  <svg viewBox="0 0 120 120" style="width:120px;height:120px;transform:rotate(-90deg)">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                    <circle id="evalRing" cx="60" cy="60" r="50" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .4s"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <div id="evalScoreNum" style="font-family:'Syne',sans-serif;font-size:30px;font-weight:900;letter-spacing:-.04em;color:var(--gold)">—</div>
+                    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:1px">/100</div>
+                  </div>
+                </div>
+                <div id="evalVerdict" style="font-size:14px;font-weight:700;margin-bottom:3px">—</div>
+                <div id="evalTier" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">—</div>
               </div>
-              <div style="margin-left:auto;" class="topbar-live"><div class="topbar-live-dot"></div>Active</div>
-            </div>
-            <div class="dijo-chat-msgs" id="dijoMsgs">
-              <div class="chat-msg">
-                <div class="chat-av-sm dijo">D</div>
-                <div class="chat-bubble dijo">Hey! I'm Dijo — your always-on creator brain. Ask me anything: what to post, how to write a hook, which trends to chase, or how to grow faster. What's on your mind?</div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px">
+                <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Score Breakdown</div>
+                <div style="padding:14px 18px;display:flex;flex-direction:column;gap:12px" id="evalBars"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Subscribers</div><div class="sc-val" style="font-size:16px;color:var(--yt)" id="evalSubs">—</div></div>
+                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Total Views</div><div class="sc-val" style="font-size:16px" id="evalViews">—</div></div>
+                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Videos</div><div class="sc-val" style="font-size:16px;color:var(--green)" id="evalVcount">—</div></div>
               </div>
             </div>
-            <div class="dijo-input-row">
-              <input class="dijo-input" id="dijoInput" placeholder="Ask Dijo anything…" onkeydown="if(event.key==='Enter')sendDijo()"/>
-              <button class="dijo-send" onclick="sendDijo()">Send</button>
+            <div class="eval-chat">
+              <div class="eval-chat-head">
+                <div class="eval-av">DJ</div>
+                <div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">Dijo Adviser</div><div style="font-size:10px;color:var(--green);font-family:'DM Mono',monospace">Always On</div></div>
+                <button onclick="clearEvalChat()" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Clear</button>
+              </div>
+              <div class="eval-msgs" id="evalMsgs">
+                <div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Connect YouTube or TikTok then hit <strong>Evaluate</strong> — I'll score your channel and tell you exactly what to do next.</div></div>
+              </div>
+              <div class="eval-chips" id="evalChips">
+                <button class="eval-chip" onclick="evalAsk('How do I grow faster?')">Grow faster?</button>
+                <button class="eval-chip" onclick="evalAsk('What content should I make next?')">Content ideas?</button>
+                <button class="eval-chip" onclick="evalAsk('Give me a 30-day action plan.')">30-day plan</button>
+              </div>
+              <div class="eval-input-row">
+                <input type="text" class="eval-input" id="evalInput" placeholder="Ask Dijo about your channel…" onkeydown="if(event.key==='Enter')evalSend()"/>
+                <button class="eval-send" onclick="evalSend()">➤</button>
+              </div>
             </div>
           </div>
-          <div class="dijo-sidebar-panel">
-            <div class="dijo-quick-card">
-              <h4>Quick prompts</h4>
-              <button class="dijo-quick-btn" onclick="quickDijo('What should I post today?')">What should I post today?</button>
-              <button class="dijo-quick-btn" onclick="quickDijo('Write me a viral hook about Vikings')">Write me a Viking hook</button>
-              <button class="dijo-quick-btn" onclick="quickDijo('What is the best time to post on TikTok UK?')">Best time to post TikTok UK</button>
-              <button class="dijo-quick-btn" onclick="quickDijo('Give me 5 content ideas for this week')">5 content ideas this week</button>
-              <button class="dijo-quick-btn" onclick="quickDijo('How do I grow faster on YouTube?')">How to grow on YouTube</button>
+        </div>
+      </div>
+
+      <!-- YOUTUBE -->
+      <div class="panel" id="panel-youtube">
+        <div id="ytDisconnected">
+          <div class="connect-wrap">
+            <div style="font-size:48px;margin-bottom:16px">▶️</div>
+            <h2 style="font-size:22px;margin-bottom:10px">Connect Your YouTube Channel</h2>
+            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real channel stats, video performance, and subscriber data — live from YouTube Data API.</p>
+            <div id="ytErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+            <button class="connect-btn yt" onclick="YouTubeAuth.connect(this)">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              Connect YouTube
+            </button>
+            <div class="feat-grid">
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Channel Stats</h4><p>Real subscriber count, views, and video count.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, and comments per video.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Dijo Evaluator</h4><p>AI score and actionable growth advice.</p></div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- ══ OPPORTUNITIES ══ -->
-      <div class="panel" id="panel-opportunities">
-        <h2 style="font-size:20px;margin-bottom:6px;">Opportunities</h2>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">Brand deals, collabs, and creator gigs.</p>
-        <div class="opps-grid-full">
-          <div class="opp-full-card"><div class="opp-tag" style="background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);">Brand Deal</div><div class="opp-full-title">UK Lifestyle Creator — Spring Campaign</div><div class="opp-full-desc">Fashion brand seeking UK TikTok creators (10K+ followers) for a paid spring campaign. Gifted products + flat fee.</div><div class="opp-full-meta"><span>💰 Paid</span><span>📍 UK</span><span>▶️ TikTok</span><button class="opp-apply">Apply →</button></div></div>
-          <div class="opp-full-card"><div class="opp-tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);">Collab</div><div class="opp-full-title">YouTube Collab — History Niche</div><div class="opp-full-desc">History channel (85K subs) looking for creators in the UK history/mythology space for a collab series.</div><div class="opp-full-meta"><span>🤝 Collab</span><span>📍 UK</span><span>📺 YouTube</span><button class="opp-apply">Apply →</button></div></div>
-          <div class="opp-full-card"><div class="opp-tag" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.15);">Ambassador</div><div class="opp-full-title">Creator Ambassador — AI Tools Brand</div><div class="opp-full-desc">SaaS company wants creators in the productivity/AI space for a 3-month ambassador programme. Any platform.</div><div class="opp-full-meta"><span>💰 Monthly Fee</span><span>🌍 Remote</span><span>📱 Any</span><button class="opp-apply">Apply →</button></div></div>
-          <div class="opp-full-card"><div class="opp-tag" style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(45,110,219,.2);">Freelance</div><div class="opp-full-title">Short-Form Video Editor</div><div class="opp-full-desc">Agency looking for a UK-based short-form editor for TikTok and Reels. Remote, flexible hours, project-based.</div><div class="opp-full-meta"><span>💰 Project Rate</span><span>📍 UK Remote</span><button class="opp-apply">Apply →</button></div></div>
+        <div id="ytConnected" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header">
+              <span class="card-title">✅ YouTube Connected</span>
+              <div class="connected-header">
+                <span class="card-tag tag-green">Live Data</span>
+                <button class="disconnect-btn" onclick="if(confirm('Disconnect YouTube?'))disconnectYouTube()">✕ Disconnect</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div id="ytAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,96,96,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">▶️</div>
+                <div><div id="ytChannelName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ytChannelHandle" style="font-size:12px;color:var(--text3)">—</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Subscribers</div><div id="ytSubs" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--yt)">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Views</div><div id="ytViews" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ytVcount" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--green)">—</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent Videos</span><span class="card-tag tag-green">Live</span></div><div class="card-body" id="ytVideosList"><div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div></div></div>
         </div>
       </div>
 
-      <!-- ══ CONNECT ══ -->
-      <div class="panel" id="panel-connect">
-        <h2 style="font-size:20px;margin-bottom:6px;">Connect Platforms</h2>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:4px;">Link your accounts for real analytics and direct publishing.</p>
-        <div class="connect-grid-app">
-          <div class="connect-card-app" id="tt-card" style="--cc-a:#ff2d55;"><div class="cc-app-icon" style="background:rgba(255,45,85,.1);color:#ff2d55;">🎵</div><div class="cc-app-name">TikTok</div><div class="cc-app-desc">Follower analytics · Hashtag velocity · Content publishing</div><div class="cc-app-status live" id="tt-status-app"><span class="cc-app-dot"></span><span id="tt-status-txt">Ready to Connect</span></div><button class="cc-app-btn tt" id="tt-btn-app" onclick="TikTokAuth&&TikTokAuth.connect(this)">Connect TikTok →</button></div>
-          <div class="connect-card-app" style="--cc-a:#ff6060;" id="yt-card"><div class="cc-app-icon" style="background:rgba(255,96,96,.1);color:#ff6060;">▶️</div><div class="cc-app-name">YouTube</div><div class="cc-app-desc">Channel analytics · Video performance · Subscriber insights</div><div class="cc-app-status live" id="yt-status-app"><span class="cc-app-dot"></span><span id="yt-status-txt">Ready to Connect</span></div><button class="cc-app-btn yt" id="yt-btn-app" onclick="YouTubeAuth&&YouTubeAuth.connect(this)">Connect YouTube →</button></div>
-          <div class="connect-card-app" style="--cc-a:#e1306c;"><div class="cc-app-icon" style="background:rgba(225,48,108,.1);color:#e1306c;">📸</div><div class="cc-app-name">Instagram</div><div class="cc-app-desc">Profile insights · Reels performance · Media analytics</div><div class="cc-app-status soon"><span>Coming Soon</span></div><button class="cc-app-btn disabled" disabled>Pending API Approval</button></div>
-          <div class="connect-card-app" style="--cc-a:#4285f4;"><div class="cc-app-icon" style="background:rgba(66,133,244,.1);color:#4285f4;">📈</div><div class="cc-app-name">Google Trends</div><div class="cc-app-desc">Search growth · Breakout queries · Trend velocity · Auto-active</div><div class="cc-app-status auto"><span class="cc-app-dot"></span>Auto-Active</div><button class="cc-app-btn auto" onclick="showPanel('trendfeed',document.querySelector('[onclick*=trendfeed]'))">Open Trend Feed →</button></div>
+      <!-- TIKTOK -->
+      <div class="panel" id="panel-tiktok">
+        <div id="ttDisconnected">
+          <div class="connect-wrap">
+            <div style="font-size:48px;margin-bottom:16px">🎵</div>
+            <h2 style="font-size:22px;margin-bottom:10px">Connect Your TikTok Account</h2>
+            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real profile stats, video performance, and audience data — via the official TikTok API.</p>
+            <div id="ttErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+            <button class="connect-btn tt" id="ttConnectBtn" onclick="TikTokAuth.connect(this)">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg>
+              Connect with TikTok
+            </button>
+            <div class="feat-grid">
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Profile Stats</h4><p>Real follower count, likes, and video count.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, comments, and shares per video.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Dijo Evaluator</h4><p>AI score and growth advice for your account.</p></div>
+            </div>
+          </div>
+        </div>
+        <div id="ttConnected" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header">
+              <span class="card-title">✅ TikTok Connected</span>
+              <div class="connected-header">
+                <span class="card-tag tag-tt">Live Data</span>
+                <button class="disconnect-btn" onclick="if(confirm('Disconnect TikTok? This will clear the session so a new account can connect.'))disconnectTikTok()">✕ Disconnect</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div id="ttAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,45,85,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">🎵</div>
+                <div><div id="ttDisplayName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ttUsername" style="font-size:12px;color:var(--text3)">—</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Followers</div><div id="ttFollowers" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--tt)">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Following</div><div id="ttFollowing" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Likes</div><div id="ttLikes" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--gold)">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ttVcount" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--green)">—</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent TikToks</span><span class="card-tag tag-tt">Live</span></div><div class="card-body" id="ttVideosList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(255,45,85,.2);border-top-color:var(--tt)"></span> Loading…</div></div></div>
         </div>
       </div>
 
-      <!-- ══ SETTINGS ══ -->
-      <div class="panel" id="panel-settings">
-        <h2 style="font-size:20px;margin-bottom:20px;">Settings</h2>
-        <div class="settings-grid">
-          <div class="settings-card">
-            <h3>Appearance</h3>
-            <div class="setting-row"><div><div class="setting-label">Dark Mode</div><div class="setting-desc">Switch between light and dark</div></div><div class="toggle" id="themeToggle" onclick="toggleTheme()"></div></div>
-            <div class="setting-row"><div><div class="setting-label">Compact sidebar</div><div class="setting-desc">Icons only, hover for labels</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-          </div>
-          <div class="settings-card">
-            <h3>Notifications</h3>
-            <div class="setting-row"><div><div class="setting-label">Daily briefing</div><div class="setting-desc">Dijo's morning trend summary</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="setting-row"><div><div class="setting-label">Trend alerts</div><div class="setting-desc">Notify when a trend spikes</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="setting-row"><div><div class="setting-label">Opportunity alerts</div><div class="setting-desc">New brand deals and gigs</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-          </div>
-          <div class="settings-card">
-            <h3>Content Preferences</h3>
-            <div class="setting-row"><div><div class="setting-label">Primary platform</div></div><select class="form-select" style="width:120px;padding:6px 10px;font-size:12px;"><option>TikTok</option><option>YouTube</option><option>Instagram</option></select></div>
-            <div class="setting-row"><div><div class="setting-label">Content region</div></div><select class="form-select" style="width:120px;padding:6px 10px;font-size:12px;"><option>UK</option><option>Global</option><option>US</option></select></div>
-          </div>
-          <div class="settings-card">
-            <h3>Account</h3>
-            <div class="setting-row"><div><div class="setting-label">Email</div><div class="setting-desc" id="settingsEmail">Not logged in</div></div></div>
-            <div class="setting-row"><div><div class="setting-label">Plan</div><div class="setting-desc">Free tier</div></div><span style="font-size:11px;padding:3px 8px;border-radius:5px;background:var(--gold-dim);color:var(--gold);font-family:var(--fm);">FREE</span></div>
-            <div style="margin-top:12px;"><button style="width:100%;padding:9px;border-radius:9px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;" onclick="window.location.href='join.html'">Upgrade →</button></div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<!-- ══ CALENDAR ADD POST MODAL ══ -->
-<div class="cal-modal-overlay" id="calModalOverlay" onclick="if(event.target===this)closeModal()">
-  <div class="cal-modal">
-    <h3 id="calModalTitle">Add Post</h3>
-    <div class="form-group">
-      <label class="form-label">Post Title / Idea</label>
-      <input class="form-input" id="calModalInput" placeholder="e.g. Viking myths hook…"/>
-      <button class="cal-dijo-suggest" id="calDijoSuggestBtn" onclick="calSuggestIdea()">✨ Suggest with Dijo</button>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Platform</label>
-      <div class="cal-modal-plats">
-        <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')">🎵 TikTok</button>
-        <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')">▶️ YouTube</button>
-        <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')">📸 Instagram</button>
-        <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')">💼 LinkedIn</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Status</label>
-      <select class="form-select" id="calModalStatus">
-        <option value="draft">Draft</option>
-        <option value="scheduled">Scheduled ⏰</option>
-        <option value="published">Published ✓</option>
-      </select>
-    </div>
-    <div class="cal-modal-actions">
-      <button class="cal-modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="cal-modal-save" onclick="savePost()">Save Post</button>
     </div>
   </div>
 </div>
 
-<!-- Scripts — order matters -->
+<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
+<div class="toast-shelf" id="toastShelf"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="ig-supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script src="tiktok-auth.js"></script>
 <script src="youtube-auth.js"></script>
 <script src="instagram-auth.js"></script>
-<script src="creator-studio.js"></script>
-<script src="portfolio.js"></script>
-<script src="calendar.js"></script>
+<script src="creator-ai.js"></script>
+<script>
+var DIJO = 'https://impactgrid-dijo.onrender.com';
+var _allTrends = [];
+var _selectedStyle = 'Educational';
+var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
+
+/* ── THEME ── */
+function toggleTheme(){
+  var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
+  try{ localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); }catch(e){}
+}
+(function(){ try{ if(localStorage.getItem('ig_theme')==='dark'){ document.documentElement.setAttribute('data-theme','dark'); document.getElementById('themeBtn').textContent='☀️'; }}catch(e){} })();
+
+/* ── TABS ── */
+function switchTab(name, sidebarItem){
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn:not(.tab-soon)').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.sb-item').forEach(function(i){ i.classList.remove('active'); });
+  var panel = document.getElementById('panel-'+name); if(panel) panel.classList.add('active');
+  var tb = document.getElementById('tab-'+name); if(tb) tb.classList.add('active');
+  if(sidebarItem) sidebarItem.classList.add('active');
+  var ca = document.getElementById('contentArea'); if(ca) ca.scrollTop = 0;
+  closeSidebar();
+  if(name==='trends' && _allTrends.length) renderFullTrends();
+  if(name==='evaluator') initEvaluator();
+}
+
+/* ── SIDEBAR MOBILE ── */
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('mobOverlay').classList.add('open'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobOverlay').classList.remove('open'); }
+
+/* ── USER MENU ── */
+function toggleUserMenu(){ document.getElementById('userDrop').classList.toggle('open'); }
+document.addEventListener('click', function(e){ var d=document.getElementById('userDrop'); if(d&&!e.target.closest('.user-btn')) d.classList.remove('open'); });
+
+/* ── AUTH ── */
+function setNavUser(user){
+  if(!user) return;
+  var email = user.email||'';
+  var name = (user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||email.split('@')[0]||'Creator';
+  document.getElementById('navGuest').style.display='none';
+  document.getElementById('navUser').style.display='block';
+  document.getElementById('userAv').textContent = (name.charAt(0)||'?').toUpperCase();
+  document.getElementById('userName').textContent = name.split(' ')[0];
+  document.getElementById('userEmail').textContent = email;
+}
+window.igSignOut = async function(){
+  try{ var c=getSupabase(); if(c) await c.auth.signOut(); }catch(e){}
+  window.location.href='index.html';
+};
+function checkAuth(){
+  var c=null; try{ if(window.getSupabase) c=getSupabase(); }catch(e){}
+  if(!c) return;
+  c.auth.getSession().then(function(r){ if(r&&r.data&&r.data.session) setNavUser(r.data.session.user); });
+  c.auth.onAuthStateChange(function(ev,session){ if(session&&session.user) setNavUser(session.user); });
+}
+
+/* ── DIJO API — SHORT responses enforced ── */
+async function callDijo(message, mode){
+  /* Prepend length instruction to every call */
+  var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
+  var res = await fetch(DIJO+'/chat',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ message: shortPrefix+message, mode: mode||'creator' })
+  });
+  if(!res.ok){ var e=await res.json().catch(function(){return{};}); throw new Error(e.error||'Dijo error '+res.status); }
+  var data = await res.json();
+  return data.reply||'';
+}
+
+/* ── TREND DATA ── */
+function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJ(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function fmtN(n){ return n?Number(n).toLocaleString():'—'; }
+function toScore(s){ return Math.min(9.9,parseFloat((s/10).toFixed(1))); }
+
+async function fetchTrends(){
+  try{
+    var res = await fetch(DIJO+'/trends/live?limit=20');
+    var data = await res.json();
+    if(data.trends&&data.trends.length){
+      _allTrends = data.trends.map(function(t,i){
+        var plat = t.platform_source==='youtube'?'yt':t.platform_source==='tiktok'?'tt':t.platform_source==='cross'?'cross':'gt';
+        var platLbl = t.platform_source==='youtube'?'YouTube':t.platform_source==='tiktok'?'TikTok':t.platform_source==='cross'?'Cross':'Google';
+        return{ topic:t.topic, score:toScore(t.trend_score), plat:plat, platLabel:platLbl, rank:i+1,
+          hashtags:t.hashtags||[], videoCount:t.video_count||0, totalViews:t.total_views||0,
+          status:t.status||'rising', igPrediction:t.instagram_prediction||0 };
+      });
+      return;
+    }
+  }catch(e){}
+  /* RSS fallback */
+  try{
+    var rss = await fetch(DIJO+'/trends/google?geo=GB');
+    var rd = await rss.json();
+    _allTrends = (rd.trends||[]).slice(0,20).map(function(topic,i){
+      return{ topic:topic, score:5.5, plat:'gt', platLabel:'Google', rank:i+1, hashtags:[], videoCount:0, totalViews:0, status:'rising', igPrediction:0 };
+    });
+  }catch(e){}
+}
+
+function trendItemHTML(t){
+  var pct = Math.round((t.score/10)*100);
+  var platCls = t.plat==='yt'?'plat-yt':t.plat==='tt'?'plat-tt':'plat-gt';
+  var meta = t.videoCount>0 ? t.videoCount+' videos · '+fmtN(t.totalViews)+' views' : t.platLabel+' · click to generate';
+  return '<div class="trend-item" onclick="loadTopic(\''+escJ(t.topic)+'\')">'
+    +'<div class="ti-rank">#'+t.rank+'</div>'
+    +'<div class="ti-info"><div class="ti-topic">'+escH(t.topic)+'</div><div class="ti-meta">'+escH(meta)+'</div></div>'
+    +'<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:'+pct+'%"></div></div><div class="ti-score">'+t.score.toFixed(1)+'/10</div></div>'
+    +'<div class="ti-plat '+platCls+'">'+escH(t.platLabel)+'</div>'
+    +'</div>';
+}
+
+function renderDashTrends(){
+  var el = document.getElementById('dashTrendList'); if(!el) return;
+  el.innerHTML = _allTrends.length ? _allTrends.slice(0,5).map(trendItemHTML).join('') : '<div style="padding:16px;color:var(--text3);font-size:13px">No trends yet — check back shortly.</div>';
+}
+
+function renderFullTrends(){
+  var el = document.getElementById('fullTrendList'); if(!el) return;
+  el.innerHTML = _allTrends.length ? _allTrends.map(trendItemHTML).join('') : '<div style="padding:16px;color:var(--text3)">No trends yet.</div>';
+}
+
+function filterTrends(btn, plat){
+  document.querySelectorAll('[data-plat]').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var el = document.getElementById('fullTrendList'); if(!el) return;
+  var list = plat==='all' ? _allTrends : _allTrends.filter(function(t){ return t.plat===plat; });
+  el.innerHTML = list.length ? list.map(trendItemHTML).join('') : '<div style="padding:16px;color:var(--text3)">No trends for this filter.</div>';
+}
+
+function renderDashOpps(){
+  var el = document.getElementById('dashOppList'); if(!el||!_allTrends.length) return;
+  el.innerHTML = _allTrends.slice(0,3).map(function(t){
+    return '<div class="opp-card" onclick="loadTopic(\''+escJ(t.topic)+'\')">'
+      +'<div class="opp-header"><span class="opp-topic">'+escH(t.topic)+'</span><span class="opp-score">'+t.score.toFixed(1)+'</span></div>'
+      +'<div class="opp-meta">'+escH(t.platLabel)+' · '+t.status+(t.videoCount?' · '+t.videoCount+' videos':'')+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function loadTopic(topic){
+  var i1=document.getElementById('quickTopic'); if(i1) i1.value=topic;
+  var i2=document.getElementById('genTopic'); if(i2) i2.value=topic;
+  switchTab('generator',null);
+  toast('💡 Topic loaded — hit Generate!');
+}
+
+/* ── BRIEFING ── */
+async function loadBriefing(forceRefresh){
+  var el = document.getElementById('briefingText');
+  var tagsEl = document.getElementById('briefingTags');
+  var dateEl = document.getElementById('briefingDate');
+  if(!el) return;
+  try{
+    var res = await fetch(DIJO+'/ai/daily-briefing');
+    var data = await res.json();
+    if(data.briefing){
+      el.textContent = data.briefing;
+      if(dateEl) dateEl.textContent = (data.date||'')+(data.cached?' · cached':' · live');
+      if(tagsEl&&data.top_trends) tagsEl.innerHTML = data.top_trends.map(function(t){
+        return '<span class="b-tag">'+escH(t.topic)+' '+Math.round(t.score)+'</span>';
+      }).join('');
+      if(forceRefresh) toast('🧠 Briefing refreshed!');
+    }
+  }catch(e){
+    if(el) el.textContent = 'Dijo briefing unavailable — check back shortly.';
+  }
+}
+
+/* ── QUICK GENERATE ── */
+async function quickGenerate(){
+  var topic = document.getElementById('quickTopic').value.trim();
+  if(!topic){ toast('⚠️ Enter a topic first'); return; }
+  var outEl = document.getElementById('quickOutput'); outEl.style.display='flex';
+  document.getElementById('quickHook').textContent='Generating…';
+  document.getElementById('quickCaption').textContent='';
+  document.getElementById('quickTags').innerHTML='';
+  try{
+    var reply = await callDijo('Write a hook, caption, and 6 hashtags for: "'+topic+'". Format:\nHOOK: ...\nCAPTION: ...\nHASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6', 'creator');
+    var lines = reply.split('\n');
+    var hook='', caption='', tags=[];
+    lines.forEach(function(l){
+      if(l.toLowerCase().startsWith('hook:')) hook=l.replace(/^hook:\s*/i,'').trim();
+      else if(l.toLowerCase().startsWith('caption:')) caption=l.replace(/^caption:\s*/i,'').trim();
+      else if(l.toLowerCase().startsWith('hashtags:')){ tags=(l.replace(/^hashtags:\s*/i,'').match(/#[a-zA-Z0-9]+/g)||[]); }
+    });
+    var hashMatches = reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g)||[];
+    if(!tags.length) tags=hashMatches.slice(0,6);
+    document.getElementById('quickHook').textContent = hook||lines[0]||reply.slice(0,120);
+    document.getElementById('quickCaption').textContent = caption||reply.slice(0,200);
+    var te=document.getElementById('quickTags'); te.innerHTML='';
+    tags.forEach(function(t){ var s=document.createElement('span');s.className='ob-tag';s.textContent=t;te.appendChild(s); });
+    toast('✅ Generated!');
+  }catch(e){
+    document.getElementById('quickHook').textContent='Dijo unavailable — try again.';
+  }
+}
+
+/* ── FULL GENERATE ── */
+var _selectedStyle='Educational';
+function selectStyle(el){
+  document.querySelectorAll('.style-chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active'); _selectedStyle=el.textContent.trim();
+}
+
+async function fullGenerate(){
+  var topic = document.getElementById('genTopic').value.trim();
+  if(!topic){ toast('⚠️ Enter a topic first'); return; }
+  var platform = document.getElementById('genPlatform').value;
+  var niche = document.getElementById('genNiche').value.trim();
+  var btn = document.getElementById('fullGenBtn');
+  var loadEl = document.getElementById('genLoading');
+  var errEl = document.getElementById('genError');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Generating…';
+  loadEl.style.display='flex'; errEl.style.display='none';
+  document.getElementById('genLoadingMsg').textContent='Dijo is building your content package for "'+topic+'"…';
+
+  var score = calcScore(topic);
+  var scColor = score>=9?'var(--green)':score>=8?'var(--gold)':score>=7?'var(--blue2)':'var(--text2)';
+  var verdict = score>=9?'🔥 Exceptional':score>=8?'⚡ Strong opportunity':score>=7?'📈 Good momentum':'💡 Emerging';
+  document.getElementById('previewScore').textContent=score.toFixed(1);
+  document.getElementById('previewScore').style.color=scColor;
+  document.getElementById('previewVerdict').textContent=verdict;
+  document.getElementById('previewVerdict').style.color=scColor;
+
+  ['outHook','outCaption','outOutline'].forEach(function(id){ var el=document.getElementById(id); el.classList.remove('ob-placeholder'); el.textContent='Generating…'; });
+  document.getElementById('outHashtags').innerHTML='<span style="color:var(--text3);font-style:italic;font-size:12px">Generating…</span>';
+
+  try{
+    var nicheCtx = niche?' Niche: '+niche+'.':'';
+    var prompt = 'Content package for: "'+topic+'" | Platform: '+platform+' | Style: '+_selectedStyle+nicheCtx
+      +'\n\nReply in this exact format:\nHOOK: [1-2 sentence stop-scroll hook]\nCAPTION: [full caption with emojis and CTA]\nOUTLINE:\n1. [0-3s hook]\n2. [setup]\n3. [core value]\n4. [proof]\n5. [CTA]\nHASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6 #tag7 #tag8\nBEST TIME: [day and time for '+platform+']';
+    var reply = await callDijo(prompt, 'creator');
+    var lines = reply.split('\n');
+    function extract(label){
+      var idx=lines.findIndex(function(l){return l.toLowerCase().startsWith(label.toLowerCase());});
+      if(idx===-1) return '';
+      return lines[idx].replace(new RegExp('^'+label+'\\s*','i'),'').trim();
+    }
+    function extractBlock(label, nextLabel){
+      var start=lines.findIndex(function(l){return l.toLowerCase().startsWith(label.toLowerCase());});
+      if(start===-1) return '';
+      var out=[];
+      for(var i=start+1;i<lines.length;i++){
+        if(nextLabel&&lines[i].toLowerCase().startsWith(nextLabel.toLowerCase())) break;
+        if(lines[i].match(/^[A-Z ]+:/)) break;
+        out.push(lines[i]);
+      }
+      return out.join('\n').trim();
+    }
+    var hook=extract('HOOK:');
+    var caption=extract('CAPTION:');
+    var outline=extractBlock('OUTLINE:','HASHTAGS:');
+    var hashLine=extract('HASHTAGS:');
+    var bestTime=extract('BEST TIME:');
+    var tags=(hashLine.match(/#[a-zA-Z][a-zA-Z0-9]*/g)||[]).concat(reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g)||[]);
+    var uniqueTags=[]; var seen={};
+    tags.forEach(function(t){ if(!seen[t]){seen[t]=1;uniqueTags.push(t);} });
+
+    document.getElementById('outHook').textContent = hook||lines[0]||'';
+    document.getElementById('outCaption').innerHTML = escH(caption||'').replace(/\n/g,'<br>');
+    document.getElementById('outOutline').innerHTML = escH(outline||'').replace(/\n/g,'<br>');
+    var he=document.getElementById('outHashtags'); he.innerHTML='';
+    uniqueTags.slice(0,10).forEach(function(t){ var s=document.createElement('span');s.className='ob-tag';s.textContent=t;he.appendChild(s); });
+    var tg=document.getElementById('outTiming'); tg.innerHTML='';
+    var days=['Today','Thursday','Saturday'];
+    days.forEach(function(d){ var slot=document.createElement('div');slot.className='timing-slot';slot.innerHTML='<div class="timing-day">'+d+'</div><div class="timing-time">'+(d==='Today'&&bestTime?bestTime:'7–9pm')+'</div>';tg.appendChild(slot); });
+
+    var dsc=document.getElementById('dashLastScore'); if(dsc){ dsc.textContent=score.toFixed(1); dsc.style.color=scColor; }
+    var dsl=document.getElementById('dashLastLabel'); if(dsl){ dsl.textContent=verdict; dsl.style.color=scColor; }
+    toast('✅ Package generated!');
+  }catch(e){
+    errEl.style.display='block'; errEl.textContent='⚠ '+( e.message||'Request failed');
+    toast('⚠️ Dijo unavailable — try again');
+  }
+  loadEl.style.display='none'; btn.disabled=false; btn.innerHTML='⚡ Generate Full Package';
+}
+
+function calcScore(topic){
+  var tl=topic.toLowerCase(); var s=6.8;
+  if(tl.match(/ai|chatgpt|automation|tech|llm/)) s+=1.3;
+  if(tl.match(/money|finance|invest|income|business/)) s+=1.0;
+  if(tl.match(/viral|trending|2026|growth/)) s+=0.6;
+  if(tl.length<20) s+=0.3;
+  return Math.min(9.9,parseFloat(s.toFixed(1)));
+}
+
+/* ── AUDIENCE ── */
+async function loadAudience(){
+  var topic = document.getElementById('audTopic').value.trim();
+  if(!topic){ toast('⚠️ Enter a topic'); return; }
+  var btn=document.getElementById('audBtn'); btn.disabled=true; btn.textContent='Analysing…';
+  document.getElementById('audOutput').innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
+  try{
+    var prompt='Audience breakdown for topic: "'+topic+'"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle for this audience\n\nBe specific and data-informed.';
+    var reply=await callDijo(prompt,'creator');
+    var ages=extractAges(reply)||[{label:'18–24',pct:30},{label:'25–34',pct:40},{label:'35–44',pct:20},{label:'45+',pct:10}];
+    var pa=extractPA(reply)||{YouTube:72,TikTok:65,Instagram:58,Google:78};
+    var html='<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px"><h3 style="font-size:15px;font-weight:800;margin-bottom:8px">👥 '+escH(topic)+' — Audience</h3><div style="font-size:13px;color:var(--text2);line-height:1.75">'+escH(reply.slice(0,500))+'</div></div>';
+    html+='<div class="aud-grid"><div class="aud-card"><div class="aud-head">Age Breakdown</div><div class="aud-body">';
+    ages.forEach(function(ag){ html+='<div class="demo-bar"><span class="demo-label">'+ag.label+'</span><div class="demo-track"><div class="demo-fill" style="width:'+ag.pct+'%"></div></div><span class="demo-pct">'+ag.pct+'%</span></div>'; });
+    html+='</div></div><div class="aud-card"><div class="aud-head">Platform Affinity</div><div class="aud-body">';
+    [{k:'YouTube',cls:'pa-yt'},{k:'TikTok',cls:'pa-tt'},{k:'Instagram',cls:'pa-ig'},{k:'Google',cls:'pa-gt'}].forEach(function(p){
+      html+='<div class="pa-item"><span class="pa-label">'+p.k+'</span><div class="pa-track"><div class="pa-fill '+p.cls+'" style="width:'+(pa[p.k]||0)+'%"></div></div><span class="pa-pct">'+(pa[p.k]||0)+'%</span></div>';
+    });
+    html+='</div></div></div>';
+    document.getElementById('audOutput').innerHTML=html;
+    toast('✅ Analysis done!');
+  }catch(e){
+    document.getElementById('audOutput').innerHTML='<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
+    toast('⚠️ Error — try again');
+  }
+  btn.disabled=false; btn.textContent='Analyse';
+}
+function extractAges(text){ var groups=[]; var m=text.match(/(\d{2}[-–]\d{2,3}\+?)[^\d]{0,8}(\d{1,3})\s*%/g); if(m&&m.length>=3){m.forEach(function(x){var p=x.match(/(\d{2}[-–]\d{2,3}\+?).*?(\d{1,3})/);if(p)groups.push({label:p[1],pct:Math.min(99,parseInt(p[2]||50))});});return groups.length>=3?groups:null;} return null; }
+function extractPA(text){ var tl=text.toLowerCase(); function p(n){var m=new RegExp(n+'[^0-9]*(\\d{1,3})\\s*%','i').exec(tl);return m?Math.min(100,parseInt(m[1])):null;} var yt=p('youtube'),tt=p('tiktok'),ig=p('instagram'),gt=p('google'); return(yt||tt||ig||gt)?{YouTube:yt||70,TikTok:tt||65,Instagram:ig||55,Google:gt||75}:null; }
+
+/* ── YOUTUBE ── */
+function initYouTube(){
+  try{
+    if(typeof YouTubeAuth==='undefined') return;
+    var s=YouTubeAuth.getSession();
+    if(s) showYtConnected(s);
+    var params=new URLSearchParams(window.location.search);
+    if(params.get('yt_connected')==='1'){ var s2=YouTubeAuth.getSession(); if(s2) showYtConnected(s2); history.replaceState({},'','creator-studio.html'); }
+  }catch(e){}
+}
+function showYtConnected(session){
+  document.getElementById('ytDisconnected').style.display='none';
+  document.getElementById('ytConnected').style.display='block';
+  var dot=document.getElementById('ytSpDot'); if(dot){dot.className='sp-dot live';}
+  var label=document.getElementById('ytSpLabel'); if(label) label.innerHTML='<span style="color:var(--green)">Connected</span>';
+  var badge=document.getElementById('ytSidebarBadge'); if(badge) badge.style.display='inline-flex';
+  var ch=session.channel;
+  var name=(ch&&ch.snippet&&ch.snippet.title)?ch.snippet.title:'YouTube';
+  var handle=(ch&&ch.snippet&&ch.snippet.customUrl)?ch.snippet.customUrl:'';
+  document.getElementById('ytChannelName').textContent=name;
+  document.getElementById('ytChannelHandle').textContent=handle;
+  var dv=document.getElementById('dashYtVal'); if(dv){dv.textContent=name;dv.style.color='var(--green)';}
+  if(ch&&ch.snippet&&ch.snippet.thumbnails&&ch.snippet.thumbnails.default){
+    var av=document.getElementById('ytAv'); av.innerHTML='<img src="'+ch.snippet.thumbnails.default.url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+  }
+  if(ch&&ch.statistics){
+    document.getElementById('ytSubs').textContent=fmtN(ch.statistics.subscriberCount);
+    document.getElementById('ytViews').textContent=fmtN(ch.statistics.viewCount);
+    document.getElementById('ytVcount').textContent=fmtN(ch.statistics.videoCount);
+    document.getElementById('evalSubs').textContent=fmtN(ch.statistics.subscriberCount);
+    document.getElementById('evalViews').textContent=fmtN(ch.statistics.viewCount);
+    document.getElementById('evalVcount').textContent=fmtN(ch.statistics.videoCount);
+  }
+  loadYtVideos(session.accessToken);
+}
+async function loadYtVideos(token){
+  var el=document.getElementById('ytVideosList'); if(!el) return;
+  try{
+    var res=await YouTubeAuth.fetchVideos(token,8); var videos=(res&&res.items)?res.items:[];
+    if(!videos.length){el.innerHTML='<div style="padding:20px;color:var(--text3)">No videos found.</div>';return;}
+    el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">'+videos.map(function(v){
+      var sn=v.snippet||{}; var st=v.statistics||{};
+      var thumb=sn.thumbnails&&sn.thumbnails.medium?sn.thumbnails.medium.url:'';
+      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+        +(thumb?'<img src="'+thumb+'" style="width:100%;height:110px;object-fit:cover" alt=""/>':'<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">▶️</div>')
+        +'<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(sn.title||'Untitled')+'</div>'
+        +'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 '+fmtN(st.viewCount)+' · ❤️ '+fmtN(st.likeCount)+' · 💬 '+fmtN(st.commentCount)+'</div></div></div>';
+    }).join('')+'</div>';
+  }catch(e){el.innerHTML='<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';}
+}
+function disconnectYouTube(){
+  try{YouTubeAuth.clearSession();}catch(e){}
+  document.getElementById('ytDisconnected').style.display='block';
+  document.getElementById('ytConnected').style.display='none';
+  var dot=document.getElementById('ytSpDot'); if(dot) dot.className='sp-dot off';
+  var label=document.getElementById('ytSpLabel'); if(label) label.innerHTML='<span class="connect-link" onclick="switchTab(\'youtube\',null)">Connect</span>';
+  var badge=document.getElementById('ytSidebarBadge'); if(badge) badge.style.display='none';
+  var dv=document.getElementById('dashYtVal'); if(dv){dv.textContent='Not connected';dv.style.color='';}
+  _evalChannelData=null; _evalScoreData=null;
+  document.getElementById('evalMain').style.display='none';
+  document.getElementById('evalNoAccount').style.display='block';
+  toast('👋 YouTube disconnected');
+}
+
+/* ── TIKTOK ── */
+function initTikTok(){
+  try{
+    if(typeof TikTokAuth==='undefined') return;
+    var s=TikTokAuth.getSession();
+    if(s) showTtConnected(s);
+    var params=new URLSearchParams(window.location.search);
+    if(params.get('tt_connected')==='1'){ var s2=TikTokAuth.getSession(); if(s2) showTtConnected(s2); history.replaceState({},'','creator-studio.html'); }
+  }catch(e){}
+}
+function showTtConnected(session){
+  document.getElementById('ttDisconnected').style.display='none';
+  document.getElementById('ttConnected').style.display='block';
+  var dot=document.getElementById('ttSpDot'); if(dot) dot.className='sp-dot tt';
+  var badge=document.getElementById('ttSidebarBadge'); if(badge) badge.style.display='inline-flex';
+  var pill=document.getElementById('ttTopbarPill'); if(pill) pill.style.display='flex';
+  var profile=session.profile||{};
+  var name=profile.display_name||profile.username||'TikTok';
+  document.getElementById('ttDisplayName').textContent=name;
+  var dv=document.getElementById('dashTtVal'); if(dv){dv.textContent=name;dv.style.color='var(--tt)';}
+  var sub=document.getElementById('dashTtSub'); if(sub) sub.innerHTML='';
+  var label=document.getElementById('ttSpLabel'); if(label) label.innerHTML='<span style="color:var(--tt)">Connected</span>';
+  fetchTtProfile(session.accessToken);
+  loadTtVideos(session.accessToken);
+}
+async function fetchTtProfile(token){
+  try{
+    var res=await fetch(DIJO+'/tiktok/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:token})});
+    var data=await res.json();
+    var user=data&&data.data&&data.data.user?data.data.user:null;
+    if(!user) return;
+    document.getElementById('ttDisplayName').textContent=user.display_name||'TikTok';
+    document.getElementById('ttUsername').textContent=user.bio_description?user.bio_description.slice(0,40):'';
+    document.getElementById('ttFollowers').textContent=fmtN(user.follower_count);
+    document.getElementById('ttFollowing').textContent=fmtN(user.following_count);
+    document.getElementById('ttLikes').textContent=fmtN(user.likes_count);
+    document.getElementById('ttVcount').textContent=fmtN(user.video_count);
+    var dv=document.getElementById('dashTtVal'); if(dv){dv.textContent=user.display_name||'TikTok';dv.style.color='var(--tt)';}
+    if(user.avatar_url){ var av=document.getElementById('ttAv'); av.innerHTML='<img src="'+user.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""/>'; }
+    /* Update evaluator stats */
+    document.getElementById('evalSubs').textContent=fmtN(user.follower_count);
+    document.getElementById('evalSubs').style.color='var(--tt)';
+    document.getElementById('evalViews').textContent=fmtN(user.likes_count);
+    document.getElementById('evalVcount').textContent=fmtN(user.video_count);
+    /* Store for evaluator */
+    _evalChannelData={_platform:'tiktok',snippet:{title:user.display_name||'TikTok'},statistics:{subscriberCount:user.follower_count||0,viewCount:user.likes_count||0,videoCount:user.video_count||0}};
+    try{localStorage.setItem('tt_profile',JSON.stringify(user));}catch(e){}
+  }catch(e){console.warn('[TikTok] Profile fetch failed:',e.message);}
+}
+async function loadTtVideos(token){
+  var el=document.getElementById('ttVideosList'); if(!el) return;
+  try{
+    var res=await fetch(DIJO+'/tiktok/videos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:token,max_count:12})});
+    var data=await res.json();
+    var videos=(data&&data.data&&data.data.videos)?data.data.videos:[];
+    if(!videos.length){el.innerHTML='<div style="padding:20px;color:var(--text3)">No videos found.</div>';return;}
+    el.innerHTML='<div class="video-grid">'+videos.map(function(v){
+      return '<div class="video-card"><div class="video-thumb">'+(v.cover_image_url?'<img src="'+escH(v.cover_image_url)+'" alt=""/>':'🎵')+'</div>'
+        +'<div class="video-info"><div class="video-title">'+escH(v.title||v.video_description||'Untitled')+'</div>'
+        +'<div class="video-stats">👁 '+fmtN(v.view_count)+' · ❤️ '+fmtN(v.like_count)+' · 💬 '+fmtN(v.comment_count)+'</div></div></div>';
+    }).join('')+'</div>';
+  }catch(e){el.innerHTML='<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';}
+}
+function disconnectTikTok(){
+  try{TikTokAuth.clearSession();}catch(e){}
+  document.getElementById('ttDisconnected').style.display='block';
+  document.getElementById('ttConnected').style.display='none';
+  var dot=document.getElementById('ttSpDot'); if(dot) dot.className='sp-dot off';
+  var badge=document.getElementById('ttSidebarBadge'); if(badge) badge.style.display='none';
+  var pill=document.getElementById('ttTopbarPill'); if(pill) pill.style.display='none';
+  var dv=document.getElementById('dashTtVal'); if(dv){dv.textContent='Not connected';dv.style.color='';}
+  var sub=document.getElementById('dashTtSub'); if(sub) sub.innerHTML='<span class="sc-link" onclick="switchTab(\'tiktok\',null)">Connect →</span>';
+  var label=document.getElementById('ttSpLabel'); if(label) label.innerHTML='<span class="connect-link" onclick="switchTab(\'tiktok\',null)">Connect</span>';
+  _evalChannelData=null; _evalScoreData=null;
+  document.getElementById('evalMain').style.display='none';
+  document.getElementById('evalNoAccount').style.display='block';
+  toast('👋 TikTok disconnected — connect a new account');
+}
+
+/* ── EVALUATOR ── */
+function initEvaluator(){
+  try{
+    if(typeof YouTubeAuth!=='undefined'){ var s=YouTubeAuth.getSession(); if(s&&s.channel){ _evalChannelData=s.channel; showEvalMain(s.channel,'youtube'); return; }}
+    if(typeof TikTokAuth!=='undefined'){ var s2=TikTokAuth.getSession(); if(s2){ showEvalMainTt(s2); return; }}
+  }catch(e){}
+}
+function showEvalMain(channel, platform){
+  document.getElementById('evalNoAccount').style.display='none';
+  document.getElementById('evalLoading').style.display='none';
+  document.getElementById('evalMain').style.display='block';
+  var name=(channel&&channel.snippet&&channel.snippet.title)||'Channel';
+  var handle=(channel&&channel.snippet&&channel.snippet.customUrl)||platform;
+  document.getElementById('evalChannelName').textContent=name;
+  document.getElementById('evalChannelHandle').textContent=handle;
+  if(channel&&channel.snippet&&channel.snippet.thumbnails&&channel.snippet.thumbnails.default){
+    document.getElementById('evalAv').innerHTML='<img src="'+channel.snippet.thumbnails.default.url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+  }
+  if(channel&&channel.statistics){
+    document.getElementById('evalSubs').textContent=fmtN(channel.statistics.subscriberCount);
+    document.getElementById('evalViews').textContent=fmtN(channel.statistics.viewCount);
+    document.getElementById('evalVcount').textContent=fmtN(channel.statistics.videoCount);
+  }
+}
+function showEvalMainTt(session){
+  document.getElementById('evalNoAccount').style.display='none';
+  document.getElementById('evalLoading').style.display='none';
+  document.getElementById('evalMain').style.display='block';
+  var profile=session.profile||{};
+  var name=profile.display_name||profile.username||'TikTok';
+  document.getElementById('evalChannelName').textContent=name;
+  document.getElementById('evalChannelHandle').textContent='TikTok';
+  if(profile.avatar_url) document.getElementById('evalAv').innerHTML='<img src="'+profile.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+  document.getElementById('evalSubs').textContent=fmtN(profile.follower_count);
+  document.getElementById('evalSubs').style.color='var(--tt)';
+  document.getElementById('evalViews').textContent=fmtN(profile.likes_count);
+  document.getElementById('evalVcount').textContent=fmtN(profile.video_count);
+  _evalChannelData={_platform:'tiktok',snippet:{title:name},statistics:{subscriberCount:profile.follower_count||0,viewCount:profile.likes_count||0,videoCount:profile.video_count||0}};
+}
+function computeScore(channel, videos){
+  var st=(channel&&channel.statistics)||{};
+  var subs=parseInt(st.subscriberCount||0),views=parseInt(st.viewCount||0),vcount=parseInt(st.videoCount||0);
+  var aScore=subs>=1000000?20:subs>=100000?16:subs>=10000?12:subs>=1000?8:subs>=100?5:2;
+  var vpr=subs>0?views/subs:0;
+  var eScore=vpr>=200?20:vpr>=100?16:vpr>=50?12:vpr>=20?8:vpr>=5?5:2;
+  var cScore=vcount>=200?20:vcount>=100?17:vcount>=50?14:vcount>=20?10:vcount>=5?6:2;
+  var rScore=10;
+  if(videos&&videos.length){
+    var avg=videos.slice(0,5).reduce(function(s,v){return s+parseInt((v.statistics&&v.statistics.viewCount)||0);},0)/Math.min(5,videos.length);
+    var ratio=subs>0?avg/subs:0;
+    rScore=ratio>=.5?20:ratio>=.2?17:ratio>=.1?13:ratio>=.05?9:ratio>=.01?5:2;
+  }
+  var lScore=10;
+  if(videos&&videos.length){
+    var tv=0,tl=0; videos.slice(0,5).forEach(function(v){tv+=parseInt((v.statistics&&v.statistics.viewCount)||0);tl+=parseInt((v.statistics&&v.statistics.likeCount)||0);});
+    var lr=tv>0?tl/tv:0; lScore=lr>=.06?20:lr>=.04?17:lr>=.02?13:lr>=.01?9:lr>=.005?5:2;
+  }
+  var total=aScore+eScore+cScore+rScore+lScore;
+  return{total:total,ring:total>=80?'var(--green)':total>=65?'var(--gold)':total>=50?'var(--blue2)':'var(--text2)',
+    verdict:total>=80?'🔥 Top Tier':total>=65?'⚡ Established':total>=50?'📈 Growing':total>=35?'🌱 Early Stage':'🚀 Just Starting',
+    tier:total>=80?'Elite':total>=65?'Established':total>=50?'Growth Stage':total>=35?'Emerging':'Beginner',
+    metrics:[{l:'Audience Size',s:aScore,m:20},{l:'Engagement',s:eScore,m:20},{l:'Content Volume',s:cScore,m:20},{l:'Recent Performance',s:rScore,m:20},{l:'Like Rate',s:lScore,m:20}],
+    raw:{subs:subs,views:views,vcount:vcount,vpr:vpr.toFixed(1)}};
+}
+function renderScore(sd){
+  var ring=document.getElementById('evalRing');
+  var circumference=314.16;
+  var offset=circumference-(sd.total/100)*circumference;
+  ring.style.stroke=sd.ring;
+  setTimeout(function(){ring.style.strokeDashoffset=offset;},80);
+  document.getElementById('evalScoreNum').textContent=sd.total;
+  document.getElementById('evalScoreNum').style.color=sd.ring;
+  document.getElementById('evalVerdict').textContent=sd.verdict;
+  document.getElementById('evalVerdict').style.color=sd.ring;
+  document.getElementById('evalTier').textContent=sd.tier+' · '+sd.total+'/100';
+  var barsEl=document.getElementById('evalBars');
+  barsEl.innerHTML=sd.metrics.map(function(m){
+    var pct=Math.round((m.s/m.m)*100);
+    return '<div class="eval-metric-row"><div class="eval-metric-label"><span>'+m.l+'</span><span>'+m.s+'/'+m.m+'</span></div>'
+      +'<div class="eval-metric-track"><div class="eval-metric-fill" style="width:0%" data-pct="'+pct+'%"></div></div></div>';
+  }).join('');
+  setTimeout(function(){barsEl.querySelectorAll('.eval-metric-fill').forEach(function(el){el.style.width=el.dataset.pct;});},200);
+}
+async function runEvaluation(){
+  document.getElementById('evalMain').style.display='none';
+  document.getElementById('evalNoAccount').style.display='none';
+  document.getElementById('evalLoading').style.display='block';
+  var ytS=null,ttS=null;
+  try{ytS=YouTubeAuth.getSession();}catch(e){}
+  try{ttS=TikTokAuth.getSession();}catch(e){}
+  if(ytS&&ytS.channel){
+    document.getElementById('evalLoadingMsg').textContent='Fetching your YouTube data…';
+    var videos=null;
+    try{var vr=await YouTubeAuth.fetchVideos(ytS.accessToken,10);videos=vr&&vr.items?vr.items:[];}catch(e){}
+    var sd=computeScore(ytS.channel,videos); _evalScoreData=sd; _evalChannelData=ytS.channel; _evalVideosData=videos;
+    document.getElementById('evalLoading').style.display='none';
+    showEvalMain(ytS.channel,'youtube'); renderScore(sd);
+    await evalGetIntro(ytS.channel,videos,sd,'YouTube');
+    toast('✅ Evaluation complete!');
+  } else if(ttS){
+    document.getElementById('evalLoadingMsg').textContent='Fetching your TikTok data…';
+    var ttProfile=ttS.profile||{};
+    try{var pr=await fetch(DIJO+'/tiktok/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:ttS.accessToken})});var pd=await pr.json();if(pd&&pd.data&&pd.data.user)ttProfile=pd.data.user;}catch(e){}
+    var ttVids=[];
+    try{var vr2=await fetch(DIJO+'/tiktok/videos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:ttS.accessToken,max_count:10})});var vd=await vr2.json();ttVids=(vd&&vd.data&&vd.data.videos)||[];}catch(e){}
+    var ttCh={_platform:'tiktok',snippet:{title:ttProfile.display_name||'TikTok'},statistics:{subscriberCount:ttProfile.follower_count||0,viewCount:ttProfile.likes_count||0,videoCount:ttProfile.video_count||0}};
+    var ttVidsForScore=ttVids.map(function(v){return{statistics:{viewCount:v.view_count||0,likeCount:v.like_count||0}};});
+    var sd2=computeScore(ttCh,ttVidsForScore); _evalScoreData=sd2; _evalChannelData=ttCh;
+    document.getElementById('evalLoading').style.display='none';
+    showEvalMainTt(ttS); renderScore(sd2);
+    await evalGetIntroTt(ttProfile,ttVids,sd2);
+    toast('✅ TikTok evaluation complete!');
+  } else {
+    document.getElementById('evalLoading').style.display='none';
+    document.getElementById('evalNoAccount').style.display='block';
+    toast('⚠️ Connect YouTube or TikTok first');
+  }
+}
+async function evalGetIntro(channel,videos,score,platform){
+  var st=(channel&&channel.statistics)||{};
+  var name=(channel&&channel.snippet&&channel.snippet.title)||'Channel';
+  var topVids=videos?videos.slice(0,3).map(function(v,i){var s=v.statistics||{};var t=(v.snippet&&v.snippet.title)||'Video';return(i+1)+'. "'+t+'" — '+fmtN(s.viewCount)+' views, '+fmtN(s.likeCount)+' likes';}).join('\n'):'N/A';
+  var prompt='Evaluate this '+platform+' channel in 3 sentences max. Then 3 bullet action points.\n\nChannel: '+name+'\nSubscribers: '+fmtN(st.subscriberCount)+'\nViews: '+fmtN(st.viewCount)+'\nVideos: '+(st.videoCount||0)+'\nScore: '+score.total+'/100 ('+score.tier+')\nTop videos:\n'+topVids;
+  try{var reply=await callDijo(prompt,'creator');addEvalMsg('dijo',reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'));_evalChatHistory=[{role:'dijo',content:reply}];}
+  catch(e){addEvalMsg('dijo','Score: <strong>'+score.total+'/100</strong> ('+score.tier+'). Ask me anything about your growth strategy.');}
+}
+async function evalGetIntroTt(profile,videos,score){
+  var name=profile.display_name||'TikTok account';
+  var topVids=videos.slice(0,3).map(function(v,i){return(i+1)+'. '+fmtN(v.view_count)+' views, '+fmtN(v.like_count)+' likes';}).join('\n');
+  var prompt='Evaluate this TikTok account in 3 sentences max. Then 3 bullet action points.\n\nAccount: '+name+'\nFollowers: '+fmtN(profile.follower_count)+'\nLikes: '+fmtN(profile.likes_count)+'\nVideos: '+(profile.video_count||0)+'\nScore: '+score.total+'/100 ('+score.tier+')\nTop videos:\n'+(topVids||'N/A');
+  try{var reply=await callDijo(prompt,'creator');addEvalMsg('dijo',reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'));_evalChatHistory=[{role:'dijo',content:reply}];}
+  catch(e){addEvalMsg('dijo','TikTok score: <strong>'+score.total+'/100</strong> ('+score.tier+'). Ask me anything.');}
+}
+function evalSend(){ var i=document.getElementById('evalInput');var msg=i.value.trim();if(!msg)return;i.value='';evalAsk(msg);document.getElementById('evalChips').style.display='none'; }
+async function evalAsk(question){
+  addEvalMsg('user',escH(question));
+  var ctx='';
+  if(_evalScoreData&&_evalChannelData){ var st=(_evalChannelData.statistics)||{};var nm=(_evalChannelData.snippet&&_evalChannelData.snippet.title)||'channel'; ctx='['+nm+': '+fmtN(st.subscriberCount)+' subs/followers, '+fmtN(st.viewCount)+' views, '+(st.videoCount||0)+' videos, Score: '+_evalScoreData.total+'/100 ('+_evalScoreData.tier+')] '; }
+  var typId='typ-'+Date.now();
+  var typEl=document.createElement('div');typEl.className='eval-msg';typEl.id=typId;
+  typEl.innerHTML='<div class="eval-av">DJ</div><div class="eval-bubble dijo" style="color:var(--text3);font-style:italic"><span class="spinner spinner-gold" style="width:10px;height:10px;border-width:1.5px"></span> Thinking…</div>';
+  document.getElementById('evalMsgs').appendChild(typEl);scrollEval();
+  try{
+    var reply=await callDijo(ctx+question,'creator');
+    var te=document.getElementById(typId);if(te)te.remove();
+    addEvalMsg('dijo',reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'));
+    _evalChatHistory.push({role:'user',content:question},{role:'dijo',content:reply});
+  }catch(e){ var te2=document.getElementById(typId);if(te2)te2.remove(); addEvalMsg('dijo','Dijo unavailable — try again in a moment.'); }
+}
+function addEvalMsg(from,html){ var msgs=document.getElementById('evalMsgs');var div=document.createElement('div');div.className='eval-msg'+(from==='user'?' user':'');var avHtml=from==='user'?'<div class="eval-av you">You</div>':'<div class="eval-av">DJ</div>';div.innerHTML=avHtml+'<div class="eval-bubble '+(from==='user'?'user':'dijo')+'">'+html+'</div>';msgs.appendChild(div);scrollEval(); }
+function scrollEval(){ var m=document.getElementById('evalMsgs');if(m)m.scrollTop=m.scrollHeight; }
+function clearEvalChat(){ document.getElementById('evalMsgs').innerHTML='<div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Chat cleared. What would you like to know?</div></div>';_evalChatHistory=[];document.getElementById('evalChips').style.display='flex'; }
+
+/* ── COPY ── */
+function copyEl(id){ var el=document.getElementById(id);if(!el)return;navigator.clipboard.writeText(el.innerText||el.textContent).then(function(){toast('📋 Copied!');}).catch(function(){}); }
+function copyTags(id){ var el=document.getElementById(id);if(!el)return;var text=Array.from(el.querySelectorAll('.ob-tag')).map(function(s){return s.textContent;}).join(' ');navigator.clipboard.writeText(text).then(function(){toast('📋 Hashtags copied!');}).catch(function(){}); }
+
+/* ── TOAST ── */
+function toast(msg){ var shelf=document.getElementById('toastShelf');var el=document.createElement('div');el.className='toast';el.textContent=msg;shelf.appendChild(el);setTimeout(function(){el.remove();},3400); }
+
+/* ── INIT ── */
+window.addEventListener('load', async function(){
+  checkAuth();
+  initYouTube();
+  initTikTok();
+  await fetchTrends();
+  renderDashTrends();
+  renderDashOpps();
+  loadBriefing();
+  setInterval(function(){fetch(DIJO+'/ping').catch(function(){});},600000);
+});
+</script>
 </body>
 </html>
