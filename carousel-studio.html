@@ -459,22 +459,16 @@ nav {
       <div class="layout-badge" id="layoutBadge">—</div>
       <div class="layout-switcher">
         <button class="layout-btn" onclick="changeLayout('FULL_BLEED')" title="Full image background with text overlay">Full Bleed</button>
-        <button class="layout-btn" onclick="changeLayout('SPLIT_LEFT')" title="Image left, text right">Split L</button>
-        <button class="layout-btn" onclick="changeLayout('SPLIT_RIGHT')" title="Text left, image right">Split R</button>
-        <button class="layout-btn" onclick="changeLayout('CORNER_FLOAT')" title="Floating image in corner">Corner</button>
         <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')" title="Image top, text bottom">Bot Strip</button>
         <button class="layout-btn" onclick="changeLayout('TOP_STRIP')" title="Text top, image bottom">Top Strip</button>
         <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')" title="Bold colour band over image">Band</button>
         <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')" title="Two images with text">Dual Img</button>
         <button class="layout-btn" onclick="changeLayout('STAT_HERO')" title="Big number hero slide">Stat</button>
         <button class="layout-btn" onclick="changeLayout('QUOTE_PULL')" title="Pull quote layout">Quote</button>
-        <button class="layout-btn" onclick="changeLayout('GRID_POINTS')" title="Grid of key points">Grid</button>
-        <button class="layout-btn" onclick="changeLayout('MAGAZINE_SPLIT')" title="Magazine style split">Magazine</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')" title="Editorial magazine cover">Ed. Cover</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')" title="Editorial collage with photos">Ed. Collage</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')" title="Three-photo editorial">Ed. Col×3</button>
         <button class="layout-btn" onclick="changeLayout('HABIT_COVER')" title="Thynk-style habit cover">Habit Cover</button>
-        <button class="layout-btn" onclick="changeLayout('HABIT_SLIDE')" title="Thynk-style habit slide">Habit Slide</button>
       </div>
     </div>
 
@@ -558,7 +552,7 @@ nav {
       </div>
       <div class="exp-opt" id="eoCopy" onclick="selExport('copy')">
         <span class="exp-icon">📋</span>
-        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + trending hashtags</div></div>
+        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + captions</div></div>
         <div class="exp-radio"></div>
       </div>
       <div class="exp-opt" id="eoJson" onclick="selExport('json')">
@@ -598,7 +592,7 @@ nav {
 })();
 
 // 2. FIX "Habit Habit 01" — duplicate label bug
-// Patch happens inside carousel-studio.js HABIT_SLIDE case
+// Patch happens inside carousel-studio.js layout renderer
 // We override the label construction after load
 var _origRender = window.renderSlide;
 
@@ -614,16 +608,19 @@ window.addEventListener('load', function(){
 var _origChangeLayout = window.changeLayout;
 window.changeLayout = function(newLayout){
   if(!window.ST || !window.ST.slides.length) return;
+  var blockedLayouts = ['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
+  if(blockedLayouts.indexOf(newLayout) !== -1){
+    toast('Layout unavailable in this version');
+    return;
+  }
   var applyAll = document.getElementById('applyAllToggle');
   if(applyAll && applyAll.checked){
-    // Apply to every slide
     ST.slides.forEach(function(s){ s.layout = newLayout; });
     buildStrip();
     renderSlide();
     fillEdit();
     toast('Layout → ' + newLayout.replace(/_/g,' ') + ' · applied to all slides');
   } else {
-    // Original — current slide only
     ST.slides[ST.cur].layout = newLayout;
     renderSlide();
     fillEdit();
@@ -717,22 +714,10 @@ var _parsedOrig = window.parseServerSlides;
 if(typeof window.parseServerSlides === 'function'){
   window.parseServerSlides = function(data, topic, platform, tone, count){
     var slides = _parsedOrig.apply(this, arguments);
-    return slides.map(function(slide, i){
-      // Enforce no empty headline
-      if(!slide.headline || slide.headline.trim().length < 3){
-        slide.headline = i === 0 ? 'This changes everything' :
-                         i === slides.length-1 ? 'Ready to take action?' :
-                         'Step ' + (i+1) + ': the shift that matters';
-      }
-      // Enforce no empty body (except cover layouts)
-      var coverLayouts = ['EDITORIAL_COVER','HABIT_COVER'];
-      if(!slide.body || slide.body.trim().length < 10){
-        if(coverLayouts.indexOf(slide.layout) === -1){
-          slide.body = 'Apply this consistently and you will see real results over time.';
-        }
-      }
-      return slide;
-    });
+    if(typeof normalizeSlidesDeck === 'function'){
+      slides = normalizeSlidesDeck(slides);
+    }
+    return slides;
   };
 }
 
