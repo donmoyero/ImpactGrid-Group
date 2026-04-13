@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════
    IMPACTGRID CREATOR STUDIO — creator-studio.css
    Merged, deduplicated, mobile-first
+   v2.1 — Mobile fixes: topbar overflow, sidebar drawer,
+           close button, z-index stack, swipe-to-close
 ═══════════════════════════════════════════════ */
 
 /* ═══════════════════════════
@@ -49,7 +51,6 @@ body {
   font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.5;
   -webkit-font-smoothing:antialiased;
   display:flex; flex-direction:column;
-  /* Safe area support for notched phones */
   padding-top:env(safe-area-inset-top);
   padding-left:env(safe-area-inset-left);
   padding-right:env(safe-area-inset-right);
@@ -109,11 +110,14 @@ img { display:block; max-width:100%; }
   background:var(--card); border-bottom:1px solid var(--border);
   display:flex; align-items:center; gap:10px;
   padding:0 16px; z-index:100;
+  /* Prevent items from wrapping — we control overflow explicitly */
+  overflow:hidden;
 }
 .tb-logo {
   display:flex; align-items:center; gap:8px;
   font-family:'Syne',sans-serif; font-weight:900;
   font-size:15px; letter-spacing:-.03em; flex-shrink:0;
+  white-space:nowrap;
 }
 .tb-logo-img { width:26px; height:26px; object-fit:contain; border-radius:5px; }
 .tb-logo-mark {
@@ -124,13 +128,14 @@ img { display:block; max-width:100%; }
 }
 .tb-div { width:1px; height:24px; background:var(--border2); flex-shrink:0; }
 .tb-crumb { font-size:12px; color:var(--text3); font-family:'DM Mono',monospace; white-space:nowrap; }
-.tb-right { margin-left:auto; display:flex; align-items:center; gap:6px; }
+.tb-right { margin-left:auto; display:flex; align-items:center; gap:6px; flex-shrink:0; }
 
 .tb-pill {
   display:flex; align-items:center; gap:5px;
   font-family:'DM Mono',monospace; font-size:10px;
   padding:4px 10px; border-radius:20px;
   letter-spacing:.08em; text-transform:uppercase; white-space:nowrap;
+  flex-shrink:0;
 }
 .tb-pill.green { background:var(--green-dim); color:var(--green); border:1px solid rgba(15,168,118,.2); }
 .tb-pill.gold { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-glo); }
@@ -163,6 +168,7 @@ img { display:block; max-width:100%; }
   padding:4px 10px 4px 4px; border-radius:8px;
   background:var(--card); border:1px solid var(--border2);
   cursor:pointer; position:relative; transition:border-color var(--transition);
+  flex-shrink:0;
 }
 .user-btn:hover { border-color:var(--gold); }
 .user-av {
@@ -200,22 +206,29 @@ img { display:block; max-width:100%; }
 .tb-login {
   font-size:12px; font-weight:500; color:var(--text2);
   padding:6px 12px; border-radius:8px; border:1px solid var(--border2);
-  transition:all var(--transition);
+  transition:all var(--transition); white-space:nowrap;
 }
 .tb-login:hover { border-color:var(--gold); color:var(--gold); }
 .tb-join {
   padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700;
   background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#fff;
-  white-space:nowrap;
+  white-space:nowrap; flex-shrink:0;
 }
 [data-theme="dark"] .tb-join { color:#07090f; }
 
-/* Hamburger */
+/* Hamburger — hidden on desktop, shown on mobile */
 .hamburger {
-  display:none; flex-direction:column; gap:5px;
-  padding:6px; cursor:pointer; flex-shrink:0; margin-right:2px;
+  display:none; flex-direction:column; justify-content:center; gap:5px;
+  padding:6px; cursor:pointer; flex-shrink:0;
+  width:36px; height:36px; border-radius:8px;
+  background:transparent; border:none;
+  -webkit-tap-highlight-color:transparent;
 }
-.hamburger span { display:block; width:18px; height:2px; background:var(--text2); border-radius:2px; }
+.hamburger span { display:block; width:18px; height:2px; background:var(--text2); border-radius:2px; transition:all .25s; }
+/* Animated X when sidebar is open */
+.hamburger.is-open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+.hamburger.is-open span:nth-child(2) { opacity:0; transform:scaleX(0); }
+.hamburger.is-open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
 
 /* ═══════════════════════════
    APP SHELL
@@ -231,11 +244,33 @@ img { display:block; max-width:100%; }
   display:flex; flex-direction:column;
   overflow-y:auto; overflow-x:hidden;
   transition:transform .3s cubic-bezier(.4,0,.2,1);
-  /* Prevent momentum scroll bleed on iOS */
   -webkit-overflow-scrolling:touch;
 }
 .sidebar::-webkit-scrollbar { width:3px; }
 .sidebar::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+/* Sidebar mobile close button — hidden on desktop */
+.sb-close-btn {
+  display:none;
+  align-items:center; justify-content:space-between;
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.sb-close-inner {
+  display:flex; align-items:center; gap:8px;
+  font-family:'Syne',sans-serif; font-weight:900;
+  font-size:14px; color:var(--text);
+}
+.sb-close-inner img { width:22px; height:22px; object-fit:contain; border-radius:4px; }
+.sb-x {
+  width:30px; height:30px; border-radius:8px;
+  background:var(--bg2); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; color:var(--text2); cursor:pointer;
+  flex-shrink:0; transition:all var(--transition);
+}
+.sb-x:hover { border-color:var(--gold); color:var(--gold); }
 
 .sb-sec { padding:14px 12px 6px; }
 .sb-sec-title {
@@ -248,9 +283,7 @@ img { display:block; max-width:100%; }
   padding:10px 10px; border-radius:9px;
   font-size:13px; font-weight:500; color:var(--text2);
   cursor:pointer; transition:all var(--transition);
-  border:1px solid transparent;
-  /* Tap target minimum 44px */
-  min-height:44px;
+  border:1px solid transparent; min-height:44px;
 }
 .sb-item:hover { background:var(--bg2); color:var(--text); }
 .sb-item:focus { outline:2px solid var(--gold); outline-offset:2px; }
@@ -305,7 +338,6 @@ img { display:block; max-width:100%; }
   background:var(--bg2); flex-wrap:nowrap;
   flex-shrink:0; overflow-x:auto; overflow-y:visible;
   -webkit-overflow-scrolling:touch;
-  /* Hide scrollbar but keep scrollability */
   scrollbar-width:none;
 }
 .tabs-bar::-webkit-scrollbar { display:none; }
@@ -480,14 +512,10 @@ img { display:block; max-width:100%; }
 .form-input, .form-select, .form-textarea {
   width:100%; padding:10px 12px; border-radius:9px;
   border:1px solid var(--border2); background:var(--bg);
-  color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif;
+  color:var(--text); font-family:'DM Sans',sans-serif;
   transition:border-color var(--transition);
-  /* Prevent iOS zoom on focus */
+  /* Prevent iOS zoom: input font-size must be ≥16px */
   font-size:16px;
-}
-.form-input, .form-select { font-size:14px; }
-@media (max-width:480px) {
-  .form-input, .form-select, .form-textarea { font-size:16px; }
 }
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   outline:none; border-color:var(--gold);
@@ -662,7 +690,7 @@ img { display:block; max-width:100%; }
 .eval-input {
   flex:1; padding:9px 13px; border-radius:9px;
   border:1px solid var(--border2); background:var(--bg);
-  color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif;
+  color:var(--text); font-size:16px; font-family:'DM Sans',sans-serif;
 }
 .eval-input:focus { outline:none; border-color:var(--gold); }
 .eval-send {
@@ -786,8 +814,9 @@ img { display:block; max-width:100%; }
 ═══════════════════════════ */
 .mob-overlay {
   display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.5); z-index:150;
+  background:rgba(0,0,0,.5); z-index:190;
   -webkit-tap-highlight-color:transparent;
+  /* z-index 190: above content (100) and tabs (100), below sidebar (200) */
 }
 .mob-overlay.open { display:block; }
 
@@ -810,9 +839,9 @@ img { display:block; max-width:100%; }
 }
 .gen-error.visible { display:block; }
 
-/* ═══════════════════════════
-   RESPONSIVE — TABLET
-═══════════════════════════ */
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — TABLET  ≤1100px
+═══════════════════════════════════════════════ */
 @media (max-width:1100px) {
   .two-col { grid-template-columns:1fr; }
   .gen-layout { grid-template-columns:1fr; }
@@ -822,69 +851,90 @@ img { display:block; max-width:100%; }
   .quick-launch-grid { grid-template-columns:repeat(3,1fr); }
 }
 
-/* ═══════════════════════════
-   RESPONSIVE — MOBILE (<860px)
-   Sidebar becomes drawer
-═══════════════════════════ */
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — MOBILE  ≤860px
+   Sidebar becomes full-height fixed drawer
+═══════════════════════════════════════════════ */
 @media (max-width:860px) {
+
+  /* ── Sidebar: off-screen by default, slides in ── */
   :root { --sidebar-w:280px; }
 
   .sidebar {
-    position:fixed; top:0; bottom:0; left:0;
-    transform:translateX(-100%);
+    position:fixed;
+    top:0; bottom:0; left:0;
+    /* Full height: covers ticker + topbar intentionally so it feels native */
+    height:100dvh; height:100vh; /* fallback for older browsers */
     z-index:200;
-    box-shadow:8px 0 40px rgba(0,0,0,.2);
-    /* Safe area on notched phones */
+    transform:translateX(-100%);
+    box-shadow:8px 0 40px rgba(0,0,0,.22);
     padding-bottom:env(safe-area-inset-bottom);
+    /* Width is defined by --sidebar-w above */
+    width:var(--sidebar-w);
   }
   [data-theme="dark"] .sidebar { box-shadow:8px 0 40px rgba(0,0,0,.6); }
   .sidebar.open { transform:translateX(0); }
 
+  /* Show close button inside sidebar on mobile */
+  .sb-close-btn { display:flex; }
+
+  /* ── Hamburger: show it ── */
   .hamburger { display:flex; }
 
-  /* Hide some topbar items to save space */
-  .tb-crumb { display:none; }
-  .tb-div { display:none; }
-  .tb-back { display:none; }
-  .tb-pill { padding:4px 8px; font-size:9px; }
-  .tb-pill-label { display:none; }
+  /* ── Topbar: hide non-essential items to prevent overflow ── */
+  .tb-crumb    { display:none; }
+  .tb-div      { display:none; }
+  .tb-back     { display:none; }
+  /* Hide status pills — sidebar shows platform status */
+  .tb-pill     { display:none !important; }
+  /* Hide Login button — keep Join only */
+  .tb-login    { display:none; }
+  /* Shrink user name in user-btn to just avatar */
+  .user-name   { display:none; }
+  .user-btn    { padding:4px; }
 
-  .eval-chat { height:420px; }
+  /* ── Layouts ── */
+  .eval-chat   { height:420px; }
   .eval-layout { grid-template-columns:1fr; }
-  .feat-grid { grid-template-columns:1fr; }
+  .feat-grid   { grid-template-columns:1fr; }
   .quick-launch-grid { grid-template-columns:1fr; gap:10px; }
 
-  .panel { padding:16px; }
+  .panel     { padding:16px; }
   .card-body { padding:14px; }
 
-  /* Bottom tab hint on mobile */
+  /* Tabs: scroll hint via gradient mask */
   .tabs-bar {
     padding:10px 12px 0;
-    /* Show a fade hint that more tabs exist */
     mask-image:linear-gradient(to right, black 85%, transparent);
     -webkit-mask-image:linear-gradient(to right, black 85%, transparent);
   }
 
-  /* Toast goes bottom-center on mobile */
-  .toast-shelf {
-    bottom:16px; right:16px; left:16px;
-    align-items:center;
-  }
+  /* Toast: center at bottom on mobile */
+  .toast-shelf { bottom:16px; right:16px; left:16px; align-items:center; }
   .toast { text-align:center; }
+
+  /* Remove hover transforms on touch devices */
+  .trend-item:hover  { transform:none; }
+  .stat-card:hover   { transform:none; }
+  .video-card:hover  { transform:none; }
+  .opp-card:hover    { background:var(--bg2); }
+
+  /* Minimum tap targets */
+  .sb-item, .tab-btn, .connect-btn, .gen-btn, .eval-send, .tb-theme { min-height:44px; }
 }
 
-/* ═══════════════════════════
-   RESPONSIVE — SMALL MOBILE (<560px)
-═══════════════════════════ */
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — SMALL MOBILE  ≤560px
+═══════════════════════════════════════════════ */
 @media (max-width:560px) {
-  .panel { padding:12px; }
-  .stat-grid { grid-template-columns:1fr; gap:10px; }
-  .stat-card { padding:14px 16px; }
-  .sc-val { font-size:20px; }
-  .tabs-bar { padding:8px 10px 0; gap:2px; }
-  .tab-btn { padding:7px 10px; font-size:12px; }
+  .panel      { padding:12px; }
+  .stat-grid  { grid-template-columns:1fr; gap:10px; }
+  .stat-card  { padding:14px 16px; }
+  .sc-val     { font-size:20px; }
+  .tabs-bar   { padding:8px 10px 0; gap:2px; }
+  .tab-btn    { padding:7px 10px; font-size:12px; }
 
-  /* Stack trend items on very small screens */
+  /* Trend items: tighter layout */
   .trend-item {
     grid-template-columns:24px 1fr auto;
     grid-template-rows:auto auto;
@@ -892,55 +942,26 @@ img { display:block; max-width:100%; }
   }
   .ti-plat { display:none; }
 
-  .gen-layout { grid-template-columns:1fr; }
-  .timing-grid { grid-template-columns:repeat(2,1fr); }
-
-  .connect-wrap { padding:32px 16px; }
-  .feat-grid { grid-template-columns:1fr; }
-
+  .gen-layout    { grid-template-columns:1fr; }
+  .timing-grid   { grid-template-columns:repeat(2,1fr); }
+  .connect-wrap  { padding:32px 16px; }
+  .feat-grid     { grid-template-columns:1fr; }
   .quick-launch-grid { grid-template-columns:1fr; }
   .quick-launch-card { padding:16px; }
-  .qlc-icon { font-size:22px; margin-bottom:6px; }
+  .qlc-icon      { font-size:22px; margin-bottom:6px; }
+  .eval-chat     { height:380px; }
+  .eval-bubble   { max-width:95%; font-size:12px; }
+  .video-grid    { grid-template-columns:repeat(2,1fr); }
 
-  /* Evaluator chat smaller on mobile */
-  .eval-chat { height:380px; }
-  .eval-bubble { max-width:95%; font-size:12px; }
-
-  /* Video grid 2 col on small screens */
-  .video-grid { grid-template-columns:repeat(2,1fr); }
+  /* TikTok stats: 2-col on tiny screens */
+  #ttConnected .card-body > div:last-child {
+    grid-template-columns:repeat(2,1fr) !important;
+  }
 }
 
 /* ═══════════════════════════
-   MOBILE-SPECIFIC UX HELPERS
+   GLOBAL HELPERS
 ═══════════════════════════ */
-
-/* Ensure all interactive elements are at least 44×44px tap targets */
-@media (max-width:860px) {
-  .sb-item,
-  .tab-btn,
-  .connect-btn,
-  .gen-btn,
-  .eval-send,
-  .tb-theme { min-height:44px; }
-
-  /* Remove hover effects on touch devices to avoid sticky hover states */
-  .trend-item:hover { transform:none; }
-  .stat-card:hover { transform:none; }
-  .video-card:hover { transform:none; }
-  .opp-card:hover { background:var(--bg2); }
-}
-
-/* Prevent text size adjustment on orientation change */
 html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-
-/* Smooth momentum scrolling everywhere on iOS */
-.content-area,
-.eval-msgs,
-.sidebar,
-.tabs-bar { -webkit-overflow-scrolling:touch; }
-
-/* Focus visible for keyboard nav */
-*:focus-visible {
-  outline:2px solid var(--gold);
-  outline-offset:2px;
-}
+.content-area, .eval-msgs, .sidebar, .tabs-bar { -webkit-overflow-scrolling:touch; }
+*:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
