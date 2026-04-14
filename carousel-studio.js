@@ -1,15 +1,15 @@
 /* ═══════════════════════════════════════════════════════════
    IMPACTGRID — Carousel Studio
-   carousel-studio.js  v4.3
+   carousel-studio.js  v4.4
 
-   v4.3 changes (v4.2 visuals 100% intact):
-   - AI prompt replaced: writes real narrative carousel copy with story arc
-   - detectFormat() picks arc type from topic (stats/myth-bust/how-to/transformation/quote/comparison/listicle)
-   - Trend chip bar loads from Anthropic API — no dead server dependency
-   - Caption + hashtag generator (punchy, platform-aware, SEO-optimised)
-   - SEO / trend score strip rendered below toolbar
-   - Brand = www.impactgridgroup.com hardcoded — bottom watermark only,
-     never written on slide content, never duplicated
+   v4.4 fixes (v4.3 visuals 100% intact):
+   - eHead / eBody panel fields now exist and stay in sync with slide
+   - Caption preserved through normalizeSlidesDeck (no longer wiped)
+   - Hashtags no longer hidden by renderSlide — right-panel only
+   - renderCaptionHashtags runs AFTER normalize so caption survives
+   - All slide text click-to-edit inline (headline, body, stat, quote)
+   - fillEdit() fully synced: headline, body, stat, quote, caption, hashtags
+   - liveEdit() wired to eHead/eBody changes → rerenders slide in real time
    ═══════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ var AI_URL  = 'https://api.anthropic.com/v1/messages';
 var AI_MODEL= 'claude-sonnet-4-20250514';
 
 /* ─────────────────────────────────────────────────────────
-   1. ASSET LIBRARY  (unchanged from v4.2)
+   1. ASSET LIBRARY
    ───────────────────────────────────────────────────────── */
 var DA = {
   "cozy-home":{
@@ -162,7 +162,7 @@ var DA = {
 };
 
 /* ─────────────────────────────────────────────────────────
-   2. THEME DETECTION  (unchanged from v4.2)
+   2. THEME DETECTION
    ───────────────────────────────────────────────────────── */
 var SIGNALS = {
   workspace:["produc","habit","routine","income","money","business","sales","revenue","market","strategy","content creator","social media","creator","brand","client","freelance","hustle","grow","audience","follower","engagement","post","reel","youtube","tiktok","linkedin","coach","consult","email","newsletter","launch","offer","scale","lead","funnel","analytics","workflow","system","tool","app","automat","schedule","outsource","team","agency","niche","platform","algorithm","viral","six figure","seven figure","passive income"],
@@ -188,7 +188,7 @@ function detectTheme(text){
 }
 
 /* ─────────────────────────────────────────────────────────
-   3. FORMAT DETECTION + NARRATIVE ARCS  (new in v4.3)
+   3. FORMAT DETECTION + NARRATIVE ARCS
    ───────────────────────────────────────────────────────── */
 var FORMAT_ARCS = {
   STATS_STORY:    ['hook','stat','insight','proof','stat','takeaway','cta'],
@@ -230,7 +230,7 @@ function buildArc(format, count){
 }
 
 /* ─────────────────────────────────────────────────────────
-   4. ASSET PICKING & OVERLAY HELPERS  (unchanged from v4.2)
+   4. ASSET PICKING & OVERLAY HELPERS
    ───────────────────────────────────────────────────────── */
 function pickAsset(theme, slideType, slideIndex, offset){
   var T=DA[theme]; if(!T||!T.assets.length) return null;
@@ -284,7 +284,7 @@ function getPanelText(theme){
 }
 
 /* ─────────────────────────────────────────────────────────
-   5. LAYOUT ASSIGNMENT  (unchanged from v4.2)
+   5. LAYOUT ASSIGNMENT
    ───────────────────────────────────────────────────────── */
 var LAYOUT_SEQUENCE = [
   'FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE',
@@ -335,6 +335,9 @@ function limitBody(text){
   return parts.slice(0,2).join(' ');
 }
 
+/* ─────────────────────────────────────────────────────────
+   FIX: normalizeSlidesDeck NOW PRESERVES caption + hashtags
+   ───────────────────────────────────────────────────────── */
 function normalizeSlidesDeck(slides){
   if(!Array.isArray(slides)) return [];
   return slides.map(function(slide,i){
@@ -345,7 +348,9 @@ function normalizeSlidesDeck(slides){
     out.body=limitBody(out.body||'');
     out.quote=stripHashtags(out.quote||'');
     out.cta=stripHashtags(out.cta||'');
-    out.hashtags=[];
+    /* ✦ PRESERVE caption and hashtags — do NOT zero them */
+    out.caption = out.caption || '';
+    out.hashtags = Array.isArray(out.hashtags) ? out.hashtags : [];
     if(out.type==='cta'&&!out.cta) out.cta='Follow for more';
     if(out.type!=='hook'&&!out.body) out.body='Apply this consistently to see measurable progress.';
     return out;
@@ -363,8 +368,10 @@ function headlineSize(text){
 var ST={
   slides:[], cur:0, count:7, theme:null, zoom:100,
   format:'square', accent:'#f5e400',
-  brand: '', /* always overridden to BRAND constant — see init */
-  userImages:{}, assetOffset:0, exportType:'png', fontPair:'syne'
+  brand: '',
+  userImages:{}, assetOffset:0, exportType:'png', fontPair:'syne',
+  globalCaption: '',    /* ✦ NEW: store the AI caption for the whole deck */
+  globalHashtags: []    /* ✦ NEW: store hashtags for the whole deck */
 };
 
 var FONT_PAIRS={
@@ -428,7 +435,7 @@ function showAssetPreview(theme){
 }
 
 /* ─────────────────────────────────────────────────────────
-   8. TREND CHIPS  (new in v4.3 — loads from Anthropic API)
+   8. TREND CHIPS
    ───────────────────────────────────────────────────────── */
 var TREND_FALLBACK = [
   'AI Productivity','Creator Economy','Personal Branding',
@@ -441,7 +448,7 @@ async function loadTrendChips(){
   if(!bar) return;
   bar.innerHTML = '<span class="tlbl">Trending</span><span style="font-size:.7rem;color:var(--text3);font-family:var(--fm)">Loading…</span>';
 
-  var topics = TREND_FALLBACK; /* default */
+  var topics = TREND_FALLBACK;
 
   try {
     var res = await fetch(AI_URL, {
@@ -475,7 +482,7 @@ function renderTrendChips(bar, topics){
     chip.className = 'trend-chip';
     chip.textContent = topic;
     chip.style.cssText = 'background:rgba(245,228,0,.06);border:1px solid rgba(245,228,0,.15);border-radius:20px;padding:3px 10px;font-size:10px;font-family:var(--fm);color:rgba(245,228,0,.7);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:.15s;letter-spacing:.2px;';
-    chip.addEventListener('mouseover', function(){ this.style.background='rgba(245,228,0,.15)'; this.style.color='var(--ig-yellow,#f5e400)'; });
+    chip.addEventListener('mouseover', function(){ this.style.background='rgba(245,228,0,.15)'; this.style.color='#f5e400'; });
     chip.addEventListener('mouseout',  function(){ this.style.background='rgba(245,228,0,.06)'; this.style.color='rgba(245,228,0,.7)'; });
     chip.addEventListener('click', function(){
       var inp = document.getElementById('topicInput');
@@ -486,7 +493,7 @@ function renderTrendChips(bar, topics){
 }
 
 /* ─────────────────────────────────────────────────────────
-   9. AI GENERATION  (v4.3 — direct Anthropic API, narrative prompt)
+   9. AI GENERATION
    ───────────────────────────────────────────────────────── */
 async function generate(){
   var topic=document.getElementById('topicInput').value.trim();
@@ -521,12 +528,19 @@ async function generate(){
 
   try {
     var data = await callAI(topic, platform, tone, count, format, arc);
+
+    /* ✦ FIX: parse slides first, THEN call renderCaptionHashtags
+       so the caption is never wiped by normalizeSlidesDeck */
     ST.slides = parseAISlides(data, topic, arc);
+
     if(data.accentColor) ST.accent=data.accentColor;
     renderSEOStrip(data);
+
+    /* ✦ FIX: renderCaptionHashtags runs AFTER parseAISlides */
     renderCaptionHashtags(data);
+
   } catch(e) {
-    console.warn('[Carousel v4.3] AI error, using fallback:',e);
+    console.warn('[Carousel v4.4] AI error, using fallback:',e);
     ST.slides = fallbackSlides(topic, arc);
     toast('⚡ Generated offline — check API connection');
   }
@@ -542,7 +556,7 @@ async function generate(){
 }
 
 /* ─────────────────────────────────────────────────────────
-   10. DIRECT ANTHROPIC API CALL  (v4.3)
+   10. DIRECT ANTHROPIC API CALL
    ───────────────────────────────────────────────────────── */
 async function callAI(topic, platform, tone, count, format, arc){
 
@@ -611,7 +625,7 @@ async function callAI(topic, platform, tone, count, format, arc){
 }
 
 /* ─────────────────────────────────────────────────────────
-   11. SLIDE PARSING  (v4.3 — maps AI JSON → ST.slides shape)
+   11. SLIDE PARSING
    ───────────────────────────────────────────────────────── */
 function parseAISlides(data, topic, arc){
   try {
@@ -621,9 +635,7 @@ function parseAISlides(data, topic, arc){
       var slideType = sl.type || BEAT_TO_SLIDE_TYPE[sl.beat] || (i===0?'hook':i===total-1?'cta':'insight');
       var layout    = normalizeLayoutSafe(null, slideType, i, total);
 
-      /* Force STAT_HERO for stat beats */
       if(sl.stat && sl.stat.length) layout = normalizeLayoutSafe('STAT_HERO', slideType, i, total);
-      /* Force QUOTE_PULL for quote beats */
       if(sl.quote && sl.quote.length) layout = normalizeLayoutSafe('QUOTE_PULL', slideType, i, total);
 
       return {
@@ -637,7 +649,7 @@ function parseAISlides(data, topic, arc){
         stat:     sl.stat  || null,
         quote:    sl.quote || null,
         cta:      stripHashtags(sl.cta  || ''),
-        caption:  '',
+        caption:  '',      /* individual slide caption — filled by renderCaptionHashtags for slide 0 */
         hashtags: [],
         primaryImage: null,
         secondImage:  null
@@ -651,30 +663,40 @@ function parseAISlides(data, topic, arc){
 }
 
 /* ─────────────────────────────────────────────────────────
-   12. CAPTION + HASHTAG RENDERER  (new in v4.3)
+   12. CAPTION + HASHTAG RENDERER  ✦ FIXED
    ───────────────────────────────────────────────────────── */
 function renderCaptionHashtags(data){
-  /* Store caption on slide 0 for the edit panel */
-  if(ST.slides.length && data.caption){
-    ST.slides[0].caption = data.caption;
+  /* ✦ Store globally so caption is available on every slide */
+  ST.globalCaption  = data.caption  || '';
+  ST.globalHashtags = typeof data.hashtags === 'string'
+    ? data.hashtags.split(',').map(function(h){return h.trim();}).filter(Boolean)
+    : (Array.isArray(data.hashtags) ? data.hashtags : []);
+
+  /* Also stamp caption onto slide 0 for per-slide storage */
+  if(ST.slides.length && ST.globalCaption){
+    ST.slides[0].caption = ST.globalCaption;
+    ST.slides[0].hashtags = ST.globalHashtags;
   }
 
-  /* Update the caption textarea in the right panel */
+  /* ✦ FIX: update right panel caption textarea directly */
   var capEl = document.getElementById('eCap');
-  if(capEl && data.caption) capEl.value = data.caption;
+  if(capEl) capEl.value = ST.globalCaption;
 
-  /* Render hashtags below the caption copy button */
-  var hashSec = document.getElementById('hashtagSection');
+  /* ✦ FIX: render hashtag chips in right panel — do NOT hide them */
+  showHashtagsInPanel(ST.globalHashtags);
+}
+
+/* Shared helper — call whenever switching slides too */
+function showHashtagsInPanel(tags){
+  var hashSec   = document.getElementById('hashtagSection');
   var hashChips = document.getElementById('hashtagChips');
-  if(hashSec && hashChips && data.hashtags){
-    var tags = typeof data.hashtags === 'string'
-      ? data.hashtags.split(',').map(function(h){return h.trim();}).filter(Boolean)
-      : (Array.isArray(data.hashtags) ? data.hashtags : []);
-    hashChips.innerHTML = tags.map(function(h){
-      return '<span class="hashtag-chip" style="cursor:pointer" title="Click to copy" onclick="copyTag(\''+h.replace(/'/g,"\\'")+'\')">#'+h.replace(/^#/,'')+'</span>';
-    }).join('');
-    hashSec.style.display = tags.length ? 'flex' : 'none';
-  }
+  if(!hashSec || !hashChips) return;
+  if(!tags || !tags.length){ hashSec.style.display='none'; return; }
+  hashChips.innerHTML = tags.map(function(h){
+    var clean = h.replace(/^#/,'');
+    return '<span class="hashtag-chip" style="cursor:pointer" title="Click to copy" onclick="copyTag(\''+clean.replace(/'/g,"\\'")+'\')">#'+clean+'</span>';
+  }).join('');
+  hashSec.style.display = 'flex';
 }
 
 function copyTag(tag){
@@ -682,7 +704,7 @@ function copyTag(tag){
 }
 
 /* ─────────────────────────────────────────────────────────
-   13. SEO / TREND SCORE STRIP  (new in v4.3)
+   13. SEO / TREND SCORE STRIP
    ───────────────────────────────────────────────────────── */
 function renderSEOStrip(data){
   var strip = document.getElementById('seo-strip');
@@ -710,7 +732,7 @@ function renderSEOStrip(data){
 }
 
 /* ─────────────────────────────────────────────────────────
-   14. FALLBACK SLIDES  (updated for arc structure)
+   14. FALLBACK SLIDES
    ───────────────────────────────────────────────────────── */
 function fallbackSlides(topic, arc){
   var shortTopic = (topic||'this').split(' ').slice(0,3).join(' ');
@@ -755,7 +777,7 @@ function fallbackSlides(topic, arc){
 }
 
 /* ─────────────────────────────────────────────────────────
-   15. RENDER ENGINE  (unchanged from v4.2)
+   15. RENDER ENGINE
    ───────────────────────────────────────────────────────── */
 
 function clearLayouts(){
@@ -872,8 +894,8 @@ function renderSlide(){
       if(dText){
         var dh='';
         if(slide.tag) dh+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';margin-bottom:10px">'+esc(slide.tag)+'</div>';
-        dh+='<div style="font-family:'+getFont('head')+';font-size:'+headlineSize(slide.headline)+'px;font-weight:800;line-height:1.15;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);margin-bottom:8px">'+esc(slide.headline)+'</div>';
-        if(slide.body) dh+='<div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.85);margin-bottom:10px">'+esc(slide.body)+'</div>';
+        dh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+headlineSize(slide.headline)+'px;font-weight:800;line-height:1.15;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);margin-bottom:8px">'+esc(slide.headline)+'</div>';
+        if(slide.body) dh+='<div class="s-body" style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.85);margin-bottom:10px">'+esc(slide.body)+'</div>';
         if(slide.cta) dh+='<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:#fff;width:fit-content">'+esc(slide.cta)+' →</div>';
         dText.innerHTML=dh;
       }
@@ -886,8 +908,8 @@ function renderSlide(){
       sBandEl.className='s-band-wrap';
       sBandEl.innerHTML='<div style="position:absolute;left:0;right:0;top:32%;padding:20px 32px 22px;background:'+accent2+';display:flex;flex-direction:column;gap:7px;">'
         +(slide.tag?'<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.65)">'+esc(slide.tag)+'</div>':'')
-        +'<div style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.15;color:#fff">'+esc(slide.headline)+'</div>'
-        +(slide.body?'<div style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.85);margin-top:2px">'+esc(slide.body)+'</div>':'')
+        +'<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.15;color:#fff">'+esc(slide.headline)+'</div>'
+        +(slide.body?'<div class="s-body" style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.85);margin-top:2px">'+esc(slide.body)+'</div>':'')
         +'</div>';
       break;
     }
@@ -932,9 +954,9 @@ function renderSlide(){
       var sColor=(['minimal','cozy-home','health'].indexOf(theme)!==-1)?T.textColors.primary:'#f0ede8';
       var sh='';
       if(slide.tag) sh+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';margin-bottom:8px">'+esc(slide.tag)+'</div>';
-      sh+='<div class="s-stat-num" style="color:'+accent2+'">'+esc(slide.stat||'1×')+'</div>';
-      sh+='<div style="font-family:'+getFont('head')+';font-size:'+Math.min(24,headlineSize(slide.headline))+'px;font-weight:700;line-height:1.2;color:'+sColor+';margin-top:6px">'+esc(slide.headline)+'</div>';
-      if(slide.body) sh+='<div style="font-size:12px;line-height:1.55;opacity:.72;margin-top:8px;color:'+sColor+'">'+esc(slide.body)+'</div>';
+      sh+='<div class="s-stat-num" style="color:'+accent2+'" data-editable-stat>'+esc(slide.stat||'1×')+'</div>';
+      sh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+Math.min(24,headlineSize(slide.headline))+'px;font-weight:700;line-height:1.2;color:'+sColor+';margin-top:6px">'+esc(slide.headline)+'</div>';
+      if(slide.body) sh+='<div class="s-body" style="font-size:12px;line-height:1.55;opacity:.72;margin-top:8px;color:'+sColor+'">'+esc(slide.body)+'</div>';
       sStat.insertAdjacentHTML('beforeend',sh);
       break;
     }
@@ -953,13 +975,13 @@ function renderSlide(){
       var qh='';
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-bottom:28px;"></div>';
       qh+='<div style="font-family:Georgia,serif;font-size:72px;line-height:0.5;color:'+accent2+';opacity:0.55;margin-bottom:20px;align-self:flex-start;">\u201C</div>';
-      qh+='<div style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
+      qh+='<div class="s-quote-text" style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-top:28px;"></div>';
       if(slide.tag){
         qh+='<div style="margin-top:16px;font-size:10px;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';opacity:0.8;">'+esc(slide.tag)+'</div>';
       }
       if(slide.body&&!slide.quote){
-        qh+='<div style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
+        qh+='<div class="s-body" style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
       }
       sQuote.innerHTML=qh;
       break;
@@ -975,7 +997,6 @@ function renderSlide(){
       hcEl.appendChild(hcOv);
       var hcTop=document.createElement('div');
       hcTop.style.cssText='position:absolute;top:0;left:0;right:0;z-index:2;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.22);';
-      /* brand shows top bar of HABIT_COVER — this is fine, it's part of the editorial design */
       hcTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">IMPACT GRID GROUP</span>'
         +'<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">@IMPACTGRIDGROUP</span>';
       hcEl.appendChild(hcTop);
@@ -987,13 +1008,14 @@ function renderSlide(){
       var line2=words.slice(mid).join(' ');
       var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max(slide.headline.length,6))));
       hcTitle.innerHTML=
-        '<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
+        '<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
         +'<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(line2||line1)+'</div>';
       hcEl.appendChild(hcTitle);
       if(slide.body||slide.subline){
         var hcSub=document.createElement('div');
         var subText=slide.body||slide.subline||'';
         hcSub.style.cssText='position:absolute;left:16px;right:40%;bottom:52px;z-index:2;font-family:'+getFont('body')+';font-size:10px;font-weight:400;color:'+accent2+';line-height:1.5;letter-spacing:.02em;text-transform:uppercase;';
+        hcSub.className='s-body';
         hcSub.textContent=subText;
         hcEl.appendChild(hcSub);
       }
@@ -1001,7 +1023,6 @@ function renderSlide(){
       hcSwirl.style.cssText='position:absolute;right:24px;bottom:120px;z-index:2;width:70px;height:70px;opacity:.9;';
       hcSwirl.innerHTML='<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M55 20 C55 20 70 30 62 48 C54 66 30 62 22 46 C14 30 28 14 44 18" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M44 18 L38 10 M44 18 L52 14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       hcEl.appendChild(hcSwirl);
-      /* Brand watermark — bottom strip, last slide only */
       var hcBot=document.createElement('div');
       hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;';
       hcBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+BRAND.toUpperCase()+'</span>'
@@ -1033,7 +1054,7 @@ function renderSlide(){
       var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max(slide.headline.length,6))));
       var ecTitle=document.createElement('div');
       ecTitle.style.cssText='position:absolute;bottom:50px;left:18px;right:18px;z-index:2;';
-      ecTitle.innerHTML='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
+      ecTitle.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
         +'<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(titleFontSz+4)+'px;font-style:italic;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(scriptWords.join(' '))+'</div>';
       ecEl.appendChild(ecTitle);
       var ecHandle=document.createElement('div');
@@ -1081,9 +1102,9 @@ function renderSlide(){
       var ecScript=ecScriptCount?ecWords.slice(-ecScriptCount).join(' '):'';
       var ecFontSz=Math.min(24,headlineSize(slide.headline));
       var ecolH='';
-      ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ecFontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;margin-bottom:0;">'+esc(ecNormal)+'</div>';
+      ecolH+='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ecFontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;margin-bottom:0;">'+esc(ecNormal)+'</div>';
       if(ecScript) ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ecFontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ecScript)+'</div>';
-      if(slide.body) ecolH+='<div style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
+      if(slide.body) ecolH+='<div class="s-body" style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ecolText.innerHTML=ecolH;
       ecolEl.appendChild(ecolText);
       var ecolFoot=document.createElement('div');
@@ -1124,9 +1145,9 @@ function renderSlide(){
       var ec3Script=ec3ScriptCount?ec3Words.slice(-ec3ScriptCount).join(' '):'';
       var ec3FontSz=Math.min(22,headlineSize(slide.headline));
       var ec3H='';
-      ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ec3FontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;">'+esc(ec3Normal)+'</div>';
+      ec3H+='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ec3FontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;">'+esc(ec3Normal)+'</div>';
       if(ec3Script) ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ec3FontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ec3Script)+'</div>';
-      if(slide.body) ec3H+='<div style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
+      if(slide.body) ec3H+='<div class="s-body" style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ec3Text.innerHTML=ec3H;
       ec3El.appendChild(ec3Text);
       var imgUrls=[primaryUrl||'',secondUrl||'',thirdUrl||primaryUrl||''];
@@ -1154,7 +1175,6 @@ function renderSlide(){
 
   document.getElementById('sNum').textContent=(ST.cur+1)+' / '+ST.slides.length;
 
-  /* Brand element — only show on last slide, editorial layouts handle their own */
   var brandEl=document.getElementById('sBrand');
   var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
   var isLastSlide=(ST.cur===ST.slides.length-1);
@@ -1171,13 +1191,131 @@ function renderSlide(){
     var match=btn.getAttribute('onclick')||'';
     btn.classList.toggle('active',match.indexOf("'"+layout+"'")!==-1||match.indexOf('"'+layout+'"')!==-1);
   });
-  var hashSec=document.getElementById('hashtagSection');
-  if(hashSec) hashSec.style.display='none'; /* hashtags shown in right panel only */
+
+  /* ✦ FIX: DO NOT hide hashtagSection here — it lives in the right panel only */
+  /* Hashtag visibility is managed by fillEdit/showHashtagsInPanel only */
+
   updateThumbActive();
+
+  /* ✦ Inject click-to-edit on slide canvas elements after render */
+  setTimeout(injectInlineEditors, 60);
 }
 
 /* ─────────────────────────────────────────────────────────
-   16. TEXT BUILDERS  (unchanged from v4.2)
+   ✦ INLINE CLICK-TO-EDIT — injected after every renderSlide
+   ───────────────────────────────────────────────────────── */
+function injectInlineEditors(){
+  if(!ST.slides.length) return;
+  var canvas = document.getElementById('slideCanvas');
+  if(!canvas) return;
+
+  /* Headline elements */
+  canvas.querySelectorAll('.s-headline').forEach(function(el){
+    if(el.dataset.igEditable) return;
+    el.dataset.igEditable = '1';
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('spellcheck','false');
+    el.style.cursor = 'text';
+    el.style.outline = 'none';
+    el.style.borderRadius = '3px';
+    el.style.transition = 'background .15s, outline .15s';
+    el.addEventListener('mouseenter', function(){ el.style.background='rgba(245,228,0,.08)'; el.style.outline='1px dashed rgba(245,228,0,.45)'; });
+    el.addEventListener('mouseleave', function(){ if(document.activeElement!==el){ el.style.background=''; el.style.outline='none'; } });
+    el.addEventListener('focus', function(){
+      el.style.background='rgba(245,228,0,.08)';
+      el.style.outline='2px solid rgba(245,228,0,.6)';
+    });
+    el.addEventListener('blur', function(){
+      el.style.background='';
+      el.style.outline='none';
+      var val = el.innerText.trim();
+      ST.slides[ST.cur].headline = val;
+      var eHead = document.getElementById('eHead');
+      if(eHead) eHead.value = val;
+    });
+    el.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ e.preventDefault(); el.blur(); }
+      e.stopPropagation();
+    });
+  });
+
+  /* Body elements */
+  canvas.querySelectorAll('.s-body').forEach(function(el){
+    if(el.dataset.igEditable) return;
+    el.dataset.igEditable = '1';
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('spellcheck','false');
+    el.style.cursor = 'text';
+    el.style.outline = 'none';
+    el.style.borderRadius = '3px';
+    el.style.transition = 'background .15s, outline .15s';
+    el.addEventListener('mouseenter', function(){ el.style.background='rgba(245,228,0,.06)'; el.style.outline='1px dashed rgba(245,228,0,.3)'; });
+    el.addEventListener('mouseleave', function(){ if(document.activeElement!==el){ el.style.background=''; el.style.outline='none'; } });
+    el.addEventListener('focus', function(){
+      el.style.background='rgba(245,228,0,.06)';
+      el.style.outline='2px solid rgba(245,228,0,.4)';
+    });
+    el.addEventListener('blur', function(){
+      el.style.background='';
+      el.style.outline='none';
+      var val = el.innerText.trim();
+      ST.slides[ST.cur].body = val;
+      var eBody = document.getElementById('eBody');
+      if(eBody) eBody.value = val;
+    });
+    el.addEventListener('keydown', function(e){ e.stopPropagation(); });
+  });
+
+  /* Quote text elements */
+  canvas.querySelectorAll('.s-quote-text').forEach(function(el){
+    if(el.dataset.igEditable) return;
+    el.dataset.igEditable = '1';
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('spellcheck','false');
+    el.style.cursor = 'text';
+    el.style.outline = 'none';
+    el.style.transition = 'background .15s, outline .15s';
+    el.addEventListener('mouseenter', function(){ el.style.outline='1px dashed rgba(245,228,0,.4)'; });
+    el.addEventListener('mouseleave', function(){ if(document.activeElement!==el){ el.style.outline='none'; } });
+    el.addEventListener('focus', function(){ el.style.outline='2px solid rgba(245,228,0,.5)'; });
+    el.addEventListener('blur', function(){
+      el.style.outline='none';
+      var val = el.innerText.trim();
+      ST.slides[ST.cur].quote = val;
+      var eQuote = document.getElementById('eQuote');
+      if(eQuote) eQuote.value = val;
+    });
+    el.addEventListener('keydown', function(e){ e.stopPropagation(); });
+  });
+
+  /* Stat number element */
+  canvas.querySelectorAll('[data-editable-stat]').forEach(function(el){
+    if(el.dataset.igEditable) return;
+    el.dataset.igEditable = '1';
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('spellcheck','false');
+    el.style.cursor = 'text';
+    el.style.outline = 'none';
+    el.style.transition = 'outline .15s';
+    el.addEventListener('mouseenter', function(){ el.style.outline='1px dashed rgba(245,228,0,.5)'; });
+    el.addEventListener('mouseleave', function(){ if(document.activeElement!==el){ el.style.outline='none'; } });
+    el.addEventListener('focus', function(){ el.style.outline='2px solid rgba(245,228,0,.7)'; });
+    el.addEventListener('blur', function(){
+      el.style.outline='none';
+      var val = el.innerText.trim();
+      ST.slides[ST.cur].stat = val;
+      var eStat = document.getElementById('eStat');
+      if(eStat) eStat.value = val;
+    });
+    el.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ e.preventDefault(); el.blur(); }
+      e.stopPropagation();
+    });
+  });
+}
+
+/* ─────────────────────────────────────────────────────────
+   16. TEXT BUILDERS
    ───────────────────────────────────────────────────────── */
 function buildFullBleedHTML(slide,tc,accent2){
   var fc='';
@@ -1193,8 +1331,8 @@ function buildFullBleedHTML(slide,tc,accent2){
 function buildSplitTextHTML(slide,accent2,pText,pBg){
   var h='';
   if(slide.tag) h+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
-  h+='<div style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:'+pText+';margin-bottom:6px">'+esc(slide.headline)+'</div>';
-  if(slide.body) h+='<div style="font-size:12px;line-height:1.65;color:'+pText+';opacity:.75;margin-bottom:8px">'+esc(slide.body)+'</div>';
+  h+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:'+pText+';margin-bottom:6px">'+esc(slide.headline)+'</div>';
+  if(slide.body) h+='<div class="s-body" style="font-size:12px;line-height:1.65;color:'+pText+';opacity:.75;margin-bottom:8px">'+esc(slide.body)+'</div>';
   if(slide.cta) h+='<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:'+pBg+';width:fit-content">'+esc(slide.cta)+' →</div>';
   return h;
 }
@@ -1202,7 +1340,7 @@ function buildSplitTextHTML(slide,accent2,pText,pBg){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ─────────────────────────────────────────────────────────
-   17. STRIP BUILDER  (unchanged from v4.2)
+   17. STRIP BUILDER
    ───────────────────────────────────────────────────────── */
 function buildStrip(){
   var strip=document.getElementById('strip');
@@ -1226,7 +1364,7 @@ function updateThumbActive(){
 }
 
 /* ─────────────────────────────────────────────────────────
-   18. NAVIGATION  (unchanged from v4.2)
+   18. NAVIGATION
    ───────────────────────────────────────────────────────── */
 function goTo(idx){ST.cur=idx;renderSlide();updateCounter();fillEdit();}
 function prevSlide(){if(ST.cur>0) goTo(ST.cur-1);}
@@ -1239,35 +1377,47 @@ function setFmt(f){ST.format=f;['square','portrait','landscape'].forEach(functio
 function shuffleAssets(){ST.assetOffset=(ST.assetOffset+1)%10;buildStrip();renderSlide();toast('🔀 New assets selected');}
 
 /* ─────────────────────────────────────────────────────────
-   19. EDIT PANEL  (unchanged from v4.2)
+   19. EDIT PANEL  ✦ FIXED — syncs eHead, eBody, caption, hashtags
    ───────────────────────────────────────────────────────── */
 function fillEdit(){
   if(!ST.slides.length) return;
   var s=ST.slides[ST.cur];
+
+  /* ✦ FIX: update eHead + eBody if they exist */
   var headEl=document.getElementById('eHead');
   var bodyEl=document.getElementById('eBody');
-  if(headEl) headEl.value=s.headline||'';
-  if(bodyEl) bodyEl.value=s.body||s.subline||'';
-  document.getElementById('eCap').value=s.caption||'';
+  if(headEl) headEl.value = s.headline || '';
+  if(bodyEl) bodyEl.value = s.body     || '';
+
+  /* Caption — show global caption on every slide */
+  var capEl = document.getElementById('eCap');
+  if(capEl) capEl.value = ST.globalCaption || s.caption || '';
+
   document.getElementById('editNum').textContent='Slide '+(ST.cur+1);
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=(s.layout||'').replace(/_/g,' ');
+
   var statSec=document.getElementById('eStatSection');
   var quoteSec=document.getElementById('eQuoteSection');
   if(statSec) statSec.style.display=(s.layout==='STAT_HERO')?'flex':'none';
   if(quoteSec) quoteSec.style.display=(s.layout==='QUOTE_PULL')?'flex':'none';
+
   var statInput=document.getElementById('eStat');
   if(statInput) statInput.value=s.stat||'';
   var quoteInput=document.getElementById('eQuote');
   if(quoteInput) quoteInput.value=s.quote||'';
+
+  /* ✦ FIX: show hashtags on every slide — they're global */
+  showHashtagsInPanel(ST.globalHashtags.length ? ST.globalHashtags : (s.hashtags||[]));
 }
 
+/* ✦ liveEdit — called by eHead / eBody oninput */
 function liveEdit(){
   if(!ST.slides.length) return;
   var headEl=document.getElementById('eHead');
   var bodyEl=document.getElementById('eBody');
-  if(headEl) ST.slides[ST.cur].headline=headEl.value;
-  if(bodyEl) ST.slides[ST.cur].body=bodyEl.value;
+  if(headEl) ST.slides[ST.cur].headline = headEl.value;
+  if(bodyEl) ST.slides[ST.cur].body     = bodyEl.value;
   renderSlide();
 }
 
@@ -1285,8 +1435,14 @@ function liveEditQuote(){
   renderSlide();
 }
 
-function updateCap(){if(!ST.slides.length) return;ST.slides[ST.cur].caption=document.getElementById('eCap').value;}
-function updateBrand(){/* brand is hardcoded — this is a no-op */}
+function updateCap(){
+  if(!ST.slides.length) return;
+  var val = document.getElementById('eCap').value;
+  ST.globalCaption = val;
+  ST.slides[ST.cur].caption = val;
+}
+
+function updateBrand(){ /* brand is hardcoded — no-op */ }
 
 function changeLayout(newLayout){
   if(!ST.slides.length) return;
@@ -1312,7 +1468,7 @@ function setFontPair(pair){
 }
 
 /* ─────────────────────────────────────────────────────────
-   20. IMAGE UPLOAD  (unchanged from v4.2)
+   20. IMAGE UPLOAD
    ───────────────────────────────────────────────────────── */
 function handleUpload(e){var f=e.target.files[0];if(!f) return;var r=new FileReader();r.onload=function(ev){ST.userImages[ST.cur]=ev.target.result;renderSlide();buildStrip();toast('🖼️ Image added to slide '+(ST.cur+1));};r.readAsDataURL(f);}
 function dzOver(e){e.preventDefault();document.getElementById('dzone').classList.add('over');}
@@ -1320,13 +1476,13 @@ function dzLeave(){document.getElementById('dzone').classList.remove('over');}
 function dzDrop(e){e.preventDefault();document.getElementById('dzone').classList.remove('over');var f=e.dataTransfer.files[0];if(!f||!f.type.startsWith('image/')) return;var r=new FileReader();r.onload=function(ev){ST.userImages[ST.cur]=ev.target.result;renderSlide();buildStrip();toast('🖼️ Image dropped on slide '+(ST.cur+1));};r.readAsDataURL(f);}
 
 /* ─────────────────────────────────────────────────────────
-   21. ACCENT / FONT / THEME  (unchanged from v4.2)
+   21. ACCENT / FONT / THEME
    ───────────────────────────────────────────────────────── */
 function setAccent(c,el){ST.accent=c;document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});el.classList.add('on');if(ST.slides.length) renderSlide();}
-function toggleTheme(){var isDark=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',isDark?'light':'dark');document.querySelector('[onclick="toggleTheme()"]').textContent=isDark?'🌙':'☀️';}
+function toggleTheme(){var isDark=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',isDark?'light':'dark');var btn=document.querySelector('[onclick="toggleTheme()"]');if(btn) btn.textContent=isDark?'🌙':'☀️';}
 
 /* ─────────────────────────────────────────────────────────
-   22. COPY & EXPORT  (unchanged from v4.2)
+   22. COPY & EXPORT
    ───────────────────────────────────────────────────────── */
 function copyCaption(){
   var c=document.getElementById('eCap').value;
@@ -1337,7 +1493,7 @@ function copyCaption(){
 function copyAll(){
   if(!ST.slides.length){toast('Generate a carousel first');return;}
   var all=ST.slides.map(function(s,i){
-    return '── SLIDE '+(i+1)+' ──\nHeadline: '+(s.headline||'')+'\nBody: '+(s.body||'')+'\n\nCaption:\n'+(s.caption||'');
+    return '── SLIDE '+(i+1)+' ──\nHeadline: '+(s.headline||'')+'\nBody: '+(s.body||'')+'\n\nCaption:\n'+(ST.globalCaption||s.caption||'');
   }).join('\n\n');
   navigator.clipboard.writeText(all).then(function(){toast('✓ All copy + captions copied');});
 }
@@ -1351,7 +1507,7 @@ function doExport(){
   if(ST.exportType==='copy'){copyAll();}
   else if(ST.exportType==='json'){
     var j=JSON.stringify({
-      slides:ST.slides.map(function(s){return{headline:s.headline,body:s.body,caption:s.caption,layout:s.layout,type:s.type,beat:s.beat};}),
+      slides:ST.slides.map(function(s){return{headline:s.headline,body:s.body,caption:ST.globalCaption,layout:s.layout,type:s.type,beat:s.beat};}),
       theme:ST.theme,accentColor:ST.accent,fontPair:ST.fontPair,
       platform:document.getElementById('platSelect').value,
       brand:BRAND,generatedAt:new Date().toISOString()
@@ -1396,7 +1552,7 @@ function triggerBlobDownload(blob,filename){
 }
 
 /* ─────────────────────────────────────────────────────────
-   23. TOAST  (unchanged from v4.2)
+   23. TOAST
    ───────────────────────────────────────────────────────── */
 function toast(msg){
   var shelf=document.getElementById('toastShelf');
@@ -1406,10 +1562,10 @@ function toast(msg){
 }
 
 /* ─────────────────────────────────────────────────────────
-   24. KEYBOARD  (unchanged from v4.2)
+   24. KEYBOARD
    ───────────────────────────────────────────────────────── */
 document.addEventListener('keydown',function(e){
-  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable) return;
   if(e.key==='ArrowRight'||e.key==='ArrowDown') nextSlide();
   if(e.key==='ArrowLeft'||e.key==='ArrowUp') prevSlide();
   if(e.key==='Escape') closeExport();
@@ -1419,13 +1575,12 @@ document.addEventListener('keydown',function(e){
    25. INIT
    ───────────────────────────────────────────────────────── */
 (function init(){
-  /* Hardcode brand — never changes, never taken from input */
-  ST.brand = BRAND;
-  ST.accent = '#f5e400'; /* IG yellow */
+  ST.brand  = BRAND;
+  ST.accent = '#f5e400';
 
   updateCounter();
 
-  /* Inject SEO strip into the toolbar row */
+  /* Inject SEO strip into toolbar row */
   (function injectSEOStrip(){
     var toolbar = document.querySelector('.toolbar');
     if(!toolbar) return;
@@ -1446,7 +1601,7 @@ document.addEventListener('keydown',function(e){
     toolbar.insertAdjacentElement('afterend', strip);
   })();
 
-  /* Inject trend chip bar below the panel header */
+  /* Inject trend chip bar below panel header */
   (function injectTrendBar(){
     var pb = document.querySelector('.ph');
     if(!pb) return;
