@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing — ImpactGrid Creator Intelligence</title>
+  <link rel="icon" href="logo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #1a1a24;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f0f8;
+      --muted: #888899;
+      --accent: #7c6ef7;
+      --accent2: #a78bfa;
+      --green: #22c55e;
+      --card: #13131c;
+    }
+    [data-theme="light"] {
+      --bg: #f5f5fa;
+      --bg2: #ffffff;
+      --bg3: #ebebf5;
+      --border: rgba(0,0,0,0.08);
+      --text: #111118;
+      --muted: #666677;
+      --card: #ffffff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .btn-theme {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+    .btn-login {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .btn-cta {
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      padding: 0.5rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn-cta:hover { opacity: 0.85; }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 3rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(124,110,247,0.15);
+      border: 1px solid rgba(124,110,247,0.3);
+      color: var(--accent2);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    /* TOGGLE */
+    .billing-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2.5rem auto 3rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .billing-toggle span.active { color: var(--text); font-weight: 600; }
+    .save-badge {
+      background: rgba(34,197,94,0.15);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: var(--green);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 100px;
+    }
+
+    /* PLANS GRID */
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 2rem 5rem;
+    }
+    .plan-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative;
+      transition: border-color 0.3s, transform 0.2s;
+    }
+    .plan-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(124,110,247,0.3);
+    }
+    .plan-card.featured {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(124,110,247,0.08), var(--card));
+    }
+    .featured-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.3rem 1rem;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+    .plan-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .plan-tagline {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 1.5rem;
+    }
+    .plan-price {
+      display: flex;
+      align-items: baseline;
+      gap: 0.3rem;
+      margin-bottom: 0.3rem;
+    }
+    .price-amount {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .price-currency {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--muted);
+      align-self: flex-start;
+      margin-top: 0.5rem;
+    }
+    .price-period {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .price-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 1.8rem;
+    }
+    .plan-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    .plan-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .plan-features li .icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .check { color: var(--green); }
+    .cross { color: #ef4444; }
+    .plan-btn {
+      display: block;
+      text-align: center;
+      padding: 0.85rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    .plan-btn:hover { opacity: 0.85; transform: scale(1.01); }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-enterprise {
+      background: linear-gradient(135deg, #7c6ef7, #a855f7);
+      color: #fff;
+    }
+
+    /* COMPARISON TABLE */
+    .comparison {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 5rem;
+    }
+    .comparison h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead th {
+      padding: 1rem;
+      text-align: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    thead th:first-child { text-align: left; }
+    thead th.col-featured { color: var(--accent2); }
+    tbody tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+    tbody td {
+      padding: 0.85rem 1rem;
+      text-align: center;
+      color: var(--muted);
+    }
+    tbody td:first-child {
+      text-align: left;
+      color: var(--text);
+      font-weight: 500;
+    }
+    tbody tr:hover td { background: rgba(255,255,255,0.02); }
+    .t-check { color: var(--green); font-size: 1.1rem; }
+    .t-cross { color: #ef4444; font-size: 1.1rem; }
+
+    /* FAQ */
+    .faq {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 2rem 5rem;
+    }
+    .faq h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+    .faq-q {
+      width: 100%;
+      background: var(--card);
+      border: none;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 1.1rem 1.3rem;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    .faq-q:hover { background: var(--bg3); }
+    .faq-q .arrow { transition: transform 0.3s; font-size: 0.8rem; color: var(--muted); }
+    .faq-item.open .faq-q .arrow { transform: rotate(180deg); }
+    .faq-a {
+      display: none;
+      background: var(--card);
+      padding: 0 1.3rem 1.1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .faq-item.open .faq-a { display: block; }
+
+    /* CTA BANNER */
+    .cta-banner {
+      max-width: 680px;
+      margin: 0 auto 5rem;
+      padding: 0 2rem;
+      text-align: center;
+    }
+    .cta-inner {
+      background: linear-gradient(135deg, rgba(124,110,247,0.15), rgba(168,85,247,0.1));
+      border: 1px solid rgba(124,110,247,0.3);
+      border-radius: 24px;
+      padding: 3rem 2rem;
+    }
+    .cta-inner h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+    .cta-inner p {
+      color: var(--muted);
+      margin-bottom: 1.8rem;
+      font-size: 1rem;
+    }
+    .cta-btns {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .cta-btns a {
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .cta-btns a:hover { opacity: 0.85; }
+    .cta-btns .primary { background: var(--accent); color: #fff; }
+    .cta-btns .secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--muted); text-decoration: none; margin: 0 0.5rem; }
+    footer a:hover { color: var(--text); }
+
+    /* MOBILE NAV */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav a {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .mobile-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.6rem;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links, .nav-right .btn-login { display: none; }
+      .mobile-menu-btn { display: block; }
+      .plans { grid-template-columns: 1fr; padding: 0 1rem 4rem; }
+      .hero { padding: 3rem 1.5rem 2rem; }
+      .comparison, .faq, .cta-banner { padding-left: 1rem; padding-right: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">
+      <img src="logo.png" alt="ImpactGrid" />
+      ImpactGrid
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="consulting.html">Services</a></li>
+      <li><a href="contact.html">Contact Us</a></li>
+      <li><a href="pricing.html" class="active" style="color:var(--text)">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="btn-theme" id="themeToggle" title="Toggle theme">🌙</button>
+      <a href="login.html" class="btn-login">Login</a>
+      <a href="join.html" class="btn-cta">Get Started →</a>
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <div class="mobile-nav" id="mobileNav">
+    <button class="mobile-close" id="mobileClose">✕</button>
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="consulting.html">Services</a>
+    <a href="contact.html">Contact Us</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="login.html" style="color:var(--muted);font-size:1rem">Login</a>
+    <a href="join.html" style="background:var(--accent);color:#fff;padding:0.7rem 2rem;border-radius:10px;font-size:1rem">Get Started →</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">Simple, honest pricing</div>
+    <h1>Start free. Upgrade when you're ready.</h1>
+    <p>All plans include access to ImpactGrid Creator Studio. No hidden fees, no surprise charges.</p>
+    <div class="billing-toggle">
+      <span class="active">Monthly billing</span>
+      <span class="save-badge">Cancel anytime</span>
+    </div>
+  </section>
+
+  <!-- PLANS -->
+  <section class="plans">
+
+    <!-- FREE -->
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-tagline">Try ImpactGrid with no card needed</div>
+      <div class="plan-price">
+        <span class="price-currency">£</span>
+        <span class="price-amount">0</span>
+      </div>
+      <div class="price-note">Always free · No card required</div>
+      <hr class="plan-divider" />
+      <ul class="plan-features">
+        <li><span class="icon check">✓</span> <span><strong>3 AI uses per month</strong> — shared across all tools</span></li>
+        <li><span class="icon check">✓</span> <span>Trend Feed — read-only (always on)</span></li>
+        <li><span class="icon check">✓</span> <span>Dijo AI content generator</span></li>
+        <li><span class="icon check">✓</span> <span>Carousel Studio</span></li>
+        <li><span class="icon check">✓</span> <span>Dijo Evaluator</span></li>
+        <li><span class="icon check">✓</span> <span>Content Plan</span></li>
+        <li><span class="icon check">✓</span> <span>Audience Intelligence</span></li>
+        <li><span class="icon cross">✗</span> <span style="color:var(--muted)">Saved projects — wiped after 30 days</span></li>
+        <li><span class="icon cross">✗</span> <span style="color:var(--muted)">No platform connections (YouTube / TikTok)</span></li>
+        <li><span class="icon cross">✗</span> <span style="color:var(--muted)">No portfolio</span></li>
+      </ul>
+      <a href="join.html" class="plan-btn btn-outline">Start for free →</a>
+    </div>
+
+    <!-- PROFESSIONAL -->
+    <div class="plan-card featured">
+      <div class="featured-badge">⭐ Most popular</div>
+      <div class="plan-name">Professional</div>
+      <div class="plan-tagline">For solo creators and freelancers</div>
+      <div class="plan-price">
+        <span class="price-currency">£</span>
+        <span class="price-amount">8.99</span>
+        <span class="price-period">/mo</span>
+      </div>
+      <div class="price-note">Billed monthly · Cancel anytime</div>
+      <hr class="plan-divider" />
+      <ul class="plan-features">
+        <li><span class="icon check">✓</span> <span><strong>100 AI uses per month</strong></span></li>
+        <li><span class="icon check">✓</span> <span>Full Trend Feed with personalised scoring</span></li>
+        <li><span class="icon check">✓</span> <span>Save & export up to 20 carousels</span></li>
+        <li><span class="icon check">✓</span> <span>1 live portfolio — saved permanently</span></li>
+        <li><span class="icon check">✓</span> <span>YouTube + TikTok account connection</span></li>
+        <li><span class="icon check">✓</span> <span>Dijo Adviser — 50 messages/month, 30-day history</span></li>
+        <li><span class="icon check">✓</span> <span>Dijo Evaluator — up to 10 evaluations/month</span></li>
+        <li><span class="icon check">✓</span> <span>Content Plan — 4 weeks saved at once</span></li>
+        <li><span class="icon check">✓</span> <span>Data saved while subscription is active</span></li>
+        <li><span class="icon check">✓</span> <span>Email support</span></li>
+      </ul>
+      <a href="join.html" class="plan-btn btn-primary">Get Professional →</a>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="plan-card">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-tagline">For businesses, agencies &amp; serious operators</div>
+      <div class="plan-price">
+        <span class="price-currency">£</span>
+        <span class="price-amount">13.99</span>
+        <span class="price-period">/mo</span>
+      </div>
+      <div class="price-note">Billed monthly · Cancel anytime</div>
+      <hr class="plan-divider" />
+      <ul class="plan-features">
+        <li><span class="icon check">✓</span> <span><strong>Unlimited AI uses</strong></span></li>
+        <li><span class="icon check">✓</span> <span>Everything in Professional</span></li>
+        <li><span class="icon check">✓</span> <span>Unlimited carousels &amp; saved projects</span></li>
+        <li><span class="icon check">✓</span> <span>Up to 3 live portfolios — permanently saved</span></li>
+        <li><span class="icon check">✓</span> <span>Dijo Adviser — unlimited messages + full history forever</span></li>
+        <li><span class="icon check">✓</span> <span>Unlimited Dijo Evaluator runs</span></li>
+        <li><span class="icon check">✓</span> <span>Unlimited saved Content Plans</span></li>
+        <li><span class="icon check">✓</span> <span>Consulting Services — priority booking</span></li>
+        <li><span class="icon check">✓</span> <span>Downloadable PDF / export reports</span></li>
+        <li><span class="icon check">✓</span> <span>Priority support — reply within 24hrs</span></li>
+        <li><span class="icon check">✓</span> <span>Early access to new features</span></li>
+      </ul>
+      <a href="join.html" class="plan-btn btn-enterprise">Get Enterprise →</a>
+    </div>
+
+  </section>
+
+  <!-- COMPARISON TABLE -->
+  <section class="comparison">
+    <h2>Compare plans</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Free</th>
+            <th class="col-featured">Professional</th>
+            <th>Enterprise</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Monthly AI uses</td><td>3</td><td>100</td><td>Unlimited</td></tr>
+          <tr><td>Trend Feed</td><td>Read-only</td><td>Full + personalised</td><td>Full + personalised</td></tr>
+          <tr><td>Dijo AI Generator</td><td>✓</td><td>✓</td><td>✓</td></tr>
+          <tr><td>Carousel Studio</td><td>✓</td><td>✓</td><td>✓</td></tr>
+          <tr><td>Saved carousels</td><td class="t-cross">✗</td><td>Up to 20</td><td>Unlimited</td></tr>
+          <tr><td>Portfolio Studio</td><td class="t-cross">✗</td><td>1 portfolio</td><td>3 portfolios</td></tr>
+          <tr><td>Dijo Evaluator</td><td>3/month</td><td>10/month</td><td>Unlimited</td></tr>
+          <tr><td>Content Plan</td><td>3/month</td><td>4 weeks saved</td><td>Unlimited</td></tr>
+          <tr><td>Dijo Adviser (chat)</td><td class="t-cross">✗</td><td>50 msgs/mo</td><td>Unlimited</td></tr>
+          <tr><td>YouTube + TikTok connection</td><td class="t-cross">✗</td><td class="t-check">✓</td><td class="t-check">✓</td></tr>
+          <tr><td>Consulting Services</td><td class="t-cross">✗</td><td class="t-cross">✗</td><td class="t-check">✓</td></tr>
+          <tr><td>PDF / export reports</td><td class="t-cross">✗</td><td class="t-cross">✗</td><td class="t-check">✓</td></tr>
+          <tr><td>Data retention</td><td>30 days</td><td>While active</td><td>Forever</td></tr>
+          <tr><td>Support</td><td>None</td><td>Email</td><td>Priority (24hr)</td></tr>
+          <tr><td>Early feature access</td><td class="t-cross">✗</td><td class="t-cross">✗</td><td class="t-check">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq">
+    <h2>Common questions</h2>
+
+    <div class="faq-item">
+      <button class="faq-q">Do I need a card to start free? <span class="arrow">▼</span></button>
+      <div class="faq-a">No. The free plan requires no payment details at all. Just create an account and start using ImpactGrid immediately.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">What happens when I hit my 3 free uses? <span class="arrow">▼</span></button>
+      <div class="faq-a">Your tools will be paused until the start of the next month. You can upgrade to Professional at any time to keep going straight away.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">What gets deleted after 30 days on free? <span class="arrow">▼</span></button>
+      <div class="faq-a">Any content you saved — carousels, generated posts, portfolios — is automatically removed after 30 days on the free plan. Upgrade to keep your work permanently.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">Can I cancel anytime? <span class="arrow">▼</span></button>
+      <div class="faq-a">Yes. There are no contracts or long-term commitments. Cancel your subscription at any time and you'll keep access until the end of your billing period.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">What are Consulting Services on Enterprise? <span class="arrow">▼</span></button>
+      <div class="faq-a">Enterprise members get priority booking for 1-to-1 consulting sessions with the ImpactGrid team. You'll also receive AI-generated engagement reports tailored to your brand and audience — available in the Consulting section of your dashboard.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">Can I upgrade or downgrade at any time? <span class="arrow">▼</span></button>
+      <div class="faq-a">Yes. You can switch plans at any time from your account settings. Changes take effect at the start of the next billing period.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">I'm a business — is Enterprise right for me? <span class="arrow">▼</span></button>
+      <div class="faq-a">Yes. Enterprise is designed for growing businesses, agencies, and serious content operators who need unlimited outputs, multiple portfolios, consulting access, and professional-grade reports. If you're unsure, start on Professional and upgrade when you need more.</div>
+    </div>
+
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta-banner">
+    <div class="cta-inner">
+      <h2>Ready to start growing?</h2>
+      <p>Join ImpactGrid free today. No card, no commitment — just real creator intelligence.</p>
+      <div class="cta-btns">
+        <a href="join.html" class="primary">Start free →</a>
+        <a href="contact.html" class="secondary">Talk to us</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p style="margin-bottom:0.75rem">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="contact.html">Contact</a>
+    </p>
+    <p>© 2026 ImpactGrid Group Ltd.</p>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const toggle = document.getElementById('themeToggle');
+    const saved = localStorage.getItem('igTheme') || 'dark';
+    if (saved === 'light') { document.documentElement.setAttribute('data-theme', 'light'); toggle.textContent = '☀️'; }
+    toggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('igTheme', next);
+      toggle.textContent = next === 'light' ? '☀️' : '🌙';
+    });
+
+    // Mobile nav
+    document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+      document.getElementById('mobileNav').classList.add('open');
+    });
+    document.getElementById('mobileClose').addEventListener('click', () => {
+      document.getElementById('mobileNav').classList.remove('open');
+    });
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-q').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+      });
+    });
+  </script>
+</body>
+</html>
