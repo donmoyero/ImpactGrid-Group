@@ -1,19 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    ImpactGrid Group — Shared Design System
-   Version: 4.0
+   Version: 4.1 — Safari backdrop-filter fix
    Default theme: Light. Dark available via data-theme="dark".
-
-   HOW TO USE ON ANY PAGE:
-   1. Add <link rel="stylesheet" href="shared.css"> in <head>
-   2. Add <html lang="en" data-theme="light"> (default)
-   3. Add <div id="nav-placeholder"></div> at top of <body>
-   4. Add <div id="footer-placeholder"></div> at end of <body>
-   5. Call renderNav('yourpage.html') and renderFooter() in a <script>
-      after nav.js is loaded. Or write your nav inline (like index.html).
-
-   TOKEN SYSTEM: matches index.html exactly.
-   Do NOT define separate :root tokens in page-specific CSS.
-   Only override tokens you genuinely need to change per-page.
 ═══════════════════════════════════════════════════════ */
 
 /* ── Google Fonts ── */
@@ -21,8 +9,6 @@
 
 /* ════════════════════════════════════════════════════
    DESIGN TOKENS
-   :root = light (default shown to all visitors)
-   [data-theme="dark"] = opt-in dark mode
 ════════════════════════════════════════════════════ */
 :root {
   /* Backgrounds */
@@ -143,7 +129,7 @@ h1, h2, h3, h4, h5 {
 }
 img { display: block; max-width: 100%; }
 
-/* Subtle grain overlay — barely visible on light, more present on dark */
+/* Subtle grain overlay */
 body::after {
   content: '';
   position: fixed; inset: 0;
@@ -155,14 +141,17 @@ body::after {
 
 /* ════════════════════════════════════════════════════
    NAVIGATION
-   Used by nav.js (renderNav) and inline on index.html.
-   All nav classes defined here — never redefined in page CSS.
+   Fixed: added -webkit-backdrop-filter for Mobile Safari
+   Fixed: added transform:translateZ(0) for GPU compositing
 ════════════════════════════════════════════════════ */
 .nav {
   position: fixed; top: 0; left: 0; right: 0;
   height: var(--nav-h); z-index: 1000;
   background: rgba(242,244,251,0.95);
+  -webkit-backdrop-filter: blur(24px); /* Safari fix */
   backdrop-filter: blur(24px);
+  -webkit-transform: translateZ(0);    /* Force GPU layer — fixes Safari blur */
+  transform: translateZ(0);
   border-bottom: 1px solid var(--border);
   transition: background 0.3s;
 }
@@ -288,10 +277,13 @@ body::after {
 
 /* ════════════════════════════════════════════════════
    MOBILE SIDEBAR
+   Fixed: added -webkit-backdrop-filter for Mobile Safari
 ════════════════════════════════════════════════════ */
 .mob-overlay {
   display: none; position: fixed; inset: 0; z-index: 1050;
-  background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.4);
+  -webkit-backdrop-filter: blur(4px); /* Safari fix */
+  backdrop-filter: blur(4px);
 }
 .mob-overlay.open { display: block; }
 
@@ -403,7 +395,6 @@ body::after {
 .section-sm { padding: 56px 20px; max-width: var(--max-w); margin: 0 auto; }
 .section-full { padding: 88px 20px; }
 
-/* Section labels */
 .label-tag {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: var(--fm); font-size: 10px;
@@ -412,7 +403,6 @@ body::after {
 }
 .label-tag::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
 
-/* Section headings */
 .sec-h {
   font-size: clamp(26px, 4.5vw, 46px);
   font-weight: 900; letter-spacing: -0.025em;
@@ -422,7 +412,6 @@ body::after {
   max-width: 520px; margin-top: 14px; line-height: 1.72;
 }
 
-/* Divider */
 .divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--border2), transparent);
@@ -439,7 +428,6 @@ body::after {
   font-family: var(--fb); transition: all 0.2s; cursor: pointer;
 }
 
-/* Primary — gold */
 .btn-gold, .btn-primary {
   background: linear-gradient(135deg, var(--gold), var(--gold2));
   color: #fff; border: none;
@@ -449,14 +437,12 @@ body::after {
   transform: translateY(-2px); box-shadow: var(--sh-gold);
 }
 
-/* Secondary — outline */
 .btn-outline, .btn-secondary {
   background: transparent; border: 1px solid var(--border2);
   color: var(--text);
 }
 .btn-outline:hover, .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
 
-/* Ghost */
 .btn-ghost-ui {
   background: rgba(0,0,0,0.04); color: var(--text); border: none;
 }
@@ -464,7 +450,6 @@ body::after {
 .btn-ghost-ui:hover { background: rgba(0,0,0,0.08); }
 [data-theme="dark"] .btn-ghost-ui:hover { background: rgba(255,255,255,0.10); }
 
-/* Danger */
 .btn-danger {
   background: var(--red-dim); border: 1px solid rgba(217,79,59,0.2);
   color: var(--red);
@@ -494,7 +479,6 @@ body::after {
 
 /* ════════════════════════════════════════════════════
    FORMS
-   Used on login.html, join.html, settings pages
 ════════════════════════════════════════════════════ */
 .form-group { margin-bottom: 20px; }
 .form-label {
@@ -561,8 +545,7 @@ body::after {
 .chip-soon { background: var(--blue-dim); border: 1px solid rgba(45,110,219,0.2); color: var(--blue); }
 
 /* ════════════════════════════════════════════════════
-   PAGE HERO (for inner pages — about, pricing, etc.)
-   Full-width hero banner below the nav.
+   PAGE HERO
 ════════════════════════════════════════════════════ */
 .page-hero {
   padding: calc(var(--nav-h) + 72px) 20px 72px;
@@ -638,8 +621,6 @@ body::after {
 
 /* ════════════════════════════════════════════════════
    SCROLL ANIMATIONS
-   Add class="anim" to any element.
-   IntersectionObserver adds "visible" when it enters view.
 ════════════════════════════════════════════════════ */
 .anim {
   opacity: 0; transform: translateY(22px);
@@ -647,7 +628,6 @@ body::after {
 }
 .anim.visible { opacity: 1; transform: none; }
 
-/* Keyframe utilities */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
