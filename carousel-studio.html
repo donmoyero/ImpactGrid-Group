@@ -141,27 +141,19 @@ nav {
 ::-webkit-scrollbar { width:3px; height:3px; }
 ::-webkit-scrollbar-thumb { background:rgba(245,228,0,.18); border-radius:2px; }
 
-/* ── INLINE EDITING ── */
-.editable-field {
-  position:relative; cursor:text;
-  border-radius:4px; transition:.15s;
+/* ── INLINE EDITING — canvas text hover/focus ring ── */
+[contenteditable]:hover {
+  background:rgba(245,228,0,.07) !important;
+  outline:1px dashed rgba(245,228,0,.4) !important;
+  border-radius:3px;
 }
-.editable-field:hover { background:rgba(245,228,0,.08); outline:1px dashed rgba(245,228,0,.35); }
-.editable-field:focus {
-  outline:2px solid var(--ig-yellow); background:rgba(245,228,0,.06);
-  cursor:text; min-width:40px; min-height:20px;
+[contenteditable]:focus {
+  background:rgba(245,228,0,.08) !important;
+  outline:2px solid rgba(245,228,0,.6) !important;
+  border-radius:3px;
 }
-.edit-hint {
-  position:absolute; top:-28px; left:50%; transform:translateX(-50%);
-  background:var(--ig-yellow); color:var(--ig-black);
-  font-size:9px; font-weight:700; font-family:'Space Mono',monospace;
-  padding:3px 8px; border-radius:4px; white-space:nowrap;
-  pointer-events:none; opacity:0; transition:.2s;
-  letter-spacing:.5px;
-}
-.editable-field:hover .edit-hint { opacity:1; }
 
-/* ── LAYOUT APPLY-ALL TOGGLE ── */
+/* ── APPLY-ALL TOGGLE ── */
 .apply-all-wrap {
   display:flex; align-items:center; gap:7px; margin-bottom:6px;
   padding:6px 8px; background:rgba(245,228,0,.05);
@@ -170,7 +162,7 @@ nav {
 .apply-all-wrap label { font-size:10px; font-family:'Space Mono',monospace; color:rgba(245,228,0,.7); cursor:pointer; }
 .apply-all-toggle { accent-color:var(--ig-yellow); width:13px; height:13px; cursor:pointer; }
 
-/* ── USER GUIDE TOOLTIP (top of canvas) ── */
+/* ── USER GUIDE TOOLTIP ── */
 .user-guide {
   position:absolute; top:12px; left:50%; transform:translateX(-50%);
   background:rgba(14,14,12,.92); border:1px solid rgba(245,228,0,.2);
@@ -389,7 +381,7 @@ nav {
           <div class="s-bg-img" id="sBgImg"></div>
         </div>
 
-        <!-- Video layer — z-index 2, ABOVE s-bg -->
+        <!-- Video layer — z-index 2 -->
         <div id="sBgVideo" style="display:none;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;"></div>
 
         <!-- Overlay z-index 3 -->
@@ -397,7 +389,7 @@ nav {
         <!-- Texture z-index 4 -->
         <div class="s-texture" id="sTexture" style="position:absolute;inset:0;z-index:4;pointer-events:none;"></div>
 
-        <!-- All layout containers z-index 5 -->
+        <!-- Layout containers z-index 5 -->
         <div class="s-content layout-bottom hidden" id="sContent" style="z-index:5"></div>
         <div class="s-split-wrap hidden" id="sSplit" style="z-index:5"></div>
         <div class="s-corner-float hidden" id="sCorner" style="z-index:5"></div>
@@ -441,14 +433,26 @@ nav {
   </div>
   <div class="rb">
 
-    <!-- User guide hint -->
+    <!-- Guide hint -->
     <div style="padding:8px 10px;background:rgba(245,228,0,.05);border-radius:8px;border:1px solid rgba(245,228,0,.1);font-size:10px;color:rgba(245,228,0,.6);font-family:'Space Mono',monospace;line-height:1.6;letter-spacing:.2px;">
-      💡 <strong style="color:var(--ig-yellow)">Click text on the slide</strong> to edit it directly. Use the layout switcher below to change the design.
+      💡 <strong style="color:var(--ig-yellow)">Click text on the slide</strong> to edit inline. Or edit below and watch it update live.
     </div>
 
+    <!-- ✦ HEADLINE — NEW FIELD -->
+    <div class="esec">
+      <div class="esec-title">Headline</div>
+      <textarea class="ftextarea" id="eHead" style="min-height:56px;resize:vertical" placeholder="Slide headline…" oninput="liveEdit()"></textarea>
+    </div>
+
+    <!-- ✦ BODY — NEW FIELD -->
+    <div class="esec">
+      <div class="esec-title">Body Text</div>
+      <textarea class="ftextarea" id="eBody" style="min-height:72px;resize:vertical" placeholder="Body copy (1–2 sentences)…" oninput="liveEdit()"></textarea>
+    </div>
+
+    <!-- LAYOUT -->
     <div class="esec">
       <div class="esec-title">Layout</div>
-      <!-- Apply to all toggle -->
       <div class="apply-all-wrap">
         <input type="checkbox" class="apply-all-toggle" id="applyAllToggle" checked/>
         <label for="applyAllToggle">Apply layout change to ALL slides</label>
@@ -469,30 +473,35 @@ nav {
       </div>
     </div>
 
+    <!-- STAT — shown only for STAT_HERO layout -->
     <div class="esec" id="eStatSection">
       <div class="esec-title">Stat / Number</div>
       <input type="text" class="finput" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
     </div>
 
+    <!-- QUOTE — shown only for QUOTE_PULL layout -->
     <div class="esec" id="eQuoteSection">
       <div class="esec-title">Quote Text</div>
       <textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
     </div>
 
+    <!-- CAPTION -->
     <div class="esec">
-      <div class="esec-title">Caption</div>
-      <textarea class="ftextarea" id="eCap" style="min-height:72px" oninput="updateCap()"></textarea>
+      <div class="esec-title">Caption <span style="font-size:9px;opacity:.5;font-family:'Space Mono',monospace;text-transform:none;letter-spacing:0">(for post)</span></div>
+      <textarea class="ftextarea" id="eCap" style="min-height:90px" oninput="updateCap()" placeholder="AI-generated caption will appear here after generating…"></textarea>
       <button class="copy-btn" onclick="copyCaption()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copy Caption
       </button>
     </div>
 
+    <!-- HASHTAGS -->
     <div class="esec" id="hashtagSection" style="display:none">
-      <div class="esec-title">Trending Hashtags</div>
+      <div class="esec-title">Trending Hashtags <span style="font-size:9px;opacity:.5;font-family:'Space Mono',monospace;text-transform:none;letter-spacing:0">(click to copy)</span></div>
       <div class="hashtag-chips" id="hashtagChips"></div>
     </div>
 
+    <!-- BACKGROUND OVERRIDE -->
     <div class="esec">
       <div class="esec-title">Override Background</div>
       <div class="dzone" id="dzone" onclick="document.getElementById('imgUp').click()"
@@ -504,6 +513,7 @@ nav {
       <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
     </div>
 
+    <!-- ACCENT COLOUR -->
     <div class="esec">
       <div class="esec-title">Accent Colour</div>
       <div class="cdots" id="cdots">
@@ -519,6 +529,7 @@ nav {
       </div>
     </div>
 
+    <!-- FONT STYLE -->
     <div class="esec">
       <div class="esec-title">Font Style</div>
       <div class="font-switcher">
@@ -576,7 +587,7 @@ nav {
 <script>
 /* ══ V3.0 PATCHES ══ */
 
-// 0. THEME TOGGLE — light default, dark on demand
+// THEME TOGGLE
 window.toggleTheme = function(){
   var html = document.documentElement;
   var isDark = html.getAttribute('data-theme') === 'dark';
@@ -585,140 +596,29 @@ window.toggleTheme = function(){
   if(btn) btn.textContent = isDark ? '🌙' : '☀️';
 };
 
-// 1. HARDCODE BRAND — always www.impactgridgroup.com, never editable
+// HARDCODE BRAND
 (function patchBrand(){
   var BRAND = 'www.impactgridgroup.com';
-  if(typeof ST !== 'undefined') {
-    ST.brand = BRAND;
-  }
-  window.updateBrand = function(){ };
-  window.getIGBrand = function(){ return BRAND; };
+  window.addEventListener('load', function(){
+    if(typeof ST !== 'undefined'){
+      ST.brand  = BRAND;
+      ST.accent = '#f5e400';
+    }
+  });
+  window.updateBrand  = function(){};
+  window.getIGBrand   = function(){ return BRAND; };
 })();
 
-// 2. FIX "Habit Habit 01" — duplicate label bug
-var _origRender = window.renderSlide;
-
-// 3. DEFAULT ACCENT = IG Yellow
+// APPLY LAYOUT TO ALL — override changeLayout from HTML buttons only
+// (JS file already has the correct changeLayout; this is kept as safety shim)
 window.addEventListener('load', function(){
   if(typeof ST !== 'undefined'){
     ST.accent = '#f5e400';
-    ST.brand = 'www.impactgridgroup.com';
+    ST.brand  = 'www.impactgridgroup.com';
   }
 });
 
-// 4. APPLY LAYOUT TO ALL SLIDES
-var _origChangeLayout = window.changeLayout;
-window.changeLayout = function(newLayout){
-  if(!window.ST || !window.ST.slides.length) return;
-  var blockedLayouts = ['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
-  if(blockedLayouts.indexOf(newLayout) !== -1){
-    toast('Layout unavailable in this version');
-    return;
-  }
-  var applyAll = document.getElementById('applyAllToggle');
-  if(applyAll && applyAll.checked){
-    ST.slides.forEach(function(s){ s.layout = newLayout; });
-    buildStrip();
-    renderSlide();
-    fillEdit();
-    toast('Layout → ' + newLayout.replace(/_/g,' ') + ' · applied to all slides');
-  } else {
-    ST.slides[ST.cur].layout = newLayout;
-    renderSlide();
-    fillEdit();
-    toast('Layout → ' + newLayout.replace(/_/g,' '));
-  }
-};
-
-// 5. INLINE CLICK-TO-EDIT on slide canvas
-var _rsOrig = window.renderSlide;
-window.renderSlide = function(){
-  if(_rsOrig) _rsOrig.apply(this, arguments);
-  setTimeout(injectInlineEditors, 80);
-};
-
-function injectInlineEditors(){
-  if(!window.ST || !ST.slides.length) return;
-  var canvas = document.getElementById('slideCanvas');
-  if(!canvas) return;
-
-  canvas.querySelectorAll('.s-headline').forEach(function(el){
-    if(el.dataset.editable) return;
-    el.dataset.editable = '1';
-    el.setAttribute('contenteditable','true');
-    el.setAttribute('spellcheck','false');
-    el.style.cursor = 'text';
-    el.style.outline = 'none';
-    el.style.borderRadius = '3px';
-    el.style.transition = 'background .15s';
-    el.addEventListener('focus', function(){
-      el.style.background = 'rgba(245,228,0,.08)';
-      el.style.outline = '1px dashed rgba(245,228,0,.4)';
-    });
-    el.addEventListener('blur', function(){
-      el.style.background = 'none';
-      el.style.outline = 'none';
-      ST.slides[ST.cur].headline = el.innerText.trim();
-      var eHead = document.getElementById('eHead');
-      if(eHead) eHead.value = el.innerText.trim();
-    });
-    el.addEventListener('keydown', function(e){
-      if(e.key === 'Enter'){ e.preventDefault(); el.blur(); }
-    });
-  });
-
-  canvas.querySelectorAll('.s-body').forEach(function(el){
-    if(el.dataset.editable) return;
-    el.dataset.editable = '1';
-    el.setAttribute('contenteditable','true');
-    el.setAttribute('spellcheck','false');
-    el.style.cursor = 'text';
-    el.style.outline = 'none';
-    el.style.borderRadius = '3px';
-    el.style.transition = 'background .15s';
-    el.addEventListener('focus', function(){
-      el.style.background = 'rgba(245,228,0,.06)';
-      el.style.outline = '1px dashed rgba(245,228,0,.3)';
-    });
-    el.addEventListener('blur', function(){
-      el.style.background = 'none';
-      el.style.outline = 'none';
-      ST.slides[ST.cur].body = el.innerText.trim();
-    });
-  });
-}
-
-// 6. VIDEO FIX — correct z-index on video element
-var _origGenerate = window.generate;
-window.generate = async function(){
-  if(_origGenerate) await _origGenerate.apply(this, arguments);
-  fixVideoLayer();
-};
-
-function fixVideoLayer(){
-  var vid = document.getElementById('sBgVideo');
-  if(vid){
-    vid.style.position = 'absolute';
-    vid.style.inset = '0';
-    vid.style.zIndex = '2';
-    vid.style.overflow = 'hidden';
-    vid.style.pointerEvents = 'none';
-  }
-}
-
-// 7. FIX empty slide — enforce content after parse
-var _parsedOrig = window.parseServerSlides;
-if(typeof window.parseServerSlides === 'function'){
-  window.parseServerSlides = function(data, topic, platform, tone, count){
-    var slides = _parsedOrig.apply(this, arguments);
-    if(typeof normalizeSlidesDeck === 'function'){
-      slides = normalizeSlidesDeck(slides);
-    }
-    return slides;
-  };
-}
-
-// 8. SHOW USER GUIDE tooltip briefly after generation
+// SHOW USER GUIDE tooltip after generation
 var _guideShown = false;
 function showGuide(){
   if(_guideShown) return;
@@ -732,9 +632,9 @@ function showGuide(){
   setTimeout(function(){ tip.remove(); }, 4500);
 }
 
-var __gen2 = window.generate;
+var __genOrig = window.generate;
 window.generate = async function(){
-  await __gen2.apply(this, arguments);
+  await __genOrig.apply(this, arguments);
   setTimeout(showGuide, 1200);
 };
 </script>
