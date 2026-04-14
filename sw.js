@@ -1,11 +1,10 @@
 /* ═══════════════════════════════════════════════
    IMPACTGRID — SERVICE WORKER (sw.js)
-   Drop this file in your root folder alongside index.html
+   v2 — Network-first strategy (always fresh content)
+   IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
+const CACHE_NAME = 'impactgrid-v2';
 
-const CACHE_NAME = 'impactgrid-v1';
-
-/* All the core files to cache for offline use */
 const CORE_FILES = [
   '/',
   '/index.html',
@@ -29,18 +28,25 @@ const CORE_FILES = [
   '/terms.html'
 ];
 
-/* ── Install: cache all core files ── */
+/* ── Install: pre-cache core files ── */
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(CORE_FILES);
+      /* Use individual requests so one failure doesn't block the rest */
+      return Promise.allSettled(
+        CORE_FILES.map(function(url) {
+          return cache.add(url).catch(function(e) {
+            console.warn('[SW] Could not cache:', url, e.message);
+          });
+        })
+      );
     }).then(function() {
       return self.skipWaiting();
     })
   );
 });
 
-/* ── Activate: clear old caches ── */
+/* ── Activate: wipe all old caches ── */
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(keys) {
@@ -48,6 +54,7 @@ self.addEventListener('activate', function(event) {
         keys.filter(function(key) {
           return key !== CACHE_NAME;
         }).map(function(key) {
+          console.log('[SW] Deleting old cache:', key);
           return caches.delete(key);
         })
       );
@@ -57,55 +64,65 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-/* ── Fetch: serve from cache, fall back to network ── */
+/* ── Fetch: NETWORK FIRST, cache fallback for offline ──
+   This is the key fix. Previous version was cache-first
+   which caused stale content. Now we always try the
+   network first so users always get fresh files.
+   Cache is only used when offline.
+── */
 self.addEventListener('fetch', function(event) {
-
-  /* Skip non-GET and cross-origin API calls (Supabase, Anthropic, etc.) */
+  /* Only handle GET requests */
   if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('supabase.co')) return;
-  if (event.request.url.includes('anthropic.com')) return;
-  if (event.request.url.includes('onrender.com')) return;
-  if (event.request.url.includes('graph.facebook.com')) return;
-  if (event.request.url.includes('api.tiktok.com')) return;
-  if (event.request.url.includes('googleapis.com')) return;
+
+  /* Skip external API calls — never cache these */
+  var url = event.request.url;
+  if (url.includes('supabase.co')) return;
+  if (url.includes('anthropic.com')) return;
+  if (url.includes('onrender.com')) return;
+  if (url.includes('graph.facebook.com')) return;
+  if (url.includes('api.tiktok.com')) return;
+  if (url.includes('googleapis.com')) return;
+  if (url.includes('fonts.gstatic.com')) return;
+  if (url.includes('cdn.jsdelivr.net')) return;
 
   event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      if (cached) return cached;
-
-      /* Not in cache — fetch from network and cache it */
-      return fetch(event.request).then(function(response) {
-        /* Only cache valid responses */
-        if (!response || response.status !== 200 || response.type === 'opaque') {
-          return response;
+    /* Always try network first */
+    fetch(event.request)
+      .then(function(response) {
+        /* Cache valid same-origin responses */
+        if (
+          response &&
+          response.status === 200 &&
+          response.type !== 'opaque'
+        ) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(event.request, clone);
+          });
         }
-        var responseClone = response.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, responseClone);
-        });
         return response;
-      }).catch(function() {
-        /* Offline fallback — serve creator-studio if page can't load */
-        if (event.request.destination === 'document') {
-          return caches.match('/creator-studio.html');
-        }
-      });
-    })
+      })
+      .catch(function() {
+        /* Network failed — serve from cache (offline mode) */
+        return caches.match(event.request).then(function(cached) {
+          if (cached) return cached;
+          /* Last resort: serve the main app shell */
+          if (event.request.destination === 'document') {
+            return caches.match('/creator-studio.html');
+          }
+        });
+      })
   );
 });
 
-/* ── Background sync: retry failed actions when back online ── */
+/* ── Background sync ── */
 self.addEventListener('sync', function(event) {
   if (event.tag === 'sync-content') {
-    event.waitUntil(syncContent());
+    event.waitUntil(Promise.resolve());
   }
 });
 
-function syncContent() {
-  return Promise.resolve();
-}
-
-/* ── Push notifications (ready for future use) ── */
+/* ── Push notifications ── */
 self.addEventListener('push', function(event) {
   var data = event.data ? event.data.json() : {};
   var title = data.title || 'ImpactGrid';
@@ -119,7 +136,7 @@ self.addEventListener('push', function(event) {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-/* ── Notification click: open the app ── */
+/* ── Notification click ── */
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   event.waitUntil(
