@@ -443,12 +443,7 @@
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 <div class="toast-shelf" id="toastShelf"></div>
 
-<!-- ═══════════════════════════════════════════
-     PWA INSTALL BANNER
-     Shows on Android/Desktop: native prompt
-     Shows on iOS Safari: manual instructions
-     Dismissed per-session via sessionStorage
-═══════════════════════════════════════════ -->
+<!-- PWA INSTALL BANNER -->
 <div id="pwa-banner" style="
   display:none;
   position:fixed; top:0; left:0; right:0; z-index:10000;
@@ -486,6 +481,7 @@
 <script src="instagram-auth.js"></script>
 <script src="creator-ai.js"></script>
 <script src="creator-studio.js"></script>
+<script src="usage-tracker.js"></script>
 
 <script>
 /* ── PWA Install Banner ── */
@@ -494,33 +490,27 @@
   var banner = document.getElementById('pwa-banner');
   var addBtn = document.getElementById('pwa-add-btn');
 
-  /* Don't show if already running as installed PWA */
   if (
     window.navigator.standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches
   ) return;
 
-  /* Don't show again this session if already dismissed */
   try { if (sessionStorage.getItem('pwa-dismissed')) return; } catch(e) {}
 
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  /* ── Android / Desktop Chrome & Edge ── */
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     deferredPrompt = e;
-    /* Small delay so the page finishes loading first */
     setTimeout(showPWABanner, 3000);
   });
 
-  /* ── iOS Safari ── manual instructions */
   if (isIOS && isSafari) {
     document.getElementById('pwa-title').textContent = 'Add to your Home Screen';
     document.getElementById('pwa-sub').textContent = 'Tap the Share button then "Add to Home Screen"';
     addBtn.textContent = 'Show me how';
     addBtn.onclick = function() {
-      /* Use the existing toast function from creator-studio.js */
       if (typeof toast === 'function') {
         toast('Tap Share (box with arrow ↑) → "Add to Home Screen"');
       }
@@ -530,7 +520,6 @@
     return;
   }
 
-  /* ── Android / Desktop: trigger native prompt ── */
   addBtn.onclick = function() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
