@@ -195,6 +195,39 @@ function detectTheme(text){
 }
 
 /* ─────────────────────────────────────────────────────────
+   getSlideIntent — maps slide position to narrative intent
+   Powers data-intent attributes + server brief construction
+   ───────────────────────────────────────────────────────── */
+var SLIDE_INTENTS = ['hook','problem','pain','insight','solution','result','cta'];
+function getSlideIntent(i, total){
+  total = total || 7;
+  if(i === 0) return 'hook';
+  if(i === total - 1) return 'cta';
+  // Distribute middle intents evenly across available slides
+  var midIntents = SLIDE_INTENTS.slice(1, -1); // problem,pain,insight,solution,result
+  var midIndex = Math.round((i - 1) / (total - 2) * (midIntents.length - 1));
+  return midIntents[midIndex] || 'insight';
+}
+
+/* ─────────────────────────────────────────────────────────
+   detectNiche — maps theme to content niche label
+   Sent to server so AI writes niche-specific copy
+   ───────────────────────────────────────────────────────── */
+var NICHE_MAP = {
+  workspace:   'creator-business',
+  luxury:      'luxury-lifestyle',
+  'cozy-home': 'home-interior',
+  minimal:     'minimalism-design',
+  finance:     'personal-finance',
+  health:      'health-wellness',
+  fashion:     'fashion-style',
+  lifestyle:   'lifestyle-general'
+};
+function detectNiche(theme){
+  return NICHE_MAP[theme] || 'lifestyle-general';
+}
+
+/* ─────────────────────────────────────────────────────────
    3. ASSET PICKING & OVERLAY HELPERS
    ───────────────────────────────────────────────────────── */
 function pickAsset(theme, slideType, slideIndex, offset){
@@ -419,9 +452,23 @@ async function generate(){
   var topic=document.getElementById('topicInput').value.trim();
   if(!topic){toast('⚠️ Add a topic first');document.getElementById('topicInput').focus();return;}
   if(!ST.theme) ST.theme=detectTheme(topic);
+
   var platform=document.getElementById('platSelect').value;
   var tone=document.getElementById('toneSelect').value;
   var count=ST.count;
+
+  // ── STEP 1: Build full intelligence context before API call ──
+  var niche   = detectNiche(ST.theme);
+  var intents = Array.from({length:count},function(_,i){ return getSlideIntent(i, count); });
+  // Grab live trend from CaptionEngine if already prefetched
+  var trendContext = '';
+  try{
+    var trends = window.CaptionEngine && window.CaptionEngine._liveTrends;
+    if(trends && trends.length){
+      trendContext = trends.slice(0,3).map(function(t){return t.topic||t.keyword||t;}).join(', ');
+    }
+  }catch(e){}
+
   var btn=document.getElementById('genBtn');
   btn.innerHTML='<div class="spin"></div> Generating…';btn.disabled=true;
   document.getElementById('emptyState').style.display='none';
@@ -430,7 +477,8 @@ async function generate(){
   var hints=['Detecting theme…','Scoring images with AI vision…','Writing punchy copy…','Designing layouts…','Adding captions + hashtags…'];
   var hi=0,hTimer=setInterval(function(){hi=(hi+1)%hints.length;document.getElementById('loadingHint').textContent=hints[hi];},1800);
   try{
-    var data=await callAI(topic,platform,tone,count);
+    // ── STEP 2: Pass niche + intents + trend to callAI ──
+    var data=await callAI(topic, platform, tone, count, niche, intents, trendContext);
     ST.trendHashtags = data.trendHashtags || [];
     ST.slides=parseServerSlides(data,topic,platform,tone,count);
     if(data.theme&&DA[data.theme]) ST.theme=data.theme;
@@ -444,12 +492,18 @@ async function generate(){
   clearInterval(hTimer);
   document.getElementById('loadingOv').classList.remove('show');
   ST.cur=0;
+
+  // ── STEP 3: Stamp data-intent on every slide object ──
+  ST.slides.forEach(function(s, i){
+    s.intent = getSlideIntent(i, ST.slides.length);
+  });
+
   buildStrip();renderSlide();updateCounter();fillEdit();
   btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate';
   btn.disabled=false;
   toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any text to edit');
 
-  // v4.5: enrich with live captions + hashtags after render
+  // ── STEP 4: enrich with live captions + hashtags after render ──
   var topicVal=topic, platformVal=platform;
   setTimeout(function(){ CaptionEngine.enrichDeck(topicVal, platformVal); }, 600);
 }
@@ -458,7 +512,11 @@ async function generate(){
    v4.5 UPGRADED callAI — sends a full storytelling brief
    so the server AI writes punchy, specific, non-generic copy
    ───────────────────────────────────────────────────────── */
-async function callAI(topic,platform,tone,count){
+async function callAI(topic, platform, tone, count, niche, intents, trendContext){
+
+  niche        = niche        || detectNiche(ST.theme || detectTheme(topic));
+  intents      = intents      || Array.from({length:count},function(_,i){return getSlideIntent(i,count);});
+  trendContext  = trendContext  || '';
 
   // Build a detailed narrative brief so the AI writes GREAT copy
   var platformVoice = {
@@ -479,23 +537,29 @@ async function callAI(topic,platform,tone,count){
     Playful:          'Light, witty, fun. Wordplay welcome. Keep it high-energy.'
   }[tone] || '';
 
-  var slideTypes = [
-    'hook: pattern-interrupt opener, make the reader stop scrolling',
-    'problem: name the specific pain point without being preachy',
-    'insight: the counterintuitive truth that reframes everything',
-    'stat: a real number or percentage with implication',
-    'quote: a powerful one-liner worth saving',
-    'lesson: the thing you wish you knew earlier',
-    'proof: what results actually look like',
-    'value: one actionable, specific step',
-    'cta: ask a direct question, invite a comment or save'
-  ].slice(0, count).join('\n');
+  // Use intent-based slide sequence rather than generic type labels
+  var slideTypes = intents.map(function(intent, i){
+    var desc = {
+      hook:     'hook: pattern-interrupt opener, make the reader stop scrolling',
+      problem:  'problem: name the specific pain point without being preachy',
+      pain:     'pain: deepen the problem — make the reader feel it personally',
+      insight:  'insight: the counterintuitive truth that reframes everything',
+      solution: 'solution: the clear, actionable fix — one step, not a list',
+      result:   'result: what success actually looks like — specific outcomes',
+      cta:      'cta: ask a direct question, invite a comment or save'
+    }[intent] || 'value: one actionable, specific step';
+    return String(i+1)+'. '+desc;
+  }).join('\n');
+
+  var trendLine = trendContext ? '\nCurrently trending in this niche: '+trendContext+'.' : '';
 
   var brief = 'You are Dijo, a world-class social media content strategist.\n\n'
     + 'TASK: Write a ' + count + '-slide carousel on: "' + topic + '"\n'
+    + 'Niche: ' + niche + '\n'
     + 'Platform: ' + platform + ' — ' + voiceNote + '\n'
-    + 'Tone: ' + tone + ' — ' + toneNote + '\n\n'
-    + 'SLIDE SEQUENCE TO FOLLOW:\n' + slideTypes + '\n\n'
+    + 'Tone: ' + tone + ' — ' + toneNote + '\n'
+    + trendLine + '\n\n'
+    + 'SLIDE SEQUENCE (follow this narrative arc exactly):\n' + slideTypes + '\n\n'
     + 'COPY RULES (non-negotiable):\n'
     + '- Headlines: punchy, specific, under 12 words. NO generic openers like "In today\'s world"\n'
     + '- Body: 2-3 sentences max. Be concrete. Name specific outcomes, numbers, feelings\n'
@@ -509,12 +573,15 @@ async function callAI(topic,platform,tone,count){
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      topic:topic,
-      platform:platform,
-      tone:tone,
-      count:count,
-      themeOverride:ST.theme||null,
-      brief:brief   // v4.5: send the full copywriting brief
+      topic:    topic,
+      platform: platform,
+      tone:     tone,
+      count:    count,
+      niche:    niche,
+      intents:  intents,
+      trend:    trendContext,
+      themeOverride: ST.theme || null,
+      brief:    brief
     })
   });
   if(!res.ok) throw new Error('Server responded '+res.status);
@@ -1631,11 +1698,14 @@ document.addEventListener('keydown',function(e){
     if(typeof toast === 'function') toast('🔥 Writing AI captions + live hashtags…');
     for(var i=0; i<ST.slides.length; i++){
       var slide = ST.slides[i];
-      var caption = await generateCaption(topic, platform, slide);
-      ST.slides[i].caption = caption;
-      var tags = pickHashtagsForSlide(topic, platform, slide.type);
-      if (!ST.slides[i].hashtags || ST.slides[i].hashtags.length === 0) {
-        ST.slides[i].hashtags = tags;
+      // ── Caption guard: only write if server didn't already provide one ──
+      if(!slide.caption || slide.caption.trim().length < 4){
+        var caption = await generateCaption(topic, platform, slide);
+        ST.slides[i].caption = caption;
+      }
+      // ── Hashtag guard: only fill if server left them empty ──
+      if(!ST.slides[i].hashtags || ST.slides[i].hashtags.length === 0){
+        ST.slides[i].hashtags = pickHashtagsForSlide(topic, platform, slide.type);
       }
     }
     // Refresh current slide's edit panel
@@ -1655,7 +1725,8 @@ document.addEventListener('keydown',function(e){
     fetchLiveTrends:      fetchLiveTrends,
     pickHashtagsForSlide: pickHashtagsForSlide,
     generateCaption:      generateCaption,
-    enrichDeck:           enrichDeck
+    enrichDeck:           enrichDeck,
+    get _liveTrends(){ return _liveTrends; }
   };
 
 })();
