@@ -957,12 +957,35 @@ document.addEventListener('keydown', function(e) {
 })();
 
 /* ─────────────────────────────────────────────
+   CONTENT CALENDAR
+───────────────────────────────────────────── */
+function getBestPostTime(i) {
+  var times = ['9:00 AM', '12:30 PM', '6:00 PM', '8:30 PM'];
+  return times[i % times.length];
+}
+
+function renderCalendar() {
+  var container = document.getElementById('calendarContainer');
+  if (!container) return;
+  var today = new Date();
+  container.innerHTML = '';
+  for (var i = 0; i < 7; i++) {
+    var d = new Date();
+    d.setDate(today.getDate() + i);
+    var day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+    var bestTime = getBestPostTime(i);
+    container.innerHTML += '<div class="calendar-day"><strong>' + day + '</strong><span>⏰ ' + bestTime + '</span></div>';
+  }
+}
+
+/* ─────────────────────────────────────────────
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('load', async function() {
   checkAuth();
   initYouTube();
   initTikTok();
+  renderCalendar();
   await fetchTrends();
   renderDashTrends();
   renderDashOpps();
