@@ -93,19 +93,41 @@ async function loadPortfolios() {
   renderDashGrid();
 }
 
-async function savePortfolioToDB(pf) {
-  try {
-    if (pf.id) {
-      await sbFetch(`/portfolios?id=eq.${pf.id}`, "PATCH", pf);
-    } else {
-      const created = await sbFetch("/portfolios", "POST", pf);
-      if (created && created[0]) pf.id = created[0].id;
+async function savePortfolioToDB(pf){
+
+  const SESSION_ID = localStorage.getItem("ig_user_id");
+
+  if(!SESSION_ID){
+    showToast("Login required to save");
+    return false;
+  }
+
+  try{
+
+    const res = await fetch("https://impactgrid-dijo.onrender.com/portfolio/save", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        session: SESSION_ID,
+        portfolio: pf
+      })
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+      showToast("Portfolio saved 🚀");
+      return true;
+    }else{
+      showToast("Save failed");
+      return false;
     }
-    showToast("✓ Saved");
-    return true;
-  } catch (e) {
-    showToast("Save failed — check Supabase config");
-    console.error("[Portfolio] Save error:", e.message);
+
+  }catch(err){
+    console.error(err);
+    showToast("Server error");
     return false;
   }
 }
@@ -822,7 +844,7 @@ ${pf.testimonials?.length ? `
   <div class="sec-lbl">Let's Collaborate</div>
   <div class="contact-ttl">Ready to work together?</div>
   <p class="contact-sub">I partner with brands that align with my audience's values. Let's create something remarkable.</p>
-  ${pf.email ? `<a class="btn btn-p" href="mailto:${esc(pf.email)}" style="margin:0 auto">Get In Touch →</a>` : `<a class="btn btn-p" href="#" style="margin:0 auto">Get In Touch →</a>`}
+  <a class="btn btn-p" href="#" onclick="openContactForm()" style="margin:0 auto">Get In Touch →</a>
 </div>
 
 <footer>
@@ -1017,3 +1039,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
   obValidate();
 });
+
+/* ── Contact Form ── */
+function openContactForm(){
+  document.getElementById("contactModal").style.display = "flex";
+}
+
+function closeContactForm(){
+  document.getElementById("contactModal").style.display = "none";
+}
+
+async function sendInquiry(){
+
+  const name  = document.getElementById("cName").value;
+  const email = document.getElementById("cEmail").value;
+  const message = document.getElementById("cMsg").value;
+
+  const creatorEmail = psState.activePortfolio && psState.activePortfolio.email;
+
+  if(!creatorEmail){
+    showToast("Creator email not set");
+    return;
+  }
+
+  try{
+
+    const res = await fetch("https://impactgrid-dijo.onrender.com/contact/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        message,
+        creatorEmail
+      })
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+      showToast("Inquiry sent 🚀");
+      closeContactForm();
+    }else{
+      showToast("Failed to send");
+    }
+
+  }catch(err){
+    console.error(err);
+    showToast("Server error");
+  }
+}
