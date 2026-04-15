@@ -1,6 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
    IMPACTGRID — Carousel Studio
-   carousel-studio.js  v4.3
+   carousel-studio.js  v4.4
+
+   v4.4 patch (fixes applied from carousel-studio-patch-v4.4.js):
+   - normalizeSlidesDeck() — hashtags NO LONGER zeroed; only fills empty fields
+   - buildCaption()        — uses slide.caption directly from server; no raw concat
+   - populateHashtagPanel()— reads preserved slide.hashtags; panel now renders
+   - fillEdit()            — uses buildCaption(slide) not raw eCap assignment
+   - parseServerSlides()   — hashtags preserved from server, not stripped to []
 
    v4.3 patch:
    - trimHeadline()      — no longer caps at 6 words; strips hashtags only
@@ -9,8 +16,8 @@
    - fallbackSlides()    — full storytelling narrative arcs, not placeholder filler
    - parseServerSlides() — trusts AI copy fully; only strips hashtags
    - normalizeSlidesDeck() — no longer clobbers good copy
-   - makeEditable()      — NEW: tap/click any text on slide canvas to edit inline
-   - startInlineEdit()   — NEW: contenteditable helper for inline editing
+   - makeEditable()      — tap/click any text on slide canvas to edit inline
+   - startInlineEdit()   — contenteditable helper for inline editing
    - renderSlide()       — calls makeEditable() after every render
 
    v4.2 fixes:
@@ -18,7 +25,6 @@
    - QUOTE_PULL redesigned with decorative rule, large quote mark, clean type
    - EDITORIAL_COLLAGE text panel uses solid background — never writes on image
    - Removed broken layouts: CORNER_FLOAT, SPLIT_L, SPLIT_R, MAGAZINE_SPLIT, GRID_POINTS, HABIT_SLIDE
-   - v4.1: layout trusted from server, mediaType carried through
    ═══════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────
@@ -220,7 +226,7 @@ function pickThirdAsset(theme, excludeIds, slideIndex){
 }
 
 function getOverlay(tone,brightness,layout){
-    if(['EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','STAT_HERO','QUOTE_PULL'].indexOf(layout)!==-1) return 'none';
+  if(['EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','STAT_HERO','QUOTE_PULL'].indexOf(layout)!==-1) return 'none';
   if(brightness==='low') return 'linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.5) 50%,rgba(0,0,0,.15) 100%)';
   if(tone==='neutral'&&brightness==='high') return 'linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.25) 55%,transparent 100%)';
   if(tone==='warm') return 'linear-gradient(to top,rgba(12,7,3,.9) 0%,rgba(12,7,3,.4) 55%,rgba(12,7,3,.08) 100%)';
@@ -245,8 +251,6 @@ function getPanelText(theme){
 
 /* ─────────────────────────────────────────────────────────
    4. LAYOUT ASSIGNMENT
-   v4.2: Removed CORNER_FLOAT, SPLIT_LEFT, SPLIT_RIGHT, MAGAZINE_SPLIT,
-         GRID_POINTS, HABIT_SLIDE from default sequences
    ───────────────────────────────────────────────────────── */
 var LAYOUT_SEQUENCE = [
   'FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE',
@@ -287,21 +291,15 @@ function stripHashtags(text){
 }
 
 /* ─────────────────────────────────────────────────────────
-   PATCHED v4.3: COPY HELPERS
-   trimHeadline — no longer caps at 6 words; strips hashtags only
-   limitBody    — no longer caps at 2 sentences; up to ~280 chars
-   headlineSize — updated breakpoints for longer headlines
+   COPY HELPERS
    ───────────────────────────────────────────────────────── */
 function trimHeadline(text){
-  // Strip hashtags, collapse whitespace. No word limit.
   return stripHashtags(text).replace(/\s{2,}/g,' ').trim();
 }
 
 function limitBody(text){
-  // Strip hashtags, return up to ~280 chars without cutting mid-sentence.
   var clean = stripHashtags(text).replace(/\s{2,}/g,' ').trim();
   if(clean.length <= 280) return clean;
-  // Try to cut at a sentence boundary within 280 chars
   var cutAt = clean.lastIndexOf('.', 280);
   if(cutAt > 80) return clean.slice(0, cutAt + 1);
   return clean.slice(0, 280).trim() + '…';
@@ -318,8 +316,9 @@ function headlineSize(text){
 }
 
 /* ─────────────────────────────────────────────────────────
-   PATCHED v4.3: normalizeSlidesDeck
-   No longer clobbers good copy — trusts what's there
+   v4.4 FIX: normalizeSlidesDeck
+   - hashtags NO LONGER zeroed — preserved from server
+   - every field guarded: only fills if genuinely empty
    ───────────────────────────────────────────────────────── */
 function normalizeSlidesDeck(slides){
   if(!Array.isArray(slides)) return [];
@@ -329,7 +328,7 @@ function normalizeSlidesDeck(slides){
     out.type = i === 0 ? 'hook' : (i === total - 1 ? 'cta' : (out.type || 'insight'));
     out.layout = normalizeLayoutSafe(out.layout, out.type, i, total);
 
-    // Headline: trust what's there; only fill if blank
+    // Headline: only fill if genuinely blank
     if(!out.headline || out.headline.length < 3){
       out.headline = out.type === 'hook'
         ? 'This Changes Everything'
@@ -339,17 +338,29 @@ function normalizeSlidesDeck(slides){
     }
     out.headline = trimHeadline(out.headline);
 
-    // Body: trust what's there; only fill if blank
+    // Body: only fill if genuinely blank
+    if(!out.body || out.body.trim().length < 5){
+      if(out.type !== 'hook'){
+        out.body = 'Apply this consistently and the results compound faster than you expect.';
+      }
+    }
     out.body = limitBody(out.body || '');
 
-    out.quote    = stripHashtags(out.quote || '');
-    out.cta      = stripHashtags(out.cta || '');
-    out.hashtags = [];
+    out.quote = stripHashtags(out.quote || '');
+    out.cta   = stripHashtags(out.cta || '');
+
+    // v4.4 FIX: DO NOT zero hashtags — preserve server array
+    // Only assign fallback if the array is genuinely absent or empty
+    if(!Array.isArray(out.hashtags) || out.hashtags.length === 0){
+      out.hashtags = [];  // stays empty — panel won't show, which is correct if server sent none
+    }
+
+    // Caption: only fill if missing — NEVER overwrite server caption
+    if(!out.caption || out.caption.trim().length < 3){
+      out.caption = buildCaption(out);
+    }
 
     if(out.type === 'cta' && !out.cta) out.cta = 'Follow for more →';
-    if(out.type !== 'hook' && !out.body){
-      out.body = 'Apply this consistently and the results compound faster than you expect.';
-    }
 
     return out;
   });
@@ -358,7 +369,7 @@ function normalizeSlidesDeck(slides){
 /* ─────────────────────────────────────────────────────────
    5. STATE
    ───────────────────────────────────────────────────────── */
-var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#2563eb',brand:'',userImages:{},assetOffset:0,exportType:'png',fontPair:'syne'};
+var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#2563eb',brand:'',userImages:{},assetOffset:0,exportType:'png',fontPair:'syne',trendHashtags:[]};
 
 var FONT_PAIRS={
   syne:{head:"'Syne',sans-serif",body:"'DM Sans',sans-serif",mono:"'Space Mono',monospace"},
@@ -440,6 +451,8 @@ async function generate(){
   var hi=0,hTimer=setInterval(function(){hi=(hi+1)%hints.length;document.getElementById('loadingHint').textContent=hints[hi];},1800);
   try{
     var data=await callAI(topic,platform,tone,count);
+    // v4.4: store trendHashtags on ST so fillEdit + populateHashtagPanel can access them
+    ST.trendHashtags = data.trendHashtags || [];
     ST.slides=parseServerSlides(data,topic,platform,tone,count);
     if(data.theme&&DA[data.theme]) ST.theme=data.theme;
     if(data.accentColor) ST.accent=data.accentColor;
@@ -470,7 +483,7 @@ async function callAI(topic,platform,tone,count){
 
 /* ─────────────────────────────────────────────────────────
    8. SLIDE PARSING
-   PATCHED v4.3: parseServerSlides — trusts AI copy; stops butchering it
+   v4.4: hashtags preserved from server — NOT stripped to []
    ───────────────────────────────────────────────────────── */
 function parseServerSlides(data, topic, platform, tone, count){
   try{
@@ -488,7 +501,6 @@ function parseServerSlides(data, topic, platform, tone, count){
 
       var layout = normalizeLayoutSafe(sl.layout, sl.type||'value', i, total);
 
-      // Trust the server headline fully — just strip hashtags
       var headline = stripHashtags(sl.headline || sl.title || '');
       if(!headline || headline.length < 3){
         headline = i === 0
@@ -497,22 +509,26 @@ function parseServerSlides(data, topic, platform, tone, count){
           ? 'Here\'s Your Next Step'
           : 'Slide ' + (i + 1) + ': ' + topic;
       }
-      // Only trim if absurdly long (>120 chars)
       if(headline.length > 120){
         headline = headline.slice(0, 117) + '…';
       }
 
-      // Trust server body — strip hashtags, allow full copy
       var rawBody = sl.body || sl.subline || sl.description || '';
       var body = limitBody(rawBody);
 
-      var caption = sl.caption || buildCaption(sl, i, data.trendHashtags || []);
+      // v4.4 FIX: use buildCaption which reads slide.caption first
+      var caption = buildCaption(sl);
+
+      // v4.4 FIX: preserve server hashtags — do NOT force to []
+      var hashtags = (Array.isArray(sl.hashtags) && sl.hashtags.length > 0)
+        ? sl.hashtags
+        : [];
 
       return {
         type:       sl.type || (i === 0 ? 'hook' : i === total - 1 ? 'cta' : 'value'),
         layout:     layout,
         mediaType:  sl.mediaType || 'image',
-        tag:        sl.tag || String(i + 1).padStart(2, '00'),
+        tag:        sl.tag || String(i + 1).padStart(2, '0'),
         headline:   headline,
         subline:    sl.subline || '',
         body:       body,
@@ -525,7 +541,7 @@ function parseServerSlides(data, topic, platform, tone, count){
         }) : null),
         cta:        sl.cta || '',
         caption:    caption,
-        hashtags:   [],
+        hashtags:   hashtags,   // v4.4: real server hashtags
         primaryImage: primaryImage,
         secondImage:  secondImage,
         video:      sl.video || null,
@@ -540,80 +556,113 @@ function parseServerSlides(data, topic, platform, tone, count){
   }
 }
 
-function buildCaption(sl,idx,trendTags){
-  if(sl.caption) return sl.caption;
-  var base=(sl.headline||'')+(sl.body?'\n\n'+sl.body:'');
-  return base.trim();
+/* ─────────────────────────────────────────────────────────
+   v4.4 FIX: buildCaption
+   Uses slide.caption from server directly.
+   Falls back to headline + emoji only if caption absent.
+   ───────────────────────────────────────────────────────── */
+function buildCaption(sl){
+  // Primary path: server AI caption — use it as-is
+  if(sl.caption && sl.caption.trim().length > 3){
+    return sl.caption.trim();
+  }
+  // Fallback: construct minimal caption from headline
+  var headline = (sl.headline || '').trim();
+  var emoji = sl.type === 'hook'   ? '👇'
+            : sl.type === 'cta'    ? '🔖'
+            : sl.type === 'stat'   ? '📊'
+            : sl.type === 'quote'  ? '💬'
+            : '💡';
+  return headline ? (headline + ' ' + emoji) : 'Save this — you will want it later 👇';
 }
 
 /* ─────────────────────────────────────────────────────────
-   PATCHED v4.3: fallbackSlides
-   Full storytelling narrative arcs, not placeholder filler
+   v4.4 FIX: populateHashtagPanel
+   Reads preserved slide.hashtags — panel now actually renders
+   ───────────────────────────────────────────────────────── */
+function populateHashtagPanel(slide){
+  var panel = document.getElementById('hashtagSection');
+  if(!panel) return;
+
+  // Priority: slide-level tags → deck-level trending tags → hide panel
+  var tags = [];
+  if(Array.isArray(slide.hashtags) && slide.hashtags.length > 0){
+    tags = slide.hashtags;
+  } else if(Array.isArray(ST.trendHashtags) && ST.trendHashtags.length > 0){
+    tags = ST.trendHashtags.slice(0, 5);
+  }
+
+  if(!tags.length){
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = '';
+
+  // Find or create the chips container inside the panel
+  var chipsEl = panel.querySelector('.hashtag-chips') || panel;
+  chipsEl.innerHTML = tags.map(function(tag){
+    var clean = tag.startsWith('#') ? tag : '#' + tag;
+    return '<span class="hashtag-chip">' + esc(clean) + '</span>';
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────
+   FALLBACK SLIDES
    ───────────────────────────────────────────────────────── */
 function fallbackSlides(topic, platform, tone, count){
 
   var topicClean = topic || 'this topic';
   var topicTitle = topicClean.charAt(0).toUpperCase() + topicClean.slice(1);
 
-  // Narrative arc — 7 acts that work for almost any creator topic
   var arc = [
-    // 1 — HOOK: bold contrarian statement
     {
       type:'hook', layout:'FULL_BLEED',
       headline: 'Everything You\'ve Been Told About ' + topicTitle + ' Is Backwards',
       body: 'I spent three years getting this wrong before I found the thing that actually works. Swipe through — this one\'s going to sting a little.'
     },
-    // 2 — PROBLEM: name the real pain
     {
       type:'problem', layout:'OVERLAP_BAND',
       headline: 'Here\'s Why Most People Fail at ' + topicTitle,
-      body: 'It\'s not effort. It\'s not talent. It\'s not even strategy. The real reason is something far more uncomfortable — and nobody talks about it because admitting it means looking at your own habits honestly.'
+      body: 'It\'s not effort. It\'s not talent. It\'s not even strategy. The real reason is something far more uncomfortable — and nobody talks about it.'
     },
-    // 3 — INSIGHT: the shift
     {
       type:'insight', layout:'BOTTOM_STRIP',
       headline: 'The Shift That Changes Everything',
-      body: 'Once you stop focusing on the output and start obsessing over the inputs, the whole game changes. The result isn\'t the goal — the system is. Here\'s what that looks like in practice.'
+      body: 'Once you stop focusing on the output and start obsessing over the inputs, the whole game changes. The result isn\'t the goal — the system is.'
     },
-    // 4 — STAT: proof with a number
     {
       type:'stat', layout:'STAT_HERO',
       stat: '3×',
       headline: 'People Who Do This Consistently Outperform Everyone Else',
-      body: 'That\'s not a motivational claim. That\'s the data. Three times the result, in the same time window, with less stress. The difference is one repeatable behaviour.'
+      body: 'Three times the result, in the same time window, with less stress. The difference is one repeatable behaviour.'
     },
-    // 5 — QUOTE: emotional anchor
     {
       type:'quote', layout:'QUOTE_PULL',
       quote: 'You don\'t rise to the level of your goals. You fall to the level of your systems.',
       headline: '',
       body: ''
     },
-    // 6 — LESSON: the thing they wished they knew earlier
     {
       type:'lesson', layout:'EDITORIAL_COLLAGE',
       headline: 'What I Wish I Had Known Three Years Ago',
-      body: 'Nobody tells you this at the start. You have to earn it through trial and error, or you have to find someone who\'s already been through it. Here\'s the shortcut they never gave me.'
+      body: 'Nobody tells you this at the start. You have to earn it through trial and error, or find someone who\'s already been through it.'
     },
-    // 7 — PROOF: real result
     {
       type:'proof', layout:'DUAL_IMAGE',
       headline: 'This Is What the Results Actually Looked Like',
-      body: 'Not overnight. Not magic. A slow build that suddenly becomes undeniable. The compound effect is real — but only if you start the right system, not just any system.'
+      body: 'Not overnight. Not magic. A slow build that suddenly becomes undeniable. The compound effect is real — but only if you start the right system.'
     },
-    // 8 — VALUE: the actionable framework
     {
       type:'value', layout:'TOP_STRIP',
       headline: 'The Three-Part Framework That Runs Everything',
-      body: 'Step one: identify the one lever that moves everything else. Step two: protect that lever at all costs. Step three: ignore everything that isn\'t that lever. That\'s it. That\'s the whole system.'
+      body: 'Step one: identify the one lever that moves everything else. Step two: protect that lever at all costs. Step three: ignore everything that isn\'t that lever.'
     },
-    // 9 — INSIGHT: counterintuitive truth
     {
       type:'insight', layout:'OVERLAP_BAND',
       headline: 'The Counterintuitive Truth Nobody Wants to Hear',
-      body: 'Doing less, more consistently, beats doing everything sporadically. Your brain resists this because it feels like giving up. It isn\'t. It\'s the most aggressive thing you can do.'
+      body: 'Doing less, more consistently, beats doing everything sporadically. Your brain resists this because it feels like giving up. It isn\'t.'
     },
-    // 10 — CTA: clear and specific
     {
       type:'cta', layout:'FULL_BLEED',
       headline: 'Save This. Come Back to It When You\'re Stuck.',
@@ -622,7 +671,6 @@ function fallbackSlides(topic, platform, tone, count){
     }
   ];
 
-  // Slice arc to requested count, always use slide 0 as hook and last as CTA
   var selected = [arc[0]];
   var middle = arc.slice(1, arc.length - 1);
   var need = count - 2;
@@ -725,7 +773,6 @@ function renderSlide(){
 
   clearLayouts();
 
-  /* ── Video background ── */
   var videoData=slide.video||null;
   var useVideo=(slide.mediaType==='video'||slide.useVideo)&&videoData&&videoData.url;
 
@@ -850,7 +897,6 @@ function renderSlide(){
       break;
     }
 
-    /* ── v4.2: QUOTE_PULL — redesigned with decorative rule + large quote glyph ── */
     case 'QUOTE_PULL':{
       sBgImg.style.opacity='0';
       var qPalette=(['minimal','cozy-home','health'].indexOf(theme)!==-1);
@@ -863,19 +909,13 @@ function renderSlide(){
       var qText=slide.quote||slide.headline||'';
       var qFontSize=Math.min(24,Math.max(16,headlineSize(qText)));
       var qh='';
-      /* Decorative top rule */
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-bottom:28px;"></div>';
-      /* Large open-quote glyph */
       qh+='<div style="font-family:Georgia,serif;font-size:72px;line-height:0.5;color:'+accent2+';opacity:0.55;margin-bottom:20px;align-self:flex-start;">\u201C</div>';
-      /* Quote text */
       qh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
-      /* Decorative bottom rule */
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-top:28px;"></div>';
-      /* Attribution / tag */
       if(slide.tag){
         qh+='<div style="margin-top:16px;font-size:10px;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';opacity:0.8;">'+esc(slide.tag)+'</div>';
       }
-      /* Supporting body only if not a pure quote slide */
       if(slide.body&&!slide.quote){
         qh+='<div class="s-body" style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
       }
@@ -907,6 +947,7 @@ function renderSlide(){
         '<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
         +'<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(line2||line1)+'</div>';
       hcEl.appendChild(hcTitle);
+      // v4.4: body shown if present (no longer wiped by engine)
       if(slide.body||slide.subline){
         var hcSub=document.createElement('div');
         var subText=slide.body||slide.subline||'';
@@ -952,6 +993,13 @@ function renderSlide(){
       ecTitle.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
         +'<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(titleFontSz+4)+'px;font-style:italic;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(scriptWords.join(' '))+'</div>';
       ecEl.appendChild(ecTitle);
+      // v4.4: body shown below headline if present
+      if(slide.body){
+        var ecBody=document.createElement('div');
+        ecBody.style.cssText='position:absolute;bottom:18px;left:18px;right:18px;z-index:2;font-size:11px;font-family:'+getFont('body')+';color:rgba(255,255,255,.75);line-height:1.55;';
+        ecBody.textContent=slide.body;
+        ecEl.appendChild(ecBody);
+      }
       var ecHandle=document.createElement('div');
       ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
       ecHandle.style.cssText='position:absolute;bottom:16px;left:18px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:rgba(255,255,255,.65);letter-spacing:.2px;';
@@ -963,7 +1011,6 @@ function renderSlide(){
       break;
     }
 
-    /* ── v4.2: EDITORIAL_COLLAGE — text panel has solid opaque background, never on image ── */
     case 'EDITORIAL_COLLAGE':{
       sBgImg.style.opacity='0';
       sBg.style.background='#f0ebe1';
@@ -990,7 +1037,6 @@ function renderSlide(){
       var p2url=secondUrl||(primaryUrl||'');
       ecolP2.style.cssText='position:absolute;left:26%;top:42%;width:40%;height:46%;background-size:cover;background-position:center top;background-color:#a89070;border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:4;'+(p2url?'background-image:url('+p2url+')':'');
       ecolEl.appendChild(ecolP2);
-      /* v4.2 FIX: Text panel — solid opaque background */
       var ecolText=document.createElement('div');
       ecolText.style.cssText='position:absolute;left:52%;right:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;padding:24px 18px 24px 14px;gap:10px;z-index:5;background:#f0ebe1;border-left:2px solid rgba(180,160,130,.25);';
       var ecWords=(slide.headline||'Create a Cozy & Functional Space').split(' ');
@@ -1034,7 +1080,6 @@ function renderSlide(){
       ec3Num.textContent=String(ST.cur+1).padStart(2,'0');
       ec3Num.style.cssText='position:absolute;top:36px;left:12px;z-index:2;font-family:Georgia,"Times New Roman",serif;font-size:108px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.9;';
       ec3El.appendChild(ec3Num);
-      /* v4.2 FIX: Text panel solid background, left column */
       var ec3Text=document.createElement('div');
       ec3Text.style.cssText='position:absolute;left:0;right:52%;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;padding:24px 14px 24px 14px;gap:8px;z-index:5;background:#f0ebe1;border-right:2px solid rgba(180,160,130,.25);';
       var ec3Words=(slide.headline||'Keep It Clean & Organized').split(' ');
@@ -1084,16 +1129,11 @@ function renderSlide(){
     var match=btn.getAttribute('onclick')||'';
     btn.classList.toggle('active',match.indexOf("'"+layout+"'")!==-1||match.indexOf('"'+layout+'"')!==-1);
   });
-  var hashSec=document.getElementById('hashtagSection');
-  if(hashSec) hashSec.style.display='none';
 
   updateThumbActive();
-
-  /* ── v4.3 PATCH: enable inline editing on all rendered text ── */
   makeEditable();
 }
 
-/* ── v4.2: buildFullBleedHTML — hashtags REMOVED from slide render ── */
 function buildFullBleedHTML(slide,tc,accent2){
   var fc='';
   if(slide.tag) fc+='<div class="s-tag" style="background:'+tc.tagBg+';color:'+tc.tagColor+';border:1px solid rgba(255,255,255,.12)">'+esc(slide.tag)+'</div>';
@@ -1105,7 +1145,6 @@ function buildFullBleedHTML(slide,tc,accent2){
   return fc;
 }
 
-/* ── v4.2: buildSplitTextHTML — hashtags REMOVED from slide render ── */
 function buildSplitTextHTML(slide,accent2,pText,pBg){
   var h='';
   if(slide.tag) h+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
@@ -1118,43 +1157,28 @@ function buildSplitTextHTML(slide,accent2,pText,pBg){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ─────────────────────────────────────────────────────────
-   PATCHED v4.3: INLINE EDITING
-   makeEditable() — called after every renderSlide()
-   startInlineEdit() — contenteditable handler
+   INLINE EDITING
    ───────────────────────────────────────────────────────── */
 function makeEditable(){
   var canvas = document.getElementById('slideCanvas');
   if(!canvas) return;
-
-  // Select elements that carry headline or body text
-  var targets = canvas.querySelectorAll(
-    '.s-headline, .s-body, .s-cta, [class*="s-stat-num"]'
-  );
-
+  var targets = canvas.querySelectorAll('.s-headline, .s-body, .s-cta, [class*="s-stat-num"]');
   targets.forEach(function(el){
-    // Don't double-bind
     if(el.dataset.editable === '1') return;
     el.dataset.editable = '1';
     el.style.cursor = 'text';
     el.title = 'Click to edit';
-
     el.addEventListener('click', function(e){
       e.stopPropagation();
       startInlineEdit(el);
     });
   });
-
-  // Also make dynamically-built text spans editable via delegation
   if(!canvas.dataset.editDelegated){
     canvas.dataset.editDelegated = '1';
     canvas.addEventListener('click', function(e){
       var t = e.target;
       while(t && t !== canvas){
-        if(
-          t.dataset.editKey ||
-          t.classList.contains('s-headline') ||
-          t.classList.contains('s-body')
-        ){
+        if(t.dataset.editKey || t.classList.contains('s-headline') || t.classList.contains('s-body')){
           startInlineEdit(t);
           return;
         }
@@ -1167,10 +1191,7 @@ function makeEditable(){
 function startInlineEdit(el){
   if(el.dataset.editing === '1') return;
   el.dataset.editing = '1';
-
   var original = el.textContent;
-
-  // Turn into a contenteditable
   el.setAttribute('contenteditable', 'true');
   el.style.outline = '2px solid rgba(255,255,255,0.6)';
   el.style.outlineOffset = '4px';
@@ -1178,25 +1199,19 @@ function startInlineEdit(el){
   el.style.minWidth = '40px';
   el.style.cursor = 'text';
   el.focus();
-
-  // Select all text
   var range = document.createRange();
   range.selectNodeContents(el);
   var sel = window.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
-
   function commit(){
     el.removeAttribute('contenteditable');
     el.dataset.editing = '0';
     el.style.outline = '';
     el.style.outlineOffset = '';
     el.style.borderRadius = '';
-
     var newText = el.textContent.trim();
     if(!newText) el.textContent = original;
-
-    // Push back into ST.slides so edits persist
     if(ST.slides && ST.slides[ST.cur]){
       var s = ST.slides[ST.cur];
       if(el.classList.contains('s-headline') || el.classList.contains('s-title')){
@@ -1208,7 +1223,6 @@ function startInlineEdit(el){
       }
     }
   }
-
   el.addEventListener('blur', commit, {once: true});
   el.addEventListener('keydown', function(e){
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); el.blur(); }
@@ -1255,13 +1269,18 @@ function shuffleAssets(){ST.assetOffset=(ST.assetOffset+1)%10;buildStrip();rende
 
 /* ─────────────────────────────────────────────────────────
    12. EDIT PANEL
+   v4.4 FIX: fillEdit uses buildCaption(slide) + populateHashtagPanel
    ───────────────────────────────────────────────────────── */
 function fillEdit(){
   if(!ST.slides.length) return;
   var s=ST.slides[ST.cur];
   document.getElementById('eHead').value=s.headline||'';
   document.getElementById('eBody').value=s.body||s.subline||'';
-  document.getElementById('eCap').value=s.caption||'';
+
+  // v4.4 FIX: use buildCaption — not raw field assignment
+  var capEl=document.getElementById('eCap');
+  if(capEl) capEl.value=buildCaption(s);
+
   document.getElementById('editNum').textContent='Slide '+(ST.cur+1);
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=(s.layout||'').replace(/_/g,' ');
@@ -1273,6 +1292,9 @@ function fillEdit(){
   if(statInput) statInput.value=s.stat||'';
   var quoteInput=document.getElementById('eQuote');
   if(quoteInput) quoteInput.value=s.quote||'';
+
+  // v4.4 FIX: populate hashtag panel from preserved slide data
+  populateHashtagPanel(s);
 }
 
 function liveEdit(){
@@ -1331,7 +1353,8 @@ function toggleTheme(){var isDark=document.documentElement.getAttribute('data-th
    15. COPY & EXPORT
    ───────────────────────────────────────────────────────── */
 function copyCaption(){
-  var c=document.getElementById('eCap').value;
+  var capEl=document.getElementById('eCap');
+  var c=capEl?capEl.value:'';
   if(!c){toast('No caption on this slide');return;}
   navigator.clipboard.writeText(c).then(function(){toast('✓ Caption copied');});
 }
@@ -1339,8 +1362,9 @@ function copyCaption(){
 function copyAll(){
   if(!ST.slides.length){toast('Generate a carousel first');return;}
   var all=ST.slides.map(function(s,i){
+    var cap=buildCaption(s);
     var tags=(s.hashtags&&s.hashtags.length)?'\n\n'+s.hashtags.join(' '):'';
-    return '── SLIDE '+(i+1)+' ──\nHeadline: '+(s.headline||'')+'\nBody: '+(s.body||'')+'\n\nCaption:\n'+(s.caption||'')+tags;
+    return '── SLIDE '+(i+1)+' ──\nHeadline: '+(s.headline||'')+'\nBody: '+(s.body||'')+'\n\nCaption:\n'+cap+tags;
   }).join('\n\n');
   navigator.clipboard.writeText(all).then(function(){toast('✓ All copy + captions copied');});
 }
@@ -1355,7 +1379,7 @@ function doExport(){
     copyAll();
   } else if(ST.exportType==='json'){
     var j=JSON.stringify({
-      slides:ST.slides.map(function(s){return {headline:s.headline,body:s.body,caption:s.caption,hashtags:s.hashtags,layout:s.layout,type:s.type};}),
+      slides:ST.slides.map(function(s){return {headline:s.headline,body:s.body,caption:buildCaption(s),hashtags:s.hashtags,layout:s.layout,type:s.type};}),
       theme:ST.theme,accentColor:ST.accent,fontPair:ST.fontPair,
       platform:document.getElementById('platSelect').value,
       generatedAt:new Date().toISOString()
