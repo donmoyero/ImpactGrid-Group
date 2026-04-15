@@ -1,30 +1,29 @@
 /* ═══════════════════════════════════════════════════════════
    IMPACTGRID — Carousel Studio
-   carousel-studio.js  v4.4
+   carousel-studio.js  v4.5
 
-   v4.4 patch (fixes applied from carousel-studio-patch-v4.4.js):
-   - normalizeSlidesDeck() — hashtags NO LONGER zeroed; only fills empty fields
-   - buildCaption()        — uses slide.caption directly from server; no raw concat
-   - populateHashtagPanel()— reads preserved slide.hashtags; panel now renders
-   - fillEdit()            — uses buildCaption(slide) not raw eCap assignment
-   - parseServerSlides()   — hashtags preserved from server, not stripped to []
+   v4.5 upgrades (integrated from carousel-studio-captions.js):
+   - CaptionEngine merged inline — no separate file needed
+   - callAI() now sends a full storytelling brief to the server
+     so every slide gets punchy, specific, non-generic copy
+   - enrichDeck() — live Google Trends pulled per-generate,
+     AI writes real platform-native captions for every slide
+   - pickHashtagsForSlide() — scored tags: 🔥 Trending, 🎯 Niche,
+     📱 Platform (no generic filler unless under count)
+   - buildCaption() — uses AI caption from enrichDeck first,
+     falls back to smart template, never blank
+   - populateHashtagPanel() — chips + copy-all button
+
+   v4.4 patch:
+   - normalizeSlidesDeck() — hashtags NO LONGER zeroed
+   - buildCaption()        — uses slide.caption from server
+   - parseServerSlides()   — hashtags preserved from server
+   - fillEdit()            — uses buildCaption(slide)
 
    v4.3 patch:
-   - trimHeadline()      — no longer caps at 6 words; strips hashtags only
-   - limitBody()         — no longer caps at 2 sentences; up to ~280 chars
-   - headlineSize()      — updated breakpoints for longer headlines
-   - fallbackSlides()    — full storytelling narrative arcs, not placeholder filler
-   - parseServerSlides() — trusts AI copy fully; only strips hashtags
-   - normalizeSlidesDeck() — no longer clobbers good copy
-   - makeEditable()      — tap/click any text on slide canvas to edit inline
-   - startInlineEdit()   — contenteditable helper for inline editing
-   - renderSlide()       — calls makeEditable() after every render
-
-   v4.2 fixes:
-   - Hashtags removed from slide renders (FullBleed + SplitText)
-   - QUOTE_PULL redesigned with decorative rule, large quote mark, clean type
-   - EDITORIAL_COLLAGE text panel uses solid background — never writes on image
-   - Removed broken layouts: CORNER_FLOAT, SPLIT_L, SPLIT_R, MAGAZINE_SPLIT, GRID_POINTS, HABIT_SLIDE
+   - trimHeadline / limitBody / headlineSize improvements
+   - fallbackSlides() — full narrative arcs
+   - makeEditable() inline editing
    ═══════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────
@@ -316,9 +315,8 @@ function headlineSize(text){
 }
 
 /* ─────────────────────────────────────────────────────────
-   v4.4 FIX: normalizeSlidesDeck
-   - hashtags NO LONGER zeroed — preserved from server
-   - every field guarded: only fills if genuinely empty
+   normalizeSlidesDeck — v4.4+
+   hashtags preserved; only fills genuinely empty fields
    ───────────────────────────────────────────────────────── */
 function normalizeSlidesDeck(slides){
   if(!Array.isArray(slides)) return [];
@@ -327,41 +325,23 @@ function normalizeSlidesDeck(slides){
     var total = slides.length;
     out.type = i === 0 ? 'hook' : (i === total - 1 ? 'cta' : (out.type || 'insight'));
     out.layout = normalizeLayoutSafe(out.layout, out.type, i, total);
-
-    // Headline: only fill if genuinely blank
     if(!out.headline || out.headline.length < 3){
-      out.headline = out.type === 'hook'
-        ? 'This Changes Everything'
-        : out.type === 'cta'
-        ? 'Ready to Apply This?'
+      out.headline = out.type === 'hook' ? 'This Changes Everything'
+        : out.type === 'cta' ? 'Ready to Apply This?'
         : 'Key Insight';
     }
     out.headline = trimHeadline(out.headline);
-
-    // Body: only fill if genuinely blank
     if(!out.body || out.body.trim().length < 5){
       if(out.type !== 'hook'){
         out.body = 'Apply this consistently and the results compound faster than you expect.';
       }
     }
     out.body = limitBody(out.body || '');
-
     out.quote = stripHashtags(out.quote || '');
     out.cta   = stripHashtags(out.cta || '');
-
-    // v4.4 FIX: DO NOT zero hashtags — preserve server array
-    // Only assign fallback if the array is genuinely absent or empty
-    if(!Array.isArray(out.hashtags) || out.hashtags.length === 0){
-      out.hashtags = [];  // stays empty — panel won't show, which is correct if server sent none
-    }
-
-    // Caption: only fill if missing — NEVER overwrite server caption
-    if(!out.caption || out.caption.trim().length < 3){
-      out.caption = buildCaption(out);
-    }
-
+    if(!Array.isArray(out.hashtags) || out.hashtags.length === 0) out.hashtags = [];
+    if(!out.caption || out.caption.trim().length < 3) out.caption = buildCaption(out);
     if(out.type === 'cta' && !out.cta) out.cta = 'Follow for more →';
-
     return out;
   });
 }
@@ -431,7 +411,7 @@ function showAssetPreview(theme){
 }
 
 /* ─────────────────────────────────────────────────────────
-   7. AI GENERATION
+   7. AI GENERATION — v4.5: smarter prompt brief
    ───────────────────────────────────────────────────────── */
 var DIJO_SERVER='https://impactgrid-dijo.onrender.com';
 
@@ -447,11 +427,10 @@ async function generate(){
   document.getElementById('emptyState').style.display='none';
   document.getElementById('slideWrap').style.display='block';
   document.getElementById('loadingOv').classList.add('show');
-  var hints=['Detecting theme…','Scoring images with AI vision…','Writing copy…','Designing layouts…','Polishing your carousel…'];
+  var hints=['Detecting theme…','Scoring images with AI vision…','Writing punchy copy…','Designing layouts…','Adding captions + hashtags…'];
   var hi=0,hTimer=setInterval(function(){hi=(hi+1)%hints.length;document.getElementById('loadingHint').textContent=hints[hi];},1800);
   try{
     var data=await callAI(topic,platform,tone,count);
-    // v4.4: store trendHashtags on ST so fillEdit + populateHashtagPanel can access them
     ST.trendHashtags = data.trendHashtags || [];
     ST.slides=parseServerSlides(data,topic,platform,tone,count);
     if(data.theme&&DA[data.theme]) ST.theme=data.theme;
@@ -468,62 +447,105 @@ async function generate(){
   buildStrip();renderSlide();updateCounter();fillEdit();
   btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate';
   btn.disabled=false;
-  toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any slide to edit');
+  toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any text to edit');
+
+  // v4.5: enrich with live captions + hashtags after render
+  var topicVal=topic, platformVal=platform;
+  setTimeout(function(){ CaptionEngine.enrichDeck(topicVal, platformVal); }, 600);
 }
 
+/* ─────────────────────────────────────────────────────────
+   v4.5 UPGRADED callAI — sends a full storytelling brief
+   so the server AI writes punchy, specific, non-generic copy
+   ───────────────────────────────────────────────────────── */
 async function callAI(topic,platform,tone,count){
+
+  // Build a detailed narrative brief so the AI writes GREAT copy
+  var platformVoice = {
+    Instagram: 'Instagram: visual, community-first, emoji-friendly, mix of personal story + value. Avoid corporate language.',
+    LinkedIn:  'LinkedIn: professional but human, insight-driven, thought-leader tone. Data and specifics beat generalities.',
+    TikTok:    'TikTok: fast, punchy, Gen-Z aware, conversational. Short sentences. Hook in first 5 words.',
+    'Twitter/X':'Twitter/X: opinionated, hot-take energy, shareable single ideas. Under 240 chars per slide headline.',
+    Pinterest: 'Pinterest: aspirational, keyword-rich, descriptive, outcome-focused.'
+  };
+  var voiceNote = platformVoice[platform] || platformVoice.Instagram;
+
+  var toneNote = {
+    'Bold & Direct':  'Be direct and unapologetic. No hedging. Short punchy sentences.',
+    Conversational:   'Write like you\'re texting a smart friend. First-person, informal, honest.',
+    Professional:     'Authoritative but warm. Data-backed where possible. No jargon.',
+    Inspirational:    'Emotionally resonant. Speak to transformation. Avoid clichés.',
+    Educational:      'Teach one clear thing per slide. Use concrete examples, not vague advice.',
+    Playful:          'Light, witty, fun. Wordplay welcome. Keep it high-energy.'
+  }[tone] || '';
+
+  var slideTypes = [
+    'hook: pattern-interrupt opener, make the reader stop scrolling',
+    'problem: name the specific pain point without being preachy',
+    'insight: the counterintuitive truth that reframes everything',
+    'stat: a real number or percentage with implication',
+    'quote: a powerful one-liner worth saving',
+    'lesson: the thing you wish you knew earlier',
+    'proof: what results actually look like',
+    'value: one actionable, specific step',
+    'cta: ask a direct question, invite a comment or save'
+  ].slice(0, count).join('\n');
+
+  var brief = 'You are Dijo, a world-class social media content strategist.\n\n'
+    + 'TASK: Write a ' + count + '-slide carousel on: "' + topic + '"\n'
+    + 'Platform: ' + platform + ' — ' + voiceNote + '\n'
+    + 'Tone: ' + tone + ' — ' + toneNote + '\n\n'
+    + 'SLIDE SEQUENCE TO FOLLOW:\n' + slideTypes + '\n\n'
+    + 'COPY RULES (non-negotiable):\n'
+    + '- Headlines: punchy, specific, under 12 words. NO generic openers like "In today\'s world"\n'
+    + '- Body: 2-3 sentences max. Be concrete. Name specific outcomes, numbers, feelings\n'
+    + '- No hollow phrases: "game-changing", "skyrocket", "unlock your potential"\n'
+    + '- Captions: platform-native voice. No hashtags inside caption body\n'
+    + '- Hashtags: 5 per slide — niche-specific + platform-appropriate, never generic filler\n'
+    + '- Each slide must feel like a different part of a story arc, not a random list\n\n'
+    + 'Return JSON: { slides: [...], theme, accentColor, trendHashtags: [] }';
+
   var res=await fetch(DIJO_SERVER+'/carousel/generate',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({topic:topic,platform:platform,tone:tone,count:count,themeOverride:ST.theme||null})
+    body:JSON.stringify({
+      topic:topic,
+      platform:platform,
+      tone:tone,
+      count:count,
+      themeOverride:ST.theme||null,
+      brief:brief   // v4.5: send the full copywriting brief
+    })
   });
   if(!res.ok) throw new Error('Server responded '+res.status);
   return await res.json();
 }
 
 /* ─────────────────────────────────────────────────────────
-   8. SLIDE PARSING
-   v4.4: hashtags preserved from server — NOT stripped to []
+   8. SLIDE PARSING — v4.4+: hashtags preserved
    ───────────────────────────────────────────────────────── */
 function parseServerSlides(data, topic, platform, tone, count){
   try{
     if(!data.slides || !Array.isArray(data.slides)) throw new Error('no slides array');
     var total = data.slides.length;
-
     var parsed = data.slides.map(function(sl, i){
       var primaryImage = null;
       if(sl.image) primaryImage = {url:sl.image, tone:sl.imageMood||'neutral', brightness:'medium'};
       else if(sl.primaryImage) primaryImage = sl.primaryImage;
-
       var secondImage = null;
       if(sl.image2) secondImage = {url:sl.image2, tone:'neutral', brightness:'medium'};
       else if(sl.secondImage) secondImage = sl.secondImage;
-
       var layout = normalizeLayoutSafe(sl.layout, sl.type||'value', i, total);
-
       var headline = stripHashtags(sl.headline || sl.title || '');
       if(!headline || headline.length < 3){
-        headline = i === 0
-          ? 'The Truth About ' + topic
-          : i === total - 1
-          ? 'Here\'s Your Next Step'
+        headline = i === 0 ? 'The Truth About ' + topic
+          : i === total - 1 ? 'Here\'s Your Next Step'
           : 'Slide ' + (i + 1) + ': ' + topic;
       }
-      if(headline.length > 120){
-        headline = headline.slice(0, 117) + '…';
-      }
-
-      var rawBody = sl.body || sl.subline || sl.description || '';
-      var body = limitBody(rawBody);
-
-      // v4.4 FIX: use buildCaption which reads slide.caption first
+      if(headline.length > 120) headline = headline.slice(0, 117) + '…';
+      var body = limitBody(sl.body || sl.subline || sl.description || '');
       var caption = buildCaption(sl);
-
-      // v4.4 FIX: preserve server hashtags — do NOT force to []
-      var hashtags = (Array.isArray(sl.hashtags) && sl.hashtags.length > 0)
-        ? sl.hashtags
-        : [];
-
+      var hashtags = (Array.isArray(sl.hashtags) && sl.hashtags.length > 0) ? sl.hashtags : [];
       return {
         type:       sl.type || (i === 0 ? 'hook' : i === total - 1 ? 'cta' : 'value'),
         layout:     layout,
@@ -541,14 +563,13 @@ function parseServerSlides(data, topic, platform, tone, count){
         }) : null),
         cta:        sl.cta || '',
         caption:    caption,
-        hashtags:   hashtags,   // v4.4: real server hashtags
+        hashtags:   hashtags,
         primaryImage: primaryImage,
         secondImage:  secondImage,
         video:      sl.video || null,
         useVideo:   sl.mediaType === 'video' && !!(sl.video && sl.video.url)
       };
     });
-
     return normalizeSlidesDeck(parsed);
   } catch(e){
     console.warn('[parseServerSlides] Error:', e.message);
@@ -557,129 +578,98 @@ function parseServerSlides(data, topic, platform, tone, count){
 }
 
 /* ─────────────────────────────────────────────────────────
-   v4.4 FIX: buildCaption
-   Uses slide.caption from server directly.
-   Falls back to headline + emoji only if caption absent.
+   buildCaption — v4.4+: server caption first, smart fallback
    ───────────────────────────────────────────────────────── */
 function buildCaption(sl){
-  // Primary path: server AI caption — use it as-is
-  if(sl.caption && sl.caption.trim().length > 3){
-    return sl.caption.trim();
-  }
-  // Fallback: construct minimal caption from headline
+  if(sl.caption && sl.caption.trim().length > 3) return sl.caption.trim();
   var headline = (sl.headline || '').trim();
-  var emoji = sl.type === 'hook'   ? '👇'
-            : sl.type === 'cta'    ? '🔖'
-            : sl.type === 'stat'   ? '📊'
-            : sl.type === 'quote'  ? '💬'
-            : '💡';
+  var emoji = sl.type === 'hook' ? '👇'
+    : sl.type === 'cta'    ? '🔖'
+    : sl.type === 'stat'   ? '📊'
+    : sl.type === 'quote'  ? '💬'
+    : '💡';
   return headline ? (headline + ' ' + emoji) : 'Save this — you will want it later 👇';
 }
 
 /* ─────────────────────────────────────────────────────────
-   v4.4 FIX: populateHashtagPanel
-   Reads preserved slide.hashtags — panel now actually renders
+   populateHashtagPanel — shows chips + copy button
    ───────────────────────────────────────────────────────── */
 function populateHashtagPanel(slide){
   var panel = document.getElementById('hashtagSection');
   if(!panel) return;
-
-  // Priority: slide-level tags → deck-level trending tags → hide panel
   var tags = [];
-  if(Array.isArray(slide.hashtags) && slide.hashtags.length > 0){
-    tags = slide.hashtags;
-  } else if(Array.isArray(ST.trendHashtags) && ST.trendHashtags.length > 0){
-    tags = ST.trendHashtags.slice(0, 5);
-  }
-
-  if(!tags.length){
-    panel.style.display = 'none';
-    return;
-  }
-
+  if(Array.isArray(slide.hashtags) && slide.hashtags.length > 0) tags = slide.hashtags;
+  else if(Array.isArray(ST.trendHashtags) && ST.trendHashtags.length > 0) tags = ST.trendHashtags.slice(0, 5);
+  if(!tags.length){ panel.style.display = 'none'; return; }
   panel.style.display = '';
-
-  // Find or create the chips container inside the panel
-  var chipsEl = panel.querySelector('.hashtag-chips') || panel;
-  chipsEl.innerHTML = tags.map(function(tag){
-    var clean = tag.startsWith('#') ? tag : '#' + tag;
-    return '<span class="hashtag-chip">' + esc(clean) + '</span>';
-  }).join('');
+  var chipsEl = document.getElementById('hashtagChips');
+  var copyBtn = document.getElementById('hashtagCopyBtn');
+  if(chipsEl){
+    chipsEl.innerHTML = tags.map(function(tag){
+      var clean = tag.startsWith('#') ? tag : '#' + tag;
+      return '<span class="hashtag-chip" onclick="copyTag(\'' + clean.replace(/'/g,"\\'") + '\')" title="Click to copy">' + esc(clean) + '</span>';
+    }).join('');
+  }
+  if(copyBtn) copyBtn.style.display = 'flex';
 }
 
+window.copyTag = function(tag){
+  navigator.clipboard.writeText(tag).then(function(){ toast('✓ ' + tag + ' copied'); });
+};
+
+window.copyHashtags = function(){
+  if(!window.ST || !ST.slides.length) return;
+  var tags = (ST.slides[ST.cur].hashtags || []).slice(0, 5);
+  if(!tags.length){ toast('No hashtags on this slide'); return; }
+  var out = tags.map(function(t){ return t.startsWith('#') ? t : '#' + t; }).join(' ');
+  navigator.clipboard.writeText(out).then(function(){ toast('✓ 5 hashtags copied'); });
+};
+
 /* ─────────────────────────────────────────────────────────
-   FALLBACK SLIDES
+   FALLBACK SLIDES — full narrative arc
    ───────────────────────────────────────────────────────── */
 function fallbackSlides(topic, platform, tone, count){
-
   var topicClean = topic || 'this topic';
   var topicTitle = topicClean.charAt(0).toUpperCase() + topicClean.slice(1);
-
   var arc = [
-    {
-      type:'hook', layout:'FULL_BLEED',
-      headline: 'Everything You\'ve Been Told About ' + topicTitle + ' Is Backwards',
-      body: 'I spent three years getting this wrong before I found the thing that actually works. Swipe through — this one\'s going to sting a little.'
-    },
-    {
-      type:'problem', layout:'OVERLAP_BAND',
-      headline: 'Here\'s Why Most People Fail at ' + topicTitle,
-      body: 'It\'s not effort. It\'s not talent. It\'s not even strategy. The real reason is something far more uncomfortable — and nobody talks about it.'
-    },
-    {
-      type:'insight', layout:'BOTTOM_STRIP',
-      headline: 'The Shift That Changes Everything',
-      body: 'Once you stop focusing on the output and start obsessing over the inputs, the whole game changes. The result isn\'t the goal — the system is.'
-    },
-    {
-      type:'stat', layout:'STAT_HERO',
-      stat: '3×',
-      headline: 'People Who Do This Consistently Outperform Everyone Else',
-      body: 'Three times the result, in the same time window, with less stress. The difference is one repeatable behaviour.'
-    },
-    {
-      type:'quote', layout:'QUOTE_PULL',
-      quote: 'You don\'t rise to the level of your goals. You fall to the level of your systems.',
-      headline: '',
-      body: ''
-    },
-    {
-      type:'lesson', layout:'EDITORIAL_COLLAGE',
-      headline: 'What I Wish I Had Known Three Years Ago',
-      body: 'Nobody tells you this at the start. You have to earn it through trial and error, or find someone who\'s already been through it.'
-    },
-    {
-      type:'proof', layout:'DUAL_IMAGE',
-      headline: 'This Is What the Results Actually Looked Like',
-      body: 'Not overnight. Not magic. A slow build that suddenly becomes undeniable. The compound effect is real — but only if you start the right system.'
-    },
-    {
-      type:'value', layout:'TOP_STRIP',
-      headline: 'The Three-Part Framework That Runs Everything',
-      body: 'Step one: identify the one lever that moves everything else. Step two: protect that lever at all costs. Step three: ignore everything that isn\'t that lever.'
-    },
-    {
-      type:'insight', layout:'OVERLAP_BAND',
-      headline: 'The Counterintuitive Truth Nobody Wants to Hear',
-      body: 'Doing less, more consistently, beats doing everything sporadically. Your brain resists this because it feels like giving up. It isn\'t.'
-    },
-    {
-      type:'cta', layout:'FULL_BLEED',
-      headline: 'Save This. Come Back to It When You\'re Stuck.',
-      body: 'The people who actually apply this will be in a completely different position six months from now. Which slide hit closest to home? Drop the number in the comments.',
-      cta: 'Follow for more →'
-    }
+    {type:'hook',layout:'FULL_BLEED',
+     headline:'Everything You\'ve Been Told About ' + topicTitle + ' Is Backwards',
+     body:'I spent three years getting this wrong before I found the thing that actually works. Swipe through — this one\'s going to sting a little.'},
+    {type:'problem',layout:'OVERLAP_BAND',
+     headline:'Here\'s Why Most People Fail at ' + topicTitle,
+     body:'It\'s not effort. It\'s not talent. It\'s not even strategy. The real reason is something far more uncomfortable — and nobody talks about it.'},
+    {type:'insight',layout:'BOTTOM_STRIP',
+     headline:'The Shift That Changes Everything',
+     body:'Once you stop focusing on the output and start obsessing over the inputs, the whole game changes. The result isn\'t the goal — the system is.'},
+    {type:'stat',layout:'STAT_HERO',stat:'3×',
+     headline:'People Who Do This Consistently Outperform Everyone Else',
+     body:'Three times the result, in the same time window, with less stress. The difference is one repeatable behaviour.'},
+    {type:'quote',layout:'QUOTE_PULL',
+     quote:'You don\'t rise to the level of your goals. You fall to the level of your systems.',
+     headline:'',body:''},
+    {type:'lesson',layout:'EDITORIAL_COLLAGE',
+     headline:'What I Wish I Had Known Three Years Ago',
+     body:'Nobody tells you this at the start. You have to earn it through trial and error, or find someone who\'s already been through it.'},
+    {type:'proof',layout:'DUAL_IMAGE',
+     headline:'This Is What the Results Actually Looked Like',
+     body:'Not overnight. Not magic. A slow build that suddenly becomes undeniable. The compound effect is real — but only if you start the right system.'},
+    {type:'value',layout:'TOP_STRIP',
+     headline:'The Three-Part Framework That Runs Everything',
+     body:'Step one: identify the one lever that moves everything else. Step two: protect that lever at all costs. Step three: ignore everything that isn\'t that lever.'},
+    {type:'insight',layout:'OVERLAP_BAND',
+     headline:'The Counterintuitive Truth Nobody Wants to Hear',
+     body:'Doing less, more consistently, beats doing everything sporadically. Your brain resists this because it feels like giving up. It isn\'t.'},
+    {type:'cta',layout:'FULL_BLEED',
+     headline:'Save This. Come Back to It When You\'re Stuck.',
+     body:'The people who actually apply this will be in a completely different position six months from now. Which slide hit closest to home? Drop the number in the comments.',
+     cta:'Follow for more →'}
   ];
-
   var selected = [arc[0]];
   var middle = arc.slice(1, arc.length - 1);
   var need = count - 2;
-  for(var i = 0; i < need; i++){
-    selected.push(middle[i % middle.length]);
-  }
+  for(var i = 0; i < need; i++) selected.push(middle[i % middle.length]);
   selected.push(arc[arc.length - 1]);
   selected = selected.slice(0, count);
-
   var built = selected.map(function(sl, i){
     return {
       type:      sl.type || (i === 0 ? 'hook' : i === count - 1 ? 'cta' : 'insight'),
@@ -701,14 +691,12 @@ function fallbackSlides(topic, platform, tone, count){
       secondImage:  null
     };
   });
-
   return normalizeSlidesDeck(built);
 }
 
 /* ─────────────────────────────────────────────────────────
    9. RENDER ENGINE
    ───────────────────────────────────────────────────────── */
-
 function clearLayouts(){
   ['sContent','sSplit','sCorner','sDual','sBand','sEditorial','sQuote','sStat','sGrid','sTopStrip','sBottomStrip',
    'sEditorialCover','sEditorialCollage','sHabitCover','sHabitSlide'].forEach(function(id){
@@ -783,8 +771,7 @@ function renderSlide(){
     sBg.style.background='#111';
   } else {
     sVideo.innerHTML='';sVideo.style.display='none';
-    var needsBg=['FULL_BLEED','DUAL_IMAGE','OVERLAP_BAND','TOP_STRIP','BOTTOM_STRIP',
-                 'EDITORIAL_COVER','HABIT_COVER'].indexOf(layout)!==-1;
+    var needsBg=['FULL_BLEED','DUAL_IMAGE','OVERLAP_BAND','TOP_STRIP','BOTTOM_STRIP','EDITORIAL_COVER','HABIT_COVER'].indexOf(layout)!==-1;
     if(primaryUrl&&needsBg){
       sBgImg.style.backgroundImage='url('+primaryUrl+')';
       sBgImg.style.opacity='1';
@@ -913,12 +900,8 @@ function renderSlide(){
       qh+='<div style="font-family:Georgia,serif;font-size:72px;line-height:0.5;color:'+accent2+';opacity:0.55;margin-bottom:20px;align-self:flex-start;">\u201C</div>';
       qh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-top:28px;"></div>';
-      if(slide.tag){
-        qh+='<div style="margin-top:16px;font-size:10px;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';opacity:0.8;">'+esc(slide.tag)+'</div>';
-      }
-      if(slide.body&&!slide.quote){
-        qh+='<div class="s-body" style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
-      }
+      if(slide.tag) qh+='<div style="margin-top:16px;font-size:10px;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';opacity:0.8;">'+esc(slide.tag)+'</div>';
+      if(slide.body&&!slide.quote) qh+='<div class="s-body" style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
       sQuote.innerHTML=qh;
       break;
     }
@@ -933,8 +916,8 @@ function renderSlide(){
       hcEl.appendChild(hcOv);
       var hcTop=document.createElement('div');
       hcTop.style.cssText='position:absolute;top:0;left:0;right:0;z-index:2;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.22);';
-      hcTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">'+(ST.brand?ST.brand.toUpperCase():'THYNK UNLIMITED')+'</span>'
-        +'<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'REALLYGREATSITE')+'</span>';
+      hcTop.innerHTML='<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">'+(ST.brand?ST.brand.toUpperCase():'IMPACTGRID')+'</span>'
+        +'<span style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';color:rgba(255,255,255,.82);letter-spacing:.14em;text-transform:uppercase;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup')+'</span>';
       hcEl.appendChild(hcTop);
       var hcTitle=document.createElement('div');
       hcTitle.style.cssText='position:absolute;left:16px;right:16px;bottom:80px;z-index:2;';
@@ -943,16 +926,13 @@ function renderSlide(){
       var line1=words.slice(0,mid).join(' ');
       var line2=words.slice(mid).join(' ');
       var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max(slide.headline.length,6))));
-      hcTitle.innerHTML=
-        '<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
+      hcTitle.innerHTML='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
         +'<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(line2||line1)+'</div>';
       hcEl.appendChild(hcTitle);
-      // v4.4: body shown if present (no longer wiped by engine)
       if(slide.body||slide.subline){
         var hcSub=document.createElement('div');
-        var subText=slide.body||slide.subline||'';
         hcSub.style.cssText='position:absolute;left:16px;right:40%;bottom:52px;z-index:2;font-family:'+getFont('body')+';font-size:10px;font-weight:400;color:'+accent2+';line-height:1.5;letter-spacing:.02em;text-transform:uppercase;';
-        hcSub.textContent=subText;
+        hcSub.textContent=slide.body||slide.subline||'';
         hcEl.appendChild(hcSub);
       }
       var hcSwirl=document.createElement('div');
@@ -961,7 +941,7 @@ function renderSlide(){
       hcEl.appendChild(hcSwirl);
       var hcBot=document.createElement('div');
       hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;';
-      hcBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.REALLYGREATSITE.COM')+'</span>'
+      hcBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.IMPACTGRIDGROUP.COM')+'</span>'
         +'<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.08em;">SLIDE '+String(ST.cur+1).padStart(2,'0')+'</span>';
       hcEl.appendChild(hcBot);
       break;
@@ -980,7 +960,7 @@ function renderSlide(){
       ecBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';font-weight:400;color:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.6);border-radius:40px;padding:4px 14px;letter-spacing:.3px;';
       ecEl.appendChild(ecBadge);
       var ecBrand=document.createElement('div');
-      ecBrand.textContent=ST.brand||'Salford & Co.';
+      ecBrand.textContent=ST.brand||'ImpactGrid';
       ecBrand.style.cssText='position:absolute;top:16px;right:16px;z-index:2;font-size:11px;font-family:'+getFont('body')+';font-weight:400;color:rgba(255,255,255,.88);letter-spacing:.4px;';
       ecEl.appendChild(ecBrand);
       var words2=(slide.headline||'3 Ways to Style Your Own Home').split(' ');
@@ -993,7 +973,6 @@ function renderSlide(){
       ecTitle.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
         +'<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(titleFontSz+4)+'px;font-style:italic;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(scriptWords.join(' '))+'</div>';
       ecEl.appendChild(ecTitle);
-      // v4.4: body shown below headline if present
       if(slide.body){
         var ecBody=document.createElement('div');
         ecBody.style.cssText='position:absolute;bottom:18px;left:18px;right:18px;z-index:2;font-size:11px;font-family:'+getFont('body')+';color:rgba(255,255,255,.75);line-height:1.55;';
@@ -1001,7 +980,7 @@ function renderSlide(){
         ecEl.appendChild(ecBody);
       }
       var ecHandle=document.createElement('div');
-      ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
+      ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
       ecHandle.style.cssText='position:absolute;bottom:16px;left:18px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:rgba(255,255,255,.65);letter-spacing:.2px;';
       ecEl.appendChild(ecHandle);
       var ecStars=document.createElement('div');
@@ -1023,7 +1002,7 @@ function renderSlide(){
       ecolBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;letter-spacing:.3px;';
       ecolEl.appendChild(ecolBadge);
       var ecolBrand=document.createElement('div');
-      ecolBrand.textContent=ST.brand||'Salford & Co.';
+      ecolBrand.textContent=ST.brand||'ImpactGrid';
       ecolBrand.style.cssText='position:absolute;top:16px;right:14px;z-index:6;font-size:11px;font-family:'+getFont('body')+';color:#888;letter-spacing:.3px;';
       ecolEl.appendChild(ecolBrand);
       var ecolNum=document.createElement('div');
@@ -1052,7 +1031,7 @@ function renderSlide(){
       ecolEl.appendChild(ecolText);
       var ecolFoot=document.createElement('div');
       ecolFoot.style.cssText='position:absolute;bottom:12px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
-      ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
+      ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
       ecolEl.appendChild(ecolFoot);
       var ecolStars=document.createElement('div');
       ecolStars.innerHTML='✽ ✽ ✽';
@@ -1073,7 +1052,7 @@ function renderSlide(){
       ec3Badge.style.cssText='position:absolute;top:14px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;';
       ec3El.appendChild(ec3Badge);
       var ec3Brand=document.createElement('div');
-      ec3Brand.textContent=ST.brand||'Salford & Co.';
+      ec3Brand.textContent=ST.brand||'ImpactGrid';
       ec3Brand.style.cssText='position:absolute;top:16px;right:14px;z-index:6;font-size:11px;font-family:'+getFont('body')+';color:#888;';
       ec3El.appendChild(ec3Brand);
       var ec3Num=document.createElement('div');
@@ -1105,7 +1084,7 @@ function renderSlide(){
       ec3El.appendChild(ec3b2);
       var ec3Foot=document.createElement('div');
       ec3Foot.style.cssText='position:absolute;bottom:12px;left:12px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
-      ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
+      ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
       ec3El.appendChild(ec3Foot);
       var ec3Stars=document.createElement('div');
       ec3Stars.innerHTML='✽ ✽ ✽';
@@ -1179,8 +1158,7 @@ function makeEditable(){
       var t = e.target;
       while(t && t !== canvas){
         if(t.dataset.editKey || t.classList.contains('s-headline') || t.classList.contains('s-body')){
-          startInlineEdit(t);
-          return;
+          startInlineEdit(t); return;
         }
         t = t.parentElement;
       }
@@ -1214,7 +1192,7 @@ function startInlineEdit(el){
     if(!newText) el.textContent = original;
     if(ST.slides && ST.slides[ST.cur]){
       var s = ST.slides[ST.cur];
-      if(el.classList.contains('s-headline') || el.classList.contains('s-title')){
+      if(el.classList.contains('s-headline')||el.classList.contains('s-title')){
         s.headline = el.textContent;
         document.getElementById('eHead') && (document.getElementById('eHead').value = s.headline);
       } else if(el.classList.contains('s-body')){
@@ -1223,10 +1201,10 @@ function startInlineEdit(el){
       }
     }
   }
-  el.addEventListener('blur', commit, {once: true});
+  el.addEventListener('blur', commit, {once:true});
   el.addEventListener('keydown', function(e){
-    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); el.blur(); }
-    if(e.key === 'Escape'){ el.textContent = original; el.blur(); }
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();el.blur();}
+    if(e.key==='Escape'){el.textContent=original;el.blur();}
   });
 }
 
@@ -1268,19 +1246,17 @@ function setFmt(f){ST.format=f;['square','portrait','landscape'].forEach(functio
 function shuffleAssets(){ST.assetOffset=(ST.assetOffset+1)%10;buildStrip();renderSlide();toast('🔀 New assets selected');}
 
 /* ─────────────────────────────────────────────────────────
-   12. EDIT PANEL
-   v4.4 FIX: fillEdit uses buildCaption(slide) + populateHashtagPanel
+   12. EDIT PANEL — v4.5: uses buildCaption + populateHashtagPanel
    ───────────────────────────────────────────────────────── */
 function fillEdit(){
   if(!ST.slides.length) return;
   var s=ST.slides[ST.cur];
-  document.getElementById('eHead').value=s.headline||'';
-  document.getElementById('eBody').value=s.body||s.subline||'';
-
-  // v4.4 FIX: use buildCaption — not raw field assignment
+  var eHead=document.getElementById('eHead');
+  var eBody=document.getElementById('eBody');
+  if(eHead) eHead.value=s.headline||'';
+  if(eBody) eBody.value=s.body||s.subline||'';
   var capEl=document.getElementById('eCap');
   if(capEl) capEl.value=buildCaption(s);
-
   document.getElementById('editNum').textContent='Slide '+(ST.cur+1);
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=(s.layout||'').replace(/_/g,' ');
@@ -1292,8 +1268,6 @@ function fillEdit(){
   if(statInput) statInput.value=s.stat||'';
   var quoteInput=document.getElementById('eQuote');
   if(quoteInput) quoteInput.value=s.quote||'';
-
-  // v4.4 FIX: populate hashtag panel from preserved slide data
   populateHashtagPanel(s);
 }
 
@@ -1319,7 +1293,7 @@ function liveEditQuote(){
 }
 
 function updateCap(){if(!ST.slides.length) return;ST.slides[ST.cur].caption=document.getElementById('eCap').value;}
-function updateBrand(){ST.brand=document.getElementById('brandInput').value;if(ST.slides.length) renderSlide();}
+function updateBrand(){ST.brand=document.getElementById('brandInput')?document.getElementById('brandInput').value:'';if(ST.slides.length) renderSlide();}
 
 function changeLayout(newLayout){
   if(!ST.slides.length) return;
@@ -1344,7 +1318,7 @@ function dzLeave(){document.getElementById('dzone').classList.remove('over');}
 function dzDrop(e){e.preventDefault();document.getElementById('dzone').classList.remove('over');var f=e.dataTransfer.files[0];if(!f||!f.type.startsWith('image/')) return;var r=new FileReader();r.onload=function(ev){ST.userImages[ST.cur]=ev.target.result;renderSlide();buildStrip();toast('🖼️ Image dropped on slide '+(ST.cur+1));};r.readAsDataURL(f);}
 
 /* ─────────────────────────────────────────────────────────
-   14. ACCENT / THEME / BRAND / FONT
+   14. ACCENT / THEME / FONT
    ───────────────────────────────────────────────────────── */
 function setAccent(c,el){ST.accent=c;document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});el.classList.add('on');if(ST.slides.length) renderSlide();}
 function toggleTheme(){var isDark=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',isDark?'light':'dark');document.querySelector('[onclick="toggleTheme()"]').textContent=isDark?'🌙':'☀️';}
@@ -1451,4 +1425,235 @@ document.addEventListener('keydown',function(e){
 (function(){
   updateCounter();
   setInterval(function(){fetch(DIJO_SERVER+'/ping').catch(function(){});},600000);
+})();
+
+
+/* ═══════════════════════════════════════════════════════════
+   ╔═══════════════════════════════════════════════════════╗
+   ║   CAPTION ENGINE v1.5 — merged from                  ║
+   ║   carousel-studio-captions.js                        ║
+   ║   Live trends · AI captions · Scored hashtags        ║
+   ╚═══════════════════════════════════════════════════════╝
+   ═══════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* ── Live trend cache ── */
+  var _liveHashtags = [];
+  var _liveTrends   = [];
+  var _lastFetch    = 0;
+  var CACHE_MS      = 30 * 60 * 1000; // 30 min
+
+  /* ═══ 1. FETCH LIVE TRENDS ═══════════════════════════════ */
+  async function fetchLiveTrends(){
+    var now = Date.now();
+    if(_liveHashtags.length && (now - _lastFetch) < CACHE_MS) return;
+    try{
+      var res  = await fetch(DIJO_SERVER + '/trends/live?limit=20');
+      var data = await res.json();
+      if(data.trends && data.trends.length){
+        _liveTrends   = data.trends;
+        _liveHashtags = extractHashtagsFromTrends(data.trends);
+        _lastFetch    = now;
+        if(typeof ST !== 'undefined') ST.trendHashtags = _liveHashtags.slice(0,8);
+      }
+    }catch(e){
+      console.warn('[CaptionEngine] Trend fetch failed:', e.message);
+    }
+  }
+
+  function extractHashtagsFromTrends(trends){
+    var tags=[], seen={};
+    trends.forEach(function(t){
+      if(Array.isArray(t.hashtags)){
+        t.hashtags.forEach(function(h){
+          var clean = h.startsWith('#') ? h : '#'+h;
+          if(!seen[clean]){seen[clean]=1;tags.push(clean);}
+        });
+      }
+      if(t.topic){
+        var derived = '#'+t.topic.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+        if(derived.length>2 && !seen[derived]){seen[derived]=1;tags.push(derived);}
+      }
+    });
+    return tags;
+  }
+
+  /* ═══ 2. SCORED HASHTAG PICKER ═══════════════════════════ */
+  var NICHE_MAP = {
+    money:       ['#financetips','#moneymoves','#wealthbuilding','#passiveincome','#financialfreedom'],
+    invest:      ['#investing101','#stockmarket','#buildwealth','#investsmart','#moneymatters'],
+    business:    ['#entrepreneurship','#businessgrowth','#smallbusiness','#startups','#businesstips'],
+    creator:     ['#contentcreator','#creatortips','#growthstrategy','#creatoreconomy','#contentmarketing'],
+    fitness:     ['#fitnessmotivation','#workoutgoals','#healthylifestyle','#gymlife','#fitfam'],
+    food:        ['#foodie','#foodphotography','#easyrecipes','#homecooking','#foodlover'],
+    travel:      ['#wanderlust','#travelgram','#travellife','#exploremore','#travelphotography'],
+    fashion:     ['#ootd','#fashionstyle','#styleinspo','#fashionblogger','#outfitideas'],
+    home:        ['#homedecor','#interiordesign','#homeinspo','#cozyvibes','#homestyle'],
+    mindset:     ['#mindsetshift','#personaldevelopment','#selfgrowth','#motivationquotes','#growthmindset'],
+    health:      ['#wellnessjourney','#healthyliving','#mentalhealth','#selfcare','#mindbody'],
+    ai:          ['#artificialintelligence','#aitools','#techtrends','#futureofwork','#digitaltransformation'],
+    productivity:['#productivityhacks','#timemanagement','#deepwork','#morningroutine','#focusmode']
+  };
+
+  var PLATFORM_TAGS = {
+    Instagram:  ['#instagramcreators','#reels','#igdaily','#explorepage','#contentcreator'],
+    LinkedIn:   ['#linkedintips','#thoughtleadership','#careergrowth','#professionaladvice','#leadership'],
+    TikTok:     ['#fyp','#foryoupage','#tiktokcreator','#viraltiktok','#trendingvideo'],
+    'Twitter/X':['#twittermarketing','#growthhacking','#viralcontent','#digitalmarketing','#contentcreator'],
+    Pinterest:  ['#pinterestmarketing','#savethis','#pinterestinspired','#pinit','#pinterestcreator']
+  };
+
+  var SLIDE_TYPE_TAGS = {
+    hook:'#stopit', cta:'#savethis', stat:'#data',
+    quote:'#quotestoliveby', proof:'#results', lesson:'#lessonslearned'
+  };
+
+  function pickHashtagsForSlide(topic, platform, slideType){
+    var topicLower = (topic||'').toLowerCase();
+    var tags=[], seen={};
+
+    // A) Niche match
+    Object.keys(NICHE_MAP).forEach(function(kw){
+      if(topicLower.indexOf(kw)!==-1){
+        NICHE_MAP[kw].forEach(function(t){
+          if(!seen[t]){seen[t]=1;tags.push({tag:t,score:10});}
+        });
+      }
+    });
+
+    // B) Platform tags
+    var platTags = PLATFORM_TAGS[platform]||PLATFORM_TAGS.Instagram;
+    platTags.forEach(function(t){
+      if(!seen[t]){seen[t]=1;tags.push({tag:t,score:7});}
+    });
+
+    // C) Live trending — highest signal
+    _liveHashtags.slice(0,10).forEach(function(t,i){
+      if(!seen[t]){seen[t]=1;tags.push({tag:t,score:9-i*0.3});}
+    });
+
+    // D) Slide-type tag
+    var typeTag = SLIDE_TYPE_TAGS[slideType];
+    if(typeTag && !seen[typeTag]) tags.push({tag:typeTag,score:5});
+
+    tags.sort(function(a,b){return b.score-a.score;});
+    var final=[], finalSeen={};
+    tags.forEach(function(t){
+      var clean=t.tag.startsWith('#')?t.tag:'#'+t.tag;
+      if(!finalSeen[clean]&&final.length<5){finalSeen[clean]=1;final.push(clean);}
+    });
+    // Pad to 5
+    ['#viral','#trending','#explore','#instagood','#content'].forEach(function(t){
+      if(final.length<5&&!finalSeen[t]){finalSeen[t]=1;final.push(t);}
+    });
+    return final;
+  }
+
+  /* ═══ 3. AI CAPTION WRITER ════════════════════════════════ */
+  var CAPTION_GOAL = {
+    hook:   'Write a pattern-interrupt hook. Bold statement, stops scroll. 1-2 lines. End with "Swipe →" variant.',
+    cta:    'Write a strong CTA. Ask a direct question. Tell them exactly what to do (save/share/follow/comment).',
+    stat:   'Amplify the stat with real-world implication. Make the number personal. 2-3 sentences.',
+    quote:  'Extend the quote\'s meaning. 1-2 sentences. Ask reader what they think.',
+    value:  'Preview the value inside. Use curiosity gap. 2-3 sentences.',
+    insight:'Tease the insight without giving it away. Create urgency to swipe.',
+    lesson: '"I used to think…" or "Nobody told me…" framing. 2 sentences.',
+    proof:  'Reference results or transformation. Invite reader to imagine their own.',
+    problem:'Validate the reader\'s frustration. Promise relief inside.',
+    list:   'Tease the list. Say what it is and why it matters. "Save this before you forget" at end.',
+    story:  'Drop reader into the middle of a moment. 2 sentences, cinematic.'
+  };
+
+  var PLATFORM_VOICE = {
+    Instagram:  'Instagram: community-first, emoji-rich, personal. Mix punchy line + question + CTA.',
+    LinkedIn:   'LinkedIn: professional but human, insight-driven. Data > generalities. No emoji unless natural.',
+    TikTok:     'TikTok: fast, punchy, Gen-Z aware. Hook in first 3 words. Max 150 chars before line break.',
+    'Twitter/X':'Twitter/X: opinionated, shareable, under 240 chars. Hot take energy.',
+    Pinterest:  'Pinterest: descriptive, keyword-rich, aspirational. Focus on the outcome.'
+  };
+
+  async function generateCaption(topic, platform, slide){
+    var slideType = slide.type || 'insight';
+    var headline  = slide.headline || topic;
+    var body      = slide.body || '';
+    var goal      = CAPTION_GOAL[slideType] || CAPTION_GOAL.insight;
+    var voice     = PLATFORM_VOICE[platform] || PLATFORM_VOICE.Instagram;
+    var trendStr  = '';
+    if(_liveTrends.length){
+      var topTrends = _liveTrends.slice(0,3).map(function(t){return t.topic;});
+      trendStr = ' Currently trending: '+topTrends.join(', ')+'.';
+    }
+    var prompt = 'You are a world-class social media copywriter. Write ONE caption only — no labels, no preamble, just the text.\n\n'
+      +'Topic: "'+topic+'"\n'
+      +'Slide type: '+slideType+'\n'
+      +'Headline: '+headline+'\n'
+      +(body?'Body: '+body+'\n':'')
+      +'Platform: '+platform+' — '+voice+'\n'
+      +trendStr+'\n\n'
+      +'Goal: '+goal+'\n\n'
+      +'Rules: No hashtags in caption. No filler phrases. Be specific, human, direct. '
+      +'Write exactly what a top creator in this niche would post.';
+    try{
+      var res = await fetch(DIJO_SERVER+'/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:prompt,mode:'creator'})
+      });
+      if(!res.ok) throw new Error('Caption API '+res.status);
+      var data = await res.json();
+      return (data.reply||'').trim();
+    }catch(e){
+      console.warn('[CaptionEngine] Caption API failed:', e.message);
+      return buildFallbackCaption(topic, platform, slide);
+    }
+  }
+
+  function buildFallbackCaption(topic, platform, slide){
+    var type = slide.type||'insight';
+    var headline = slide.headline||topic;
+    var fallbacks = {
+      hook:   'Most people get this completely wrong. Swipe to see what nobody tells you about '+topic+' →',
+      cta:    'Save this. Share it with someone who needs it. Which slide hit hardest? Drop a number 👇',
+      stat:   headline+'\n\nThe numbers don\'t lie — but most people never look. Save this for later.',
+      quote:  '"'+(slide.quote||headline)+'"\n\nDoes this land for you? Tell me below 👇',
+      value:  headline+'\n\nSwipe through for the full breakdown. This one\'s worth saving 🔖',
+      insight:'Here\'s what changed everything for me about '+topic+'. Slide 3 is the one nobody talks about →',
+      lesson: 'I wish someone told me this sooner. Everything about '+topic+' — the honest version.'
+    };
+    return fallbacks[type]||(headline+'\n\nSave this. You\'ll want to come back to it. 🔖');
+  }
+
+  /* ═══ 4. ENRICH DECK — real captions + hashtags for every slide ═══ */
+  async function enrichDeck(topic, platform){
+    if(!window.ST || !ST.slides.length) return;
+    await fetchLiveTrends();
+    if(typeof toast === 'function') toast('🔥 Writing AI captions + live hashtags…');
+    for(var i=0; i<ST.slides.length; i++){
+      var slide = ST.slides[i];
+      var caption = await generateCaption(topic, platform, slide);
+      ST.slides[i].caption = caption;
+      var tags = pickHashtagsForSlide(topic, platform, slide.type);
+      ST.slides[i].hashtags = tags;
+    }
+    // Refresh current slide's edit panel
+    if(typeof fillEdit === 'function') fillEdit();
+    if(typeof toast === 'function') toast('✦ AI captions + trending hashtags ready');
+  }
+
+  /* ═══ 5. PREFETCH on load ══════════════════════════════════ */
+  window.addEventListener('load', function(){
+    setTimeout(function(){
+      fetchLiveTrends().catch(function(){});
+    }, 800);
+  });
+
+  /* ═══ 6. EXPOSE globally ═════════════════════════════════== */
+  window.CaptionEngine = {
+    fetchLiveTrends:      fetchLiveTrends,
+    pickHashtagsForSlide: pickHashtagsForSlide,
+    generateCaption:      generateCaption,
+    enrichDeck:           enrichDeck
+  };
+
 })();
