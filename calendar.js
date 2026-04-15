@@ -393,11 +393,84 @@ function calEsc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+/* ── Notifications ── */
+async function requestNotificationPermission(){
+  if (!("Notification" in window)) return;
+
+  if (Notification.permission === "default"){
+    await Notification.requestPermission();
+  }
+}
+
+function sendNotification(title, body){
+  if (Notification.permission !== "granted") return;
+
+  new Notification(title, {
+    body: body,
+    icon: "logo.png"
+  });
+}
+
+function startAIReminders(){
+
+  // Morning reminder
+  setInterval(() => {
+    const hour = new Date().getHours();
+
+    if (hour === 10){
+      sendNotification(
+        "🔥 Trending Now",
+        "A topic is trending — create a carousel now"
+      );
+    }
+
+  }, 60000); // check every minute
+
+
+  // Evening reminder
+  setInterval(() => {
+    const hour = new Date().getHours();
+
+    if (hour === 18){
+      sendNotification(
+        "⏰ Best Time to Post",
+        "Your audience is active — post content now"
+      );
+    }
+
+  }, 60000);
+}
+
+function startDijoNudges(){
+
+  const messages = [
+    "📈 You're missing engagement — create something now",
+    "🎯 Quick win: turn a trend into a carousel",
+    "🚀 Post now before this trend dies",
+    "🔥 Your competitors are posting right now",
+    "💡 Idea: use AI tools topic today"
+  ];
+
+  setInterval(() => {
+    if (Notification.permission !== "granted") return;
+
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+
+    sendNotification("Dijo AI", msg);
+
+  }, 1000 * 60 * 60 * 3); // every 3 hours
+}
+
 /* ── Init ── */
 function initCalendar() {
   loadCalFromStorage();
   renderIdeasBank();
   renderCalendar();
+
+  // NEW
+  requestNotificationPermission();
+  startAIReminders();
+  startDijoNudges();
 }
 
 // Auto-init on DOMContentLoaded if panel exists
