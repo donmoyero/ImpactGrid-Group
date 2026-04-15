@@ -7,22 +7,72 @@
 /* ── GOOGLE FONTS (additions) ── */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* ── TOKENS — LIGHT DEFAULT ── */
+/* ══════════════════════════════════════════════════
+   LOAD ORDER: shared.css → carousel-studio.css → carousel-studio-additions.css
+   shared.css owns: global colours, typography, animations, nav, layout utilities
+   carousel-studio.css owns: tool UI tokens, shell layout, canvas, slide internals
+   ══════════════════════════════════════════════════ */
+
+/* ── CAROUSEL-SPECIFIC TOKENS (override / extend shared.css) ── */
 :root {
-  --bg:#eeece7; --surface:#fff; --surface2:#f5f3ef; --border:#dedad4;
-  --text:#1a1814; --text2:#6b6560; --text3:#b0a89e;
-  --accent:#2563eb; --gold:#c9a84c; --green:#22c55e;
-  --nav-h:58px; --panel-w:296px; --edit-w:256px;
-  --r:10px; --r-lg:16px;
-  --fh:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'Space Mono',monospace;
-  --sh:0 2px 12px rgba(0,0,0,.08); --sh-lg:0 12px 40px rgba(0,0,0,.14);
+  /* Warm canvas palette — intentionally different from shared.css blue-tinted bg */
+  --bg:       #eeece7;
+  --surface:  #fff;
+  --surface2: #f5f3ef;
+  --border:   #dedad4;
+
+  /* Warm text scale */
+  --text:  #1a1814;
+  --text2: #6b6560;
+  --text3: #b0a89e;
+
+  /* Tool accent & semantic colours */
+  --accent: #2563eb;
+  --gold:   #c9a84c;
+  --green:  #22c55e;
+
+  /* Tool layout — not in shared.css */
+  --nav-h:   58px;
+  --panel-w: 296px;
+  --edit-w:  256px;
+  --r-lg:    16px;
+
+  /* r (border radius) — 10px vs shared's 12px, intentional tool difference */
+  --r: 10px;
+
+  /* Tool typography — Space Mono differs from shared's DM Mono */
+  --fh: 'Syne', sans-serif;       /* display — same font as shared's --fd */
+  --fb: 'DM Sans', sans-serif;    /* body */
+  --fm: 'Space Mono', monospace;  /* mono — intentionally differs from shared --fm */
+
+  /* Tool shadows */
+  --sh:    0 2px 12px rgba(0,0,0,.08);
+  --sh-lg: 0 12px 40px rgba(0,0,0,.14);
 }
 
-/* ── TOKENS — DARK MODE ── */
+/* ── DARK MODE OVERRIDES ── */
 [data-theme="dark"] {
-  --bg:#0d0c0a; --surface:#161512; --surface2:#1e1c18; --border:#2a2822;
-  --text:#f0ede8; --text2:#a09890; --text3:#5c5a55;
-  --sh:0 2px 16px rgba(0,0,0,.5); --sh-lg:0 20px 60px rgba(0,0,0,.7);
+  --bg:       #0d0c0a;
+  --surface:  #161512;
+  --surface2: #1e1c18;
+  --border:   #2a2822;
+  --text:     #f0ede8;
+  --text2:    #a09890;
+  --text3:    #5c5a55;
+  --sh:       0 2px 16px rgba(0,0,0,.5);
+  --sh-lg:    0 20px 60px rgba(0,0,0,.7);
+}
+
+/* ── SUPPRESS shared.css GLOBALS THAT BLEED INTO THE CANVAS TOOL ── */
+/* shared.css applies a grain overlay via body::after at z-index:9999.
+   Add class="carousel-studio" to <body> on the tool page to suppress it. */
+body.carousel-studio::after {
+  display: none !important;
+}
+/* shared.css resets h1-h5 to font-family:var(--fd). Re-assert inside
+   the shell so slide headings respect the tool's --fh variable. */
+.shell h1, .shell h2, .shell h3, .shell h4, .shell h5 {
+  font-family: var(--fh);
 }
 
 /* ── RESET ── */
