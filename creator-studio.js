@@ -239,7 +239,18 @@ function loadTopic(topic) {
   var i1 = document.getElementById('quickTopic'); if (i1) i1.value = topic;
   var i2 = document.getElementById('genTopic'); if (i2) i2.value = topic;
   switchTab('generator', null);
-  toast('💡 Topic loaded — hit Generate!');
+  // AUTO GENERATE — click trend → instant generation
+  setTimeout(function() { fullGenerate(); }, 300);
+  toast('💡 Generating for: ' + topic);
+}
+
+/* Dynamic AI hint above generator input */
+function updateHint(score) {
+  var el = document.getElementById('aiHint');
+  if (!el) return;
+  if (score >= 9) el.textContent = '🔥 High viral potential topic';
+  else if (score >= 8) el.textContent = '⚡ Strong trending opportunity';
+  else el.textContent = '💡 Emerging topic — needs strong hook';
 }
 
 /* ─────────────────────────────────────────────
@@ -335,6 +346,7 @@ async function fullGenerate() {
   document.getElementById('genLoadingMsg').textContent = 'Dijo is building your content package for "' + topic + '"…';
 
   var score = calcScore(topic);
+  updateHint(score);
   var scColor = score >= 9 ? 'var(--green)' : score >= 8 ? 'var(--gold)' : score >= 7 ? 'var(--blue2)' : 'var(--text2)';
   var verdict = score >= 9 ? '🔥 Exceptional' : score >= 8 ? '⚡ Strong opportunity' : score >= 7 ? '📈 Good momentum' : '💡 Emerging';
   document.getElementById('previewScore').textContent = score.toFixed(1);
@@ -349,9 +361,40 @@ async function fullGenerate() {
   document.getElementById('outHashtags').innerHTML = '<span style="color:var(--text3);font-style:italic;font-size:12px">Generating…</span>';
 
   try {
-    var nicheCtx = niche ? ' Niche: ' + niche + '.' : '';
-    var prompt = 'Content package for: "' + topic + '" | Platform: ' + platform + ' | Style: ' + _selectedStyle + nicheCtx
-      + '\n\nReply in this exact format:\nHOOK: [1-2 sentence stop-scroll hook]\nCAPTION: [full caption with emojis and CTA]\nOUTLINE:\n1. [0-3s hook]\n2. [setup]\n3. [core value]\n4. [proof]\n5. [CTA]\nHASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6 #tag7 #tag8\nBEST TIME: [day and time for ' + platform + ']';
+    var nicheCtx = niche ? '\nNiche: ' + niche + '.' : '';
+
+    // Inject real trend data if available for this topic
+    var trend = _allTrends.find(function(t) { return t.topic.toLowerCase() === topic.toLowerCase(); });
+    var trendExtra = '';
+    if (trend) {
+      trendExtra = '\n\nReal trend data:'
+        + '\n- Platform: ' + trend.platLabel
+        + '\n- Views: ' + fmtN(trend.totalViews)
+        + '\n- Video count: ' + trend.videoCount
+        + '\n- Trend score: ' + trend.score + '/10'
+        + (trend.hashtags.length ? '\n- Suggested hashtags: ' + trend.hashtags.join(', ') : '');
+    }
+
+    var prompt =
+      'You are a top 1% viral content strategist.\n\n'
+      + 'Topic: "' + topic + '"\n'
+      + 'Platform: ' + platform + '\n'
+      + 'Style: ' + _selectedStyle + '\n'
+      + 'Trend Score: ' + score + '/10'
+      + nicheCtx
+      + trendExtra + '\n\n'
+      + 'Write HIGH-PERFORMING content.\n\n'
+      + 'Rules:\n'
+      + '- Hook must create curiosity or controversy\n'
+      + '- Caption must be short, punchy, scroll-stopping\n'
+      + '- No fluff\n'
+      + '- Make it feel like viral content, not advice\n\n'
+      + 'Format EXACTLY:\n\n'
+      + 'HOOK: ...\n'
+      + 'CAPTION: ...\n'
+      + 'OUTLINE:\n1. ...\n2. ...\n3. ...\n4. ...\n5. ...\n'
+      + 'HASHTAGS: #... #... #...\n'
+      + 'BEST TIME: [best day and time for ' + platform + ']';
     var reply = await callDijo(prompt, 'creator');
     var lines = reply.split('\n');
 
@@ -386,6 +429,19 @@ async function fullGenerate() {
     document.getElementById('outOutline').innerHTML = escH(outline || '').replace(/\n/g, '<br>');
     var he = document.getElementById('outHashtags'); he.innerHTML = '';
     uniqueTags.slice(0, 10).forEach(function(t) { var s = document.createElement('span'); s.className = 'ob-tag'; s.textContent = t; he.appendChild(s); });
+
+    // Populate clickable hashtag bar
+    var bar = document.getElementById('hashtagBar');
+    if (bar) {
+      bar.innerHTML = '';
+      uniqueTags.slice(0, 10).forEach(function(tag) {
+        var el = document.createElement('div');
+        el.className = 'hashtag-chip';
+        el.textContent = tag;
+        el.onclick = function() { navigator.clipboard.writeText(tag).then(function() { toast('📋 ' + tag + ' copied!'); }); };
+        bar.appendChild(el);
+      });
+    }
     var tg = document.getElementById('outTiming'); tg.innerHTML = '';
     ['Today', 'Thursday', 'Saturday'].forEach(function(d) {
       var slot = document.createElement('div'); slot.className = 'timing-slot';
@@ -912,4 +968,19 @@ window.addEventListener('load', async function() {
   renderDashOpps();
   loadBriefing();
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
+
+  // Auto-refresh trends every 60 seconds
+  setInterval(async function() {
+    try {
+      await fetchTrends();
+      renderDashTrends();
+      renderDashOpps();
+      if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
+        renderFullTrends();
+      }
+      console.log('[Trends] Auto refreshed');
+    } catch(e) {
+      console.warn('[Trends] refresh failed');
+    }
+  }, 60000);
 });
