@@ -192,9 +192,11 @@
       <div class="label-tag" style="justify-content:center;">Book a Call</div>
       <h2>Book a Call</h2>
       <p>Pick a day that works for you. I'll call you and help you fix your content strategy.</p>
-      <div class="cta-acts">
-        <a href="#" id="bookCallBtn" class="btn-pri">📅 Book a Call</a>
-        <a href="analytics.html" class="btn-sec">Explore Analytics →</a>
+      <div style="max-width:420px;margin:20px auto 0;display:flex;flex-direction:column;gap:10px;">
+        <input id="bkName" placeholder="Your name" class="input"/>
+        <input id="bkEmail" placeholder="Your email" class="input"/>
+        <input id="bkDate" type="date" class="input"/>
+        <button id="bkBtn" class="btn-pri">📅 Book Call</button>
       </div>
     </div>
   </section>
@@ -212,6 +214,48 @@ document.addEventListener('DOMContentLoaded', function() {
   renderNav('consulting.html');
   renderFooter();
 });
+</script>
+<script>
+const DIJO_SERVER = "https://your-render-url.onrender.com"; // 🔴 CHANGE THIS
+
+document.getElementById('bkBtn').onclick = async () => {
+  const name  = document.getElementById('bkName').value.trim();
+  const email = document.getElementById('bkEmail').value.trim();
+  const date  = document.getElementById('bkDate').value;
+
+  if (!name || !email || !date) {
+    alert("Fill all fields");
+    return;
+  }
+
+  const btn = document.getElementById('bkBtn');
+  btn.textContent = "Booking…";
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch(DIJO_SERVER + "/book-call", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, date })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      btn.textContent = "✅ Booked!";
+      document.getElementById('bkName').value  = "";
+      document.getElementById('bkEmail').value = "";
+      document.getElementById('bkDate').value  = "";
+    } else {
+      alert(data.message || "Something went wrong. Try again.");
+      btn.textContent = "📅 Book Call";
+      btn.disabled = false;
+    }
+  } catch (err) {
+    alert("Could not connect. Please try again later.");
+    btn.textContent = "📅 Book Call";
+    btn.disabled = false;
+  }
+};
 </script>
 </body>
 </html>
