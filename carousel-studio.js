@@ -601,7 +601,7 @@ function populateHashtagPanel(slide){
   if(Array.isArray(slide.hashtags) && slide.hashtags.length > 0) tags = slide.hashtags;
   else if(Array.isArray(ST.trendHashtags) && ST.trendHashtags.length > 0) tags = ST.trendHashtags.slice(0, 5);
   if(!tags.length){ panel.style.display = 'none'; return; }
-  panel.style.display = '';
+  panel.style.display = 'block';
   var chipsEl = document.getElementById('hashtagChips');
   var copyBtn = document.getElementById('hashtagCopyBtn');
   if(chipsEl){
@@ -1634,7 +1634,9 @@ document.addEventListener('keydown',function(e){
       var caption = await generateCaption(topic, platform, slide);
       ST.slides[i].caption = caption;
       var tags = pickHashtagsForSlide(topic, platform, slide.type);
-      ST.slides[i].hashtags = tags;
+      if (!ST.slides[i].hashtags || ST.slides[i].hashtags.length === 0) {
+        ST.slides[i].hashtags = tags;
+      }
     }
     // Refresh current slide's edit panel
     if(typeof fillEdit === 'function') fillEdit();
