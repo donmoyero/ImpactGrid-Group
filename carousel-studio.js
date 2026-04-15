@@ -227,6 +227,28 @@ function detectNiche(theme){
   return NICHE_MAP[theme] || 'lifestyle-general';
 }
 
+function detectPlatformIntent(topic){
+  var t = (topic || '').toLowerCase();
+
+  if(t.includes('linkedin') || t.includes('career') || t.includes('job')){
+    return 'LinkedIn';
+  }
+
+  if(t.includes('tiktok') || t.includes('viral') || t.includes('trend')){
+    return 'TikTok';
+  }
+
+  if(t.includes('aesthetic') || t.includes('inspo') || t.includes('ideas')){
+    return 'Pinterest';
+  }
+
+  if(t.includes('thread') || t.includes('tweet')){
+    return 'Twitter/X';
+  }
+
+  return 'Instagram'; // default
+}
+
 /* ─────────────────────────────────────────────────────────
    3. ASSET PICKING & OVERLAY HELPERS
    ───────────────────────────────────────────────────────── */
@@ -471,12 +493,15 @@ async function generate(){
   if(!topic){toast('⚠️ Add a topic first');document.getElementById('topicInput').focus();return;}
   if(!ST.theme) ST.theme=detectTheme(topic);
 
-  var platform=document.getElementById('platSelect').value;
+  var selectedPlatform = document.getElementById('platSelect').value;
+  var detectedPlatform = detectPlatformIntent(topic);
+  var platform = selectedPlatform || detectedPlatform;
   var tone=document.getElementById('toneSelect').value;
   var count=ST.count;
 
   // ── STEP 1: Build full intelligence context before API call ──
-  var niche   = detectNiche(ST.theme);
+  var theme  = ST.theme || detectTheme(topic);
+  var niche  = detectNiche(theme);
   var intents = Array.from({length:count},function(_,i){ return getSlideIntent(i, count); });
   // Grab live trend from CaptionEngine if already prefetched
   var trendContext = '';
@@ -496,7 +521,16 @@ async function generate(){
   var hi=0,hTimer=setInterval(function(){hi=(hi+1)%hints.length;document.getElementById('loadingHint').textContent=hints[hi];},1800);
   try{
     // ── STEP 2: Pass niche + intents + trend to callAI ──
-    var data=await callAI(topic, platform, tone, count, niche, intents, trendContext);
+    var data = await callAI(
+      topic,
+      platform,
+      tone,
+      count,
+      niche,
+      intents,
+      trendContext,
+      currentTrend
+    );
     ST.trendHashtags = data.trendHashtags || [];
     ST.slides=parseServerSlides(data,topic,platform,tone,count);
     if(data.theme&&DA[data.theme]) ST.theme=data.theme;
@@ -530,11 +564,12 @@ async function generate(){
    v4.5 UPGRADED callAI — sends a full storytelling brief
    so the server AI writes punchy, specific, non-generic copy
    ───────────────────────────────────────────────────────── */
-async function callAI(topic, platform, tone, count, niche, intents, trendContext){
+async function callAI(topic, platform, tone, count, niche, intents, trendContext, trendData){
 
   niche        = niche        || detectNiche(ST.theme || detectTheme(topic));
   intents      = intents      || Array.from({length:count},function(_,i){return getSlideIntent(i,count);});
   trendContext  = trendContext  || '';
+  trendData     = trendData     || null;
 
   // Build a detailed narrative brief so the AI writes GREAT copy
   var platformVoice = {
@@ -587,6 +622,8 @@ async function callAI(topic, platform, tone, count, niche, intents, trendContext
     + '- Each slide must feel like a different part of a story arc, not a random list\n\n'
     + 'Return JSON: { slides: [...], theme, accentColor, trendHashtags: [] }';
 
+  console.log('[AI INPUT]', { topic: topic, niche: niche, platform: platform, trend: trendData });
+
   var res=await fetch(DIJO_SERVER+'/carousel/generate',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -597,7 +634,7 @@ async function callAI(topic, platform, tone, count, niche, intents, trendContext
       count:    count,
       niche:    niche,
       intents:  intents,
-      trend:        currentTrend,
+      trend:        trendData,
       trendContext: trendContext,
       themeOverride: ST.theme || null,
       brief:    brief
