@@ -50,6 +50,9 @@ function switchTab(name, sidebarItem) {
 
   if (name === 'trends' && _allTrends.length) renderFullTrends();
   if (name === 'evaluator') initEvaluator();
+  if (name === 'generator') {
+    if (typeof loadCalendar === 'function') loadCalendar();
+  }
 }
 
 /* ─────────────────────────────────────────────
@@ -964,17 +967,24 @@ function getBestPostTime(i) {
   return times[i % times.length];
 }
 
-function renderCalendar() {
+function loadCalendar() {
   var container = document.getElementById('calendarContainer');
   if (!container) return;
   var today = new Date();
   container.innerHTML = '';
+
+  var hasContent = false;
   for (var i = 0; i < 7; i++) {
     var d = new Date();
     d.setDate(today.getDate() + i);
     var day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
     var bestTime = getBestPostTime(i);
     container.innerHTML += '<div class="calendar-day"><strong>' + day + '</strong><span>⏰ ' + bestTime + '</span></div>';
+    hasContent = true;
+  }
+
+  if (!hasContent) {
+    container.innerHTML = '<div style="padding:14px;color:var(--text2);font-size:13px">📅 No content scheduled yet<br><br>Generate content and your calendar will update automatically.</div>';
   }
 }
 
@@ -985,7 +995,7 @@ window.addEventListener('load', async function() {
   checkAuth();
   initYouTube();
   initTikTok();
-  renderCalendar();
+  loadCalendar();
   await fetchTrends();
   renderDashTrends();
   renderDashOpps();
