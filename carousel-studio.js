@@ -383,6 +383,7 @@ function normalizeSlidesDeck(slides){
    5. STATE
    ───────────────────────────────────────────────────────── */
 var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#2563eb',brand:'',userImages:{},assetOffset:0,exportType:'png',fontPair:'syne',trendHashtags:[]};
+var currentTrend = null;
 
 var FONT_PAIRS={
   syne:{head:"'Syne',sans-serif",body:"'DM Sans',sans-serif",mono:"'Space Mono',monospace"},
@@ -447,6 +448,23 @@ function showAssetPreview(theme){
    7. AI GENERATION — v4.5: smarter prompt brief
    ───────────────────────────────────────────────────────── */
 var DIJO_SERVER='https://impactgrid-dijo.onrender.com';
+
+function onTrendClick(trend){
+  if(!trend) return;
+
+  currentTrend = trend;
+
+  var input = document.getElementById('topicInput');
+  if(input){
+    input.value = trend.topic || trend.keyword || '';
+  }
+
+  toast('🔥 Trend loaded — generating...');
+
+  setTimeout(function(){
+    generate();
+  }, 200);
+}
 
 async function generate(){
   var topic=document.getElementById('topicInput').value.trim();
@@ -579,7 +597,8 @@ async function callAI(topic, platform, tone, count, niche, intents, trendContext
       count:    count,
       niche:    niche,
       intents:  intents,
-      trend:    trendContext,
+      trend:        currentTrend,
+      trendContext: trendContext,
       themeOverride: ST.theme || null,
       brief:    brief
     })
@@ -1435,22 +1454,50 @@ function doExport(){
   }
 }
 
-function exportSlidesAsPNG(){
+async function exportSlidesAsPNG(){
   if(typeof html2canvas==='undefined'){
-    toast('💡 html2canvas not loaded — use JSON export or screenshot each slide.');
+    toast('💡 html2canvas not loaded');
     return;
   }
-  var canvas=document.getElementById('slideCanvas');
-  toast('📸 Capturing slide '+(ST.cur+1)+'…');
-  html2canvas(canvas,{useCORS:true,allowTaint:false,scale:2,backgroundColor:null}).then(function(c){
-    c.toBlob(function(blob){
-      triggerBlobDownload(blob,'ImpactGrid-slide-'+(ST.cur+1)+'.png');
-      toast('✓ Slide '+(ST.cur+1)+' saved as PNG');
-    },'image/png');
-  }).catch(function(err){
-    console.warn('html2canvas error:',err);
-    toast('💡 Screenshot this slide — PNG capture needs HTTPS & CORS images');
-  });
+
+  if(!ST.slides.length){
+    toast('Generate a carousel first');
+    return;
+  }
+
+  toast('📦 Preparing full carousel...');
+
+  var originalIndex=ST.cur;
+
+  for(var i=0;i<ST.slides.length;i++){
+    ST.cur=i;
+    renderSlide();
+
+    await new Promise(function(r){setTimeout(r,300);}); // allow render
+
+    var canvas=document.getElementById('slideCanvas');
+
+    var c=await html2canvas(canvas,{
+      useCORS:true,
+      allowTaint:false,
+      scale:2,
+      backgroundColor:null
+    });
+
+    await new Promise(function(resolve){
+      c.toBlob(function(blob){
+        triggerBlobDownload(blob,'ImpactGrid-slide-'+(i+1)+'.png');
+        resolve();
+      },'image/png');
+    });
+
+    await new Promise(function(r){setTimeout(r,200);}); // spacing between downloads
+  }
+
+  ST.cur=originalIndex;
+  renderSlide();
+
+  toast('✓ Full carousel downloaded');
 }
 
 function triggerBlobDownload(blob,filename){
