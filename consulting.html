@@ -96,6 +96,98 @@
   .outcomes-inner{grid-template-columns:1fr 1fr;}
   .cta-band{padding:48px 20px;margin:0 12px 60px;}
 }
+
+/* ── Booking Calendar ── */
+.calendar{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:24px 0 20px;
+  position:relative;
+}
+.day{
+  padding:14px 10px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:10px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.day:hover{
+  border-color:var(--gold-glo);
+  background:var(--gold-dim);
+  transform:translateY(-2px);
+}
+.day.selected{
+  border-color:var(--gold);
+  background:var(--gold-dim);
+  box-shadow:0 0 0 2px var(--gold-glo);
+}
+.day.disabled{
+  opacity:0.3;
+  cursor:not-allowed;
+  pointer-events:none;
+}
+.day-name{
+  font-family:var(--fm);
+  font-size:9px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--text3);
+  font-weight:600;
+}
+.day-date{
+  font-family:var(--fd);
+  font-size:13px;
+  font-weight:800;
+  color:var(--text);
+}
+.day.selected .day-name,
+.day.selected .day-date{ color:var(--gold); }
+.booking-fields{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:0 auto;
+  max-width:480px;
+  position:relative;
+}
+.booking-input{
+  width:100%;
+  padding:12px 16px;
+  border-radius:var(--r);
+  border:1px solid var(--border2);
+  background:var(--card);
+  color:var(--text);
+  font-size:14px;
+  font-family:var(--fs);
+  transition:border-color .2s;
+  box-sizing:border-box;
+}
+.booking-input:focus{
+  outline:none;
+  border-color:var(--gold);
+}
+.booking-feedback{
+  margin:14px auto 0;
+  max-width:480px;
+  padding:11px 16px;
+  border-radius:var(--r);
+  font-size:13px;
+  position:relative;
+}
+.booking-feedback--info{ background:var(--blue-dim); color:var(--blue); border:1px solid rgba(45,110,219,.2); }
+.booking-feedback--success{ background:var(--green-dim); color:var(--green); border:1px solid rgba(15,168,118,.2); }
+.booking-feedback--error{ background:rgba(217,79,59,.08); color:var(--red); border:1px solid rgba(217,79,59,.2); }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+@media(max-width:640px){
+  .calendar{ grid-template-columns:repeat(2,1fr); }
+  .booking-fields{ grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body>
@@ -261,11 +353,21 @@
 
   <section style="padding:56px 0 80px;">
     <div class="cta-band">
-      <div class="label-tag" style="justify-content:center;">Book a Consultation</div>
-      <h2>Ready to work together?</h2>
-      <p>A no-obligation conversation about your business goals. No pitch, no pressure — just intelligence.</p>
-      <div class="cta-acts">
-        <a href="mailto:consulting@impactgridgroup.com" class="btn-pri">📧 Book a Consultation</a>
+      <div class="label-tag" style="justify-content:center;">Book a Call</div>
+      <h2>Book a Call</h2>
+      <p>Select a day and I'll call you directly.</p>
+
+      <div id="bookingCalendar" class="calendar"></div>
+
+      <div class="booking-fields">
+        <input id="bookName" class="booking-input" placeholder="Your Name" autocomplete="name"/>
+        <input id="bookEmail" class="booking-input" placeholder="Your Email" type="email" autocomplete="email"/>
+      </div>
+
+      <div id="bookingFeedback" class="booking-feedback" style="display:none;"></div>
+
+      <div class="cta-acts" style="margin-top:24px;">
+        <button class="btn-pri" id="bookBtn" onclick="bookCall()">📅 Book Call</button>
         <a href="analytics.html" class="btn-sec">Explore Analytics →</a>
       </div>
     </div>
@@ -284,6 +386,94 @@ document.addEventListener('DOMContentLoaded', function() {
   renderNav('consulting.html');
   renderFooter();
 });
+</script>
+
+<script>
+const bookedDates = ["2026-04-18","2026-04-20"]; // manually blocked dates
+let selectedDate = null;
+
+function renderBookingCalendar() {
+  const el = document.getElementById("bookingCalendar");
+  if (!el) return;
+  el.innerHTML = "";
+  const today = new Date();
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() + i);
+    const iso = d.toISOString().split("T")[0];
+    const label = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    const isBooked = bookedDates.includes(iso);
+    const isSelected = selectedDate === iso;
+
+    const div = document.createElement("div");
+    div.className = "day" + (isBooked ? " disabled" : "") + (isSelected ? " selected" : "");
+    div.innerHTML = "<span class=\'day-name\'>" + label.split(" ")[0] + "</span><span class=\'day-date\'>" + label.split(" ").slice(1).join(" ") + "</span>";
+    if (!isBooked) {
+      div.onclick = function() { selectDate(iso, div); };
+    }
+    el.appendChild(div);
+  }
+}
+
+function selectDate(date, el) {
+  selectedDate = date;
+  document.querySelectorAll(".day").forEach(function(d) { d.classList.remove("selected"); });
+  el.classList.add("selected");
+  showFeedback("\u{1F4C5} " + date + " selected \u2014 fill in your details below.", "info");
+}
+
+async function bookCall() {
+  const name = document.getElementById("bookName").value.trim();
+  const email = document.getElementById("bookEmail").value.trim();
+  const btn = document.getElementById("bookBtn");
+
+  if (!selectedDate) { showFeedback("\u26A0\uFE0F Please select a date first.", "error"); return; }
+  if (!name || !email) { showFeedback("\u26A0\uFE0F Please fill in your name and email.", "error"); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showFeedback("\u26A0\uFE0F Please enter a valid email address.", "error"); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = "Booking\u2026";
+
+  try {
+    const res = await fetch("https://impactgrid-dijo.onrender.com/contact/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        message: "Consultation call booked for " + selectedDate + " by " + name + " (" + email + ")",
+        creatorEmail: "Ogunmoyerodara@gmail.com"
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showFeedback("\u2705 Booked! Expect a call on " + selectedDate + ". Check your email for confirmation.", "success");
+      document.getElementById("bookName").value = "";
+      document.getElementById("bookEmail").value = "";
+      selectedDate = null;
+      document.querySelectorAll(".day").forEach(function(d) { d.classList.remove("selected"); });
+      btn.innerHTML = "\u2705 Booked";
+    } else {
+      showFeedback("\u26A0\uFE0F Something went wrong \u2014 please try again or email us directly.", "error");
+      btn.disabled = false;
+      btn.innerHTML = "\uD83D\uDCC5 Book Call";
+    }
+  } catch (e) {
+    showFeedback("\u26A0\uFE0F Could not connect \u2014 please email consulting@impactgridgroup.com directly.", "error");
+    btn.disabled = false;
+    btn.innerHTML = "\uD83D\uDCC5 Book Call";
+  }
+}
+
+function showFeedback(msg, type) {
+  const el = document.getElementById("bookingFeedback");
+  el.textContent = msg;
+  el.style.display = "block";
+  el.className = "booking-feedback booking-feedback--" + type;
+}
+
+renderBookingCalendar();
 </script>
 </body>
 </html>
