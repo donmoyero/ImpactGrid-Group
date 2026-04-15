@@ -41,7 +41,7 @@
       { href:'consulting.html',     label:'Consulting' },
       { href:'contact.html',        label:'Contact' },
       { href:'pricing.html',        label:'Pricing' },
-      { href:'creator-studio.html', label:'Try Creator Studio' },
+      { href:'creator-studio.html', label:'Try Creator Studio Free →' },
     ].map(function(l) {
       var cls = l.href === activePage ? ' class="active"' : '';
       return '<a href="' + l.href + '"' + cls + ' onclick="closeSidebar()">' + l.label + '</a>';
@@ -161,10 +161,10 @@
                 '<div style="display:none;width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;">IG</div>' +
                 'ImpactGrid' +
               '</div>' +
-              '<p>Turning data into strategic advantage with analytics, AI, creator tools, and professional networking.</p>' +
+              '<p>Creator intelligence for content that actually performs.</p>' +
             '</div>' +
-            '<div class="fc"><h4>Services</h4><a href="consulting.html">Consulting</a><a href="analytics.html">Analytics</a><a href="creator-studio.html">Creator Studio</a><a href="ai.html">Dijo AI</a></div>' +
-            '<div class="fc"><h4>Platform</h4><a href="network.html">Network</a><a href="jobs.html">Jobs</a><a href="pricing.html">Pricing</a><a href="about.html">About</a><a href="mailto:support@impactgridgroup.com">Contact</a></div>' +
+            '<div class="fc"><h4>Product</h4><a href="creator-studio.html">Creator Studio</a><a href="carousel-studio.html">Carousel Studio</a><a href="pricing.html">Pricing</a></div>' +
+            '<div class="fc"><h4>Company</h4><a href="about.html">About</a><a href="consulting.html">Consulting</a><a href="contact.html">Contact Us</a></div>' +
             '<div class="fc"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>' +
           '</div>' +
           '<div class="footer-bot">' +
