@@ -1,13 +1,23 @@
 /* ═══════════════════════════════════════════════════════════
    IMPACTGRID — Carousel Studio
-   carousel-studio.js  v4.2
+   carousel-studio.js  v4.3
+
+   v4.3 patch:
+   - trimHeadline()      — no longer caps at 6 words; strips hashtags only
+   - limitBody()         — no longer caps at 2 sentences; up to ~280 chars
+   - headlineSize()      — updated breakpoints for longer headlines
+   - fallbackSlides()    — full storytelling narrative arcs, not placeholder filler
+   - parseServerSlides() — trusts AI copy fully; only strips hashtags
+   - normalizeSlidesDeck() — no longer clobbers good copy
+   - makeEditable()      — NEW: tap/click any text on slide canvas to edit inline
+   - startInlineEdit()   — NEW: contenteditable helper for inline editing
+   - renderSlide()       — calls makeEditable() after every render
 
    v4.2 fixes:
    - Hashtags removed from slide renders (FullBleed + SplitText)
    - QUOTE_PULL redesigned with decorative rule, large quote mark, clean type
    - EDITORIAL_COLLAGE text panel uses solid background — never writes on image
    - Removed broken layouts: CORNER_FLOAT, SPLIT_L, SPLIT_R, MAGAZINE_SPLIT, GRID_POINTS, HABIT_SLIDE
-     from LAYOUT_SEQUENCE and assignLayout defaults
    - v4.1: layout trusted from server, mediaType carried through
    ═══════════════════════════════════════════════════════════ */
 
@@ -264,7 +274,6 @@ function assignLayout(slideType,idx,total){
   return set[idx%set.length];
 }
 
-
 function normalizeLayoutSafe(layout, slideType, idx, total){
   var fallback=assignLayout(slideType||'value',idx||0,total||1);
   var blocked=['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
@@ -273,43 +282,77 @@ function normalizeLayoutSafe(layout, slideType, idx, total){
   return layout;
 }
 
-
 function stripHashtags(text){
   return String(text||'').replace(/(^|\s)#[\w-]+/g,' ').replace(/\s+/g,' ').trim();
 }
 
+/* ─────────────────────────────────────────────────────────
+   PATCHED v4.3: COPY HELPERS
+   trimHeadline — no longer caps at 6 words; strips hashtags only
+   limitBody    — no longer caps at 2 sentences; up to ~280 chars
+   headlineSize — updated breakpoints for longer headlines
+   ───────────────────────────────────────────────────────── */
 function trimHeadline(text){
-  return stripHashtags(text).split(/\s+/).filter(Boolean).slice(0,6).join(' ');
+  // Strip hashtags, collapse whitespace. No word limit.
+  return stripHashtags(text).replace(/\s{2,}/g,' ').trim();
 }
 
 function limitBody(text){
-  var clean=stripHashtags(text);
-  var parts=(clean.match(/[^.!?]+[.!?]?/g)||[]).map(function(p){return p.trim();}).filter(Boolean);
-  return parts.slice(0,2).join(' ');
-}
-
-function normalizeSlidesDeck(slides){
-  if(!Array.isArray(slides)) return [];
-  return slides.map(function(slide,i){
-    var out=Object.assign({},slide||{});
-    out.type=i===0?'hook':(i===slides.length-1?'cta':'insight');
-    var fallback=assignLayout(out.type,i,slides.length);
-    out.layout=normalizeLayoutSafe(out.layout,out.type,i,slides.length);
-    out.headline=trimHeadline(out.headline||(out.type==='hook'?'This changes everything':out.type==='cta'?'Ready to apply this?':'Key insight'));
-    out.body=limitBody(out.body||'');
-    out.quote=stripHashtags(out.quote||'');
-    out.cta=stripHashtags(out.cta||'');
-    out.hashtags=[];
-    if(out.type==='cta'&&!out.cta) out.cta='Follow for more';
-    if(out.type!=='hook'&&!out.body) out.body='Apply this consistently to see measurable progress.';
-    out.layout=normalizeLayoutSafe(out.layout,out.type,i,slides.length)||fallback;
-    return out;
-  });
+  // Strip hashtags, return up to ~280 chars without cutting mid-sentence.
+  var clean = stripHashtags(text).replace(/\s{2,}/g,' ').trim();
+  if(clean.length <= 280) return clean;
+  // Try to cut at a sentence boundary within 280 chars
+  var cutAt = clean.lastIndexOf('.', 280);
+  if(cutAt > 80) return clean.slice(0, cutAt + 1);
+  return clean.slice(0, 280).trim() + '…';
 }
 
 function headlineSize(text){
-  var l=(text||'').length;
-  if(l<20) return 38; if(l<30) return 33; if(l<45) return 28; if(l<60) return 24; return 20;
+  var l = (text||'').length;
+  if(l < 20) return 38;
+  if(l < 35) return 32;
+  if(l < 50) return 27;
+  if(l < 70) return 23;
+  if(l < 90) return 20;
+  return 17;
+}
+
+/* ─────────────────────────────────────────────────────────
+   PATCHED v4.3: normalizeSlidesDeck
+   No longer clobbers good copy — trusts what's there
+   ───────────────────────────────────────────────────────── */
+function normalizeSlidesDeck(slides){
+  if(!Array.isArray(slides)) return [];
+  return slides.map(function(slide, i){
+    var out = Object.assign({}, slide || {});
+    var total = slides.length;
+    out.type = i === 0 ? 'hook' : (i === total - 1 ? 'cta' : (out.type || 'insight'));
+    out.layout = normalizeLayoutSafe(out.layout, out.type, i, total);
+
+    // Headline: trust what's there; only fill if blank
+    if(!out.headline || out.headline.length < 3){
+      out.headline = out.type === 'hook'
+        ? 'This Changes Everything'
+        : out.type === 'cta'
+        ? 'Ready to Apply This?'
+        : 'Key Insight';
+    }
+    out.headline = trimHeadline(out.headline);
+
+    // Body: trust what's there; only fill if blank
+    out.body = limitBody(out.body || '');
+
+    out.quote    = stripHashtags(out.quote || '');
+    out.cta      = stripHashtags(out.cta || '');
+    out.hashtags = [];
+
+    if(out.type === 'cta' && !out.cta) out.cta = 'Follow for more →';
+    if(out.type !== 'hook' && !out.body){
+      out.body = 'Apply this consistently and the results compound faster than you expect.';
+    }
+
+    return out;
+  });
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -427,61 +470,73 @@ async function callAI(topic,platform,tone,count){
 
 /* ─────────────────────────────────────────────────────────
    8. SLIDE PARSING
+   PATCHED v4.3: parseServerSlides — trusts AI copy; stops butchering it
    ───────────────────────────────────────────────────────── */
-function parseServerSlides(data,topic,platform,tone,count){
+function parseServerSlides(data, topic, platform, tone, count){
   try{
-    if(!data.slides||!Array.isArray(data.slides)) throw new Error('no slides');
-    var total=data.slides.length;
-    var parsed=data.slides.map(function(sl,i){
+    if(!data.slides || !Array.isArray(data.slides)) throw new Error('no slides array');
+    var total = data.slides.length;
 
-      var primaryImage=null;
-      if(sl.image) primaryImage={url:sl.image,tone:sl.imageMood||'neutral',brightness:'medium'};
-      else if(sl.primaryImage) primaryImage=sl.primaryImage;
+    var parsed = data.slides.map(function(sl, i){
+      var primaryImage = null;
+      if(sl.image) primaryImage = {url:sl.image, tone:sl.imageMood||'neutral', brightness:'medium'};
+      else if(sl.primaryImage) primaryImage = sl.primaryImage;
 
-      var secondImage=null;
-      if(sl.image2) secondImage={url:sl.image2,tone:'neutral',brightness:'medium'};
-      else if(sl.secondImage) secondImage=sl.secondImage;
+      var secondImage = null;
+      if(sl.image2) secondImage = {url:sl.image2, tone:'neutral', brightness:'medium'};
+      else if(sl.secondImage) secondImage = sl.secondImage;
 
-      var layout=normalizeLayoutSafe(sl.layout,sl.type||'value',i,total);
+      var layout = normalizeLayoutSafe(sl.layout, sl.type||'value', i, total);
 
-      var headline=stripHashtags(sl.headline||sl.title||'');
-      if(!headline||headline.length<3){
-        headline=i===0?'Everything changes when you know this':i===total-1?'Ready to take action?':'Step '+(i+1)+': '+topic;
+      // Trust the server headline fully — just strip hashtags
+      var headline = stripHashtags(sl.headline || sl.title || '');
+      if(!headline || headline.length < 3){
+        headline = i === 0
+          ? 'The Truth About ' + topic
+          : i === total - 1
+          ? 'Here\'s Your Next Step'
+          : 'Slide ' + (i + 1) + ': ' + topic;
       }
-      headline=trimHeadline(headline);
+      // Only trim if absurdly long (>120 chars)
+      if(headline.length > 120){
+        headline = headline.slice(0, 117) + '…';
+      }
 
-      var body=limitBody(sl.body||sl.subline||sl.description||'');
-      var caption=sl.caption||buildCaption(sl,i,data.trendHashtags||[]);
-      var hashtags=[];
+      // Trust server body — strip hashtags, allow full copy
+      var rawBody = sl.body || sl.subline || sl.description || '';
+      var body = limitBody(rawBody);
+
+      var caption = sl.caption || buildCaption(sl, i, data.trendHashtags || []);
 
       return {
-        type:       sl.type||(i===0?'hook':i===total-1?'cta':'value'),
+        type:       sl.type || (i === 0 ? 'hook' : i === total - 1 ? 'cta' : 'value'),
         layout:     layout,
-        mediaType:  sl.mediaType||'image',
-        tag:        sl.tag||String(i+1).padStart(2,'0'),
+        mediaType:  sl.mediaType || 'image',
+        tag:        sl.tag || String(i + 1).padStart(2, '00'),
         headline:   headline,
-        subline:    sl.subline||'',
+        subline:    sl.subline || '',
         body:       body,
-        stat:       sl.stat||null,
-        quote:      sl.quote||null,
-        points:     sl.points||null,
-        gridPoints: sl.gridPoints||(sl.points?sl.points.map(function(p,pi){
-          var glyphs=['→','★','◆','✦','●','▲'];
-          return {glyph:glyphs[pi%glyphs.length],text:p};
-        }):null),
-        cta:        sl.cta||'',
+        stat:       sl.stat || null,
+        quote:      sl.quote || null,
+        points:     sl.points || null,
+        gridPoints: sl.gridPoints || (sl.points ? sl.points.map(function(p, pi){
+          var glyphs = ['→','★','◆','✦','●','▲'];
+          return {glyph: glyphs[pi % glyphs.length], text: p};
+        }) : null),
+        cta:        sl.cta || '',
         caption:    caption,
         hashtags:   [],
         primaryImage: primaryImage,
         secondImage:  secondImage,
-        video:      sl.video||null,
-        useVideo:   sl.mediaType==='video'&&!!(sl.video&&sl.video.url)
+        video:      sl.video || null,
+        useVideo:   sl.mediaType === 'video' && !!(sl.video && sl.video.url)
       };
     });
+
     return normalizeSlidesDeck(parsed);
-  }catch(e){
-    console.warn('[parseServerSlides] Error:',e.message);
-    return fallbackSlides(topic,platform,tone,count);
+  } catch(e){
+    console.warn('[parseServerSlides] Error:', e.message);
+    return fallbackSlides(topic, platform, tone, count);
   }
 }
 
@@ -491,27 +546,115 @@ function buildCaption(sl,idx,trendTags){
   return base.trim();
 }
 
-function fallbackSlides(topic,platform,tone,count){
-  var hooks=['Nobody talks about this — but it changed everything.','I spent years getting this wrong. Here\'s the truth.','Most people skip this. That\'s why they struggle.','One shift. Everything clicks.'];
-  var hook=hooks[Math.floor(Math.random()*hooks.length)];
-  var vals=[
-    {type:'value',headline:'The problem nobody admits',body:'Most people focus on the wrong thing entirely.',layout:'FULL_BLEED'},
-    {type:'insight',headline:'The shift that changes everything',body:'Once you understand this, you cannot go back.',layout:'OVERLAP_BAND'},
-    {type:'stat',headline:'The numbers do not lie',body:'Creators who do this consistently outperform. Every time.',layout:'STAT_HERO',stat:'87%'},
-    {type:'quote',headline:'',body:'',quote:'The secret was never the strategy. It was the consistency.',layout:'QUOTE_PULL'},
-    {type:'lesson',headline:'What I wish I had known sooner',body:'Three years in, I finally understood this.',layout:'BOTTOM_STRIP'},
-    {type:'proof',headline:'Here is what happened next',body:'The results were real and they compounded fast.',layout:'DUAL_IMAGE'},
-    {type:'value',headline:'The counterintuitive truth',body:'Everything you have been told is backwards.',layout:'TOP_STRIP'},
-    {type:'insight',headline:'Nobody will tell you this',body:'It is not about working harder. Order matters.',layout:'OVERLAP_BAND'},
-    {type:'tip',headline:'Start here, not there',body:'This single action creates the most momentum.',layout:'BOTTOM_STRIP'}
+/* ─────────────────────────────────────────────────────────
+   PATCHED v4.3: fallbackSlides
+   Full storytelling narrative arcs, not placeholder filler
+   ───────────────────────────────────────────────────────── */
+function fallbackSlides(topic, platform, tone, count){
+
+  var topicClean = topic || 'this topic';
+  var topicTitle = topicClean.charAt(0).toUpperCase() + topicClean.slice(1);
+
+  // Narrative arc — 7 acts that work for almost any creator topic
+  var arc = [
+    // 1 — HOOK: bold contrarian statement
+    {
+      type:'hook', layout:'FULL_BLEED',
+      headline: 'Everything You\'ve Been Told About ' + topicTitle + ' Is Backwards',
+      body: 'I spent three years getting this wrong before I found the thing that actually works. Swipe through — this one\'s going to sting a little.'
+    },
+    // 2 — PROBLEM: name the real pain
+    {
+      type:'problem', layout:'OVERLAP_BAND',
+      headline: 'Here\'s Why Most People Fail at ' + topicTitle,
+      body: 'It\'s not effort. It\'s not talent. It\'s not even strategy. The real reason is something far more uncomfortable — and nobody talks about it because admitting it means looking at your own habits honestly.'
+    },
+    // 3 — INSIGHT: the shift
+    {
+      type:'insight', layout:'BOTTOM_STRIP',
+      headline: 'The Shift That Changes Everything',
+      body: 'Once you stop focusing on the output and start obsessing over the inputs, the whole game changes. The result isn\'t the goal — the system is. Here\'s what that looks like in practice.'
+    },
+    // 4 — STAT: proof with a number
+    {
+      type:'stat', layout:'STAT_HERO',
+      stat: '3×',
+      headline: 'People Who Do This Consistently Outperform Everyone Else',
+      body: 'That\'s not a motivational claim. That\'s the data. Three times the result, in the same time window, with less stress. The difference is one repeatable behaviour.'
+    },
+    // 5 — QUOTE: emotional anchor
+    {
+      type:'quote', layout:'QUOTE_PULL',
+      quote: 'You don\'t rise to the level of your goals. You fall to the level of your systems.',
+      headline: '',
+      body: ''
+    },
+    // 6 — LESSON: the thing they wished they knew earlier
+    {
+      type:'lesson', layout:'EDITORIAL_COLLAGE',
+      headline: 'What I Wish I Had Known Three Years Ago',
+      body: 'Nobody tells you this at the start. You have to earn it through trial and error, or you have to find someone who\'s already been through it. Here\'s the shortcut they never gave me.'
+    },
+    // 7 — PROOF: real result
+    {
+      type:'proof', layout:'DUAL_IMAGE',
+      headline: 'This Is What the Results Actually Looked Like',
+      body: 'Not overnight. Not magic. A slow build that suddenly becomes undeniable. The compound effect is real — but only if you start the right system, not just any system.'
+    },
+    // 8 — VALUE: the actionable framework
+    {
+      type:'value', layout:'TOP_STRIP',
+      headline: 'The Three-Part Framework That Runs Everything',
+      body: 'Step one: identify the one lever that moves everything else. Step two: protect that lever at all costs. Step three: ignore everything that isn\'t that lever. That\'s it. That\'s the whole system.'
+    },
+    // 9 — INSIGHT: counterintuitive truth
+    {
+      type:'insight', layout:'OVERLAP_BAND',
+      headline: 'The Counterintuitive Truth Nobody Wants to Hear',
+      body: 'Doing less, more consistently, beats doing everything sporadically. Your brain resists this because it feels like giving up. It isn\'t. It\'s the most aggressive thing you can do.'
+    },
+    // 10 — CTA: clear and specific
+    {
+      type:'cta', layout:'FULL_BLEED',
+      headline: 'Save This. Come Back to It When You\'re Stuck.',
+      body: 'The people who actually apply this will be in a completely different position six months from now. Which slide hit closest to home? Drop the number in the comments.',
+      cta: 'Follow for more →'
+    }
   ];
-  var slides=[{type:'hook',tag:'01',headline:hook.split(/\s+/).slice(0,6).join(' '),body:'Swipe through for the core insight.',mediaType:'image',cta:'',layout:'FULL_BLEED',caption:hook+'\n\nSave this.',hashtags:[]}];
-  for(var i=1;i<count-1;i++){
-    var v=vals[(i-1)%vals.length];
-    slides.push({type:v.type,tag:String(i+1).padStart(2,'0'),headline:v.headline.split(/\s+/).slice(0,6).join(' '),body:v.body,mediaType:'image',cta:'',layout:normalizeLayoutSafe(v.layout,v.type,i,count),stat:v.stat||null,quote:v.quote||null,gridPoints:v.gridPoints||null,caption:'',hashtags:[]});
+
+  // Slice arc to requested count, always use slide 0 as hook and last as CTA
+  var selected = [arc[0]];
+  var middle = arc.slice(1, arc.length - 1);
+  var need = count - 2;
+  for(var i = 0; i < need; i++){
+    selected.push(middle[i % middle.length]);
   }
-  slides.push({type:'cta',tag:String(count).padStart(2,'0'),headline:'Ready to make this real?',body:'Pick one action and execute it today.',mediaType:'image',cta:'Follow for more →',layout:'FULL_BLEED',caption:'Which slide hit hardest? Drop a number 👇',hashtags:[]});
-  return normalizeSlidesDeck(slides.slice(0,count));
+  selected.push(arc[arc.length - 1]);
+  selected = selected.slice(0, count);
+
+  var built = selected.map(function(sl, i){
+    return {
+      type:      sl.type || (i === 0 ? 'hook' : i === count - 1 ? 'cta' : 'insight'),
+      layout:    normalizeLayoutSafe(sl.layout, sl.type, i, count),
+      mediaType: 'image',
+      tag:       String(i + 1).padStart(2, '0'),
+      headline:  trimHeadline(sl.headline || ''),
+      body:      limitBody(sl.body || ''),
+      stat:      sl.stat || null,
+      quote:     sl.quote || null,
+      cta:       sl.cta || (i === count - 1 ? 'Follow for more →' : ''),
+      caption:   i === 0
+        ? topicTitle + ' — here\'s the honest version nobody tells you.\n\nSave this if it hits. Share it if someone needs it.'
+        : i === count - 1
+        ? 'Which slide hit hardest? Drop a number 👇\n\nFollow for more like this.'
+        : '',
+      hashtags:  [],
+      primaryImage: null,
+      secondImage:  null
+    };
+  });
+
+  return normalizeSlidesDeck(built);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -640,9 +783,9 @@ function renderSlide(){
       if(dText){
         var dh='';
         if(slide.tag) dh+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';margin-bottom:10px">'+esc(slide.tag)+'</div>';
-        dh+='<div style="font-family:'+getFont('head')+';font-size:'+headlineSize(slide.headline)+'px;font-weight:800;line-height:1.15;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);margin-bottom:8px">'+esc(slide.headline)+'</div>';
-        if(slide.body) dh+='<div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.85);margin-bottom:10px">'+esc(slide.body)+'</div>';
-        if(slide.cta) dh+='<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:#fff;width:fit-content">'+esc(slide.cta)+' →</div>';
+        dh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+headlineSize(slide.headline)+'px;font-weight:800;line-height:1.15;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);margin-bottom:8px">'+esc(slide.headline)+'</div>';
+        if(slide.body) dh+='<div class="s-body" style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.85);margin-bottom:10px">'+esc(slide.body)+'</div>';
+        if(slide.cta) dh+='<div class="s-cta" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:#fff;width:fit-content">'+esc(slide.cta)+' →</div>';
         dText.innerHTML=dh;
       }
       break;
@@ -654,8 +797,8 @@ function renderSlide(){
       sBandEl.className='s-band-wrap';
       sBandEl.innerHTML='<div style="position:absolute;left:0;right:0;top:32%;padding:20px 32px 22px;background:'+accent2+';display:flex;flex-direction:column;gap:7px;">'
         +(slide.tag?'<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.65)">'+esc(slide.tag)+'</div>':'')
-        +'<div style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.15;color:#fff">'+esc(slide.headline)+'</div>'
-        +(slide.body?'<div style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.85);margin-top:2px">'+esc(slide.body)+'</div>':'')
+        +'<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.15;color:#fff">'+esc(slide.headline)+'</div>'
+        +(slide.body?'<div class="s-body" style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.85);margin-top:2px">'+esc(slide.body)+'</div>':'')
         +'</div>';
       break;
     }
@@ -701,8 +844,8 @@ function renderSlide(){
       var sh='';
       if(slide.tag) sh+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';margin-bottom:8px">'+esc(slide.tag)+'</div>';
       sh+='<div class="s-stat-num" style="color:'+accent2+'">'+esc(slide.stat||'1×')+'</div>';
-      sh+='<div style="font-family:'+getFont('head')+';font-size:'+Math.min(24,headlineSize(slide.headline))+'px;font-weight:700;line-height:1.2;color:'+sColor+';margin-top:6px">'+esc(slide.headline)+'</div>';
-      if(slide.body) sh+='<div style="font-size:12px;line-height:1.55;opacity:.72;margin-top:8px;color:'+sColor+'">'+esc(slide.body)+'</div>';
+      sh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+Math.min(24,headlineSize(slide.headline))+'px;font-weight:700;line-height:1.2;color:'+sColor+';margin-top:6px">'+esc(slide.headline)+'</div>';
+      if(slide.body) sh+='<div class="s-body" style="font-size:12px;line-height:1.55;opacity:.72;margin-top:8px;color:'+sColor+'">'+esc(slide.body)+'</div>';
       sStat.insertAdjacentHTML('beforeend',sh);
       break;
     }
@@ -725,7 +868,7 @@ function renderSlide(){
       /* Large open-quote glyph */
       qh+='<div style="font-family:Georgia,serif;font-size:72px;line-height:0.5;color:'+accent2+';opacity:0.55;margin-bottom:20px;align-self:flex-start;">\u201C</div>';
       /* Quote text */
-      qh+='<div style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
+      qh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
       /* Decorative bottom rule */
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-top:28px;"></div>';
       /* Attribution / tag */
@@ -734,7 +877,7 @@ function renderSlide(){
       }
       /* Supporting body only if not a pure quote slide */
       if(slide.body&&!slide.quote){
-        qh+='<div style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
+        qh+='<div class="s-body" style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
       }
       sQuote.innerHTML=qh;
       break;
@@ -761,7 +904,7 @@ function renderSlide(){
       var line2=words.slice(mid).join(' ');
       var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max(slide.headline.length,6))));
       hcTitle.innerHTML=
-        '<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
+        '<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
         +'<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(line2||line1)+'</div>';
       hcEl.appendChild(hcTitle);
       if(slide.body||slide.subline){
@@ -806,7 +949,7 @@ function renderSlide(){
       var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max(slide.headline.length,6))));
       var ecTitle=document.createElement('div');
       ecTitle.style.cssText='position:absolute;bottom:50px;left:18px;right:18px;z-index:2;';
-      ecTitle.innerHTML='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
+      ecTitle.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
         +'<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(titleFontSz+4)+'px;font-style:italic;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(scriptWords.join(' '))+'</div>';
       ecEl.appendChild(ecTitle);
       var ecHandle=document.createElement('div');
@@ -828,8 +971,6 @@ function renderSlide(){
       showLayout('sEditorialCollage');
       ecolEl.innerHTML='';
       ecolEl.style.cssText='position:absolute;inset:0;z-index:4;background:#f0ebe1;';
-
-      /* Badge + brand */
       var ecolBadge=document.createElement('div');
       ecolBadge.textContent='Page '+String(ST.cur+1).padStart(2,'0');
       ecolBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#888;border:1px solid #b0a898;border-radius:40px;padding:3px 12px;letter-spacing:.3px;';
@@ -838,25 +979,18 @@ function renderSlide(){
       ecolBrand.textContent=ST.brand||'Salford & Co.';
       ecolBrand.style.cssText='position:absolute;top:16px;right:14px;z-index:6;font-size:11px;font-family:'+getFont('body')+';color:#888;letter-spacing:.3px;';
       ecolEl.appendChild(ecolBrand);
-
-      /* Large italic page number — behind photos */
       var ecolNum=document.createElement('div');
       ecolNum.textContent=String(ST.cur+1).padStart(2,'0');
       ecolNum.style.cssText='position:absolute;top:36px;right:14px;z-index:2;font-family:Georgia,"Times New Roman",serif;font-size:108px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.9;';
       ecolEl.appendChild(ecolNum);
-
-      /* Photo 1 — left column top */
       var ecolP1=document.createElement('div');
       ecolP1.style.cssText='position:absolute;left:14px;top:54px;width:44%;height:48%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;z-index:3;'+(primaryUrl?'background-image:url('+primaryUrl+')':'');
       ecolEl.appendChild(ecolP1);
-
-      /* Photo 2 — overlapping center */
       var ecolP2=document.createElement('div');
       var p2url=secondUrl||(primaryUrl||'');
       ecolP2.style.cssText='position:absolute;left:26%;top:42%;width:40%;height:46%;background-size:cover;background-position:center top;background-color:#a89070;border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:4;'+(p2url?'background-image:url('+p2url+')':'');
       ecolEl.appendChild(ecolP2);
-
-      /* ── v4.2 FIX: Text panel — solid opaque background, right column, z-index above photos ── */
+      /* v4.2 FIX: Text panel — solid opaque background */
       var ecolText=document.createElement('div');
       ecolText.style.cssText='position:absolute;left:52%;right:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;padding:24px 18px 24px 14px;gap:10px;z-index:5;background:#f0ebe1;border-left:2px solid rgba(180,160,130,.25);';
       var ecWords=(slide.headline||'Create a Cozy & Functional Space').split(' ');
@@ -865,13 +999,11 @@ function renderSlide(){
       var ecScript=ecScriptCount?ecWords.slice(-ecScriptCount).join(' '):'';
       var ecFontSz=Math.min(24,headlineSize(slide.headline));
       var ecolH='';
-      ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ecFontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;margin-bottom:0;">'+esc(ecNormal)+'</div>';
+      ecolH+='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ecFontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;margin-bottom:0;">'+esc(ecNormal)+'</div>';
       if(ecScript) ecolH+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ecFontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ecScript)+'</div>';
-      if(slide.body) ecolH+='<div style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
+      if(slide.body) ecolH+='<div class="s-body" style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ecolText.innerHTML=ecolH;
       ecolEl.appendChild(ecolText);
-
-      /* Footer */
       var ecolFoot=document.createElement('div');
       ecolFoot.style.cssText='position:absolute;bottom:12px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
       ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
@@ -902,8 +1034,7 @@ function renderSlide(){
       ec3Num.textContent=String(ST.cur+1).padStart(2,'0');
       ec3Num.style.cssText='position:absolute;top:36px;left:12px;z-index:2;font-family:Georgia,"Times New Roman",serif;font-size:108px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.9;';
       ec3El.appendChild(ec3Num);
-
-      /* ── v4.2 FIX: Text panel solid background, left column, z-index 5 ── */
+      /* v4.2 FIX: Text panel solid background, left column */
       var ec3Text=document.createElement('div');
       ec3Text.style.cssText='position:absolute;left:0;right:52%;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;padding:24px 14px 24px 14px;gap:8px;z-index:5;background:#f0ebe1;border-right:2px solid rgba(180,160,130,.25);';
       var ec3Words=(slide.headline||'Keep It Clean & Organized').split(' ');
@@ -912,13 +1043,11 @@ function renderSlide(){
       var ec3Script=ec3ScriptCount?ec3Words.slice(-ec3ScriptCount).join(' '):'';
       var ec3FontSz=Math.min(22,headlineSize(slide.headline));
       var ec3H='';
-      ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ec3FontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;">'+esc(ec3Normal)+'</div>';
+      ec3H+='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+ec3FontSz+'px;font-weight:400;line-height:1.15;color:#1a1814;">'+esc(ec3Normal)+'</div>';
       if(ec3Script) ec3H+='<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(ec3FontSz+2)+'px;font-style:italic;font-weight:400;line-height:1.1;color:#1a1814;margin-top:-4px;">'+esc(ec3Script)+'</div>';
-      if(slide.body) ec3H+='<div style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
+      if(slide.body) ec3H+='<div class="s-body" style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ec3Text.innerHTML=ec3H;
       ec3El.appendChild(ec3Text);
-
-      /* Three photos — right column */
       var imgUrls=[primaryUrl||'',secondUrl||'',thirdUrl||primaryUrl||''];
       var ec3Wide=document.createElement('div');
       ec3Wide.style.cssText='position:absolute;left:50%;right:12px;top:44px;height:46%;background-size:cover;background-position:center;background-color:#c8b89a;border-radius:3px;z-index:3;'+(imgUrls[0]?'background-image:url('+imgUrls[0]+')':'');
@@ -929,7 +1058,6 @@ function renderSlide(){
       var ec3b2=document.createElement('div');
       ec3b2.style.cssText='position:absolute;right:12px;width:24%;bottom:28px;height:46%;background-size:cover;background-position:center top;background-color:#8a7258;border-radius:3px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:3;'+(imgUrls[2]?'background-image:url('+imgUrls[2]+')':'');
       ec3El.appendChild(ec3b2);
-
       var ec3Foot=document.createElement('div');
       ec3Foot.style.cssText='position:absolute;bottom:12px;left:12px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
       ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'reallygreatsite');
@@ -960,6 +1088,9 @@ function renderSlide(){
   if(hashSec) hashSec.style.display='none';
 
   updateThumbActive();
+
+  /* ── v4.3 PATCH: enable inline editing on all rendered text ── */
+  makeEditable();
 }
 
 /* ── v4.2: buildFullBleedHTML — hashtags REMOVED from slide render ── */
@@ -978,13 +1109,112 @@ function buildFullBleedHTML(slide,tc,accent2){
 function buildSplitTextHTML(slide,accent2,pText,pBg){
   var h='';
   if(slide.tag) h+='<div style="font-size:9px;font-weight:700;font-family:'+getFont('mono')+';letter-spacing:2px;text-transform:uppercase;color:'+accent2+';margin-bottom:4px">'+esc(slide.tag)+'</div>';
-  h+='<div style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:'+pText+';margin-bottom:6px">'+esc(slide.headline)+'</div>';
-  if(slide.body) h+='<div style="font-size:12px;line-height:1.65;color:'+pText+';opacity:.75;margin-bottom:8px">'+esc(slide.body)+'</div>';
-  if(slide.cta) h+='<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:'+pBg+';width:fit-content">'+esc(slide.cta)+' →</div>';
+  h+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+Math.min(26,headlineSize(slide.headline))+'px;font-weight:800;line-height:1.2;color:'+pText+';margin-bottom:6px">'+esc(slide.headline)+'</div>';
+  if(slide.body) h+='<div class="s-body" style="font-size:12px;line-height:1.65;color:'+pText+';opacity:.75;margin-bottom:8px">'+esc(slide.body)+'</div>';
+  if(slide.cta) h+='<div class="s-cta" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:11px;font-weight:700;font-family:'+getFont('head')+';background:'+accent2+';color:'+pBg+';width:fit-content">'+esc(slide.cta)+' →</div>';
   return h;
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ─────────────────────────────────────────────────────────
+   PATCHED v4.3: INLINE EDITING
+   makeEditable() — called after every renderSlide()
+   startInlineEdit() — contenteditable handler
+   ───────────────────────────────────────────────────────── */
+function makeEditable(){
+  var canvas = document.getElementById('slideCanvas');
+  if(!canvas) return;
+
+  // Select elements that carry headline or body text
+  var targets = canvas.querySelectorAll(
+    '.s-headline, .s-body, .s-cta, [class*="s-stat-num"]'
+  );
+
+  targets.forEach(function(el){
+    // Don't double-bind
+    if(el.dataset.editable === '1') return;
+    el.dataset.editable = '1';
+    el.style.cursor = 'text';
+    el.title = 'Click to edit';
+
+    el.addEventListener('click', function(e){
+      e.stopPropagation();
+      startInlineEdit(el);
+    });
+  });
+
+  // Also make dynamically-built text spans editable via delegation
+  if(!canvas.dataset.editDelegated){
+    canvas.dataset.editDelegated = '1';
+    canvas.addEventListener('click', function(e){
+      var t = e.target;
+      while(t && t !== canvas){
+        if(
+          t.dataset.editKey ||
+          t.classList.contains('s-headline') ||
+          t.classList.contains('s-body')
+        ){
+          startInlineEdit(t);
+          return;
+        }
+        t = t.parentElement;
+      }
+    });
+  }
+}
+
+function startInlineEdit(el){
+  if(el.dataset.editing === '1') return;
+  el.dataset.editing = '1';
+
+  var original = el.textContent;
+
+  // Turn into a contenteditable
+  el.setAttribute('contenteditable', 'true');
+  el.style.outline = '2px solid rgba(255,255,255,0.6)';
+  el.style.outlineOffset = '4px';
+  el.style.borderRadius = '3px';
+  el.style.minWidth = '40px';
+  el.style.cursor = 'text';
+  el.focus();
+
+  // Select all text
+  var range = document.createRange();
+  range.selectNodeContents(el);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  function commit(){
+    el.removeAttribute('contenteditable');
+    el.dataset.editing = '0';
+    el.style.outline = '';
+    el.style.outlineOffset = '';
+    el.style.borderRadius = '';
+
+    var newText = el.textContent.trim();
+    if(!newText) el.textContent = original;
+
+    // Push back into ST.slides so edits persist
+    if(ST.slides && ST.slides[ST.cur]){
+      var s = ST.slides[ST.cur];
+      if(el.classList.contains('s-headline') || el.classList.contains('s-title')){
+        s.headline = el.textContent;
+        document.getElementById('eHead') && (document.getElementById('eHead').value = s.headline);
+      } else if(el.classList.contains('s-body')){
+        s.body = el.textContent;
+        document.getElementById('eBody') && (document.getElementById('eBody').value = s.body);
+      }
+    }
+  }
+
+  el.addEventListener('blur', commit, {once: true});
+  el.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); el.blur(); }
+    if(e.key === 'Escape'){ el.textContent = original; el.blur(); }
+  });
+}
 
 /* ─────────────────────────────────────────────────────────
    10. STRIP BUILDER
