@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<title>Carousel Studio v4.0 · Impact Grid Group</title>
+<title>Carousel Studio v4.5 · Impact Grid Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="carousel-studio.css"/>
 <link rel="stylesheet" href="carousel-studio-additions.css"/>
 <style>
-/* ══ V4.0 DESIGN SYSTEM ══ */
+/* ══ V4.5 DESIGN SYSTEM ══ */
 :root {
   --ig-yellow: #f5e400;
   --ig-black: #0e0e0c;
@@ -220,6 +220,9 @@ nav {
 .dl-progress-label { font-size:11px; color:rgba(245,228,0,.7); font-family:'Space Mono',monospace; }
 .dl-progress-cancel { font-size:10px; color:rgba(255,255,255,.3); cursor:pointer; text-align:right; transition:.15s; }
 .dl-progress-cancel:hover { color:rgba(245,228,0,.7); }
+
+/* Caption AI loading state */
+.cap-ai-loading { opacity:.6; font-style:italic; }
 </style>
 </head>
 <body>
@@ -228,10 +231,9 @@ nav {
 <!-- ══ NAV ══ -->
 <nav>
   <div class="logo-wrap">
-    <!-- ImpactGrid Group Logo — uses real logo.png with fallback IG mark -->
     <img class="logo-img" src="logo.png" alt="Impact Grid Group"
          onerror="this.outerHTML='<div style=\'width:28px;height:28px;background:var(--ig-yellow);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;color:#0e0e0c;font-family:Syne,sans-serif\'>IG</div>'"/>
-    <div class="logo-text">Impact<em>Grid</em> <span class="v-badge">v4.0</span></div>
+    <div class="logo-text">Impact<em>Grid</em> <span class="v-badge">v4.5</span></div>
   </div>
   <div class="sep" style="width:1px;height:18px;background:rgba(245,228,0,.15);flex-shrink:0;margin:0 6px"></div>
   <span class="crumb" style="font-size:10px;color:rgba(255,255,255,.25);font-family:'Space Mono',monospace">carousel-studio</span>
@@ -256,7 +258,7 @@ nav {
   <div class="ph">
     <img class="ph-icon" src="logo.png" alt="" onerror="this.style.display='none'"/>
     <div class="ph-title">✦ AI Carousel Creator</div>
-    <div class="ph-sub">Describe your content. Dijo picks the theme, scores images with AI vision &amp; designs every slide.</div>
+    <div class="ph-sub">Describe your content. Dijo picks the theme, writes real captions with live trend context &amp; designs every slide.</div>
   </div>
   <div class="pb">
 
@@ -382,8 +384,8 @@ nav {
         <img src="logo.png" alt="" style="width:38px;height:38px;object-fit:contain;filter:brightness(0) saturate(100%) invert(91%) sepia(90%) saturate(800%) hue-rotate(5deg) brightness(105%)"
              onerror="this.outerHTML='✦'"/>
       </div>
-      <div class="empty-title">Carousel Studio <span style="color:var(--ig-yellow)">v4.0</span></div>
-      <div class="empty-sub">Type your topic on the left. Dijo writes the copy,<br/>picks images with AI vision &amp; builds every slide.</div>
+      <div class="empty-title">Carousel Studio <span style="color:var(--ig-yellow)">v4.5</span></div>
+      <div class="empty-sub">Type your topic on the left. Dijo writes punchy copy,<br/>pulls live trends for captions &amp; builds every slide.</div>
       <div class="quick-prompts">
         <div class="qp" onclick="prefill('5 habits that helped me hit £10K per month as a creator')">
           <span class="qp-icon">💰</span>
@@ -511,17 +513,20 @@ nav {
       <textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
     </div>
 
-    <!-- CAPTION — short punchy line only -->
+    <!-- CAPTION -->
     <div class="esec">
-      <div class="esec-title">Caption</div>
-      <textarea class="ftextarea" id="eCap" style="min-height:60px" placeholder="One punchy line + emoji…" oninput="updateCap()"></textarea>
+      <div class="esec-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Caption</span>
+        <span style="font-size:9px;font-family:'Space Mono',monospace;color:rgba(245,228,0,.4)" id="capAiLabel">AI-written</span>
+      </div>
+      <textarea class="ftextarea" id="eCap" style="min-height:80px" placeholder="AI caption loads after generation…" oninput="updateCap()"></textarea>
       <button class="copy-btn" onclick="copyCaption()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copy Caption
       </button>
     </div>
 
-    <!-- HASHTAGS — exactly 5, right panel only, never on slide -->
+    <!-- HASHTAGS — 5 scored tags, right panel only, never on slide -->
     <div class="esec" id="hashtagSection">
       <div class="esec-title" style="display:flex;align-items:center;justify-content:space-between;">
         <span>Trending Hashtags</span>
@@ -590,7 +595,7 @@ nav {
       </div>
       <div class="exp-opt" id="eoCopy" onclick="selExport('copy')">
         <span class="exp-icon">📋</span>
-        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + captions</div></div>
+        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + AI captions + hashtags</div></div>
         <div class="exp-radio"></div>
       </div>
       <div class="exp-opt" id="eoJson" onclick="selExport('json')">
@@ -613,14 +618,16 @@ nav {
 
 <div class="toast-shelf" id="toastShelf"></div>
 
+<!-- ══ MAIN ENGINE (v4.5 — includes Caption Engine) ══ -->
 <script src="carousel-studio.js"></script>
+
 <script>
 /* ══════════════════════════════════════════════════════════
-   CAROUSEL STUDIO v4.0 PATCHES
-   All overrides applied after carousel-studio.js loads
+   CAROUSEL STUDIO v4.5 PATCHES
+   Brand lock · Apply-all layout · Guide tooltip · Download
 ══════════════════════════════════════════════════════════ */
 
-// ── 1. BRAND — hardcoded, never editable, never changes
+// ── 1. BRAND — hardcoded, never editable
 (function patchBrand(){
   var BRAND = 'www.impactgridgroup.com';
   if(typeof ST !== 'undefined') ST.brand = BRAND;
@@ -636,7 +643,7 @@ window.addEventListener('load', function(){
   }
 });
 
-// ── 3. APPLY LAYOUT TO ALL SLIDES (override changeLayout)
+// ── 3. APPLY LAYOUT TO ALL SLIDES
 var _origChangeLayout = window.changeLayout;
 window.changeLayout = function(newLayout){
   if(!window.ST || !window.ST.slides.length) return;
@@ -654,198 +661,10 @@ window.changeLayout = function(newLayout){
   }
 };
 
-// ── 4. HASHTAG PANEL — populate right panel after generation
-function populateHashtagPanel(slide){
-  var sec   = document.getElementById('hashtagSection');
-  var chips = document.getElementById('hashtagChips');
-  var copyBtn = document.getElementById('hashtagCopyBtn');
-  if(!sec || !chips) return;
-
-  var tags = (slide && slide.hashtags && slide.hashtags.length)
-    ? slide.hashtags.slice(0,5)
-    : [];
-
-  if(!tags.length){
-    sec.style.display = 'none';
-    return;
-  }
-
-  sec.style.display = 'block';
-  chips.innerHTML = tags.map(function(tag){
-    var t = tag.startsWith('#') ? tag : '#' + tag;
-    return '<span class="hashtag-chip" onclick="copyTag(\'' + t + '\')" title="Click to copy">' + t + '</span>';
-  }).join('');
-
-  if(copyBtn) copyBtn.style.display = 'flex';
-}
-
-window.copyTag = function(tag){
-  navigator.clipboard.writeText(tag).then(function(){ toast('✓ ' + tag + ' copied'); });
-};
-
-window.copyHashtags = function(){
-  if(!window.ST || !ST.slides.length) return;
-  var tags = (ST.slides[ST.cur].hashtags || []).slice(0,5);
-  if(!tags.length){ toast('No hashtags on this slide'); return; }
-  var out = tags.map(function(t){ return t.startsWith('#') ? t : '#' + t; }).join(' ');
-  navigator.clipboard.writeText(out).then(function(){ toast('✓ 5 hashtags copied'); });
-};
-
-// ── 5. INLINE EDITING — ALL text elements including numbers
-var _rsOrig = window.renderSlide;
-window.renderSlide = function(){
-  if(_rsOrig) _rsOrig.apply(this, arguments);
-  setTimeout(injectInlineEditors, 100);
-  // Populate hashtag panel whenever slide renders
-  if(window.ST && ST.slides.length){
-    populateHashtagPanel(ST.slides[ST.cur]);
-  }
-};
-
-function makeEditable(el, onSave, opts){
-  opts = opts || {};
-  if(el.dataset.igEditable) return;
-  el.dataset.igEditable = '1';
-  el.setAttribute('contenteditable', 'true');
-  el.setAttribute('spellcheck', 'false');
-  el.style.cursor    = 'text';
-  el.style.outline   = 'none';
-  el.style.borderRadius = '3px';
-  el.style.transition = 'background .15s, outline .15s';
-  el.style.minWidth  = '20px';
-
-  el.addEventListener('mouseenter', function(){
-    if(!el.matches(':focus')){
-      el.style.background = 'rgba(245,228,0,.07)';
-      el.style.outline    = '1px dashed rgba(245,228,0,.4)';
-    }
-  });
-  el.addEventListener('mouseleave', function(){
-    if(!el.matches(':focus')){
-      el.style.background = 'none';
-      el.style.outline    = 'none';
-    }
-  });
-  el.addEventListener('focus', function(){
-    el.style.background = 'rgba(245,228,0,.07)';
-    el.style.outline    = '2px solid rgba(245,228,0,.6)';
-    // Select all on click for numbers
-    if(opts.selectAll){
-      var range = document.createRange();
-      range.selectNodeContents(el);
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  });
-  el.addEventListener('blur', function(){
-    el.style.background = 'none';
-    el.style.outline    = 'none';
-    if(onSave) onSave(el.innerText.trim());
-  });
-  el.addEventListener('keydown', function(e){
-    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); el.blur(); }
-    if(e.key === 'Escape'){ el.blur(); }
-  });
-}
-
-function injectInlineEditors(){
-  if(!window.ST || !ST.slides.length) return;
-  var canvas = document.getElementById('slideCanvas');
-  if(!canvas) return;
-
-  // Headlines
-  canvas.querySelectorAll('.s-headline').forEach(function(el){
-    makeEditable(el, function(val){
-      ST.slides[ST.cur].headline = val;
-      var h = document.getElementById('eHead');
-      if(h) h.value = val;
-    });
-  });
-
-  // Body text
-  canvas.querySelectorAll('.s-body').forEach(function(el){
-    makeEditable(el, function(val){
-      ST.slides[ST.cur].body = val;
-      var b = document.getElementById('eBody');
-      if(b) b.value = val;
-    });
-  });
-
-  // Stat numbers — select-all on focus for easy replacement
-  canvas.querySelectorAll('.s-stat-num').forEach(function(el){
-    makeEditable(el, function(val){
-      ST.slides[ST.cur].stat = val;
-      var s = document.getElementById('eStat');
-      if(s) s.value = val;
-    }, { selectAll: true });
-  });
-
-  // CTA buttons text
-  canvas.querySelectorAll('.s-cta').forEach(function(el){
-    makeEditable(el, function(val){
-      ST.slides[ST.cur].cta = val.replace(/\s*→\s*$/, '').trim();
-    });
-  });
-
-  // Tag labels
-  canvas.querySelectorAll('.s-tag').forEach(function(el){
-    makeEditable(el, function(val){
-      ST.slides[ST.cur].tag = val;
-    }, { selectAll: true });
-  });
-
-  // Quote text
-  canvas.querySelectorAll('.s-quote-text').forEach(function(el){
-    makeEditable(el, function(val){
-      ST.slides[ST.cur].quote = val;
-      var q = document.getElementById('eQuote');
-      if(q) q.value = val;
-    });
-  });
-
-  // Any other contenteditable elements with data-field attribute
-  // (for editorial/habit layouts that build inline)
-  canvas.querySelectorAll('[data-editable-field]').forEach(function(el){
-    var field = el.dataset.editableField;
-    makeEditable(el, function(val){
-      if(field && ST.slides[ST.cur]) ST.slides[ST.cur][field] = val;
-    });
-  });
-}
-
-// ── 6. VIDEO LAYER FIX
-var _origGenerate = window.generate;
-window.generate = async function(){
-  if(_origGenerate) await _origGenerate.apply(this, arguments);
-  fixVideoLayer();
-};
-
-function fixVideoLayer(){
-  var vid = document.getElementById('sBgVideo');
-  if(vid){
-    vid.style.position     = 'absolute';
-    vid.style.inset        = '0';
-    vid.style.zIndex       = '2';
-    vid.style.overflow     = 'hidden';
-    vid.style.pointerEvents= 'none';
-  }
-}
-
-// ── 7. POPULATE HASHTAGS after generate completes (hook into fillEdit)
-var _origFillEdit = window.fillEdit;
-window.fillEdit = function(){
-  if(_origFillEdit) _origFillEdit.apply(this, arguments);
-  if(window.ST && ST.slides.length){
-    populateHashtagPanel(ST.slides[ST.cur]);
-  }
-};
-
-// ── 8. GUIDE TOOLTIP after generation
+// ── 4. GUIDE TOOLTIP after generation
 var _guideShown = false;
 function showGuide(){
-  if(_guideShown) return;
-  _guideShown = true;
+  if(_guideShown) return; _guideShown = true;
   var wrap = document.querySelector('.canvas-wrap');
   if(!wrap) return;
   var tip = document.createElement('div');
@@ -855,154 +674,117 @@ function showGuide(){
   setTimeout(function(){ if(tip.parentNode) tip.remove(); }, 4500);
 }
 
-var __gen2 = window.generate;
+// Hook guide + caption label into generate
+var _genOrig = window.generate;
 window.generate = async function(){
-  await __gen2.apply(this, arguments);
+  await _genOrig.apply(this, arguments);
   setTimeout(showGuide, 1400);
+  // Mark caption as loading while enrichDeck runs
+  var capEl = document.getElementById('eCap');
+  var capLbl = document.getElementById('capAiLabel');
+  if(capEl){ capEl.classList.add('cap-ai-loading'); }
+  if(capLbl){ capLbl.textContent = '✦ Writing…'; }
+  // enrichDeck is called from generate() in carousel-studio.js automatically
+  // Wait for it to settle then refresh UI
+  setTimeout(function(){
+    if(capEl){ capEl.classList.remove('cap-ai-loading'); }
+    if(capLbl){ capLbl.textContent = 'AI-written'; }
+    if(typeof fillEdit === 'function') fillEdit();
+  }, ST && ST.slides ? ST.slides.length * 1800 + 2000 : 15000);
 };
 
-// ── 9. DOWNLOAD ALL — blob download with iOS Safari detection
-// (download logic ported from ImpactGrid Event Gallery)
+// ── 5. VIDEO LAYER FIX
+window.addEventListener('load', function(){
+  var vid = document.getElementById('sBgVideo');
+  if(vid){
+    vid.style.position='absolute'; vid.style.inset='0';
+    vid.style.zIndex='2'; vid.style.overflow='hidden';
+    vid.style.pointerEvents='none';
+  }
+});
 
+// ── 6. DOWNLOAD ALL — with progress toast + iOS Safari support
 function isSafariIOS(){
   return /iP(ad|hone|od)/.test(navigator.userAgent) && /WebKit/.test(navigator.userAgent) && !window.MSStream;
 }
 
 var _dlCancelled = false;
 
-async function blobDownload(url, filename){
-  try {
-    var res  = await fetch(url);
-    var blob = await res.blob();
-    var objUrl = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = objUrl;
-    a.download = filename;
-    a.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(objUrl); }, 2500);
-  } catch(e) {
-    console.warn('[download] blobDownload failed:', e);
-    throw e;
-  }
-}
-
 function showDlProgress(label, pct){
   var existing = document.getElementById('dlProgressToast');
   if(existing) existing.remove();
   var t = document.createElement('div');
-  t.id = 'dlProgressToast';
-  t.className = 'dl-progress-toast';
-  t.innerHTML =
-    '<div class="dl-progress-label" id="dlProgressLabel">' + label + '</div>' +
-    '<div class="dl-progress-bar"><div class="dl-progress-fill" id="dlProgressFill" style="width:' + (pct||0) + '%"></div></div>' +
-    '<div class="dl-progress-cancel" onclick="cancelDl()">Cancel</div>';
+  t.id = 'dlProgressToast'; t.className = 'dl-progress-toast';
+  t.innerHTML = '<div class="dl-progress-label" id="dlProgressLabel">'+label+'</div>'
+    +'<div class="dl-progress-bar"><div class="dl-progress-fill" id="dlProgressFill" style="width:'+(pct||0)+'%"></div></div>'
+    +'<div class="dl-progress-cancel" onclick="cancelDl()">Cancel</div>';
   document.body.appendChild(t);
 }
-
 function updateDlProgress(label, pct){
-  var lbl  = document.getElementById('dlProgressLabel');
-  var fill = document.getElementById('dlProgressFill');
-  if(lbl)  lbl.textContent = label;
-  if(fill) fill.style.width = pct + '%';
+  var lbl=document.getElementById('dlProgressLabel');
+  var fill=document.getElementById('dlProgressFill');
+  if(lbl) lbl.textContent=label;
+  if(fill) fill.style.width=pct+'%';
 }
-
 function hideDlProgress(){
-  var t = document.getElementById('dlProgressToast');
+  var t=document.getElementById('dlProgressToast');
   if(t) t.remove();
 }
-
-window.cancelDl = function(){
-  _dlCancelled = true;
-  hideDlProgress();
-  toast('Download cancelled');
-};
+window.cancelDl = function(){ _dlCancelled=true; hideDlProgress(); toast('Download cancelled'); };
 
 window.downloadAll = async function(){
   if(!window.ST || !ST.slides.length){ toast('Generate a carousel first'); return; }
-  if(typeof html2canvas === 'undefined'){
-    toast('💡 html2canvas not loaded — use Export → PNG');
-    return;
-  }
-
+  if(typeof html2canvas === 'undefined'){ toast('💡 html2canvas not loaded — use Export → PNG'); return; }
   _dlCancelled = false;
-  var total = ST.slides.length;
-  var blobs = [];
-
+  var total = ST.slides.length, blobs = [];
   showDlProgress('Preparing slides…', 0);
-
   var origCur = ST.cur;
-
-  for(var i = 0; i < total; i++){
+  for(var i=0; i<total; i++){
     if(_dlCancelled) break;
-    ST.cur = i;
-    renderSlide();
-    updateCounter();
-    // Wait for render
+    ST.cur = i; renderSlide(); updateCounter();
     await new Promise(function(r){ setTimeout(r, 320); });
-
-    updateDlProgress('Capturing slide ' + (i+1) + ' of ' + total + '…', Math.round((i / total) * 80));
-
-    try {
+    updateDlProgress('Capturing slide '+(i+1)+' of '+total+'…', Math.round((i/total)*80));
+    try{
       var canvas = document.getElementById('slideCanvas');
-      var c = await html2canvas(canvas, { useCORS: true, allowTaint: false, scale: 2, backgroundColor: null });
-      await new Promise(function(res, rej){
+      var c = await html2canvas(canvas,{useCORS:true,allowTaint:false,scale:2,backgroundColor:null});
+      await new Promise(function(res,rej){
         c.toBlob(function(blob){
-          if(blob) blobs.push({ blob: blob, name: 'ImpactGrid-slide-' + String(i+1).padStart(2,'0') + '.png' });
+          if(blob) blobs.push({blob:blob,name:'ImpactGrid-slide-'+String(i+1).padStart(2,'0')+'.png'});
           res();
-        }, 'image/png');
+        },'image/png');
       });
-    } catch(e) {
-      console.warn('[downloadAll] Capture failed slide', i+1, e);
-    }
+    }catch(e){ console.warn('[downloadAll] Capture failed slide',i+1,e); }
   }
-
-  // Restore original slide
-  ST.cur = origCur;
-  renderSlide(); updateCounter(); fillEdit();
-
+  ST.cur = origCur; renderSlide(); updateCounter(); fillEdit();
   if(_dlCancelled || !blobs.length){ hideDlProgress(); return; }
-
-  updateDlProgress('Downloading ' + blobs.length + ' slides…', 85);
-
-  // iOS Safari: use share sheet
+  updateDlProgress('Downloading '+blobs.length+' slides…', 85);
   if(isSafariIOS() && navigator.share && navigator.canShare){
-    var files = blobs.map(function(b){ return new File([b.blob], b.name, { type: 'image/png' }); });
-    if(navigator.canShare({ files: files })){
-      hideDlProgress();
-      try { await navigator.share({ files: files, title: 'ImpactGrid Carousel' }); }
-      catch(e){ console.warn('Share cancelled'); }
-      return;
-    }
+    var files = blobs.map(function(b){ return new File([b.blob],b.name,{type:'image/png'}); });
+    if(navigator.canShare({files:files})){ hideDlProgress(); try{ await navigator.share({files:files,title:'ImpactGrid Carousel'}); }catch(e){} return; }
   }
-
-  // Desktop: trigger downloads sequentially
-  for(var j = 0; j < blobs.length; j++){
+  for(var j=0; j<blobs.length; j++){
     if(_dlCancelled) break;
-    updateDlProgress('Saving ' + (j+1) + ' of ' + blobs.length, 85 + Math.round((j / blobs.length) * 15));
-    try {
-      var url = URL.createObjectURL(blobs[j].blob);
-      var a2 = document.createElement('a');
-      a2.href = url; a2.download = blobs[j].name;
-      a2.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
+    updateDlProgress('Saving '+(j+1)+' of '+blobs.length, 85+Math.round((j/blobs.length)*15));
+    try{
+      var url=URL.createObjectURL(blobs[j].blob);
+      var a2=document.createElement('a');
+      a2.href=url; a2.download=blobs[j].name;
+      a2.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
       document.body.appendChild(a2); a2.click();
-      await new Promise(function(r){ setTimeout(r, 400); });
+      await new Promise(function(r){ setTimeout(r,400); });
       document.body.removeChild(a2); URL.revokeObjectURL(url);
-    } catch(e){ console.warn('[downloadAll] save failed:', e); }
+    }catch(e){ console.warn('[downloadAll] save failed:',e); }
   }
-
   hideDlProgress();
-  toast('✦ ' + blobs.length + ' slides saved');
+  toast('✦ '+blobs.length+' slides saved');
 };
 
-// ── 10. INIT
+// ── 7. INIT
 window.addEventListener('load', function(){
   if(typeof ST !== 'undefined'){
     ST.accent = '#f5e400';
     ST.brand  = 'www.impactgridgroup.com';
   }
-  // Ping server to keep it warm
   setInterval(function(){
     fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
   }, 600000);
