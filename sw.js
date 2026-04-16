@@ -3,7 +3,7 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v2';
+const CACHE_NAME = 'impactgrid-v3';
 
 const CORE_FILES = [
   '/',
@@ -17,7 +17,8 @@ const CORE_FILES = [
   '/manifest.json',
   '/logo.png',
   '/dijo-mascot.png',
-  '/Earth.png',
+  '/earth.png',
+  '/calendar.js',
   '/login.html',
   '/join.html',
   '/settings.html',
