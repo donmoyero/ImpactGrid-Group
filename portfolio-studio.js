@@ -95,9 +95,10 @@ async function loadPortfolios() {
 
 async function savePortfolioToDB(pf){
 
-  const SESSION_ID = localStorage.getItem("ig_user_id");
+  // Prefer ig_user_id (authenticated user) but fall back to the anonymous SESSION_ID
+  const userId = localStorage.getItem("ig_user_id") || SESSION_ID;
 
-  if(!SESSION_ID){
+  if(!userId){
     showToast("Login required to save");
     return false;
   }
@@ -110,7 +111,7 @@ async function savePortfolioToDB(pf){
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        session: SESSION_ID,
+        session: userId,
         portfolio: pf
       })
     });
@@ -1009,7 +1010,7 @@ function val(id)       { const el = document.getElementById(id); return el ? el.
 function setValue(id,v){ const el = document.getElementById(id); if (el) el.value = v || ""; }
 function sleep(ms)     { return new Promise(r => setTimeout(r, ms)); }
 function showToast(msg){ const s = document.getElementById("psToastShelf"); if(!s) return; const t=document.createElement("div"); t.className="ps-toast"; t.textContent=msg; s.appendChild(t); setTimeout(()=>t.remove(),3000); }
-// toggleTheme is provided by nav.js — do not redefine here
+// toggleTheme() is defined in nav.js — do not redefine here
 
 /* ══════════════════════════════════════════════════════════
    INIT
