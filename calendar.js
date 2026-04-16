@@ -45,26 +45,21 @@ var CAL_PLATS = {
 /* CAL_IDEAS and DIJO_FILL_TEMPLATES removed — replaced by real fetchTrends() engine */
 
 /* ── Supabase client (uses content project — same as supabase-config.js) ── */
-var _calSupabase = null;
 function getCalDb() {
-  if (!_calSupabase) {
-    var url  = 'https://exeiojgldxqaakkybdij.supabase.co';
-    var anon = 'sb_publishable_ZuzIHR43W_7OpCejLpFyTQ_r5HQYHSq';
-    _calSupabase = window.supabase ? window.supabase.createClient(url, anon) : null;
-  }
-  return _calSupabase;
+  // use your content supabase (DO NOT change project)
+  return window.contentClient || null;
 }
 
-/* ── Get current user ID (returns null if not logged in) ── */
+/* ── Get current user ID (falls back to demo-user if not logged in) ── */
 function getCalUserId() {
   try {
-    // use your login system (ig-supabase)
-    if (window.IG_USER && IG_USER.id) {
-      return IG_USER.id;
+    var c = window.getSupabase ? getSupabase() : null;
+    if (c && c.auth && c.auth.user) {
+      var u = c.auth.user();
+      if (u) return u.id;
     }
-  } catch (e) {}
-
-  return null; // no more demo-user
+  } catch(e) {}
+  return 'demo-user';
 }
 
 /* ── Niche personalisation ── */
