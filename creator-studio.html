@@ -236,6 +236,10 @@
         <span class="sb-icon">⚙️</span>
         Settings
       </a>
+      <div class="sb-item" id="installSideBtn" style="display:none;cursor:pointer" onclick="document.getElementById('installSideBtn').onclick && document.getElementById('installSideBtn').onclick()">
+        <span class="sb-icon">📲</span>
+        Install App
+      </div>
     </div>
   </aside>
 
@@ -706,61 +710,108 @@
 <script src="usage-tracker.js"></script>
 
 <script>
-/* ── PWA Install Banner ── */
+/* ══════════════════════════════════════
+   PWA INSTALL — full Android/desktop/iOS
+══════════════════════════════════════ */
 (function() {
   var deferredPrompt = null;
-  var banner = document.getElementById('pwa-banner');
-  var addBtn = document.getElementById('pwa-add-btn');
+  var banner  = document.getElementById('pwa-banner');
+  var addBtn  = document.getElementById('pwa-add-btn');
+  var installSideBtn = document.getElementById('installSideBtn');
 
+  /* Already running as installed PWA — hide everything */
   if (
     window.navigator.standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches
-  ) return;
-
-  try { if (sessionStorage.getItem('pwa-dismissed')) return; } catch(e) {}
-
-  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    setTimeout(showPWABanner, 3000);
-  });
-
-  if (isIOS && isSafari) {
-    document.getElementById('pwa-title').textContent = 'Add to your Home Screen';
-    document.getElementById('pwa-sub').textContent = 'Tap the Share button then "Add to Home Screen"';
-    addBtn.textContent = 'Show me how';
-    addBtn.onclick = function() {
-      if (typeof toast === 'function') {
-        toast('Tap Share (box with arrow ↑) → "Add to Home Screen"');
-      }
-      dismissPWABanner();
-    };
-    setTimeout(showPWABanner, 3000);
+  ) {
+    if (installSideBtn) installSideBtn.style.display = 'none';
     return;
   }
 
-  addBtn.onclick = function() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(choice) {
-        deferredPrompt = null;
-        dismissPWABanner();
-      });
-    }
-  };
+  try { if (sessionStorage.getItem('pwa-dismissed')) return; } catch(e) {}
 
-  function showPWABanner() {
+  /* ── Helpers ── */
+  function isIOS() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  }
+
+  function isSafari() {
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  }
+
+  function showIOSInstallGuide() {
+    if (typeof toast === 'function') {
+      toast('Tap Share (⬆️) → "Add to Home Screen" → Add');
+    } else {
+      alert(
+        'To install ImpactGrid:\n\n' +
+        '1. Tap the Share button (⬆️)\n' +
+        '2. Tap "Add to Home Screen"\n' +
+        '3. Tap "Add"'
+      );
+    }
+  }
+
+  function showBanner() {
     try { if (sessionStorage.getItem('pwa-dismissed')) return; } catch(e) {}
-    banner.style.display = 'flex';
+    if (banner) banner.style.display = 'flex';
+    if (installSideBtn) installSideBtn.style.display = 'flex';
   }
 
   window.dismissPWABanner = function() {
-    banner.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    if (installSideBtn) installSideBtn.style.display = 'none';
     try { sessionStorage.setItem('pwa-dismissed', '1'); } catch(e) {}
   };
+
+  /* ── Install trigger (shared by banner btn + sidebar btn) ── */
+  async function triggerInstall() {
+    if (isIOS() && isSafari()) {
+      showIOSInstallGuide();
+      dismissPWABanner();
+      return;
+    }
+    if (!deferredPrompt) {
+      showBanner();
+      return;
+    }
+    deferredPrompt.prompt();
+    var result = await deferredPrompt.userChoice;
+    /* Hide banner regardless of outcome — accepted OR dismissed */
+    dismissPWABanner();
+    deferredPrompt = null;
+  }
+
+  /* ── Android / Desktop: capture beforeinstallprompt ── */
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    /* Show after 5 seconds — feels natural, not desperate */
+    setTimeout(showBanner, 5000);
+    if (installSideBtn) installSideBtn.style.display = 'flex';
+  });
+
+  /* ── iOS Safari: show guide after 5 seconds ── */
+  if (isIOS() && isSafari()) {
+    document.getElementById('pwa-title').textContent = 'Add to your Home Screen';
+    document.getElementById('pwa-sub').textContent = 'Tap Share (⬆️) → "Add to Home Screen"';
+    addBtn.textContent = 'Show me how';
+    setTimeout(showBanner, 5000);
+  }
+
+  /* ── Wire up buttons ── */
+  if (addBtn) addBtn.onclick = triggerInstall;
+  if (installSideBtn) installSideBtn.onclick = triggerInstall;
+
+  /* ── Post-install celebration ── */
+  window.addEventListener('appinstalled', function() {
+    if (banner) banner.style.display = 'none';
+    if (installSideBtn) installSideBtn.style.display = 'none';
+    if (typeof toast === 'function') {
+      toast('🔥 ImpactGrid installed — you\'re ready to grow');
+    }
+  });
+
 })();
 </script>
 <script src="calendar.js"></script>
