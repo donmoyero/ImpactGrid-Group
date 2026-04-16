@@ -3,24 +3,12 @@
    portfolio-studio.css
    ═══════════════════════════════════════════════════════════ */
 
-/* ── TOKENS ── */
+/* ── TOKENS: mapped to shared.css via bridge in HTML <style> block ── */
+/* Additive tokens not in shared.css */
 :root {
-  --bg:#0d0c0a; --surface:#161512; --surface2:#1e1c18; --surface3:#252219;
-  --border:#2a2822; --border2:#333028;
-  --text:#f0ede8; --text2:#a09890; --text3:#5c5a55;
-  --accent:#c97e08; --accent2:#e8a020; --blue:#2563eb;
-  --green:#22c55e; --red:#ef4444; --pink:#e91e8c;
-  --nav-h:54px;
-  --r:10px; --r-lg:16px; --r-xl:22px;
-  --fh:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'Space Mono',monospace; --fp:'Playfair Display',serif;
-  --sh:0 2px 16px rgba(0,0,0,.5); --sh-lg:0 24px 64px rgba(0,0,0,.7);
-  --glow:0 0 40px rgba(201,126,8,.15);
-}
-[data-theme="light"] {
-  --bg:#f0ede8; --surface:#fff; --surface2:#f5f3ef; --surface3:#eceae5;
-  --border:#dedad4; --border2:#ccc8c0;
-  --text:#1a1814; --text2:#6b6560; --text3:#b0a89e;
-  --sh:0 2px 12px rgba(0,0,0,.08); --sh-lg:0 12px 40px rgba(0,0,0,.14);
+  --r-xl: 22px;
+  --pink: #e91e8c;
+  --glow: 0 0 40px rgba(201,126,8,.15);
 }
 
 /* ── RESET ── */
@@ -37,8 +25,7 @@ a{color:inherit;text-decoration:none}
   padding:0 20px; background:var(--surface); border-bottom:1px solid var(--border);
   z-index:200; position:relative; flex-shrink:0;
 }
-.ps-logo{font-family:var(--fh);font-weight:800;font-size:17px;letter-spacing:-.4px}
-.ps-logo em{color:var(--accent);font-style:normal}
+/* .ps-logo removed — nav now uses shared .logo from shared.css */
 .ps-sep{width:1px;height:18px;background:var(--border)}
 .ps-crumb{font-size:11px;color:var(--text3);font-family:var(--fm)}
 .ps-nav-sp{flex:1}
@@ -502,7 +489,7 @@ a{color:inherit;text-decoration:none}
 }
 
 
-/* ── Contact Modal ── */
+/* ── Contact Modal — uses shared tokens, respects light/dark ── */
 .contact-modal{
   position: fixed;
   inset: 0;
@@ -514,9 +501,10 @@ a{color:inherit;text-decoration:none}
 }
 
 .contact-box{
-  background: #111;
+  background: var(--card);
+  border: 1px solid var(--border2);
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--r2);
   width: 300px;
   display: flex;
   flex-direction: column;
@@ -526,18 +514,26 @@ a{color:inherit;text-decoration:none}
 .contact-box h3{
   margin: 0;
   font-size: 18px;
-  color: #fff;
+  color: var(--text);
+  font-family: var(--fd);
 }
 
 .contact-box input,
 .contact-box textarea{
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
   padding: 10px 12px;
-  color: #fff;
+  color: var(--text);
   font-size: 14px;
   outline: none;
+  font-family: var(--fb);
+  transition: border-color .15s;
+}
+
+.contact-box input:focus,
+.contact-box textarea:focus {
+  border-color: var(--gold);
 }
 
 .contact-box textarea{
@@ -547,19 +543,26 @@ a{color:inherit;text-decoration:none}
 
 .contact-box button{
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--r);
   border: none;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
+  font-family: var(--fb);
+  transition: .15s;
 }
 
 .contact-box button:first-of-type{
-  background: #c97e08;
+  background: var(--gold);
   color: #fff;
 }
+[data-theme="dark"] .contact-box button:first-of-type { color: #07090f; }
+
+.contact-box button:first-of-type:hover { background: var(--gold2); }
 
 .contact-box button:last-of-type{
-  background: #222;
-  color: #aaa;
+  background: var(--bg2);
+  color: var(--text2);
+  border: 1px solid var(--border2);
 }
+.contact-box button:last-of-type:hover { color: var(--text); }
