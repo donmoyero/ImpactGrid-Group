@@ -15,6 +15,17 @@
 
 (function() {
 
+  /* ── Favicon (uses logo.png — single source of truth) ── */
+  (function() {
+    if (!document.querySelector("link[rel='icon']")) {
+      var link = document.createElement('link');
+      link.rel  = 'icon';
+      link.type = 'image/png';
+      link.href = 'logo.png';
+      document.head.appendChild(link);
+    }
+  })();
+
   /* ── Top-level nav links ── */
   var NAV_LINKS = [
     { href: 'index.html',    label: 'Home' },
