@@ -11,7 +11,6 @@
    2. <div id="ig-footer"></div> at bottom of body
    3. Load: nav.js
    4. Call: renderNav('yourpage.html'); renderFooter();
-   NOTE: index.html manages its own inline nav — do NOT load nav.js there.
 ═══════════════════════════════════════════════════════ */
 
 (function() {
