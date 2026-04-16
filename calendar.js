@@ -55,15 +55,50 @@ function getCalDb() {
   return _calSupabase;
 }
 
-/* ── Get current user ID (falls back to demo-user if not logged in) ── */
+/* ── Get current user ID (supports Supabase v1 + v2, and IG_USER fallback) ── */
 function getCalUserId() {
   try {
+    // IG_USER override (set externally by auth layer)
+    if (window.IG_USER && IG_USER.id) return IG_USER.id;
+
     var c = window.getSupabase ? getSupabase() : null;
-    if (c && c.auth && c.auth.user) {
-      var u = c.auth.user();
-      if (u) return u.id;
+    if (c && c.auth) {
+      // Supabase v2: getSession() is async, but session is cached on auth object
+      if (c.auth.currentSession) {
+        var s = c.auth.currentSession;
+        if (s && s.user) return s.user.id;
+      }
+      // Supabase v1 fallback
+      if (typeof c.auth.user === 'function') {
+        var u = c.auth.user();
+        if (u) return u.id;
+      }
     }
-  } catch(e) {}
+  } catch(e) { console.warn('getCalUserId error:', e); }
+  return 'demo-user';
+}
+
+/* ── Async version for operations that can await (use this in savePost, calAutoFill) ── */
+async function getCalUserIdAsync() {
+  try {
+    if (window.IG_USER && IG_USER.id) return IG_USER.id;
+
+    var c = window.getSupabase ? getSupabase() : null;
+    if (c && c.auth) {
+      // Supabase v2
+      if (typeof c.auth.getSession === 'function') {
+        var result = await c.auth.getSession();
+        if (result.data && result.data.session && result.data.session.user) {
+          return result.data.session.user.id;
+        }
+      }
+      // Supabase v1 fallback
+      if (typeof c.auth.user === 'function') {
+        var u = c.auth.user();
+        if (u) return u.id;
+      }
+    }
+  } catch(e) { console.warn('getCalUserIdAsync error:', e); }
   return 'demo-user';
 }
 
@@ -419,7 +454,7 @@ async function calAutoFill() {
   // Save all filled posts to Supabase
   var db = getCalDb();
   if (db) {
-    var userId = getCalUserId();
+    var userId = await getCalUserIdAsync();
     // Delete existing posts for this week then re-insert
     var weekStart2 = getWeekStart(calState.weekOffset);
     var datesToClear = [];
@@ -507,7 +542,7 @@ async function loadFromSupabase() {
   if (!db) { console.warn('calendar: Supabase not ready, skipping cloud load'); return; }
 
   try {
-    var userId = getCalUserId();
+    var userId = await getCalUserIdAsync();
     var res = await db.from('calendar_posts').select('*').eq('user_id', userId);
     if (res.error) { console.error('calendar load error:', res.error); return; }
 
