@@ -1347,4 +1347,11 @@ window.addEventListener('load', async function() {
       console.warn('[Trends] refresh failed');
     }
   }, 60000);
+
+  // Live feel — re-renders chart + top 3 every 20s so the page always feels alive
+  setInterval(() => {
+    loadTrends();
+    renderTrendChart();
+    updateTopTrends();
+  }, 20000);
 });
