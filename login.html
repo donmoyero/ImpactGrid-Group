@@ -275,7 +275,7 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="ig-supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script>
 
 /* ── Theme ── */
@@ -308,7 +308,7 @@ function togglePw() {
 /* ── Google Sign-In ── */
 async function googleSignIn() {
   try {
-    var c = getSupabase();
+    var c = getContentClient();
     var res = await c.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin + '/creator-studio.html' }
@@ -355,7 +355,7 @@ async function login() {
   btn.innerHTML = 'Signing in <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
 
   try {
-    var client = getSupabase();
+    var client = getContentClient();
     var res = await client.auth.signInWithPassword({ email: email, password: password });
     if (res.error) { console.error('[ImpactGrid] signInWithPassword error:', res.error); throw res.error; }
 
@@ -379,7 +379,7 @@ async function login() {
 /* ── Auto-redirect if already logged in ── */
 document.addEventListener('DOMContentLoaded', async function() {
   try {
-    var client = getSupabase();
+    var client = getContentClient();
     var res = await client.auth.getSession();
     if (res.data && res.data.session) {
       var user    = res.data.session.user;
