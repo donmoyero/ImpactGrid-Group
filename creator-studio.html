@@ -327,6 +327,28 @@
           </div>
         </div>
 
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">🔥 What you should post this week</div>
+          </div>
+          <div class="card-body">
+            <div class="app-grid">
+              <div class="card-sm">
+                <div class="h3" id="trend1">Loading...</div>
+                <div class="text-sm">Most likely to blow up</div>
+              </div>
+              <div class="card-sm">
+                <div class="h3" id="trend2">Loading...</div>
+                <div class="text-sm">Getting popular fast</div>
+              </div>
+              <div class="card-sm">
+                <div class="h3" id="trend3">Loading...</div>
+                <div class="text-sm">Still early — get in now</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px">
           <button class="style-chip active" data-plat="all" onclick="filterTrends(this,'all')">All</button>
           <button class="style-chip" data-plat="gt" onclick="filterTrends(this,'gt')" style="color:var(--gt)">Google</button>
@@ -836,6 +858,21 @@ document.addEventListener('trendsLoaded', renderTrendChart);
 /* Fallback: also try once DOM + scripts are settled */
 window.addEventListener('load', function() {
   setTimeout(renderTrendChart, 1500);
+});
+
+function populateTopTrends() {
+  if (!_allTrends || !_allTrends.length) return;
+  const sorted = [..._allTrends].sort((a, b) => b.score - a.score);
+  const ids = ['trend1', 'trend2', 'trend3'];
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && sorted[i]) el.textContent = sorted[i].title;
+  });
+}
+
+document.addEventListener('trendsLoaded', populateTopTrends);
+window.addEventListener('load', function() {
+  setTimeout(populateTopTrends, 1600);
 });
 </script>
 
