@@ -34,7 +34,7 @@ function ensureTrends() {
   }
 }
 
-
+function updateBriefing() {
   const briefEl = document.getElementById('dijoBrief');
   if (!briefEl) return;
 
