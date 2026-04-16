@@ -55,16 +55,16 @@ function getCalDb() {
   return _calSupabase;
 }
 
-/* ── Get current user ID (falls back to demo-user if not logged in) ── */
+/* ── Get current user ID (returns null if not logged in) ── */
 function getCalUserId() {
   try {
-    var c = window.getSupabase ? getSupabase() : null;
-    if (c && c.auth && c.auth.user) {
-      var u = c.auth.user();
-      if (u) return u.id;
+    // use your login system (ig-supabase)
+    if (window.IG_USER && IG_USER.id) {
+      return IG_USER.id;
     }
-  } catch(e) {}
-  return 'demo-user';
+  } catch (e) {}
+
+  return null; // no more demo-user
 }
 
 /* ── Niche personalisation ── */
