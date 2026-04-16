@@ -365,7 +365,7 @@
   /* ── Show welcome message — varies by mode ── */
   setTimeout(function() {
     var welcomes = {
-      group:     'Hey! 👋 I\'m Dijo — happy to help. Whether you want to know what ImpactGrid does, how pricing works, or just have a nosy around — fire away.',
+      group:     'Hello! How can I help you today?',
       dashboard: 'Hey! 👋 I\'m Dijo, your ImpactGrid assistant. Need help adding data, reading your numbers, or understanding what anything means? Just ask.',
       adviser:   'Hey! 👋 I\'m Dijo — think of me as your financial co-pilot. Tell me about your business and I\'ll help you make sense of the numbers.'
     };
@@ -375,12 +375,7 @@
   /* ── Populate suggestion chips by mode ── */
   (function() {
     var chipSets = {
-      group: [
-        ['What is ImpactGrid?',       "What does ImpactGrid do?"],
-        ['Pricing',                   "What are the pricing plans?"],
-        ['Get started',               "How do I get started?"],
-        ['Data privacy',              "Is my data private?"]
-      ],
+      group: [],
       dashboard: [
         ['➕ Add my data',            "How do I add my monthly revenue and expenses?"],
         ['📋 View my records',        "How do I view and edit my financial records?"],
