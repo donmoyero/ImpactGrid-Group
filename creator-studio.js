@@ -119,34 +119,90 @@ window.igSignOut = async function() {
   window.location.href = 'index.html';
 };
 function checkAuth() {
-  var c = null;
-  try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
+  var c = getSupabase();
   if (!c) return;
 
-  c.auth.getSession().then(function(r) {
-    if (r && r.data && r.data.session) {
+  c.auth.getSession().then(async function(r) {
+    if (r?.data?.session) {
       IG_USER = r.data.session.user;
+
       setNavUser(IG_USER);
 
-      // 🔥 Load usage (local for now)
-      IG_USES = parseInt(localStorage.getItem('ig_uses') || '0');
+      // ✅ LOAD REAL PROFILE
+      await loadProfile();
 
-      // 👑 Admin override
-      if (IG_USER.email === IG_ADMIN_EMAIL) {
-        IG_IS_ADMIN = true;
-        IG_PLAN = 'enterprise';
-        console.log('👑 Admin mode active');
-      }
-      // TODO later: load plan from DB
+      // ✅ PERSONAL WELCOME
+      setWelcome();
     }
   });
 
   c.auth.onAuthStateChange(function(ev, session) {
-    if (session && session.user) {
+    if (session?.user) {
       IG_USER = session.user;
       setNavUser(session.user);
+      loadProfile();
+      setWelcome();
     }
   });
+}
+
+async function loadProfile() {
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('full_name, avatar_url')
+    .eq('id', user.id)
+    .single();
+
+  if (!data) return;
+
+  const name = data.full_name || user.email.split('@')[0];
+
+  // NAME
+  const nameEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = name;
+
+  // AVATAR
+  const avEl = document.getElementById('userAv');
+  if (avEl) {
+    if (data.avatar_url) {
+      avEl.innerHTML =
+        `<img src="${data.avatar_url}?t=${Date.now()}" 
+        style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
+    } else {
+      avEl.textContent = name.charAt(0).toUpperCase();
+    }
+  }
+
+  // PROFILE CARD (if exists)
+  const cardName = document.getElementById('profileName');
+  const cardAv   = document.getElementById('profileAvatar');
+
+  if (cardName) cardName.textContent = name;
+
+  if (cardAv) {
+    if (data.avatar_url) {
+      cardAv.innerHTML =
+        `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+    } else {
+      cardAv.textContent = name.charAt(0).toUpperCase();
+    }
+  }
+}
+
+function setWelcome() {
+  if (!IG_USER) return;
+
+  const name =
+    IG_USER.user_metadata?.full_name ||
+    IG_USER.email.split('@')[0] ||
+    'Creator';
+
+  const el = document.getElementById('dijoWelcome');
+  if (el) el.textContent = "Welcome back, " + name + " 👋";
 }
 
 /* ─────────────────────────────────────────────
