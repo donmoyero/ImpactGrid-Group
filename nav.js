@@ -89,7 +89,28 @@
           '<div class="nav-right">' +
             '<button class="theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>' +
 
-            '<a href="creator-studio.html" class="btn-gold-sm">Try Creator Studio Free →</a>' +
+            /* ── GUEST: shown when logged out ── */
+            '<div id="navGuest" class="nav-guest" style="display:flex;align-items:center;gap:7px;">' +
+              '<a href="login.html" class="btn-ghost-sm">Login</a>' +
+              '<a href="join.html" class="btn-gold-sm">Join Free</a>' +
+            '</div>' +
+
+            /* ── USER: shown when logged in (hidden by default, revealed by checkAuth) ── */
+            '<div id="navUser" style="display:none;position:relative;">' +
+              '<button class="user-btn" onclick="toggleDD()" aria-label="Account menu">' +
+                '<div class="u-av" id="userAv">?</div>' +
+                '<span class="u-name" id="userName">Account</span>' +
+                '<span class="u-chev">▾</span>' +
+              '</button>' +
+              '<div class="u-drop" id="uDrop">' +
+                '<div class="dd-email" id="userEmail"></div>' +
+                '<div class="dd-div"></div>' +
+                '<a href="creator-studio.html">Creator Studio</a>' +
+                '<a href="account.html">Account Settings</a>' +
+                '<div class="dd-div"></div>' +
+                '<button onclick="igSignOut()">Sign out</button>' +
+              '</div>' +
+            '</div>' +
 
             '<button class="hamburger" id="hamburger" aria-label="Open menu" onclick="openSidebar()">' +
               '<span></span><span></span><span></span>' +
@@ -109,7 +130,27 @@
           '</div>' +
           '<button class="mob-close" onclick="closeSidebar()">✕</button>' +
         '</div>' +
+        /* ── Mobile user info card (shown when logged in) ── */
+        '<div class="mob-user" id="mobUserCard">' +
+          '<div class="u-av" id="mobUserAv">?</div>' +
+          '<div class="mob-u-info">' +
+            '<div class="mob-u-name" id="mobUserName">Account</div>' +
+            '<div class="mob-u-email" id="mobUserEmail"></div>' +
+          '</div>' +
+        '</div>' +
         '<div class="mob-nav">' + mobileLinks + '</div>' +
+        '<div class="mob-auth">' +
+          /* Guest state */
+          '<div class="mob-out" id="mobOut">' +
+            '<a href="login.html" class="mob-alink" onclick="closeSidebar()">Login</a>' +
+            '<a href="join.html" class="mob-acta" onclick="closeSidebar()">Join Free →</a>' +
+          '</div>' +
+          /* Logged-in state */
+          '<div class="mob-in" id="mobIn">' +
+            '<a href="creator-studio.html" class="mob-adash" onclick="closeSidebar()">Creator Studio →</a>' +
+            '<button class="mob-asignout" onclick="igSignOut()">Sign out</button>' +
+          '</div>' +
+        '</div>' +
         '<div class="mob-theme-row">' +
           '<span>Theme</span>' +
           '<button class="mob-tbtn" id="mobTBtn" onclick="toggleTheme()">🌙 Dark</button>' +
@@ -243,6 +284,108 @@
     document.addEventListener('DOMContentLoaded', _initScrollAnimations);
   } else {
     _initScrollAnimations();
+  }
+
+  /* ─────────────────────────────────────────
+     AUTH-AWARE NAV
+     Reads the Supabase session and switches the nav between
+     guest state (Login | Join Free) and user state (avatar + dropdown).
+
+     Called automatically on DOMContentLoaded, and also exposed as
+     window.checkAuth() so individual pages can call it if needed.
+  ───────────────────────────────────────── */
+
+  function _getClient() {
+    if (typeof getSupabase === 'function')      return getSupabase();
+    if (typeof getContentClient === 'function') return getContentClient();
+    return null;
+  }
+
+  window.setNavUser = function(name, email) {
+    /* ── Desktop ── */
+    var guest = document.getElementById('navGuest');
+    var user  = document.getElementById('navUser');
+    if (guest) guest.style.display = 'none';
+    if (user)  user.style.display  = 'block';
+
+    var initial = (name || email || '?').charAt(0).toUpperCase();
+    var av = document.getElementById('userAv');
+    if (av) av.textContent = initial;
+
+    var uName = document.getElementById('userName');
+    if (uName) uName.textContent = name ? name.split(' ')[0] : (email || 'Account');
+
+    var uEmail = document.getElementById('userEmail');
+    if (uEmail) uEmail.textContent = email || '';
+
+    /* ── Mobile sidebar ── */
+    var mobOut  = document.getElementById('mobOut');
+    var mobIn   = document.getElementById('mobIn');
+    var mobCard = document.getElementById('mobUserCard');
+    if (mobOut)  mobOut.classList.add('hide');
+    if (mobIn)   mobIn.classList.add('show');
+    if (mobCard) mobCard.classList.add('show');
+
+    var mobAv    = document.getElementById('mobUserAv');
+    var mobUName = document.getElementById('mobUserName');
+    var mobUEmail= document.getElementById('mobUserEmail');
+    if (mobAv)    mobAv.textContent    = initial;
+    if (mobUName) mobUName.textContent = name || email || 'Account';
+    if (mobUEmail)mobUEmail.textContent= email || '';
+  };
+
+  window.setNavGuest = function() {
+    var guest = document.getElementById('navGuest');
+    var user  = document.getElementById('navUser');
+    if (guest) guest.style.display = 'flex';
+    if (user)  user.style.display  = 'none';
+
+    var mobOut  = document.getElementById('mobOut');
+    var mobIn   = document.getElementById('mobIn');
+    var mobCard = document.getElementById('mobUserCard');
+    if (mobOut)  mobOut.classList.remove('hide');
+    if (mobIn)   mobIn.classList.remove('show');
+    if (mobCard) mobCard.classList.remove('show');
+  };
+
+  window.checkAuth = async function() {
+    try {
+      var client = _getClient();
+      if (!client) return; /* supabase-config.js not loaded — skip silently */
+      var res = await client.auth.getSession();
+      if (res.data && res.data.session) {
+        var u = res.data.session.user;
+        var displayName = (u.user_metadata && u.user_metadata.full_name) || '';
+        window.setNavUser(displayName, u.email);
+      } else {
+        window.setNavGuest();
+      }
+    } catch(e) {
+      window.setNavGuest();
+    }
+  };
+
+  window.igSignOut = async function() {
+    try {
+      var client = _getClient();
+      if (client) await client.auth.signOut();
+    } catch(e) {}
+    window.location.href = 'index.html';
+  };
+
+  /* Close user dropdown when clicking outside */
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#navUser')) {
+      var d = document.getElementById('uDrop');
+      if (d) d.classList.remove('open');
+    }
+  });
+
+  /* Auto-run after DOM + supabase-config have loaded */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(window.checkAuth, 50); });
+  } else {
+    setTimeout(window.checkAuth, 50);
   }
 
   /* ─────────────────────────────────────────
