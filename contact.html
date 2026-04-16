@@ -1,604 +1,373 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contact Us — ImpactGrid</title>
-<link rel="icon" href="logo.png">
-<link rel="stylesheet" href="shared.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Contact — ImpactGrid</title>
+<meta name="description" content="Get in touch with the ImpactGrid team. We typically reply within 24 hours."/>
+<link rel="icon" href="favicon.ico"/>
+<link rel="stylesheet" href="shared.css"/>
 <style>
-  .contact-hero {
-    text-align: center;
-    padding: 4rem 2rem 2rem;
-  }
-  .contact-hero .label {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent, #7c5cfc);
-    margin-bottom: 1rem;
-  }
-  .contact-hero h1 {
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
-    font-weight: 700;
-    margin-bottom: 1rem;
-    line-height: 1.2;
-  }
-  .contact-hero p {
-    color: var(--text-muted, #888);
-    font-size: 1.05rem;
-    max-width: 480px;
-    margin: 0 auto;
-  }
+.page-hero{
+  padding:calc(var(--nav-h) + 80px) 28px 72px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.page-hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,var(--gold-dim),transparent);pointer-events:none;}
+.page-hero-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 75% 65% at 50% 50%,black 20%,transparent 100%);
+}
+[data-theme="dark"] .page-hero-grid{background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);}
+.page-hero h1{font-size:clamp(36px,5.5vw,68px);font-weight:900;letter-spacing:-.03em;margin-bottom:18px;position:relative;line-height:1.05;}
+.page-hero h1 em{color:var(--gold);font-style:normal;}
+.page-hero p{font-size:17px;color:var(--text2);max-width:520px;margin:0 auto;line-height:1.75;position:relative;}
 
-  .contact-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2.5rem;
-    max-width: 1000px;
-    margin: 3rem auto;
-    padding: 0 2rem;
-  }
-  @media (max-width: 720px) {
-    .contact-grid { grid-template-columns: 1fr; }
-  }
+/* RESPONSE BADGE */
+.response-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(15,168,118,.08);border:1px solid rgba(15,168,118,.2);
+  border-radius:20px;padding:6px 14px;font-size:13px;color:var(--green);
+  font-weight:500;margin-top:20px;position:relative;
+}
+.response-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 
-  .contact-form-card {
-    background: var(--card-bg, #141414);
-    border: 1px solid var(--border, rgba(255,255,255,0.08));
-    border-radius: 16px;
-    padding: 2rem;
-  }
-  .contact-form-card h2 {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-  }
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-  @media (max-width: 480px) {
-    .form-row { grid-template-columns: 1fr; }
-  }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 1rem;
-  }
-  .form-group label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted, #888);
-  }
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    background: var(--input-bg, rgba(255,255,255,0.04));
-    border: 1px solid var(--border, rgba(255,255,255,0.08));
-    border-radius: 10px;
-    padding: 10px 14px;
-    color: var(--text, #f0f0f0);
-    font-size: 14px;
-    font-family: inherit;
-    transition: border-color 0.2s;
-    outline: none;
-    width: 100%;
-  }
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    border-color: var(--accent, #7c5cfc);
-  }
-  .form-group textarea {
-    resize: vertical;
-    min-height: 120px;
-  }
-  .form-group select option {
-    background: #1a1a1a;
-  }
-  .submit-btn {
-    width: 100%;
-    background: var(--accent, #7c5cfc);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    margin-top: 0.5rem;
-  }
-  .submit-btn:hover { opacity: 0.88; }
-  .submit-btn:active { transform: scale(0.98); }
-  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* CONTACT GRID */
+.contact-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;
+  max-width:var(--max-w);margin:0 auto;padding:0 28px;
+}
 
-  .success-msg {
-    display: none;
-    background: rgba(34,197,94,0.1);
-    border: 1px solid rgba(34,197,94,0.3);
-    border-radius: 10px;
-    padding: 14px;
-    color: #22c55e;
-    font-size: 14px;
-    text-align: center;
-    margin-top: 1rem;
-  }
+/* FORM CARD */
+.form-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);padding:32px;position:relative;overflow:hidden;
+}
+.form-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+}
+.form-card h2{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.02em;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.form-group label{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;}
+.form-group .input{width:100%;}
+.submit-btn{
+  width:100%;margin-top:4px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;
+  border:none;cursor:pointer;transition:all .2s;
+}
+[data-theme="dark"] .submit-btn{color:#07090f;}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:var(--sh-gold);}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.success-msg{
+  display:none;margin-top:14px;
+  background:rgba(15,168,118,.08);border:1px solid rgba(15,168,118,.2);
+  border-radius:var(--r);padding:13px 16px;font-size:14px;
+  color:var(--green);text-align:center;
+}
 
-  /* RIGHT COLUMN */
-  .contact-right {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
+/* RIGHT COLUMN */
+.contact-right{display:flex;flex-direction:column;gap:18px;}
 
-  .contact-info-card {
-    background: var(--card-bg, #141414);
-    border: 1px solid var(--border, rgba(255,255,255,0.08));
-    border-radius: 16px;
-    padding: 1.5rem;
-  }
-  .contact-info-card h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-  .contact-info-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
-  }
-  .contact-info-item:last-child { border-bottom: none; }
-  .contact-info-item .icon {
-    font-size: 18px;
-    width: 36px;
-    height: 36px;
-    background: var(--accent-light, rgba(124,92,252,0.1));
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .contact-info-item .info-text p {
-    font-size: 13px;
-    color: var(--text-muted, #888);
-    margin-bottom: 2px;
-  }
-  .contact-info-item .info-text a,
-  .contact-info-item .info-text span {
-    font-size: 14px;
-    color: var(--text, #f0f0f0);
-    text-decoration: none;
-    font-weight: 500;
-  }
-  .contact-info-item .info-text a:hover { color: var(--accent, #7c5cfc); }
+.info-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);padding:24px;
+}
+.info-card h3{font-size:14px;font-weight:800;margin-bottom:16px;letter-spacing:-.01em;}
+.info-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--border);
+}
+.info-item:last-child{border-bottom:none;padding-bottom:0;}
+.info-ico{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  background:var(--gold-dim);border:1px solid var(--gold-glo);
+}
+.info-text p{font-size:12px;color:var(--text2);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+.info-text a,.info-text span{font-size:13.5px;color:var(--text);text-decoration:none;font-weight:500;}
+.info-text a:hover{color:var(--gold);}
 
-  /* FAQ */
-  .faq-section {
-    max-width: 1000px;
-    margin: 0 auto 4rem;
-    padding: 0 2rem;
-  }
-  .faq-section h2 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-  }
-  .faq-item {
-    border: 1px solid var(--border, rgba(255,255,255,0.08));
-    border-radius: 12px;
-    margin-bottom: 10px;
-    overflow: hidden;
-  }
-  .faq-question {
-    width: 100%;
-    background: var(--card-bg, #141414);
-    border: none;
-    color: var(--text, #f0f0f0);
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 16px 20px;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background 0.2s;
-  }
-  .faq-question:hover { background: var(--border, rgba(255,255,255,0.04)); }
-  .faq-question .chevron {
-    font-size: 12px;
-    transition: transform 0.3s;
-    color: var(--text-muted, #888);
-  }
-  .faq-item.open .chevron { transform: rotate(180deg); }
-  .faq-answer {
-    display: none;
-    padding: 0 20px 16px;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--text-muted, #aaa);
-    background: var(--card-bg, #141414);
-  }
-  .faq-item.open .faq-answer { display: block; }
+/* FAQ */
+.faq-wrap{max-width:var(--max-w);margin:0 auto;padding:0 28px;}
+.faq-item{border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
+.faq-q{
+  width:100%;background:var(--card);border:none;color:var(--text);
+  font-family:inherit;font-size:14px;font-weight:600;
+  padding:16px 20px;text-align:left;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:background .2s;
+}
+.faq-q:hover{background:var(--bg2);}
+.arrow{font-size:11px;color:var(--text2);transition:transform .3s;}
+.faq-item.open .arrow{transform:rotate(180deg);}
+.faq-a{
+  display:none;padding:0 20px 16px;
+  font-size:13.5px;line-height:1.7;color:var(--text2);background:var(--card);
+}
+.faq-item.open .faq-a{display:block;}
 
-  /* RESPONSE TIME BADGE */
-  .response-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(34,197,94,0.08);
-    border: 1px solid rgba(34,197,94,0.2);
-    border-radius: 10px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #22c55e;
-    font-weight: 500;
-  }
-  .response-dot {
-    width: 8px;
-    height: 8px;
-    background: #22c55e;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
+/* CTA BANNER */
+.cta-band{
+  margin:0 28px 80px;
+  background:linear-gradient(135deg,var(--gold-dim),rgba(201,126,8,.01));
+  border:1px solid var(--gold-glo);border-radius:var(--r2);
+  padding:72px 52px;text-align:center;position:relative;overflow:hidden;
+}
+[data-theme="dark"] .cta-band{background:linear-gradient(135deg,rgba(240,180,41,.08),rgba(240,180,41,.01));}
+.cta-band::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 80% at 50% 50%,var(--gold-dim),transparent);}
+.cta-band h2{font-size:clamp(24px,4vw,44px);margin-bottom:12px;position:relative;}
+.cta-band p{font-size:16px;color:var(--text2);margin-bottom:32px;position:relative;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.7;}
+.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
+.btn-pri{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;text-decoration:none;}
+[data-theme="dark"] .btn-pri{color:#07090f;}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:var(--sh-gold);}
+.btn-sec{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r);font-size:15px;font-weight:600;border:1px solid var(--border2);color:var(--text);transition:all .2s;text-decoration:none;}
+.btn-sec:hover{border-color:var(--gold);color:var(--gold);}
 
-  /* LIGHT MODE OVERRIDES */
-  body.light .contact-form-card,
-  body.light .contact-info-card,
-  body.light .faq-question,
-  body.light .faq-answer {
-    background: #ffffff;
-  }
-  body.light .form-group input,
-  body.light .form-group select,
-  body.light .form-group textarea {
-    background: #f8f8f6;
-    color: #111;
-  }
-  body.light .form-group select option { background: #fff; }
+@media(max-width:860px){
+  .contact-grid{grid-template-columns:1fr;}
+  .form-row{grid-template-columns:1fr;}
+}
+@media(max-width:640px){
+  .cta-band{padding:48px 20px;margin:0 12px 60px;}
+}
 </style>
 </head>
 <body>
 
-<!-- ── NAV (matches index.html style) ── -->
-<nav class="main-nav" id="mainNav">
-  <a href="index.html" class="nav-logo">
-    <img src="logo.png" alt="ImpactGrid">
-    <span>ImpactGrid</span>
-  </a>
+<div id="ig-nav"></div>
 
-  <div class="nav-links desktop-nav">
-    <a href="index.html">Home</a>
-    <a href="about.html">About</a>
-    <a href="consulting.html">Consulting</a>
-    <a href="contact.html" class="active">Contact Us</a>
-  </div>
+<div class="page-wrap">
 
-  <div class="nav-right">
-    <button id="themeToggle" class="theme-btn" aria-label="Toggle theme">🌙</button>
-    <a href="login.html" class="btn-ghost">Login</a>
-    <a href="creator-studio.html" class="btn-primary">Try Creator Studio →</a>
-  </div>
-
-  <!-- Mobile hamburger -->
-  <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">☰</button>
-</nav>
-
-<!-- Mobile nav drawer -->
-<div class="mobile-nav" id="mobileNav">
-  <a href="index.html">🏠 Home</a>
-  <a href="about.html">ℹ️ About</a>
-  <a href="consulting.html">📊 Consulting</a>
-  <a href="contact.html" class="active">✉️ Contact Us</a>
-  <a href="creator-studio.html">✨ Creator Studio</a>
-  <hr style="border-color:rgba(255,255,255,0.08); margin: 8px 0;">
-  <a href="login.html">Login</a>
-  <a href="creator-studio.html" class="btn-primary" style="text-align:center; border-radius:8px; padding:10px;">Try Creator Studio →</a>
-</div>
-
-<!-- ── HERO ── -->
-<section class="contact-hero">
-  <span class="label">Get in Touch</span>
-  <h1>Need help growing your content?</h1>
-  <p>Ask anything about content, growth, or using ImpactGrid. We'll reply fast.</p>
-</section>
-
-<!-- ── MAIN GRID ── -->
-<div class="contact-grid">
-
-  <!-- FORM -->
-  <div class="contact-form-card">
-    <h2>Send us a message</h2>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label for="firstName">First Name</label>
-        <input type="text" id="firstName" placeholder="Your first name">
-      </div>
-      <div class="form-group">
-        <label for="lastName">Last Name</label>
-        <input type="text" id="lastName" placeholder="Your last name">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="email">Email Address</label>
-      <input type="email" id="email" placeholder="you@example.com">
-    </div>
-
-    <div class="form-group">
-      <label for="subject">What's this about?</label>
-      <select id="subject">
-        <option value="" disabled selected>Select a topic</option>
-        <option value="general">General question</option>
-        <option value="creator">Creator Studio help</option>
-        <option value="billing">Billing or subscription</option>
-        <option value="consulting">Consulting enquiry</option>
-        <option value="bug">Something isn't working</option>
-        <option value="other">Something else</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="message">Your message</label>
-      <textarea id="message" placeholder="Tell us what's on your mind…"></textarea>
-    </div>
-
-    <button class="submit-btn" id="submitBtn" onclick="submitForm()">Send Message →</button>
-
-    <div class="success-msg" id="successMsg">
-      ✅ Message sent! We'll get back to you within 24 hours.
-    </div>
-  </div>
-
-  <!-- RIGHT COLUMN -->
-  <div class="contact-right">
-
+  <div class="page-hero">
+    <div class="page-hero-glow"></div>
+    <div class="page-hero-grid"></div>
+    <div class="label-tag" style="justify-content:center;">Contact</div>
+    <h1>We're Here<br><em>To Help</em></h1>
+    <p>Got a question, bug report, or consulting enquiry? Drop us a message and we'll get back to you fast.</p>
     <div class="response-badge">
       <div class="response-dot"></div>
       We typically reply within 24 hours
     </div>
-
-    <div class="contact-info-card">
-      <h3>Other ways to reach us</h3>
-
-      <div class="contact-info-item">
-        <div class="icon">✉️</div>
-        <div class="info-text">
-          <p>General support</p>
-          <a href="mailto:support@impactgridgroup.com">support@impactgridgroup.com</a>
-        </div>
-      </div>
-
-      <div class="contact-info-item">
-        <div class="icon">📊</div>
-        <div class="info-text">
-          <p>Consulting enquiries</p>
-          <a href="mailto:consulting@impactgridgroup.com">consulting@impactgridgroup.com</a>
-        </div>
-      </div>
-
-      <div class="contact-info-item">
-        <div class="icon">🌍</div>
-        <div class="info-text">
-          <p>Based in</p>
-          <span>England, United Kingdom</span>
-        </div>
-      </div>
-
-      <div class="contact-info-item">
-        <div class="icon">🕐</div>
-        <div class="info-text">
-          <p>Support hours</p>
-          <span>Mon – Fri, 9am – 6pm GMT</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="contact-info-card">
-      <h3>Quick links</h3>
-      <div class="contact-info-item">
-        <div class="icon">✨</div>
-        <div class="info-text">
-          <p>New to ImpactGrid?</p>
-          <a href="join.html">Create a free account →</a>
-        </div>
-      </div>
-      <div class="contact-info-item">
-        <div class="icon">💼</div>
-        <div class="info-text">
-          <p>Need strategic advice?</p>
-          <a href="consulting.html">Book a consultation →</a>
-        </div>
-      </div>
-      <div class="contact-info-item">
-        <div class="icon">💳</div>
-        <div class="info-text">
-          <p>Plans and pricing</p>
-          <a href="pricing.html">View all plans →</a>
-        </div>
-      </div>
-    </div>
-
   </div>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <div class="contact-grid">
+
+      <!-- FORM -->
+      <div class="form-card">
+        <h2>Send us a message</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input class="input" type="text" id="firstName" placeholder="Your first name"/>
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input class="input" type="text" id="lastName" placeholder="Your last name"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com"/>
+        </div>
+        <div class="form-group">
+          <label for="subject">What's this about?</label>
+          <select class="input" id="subject">
+            <option value="" disabled selected>Select a topic</option>
+            <option value="general">General question</option>
+            <option value="creator">Creator Studio help</option>
+            <option value="billing">Billing or subscription</option>
+            <option value="consulting">Consulting enquiry</option>
+            <option value="bug">Something isn't working</option>
+            <option value="other">Something else</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="message">Your message</label>
+          <textarea class="input" id="message" placeholder="Tell us what's on your mind…" style="resize:vertical;min-height:120px;"></textarea>
+        </div>
+        <button class="submit-btn" id="submitBtn">Send Message →</button>
+        <div class="success-msg" id="successMsg">✅ Message sent! We'll get back to you within 24 hours.</div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="contact-right">
+
+        <div class="info-card">
+          <h3>Other ways to reach us</h3>
+          <div class="info-item">
+            <div class="info-ico">✉️</div>
+            <div class="info-text">
+              <p>General support</p>
+              <a href="mailto:support@impactgridgroup.com">support@impactgridgroup.com</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-ico">📊</div>
+            <div class="info-text">
+              <p>Consulting enquiries</p>
+              <a href="mailto:consulting@impactgridgroup.com">consulting@impactgridgroup.com</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-ico">🌍</div>
+            <div class="info-text">
+              <p>Based in</p>
+              <span>England, United Kingdom</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-ico">🕐</div>
+            <div class="info-text">
+              <p>Support hours</p>
+              <span>Mon – Fri, 9am – 6pm GMT</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Quick links</h3>
+          <div class="info-item">
+            <div class="info-ico">✨</div>
+            <div class="info-text">
+              <p>New to ImpactGrid?</p>
+              <a href="join.html">Create a free account →</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-ico">💼</div>
+            <div class="info-text">
+              <p>Need strategic advice?</p>
+              <a href="consulting.html">Book a consultation →</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-ico">💳</div>
+            <div class="info-text">
+              <p>Plans and pricing</p>
+              <a href="pricing.html">View all plans →</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="faq-wrap">
+      <div style="text-align:center;margin-bottom:36px;">
+        <div class="label-tag">FAQ</div>
+        <h2 class="sec-h">Frequently asked questions</h2>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">Is ImpactGrid free to use? <span class="arrow">▼</span></button>
+        <div class="faq-a">Yes! The free plan gives you 3 AI uses per month across all tools — including Dijo AI, Carousel Studio, Content Plan, and more. Your data resets every 30 days on the free plan. Upgrade to Pro or Enterprise for more uses and saved data.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How do I upgrade my plan? <span class="arrow">▼</span></button>
+        <div class="faq-a">You can upgrade from your account settings or on the <a href="pricing.html" style="color:var(--gold);">pricing page</a>. Professional is £8.99/month and Enterprise is £13.99/month — both include more AI uses and saved data.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What happens to my content after 30 days on the free plan? <span class="arrow">▼</span></button>
+        <div class="faq-a">On the free plan, all generated content — including carousels, portfolios, and saved plans — is permanently deleted after 30 days. Upgrade to a paid plan to keep your work saved indefinitely.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Can I connect my YouTube or TikTok account? <span class="arrow">▼</span></button>
+        <div class="faq-a">Yes — YouTube and TikTok connections are available on Professional and Enterprise plans. Once connected, Dijo can score your channel and give you personalised growth advice based on your real data.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">I found a bug — how do I report it? <span class="arrow">▼</span></button>
+        <div class="faq-a">Use the contact form above and select "Something isn't working" as the topic. Describe what happened and what page you were on — we'll look into it within 24 hours.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How do I delete my account? <span class="arrow">▼</span></button>
+        <div class="faq-a">You can delete your account from <a href="settings.html" style="color:var(--gold);">Settings → Account → Danger Zone</a>. This permanently removes all your data. If you have trouble, email us at support@impactgridgroup.com.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- CTA -->
+  <section style="padding:56px 0 80px;">
+    <div class="cta-band">
+      <div class="label-tag" style="justify-content:center;">Get Started</div>
+      <h2>Ready to grow?</h2>
+      <p>Join ImpactGrid free today. No card, no commitment — just real creator intelligence.</p>
+      <div class="cta-acts">
+        <a href="join.html" class="btn-pri">Start for free →</a>
+        <a href="consulting.html" class="btn-sec">Book a consultation</a>
+      </div>
+    </div>
+  </section>
+
 </div>
 
-<!-- ── FAQ ── -->
-<section class="faq-section">
-  <h2>Frequently asked questions</h2>
+<div id="ig-footer"></div>
 
-  <div class="faq-item">
-    <button class="faq-question" onclick="toggleFaq(this)">
-      Is ImpactGrid free to use? <span class="chevron">▼</span>
-    </button>
-    <div class="faq-answer">
-      Yes! The free plan gives you 3 AI uses per month across all tools — including Dijo AI, Carousel Studio, Content Plan, and more. Your data resets every 30 days on the free plan. Upgrade to Pro or Enterprise for more uses and saved data.
-    </div>
-  </div>
-
-  <div class="faq-item">
-    <button class="faq-question" onclick="toggleFaq(this)">
-      How do I upgrade my plan? <span class="chevron">▼</span>
-    </button>
-    <div class="faq-answer">
-      You can upgrade from your account settings or on the <a href="pricing.html" style="color:var(--accent,#7c5cfc);">pricing page</a>. Professional is £8.99/month and Enterprise is £13.99/month — both include more AI uses and saved data.
-    </div>
-  </div>
-
-  <div class="faq-item">
-    <button class="faq-question" onclick="toggleFaq(this)">
-      What happens to my content after 30 days on the free plan? <span class="chevron">▼</span>
-    </button>
-    <div class="faq-answer">
-      On the free plan, all generated content — including carousels, portfolios, and saved plans — is permanently deleted after 30 days. Upgrade to a paid plan to keep your work saved indefinitely.
-    </div>
-  </div>
-
-  <div class="faq-item">
-    <button class="faq-question" onclick="toggleFaq(this)">
-      Can I connect my YouTube or TikTok account? <span class="chevron">▼</span>
-    </button>
-    <div class="faq-answer">
-      Yes — YouTube and TikTok connections are available on Professional and Enterprise plans. Once connected, Dijo can score your channel and give you personalised growth advice based on your real data.
-    </div>
-  </div>
-
-  <div class="faq-item">
-    <button class="faq-question" onclick="toggleFaq(this)">
-      I found a bug — how do I report it? <span class="chevron">▼</span>
-    </button>
-    <div class="faq-answer">
-      Use the contact form above and select "Something isn't working" as the topic. Describe what happened and what page you were on — we'll look into it within 24 hours.
-    </div>
-  </div>
-
-  <div class="faq-item">
-    <button class="faq-question" onclick="toggleFaq(this)">
-      How do I delete my account? <span class="chevron">▼</span>
-    </button>
-    <div class="faq-answer">
-      You can delete your account from <a href="settings.html" style="color:var(--accent,#7c5cfc);">Settings → Account → Danger Zone</a>. This permanently removes all your data. If you have trouble, email us at support@impactgridgroup.com.
-    </div>
-  </div>
-
-</section>
-
-<!-- ── FOOTER ── -->
-<footer class="main-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <img src="logo.png" alt="ImpactGrid" width="28">
-      <span>ImpactGrid</span>
-      <p>Creator intelligence for the next generation of content makers.</p>
-    </div>
-    <div class="footer-links">
-      <div>
-        <h4>Product</h4>
-        <a href="creator-studio.html">Creator Studio</a>
-        <a href="consulting.html">Consulting</a>
-        <a href="pricing.html">Pricing</a>
-        <a href="join.html">Get Started</a>
-      </div>
-      <div>
-        <h4>Company</h4>
-        <a href="about.html">About</a>
-        <a href="contact.html">Contact</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-      </div>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <p>© 2026 ImpactGrid Group Ltd.</p>
-    <div>
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-    </div>
-  </div>
-</footer>
-
+<script defer src="nav.js"></script>
 <script>
-  /* ── THEME ── */
-  const themeBtn = document.getElementById('themeToggle');
-  const saved = localStorage.getItem('igTheme') || 'dark';
-  if (saved === 'light') { document.body.classList.add('light'); themeBtn.textContent = '☀️'; }
-  themeBtn.addEventListener('click', () => {
-    const isLight = document.body.classList.toggle('light');
-    themeBtn.textContent = isLight ? '☀️' : '🌙';
-    localStorage.setItem('igTheme', isLight ? 'light' : 'dark');
-  });
+document.addEventListener('DOMContentLoaded', function() {
+  renderNav('contact.html');
+  renderFooter();
+});
 
-  /* ── MOBILE NAV ── */
-  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-  const mobileNav = document.getElementById('mobileNav');
-  if (mobileMenuBtn) {
-    mobileMenuBtn.addEventListener('click', () => {
-      mobileNav.classList.toggle('open');
-    });
-  }
-
-  /* ── FAQ ── */
-  function toggleFaq(btn) {
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
     const item = btn.closest('.faq-item');
     const isOpen = item.classList.contains('open');
     document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
     if (!isOpen) item.classList.add('open');
+  });
+});
+
+// Form submit
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const firstName = document.getElementById('firstName').value.trim();
+  const email     = document.getElementById('email').value.trim();
+  const subject   = document.getElementById('subject').value;
+  const message   = document.getElementById('message').value.trim();
+
+  if (!firstName || !email || !subject || !message) {
+    alert('Please fill in all required fields.');
+    return;
   }
 
-  /* ── FORM SUBMIT (placeholder — wire to backend/Supabase later) ── */
-  function submitForm() {
-    const firstName = document.getElementById('firstName').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const subject = document.getElementById('subject').value;
-    const message = document.getElementById('message').value.trim();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
 
-    if (!firstName || !email || !subject || !message) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.textContent = 'Sending…';
-
-    fetch("https://your-render-url/contact", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        firstName,
-        email,
-        subject,
-        message
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('successMsg').style.display = 'block';
-      btn.textContent = '✅ Sent!';
-    })
-    .catch(() => {
-      alert("Failed to send. Try again.");
-      btn.disabled = false;
-      btn.textContent = 'Send Message →';
-    });
-  }
+  fetch("https://your-render-url/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ firstName, email, subject, message })
+  })
+  .then(res => res.json())
+  .then(() => {
+    document.getElementById('successMsg').style.display = 'block';
+    btn.textContent = '✅ Sent!';
+  })
+  .catch(() => {
+    alert("Failed to send. Try again.");
+    btn.disabled = false;
+    btn.textContent = 'Send Message →';
+  });
+});
 </script>
-
 </body>
 </html>
