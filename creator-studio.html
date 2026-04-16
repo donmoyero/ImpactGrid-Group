@@ -824,8 +824,11 @@ function renderTrendChart() {
   const ctx = document.getElementById('trendChart');
   if (!ctx || !_allTrends) return;
 
-  const labels = _allTrends.map(t => t.title.slice(0, 8));
-  const data = _allTrends.map(t => t.score);
+  const labels = _allTrends.map(t => {
+    if (!t || !t.title) return "trend";
+    return t.title.substring(0, 8);
+  });
+  const data = _allTrends.map(t => t.score || 0);
 
   new Chart(ctx, {
     type: 'line',
