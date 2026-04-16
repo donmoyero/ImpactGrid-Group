@@ -55,27 +55,23 @@ function getCalDb() {
   return _calSupabase;
 }
 
-/* ── Get current user ID (supports Supabase v1 + v2, and IG_USER fallback) ── */
+/* ── Get current user ID (supports IG_USER override and Supabase session fallback) ── */
 function getCalUserId() {
   try {
-    // IG_USER override (set externally by auth layer)
-    if (window.IG_USER && IG_USER.id) return IG_USER.id;
+    if (window.IG_USER && IG_USER.id) {
+      return IG_USER.id;
+    }
 
-    var c = window.getSupabase ? getSupabase() : null;
-    if (c && c.auth) {
-      // Supabase v2: getSession() is async, but session is cached on auth object
-      if (c.auth.currentSession) {
-        var s = c.auth.currentSession;
-        if (s && s.user) return s.user.id;
-      }
-      // Supabase v1 fallback
-      if (typeof c.auth.user === 'function') {
-        var u = c.auth.user();
-        if (u) return u.id;
+    // fallback to session (extra safety)
+    if (window.supabase) {
+      const session = supabase.auth.getSession();
+      if (session?.data?.session?.user?.id) {
+        return session.data.session.user.id;
       }
     }
-  } catch(e) { console.warn('getCalUserId error:', e); }
-  return 'demo-user';
+  } catch (e) {}
+
+  return "guest-user"; // NEVER null
 }
 
 /* ── Async version for operations that can await (use this in savePost, calAutoFill) ── */
@@ -362,6 +358,7 @@ async function savePost() {
 
     var db = getCalDb();
     if (db) {
+      console.log("Saving post with user:", getCalUserId());
       var res = await db.from('calendar_posts').insert([{
         user_id:   getCalUserId(),
         date:      key,
