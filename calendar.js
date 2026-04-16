@@ -67,7 +67,32 @@ function getCalUserId() {
   return 'demo-user';
 }
 
-/* ── Week helpers ── */
+/* ── Niche personalisation ── */
+var USER_NICHE = 'all'; // updated by setUserNiche() from the UI select
+
+function setUserNiche(niche) {
+  USER_NICHE = niche;
+  renderCalendar();
+}
+
+function matchesNiche(topic) {
+  if (USER_NICHE === 'all') return true;
+  var t = topic.toLowerCase();
+  if (USER_NICHE === 'creator')   return t.includes('ai') || t.includes('content') || t.includes('social') || t.includes('creator') || t.includes('tool');
+  if (USER_NICHE === 'fitness')   return t.includes('workout') || t.includes('health') || t.includes('fitness') || t.includes('routine') || t.includes('gym');
+  if (USER_NICHE === 'finance')   return t.includes('money') || t.includes('finance') || t.includes('hustle') || t.includes('invest') || t.includes('budget');
+  if (USER_NICHE === 'lifestyle') return t.includes('style') || t.includes('life') || t.includes('food') || t.includes('travel') || t.includes('meal');
+  return true;
+}
+
+/* ── Trend momentum indicator ── */
+function getTrendMomentum(score) {
+  if (score > 85) return '📈';
+  if (score > 60) return '➖';
+  return '📉';
+}
+
+
 function getWeekStart(offset) {
   var now = new Date();
   var day = now.getDay();
@@ -124,9 +149,13 @@ function renderCalendar() {
     var chipsHtml = filtered.map(function(p) {
       var plat = CAL_PLATS[p.platform] || CAL_PLATS.tt;
       var statusDot = p.status === 'published' ? ' ✓' : p.status === 'scheduled' ? ' ⏰' : '';
-      return '<div class="cal-post-chip ' + plat.cls + '" onclick="openEditPost(\'' + key + '\',\'' + p.id + '\')" title="' + calEsc(p.topic) + '">' +
+      var momentum = getTrendMomentum(p.score || 0);
+      var scoreLabel = p.score ? ' 🔥' + p.score : '';
+      return '<div class="cal-post-chip ' + plat.cls + '" onclick="openEditPost(\'' + key + '\',\'' + p.id + '\')" title="' + calEsc(p.topic) + ' — Score: ' + (p.score||0) + '">' +
         '<span>' + plat.icon + '</span>' +
-        '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + calEsc(p.topic) + ' • ' + (p.bestTime || '18:00') + statusDot + '</span>' +
+        '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + calEsc(p.topic) + statusDot + '</span>' +
+        '<span class="cal-momentum">' + momentum + '</span>' +
+        '<span class="cal-score">' + (p.score || 0) + '</span>' +
         '<span class="cal-chip-del" onclick="event.stopPropagation();deletePost(\'' + key + '\',\'' + p.id + '\')">✕</span>' +
       '</div>';
     }).join('');
@@ -151,7 +180,7 @@ function renderCalendar() {
 
 /* ── Stats ── */
 function updateCalStats() {
-  var total = 0;
+  var total = 0, published = 0;
   var platCount = { yt: 0, tt: 0, ig: 0, li: 0 };
   var weekStart = getWeekStart(calState.weekOffset);
 
@@ -161,13 +190,17 @@ function updateCalStats() {
     var key = formatDateKey(day);
     var posts = calState.posts[key] || [];
     total += posts.length;
-    posts.forEach(function(p) { if (platCount[p.platform] !== undefined) platCount[p.platform]++; });
+    posts.forEach(function(p) {
+      if (platCount[p.platform] !== undefined) platCount[p.platform]++;
+      if (p.status === 'published') published++;
+    });
   }
 
   var el = document.getElementById('calStatTotal'); if (el) el.textContent = total;
   var elYt = document.getElementById('calStatYt'); if (elYt) elYt.textContent = platCount.yt;
   var elTt = document.getElementById('calStatTt'); if (elTt) elTt.textContent = platCount.tt;
   var elIg = document.getElementById('calStatIg'); if (elIg) elIg.textContent = platCount.ig;
+  var elDone = document.getElementById('calStatDone'); if (elDone) elDone.textContent = published;
 }
 
 /* ── Navigation ── */
@@ -354,7 +387,10 @@ async function calAutoFill() {
 
   var weekStart = getWeekStart(calState.weekOffset);
 
-  const trends = await fetchTrends();
+  const allTrends = await fetchTrends();
+  // Filter by niche, fall back to all if filter removes everything
+  var trends = allTrends.filter(function(t){ return matchesNiche(t.topic); });
+  if (!trends.length) trends = allTrends;
 
   for (var i = 0; i < 7; i++) {
     var day = new Date(weekStart);
@@ -529,23 +565,42 @@ function sendNotification(title, body){
   });
 }
 
+/* ── Missed trend hook ── */
+function checkMissedTrends() {
+  var yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  var key = formatDateKey(yesterday);
+  var posts = calState.posts[key] || [];
+  posts.forEach(function(p) {
+    if (p.status !== 'published' && p.score > 85) {
+      sendNotification(
+        '⚠️ Missed Viral Opportunity',
+        '"' + p.topic + '" was trending yesterday — still worth posting'
+      );
+    }
+  });
+}
+
+
 function startAIReminders() {
-  // Smart reminders — fire when current time matches a post's bestTime
+  // Smart reminders — fires when hour matches bestTime; uses notified flag to avoid repeat
   setInterval(function() {
     var now = new Date();
     var todayKey = formatDateKey(now);
     var posts = calState.posts[todayKey] || [];
-    var currentTime = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 
     posts.forEach(function(post) {
-      // Match HH:MM exactly, or match HH:00 when bestTime is HH:30 within same hour
-      var postHour = (post.bestTime || '').split(':')[0];
-      var nowHour  = String(now.getHours()).padStart(2,'0');
-      if (post.bestTime && post.bestTime === currentTime) {
-        sendNotification('⏰ Time to post', post.topic + ' — best time is now (' + post.bestTime + ')');
+      if (!post.bestTime) return;
+      var hour = parseInt(post.bestTime.split(':')[0], 10);
+      if (hour === now.getHours() && !post.notified) {
+        sendNotification(
+          '🔥 Post Now — ' + (post.source === 'AI' ? 'Trending' : 'Your content'),
+          '"' + post.topic + '" — best time is right now (' + post.bestTime + ')'
+        );
+        post.notified = true;
       }
     });
-  }, 60000); // check every minute
+  }, 60000);
 }
 
 function startDijoNudges(){
@@ -575,6 +630,7 @@ function initCalendar() {
   requestNotificationPermission();
   startAIReminders();
   startDijoNudges();
+  checkMissedTrends();
 }
 
 // Auto-init on DOMContentLoaded if panel exists
