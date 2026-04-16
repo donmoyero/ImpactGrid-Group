@@ -783,6 +783,17 @@
   <script src="ig-supabase.js"></script>
   <script src="nav.js"></script>
   <script>
+    /* ✅ Restore avatar preview instantly from cache (before DB responds) */
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        var cached = localStorage.getItem('ig_avatar');
+        if (cached) {
+          var img = document.getElementById('s-av-img');
+          if (img) { img.src = cached; img.style.display = 'block'; }
+        }
+      } catch(e) {}
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
       renderNav('settings.html');
       renderFooter();
@@ -860,6 +871,8 @@
           if (p.avatar_url) {
             var img = document.getElementById('s-av-img');
             img.src = p.avatar_url; img.style.display = 'block';
+            /* ✅ Keep localStorage in sync with DB value */
+            try { localStorage.setItem('ig_avatar', p.avatar_url); } catch(e) {}
           }
         }).catch(function() {});
     }
@@ -904,6 +917,8 @@
       reader.onload = function(ev) {
         var img = document.getElementById('s-av-img');
         img.src = ev.target.result; img.style.display = 'block';
+        /* ✅ Cache base64 so nav picks it up immediately on any page */
+        try { localStorage.setItem('ig_avatar', ev.target.result); } catch(e) {}
       };
       reader.readAsDataURL(file);
 
@@ -916,7 +931,10 @@
       var up   = await client.storage.from('avatars').upload(path, file, { upsert: true });
       if (!up.error) {
         var urlRes = client.storage.from('avatars').getPublicUrl(path);
-        await client.from('profiles').upsert({ id: uid, avatar_url: urlRes.data.publicUrl });
+        var publicUrl = urlRes.data.publicUrl;
+        await client.from('profiles').upsert({ id: uid, avatar_url: publicUrl });
+        /* ✅ Also cache the CDN URL (smaller than base64, preferred for returning visits) */
+        try { localStorage.setItem('ig_avatar', publicUrl); } catch(e) {}
       }
     });
 
