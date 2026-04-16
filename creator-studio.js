@@ -13,10 +13,12 @@ var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _eva
 /* ─────────────────────────────────────────────
    SUBSCRIPTION SYSTEM
 ───────────────────────────────────────────── */
-var IG_USER = null;
-var IG_PLAN = 'free'; // free | pro | enterprise
-var IG_USES = 0;
-var IG_LIMIT = 3;
+var IG_USER        = null;
+var IG_PLAN        = 'free'; // free | pro | enterprise
+var IG_USES        = 0;
+var IG_LIMIT       = 3;
+var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
+var IG_IS_ADMIN    = false;
 
 /* ─────────────────────────────────────────────
    THEME
@@ -129,6 +131,12 @@ function checkAuth() {
       // 🔥 Load usage (local for now)
       IG_USES = parseInt(localStorage.getItem('ig_uses') || '0');
 
+      // 👑 Admin override
+      if (IG_USER.email === IG_ADMIN_EMAIL) {
+        IG_IS_ADMIN = true;
+        IG_PLAN = 'enterprise';
+        console.log('👑 Admin mode active');
+      }
       // TODO later: load plan from DB
     }
   });
@@ -150,6 +158,9 @@ function checkAccess() {
     showUpgrade("Create an account to save and unlock more");
     return false;
   }
+
+  // 👑 Admin bypass
+  if (IG_IS_ADMIN) return true;
 
   // Free plan limit
   if (IG_PLAN === 'free' && IG_USES >= IG_LIMIT) {
@@ -545,8 +556,10 @@ async function fullGenerate() {
 
     var dsc = document.getElementById('dashLastScore'); if (dsc) { dsc.textContent = score.toFixed(1); dsc.style.color = scColor; }
     var dsl = document.getElementById('dashLastLabel'); if (dsl) { dsl.textContent = verdict; dsl.style.color = scColor; }
-    IG_USES++;
-    localStorage.setItem('ig_uses', IG_USES);
+    if (!IG_IS_ADMIN) {
+      IG_USES++;
+      localStorage.setItem('ig_uses', IG_USES);
+    }
     toast('✅ Package generated!');
   } catch(e) {
     errEl.classList.add('visible');
