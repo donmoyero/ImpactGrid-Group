@@ -21,6 +21,22 @@ var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
 var IG_IS_ADMIN    = false;
 
 /* ─────────────────────────────────────────────
+   BRIEFING
+───────────────────────────────────────────── */
+function updateBriefing() {
+  const briefEl = document.getElementById('dijoBrief');
+  if (!briefEl) return;
+
+  // if trends already loaded
+  if (_allTrends && _allTrends.length) {
+    const count = Math.min(_allTrends.length, 5);
+    briefEl.textContent = count + " trends rising · Best time: 6PM";
+  } else {
+    briefEl.textContent = "No trends yet · Check back later";
+  }
+}
+
+/* ─────────────────────────────────────────────
    THEME
 ───────────────────────────────────────────── */
 function toggleTheme() {
@@ -230,10 +246,8 @@ function setWelcome() {
   if (greetEl) greetEl.textContent = greeting + ",";
   if (nameEl)  nameEl.textContent = name + " 👋";
 
-  // keep this SIMPLE (no overthinking)
-  if (briefEl) {
-    briefEl.textContent = "3 trends rising · Best time to post: 6PM";
-  }
+  // use real trend count
+  updateBriefing();
 }
 
 /* ─────────────────────────────────────────────
@@ -361,6 +375,7 @@ async function fetchTrends() {
           totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0
         };
       });
+      updateBriefing();
       return;
     }
   } catch(e) {}
@@ -371,6 +386,7 @@ async function fetchTrends() {
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 };
     });
+    updateBriefing();
   } catch(e) {}
 }
 
