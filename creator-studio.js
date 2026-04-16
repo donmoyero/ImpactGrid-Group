@@ -8,6 +8,7 @@
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
 var _selectedStyle = 'Educational';
+var trendChartInstance = null;
 var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
 
 /* ─────────────────────────────────────────────
@@ -498,6 +499,45 @@ function renderFullTrends() {
   el.innerHTML = _allTrends.length
     ? _allTrends.map(trendItemHTML).join('')
     : '<div style="padding:16px;color:var(--text3)">Loading trends…</div>';
+}
+
+function renderTrendChart() {
+  var ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+
+  if (trendChartInstance) {
+    trendChartInstance.stop();
+    trendChartInstance.destroy();
+  }
+
+  var labels = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
+  var scores = _allTrends.slice(0, 7).map(function(t) { return t.score; });
+
+  trendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Trend Score',
+        data: scores,
+        borderColor: 'var(--gold, #f5a623)',
+        backgroundColor: 'rgba(245,166,35,0.08)',
+        borderWidth: 2,
+        pointRadius: 4,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 10, ticks: { color: 'var(--text3)' }, grid: { color: 'var(--border)' } },
+        x: { ticks: { color: 'var(--text3)', maxRotation: 30 }, grid: { display: false } }
+      }
+    }
+  });
 }
 
 function runTrendPrediction() {
