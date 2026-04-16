@@ -181,18 +181,20 @@ function openEditPost(dateKey, postId) {
   calState.editingPostId = postId;
   _modalPlatSel = post.platform;
   _modalStatus  = post.status;
-  showModal(post.label, post.platform, post.status, 'Edit Post');
+  showModal(post.label, post.platform, post.status, 'Edit Post', post.notes || '');
 }
 
-function showModal(label, platform, status, title) {
+function showModal(label, platform, status, title, notes) {
   var overlay = document.getElementById('calModalOverlay');
   var titleEl = document.getElementById('calModalTitle');
   var input   = document.getElementById('calModalInput');
   var statusSel = document.getElementById('calModalStatus');
+  var notesEl = document.getElementById('calModalNotes');
 
   if (titleEl) titleEl.textContent = title;
   if (input)   input.value = label;
   if (statusSel) statusSel.value = status || 'draft';
+  if (notesEl) notesEl.value = notes || '';
   updateModalPlatBtns(platform);
 
   if (overlay) overlay.classList.add('open');
@@ -223,8 +225,10 @@ function calModalSelectPlat(btn, plat) {
 function savePost() {
   var input  = document.getElementById('calModalInput');
   var status = document.getElementById('calModalStatus');
+  var notesEl = document.getElementById('calModalNotes');
   var label  = (input ? input.value.trim() : '') || 'Untitled post';
   var sts    = status ? status.value : 'draft';
+  var notes  = notesEl ? notesEl.value.trim() : '';
   var key    = calState.editingDate;
 
   if (!calState.posts[key]) calState.posts[key] = [];
@@ -237,6 +241,7 @@ function savePost() {
       posts[idx].label    = label;
       posts[idx].platform = _modalPlatSel;
       posts[idx].status   = sts;
+      posts[idx].notes    = notes;
     }
   } else {
     // Add new
@@ -244,7 +249,8 @@ function savePost() {
       id:       'p' + (calState.nextId++),
       label:    label,
       platform: _modalPlatSel,
-      status:   sts
+      status:   sts,
+      notes:    notes
     });
   }
 
@@ -268,7 +274,24 @@ async function calAutoFill() {
   var weekStart = getWeekStart(calState.weekOffset);
 
   try {
-    var prompt = 'You are Dijo, a creator assistant. Generate a 7-day content plan.\n\nReturn ONLY a JSON array of 7 objects, one per day. Each object:\n{"day":0,"platform":"tt","label":"Short post idea"}\n\nday is 0-6 (Mon-Sun). platform is one of: tt, yt, ig, li.\nMake each idea specific, trending, and under 30 chars.\nToday\'s hot topics: Viking history, UK Street Style, AI tools, side hustles.\n\nReturn only the JSON array. No extra text.';
+    var prompt = `
+You are Dijo, an AI content strategist.
+
+Create a 7-day content plan.
+
+RULES:
+- Focus on REAL trending topics
+- Make ideas feel viral
+- Each idea must feel like something people are posting RIGHT NOW
+- Keep under 30 characters
+
+Use current viral topics (TikTok, YouTube, UK trends).
+
+Return ONLY JSON:
+[
+ { "day":0, "platform":"tt", "label":"idea" }
+]
+`;
 
     var res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -325,7 +348,7 @@ async function calSuggestIdea() {
 
   try {
     var platName = (CAL_PLATS[_modalPlatSel]||{}).label || 'TikTok';
-    var prompt = 'Suggest ONE specific short-form content idea for ' + platName + '. Based on trending topics: Viking history, UK Street Style, AI tools. Reply with ONLY the idea title, under 40 characters. No quotes, no explanation.';
+    var prompt = 'Suggest ONE specific short-form content idea for ' + platName + '. Use current viral topics (TikTok, YouTube, UK trends). Reply with ONLY the idea title, under 40 characters. No quotes, no explanation.';
     var res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -343,6 +366,36 @@ async function calSuggestIdea() {
   }
 
   if (btn) { btn.disabled = false; btn.textContent = '✨ Suggest with Dijo'; }
+}
+
+/* ── Generate today's content from calendar ── */
+function generateFromCalendar() {
+  var todayKey = formatDateKey(new Date());
+  var posts = calState.posts[todayKey] || [];
+
+  if (posts.length === 0) {
+    if (typeof toast === 'function') {
+      toast('📅 No content planned for today — auto-filling now');
+    }
+    calAutoFill();
+    return;
+  }
+
+  var idea = posts[0].label;
+
+  // Push idea to generator input (matches creator-studio.html ID)
+  var input = document.getElementById('genTopic');
+  if (input) input.value = idea;
+
+  // Switch to generator tab
+  if (typeof switchTab === 'function') {
+    switchTab('generator', null);
+  }
+
+  // Fire the generator
+  if (typeof fullGenerate === 'function') {
+    setTimeout(function() { fullGenerate(); }, 200);
+  }
 }
 
 /* ── Ideas bank ── */
@@ -417,11 +470,15 @@ function startAIReminders(){
   setInterval(() => {
     const hour = new Date().getHours();
 
-    if (hour === 10){
-      sendNotification(
-        "🔥 Trending Now",
-        "A topic is trending — create a carousel now"
-      );
+    if (hour === 10) {
+      var messages = [
+        "🔥 This topic is blowing up — post now",
+        "📈 You can go viral today — create content",
+        "🚀 Trend detected — don't miss it",
+        "🎯 Perfect time to post right now"
+      ];
+      var msg = messages[Math.floor(Math.random() * messages.length)];
+      sendNotification("Dijo AI", msg);
     }
 
   }, 60000); // check every minute
@@ -466,6 +523,13 @@ function initCalendar() {
   loadCalFromStorage();
   renderIdeasBank();
   renderCalendar();
+
+  // AUTO FILL if empty
+  if (Object.keys(calState.posts).length === 0) {
+    setTimeout(function() {
+      calAutoFill();
+    }, 600);
+  }
 
   // NEW
   requestNotificationPermission();
