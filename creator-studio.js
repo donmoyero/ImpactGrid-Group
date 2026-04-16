@@ -108,11 +108,16 @@ function setNavUser(user) {
   var email = user.email || '';
   var name = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name))
     || email.split('@')[0] || 'Creator';
-  document.getElementById('navGuest').style.display = 'none';
-  document.getElementById('navUser').style.display = 'block';
-  document.getElementById('userAv').textContent = (name.charAt(0) || '?').toUpperCase();
-  document.getElementById('userName').textContent = name.split(' ')[0];
-  document.getElementById('userEmail').textContent = email;
+  var guest = document.getElementById('navGuest');
+  var userBox = document.getElementById('navUser');
+  if (guest) guest.style.display = 'none';
+  if (userBox) userBox.style.display = 'flex';
+  var avEl = document.getElementById('userAv');
+  var nameEl = document.getElementById('userName');
+  var emailEl = document.getElementById('userEmail');
+  if (avEl) avEl.textContent = (name.charAt(0) || '?').toUpperCase();
+  if (nameEl) nameEl.textContent = name.split(' ')[0];
+  if (emailEl) emailEl.textContent = email;
 }
 window.igSignOut = async function() {
   try { var c = getSupabase(); if (c) await c.auth.signOut(); } catch(e) {}
@@ -137,6 +142,7 @@ function checkAuth() {
       IG_USER = r.data.session.user;
 
       setNavUser(IG_USER);
+      setTimeout(function() { setNavUser(IG_USER); }, 150);
 
       // ✅ LOAD REAL PROFILE
       await loadProfile();
