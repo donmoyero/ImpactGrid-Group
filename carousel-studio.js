@@ -407,6 +407,41 @@ function normalizeSlidesDeck(slides){
 var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#2563eb',brand:'',userImages:{},assetOffset:0,exportType:'png',fontPair:'syne',trendHashtags:[]};
 var currentTrend = null;
 
+/* ── MONETISATION ───────────────────────────── */
+var IG_USER = null;
+var IG_PLAN = "free"; // free | pro | enterprise
+var IG_USES = parseInt(localStorage.getItem("ig_carousel_uses") || "0");
+var IG_LIMIT = 3;
+
+async function getUser() {
+  try {
+    const sb = window.supabase;
+    if (!sb) return null;
+    const { data } = await sb.auth.getUser();
+    return data?.user || null;
+  } catch {
+    return null;
+  }
+}
+
+async function checkCarouselAccess() {
+  IG_USER = await getUser();
+
+  // ❌ Not logged in
+  if (!IG_USER) {
+    showUpgradeBar("Login to generate and save carousels");
+    return false;
+  }
+
+  // ❌ Free limit reached
+  if (IG_PLAN === "free" && IG_USES >= IG_LIMIT) {
+    showUpgradeBar("Free limit reached — upgrade for unlimited carousels");
+    return false;
+  }
+
+  return true;
+}
+
 var FONT_PAIRS={
   syne:{head:"'Syne',sans-serif",body:"'DM Sans',sans-serif",mono:"'Space Mono',monospace"},
   cormorant:{head:"'Cormorant Garant',Georgia,serif",body:"'DM Sans',sans-serif",mono:"'Space Mono',monospace"},
@@ -489,6 +524,7 @@ function onTrendClick(trend){
 }
 
 async function generate(){
+  if (!(await checkCarouselAccess())) return;
   var topic=document.getElementById('topicInput').value.trim();
   if(!topic){toast('⚠️ Add a topic first');document.getElementById('topicInput').focus();return;}
   if(!ST.theme) ST.theme=detectTheme(topic);
@@ -553,6 +589,8 @@ async function generate(){
   buildStrip();renderSlide();updateCounter();fillEdit();
   btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate';
   btn.disabled=false;
+  IG_USES++;
+  localStorage.setItem("ig_carousel_uses", IG_USES);
   toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any text to edit');
 
   // ── STEP 4: enrich with live captions + hashtags after render ──
@@ -1813,4 +1851,62 @@ document.addEventListener('keydown',function(e){
     get _liveTrends(){ return _liveTrends; }
   };
 
+})();
+
+/* ══════════════════════════════════════════════════════════
+   UPGRADE BAR
+══════════════════════════════════════════════════════════ */
+function showUpgradeBar(message) {
+  let el = document.getElementById("upgradeBar");
+
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "upgradeBar";
+    document.body.appendChild(el);
+  }
+
+  el.innerHTML =
+    '<div class="upgrade-inner">'
+    + '<span>' + message + '</span>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
+    + '<a href="login.html" class="btn btn-secondary">Login</a>'
+    + '</div></div>';
+
+  el.classList.add("show");
+
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 4000);
+}
+
+(function() {
+  const style = document.createElement("style");
+  style.innerHTML = [
+    "#upgradeBar {",
+    "  position: fixed;",
+    "  top: 80px;",
+    "  left: 50%;",
+    "  transform: translateX(-50%) translateY(-20px);",
+    "  background: var(--card);",
+    "  border: 1px solid var(--border);",
+    "  border-radius: 999px;",
+    "  padding: 10px 16px;",
+    "  box-shadow: var(--sh2);",
+    "  opacity: 0;",
+    "  transition: all .3s ease;",
+    "  z-index: 9999;",
+    "}",
+    "#upgradeBar.show {",
+    "  opacity: 1;",
+    "  transform: translateX(-50%) translateY(0);",
+    "}",
+    ".upgrade-inner {",
+    "  display: flex;",
+    "  gap: 12px;",
+    "  align-items: center;",
+    "  font-size: 12px;",
+    "}"
+  ].join("\n");
+  document.head.appendChild(style);
 })();
