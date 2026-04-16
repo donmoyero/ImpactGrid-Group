@@ -168,7 +168,7 @@
     <div class="sb-sec">
       <div class="sb-sec-title">Intelligence</div>
       <div class="sb-item active" onclick="switchTab('dashboard',this)"><span class="sb-icon">📊</span>Dashboard<span class="sb-badge live">Live</span></div>
-      <div class="sb-item" onclick="switchTab('trends',this)"><span class="sb-icon">📡</span>Trend Feed</div>
+      <div class="sb-item" onclick="switchTab('trends',this)"><span class="sb-icon">📈</span>Live Trend Analysis</div>
       <div class="sb-item" onclick="switchTab('generator',this)"><span class="sb-icon">✍️</span>AI Generator</div>
       <div class="sb-item" onclick="switchTab('audience',this)"><span class="sb-icon">👥</span>Audience</div>
       <div class="sb-item" onclick="switchTab('evaluator',this)"><span class="sb-icon">🎯</span>Dijo Evaluator<span class="sb-badge live">AI</span></div>
@@ -216,7 +216,7 @@
   <div class="main">
     <div class="tabs-bar">
       <button class="tab-btn active" id="tab-dashboard" onclick="switchTab('dashboard',null)">📊 Dashboard</button>
-      <button class="tab-btn" id="tab-trends" onclick="switchTab('trends',null)">📡 Trend Feed</button>
+      <button class="tab-btn" id="tab-trends" onclick="switchTab('trends',null)">📈 Live Trend Analysis</button>
       <button class="tab-btn" id="tab-generator" onclick="switchTab('generator',null)">✍️ Generator</button>
       <button class="tab-btn" id="tab-audience" onclick="switchTab('audience',null)">👥 Audience</button>
       <button class="tab-btn" id="tab-evaluator" onclick="switchTab('evaluator',null)">🎯 Evaluator</button>
@@ -314,7 +314,7 @@
       <!-- TREND FEED -->
       <div class="panel" id="panel-trends">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-          <div><h2 style="font-size:20px;margin-bottom:3px">Trend Intelligence Feed</h2><p style="font-size:13px;color:var(--text2)">Real Google Trends · Scored by Trend Score™ · Click any topic to generate</p></div>
+          <div><h2 style="font-size:20px;margin-bottom:3px">📈 Live Trend Analysis</h2><p style="font-size:13px;color:var(--text2)">Real Google Trends · Scored by Trend Score™ · Click any topic to generate</p></div>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
             <button class="style-chip active" data-plat="all" onclick="filterTrends(this,'all')">All</button>
             <button class="style-chip" data-plat="gt" onclick="filterTrends(this,'gt')" style="color:var(--gt)">Google</button>
@@ -322,6 +322,7 @@
             <button class="style-chip" data-plat="tt" onclick="filterTrends(this,'tt')" style="color:var(--tt)">TikTok</button>
           </div>
         </div>
+        <canvas id="trendChart" height="120" style="width:100%;margin-bottom:16px;border-radius:12px;background:var(--card);padding:12px;box-sizing:border-box;border:1px solid var(--border)"></canvas>
         <div class="card"><div class="card-body"><div class="trend-list" id="fullTrendList"><div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div></div></div>
       </div>
 
@@ -668,6 +669,7 @@
   <button class="dl-dismiss" id="dlDismiss" title="Dismiss">✕</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
 <script src="tiktok-auth.js"></script>
@@ -778,6 +780,51 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof checkAuth === 'function') {
     checkAuth();
   }
+});
+</script>
+
+<script>
+/* ══════════════════════════════════════════
+   LIVE TREND CHART — Chart.js momentum line
+══════════════════════════════════════════ */
+function renderTrendChart() {
+  const ctx = document.getElementById('trendChart');
+  if (!ctx || !_allTrends) return;
+
+  const labels = _allTrends.map(t => t.title.slice(0,10));
+  const data = _allTrends.map(t => t.score);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Trend Momentum',
+        data,
+        tension: 0.4,
+        fill: true,
+        borderColor: 'rgba(201,126,8,1)',
+        backgroundColor: 'rgba(201,126,8,0.12)',
+        pointBackgroundColor: 'rgba(201,126,8,1)',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: 'rgba(150,150,150,0.8)', font: { size: 10 } }, grid: { color: 'rgba(150,150,150,0.1)' } },
+        y: { ticks: { color: 'rgba(150,150,150,0.8)', font: { size: 10 } }, grid: { color: 'rgba(150,150,150,0.1)' } }
+      }
+    }
+  });
+}
+
+/* Call after trends have loaded — hook into the existing trend load cycle */
+document.addEventListener('trendsLoaded', renderTrendChart);
+/* Fallback: also try once DOM + scripts are settled */
+window.addEventListener('load', function() {
+  setTimeout(renderTrendChart, 1500);
 });
 </script>
 
