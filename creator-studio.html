@@ -669,35 +669,23 @@
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 <div class="toast-shelf" id="toastShelf"></div>
 
-<!-- PWA INSTALL BANNER -->
-<div id="pwa-banner" style="
-  display:none;
-  position:fixed; top:0; left:0; right:0; z-index:10000;
-  background:var(--card);
-  border-bottom:2px solid var(--gold-glo);
-  box-shadow:0 4px 24px rgba(0,0,0,0.14);
-  padding:10px 16px;
-  align-items:center; gap:12px; flex-wrap:wrap;
-">
-  <img src="logo.png" style="width:34px;height:34px;border-radius:8px;flex-shrink:0;object-fit:contain" alt="ImpactGrid"/>
-  <div style="flex:1;min-width:140px">
-    <div id="pwa-title" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--text);line-height:1.2">Add ImpactGrid to your homescreen</div>
-    <div id="pwa-sub" style="font-size:11px;color:var(--text3);margin-top:2px">Get the full app — works offline too</div>
+<!-- ═══ DOWNLOAD BAR (bottom, app-store style) ═══ -->
+<div class="download-bar" id="downloadBar">
+  <img src="logo.png" class="dl-icon" alt="ImpactGrid"
+       onerror="this.style.display='none'"/>
+  <div class="dl-text">
+    <div class="dl-title">ImpactGrid</div>
+    <div class="dl-sub" id="dlSub">Add to your home screen — free</div>
   </div>
-  <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
-    <button id="pwa-add-btn" style="
-      padding:8px 18px; border-radius:9px; font-size:13px; font-weight:700;
-      background:linear-gradient(135deg,var(--gold),var(--gold2));
-      color:#fff; border:none; cursor:pointer; white-space:nowrap;
-      min-height:36px;
-    ">Add to homescreen</button>
-    <button onclick="dismissPWABanner()" style="
-      padding:8px 12px; border-radius:9px; font-size:13px;
-      background:var(--bg2); border:1px solid var(--border2);
-      color:var(--text2); cursor:pointer; white-space:nowrap;
-      min-height:36px;
-    ">Not now</button>
+  <!-- Android / Desktop -->
+  <button class="dl-btn" id="dlBtn">
+    ⬇ Download App
+  </button>
+  <!-- iOS hint shown instead -->
+  <div class="dl-ios-hint" id="dlIOSHint">
+    Tap <strong>Share ⬆️</strong> then <strong>"Add to Home Screen"</strong>
   </div>
+  <button class="dl-dismiss" id="dlDismiss" title="Dismiss">✕</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -710,16 +698,20 @@
 <script src="usage-tracker.js"></script>
 
 <script>
-/* ══════════════════════════════════════
-   PWA INSTALL — full Android/desktop/iOS
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   IMPACTGRID — DOWNLOAD / INSTALL LOGIC
+   Works on: Android Chrome, desktop Chrome/Edge, iOS Safari
+══════════════════════════════════════════ */
 (function() {
-  var deferredPrompt = null;
-  var banner  = document.getElementById('pwa-banner');
-  var addBtn  = document.getElementById('pwa-add-btn');
+  var deferredPrompt  = null;
+  var bar    = document.getElementById('downloadBar');
+  var dlBtn  = document.getElementById('dlBtn');
+  var dlDismiss = document.getElementById('dlDismiss');
+  var dlSub  = document.getElementById('dlSub');
+  var dlIOSHint = document.getElementById('dlIOSHint');
   var installSideBtn = document.getElementById('installSideBtn');
 
-  /* Already running as installed PWA — hide everything */
+  /* Already installed as PWA — hide everything silently */
   if (
     window.navigator.standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches
@@ -728,85 +720,71 @@
     return;
   }
 
-  try { if (sessionStorage.getItem('pwa-dismissed')) return; } catch(e) {}
+  /* Don't show again this session if user dismissed */
+  try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
 
-  /* ── Helpers ── */
-  function isIOS() {
-    return /iphone|ipad|ipod/i.test(navigator.userAgent);
-  }
+  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+  function isSafari() { return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
 
-  function isSafari() {
-    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  }
+  function showBar() {
+    try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
+    if (!bar) return;
 
-  function showIOSInstallGuide() {
-    if (typeof toast === 'function') {
-      toast('Tap Share (⬆️) → "Add to Home Screen" → Add');
+    if (isIOS() && isSafari()) {
+      /* iOS: hide the button, show the share hint instead */
+      if (dlBtn) dlBtn.style.display = 'none';
+      if (dlIOSHint) dlIOSHint.style.display = 'block';
+      if (dlSub) dlSub.textContent = 'Install on your iPhone — takes 3 taps';
     } else {
-      alert(
-        'To install ImpactGrid:\n\n' +
-        '1. Tap the Share button (⬆️)\n' +
-        '2. Tap "Add to Home Screen"\n' +
-        '3. Tap "Add"'
-      );
+      if (dlBtn) dlBtn.style.display = 'inline-flex';
+      if (dlIOSHint) dlIOSHint.style.display = 'none';
     }
-  }
 
-  function showBanner() {
-    try { if (sessionStorage.getItem('pwa-dismissed')) return; } catch(e) {}
-    if (banner) banner.style.display = 'flex';
+    bar.classList.add('visible');
     if (installSideBtn) installSideBtn.style.display = 'flex';
   }
 
-  window.dismissPWABanner = function() {
-    if (banner) banner.style.display = 'none';
+  function hideBar() {
+    if (bar) bar.classList.remove('visible');
     if (installSideBtn) installSideBtn.style.display = 'none';
-    try { sessionStorage.setItem('pwa-dismissed', '1'); } catch(e) {}
-  };
-
-  /* ── Install trigger (shared by banner btn + sidebar btn) ── */
-  async function triggerInstall() {
-    if (isIOS() && isSafari()) {
-      showIOSInstallGuide();
-      dismissPWABanner();
-      return;
-    }
-    if (!deferredPrompt) {
-      showBanner();
-      return;
-    }
-    deferredPrompt.prompt();
-    var result = await deferredPrompt.userChoice;
-    /* Hide banner regardless of outcome — accepted OR dismissed */
-    dismissPWABanner();
-    deferredPrompt = null;
+    try { sessionStorage.setItem('ig-dl-dismissed', '1'); } catch(e) {}
   }
 
-  /* ── Android / Desktop: capture beforeinstallprompt ── */
+  /* Expose so sidebar button can call it */
+  window.dismissPWABanner = hideBar;
+
+  /* Dismiss button */
+  if (dlDismiss) dlDismiss.onclick = hideBar;
+
+  /* ── Android / Desktop: capture install prompt ── */
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     deferredPrompt = e;
-    /* Show after 5 seconds — feels natural, not desperate */
-    setTimeout(showBanner, 5000);
-    if (installSideBtn) installSideBtn.style.display = 'flex';
+    /* Show after 5s — feels natural not desperate */
+    setTimeout(showBar, 5000);
   });
 
-  /* ── iOS Safari: show guide after 5 seconds ── */
+  /* ── iOS Safari: show after 5s ── */
   if (isIOS() && isSafari()) {
-    document.getElementById('pwa-title').textContent = 'Add to your Home Screen';
-    document.getElementById('pwa-sub').textContent = 'Tap Share (⬆️) → "Add to Home Screen"';
-    addBtn.textContent = 'Show me how';
-    setTimeout(showBanner, 5000);
+    setTimeout(showBar, 5000);
   }
 
-  /* ── Wire up buttons ── */
-  if (addBtn) addBtn.onclick = triggerInstall;
+  /* ── Install button click ── */
+  async function triggerInstall() {
+    if (!deferredPrompt) return; /* iOS path handled by hint, no prompt needed */
+    deferredPrompt.prompt();
+    var result = await deferredPrompt.userChoice;
+    /* Hide bar whether accepted OR dismissed — no zombie banner */
+    hideBar();
+    deferredPrompt = null;
+  }
+
+  if (dlBtn) dlBtn.onclick = triggerInstall;
   if (installSideBtn) installSideBtn.onclick = triggerInstall;
 
   /* ── Post-install celebration ── */
   window.addEventListener('appinstalled', function() {
-    if (banner) banner.style.display = 'none';
-    if (installSideBtn) installSideBtn.style.display = 'none';
+    hideBar();
     if (typeof toast === 'function') {
       toast('🔥 ImpactGrid installed — you\'re ready to grow');
     }
