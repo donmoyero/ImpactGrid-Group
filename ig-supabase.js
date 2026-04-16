@@ -6,14 +6,17 @@
 ═══════════════════════════════════════════════════════ */
 
 var SUPABASE_URL  = 'https://wedjsnizcvtgptobwugc.supabase.co';
-var SUPABASE_ANON = 'sb_publishable_7pp0dEBXmrEpiqsfF9SI-A_X0EWrmrW';
+// 🚨 REPLACE THIS with your real anon public key from:
+//    Supabase Dashboard → Settings → API → "anon public"
+//    It must start with: eyJhbGciOiJIUzI1NiIs...
+var SUPABASE_ANON = 'PASTE_YOUR_ANON_PUBLIC_KEY_HERE';
 
 /* Singleton instance — created once, reused everywhere */
 var _supabaseClient = null;
 
 function getSupabase() {
   if (!_supabaseClient) {
-    _supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+    _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
       auth: {
         persistSession    : true,
         autoRefreshToken  : true,
