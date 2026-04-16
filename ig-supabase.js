@@ -9,7 +9,7 @@ var SUPABASE_URL  = 'https://wedjsnizcvtgptobwugc.supabase.co';
 // 🚨 REPLACE THIS with your real anon public key from:
 //    Supabase Dashboard → Settings → API → "anon public"
 //    It must start with: eyJhbGciOiJIUzI1NiIs...
-var SUPABASE_ANON = 'PASTE_YOUR_ANON_PUBLIC_KEY_HERE';
+var SUPABASE_ANON = 'sb_publishable_7pp0dEBXmrEpiqsfF9SI-A_X0EWrmrW';
 
 /* Singleton instance — created once, reused everywhere */
 var _supabaseClient = null;
