@@ -571,8 +571,9 @@ async function googleSignIn() {
       provider: 'google',
       options: { redirectTo: window.location.origin + '/creator-studio.html' }
     });
-    if (res.error) throw res.error;
+    if (res.error) { console.error('[ImpactGrid] Google sign-in error:', res.error); throw res.error; }
   } catch(err) {
+    console.error('[ImpactGrid] googleSignIn caught:', err);
     alert('Google sign-in failed: ' + (err.message || 'Please try again.'));
   }
 }
@@ -647,7 +648,7 @@ async function joinCreator() {
       password: pass,
       options: { data: { full_name: fname + ' ' + lname, role: 'creator' } }
     });
-    if (res.error) throw res.error;
+    if (res.error) { console.error('[ImpactGrid] Creator signUp error:', res.error); throw res.error; }
     var userId = res.data.user ? res.data.user.id : null;
     if (userId) {
       await c.from('profiles').upsert({
@@ -659,6 +660,7 @@ async function joinCreator() {
     }
     showSuccess('creator', fname, 'creator-studio.html');
   } catch(err) {
+    console.error('[ImpactGrid] joinCreator() caught:', err);
     var msg = err.message || 'Something went wrong. Please try again.';
     if (msg.includes('already registered') || msg.includes('already been registered')) {
       msg = 'This email is already registered. <a href="login.html">Sign in instead?</a>';
@@ -694,7 +696,7 @@ async function joinEmployer() {
       email: email, password: pass,
       options: { data: { full_name: name, role: 'employer', company_name: company } }
     });
-    if (res.error) throw res.error;
+    if (res.error) { console.error('[ImpactGrid] Employer signUp error:', res.error); throw res.error; }
     var userId = res.data.user ? res.data.user.id : null;
     if (userId) {
       await c.from('profiles').upsert({
@@ -706,6 +708,7 @@ async function joinEmployer() {
     }
     showSuccess('employer', name.split(' ')[0], 'employer-dashboard.html');
   } catch(err) {
+    console.error('[ImpactGrid] joinEmployer() caught:', err);
     var msg = err.message || 'Something went wrong. Please try again.';
     if (msg.includes('already registered') || msg.includes('already been registered')) {
       msg = 'This email is already registered. <a href="login.html">Sign in instead?</a>';
