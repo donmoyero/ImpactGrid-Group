@@ -32,12 +32,15 @@ if (!SESSION_ID) {
 /* ── STATE ──────────────────────────────────────────────── */
 let psState = {
   currentStep:     1,
-  selectedTheme:   "dark",
+  selectedTheme:   null,   // theme for the output portfolio site; app UI theme is controlled by shared.css + nav.js
   portfolios:      [],
   activePortfolio: null,
   generating:      false,
 };
 
+/* ── THEMES — used ONLY for the published portfolio mini-site (buildPortfolioHTML).
+   The app UI theme is controlled entirely by shared.css + nav.js toggleTheme().
+   Do NOT use these values to style anything inside portfolio-studio.html. ── */
 const THEMES = {
   dark:     { bg:"#1a1814", accent:"#c97e08", text:"#f0ede8", sub:"rgba(240,237,232,0.55)", surface:"#23201a", border:"rgba(255,255,255,0.07)", gradient:"linear-gradient(160deg,#1a1814 0%,#2a2318 100%)" },
   navy:     { bg:"#0f172a", accent:"#4f8ef7", text:"#f0ede8", sub:"rgba(240,237,232,0.55)", surface:"#162035", border:"rgba(255,255,255,0.07)", gradient:"linear-gradient(160deg,#0f172a 0%,#1e3a5f 100%)" },
