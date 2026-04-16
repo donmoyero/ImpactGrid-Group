@@ -304,8 +304,9 @@ img { display:block; max-width:100%; }
 
 /* Sidebar platform status footer */
 .sb-platforms {
-  padding:14px 12px; border-top:1px solid var(--border);
-  margin-top:auto;
+  padding:14px 12px;
+  border-top:1px solid var(--border);
+  margin-top:12px; /* fixed margin instead of auto so it renders on mobile */
 }
 .sb-plat-title {
   font-family:'DM Mono',monospace; font-size:9px;
@@ -910,14 +911,18 @@ img { display:block; max-width:100%; }
   .sidebar {
     position:fixed;
     top:0; bottom:0; left:0;
-    /* Full height: covers ticker + topbar intentionally so it feels native */
-    height:100dvh; height:100vh; /* fallback for older browsers */
+    height:100dvh; height:100vh;
     z-index:200;
     transform:translateX(-100%);
     box-shadow:8px 0 40px rgba(0,0,0,.22);
-    padding-bottom:env(safe-area-inset-bottom);
-    /* Width is defined by --sidebar-w above */
     width:var(--sidebar-w);
+    /* Fix scroll: let the sidebar itself scroll, give room for safe area */
+    overflow-y:auto;
+    overflow-x:hidden;
+    /* Critical: padding-bottom so last item clears safe area + some breathing room */
+    padding-bottom:calc(env(safe-area-inset-bottom) + 32px);
+    /* Remove any flex height constraints that clip content */
+    display:block;
   }
   [data-theme="dark"] .sidebar { box-shadow:8px 0 40px rgba(0,0,0,.6); }
   .sidebar.open { transform:translateX(0); }
@@ -1007,8 +1012,75 @@ img { display:block; max-width:100%; }
 }
 
 /* ═══════════════════════════
-   GLOBAL HELPERS
+   DOWNLOAD / INSTALL BAR
+   Replaces old PWA banner —
+   looks like an App Store prompt
 ═══════════════════════════ */
+.download-bar {
+  display:none; /* shown by JS */
+  position:fixed; bottom:0; left:0; right:0;
+  z-index:10000;
+  background:var(--card);
+  border-top:1px solid var(--border2);
+  box-shadow:0 -8px 32px rgba(0,0,0,.16);
+  padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+  align-items:center; gap:14px;
+  animation:slideUp .35s cubic-bezier(.4,0,.2,1) both;
+}
+.download-bar.visible { display:flex; }
+@keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
+
+.dl-icon {
+  width:48px; height:48px; border-radius:12px;
+  object-fit:contain; flex-shrink:0;
+  border:1px solid var(--border);
+}
+.dl-text { flex:1; min-width:0; }
+.dl-title {
+  font-family:'Syne',sans-serif; font-size:14px;
+  font-weight:900; color:var(--text); margin-bottom:2px;
+}
+.dl-sub { font-size:11px; color:var(--text3); line-height:1.4; }
+
+.dl-btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:10px 20px; border-radius:10px; flex-shrink:0;
+  font-size:13px; font-weight:700;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff; border:none; cursor:pointer;
+  white-space:nowrap;
+  box-shadow:0 4px 14px var(--gold-glo);
+  transition:transform .15s, box-shadow .15s;
+}
+[data-theme="dark"] .dl-btn { color:#07090f; }
+.dl-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px var(--gold-glo); }
+.dl-btn:active { transform:translateY(0); }
+
+.dl-dismiss {
+  width:28px; height:28px; border-radius:50%;
+  background:var(--bg2); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; color:var(--text3); cursor:pointer;
+  flex-shrink:0; transition:all var(--transition);
+}
+.dl-dismiss:hover { border-color:var(--border2); color:var(--text); background:var(--bg3); }
+
+/* iOS share hint (shown instead of button on iOS Safari) */
+.dl-ios-hint {
+  display:none;
+  font-size:12px; color:var(--text2); line-height:1.5;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:9px; padding:8px 12px; flex:1;
+}
+.dl-ios-hint strong { color:var(--text); }
+
+@media(max-width:440px) {
+  .download-bar { gap:10px; padding:12px 14px calc(12px + env(safe-area-inset-bottom)); }
+  .dl-title { font-size:13px; }
+  .dl-btn { padding:9px 14px; font-size:12px; }
+}
+
+/* ── end download bar ── */
 html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 .content-area, .eval-msgs, .sidebar, .tabs-bar { -webkit-overflow-scrolling:touch; }
 *:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
