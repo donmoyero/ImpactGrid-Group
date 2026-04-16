@@ -1,115 +1,260 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pricing — ImpactGrid Creator Intelligence</title>
-  <link rel="icon" href="logo.png" />
-  <link rel="stylesheet" href="shared.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Pricing — ImpactGrid Creator Intelligence</title>
+<meta name="description" content="Simple, honest pricing for ImpactGrid. Start free, upgrade when you're ready."/>
+<link rel="icon" href="favicon.ico"/>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.page-hero{
+  padding:calc(var(--nav-h) + 80px) 28px 72px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.page-hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,var(--gold-dim),transparent);pointer-events:none;}
+.page-hero-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 75% 65% at 50% 50%,black 20%,transparent 100%);
+}
+[data-theme="dark"] .page-hero-grid{background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);}
+.page-hero h1{font-size:clamp(36px,5.5vw,68px);font-weight:900;letter-spacing:-.03em;margin-bottom:18px;position:relative;line-height:1.05;}
+.page-hero h1 em{color:var(--gold);font-style:normal;}
+.page-hero p{font-size:17px;color:var(--text2);max-width:520px;margin:0 auto;line-height:1.75;position:relative;}
+
+/* PLANS GRID */
+.plans-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  max-width:var(--max-w);margin:0 auto;padding:0 28px;
+}
+.plan-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);padding:30px 26px;
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  transition:all .3s;
+}
+.plan-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--pc,var(--border2));transition:opacity .3s;opacity:0;
+}
+.plan-card:hover{transform:translateY(-4px);border-color:var(--border2);box-shadow:var(--sh2);}
+.plan-card:hover::before{opacity:1;}
+.plan-card.featured{
+  border-color:var(--gold-glo);
+  background:linear-gradient(160deg,var(--gold-dim),var(--card) 60%);
+}
+.plan-card.featured::before{background:linear-gradient(90deg,var(--gold),var(--gold2));opacity:1;}
+
+.featured-badge{
+  display:inline-flex;align-items:center;gap:5px;margin-bottom:14px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:700;color:var(--gold);
+}
+.plan-name{font-size:20px;font-weight:900;letter-spacing:-.03em;margin-bottom:4px;}
+.plan-tagline{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5;}
+.plan-price{display:flex;align-items:baseline;gap:2px;margin-bottom:4px;}
+.price-currency{font-size:22px;font-weight:800;color:var(--text);}
+.price-amount{font-family:var(--fd);font-size:clamp(40px,5vw,56px);font-weight:900;letter-spacing:-.04em;line-height:1;}
+.price-period{font-size:15px;color:var(--text2);font-weight:500;}
+.price-note{font-size:12px;color:var(--text2);margin-bottom:20px;font-family:var(--fm);letter-spacing:.03em;}
+.plan-divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+
+.plan-features{list-style:none;padding:0;margin:0 0 24px;display:flex;flex-direction:column;gap:10px;flex:1;}
+.plan-features li{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.5;}
+.feat-check{color:var(--green);font-weight:700;font-size:14px;flex-shrink:0;margin-top:1px;}
+.feat-cross{color:var(--text2);opacity:.4;font-size:14px;flex-shrink:0;margin-top:1px;}
+.feat-muted{color:var(--text2);}
+
+.plan-btn{
+  display:flex;align-items:center;justify-content:center;
+  padding:12px 20px;border-radius:var(--r);font-size:14px;font-weight:700;
+  text-decoration:none;transition:all .2s;margin-top:auto;
+}
+.plan-btn.outline{border:1px solid var(--border2);color:var(--text);}
+.plan-btn.outline:hover{border-color:var(--gold);color:var(--gold);}
+.plan-btn.primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .plan-btn.primary{color:#07090f;}
+.plan-btn.primary:hover{transform:translateY(-2px);box-shadow:var(--sh-gold);}
+.plan-btn.enterprise{border:1px solid var(--gold-glo);color:var(--gold);background:var(--gold-dim);}
+.plan-btn.enterprise:hover{background:var(--gold);color:#fff;}
+[data-theme="dark"] .plan-btn.enterprise:hover{color:#07090f;}
+
+/* COMPARISON TABLE */
+.table-wrap{overflow-x:auto;margin-top:44px;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+thead th{
+  padding:14px 20px;text-align:left;font-size:12px;font-family:var(--fm);
+  letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+  color:var(--text2);border-bottom:2px solid var(--border);
+}
+thead th:first-child{width:35%;}
+thead th.col-featured{color:var(--gold);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+tbody tr:hover{background:var(--bg2);}
+tbody tr:last-child{border-bottom:none;}
+tbody td{padding:13px 20px;color:var(--text2);vertical-align:middle;}
+tbody td:first-child{color:var(--text);font-weight:500;font-size:13.5px;}
+tbody td.col-featured{color:var(--text);font-weight:600;}
+.t-check{color:var(--green);font-size:16px;}
+.t-cross{color:var(--text2);opacity:.35;font-size:16px;}
+
+/* FAQ */
+.faq-wrap{max-width:720px;margin:0 auto;}
+.faq-item{border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
+.faq-q{
+  width:100%;background:var(--card);border:none;color:var(--text);
+  font-family:inherit;font-size:14px;font-weight:600;
+  padding:16px 20px;text-align:left;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:background .2s;
+}
+.faq-q:hover{background:var(--bg2);}
+.arrow{font-size:11px;color:var(--text2);transition:transform .3s;}
+.faq-item.open .arrow{transform:rotate(180deg);}
+.faq-a{
+  display:none;padding:0 20px 16px;
+  font-size:13.5px;line-height:1.7;color:var(--text2);background:var(--card);
+}
+.faq-item.open .faq-a{display:block;}
+
+/* CTA BANNER */
+.cta-band{
+  margin:0 28px 80px;
+  background:linear-gradient(135deg,var(--gold-dim),rgba(201,126,8,.01));
+  border:1px solid var(--gold-glo);border-radius:var(--r2);
+  padding:72px 52px;text-align:center;position:relative;overflow:hidden;
+}
+[data-theme="dark"] .cta-band{background:linear-gradient(135deg,rgba(240,180,41,.08),rgba(240,180,41,.01));}
+.cta-band::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 80% at 50% 50%,var(--gold-dim),transparent);}
+.cta-band h2{font-size:clamp(24px,4vw,44px);margin-bottom:12px;position:relative;}
+.cta-band p{font-size:16px;color:var(--text2);margin-bottom:32px;position:relative;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.7;}
+.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
+.btn-pri{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;text-decoration:none;}
+[data-theme="dark"] .btn-pri{color:#07090f;}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:var(--sh-gold);}
+.btn-sec{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:var(--r);font-size:15px;font-weight:600;border:1px solid var(--border2);color:var(--text);transition:all .2s;text-decoration:none;}
+.btn-sec:hover{border-color:var(--gold);color:var(--gold);}
+
+@media(max-width:900px){.plans-grid{grid-template-columns:1fr;max-width:480px;}}
+@media(max-width:640px){
+  .cta-band{padding:48px 20px;margin:0 12px 60px;}
+  .plans-grid{padding:0 16px;}
+}
+</style>
 </head>
 <body>
 
-  <div id="ig-nav"></div>
-  <div class="page-wrap">
+<div id="ig-nav"></div>
+
+<div class="page-wrap">
 
   <!-- HERO -->
-  <section class="hero">
-    <div class="hero-badge">Simple, honest pricing</div>
-    <h1>Start free. Upgrade when you're ready.</h1>
+  <div class="page-hero">
+    <div class="page-hero-glow"></div>
+    <div class="page-hero-grid"></div>
+    <div class="label-tag" style="justify-content:center;">Pricing</div>
+    <h1>Start Free.<br><em>Upgrade When Ready.</em></h1>
     <p>All plans include access to ImpactGrid Creator Studio. No hidden fees, no surprise charges.</p>
-    <div class="billing-toggle">
-      <span class="active">Monthly billing</span>
-      <span class="save-badge">Cancel anytime</span>
-    </div>
-  </section>
+  </div>
+
+  <div class="divider"></div>
 
   <!-- PLANS -->
-  <section class="plans">
+  <section class="section">
+    <div class="plans-grid">
 
-    <!-- FREE -->
-    <div class="plan-card">
-      <div class="plan-name">Free</div>
-      <div class="plan-tagline">Try ImpactGrid with no card needed</div>
-      <div class="plan-price">
-        <span class="price-currency">£</span>
-        <span class="price-amount">0</span>
+      <!-- FREE -->
+      <div class="plan-card" style="--pc:var(--border2);">
+        <div class="plan-name">Free</div>
+        <div class="plan-tagline">Try ImpactGrid with no card needed</div>
+        <div class="plan-price">
+          <span class="price-currency">£</span>
+          <span class="price-amount">0</span>
+        </div>
+        <div class="price-note">Always free · No card required</div>
+        <hr class="plan-divider"/>
+        <ul class="plan-features">
+          <li><span class="feat-check">✓</span> <span><strong>3 AI uses per month</strong> — shared across all tools</span></li>
+          <li><span class="feat-check">✓</span> <span>Trend Feed — read-only (always on)</span></li>
+          <li><span class="feat-check">✓</span> <span>Dijo AI content generator</span></li>
+          <li><span class="feat-check">✓</span> <span>Carousel Studio</span></li>
+          <li><span class="feat-check">✓</span> <span>Dijo Evaluator</span></li>
+          <li><span class="feat-check">✓</span> <span>Content Plan</span></li>
+          <li><span class="feat-check">✓</span> <span>Audience Intelligence</span></li>
+          <li><span class="feat-cross">✗</span> <span class="feat-muted">Saved projects — wiped after 30 days</span></li>
+          <li><span class="feat-cross">✗</span> <span class="feat-muted">No platform connections (YouTube / TikTok)</span></li>
+          <li><span class="feat-cross">✗</span> <span class="feat-muted">No portfolio</span></li>
+        </ul>
+        <a href="creator-studio.html" class="plan-btn outline">Start for free →</a>
       </div>
-      <div class="price-note">Always free · No card required</div>
-      <hr class="plan-divider" />
-      <ul class="plan-features">
-        <li><span class="icon check">✓</span> <span><strong>3 AI uses per month</strong> — shared across all tools</span></li>
-        <li><span class="icon check">✓</span> <span>Trend Feed — read-only (always on)</span></li>
-        <li><span class="icon check">✓</span> <span>Dijo AI content generator</span></li>
-        <li><span class="icon check">✓</span> <span>Carousel Studio</span></li>
-        <li><span class="icon check">✓</span> <span>Dijo Evaluator</span></li>
-        <li><span class="icon check">✓</span> <span>Content Plan</span></li>
-        <li><span class="icon check">✓</span> <span>Audience Intelligence</span></li>
-        <li><span class="icon cross">✗</span> <span style="color:var(--muted)">Saved projects — wiped after 30 days</span></li>
-        <li><span class="icon cross">✗</span> <span style="color:var(--muted)">No platform connections (YouTube / TikTok)</span></li>
-        <li><span class="icon cross">✗</span> <span style="color:var(--muted)">No portfolio</span></li>
-      </ul>
-      <a href="creator-studio.html" class="plan-btn btn-outline">Start for free →</a>
-    </div>
 
-    <!-- PROFESSIONAL -->
-    <div class="plan-card featured">
-      <div class="featured-badge">⭐ Most popular</div>
-      <div class="plan-name">Professional</div>
-      <div class="plan-tagline">For solo creators and freelancers</div>
-      <div class="plan-price">
-        <span class="price-currency">£</span>
-        <span class="price-amount">8.99</span>
-        <span class="price-period">/mo</span>
+      <!-- PROFESSIONAL -->
+      <div class="plan-card featured">
+        <div class="featured-badge">⭐ Most popular</div>
+        <div class="plan-name">Professional</div>
+        <div class="plan-tagline">For solo creators and freelancers</div>
+        <div class="plan-price">
+          <span class="price-currency">£</span>
+          <span class="price-amount">8.99</span>
+          <span class="price-period">/mo</span>
+        </div>
+        <div class="price-note">Billed monthly · Cancel anytime</div>
+        <hr class="plan-divider"/>
+        <ul class="plan-features">
+          <li><span class="feat-check">✓</span> <span><strong>100 AI uses per month</strong></span></li>
+          <li><span class="feat-check">✓</span> <span>Full Trend Feed with personalised scoring</span></li>
+          <li><span class="feat-check">✓</span> <span>Save &amp; export up to 20 carousels</span></li>
+          <li><span class="feat-check">✓</span> <span>1 live portfolio — saved permanently</span></li>
+          <li><span class="feat-check">✓</span> <span>YouTube + TikTok account connection</span></li>
+          <li><span class="feat-check">✓</span> <span>Dijo Adviser — 50 messages/month, 30-day history</span></li>
+          <li><span class="feat-check">✓</span> <span>Dijo Evaluator — up to 10 evaluations/month</span></li>
+          <li><span class="feat-check">✓</span> <span>Content Plan — 4 weeks saved at once</span></li>
+          <li><span class="feat-check">✓</span> <span>Data saved while subscription is active</span></li>
+          <li><span class="feat-check">✓</span> <span>Email support</span></li>
+        </ul>
+        <a href="creator-studio.html" class="plan-btn primary">Get Professional →</a>
       </div>
-      <div class="price-note">Billed monthly · Cancel anytime</div>
-      <hr class="plan-divider" />
-      <ul class="plan-features">
-        <li><span class="icon check">✓</span> <span><strong>100 AI uses per month</strong></span></li>
-        <li><span class="icon check">✓</span> <span>Full Trend Feed with personalised scoring</span></li>
-        <li><span class="icon check">✓</span> <span>Save & export up to 20 carousels</span></li>
-        <li><span class="icon check">✓</span> <span>1 live portfolio — saved permanently</span></li>
-        <li><span class="icon check">✓</span> <span>YouTube + TikTok account connection</span></li>
-        <li><span class="icon check">✓</span> <span>Dijo Adviser — 50 messages/month, 30-day history</span></li>
-        <li><span class="icon check">✓</span> <span>Dijo Evaluator — up to 10 evaluations/month</span></li>
-        <li><span class="icon check">✓</span> <span>Content Plan — 4 weeks saved at once</span></li>
-        <li><span class="icon check">✓</span> <span>Data saved while subscription is active</span></li>
-        <li><span class="icon check">✓</span> <span>Email support</span></li>
-      </ul>
-      <a href="creator-studio.html" class="plan-btn btn-primary">Get Professional →</a>
-    </div>
 
-    <!-- ENTERPRISE -->
-    <div class="plan-card">
-      <div class="plan-name">Enterprise</div>
-      <div class="plan-tagline">For businesses, agencies &amp; serious operators</div>
-      <div class="plan-price">
-        <span class="price-currency">£</span>
-        <span class="price-amount">13.99</span>
-        <span class="price-period">/mo</span>
+      <!-- ENTERPRISE -->
+      <div class="plan-card" style="--pc:var(--gold);">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-tagline">For businesses, agencies &amp; serious operators</div>
+        <div class="plan-price">
+          <span class="price-currency">£</span>
+          <span class="price-amount">13.99</span>
+          <span class="price-period">/mo</span>
+        </div>
+        <div class="price-note">Billed monthly · Cancel anytime</div>
+        <hr class="plan-divider"/>
+        <ul class="plan-features">
+          <li><span class="feat-check">✓</span> <span><strong>Unlimited AI uses</strong></span></li>
+          <li><span class="feat-check">✓</span> <span>Everything in Professional</span></li>
+          <li><span class="feat-check">✓</span> <span>Unlimited carousels &amp; saved projects</span></li>
+          <li><span class="feat-check">✓</span> <span>Up to 3 live portfolios — permanently saved</span></li>
+          <li><span class="feat-check">✓</span> <span>Dijo Adviser — unlimited messages + full history forever</span></li>
+          <li><span class="feat-check">✓</span> <span>Unlimited Dijo Evaluator runs</span></li>
+          <li><span class="feat-check">✓</span> <span>Unlimited saved Content Plans</span></li>
+          <li><span class="feat-check">✓</span> <span>Consulting Services — priority booking</span></li>
+          <li><span class="feat-check">✓</span> <span>Downloadable PDF / export reports</span></li>
+          <li><span class="feat-check">✓</span> <span>Priority support — reply within 24hrs</span></li>
+          <li><span class="feat-check">✓</span> <span>Early access to new features</span></li>
+        </ul>
+        <a href="creator-studio.html" class="plan-btn enterprise">Get Enterprise →</a>
       </div>
-      <div class="price-note">Billed monthly · Cancel anytime</div>
-      <hr class="plan-divider" />
-      <ul class="plan-features">
-        <li><span class="icon check">✓</span> <span><strong>Unlimited AI uses</strong></span></li>
-        <li><span class="icon check">✓</span> <span>Everything in Professional</span></li>
-        <li><span class="icon check">✓</span> <span>Unlimited carousels &amp; saved projects</span></li>
-        <li><span class="icon check">✓</span> <span>Up to 3 live portfolios — permanently saved</span></li>
-        <li><span class="icon check">✓</span> <span>Dijo Adviser — unlimited messages + full history forever</span></li>
-        <li><span class="icon check">✓</span> <span>Unlimited Dijo Evaluator runs</span></li>
-        <li><span class="icon check">✓</span> <span>Unlimited saved Content Plans</span></li>
-        <li><span class="icon check">✓</span> <span>Consulting Services — priority booking</span></li>
-        <li><span class="icon check">✓</span> <span>Downloadable PDF / export reports</span></li>
-        <li><span class="icon check">✓</span> <span>Priority support — reply within 24hrs</span></li>
-        <li><span class="icon check">✓</span> <span>Early access to new features</span></li>
-      </ul>
-      <a href="creator-studio.html" class="plan-btn btn-enterprise">Get Enterprise →</a>
-    </div>
 
+    </div>
   </section>
 
+  <div class="divider"></div>
+
   <!-- COMPARISON TABLE -->
-  <section class="comparison">
-    <h2>Compare plans</h2>
+  <section class="section">
+    <div style="text-align:center;margin-bottom:8px;">
+      <div class="label-tag">Compare</div>
+      <h2 class="sec-h">Full plan comparison</h2>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -121,106 +266,101 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>Monthly AI uses</td><td>3</td><td>100</td><td>Unlimited</td></tr>
-          <tr><td>Trend Feed</td><td>Read-only</td><td>Full + personalised</td><td>Full + personalised</td></tr>
-          <tr><td>Dijo AI Generator</td><td>✓</td><td>✓</td><td>✓</td></tr>
-          <tr><td>Carousel Studio</td><td>✓</td><td>✓</td><td>✓</td></tr>
-          <tr><td>Saved carousels</td><td class="t-cross">✗</td><td>Up to 20</td><td>Unlimited</td></tr>
-          <tr><td>Portfolio Studio</td><td class="t-cross">✗</td><td>1 portfolio</td><td>3 portfolios</td></tr>
-          <tr><td>Dijo Evaluator</td><td>3/month</td><td>10/month</td><td>Unlimited</td></tr>
-          <tr><td>Content Plan</td><td>3/month</td><td>4 weeks saved</td><td>Unlimited</td></tr>
-          <tr><td>Dijo Adviser (chat)</td><td class="t-cross">✗</td><td>50 msgs/mo</td><td>Unlimited</td></tr>
-          <tr><td>YouTube + TikTok connection</td><td class="t-cross">✗</td><td class="t-check">✓</td><td class="t-check">✓</td></tr>
-          <tr><td>Consulting Services</td><td class="t-cross">✗</td><td class="t-cross">✗</td><td class="t-check">✓</td></tr>
-          <tr><td>PDF / export reports</td><td class="t-cross">✗</td><td class="t-cross">✗</td><td class="t-check">✓</td></tr>
-          <tr><td>Data retention</td><td>30 days</td><td>While active</td><td>Forever</td></tr>
-          <tr><td>Support</td><td>None</td><td>Email</td><td>Priority (24hr)</td></tr>
-          <tr><td>Early feature access</td><td class="t-cross">✗</td><td class="t-cross">✗</td><td class="t-check">✓</td></tr>
+          <tr><td>Monthly AI uses</td><td>3</td><td class="col-featured">100</td><td>Unlimited</td></tr>
+          <tr><td>Trend Feed</td><td>Read-only</td><td class="col-featured">Full + personalised</td><td>Full + personalised</td></tr>
+          <tr><td>Dijo AI Generator</td><td class="t-check">✓</td><td class="t-check col-featured">✓</td><td class="t-check">✓</td></tr>
+          <tr><td>Carousel Studio</td><td class="t-check">✓</td><td class="t-check col-featured">✓</td><td class="t-check">✓</td></tr>
+          <tr><td>Saved carousels</td><td class="t-cross">✗</td><td class="col-featured">Up to 20</td><td>Unlimited</td></tr>
+          <tr><td>Portfolio Studio</td><td class="t-cross">✗</td><td class="col-featured">1 portfolio</td><td>3 portfolios</td></tr>
+          <tr><td>Dijo Evaluator</td><td>3/month</td><td class="col-featured">10/month</td><td>Unlimited</td></tr>
+          <tr><td>Content Plan</td><td>3/month</td><td class="col-featured">4 weeks saved</td><td>Unlimited</td></tr>
+          <tr><td>Dijo Adviser (chat)</td><td class="t-cross">✗</td><td class="col-featured">50 msgs/mo</td><td>Unlimited</td></tr>
+          <tr><td>YouTube + TikTok connection</td><td class="t-cross">✗</td><td class="t-check col-featured">✓</td><td class="t-check">✓</td></tr>
+          <tr><td>Consulting Services</td><td class="t-cross">✗</td><td class="t-cross col-featured">✗</td><td class="t-check">✓</td></tr>
+          <tr><td>PDF / export reports</td><td class="t-cross">✗</td><td class="t-cross col-featured">✗</td><td class="t-check">✓</td></tr>
+          <tr><td>Data retention</td><td>30 days</td><td class="col-featured">While active</td><td>Forever</td></tr>
+          <tr><td>Support</td><td>None</td><td class="col-featured">Email</td><td>Priority (24hr)</td></tr>
+          <tr><td>Early feature access</td><td class="t-cross">✗</td><td class="t-cross col-featured">✗</td><td class="t-check">✓</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
+  <div class="divider"></div>
+
   <!-- FAQ -->
-  <section class="faq">
-    <h2>Common questions</h2>
-
-    <div class="faq-item">
-      <button class="faq-q">Do I need a card to start free? <span class="arrow">▼</span></button>
-      <div class="faq-a">No. The free plan requires no payment details at all. Just create an account and start using ImpactGrid immediately.</div>
+  <section class="section">
+    <div style="text-align:center;margin-bottom:36px;">
+      <div class="label-tag">FAQ</div>
+      <h2 class="sec-h">Common questions</h2>
     </div>
-
-    <div class="faq-item">
-      <button class="faq-q">What happens when I hit my 3 free uses? <span class="arrow">▼</span></button>
-      <div class="faq-a">Your tools will be paused until the start of the next month. You can upgrade to Professional at any time to keep going straight away.</div>
-    </div>
-
-    <div class="faq-item">
-      <button class="faq-q">What gets deleted after 30 days on free? <span class="arrow">▼</span></button>
-      <div class="faq-a">Any content you saved — carousels, generated posts, portfolios — is automatically removed after 30 days on the free plan. Upgrade to keep your work permanently.</div>
-    </div>
-
-    <div class="faq-item">
-      <button class="faq-q">Can I cancel anytime? <span class="arrow">▼</span></button>
-      <div class="faq-a">Yes. There are no contracts or long-term commitments. Cancel your subscription at any time and you'll keep access until the end of your billing period.</div>
-    </div>
-
-    <div class="faq-item">
-      <button class="faq-q">What are Consulting Services on Enterprise? <span class="arrow">▼</span></button>
-      <div class="faq-a">Enterprise members get priority booking for 1-to-1 consulting sessions with the ImpactGrid team. You'll also receive AI-generated engagement reports tailored to your brand and audience — available in the Consulting section of your dashboard.</div>
-    </div>
-
-    <div class="faq-item">
-      <button class="faq-q">Can I upgrade or downgrade at any time? <span class="arrow">▼</span></button>
-      <div class="faq-a">Yes. You can switch plans at any time from your account settings. Changes take effect at the start of the next billing period.</div>
-    </div>
-
-    <div class="faq-item">
-      <button class="faq-q">I'm a business — is Enterprise right for me? <span class="arrow">▼</span></button>
-      <div class="faq-a">Yes. Enterprise is designed for growing businesses, agencies, and serious content operators who need unlimited outputs, multiple portfolios, consulting access, and professional-grade reports. If you're unsure, start on Professional and upgrade when you need more.</div>
-    </div>
-
-  </section>
-
-  <!-- CTA BANNER -->
-  <section class="cta-banner">
-    <div class="cta-inner">
-      <h2>Ready to start growing?</h2>
-      <p>Join ImpactGrid free today. No card, no commitment — just real creator intelligence.</p>
-      <div class="cta-btns">
-        <a href="creator-studio.html" class="primary">Start free →</a>
-        <a href="contact.html" class="secondary">Talk to us</a>
+    <div class="faq-wrap">
+      <div class="faq-item">
+        <button class="faq-q">Do I need a card to start free? <span class="arrow">▼</span></button>
+        <div class="faq-a">No. The free plan requires no payment details at all. Just create an account and start using ImpactGrid immediately.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What happens when I hit my 3 free uses? <span class="arrow">▼</span></button>
+        <div class="faq-a">Your tools will be paused until the start of the next month. You can upgrade to Professional at any time to keep going straight away.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What gets deleted after 30 days on free? <span class="arrow">▼</span></button>
+        <div class="faq-a">Any content you saved — carousels, generated posts, portfolios — is automatically removed after 30 days on the free plan. Upgrade to keep your work permanently.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Can I cancel anytime? <span class="arrow">▼</span></button>
+        <div class="faq-a">Yes. There are no contracts or long-term commitments. Cancel your subscription at any time and you'll keep access until the end of your billing period.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What are Consulting Services on Enterprise? <span class="arrow">▼</span></button>
+        <div class="faq-a">Enterprise members get priority booking for 1-to-1 consulting sessions with the ImpactGrid team. You'll also receive AI-generated engagement reports tailored to your brand and audience — available in the Consulting section of your dashboard.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Can I upgrade or downgrade at any time? <span class="arrow">▼</span></button>
+        <div class="faq-a">Yes. You can switch plans at any time from your account settings. Changes take effect at the start of the next billing period.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">I'm a business — is Enterprise right for me? <span class="arrow">▼</span></button>
+        <div class="faq-a">Yes. Enterprise is designed for growing businesses, agencies, and serious content operators who need unlimited outputs, multiple portfolios, consulting access, and professional-grade reports. If you're unsure, start on Professional and upgrade when you need more.</div>
       </div>
     </div>
   </section>
 
-  <!-- FOOTER -->
-  <footer>
-    <p style="margin-bottom:0.75rem">
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-      <a href="contact.html">Contact</a>
-    </p>
-    <p>© 2026 ImpactGrid Group Ltd.</p>
-  </footer>
+  <div class="divider"></div>
 
-  </div><!-- /.page-wrap -->
+  <!-- CTA -->
+  <section style="padding:56px 0 80px;">
+    <div class="cta-band">
+      <div class="label-tag" style="justify-content:center;">Get Started</div>
+      <h2>Ready to start growing?</h2>
+      <p>Join ImpactGrid free today. No card, no commitment — just real creator intelligence.</p>
+      <div class="cta-acts">
+        <a href="creator-studio.html" class="btn-pri">Start free →</a>
+        <a href="contact.html" class="btn-sec">Talk to us</a>
+      </div>
+    </div>
+  </section>
 
-  <script>
-    // FAQ accordion
-    document.querySelectorAll('.faq-q').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = btn.closest('.faq-item');
-        const isOpen = item.classList.contains('open');
-        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
-        if (!isOpen) item.classList.add('open');
-      });
-    });
-  </script>
-  <script src="nav.js"></script>
-  <script>
-    renderNav('pricing.html');
-    renderFooter();
-  </script>
+</div>
+
+<div id="ig-footer"></div>
+
+<script defer src="nav.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  renderNav('pricing.html');
+  renderFooter();
+});
+
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+</script>
 </body>
 </html>
