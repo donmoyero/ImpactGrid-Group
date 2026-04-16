@@ -11,6 +11,14 @@ var _selectedStyle = 'Educational';
 var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
 
 /* ─────────────────────────────────────────────
+   SUBSCRIPTION SYSTEM
+───────────────────────────────────────────── */
+var IG_USER = null;
+var IG_PLAN = 'free'; // free | pro | enterprise
+var IG_USES = 0;
+var IG_LIMIT = 3;
+
+/* ─────────────────────────────────────────────
    THEME
 ───────────────────────────────────────────── */
 function toggleTheme() {
@@ -112,13 +120,95 @@ function checkAuth() {
   var c = null;
   try { if (window.getSupabase) c = getSupabase(); } catch(e) {}
   if (!c) return;
+
   c.auth.getSession().then(function(r) {
-    if (r && r.data && r.data.session) setNavUser(r.data.session.user);
+    if (r && r.data && r.data.session) {
+      IG_USER = r.data.session.user;
+      setNavUser(IG_USER);
+
+      // 🔥 Load usage (local for now)
+      IG_USES = parseInt(localStorage.getItem('ig_uses') || '0');
+
+      // TODO later: load plan from DB
+    }
   });
+
   c.auth.onAuthStateChange(function(ev, session) {
-    if (session && session.user) setNavUser(session.user);
+    if (session && session.user) {
+      IG_USER = session.user;
+      setNavUser(session.user);
+    }
   });
 }
+
+/* ─────────────────────────────────────────────
+   PAYWALL
+───────────────────────────────────────────── */
+function checkAccess() {
+  // Not logged in
+  if (!IG_USER) {
+    showUpgrade("Create an account to save and unlock more");
+    return false;
+  }
+
+  // Free plan limit
+  if (IG_PLAN === 'free' && IG_USES >= IG_LIMIT) {
+    showUpgrade("You've hit your free limit — upgrade to continue");
+    return false;
+  }
+
+  return true;
+}
+
+function showUpgrade(message) {
+  var existing = document.getElementById('upgradeBar');
+  if (existing) existing.remove();
+
+  var bar = document.createElement('div');
+  bar.id = 'upgradeBar';
+  bar.innerHTML =
+    '<div class="upgrade-inner">'
+    + '<span>' + message + '</span>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
+    + '<a href="login.html" class="btn btn-secondary">Login</a>'
+    + '</div></div>';
+
+  document.body.appendChild(bar);
+  setTimeout(function() { bar.classList.add('show'); }, 50);
+  setTimeout(function() { bar.remove(); }, 4000);
+}
+
+(function() {
+  var style = document.createElement('style');
+  style.innerHTML = [
+    '#upgradeBar {',
+    '  position: fixed;',
+    '  top: 80px;',
+    '  left: 50%;',
+    '  transform: translateX(-50%) translateY(-20px);',
+    '  background: var(--card);',
+    '  border: 1px solid var(--border);',
+    '  border-radius: 999px;',
+    '  padding: 10px 16px;',
+    '  box-shadow: var(--sh2);',
+    '  opacity: 0;',
+    '  transition: all .3s ease;',
+    '  z-index: 9999;',
+    '}',
+    '#upgradeBar.show {',
+    '  opacity: 1;',
+    '  transform: translateX(-50%) translateY(0);',
+    '}',
+    '.upgrade-inner {',
+    '  display: flex;',
+    '  gap: 12px;',
+    '  align-items: center;',
+    '  font-size: 12px;',
+    '}'
+  ].join('\n');
+  document.head.appendChild(style);
+})();
 
 /* ─────────────────────────────────────────────
    DIJO API — 3-sentence max enforced
@@ -335,6 +425,7 @@ function calcScore(topic) {
 }
 
 async function fullGenerate() {
+  if (!checkAccess()) return;
   var topic = document.getElementById('genTopic').value.trim();
   if (!topic) { toast('⚠️ Enter a topic first'); return; }
   var platform = document.getElementById('genPlatform').value;
@@ -454,6 +545,8 @@ async function fullGenerate() {
 
     var dsc = document.getElementById('dashLastScore'); if (dsc) { dsc.textContent = score.toFixed(1); dsc.style.color = scColor; }
     var dsl = document.getElementById('dashLastLabel'); if (dsl) { dsl.textContent = verdict; dsl.style.color = scColor; }
+    IG_USES++;
+    localStorage.setItem('ig_uses', IG_USES);
     toast('✅ Package generated!');
   } catch(e) {
     errEl.classList.add('visible');
