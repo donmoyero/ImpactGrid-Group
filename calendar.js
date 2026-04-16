@@ -45,9 +45,14 @@ var CAL_PLATS = {
 /* CAL_IDEAS and DIJO_FILL_TEMPLATES removed — replaced by real fetchTrends() engine */
 
 /* ── Supabase client (uses content project — same as supabase-config.js) ── */
+var _calSupabase = null;
 function getCalDb() {
-  // use your content supabase (DO NOT change project)
-  return window.contentClient || null;
+  if (!_calSupabase) {
+    var url  = 'https://exeiojgldxqaakkybdij.supabase.co';
+    var anon = 'sb_publishable_ZuzIHR43W_7OpCejLpFyTQ_r5HQYHSq';
+    _calSupabase = window.supabase ? window.supabase.createClient(url, anon) : null;
+  }
+  return _calSupabase;
 }
 
 /* ── Get current user ID (falls back to demo-user if not logged in) ── */
@@ -618,6 +623,25 @@ function startDijoNudges(){
   }, 1000 * 60 * 60 * 3); // every 3 hours
 }
 
+/* ── Minute-precise reminders ── */
+function checkReminders() {
+  var now = new Date();
+  var currentTime =
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0');
+
+  Object.keys(calState.posts).forEach(function(date) {
+    calState.posts[date].forEach(function(post) {
+      if (post.bestTime === currentTime) {
+        sendNotification(
+          '📅 Time to post',
+          post.topic + ' (' + (post.platform || '') + ')'
+        );
+      }
+    });
+  });
+}
+
 /* ── Init ── */
 function initCalendar() {
   loadFromSupabase(); // loads from DB, auto-fills if empty, then renders
@@ -626,6 +650,7 @@ function initCalendar() {
   startAIReminders();
   startDijoNudges();
   checkMissedTrends();
+  setInterval(checkReminders, 60000);
 }
 
 // Auto-init on DOMContentLoaded if panel exists
