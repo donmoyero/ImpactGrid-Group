@@ -301,22 +301,48 @@
     return null;
   }
 
-  window.setNavUser = function(name, email) {
+  /* ── Helper: render avatar into an element (image or initial fallback) ── */
+  function _setAv(el, initial) {
+    if (!el) return;
+    var avatar = '';
+    try { avatar = localStorage.getItem('ig_avatar') || ''; } catch(e) {}
+    if (avatar) {
+      el.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" />';
+    } else {
+      el.textContent = initial;
+    }
+  }
+
+  window.setNavUser = function(userObjOrName, email) {
+    /* Accept either a full Supabase user object OR legacy (name, email) strings */
+    var name, resolvedEmail;
+    if (userObjOrName && typeof userObjOrName === 'object') {
+      var u = userObjOrName;
+      resolvedEmail = u.email || '';
+      name = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name))
+             || resolvedEmail.split('@')[0]
+             || 'Creator';
+    } else {
+      name          = userObjOrName || '';
+      resolvedEmail = email || '';
+      name          = name || resolvedEmail.split('@')[0] || 'Creator';
+    }
+
+    var initial = name.charAt(0).toUpperCase();
+
     /* ── Desktop ── */
     var guest = document.getElementById('navGuest');
     var user  = document.getElementById('navUser');
     if (guest) guest.style.display = 'none';
     if (user)  user.style.display  = 'block';
 
-    var initial = (name || email || '?').charAt(0).toUpperCase();
-    var av = document.getElementById('userAv');
-    if (av) av.textContent = initial;
+    _setAv(document.getElementById('userAv'), initial);
 
     var uName = document.getElementById('userName');
-    if (uName) uName.textContent = name ? name.split(' ')[0] : (email || 'Account');
+    if (uName) uName.textContent = name.split(' ')[0];
 
     var uEmail = document.getElementById('userEmail');
-    if (uEmail) uEmail.textContent = email || '';
+    if (uEmail) uEmail.textContent = resolvedEmail;
 
     /* ── Mobile sidebar ── */
     var mobOut  = document.getElementById('mobOut');
@@ -326,12 +352,12 @@
     if (mobIn)   mobIn.classList.add('show');
     if (mobCard) mobCard.classList.add('show');
 
-    var mobAv    = document.getElementById('mobUserAv');
-    var mobUName = document.getElementById('mobUserName');
-    var mobUEmail= document.getElementById('mobUserEmail');
-    if (mobAv)    mobAv.textContent    = initial;
-    if (mobUName) mobUName.textContent = name || email || 'Account';
-    if (mobUEmail)mobUEmail.textContent= email || '';
+    _setAv(document.getElementById('mobUserAv'), initial);
+
+    var mobUName  = document.getElementById('mobUserName');
+    var mobUEmail = document.getElementById('mobUserEmail');
+    if (mobUName)  mobUName.textContent  = name;
+    if (mobUEmail) mobUEmail.textContent = resolvedEmail;
   };
 
   window.setNavGuest = function() {
@@ -355,8 +381,7 @@
       var res = await client.auth.getSession();
       if (res.data && res.data.session) {
         var u = res.data.session.user;
-        var displayName = (u.user_metadata && u.user_metadata.full_name) || '';
-        window.setNavUser(displayName, u.email);
+        window.setNavUser(u); /* pass full user object — setNavUser handles name/avatar */
       } else {
         window.setNavGuest();
       }
