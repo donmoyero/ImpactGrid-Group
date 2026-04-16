@@ -25,7 +25,6 @@ calState.postsArrayForSupabase = function(userId) {
         platform:  post.platform,
         score:     post.score || 0,
         best_time: post.bestTime || '18:00',
-        source:    post.source || 'AI',
         note:      post.note || '',
         status:    post.status || 'draft'
       });
@@ -351,7 +350,6 @@ async function savePost() {
       platform: _modalPlatSel,
       score:    Math.floor(Math.random() * 100),
       bestTime: '18:00',
-      source:   'manual',
       note:     notes,
       status:   sts
     };
@@ -366,7 +364,6 @@ async function savePost() {
         platform:  _modalPlatSel,
         score:     newPost.score,
         best_time: newPost.bestTime,
-        source:    'manual',
         note:      notes,
         status:    sts
       }]).select().single();
