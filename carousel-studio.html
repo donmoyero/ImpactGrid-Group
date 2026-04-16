@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="carousel-studio.css"/>
 <link rel="stylesheet" href="carousel-studio-additions.css"/>
 <style>
+/* ── Resolve --ig-yellow → shared token so dark/light mode inherits correctly ── */
+:root { --ig-yellow: var(--brand-primary); }
 /* ── Carousel-page-only extras (no overrides, no !important) ── */
 
 /* Inline editable fields */
@@ -50,11 +52,11 @@
 
 <!-- ══ NAV ══ -->
 <nav>
-  <a href="index.html" class="logo-wrap" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
-    <img src="logo.png" style="width:26px;height:26px;object-fit:contain;border-radius:5px;" alt="ImpactGrid"
+  <a href="index.html" class="logo">
+    <img src="logo.png" class="logo-img" alt="ImpactGrid"
          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-    <div style="display:none;width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--gold),var(--gold2));align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;font-family:var(--fd);">IG</div>
-    <span style="font-family:var(--fd);font-weight:900;font-size:15px;letter-spacing:-.03em;color:var(--text);">ImpactGrid</span>
+    <div class="logo-mark" style="display:none;">IG</div>
+    <span class="logo-text">ImpactGrid</span>
   </a>
   <div class="sep"></div>
   <span class="crumb">Carousel Studio</span>
@@ -65,7 +67,7 @@
   <button class="nb" onclick="downloadAll()" title="Download all slides as PNG">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Slides
   </button>
-  <button class="nb" onclick="toggleTheme()" style="font-size:14px;padding:6px 9px" title="Toggle light/dark">🌙</button>
+  <button class="nb" id="themeBtn" onclick="toggleTheme()" style="font-size:14px;padding:6px 9px" title="Toggle light/dark">🌙</button>
   <a class="nb" href="creator-studio.html" title="Back to Creator Studio">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>Studio
   </a>
@@ -74,7 +76,6 @@
 <!-- ══ LEFT PANEL ══ -->
 <aside class="left">
   <div class="ph">
-    <img class="ph-icon" src="logo.png" alt="" onerror="this.style.display='none'"/>
     <div class="ph-title">✦ AI Carousel Creator</div>
     <div class="ph-sub">Describe your content. Dijo picks the theme, writes real captions with live trend context &amp; designs every slide.</div>
   </div>
@@ -438,6 +439,7 @@
 
 <!-- ══ MAIN ENGINE (v4.5 — includes Caption Engine) ══ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="nav.js"></script>
 <script src="carousel-studio.js"></script>
 
 <script>
