@@ -320,11 +320,9 @@ function setWelcome() {
   if (hour >= 18) greeting = "Good evening";
 
   const greetEl = document.getElementById('dijoGreeting');
-  const nameEl  = document.getElementById('dijoWelcome');
   const briefEl = document.getElementById('dijoBrief');
 
-  if (greetEl) greetEl.textContent = greeting + ",";
-  if (nameEl)  nameEl.textContent = name + " 👋";
+  if (greetEl) greetEl.textContent = greeting + ", " + name;
 
   // use real trend count
   updateBriefing();
