@@ -1009,7 +1009,7 @@ function val(id)       { const el = document.getElementById(id); return el ? el.
 function setValue(id,v){ const el = document.getElementById(id); if (el) el.value = v || ""; }
 function sleep(ms)     { return new Promise(r => setTimeout(r, ms)); }
 function showToast(msg){ const s = document.getElementById("psToastShelf"); if(!s) return; const t=document.createElement("div"); t.className="ps-toast"; t.textContent=msg; s.appendChild(t); setTimeout(()=>t.remove(),3000); }
-function toggleTheme() { const h=document.documentElement; h.dataset.theme = h.dataset.theme==="light"?"dark":"light"; }
+// toggleTheme is provided by nav.js — do not redefine here
 
 /* ══════════════════════════════════════════════════════════
    INIT
