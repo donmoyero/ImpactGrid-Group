@@ -120,7 +120,17 @@ window.igSignOut = async function() {
 };
 function checkAuth() {
   var c = getSupabase();
-  if (!c) return;
+  if (!c) { console.log("SUPABASE NOT READY ❌"); return; }
+
+  // 🔥 TEMP DEBUG — remove once session confirmed
+  c.auth.getSession().then(function(r) {
+    console.log("SESSION:", r);
+    if (r?.data?.session) {
+      console.log("USER FOUND ✅:", r.data.session.user);
+    } else {
+      console.log("NO SESSION ❌");
+    }
+  });
 
   c.auth.getSession().then(async function(r) {
     if (r?.data?.session) {
