@@ -21,6 +21,75 @@ var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
 var IG_IS_ADMIN    = false;
 
 /* ─────────────────────────────────────────────
+   LOAD USER — called on DOMContentLoaded
+   Syncs IG_USER from Supabase session, then
+   updates greeting + avatar/name UI.
+───────────────────────────────────────────── */
+async function loadUser() {
+  var supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    var result = await supabase.auth.getUser();
+    if (result.data && result.data.user) {
+      IG_USER = result.data.user;
+      console.log("USER SYNCED ✅", IG_USER);
+      setWelcome();
+      updateUserUI();
+    } else {
+      console.log("No user found");
+    }
+  } catch(e) {
+    console.warn("loadUser error:", e);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadUser);
+
+/* ─────────────────────────────────────────────
+   UPDATE USER UI — fills name + avatar elements
+   Uses data-user-name / data-user-avatar attrs,
+   with fallback to profileName / profileAvatar IDs.
+───────────────────────────────────────────── */
+function updateUserUI() {
+  if (!IG_USER) return;
+
+  var name =
+    (IG_USER.user_metadata && IG_USER.user_metadata.full_name) ||
+    (IG_USER.email && IG_USER.email.split('@')[0]) ||
+    'Creator';
+
+  var avatar =
+    (IG_USER.user_metadata && IG_USER.user_metadata.avatar_url) || null;
+
+  // data-user-name elements
+  var nameEls = document.querySelectorAll('[data-user-name]');
+  nameEls.forEach(function(el) { el.textContent = name; });
+
+  // data-user-avatar elements
+  var avatarEls = document.querySelectorAll('[data-user-avatar]');
+  avatarEls.forEach(function(el) {
+    if (avatar) {
+      el.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">';
+    } else {
+      el.textContent = name.charAt(0).toUpperCase();
+    }
+  });
+
+  // Fallback: also update profileName / profileAvatar by ID
+  var cardName = document.getElementById('profileName');
+  var cardAv   = document.getElementById('profileAvatar');
+  if (cardName) cardName.textContent = name;
+  if (cardAv) {
+    if (avatar) {
+      cardAv.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">';
+    } else {
+      cardAv.textContent = name.charAt(0).toUpperCase();
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
    BRIEFING
 ───────────────────────────────────────────── */
 function ensureTrends() {
