@@ -575,11 +575,28 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
 
-    /* TODO: Replace this timeout with your Supabase/email API call */
-    setTimeout(() => {
+    fetch("https://your-render-url/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        firstName,
+        email,
+        subject,
+        message
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
       document.getElementById('successMsg').style.display = 'block';
       btn.textContent = '✅ Sent!';
-    }, 1000);
+    })
+    .catch(() => {
+      alert("Failed to send. Try again.");
+      btn.disabled = false;
+      btn.textContent = 'Send Message →';
+    });
   }
 </script>
 
