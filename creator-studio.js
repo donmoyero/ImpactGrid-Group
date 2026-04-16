@@ -502,12 +502,15 @@ function renderFullTrends() {
 }
 
 function renderTrendChart() {
-  var ctx = document.getElementById('trendChart');
-  if (!ctx) return;
+  var canvas = document.getElementById('trendChart');
+  if (!canvas) return;
+
+  var ctx = canvas.getContext('2d');
 
   if (trendChartInstance) {
     trendChartInstance.stop();
     trendChartInstance.destroy();
+    trendChartInstance = null;
   }
 
   var labels = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
