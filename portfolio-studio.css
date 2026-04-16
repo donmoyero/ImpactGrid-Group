@@ -3,39 +3,28 @@
    portfolio-studio.css
    ═══════════════════════════════════════════════════════════ */
 
-/* ── TOKENS: mapped to shared.css via bridge in HTML <style> block ── */
-/* Additive tokens not in shared.css */
+/* ── Portfolio Studio local tokens (layout only — colours/typography from shared.css) ── */
 :root {
+  --surface:  var(--card);
+  --surface2: var(--card2);
+  --surface3: var(--bg2);
+  --accent:   var(--gold);
+  --accent2:  var(--gold2);
+  --fh: var(--fd);
+  --fm: var(--fm, 'DM Mono', monospace);
+  --fp: var(--fd); /* Playfair removed — use Syne */
+  --r-lg: 16px;
   --r-xl: 22px;
-  --pink: #e91e8c;
-  --glow: 0 0 40px rgba(201,126,8,.15);
+  --sh-lg: var(--sh2);
 }
 
-/* ── RESET ── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:var(--fb);background:var(--bg);color:var(--text);overflow:hidden;font-size:14px}
-button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
-input,textarea,select{font-family:inherit;color:var(--text);outline:none;background:none}
-a{color:inherit;text-decoration:none}
-.hidden{display:none!important}
-
-/* ── APP BAR (sits under the shared nav) ── */
-/* The shared nav from nav.js handles logo, theme toggle, main links.
-   This bar only carries the page crumb + studio shortcut. */
-.ps-app-bar {
-  height: 38px; display:flex; align-items:center; gap:10px;
-  padding: 0 20px; background:var(--card); border-bottom:1px solid var(--border);
-  position:relative; flex-shrink:0; z-index:190;
-}
-.ps-sep{width:1px;height:16px;background:var(--border)}
-.ps-crumb{font-size:11px;color:var(--text3);font-family:var(--fm)}
-.ps-nav-sp{flex:1}
-.ps-nb{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r);font-size:12px;font-weight:500;color:var(--text2);transition:.15s}
-.ps-nb:hover{background:var(--bg2);color:var(--text)}
+/* ── App-shell overrides (shared.css owns the full reset) ── */
+html, body { height: 100%; overflow: hidden; font-size: 14px; }
+input, textarea, select { font-family: inherit; color: var(--text); outline: none; background: none; }
+.hidden { display: none !important; }
 
 /* ── SHELL ── */
-/* Total chrome = shared nav (--nav-h) + app bar (38px) */
-.ps-shell{height:calc(100vh - var(--nav-h) - 38px);overflow:hidden;position:relative}
+.ps-shell{height:calc(100vh - var(--nav-h));overflow:hidden;position:relative}
 
 /* ── SCREENS ── */
 .ps-screen{position:absolute;inset:0;overflow-y:auto;opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity .3s ease,transform .3s ease}
@@ -286,7 +275,7 @@ a{color:inherit;text-decoration:none}
    BUILDER
 ══════════════════════════════════════════ */
 #screenBuilder{padding:0;overflow:hidden}
-.builder-shell{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - var(--nav-h) - 38px);overflow:hidden}
+.builder-shell{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - var(--nav-h));overflow:hidden}
 
 /* Left edit panel */
 .builder-left{
@@ -491,80 +480,34 @@ a{color:inherit;text-decoration:none}
 }
 
 
-/* ── Contact Modal — uses shared tokens, respects light/dark ── */
-.contact-modal{
-  position: fixed;
-  inset: 0;
+/* ── Contact Modal ── */
+.contact-modal {
+  position: fixed; inset: 0;
   background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   z-index: 999;
 }
-
-.contact-box{
-  background: var(--card);
-  border: 1px solid var(--border2);
-  padding: 20px;
-  border-radius: var(--r2);
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.contact-box {
+  background: var(--card); border: 1px solid var(--border2);
+  padding: 28px; border-radius: var(--r2);
+  width: 340px; display: flex; flex-direction: column; gap: 12px;
+  box-shadow: var(--sh2);
 }
-
-.contact-box h3{
-  margin: 0;
-  font-size: 18px;
-  color: var(--text);
-  font-family: var(--fd);
-}
-
+.contact-box h3 { margin: 0; font-size: 18px; color: var(--text); }
 .contact-box input,
-.contact-box textarea{
-  background: var(--bg2);
-  border: 1px solid var(--border2);
-  border-radius: var(--r);
-  padding: 10px 12px;
-  color: var(--text);
-  font-size: 14px;
-  outline: none;
+.contact-box textarea {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 10px 12px;
+  color: var(--text); font-size: 14px; outline: none; width: 100%;
   font-family: var(--fb);
-  transition: border-color .15s;
 }
-
 .contact-box input:focus,
-.contact-box textarea:focus {
-  border-color: var(--gold);
+.contact-box textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.contact-box textarea { min-height: 90px; resize: vertical; }
+.contact-box button {
+  padding: 10px; border-radius: var(--r);
+  border: none; cursor: pointer; font-weight: 600; font-size: 14px;
 }
-
-.contact-box textarea{
-  min-height: 90px;
-  resize: vertical;
-}
-
-.contact-box button{
-  padding: 10px;
-  border-radius: var(--r);
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  font-family: var(--fb);
-  transition: .15s;
-}
-
-.contact-box button:first-of-type{
-  background: var(--gold);
-  color: #fff;
-}
-[data-theme="dark"] .contact-box button:first-of-type { color: #07090f; }
-
+.contact-box button:first-of-type { background: var(--gold); color: #fff; }
 .contact-box button:first-of-type:hover { background: var(--gold2); }
-
-.contact-box button:last-of-type{
-  background: var(--bg2);
-  color: var(--text2);
-  border: 1px solid var(--border2);
-}
-.contact-box button:last-of-type:hover { color: var(--text); }
+.contact-box button:last-of-type { background: var(--bg2); color: var(--text2); border: 1px solid var(--border2); }
