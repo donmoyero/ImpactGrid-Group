@@ -313,8 +313,9 @@ async function googleSignIn() {
       provider: 'google',
       options: { redirectTo: window.location.origin + '/creator-studio.html' }
     });
-    if (res.error) throw res.error;
+    if (res.error) { console.error('[ImpactGrid] Google sign-in error:', res.error); throw res.error; }
   } catch(err) {
+    console.error('[ImpactGrid] googleSignIn caught:', err);
     showAlert('Google sign-in failed: ' + (err.message || 'Please try again.'), 'error');
   }
 }
@@ -356,7 +357,7 @@ async function login() {
   try {
     var client = getSupabase();
     var res = await client.auth.signInWithPassword({ email: email, password: password });
-    if (res.error) throw res.error;
+    if (res.error) { console.error('[ImpactGrid] signInWithPassword error:', res.error); throw res.error; }
 
     var profRes = await client.from('profiles').select('role,status').eq('id', res.data.user.id).single();
     var role = (profRes.data && profRes.data.role) || 'creator';
@@ -364,6 +365,7 @@ async function login() {
     redirectByRole(res.data.user, role);
 
   } catch(e) {
+    console.error('[ImpactGrid] login() caught:', e);
     var msg = e.message || 'Login failed. Please check your details.';
     if (msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')) {
       msg = 'Incorrect email or password. Please try again.';
