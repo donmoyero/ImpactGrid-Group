@@ -1304,6 +1304,19 @@ function loadCalendar() {
 }
 
 /* ─────────────────────────────────────────────
+   TOP 3 TRENDS — "What you should post this week"
+───────────────────────────────────────────── */
+function updateTopTrends() {
+  if (!_allTrends || !_allTrends.length) return;
+
+  const sorted = [..._allTrends].sort((a, b) => b.score - a.score);
+
+  document.getElementById("trend1").textContent = sorted[0]?.title || "-";
+  document.getElementById("trend2").textContent = sorted[1]?.title || "-";
+  document.getElementById("trend3").textContent = sorted[2]?.title || "-";
+}
+
+/* ─────────────────────────────────────────────
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('load', async function() {
@@ -1313,6 +1326,7 @@ window.addEventListener('load', async function() {
   loadCalendar();
   await fetchTrends();
   ensureTrends();
+  updateTopTrends();
   renderDashTrends();
   renderDashOpps();
   loadBriefing();
@@ -1324,6 +1338,7 @@ window.addEventListener('load', async function() {
       await fetchTrends();
       renderDashTrends();
       renderDashOpps();
+      updateTopTrends();
       if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
         renderFullTrends();
       }
