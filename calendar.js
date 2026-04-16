@@ -13,6 +13,27 @@ var calState = {
   filter: 'all'
 };
 
+/* ── Helper: flatten calState.posts into Supabase-ready rows ── */
+calState.postsArrayForSupabase = function(userId) {
+  var arr = [];
+  Object.keys(calState.posts).forEach(function(date) {
+    calState.posts[date].forEach(function(post) {
+      arr.push({
+        user_id:   userId || getCalUserId(),
+        date:      date,
+        topic:     post.topic,
+        platform:  post.platform,
+        score:     post.score || 0,
+        best_time: post.bestTime || '18:00',
+        source:    post.source || 'AI',
+        note:      post.note || '',
+        status:    post.status || 'draft'
+      });
+    });
+  });
+  return arr;
+};
+
 /* Platform config */
 var CAL_PLATS = {
   yt: { icon: '▶️', label: 'YouTube',  cls: 'cal-chip-yt',  modalCls: 'sel-yt' },
@@ -22,6 +43,29 @@ var CAL_PLATS = {
 };
 
 /* CAL_IDEAS and DIJO_FILL_TEMPLATES removed — replaced by real fetchTrends() engine */
+
+/* ── Supabase client (uses content project — same as supabase-config.js) ── */
+var _calSupabase = null;
+function getCalDb() {
+  if (!_calSupabase) {
+    var url  = 'https://exeiojgldxqaakkybdij.supabase.co';
+    var anon = 'sb_publishable_ZuzIHR43W_7OpCejLpFyTQ_r5HQYHSq';
+    _calSupabase = window.supabase ? window.supabase.createClient(url, anon) : null;
+  }
+  return _calSupabase;
+}
+
+/* ── Get current user ID (falls back to demo-user if not logged in) ── */
+function getCalUserId() {
+  try {
+    var c = window.getSupabase ? getSupabase() : null;
+    if (c && c.auth && c.auth.user) {
+      var u = c.auth.user();
+      if (u) return u.id;
+    }
+  } catch(e) {}
+  return 'demo-user';
+}
 
 /* ── Week helpers ── */
 function getWeekStart(offset) {
@@ -203,7 +247,7 @@ function calModalSelectPlat(btn, plat) {
   updateModalPlatBtns(plat);
 }
 
-function savePost() {
+async function savePost() {
   var input  = document.getElementById('calModalInput');
   var status = document.getElementById('calModalStatus');
   var notesEl = document.getElementById('calModalNotes');
@@ -215,7 +259,7 @@ function savePost() {
   if (!calState.posts[key]) calState.posts[key] = [];
 
   if (calState.editingPostId) {
-    // Edit existing
+    // Edit existing (local only — DB update via upsert)
     var posts = calState.posts[key];
     var idx = posts.findIndex(function(p){ return p.id === calState.editingPostId; });
     if (idx !== -1) {
@@ -223,10 +267,21 @@ function savePost() {
       posts[idx].platform = _modalPlatSel;
       posts[idx].status   = sts;
       posts[idx].note     = notes;
+
+      // Upsert to Supabase
+      var db = getCalDb();
+      if (db) {
+        await db.from('calendar_posts').update({
+          topic:     label,
+          platform:  _modalPlatSel,
+          status:    sts,
+          note:      notes
+        }).eq('id', calState.editingPostId);
+      }
     }
   } else {
-    // Add new
-    calState.posts[key].push({
+    // Add new — insert to Supabase and use returned ID
+    var newPost = {
       id:       'p' + (calState.nextId++),
       topic:    label,
       platform: _modalPlatSel,
@@ -235,26 +290,47 @@ function savePost() {
       source:   'manual',
       note:     notes,
       status:   sts
-    });
+    };
+
+    var db = getCalDb();
+    if (db) {
+      var res = await db.from('calendar_posts').insert([{
+        user_id:   getCalUserId(),
+        date:      key,
+        topic:     label,
+        platform:  _modalPlatSel,
+        score:     newPost.score,
+        best_time: newPost.bestTime,
+        source:    'manual',
+        note:      notes,
+        status:    sts
+      }]).select().single();
+      if (res.data) newPost.id = res.data.id; // use real DB id
+    }
+
+    calState.posts[key].push(newPost);
   }
 
   closeModal();
   renderCalendar();
-  saveCalToStorage();
 }
 
-function deletePost(dateKey, postId) {
+async function deletePost(dateKey, postId) {
   if (!calState.posts[dateKey]) return;
   calState.posts[dateKey] = calState.posts[dateKey].filter(function(p){ return p.id !== postId; });
   renderCalendar();
-  saveCalToStorage();
+
+  var db = getCalDb();
+  if (db) { await db.from('calendar_posts').delete().eq('id', postId); }
 }
 
 /* ── Save note to first post of the day ── */
-function saveNote(dateKey, text) {
+async function saveNote(dateKey, text) {
   if (!calState.posts[dateKey] || !calState.posts[dateKey].length) return;
   calState.posts[dateKey][0].note = text;
-  saveCalToStorage();
+
+  var db = getCalDb();
+  if (db) { await db.from('calendar_posts').update({ note: text }).eq('id', calState.posts[dateKey][0].id); }
 }
 
 /* ── Real Trend Engine ── */
@@ -302,8 +378,23 @@ async function calAutoFill() {
   }
 
   renderCalendar();
-  saveCalToStorage();
   if (btn) { btn.disabled = false; btn.textContent = '✨ Auto-Fill with Dijo'; }
+
+  // Save all filled posts to Supabase
+  var db = getCalDb();
+  if (db) {
+    var userId = getCalUserId();
+    // Delete existing posts for this week then re-insert
+    var weekStart2 = getWeekStart(calState.weekOffset);
+    var datesToClear = [];
+    for (var j = 0; j < 7; j++) {
+      var d2 = new Date(weekStart2);
+      d2.setDate(weekStart2.getDate() + j);
+      datesToClear.push(formatDateKey(d2));
+    }
+    await db.from('calendar_posts').delete().eq('user_id', userId).in('date', datesToClear);
+    await db.from('calendar_posts').insert(calState.postsArrayForSupabase(userId));
+  }
 }
 
 /* ── Dijo suggest for modal ── */
@@ -374,18 +465,46 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-/* ── Persist to localStorage ── */
-function saveCalToStorage() {
-  try { localStorage.setItem('ig_cal_posts', JSON.stringify(calState.posts)); localStorage.setItem('ig_cal_id', calState.nextId); } catch(e) {}
-}
-function loadCalFromStorage() {
+/* ── Load from Supabase (replaces localStorage load) ── */
+async function loadFromSupabase() {
+  var db = getCalDb();
+  if (!db) { console.warn('calendar: Supabase not ready, skipping cloud load'); return; }
+
   try {
-    var saved = localStorage.getItem('ig_cal_posts');
-    if (saved) calState.posts = JSON.parse(saved);
-    var savedId = localStorage.getItem('ig_cal_id');
-    if (savedId) calState.nextId = parseInt(savedId) || 1;
-  } catch(e) {}
+    var userId = getCalUserId();
+    var res = await db.from('calendar_posts').select('*').eq('user_id', userId);
+    if (res.error) { console.error('calendar load error:', res.error); return; }
+
+    calState.posts = {}; // clear before repopulating
+    (res.data || []).forEach(function(item) {
+      var key = item.date;
+      if (!calState.posts[key]) calState.posts[key] = [];
+      calState.posts[key].push({
+        id:       item.id,
+        topic:    item.topic,
+        platform: item.platform,
+        score:    item.score || 0,
+        bestTime: item.best_time || '18:00',
+        source:   item.source || 'AI',
+        note:     item.note || '',
+        status:   item.status || 'draft'
+      });
+    });
+
+    renderCalendar();
+
+    // Auto-fill if nothing in DB yet
+    if (Object.keys(calState.posts).length === 0) {
+      setTimeout(function() { calAutoFill(); }, 600);
+    }
+  } catch(e) {
+    console.error('calendar: loadFromSupabase failed', e);
+  }
 }
+
+/* ── localStorage removed — Supabase is the source of truth ──
+   saveCalToStorage() and loadCalFromStorage() are no longer used.
+   All reads go through loadFromSupabase(), all writes go direct to DB. ── */
 
 /* ── Escape helper ── */
 function calEsc(s) {
@@ -451,17 +570,8 @@ function startDijoNudges(){
 
 /* ── Init ── */
 function initCalendar() {
-  loadCalFromStorage();
-  renderCalendar();
+  loadFromSupabase(); // loads from DB, auto-fills if empty, then renders
 
-  // AUTO FILL if empty
-  if (Object.keys(calState.posts).length === 0) {
-    setTimeout(function() {
-      calAutoFill();
-    }, 600);
-  }
-
-  // NEW
   requestNotificationPermission();
   startAIReminders();
   startDijoNudges();
