@@ -454,6 +454,7 @@ async function fetchTrends() {
         };
       });
       updateBriefing();
+      runTrendPrediction();
       return;
     }
   } catch(e) {}
@@ -465,6 +466,7 @@ async function fetchTrends() {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 };
     });
     updateBriefing();
+    runTrendPrediction();
   } catch(e) {}
 }
 
@@ -496,6 +498,20 @@ function renderFullTrends() {
   el.innerHTML = _allTrends.length
     ? _allTrends.map(trendItemHTML).join('')
     : '<div style="padding:16px;color:var(--text3)">Loading trends…</div>';
+}
+
+function runTrendPrediction() {
+  const el = document.getElementById("trendPrediction");
+  if (!el || !_allTrends || !_allTrends.length) return;
+
+  // pick strongest trend
+  const top = _allTrends.sort((a,b)=>b.score-a.score)[0];
+
+  el.innerHTML = `
+    <div class="h3">${top.topic}</div>
+    <div class="text-sm">Predicted to peak this week</div>
+    <div class="text-sm">Best platform: ${top.platLabel || "TikTok"}</div>
+  `;
 }
 
 function filterTrends(btn, plat) {
