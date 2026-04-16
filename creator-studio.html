@@ -818,52 +818,6 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script>
-/* ══════════════════════════════════════════
-   LIVE TREND CHART — Chart.js momentum line
-══════════════════════════════════════════ */
-function renderTrendChart() {
-  const ctx = document.getElementById('trendChart');
-  if (!ctx || !_allTrends) return;
-
-  const labels = _allTrends.map(t => {
-    if (!t || !t.title) return "trend";
-    return t.title.substring(0, 8);
-  });
-  const data = _allTrends.map(t => t.score || 0);
-
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Trend',
-        data,
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true,
-        pointRadius: 3
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: { display: false },
-        x: { display: false }
-      },
-      plugins: {
-        legend: { display: false }
-      }
-    }
-  });
-}
-
-/* Call after trends have loaded — hook into the existing trend load cycle */
-document.addEventListener('trendsLoaded', renderTrendChart);
-/* Fallback: also try once DOM + scripts are settled */
-window.addEventListener('load', function() {
-  setTimeout(renderTrendChart, 1500);
-});
-
 function populateTopTrends() {
   if (!_allTrends || !_allTrends.length) return;
   const sorted = [..._allTrends].sort((a, b) => b.score - a.score);
