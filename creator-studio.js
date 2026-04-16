@@ -50,7 +50,7 @@ function switchTab(name, sidebarItem) {
 
   if (name === 'trends' && _allTrends.length) renderFullTrends();
   if (name === 'evaluator') initEvaluator();
-  if (name === 'generator') {
+  if (name === 'calendar') {
     if (typeof loadCalendar === 'function') loadCalendar();
   }
 }
@@ -968,8 +968,20 @@ function getBestPostTime(i) {
 }
 
 function loadCalendar() {
-  var container = document.getElementById('calendarContainer');
-  if (!container) return;
+  var el = document.getElementById('calendarContainer');
+  if (!el) return;
+
+  if (typeof calState !== 'undefined' && Object.keys(calState.posts).length === 0) {
+    el.innerHTML = `
+      <div style="padding:14px;color:var(--text2);font-size:13px">
+        📅 No content yet<br><br>
+        Dijo will suggest what to post automatically.
+      </div>
+    `;
+    return;
+  }
+
+  var container = el;
   var today = new Date();
   container.innerHTML = '';
 
