@@ -38,6 +38,12 @@ let psState = {
   generating:      false,
 };
 
+/* ── MONETISATION ───────────────────────────── */
+let IG_USER = null;
+let IG_PLAN = "free"; // free | pro | enterprise
+let IG_USES = parseInt(localStorage.getItem("ig_portfolio_uses") || "0");
+const IG_LIMIT = 1; // 🔥 portfolio is premium → only 1 free
+
 /* ── THEMES — used ONLY for the published portfolio mini-site (buildPortfolioHTML).
    The app UI theme is controlled entirely by shared.css + nav.js toggleTheme().
    Do NOT use these values to style anything inside portfolio-studio.html. ── */
@@ -49,6 +55,38 @@ const THEMES = {
   rose:     { bg:"#1a0d12", accent:"#f43f80", text:"#fce7ef", sub:"rgba(252,231,239,0.55)", surface:"#260d16", border:"rgba(255,255,255,0.07)",    gradient:"linear-gradient(160deg,#1a0d12 0%,#2d0f1e 100%)" },
   forest:   { bg:"#14532d", accent:"#4ade80", text:"#f0fdf4", sub:"rgba(240,253,244,0.6)",  surface:"#1a6635", border:"rgba(255,255,255,0.08)",    gradient:"linear-gradient(160deg,#14532d 0%,#166534 100%)" },
 };
+
+/* ══════════════════════════════════════════════════════════
+   AUTH + ACCESS CONTROL
+══════════════════════════════════════════════════════════ */
+async function getUser() {
+  try {
+    const sb = window.supabase;
+    if (!sb) return null;
+    const { data } = await sb.auth.getUser();
+    return data?.user || null;
+  } catch {
+    return null;
+  }
+}
+
+async function checkPortfolioAccess() {
+  IG_USER = await getUser();
+
+  // ❌ Not logged in
+  if (!IG_USER) {
+    showUpgradeBar("Sign up to create and save your portfolio");
+    return false;
+  }
+
+  // ❌ Free limit
+  if (IG_PLAN === "free" && IG_USES >= IG_LIMIT) {
+    showUpgradeBar("Upgrade to create unlimited portfolios");
+    return false;
+  }
+
+  return true;
+}
 
 /* ══════════════════════════════════════════════════════════
    SCREEN NAVIGATION
@@ -98,11 +136,11 @@ async function loadPortfolios() {
 
 async function savePortfolioToDB(pf){
 
-  // Prefer ig_user_id (authenticated user) but fall back to the anonymous SESSION_ID
-  const userId = localStorage.getItem("ig_user_id") || SESSION_ID;
+  // Require authenticated user — no anonymous saving
+  const userId = localStorage.getItem("ig_user_id");
 
-  if(!userId){
-    showToast("Login required to save");
+  if (!userId) {
+    showUpgradeBar("Login required to save your portfolio");
     return false;
   }
 
@@ -364,6 +402,7 @@ function generateSlug(name) {
    Matches carousel-studio.js callAI pattern exactly
 ══════════════════════════════════════════════════════════ */
 async function startGeneration() {
+  if (!(await checkPortfolioAccess())) return;
   const pf = collectOnboardData();
   psState.activePortfolio = pf;
   psState.generating = true;
@@ -409,6 +448,8 @@ async function startGeneration() {
 
     /* Save to Supabase */
     await savePortfolioToDB(pf);
+    IG_USES++;
+    localStorage.setItem("ig_portfolio_uses", IG_USES);
     psState.portfolios.unshift(pf);
 
     advanceStep(); // Step 5: building preview
@@ -1095,3 +1136,61 @@ async function sendInquiry(){
     showToast("Server error");
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   UPGRADE BAR
+══════════════════════════════════════════════════════════ */
+function showUpgradeBar(message) {
+  let el = document.getElementById("upgradeBar");
+
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "upgradeBar";
+    document.body.appendChild(el);
+  }
+
+  el.innerHTML =
+    '<div class="upgrade-inner">'
+    + '<span>' + message + '</span>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
+    + '<a href="login.html" class="btn btn-secondary">Login</a>'
+    + '</div></div>';
+
+  el.classList.add("show");
+
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 4000);
+}
+
+(function() {
+  const style = document.createElement("style");
+  style.innerHTML = [
+    "#upgradeBar {",
+    "  position: fixed;",
+    "  top: 80px;",
+    "  left: 50%;",
+    "  transform: translateX(-50%) translateY(-20px);",
+    "  background: var(--card);",
+    "  border: 1px solid var(--border);",
+    "  border-radius: 999px;",
+    "  padding: 10px 16px;",
+    "  box-shadow: var(--sh2);",
+    "  opacity: 0;",
+    "  transition: all .3s ease;",
+    "  z-index: 9999;",
+    "}",
+    "#upgradeBar.show {",
+    "  opacity: 1;",
+    "  transform: translateX(-50%) translateY(0);",
+    "}",
+    ".upgrade-inner {",
+    "  display: flex;",
+    "  gap: 12px;",
+    "  align-items: center;",
+    "  font-size: 12px;",
+    "}"
+  ].join("\n");
+  document.head.appendChild(style);
+})();
