@@ -394,7 +394,7 @@
                 <p>JPG or PNG. Max 2MB. Shown on your network profile.</p>
                 <div class="av-btns">
                   <label>
-                    <input type="file" id="s-av-upload" accept="image/*" style="display:none" />
+                    <input type="file" id="s-av-upload" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])" />
                     Upload photo
                   </label>
                 </div>
@@ -911,32 +911,61 @@
     }
 
     /* ─── Avatar upload ─── */
-    document.getElementById('s-av-upload').addEventListener('change', async function(e) {
-      var file = e.target.files[0]; if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        var img = document.getElementById('s-av-img');
-        img.src = ev.target.result; img.style.display = 'block';
-        /* ✅ Cache base64 so nav picks it up immediately on any page */
-        try { localStorage.setItem('ig_avatar', ev.target.result); } catch(e) {}
-      };
-      reader.readAsDataURL(file);
+    async function uploadAvatar(file) {
+      if (!file) return;
 
-      var client     = getSupabase();
-      var sessionRes = await client.auth.getSession();
-      if (!sessionRes.data || !sessionRes.data.session) return;
-      var uid  = sessionRes.data.session.user.id;
-      var ext  = file.name.split('.').pop();
-      var path = 'avatars/' + uid + '.' + ext;
-      var up   = await client.storage.from('avatars').upload(path, file, { upsert: true });
-      if (!up.error) {
-        var urlRes = client.storage.from('avatars').getPublicUrl(path);
-        var publicUrl = urlRes.data.publicUrl;
-        await client.from('profiles').upsert({ id: uid, avatar_url: publicUrl });
-        /* ✅ Also cache the CDN URL (smaller than base64, preferred for returning visits) */
-        try { localStorage.setItem('ig_avatar', publicUrl); } catch(e) {}
+      const supabase = getSupabase();
+
+      // get logged in user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("You are not logged in");
+        return;
       }
-    });
+
+      // fixed file path (important)
+      const filePath = user.id + '/avatar.png';
+
+      // upload file
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          upsert: true
+        });
+
+      if (error) {
+        console.error("UPLOAD ERROR:", error);
+        alert("Upload failed");
+        return;
+      }
+
+      // get public URL
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const avatarUrl = data.publicUrl;
+
+      // update avatar preview immediately
+      var img = document.getElementById('s-av-img');
+      img.src = avatarUrl; img.style.display = 'block';
+      try { localStorage.setItem('ig_avatar', avatarUrl); } catch(e) {}
+
+      // save to database
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', user.id);
+
+      if (dbError) {
+        console.error("DB ERROR:", dbError);
+        alert("Database update failed");
+        return;
+      }
+
+      alert("Avatar uploaded successfully ✅");
+    }
 
     /* ─── Update email ─── */
     async function updateEmail() {
