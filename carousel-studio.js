@@ -408,10 +408,12 @@ var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#256
 var currentTrend = null;
 
 /* ── MONETISATION ───────────────────────────── */
-var IG_USER = null;
-var IG_PLAN = "free"; // free | pro | enterprise
-var IG_USES = parseInt(localStorage.getItem("ig_carousel_uses") || "0");
-var IG_LIMIT = 3;
+var IG_USER        = null;
+var IG_PLAN        = "free"; // free | pro | enterprise
+var IG_USES        = parseInt(localStorage.getItem("ig_carousel_uses") || "0");
+var IG_LIMIT       = 3;
+var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
+var IG_IS_ADMIN    = false;
 
 async function getUser() {
   try {
@@ -432,6 +434,16 @@ async function checkCarouselAccess() {
     showUpgradeBar("Login to generate and save carousels");
     return false;
   }
+
+  // 👑 Admin override
+  if (IG_USER.email === IG_ADMIN_EMAIL) {
+    IG_IS_ADMIN = true;
+    IG_PLAN = "enterprise";
+    console.log("👑 Admin mode active");
+  }
+
+  // 👑 Admin bypass
+  if (IG_IS_ADMIN) return true;
 
   // ❌ Free limit reached
   if (IG_PLAN === "free" && IG_USES >= IG_LIMIT) {
@@ -589,8 +601,10 @@ async function generate(){
   buildStrip();renderSlide();updateCounter();fillEdit();
   btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate';
   btn.disabled=false;
-  IG_USES++;
-  localStorage.setItem("ig_carousel_uses", IG_USES);
+  if (!IG_IS_ADMIN) {
+    IG_USES++;
+    localStorage.setItem("ig_carousel_uses", IG_USES);
+  }
   toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any text to edit');
 
   // ── STEP 4: enrich with live captions + hashtags after render ──
