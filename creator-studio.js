@@ -217,8 +217,23 @@ function setWelcome() {
     IG_USER.email.split('@')[0] ||
     'Creator';
 
-  const el = document.getElementById('dijoWelcome');
-  if (el) el.textContent = "Welcome back, " + name + " 👋";
+  const hour = new Date().getHours();
+
+  let greeting = "Good morning";
+  if (hour >= 12 && hour < 18) greeting = "Good afternoon";
+  if (hour >= 18) greeting = "Good evening";
+
+  const greetEl = document.getElementById('dijoGreeting');
+  const nameEl  = document.getElementById('dijoWelcome');
+  const briefEl = document.getElementById('dijoBrief');
+
+  if (greetEl) greetEl.textContent = greeting + ",";
+  if (nameEl)  nameEl.textContent = name + " 👋";
+
+  // keep this SIMPLE (no overthinking)
+  if (briefEl) {
+    briefEl.textContent = "3 trends rising · Best time to post: 6PM";
+  }
 }
 
 /* ─────────────────────────────────────────────
