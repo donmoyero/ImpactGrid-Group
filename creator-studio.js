@@ -575,10 +575,10 @@ function trendItemHTML(t) {
 
   // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
   var badge =
-    t.plat === 'tt'    ? '🔥 Viral (TikTok)'
-    : t.plat === 'yt'  ? '🎯 Validated (YouTube)'
-    : t.plat === 'cross' ? '🚀 Multi-Platform'
-    : '🔍 Demand (Google)';
+    t.plat === 'tt'    ? '⚡ TikTok Viral'
+    : t.plat === 'yt'  ? '🎯 YouTube Validated'
+    : t.plat === 'cross' ? '🚀 Cross-Platform'
+    : '🔍 Search Demand';
 
   // Confidence indicator
   var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
