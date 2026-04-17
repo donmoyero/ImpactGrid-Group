@@ -517,12 +517,6 @@ const pointLabelsPlugin = {
         const y = point.y;
 
         ctx.save();
-
-        // BOX
-        ctx.fillStyle = '#0f1117';
-        ctx.strokeStyle = '#c97e08';
-        ctx.lineWidth = 1;
-
         ctx.font = '11px DM Sans';
 
         const padding = 6;
@@ -530,16 +524,32 @@ const pointLabelsPlugin = {
         const boxWidth = textWidth + padding * 2;
         const boxHeight = 20;
 
+        // 🔥 AUTO POSITION (key fix)
+        let offsetY = -28;
+
+        // prevent top clipping
+        if (y < 40) offsetY = 20;
+
+        // BOX
+        ctx.fillStyle = '#0f1117';
+        ctx.strokeStyle = '#c97e08';
+        ctx.lineWidth = 1;
+
         ctx.beginPath();
-        ctx.roundRect(x - boxWidth/2, y - 30, boxWidth, boxHeight, 6);
+        ctx.roundRect(
+          x - boxWidth / 2,
+          y + offsetY,
+          boxWidth,
+          boxHeight,
+          6
+        );
         ctx.fill();
         ctx.stroke();
 
         // TEXT
         ctx.fillStyle = '#fff';
-        ctx.font = '10px DM Sans';
         ctx.textAlign = 'center';
-        ctx.fillText(label, x, y - 18);
+        ctx.fillText(label, x, y + offsetY + 14);
 
         ctx.restore();
       });
