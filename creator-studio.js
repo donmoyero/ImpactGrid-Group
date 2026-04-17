@@ -255,7 +255,9 @@ function checkAuth() {
       setNavUser(session.user);
       loadProfile();
       setWelcome();
-
+    }
+  });
+}
 
 async function loadProfile() {
   const supabase = getSupabase();
