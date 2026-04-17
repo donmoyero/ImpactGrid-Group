@@ -712,7 +712,7 @@
 <script src="youtube-auth.js"></script>
 <script src="instagram-auth.js"></script>
 <script src="creator-ai.js"></script>
-
+<script src="creator-studio.js"></script>
 
 <script>
 /* ══════════════════════════════════════════
@@ -809,8 +809,38 @@
 
 })();
 </script>
+<script src="calendar.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof checkAuth === 'function') {
+    checkAuth();
+  }
+});
+</script>
+
+<script>
+function populateTopTrends() {
+  if (!_allTrends || !_allTrends.length) return;
+  const sorted = [..._allTrends].sort((a, b) => b.score - a.score);
+  const ids = ['trend1', 'trend2', 'trend3'];
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && sorted[i]) el.textContent = sorted[i].title;
+  });
+}
+
+document.addEventListener('trendsLoaded', populateTopTrends);
+window.addEventListener('load', function() {
+  setTimeout(populateTopTrends, 1600);
+});
+</script>
+
+
 <script src="nav.js"></script>
-<script src="creator-studio.js"></script>
+<script>
+  renderNav('creator-studio.html');
+</script>
 
 </body>
 </html>
