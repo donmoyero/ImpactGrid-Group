@@ -501,14 +501,21 @@ function renderFullTrends() {
     : '<div style="padding:16px;color:var(--text3)">Loading trends…</div>';
 }
 
+const trendLabels = [
+  "Hook Ideas 🔥",
+  "Storytelling",
+  "Reels Growth",
+  "Viral Audio",
+  "Carousel Tips"
+];
+
 function renderTrendChart() {
-  var canvas = document.getElementById('trendChart');
+  const canvas = document.getElementById('trendChart');
   if (!canvas) return;
 
-  var ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d');
 
   if (trendChartInstance) {
-    trendChartInstance.stop();
     trendChartInstance.destroy();
     trendChartInstance = null;
   }
@@ -516,30 +523,85 @@ function renderTrendChart() {
   var labels = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
   var scores = _allTrends.slice(0, 7).map(function(t) { return t.score; });
 
+  const chartData = {
+    labels: labels,
+    datasets: [{
+      label: 'Trend Score',
+      data: scores,
+      borderColor: 'var(--gold, #f5a623)',
+      backgroundColor: 'rgba(245,166,35,0.08)',
+      borderWidth: 2,
+      pointRadius: 4,
+      tension: 0.4,
+      fill: true
+    }]
+  };
+
   trendChartInstance = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Trend Score',
-        data: scores,
-        borderColor: 'var(--gold, #f5a623)',
-        backgroundColor: 'rgba(245,166,35,0.08)',
-        borderWidth: 2,
-        pointRadius: 4,
-        tension: 0.4,
-        fill: true
-      }]
-    },
+    data: chartData,
+
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false }
+      },
       scales: {
         y: { min: 0, max: 10, ticks: { color: 'var(--text3)' }, grid: { color: 'var(--border)' } },
         x: { ticks: { color: 'var(--text3)', maxRotation: 30 }, grid: { display: false } }
       }
-    }
+    },
+
+    plugins: [{
+      id: 'floatingLabels',
+
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        const meta = chart.getDatasetMeta(0);
+
+        meta.data.forEach((point, i) => {
+          const label = trendLabels[i];
+          if (!label) return;
+
+          const x = point.x;
+          const y = point.y;
+
+          // 🔥 Zig-zag positioning (your "chasing" effect)
+          const offsetY = i % 2 === 0 ? -40 : -65;
+
+          const text = label;
+
+          ctx.save();
+
+          // TEXT STYLE
+          ctx.font = "11px Inter, sans-serif";
+          ctx.textBaseline = "middle";
+
+          const padding = 6;
+          const textWidth = ctx.measureText(text).width;
+          const width = textWidth + padding * 2;
+          const height = 22;
+
+          const boxX = x - width / 2;
+          const boxY = y + offsetY;
+
+          // 🔥 CARD BACKGROUND
+          ctx.fillStyle = "#111";
+          ctx.strokeStyle = "#FFD700";
+          ctx.lineWidth = 1;
+
+          ctx.fillRect(boxX, boxY, width, height);
+          ctx.strokeRect(boxX, boxY, width, height);
+
+          // 🔥 TEXT
+          ctx.fillStyle = "#fff";
+          ctx.fillText(text, boxX + padding, boxY + height / 2);
+
+          ctx.restore();
+        });
+      }
+    }]
   });
 }
 
