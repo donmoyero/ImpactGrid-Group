@@ -1366,6 +1366,18 @@ document.addEventListener('keydown', function(e) {
 });
 
 /* ─────────────────────────────────────────────
+   TAB NAVIGATION — data-tab event listeners
+   Replaces fragile inline onclick="switchTab(...)"
+───────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[data-tab]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      switchTab(this.dataset.tab, this);
+    });
+  });
+});
+
+/* ─────────────────────────────────────────────
    SWIPE TO CLOSE SIDEBAR (touch devices)
 ───────────────────────────────────────────── */
 (function() {
