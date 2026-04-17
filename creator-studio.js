@@ -35,6 +35,13 @@ async function loadUser() {
     if (result.data && result.data.user) {
       IG_USER = result.data.user;
       console.log("USER SYNCED ✅", IG_USER);
+
+      // 👑 ADMIN DETECTION
+      if (IG_USER && IG_USER.email === IG_ADMIN_EMAIL) {
+        IG_IS_ADMIN = true;
+        console.log("ADMIN MODE 👑");
+      }
+
       setWelcome();
       updateUserUI();
     } else {
@@ -238,6 +245,10 @@ function checkAuth() {
     if (r?.data?.session) {
       IG_USER = r.data.session.user;
 
+      // ✅ ADMIN DETECTION
+      IG_IS_ADMIN = !!(IG_USER.email && IG_USER.email.toLowerCase() === IG_ADMIN_EMAIL.toLowerCase());
+      if (IG_IS_ADMIN) console.log("ADMIN DETECTED ✅ — all limits bypassed");
+
       setNavUser(IG_USER);
       setTimeout(function() { setNavUser(IG_USER); }, 150);
 
@@ -252,6 +263,11 @@ function checkAuth() {
   c.auth.onAuthStateChange(function(ev, session) {
     if (session?.user) {
       IG_USER = session.user;
+
+      // ✅ ADMIN DETECTION
+      IG_IS_ADMIN = !!(IG_USER.email && IG_USER.email.toLowerCase() === IG_ADMIN_EMAIL.toLowerCase());
+      if (IG_IS_ADMIN) console.log("ADMIN DETECTED ✅ — all limits bypassed");
+
       setNavUser(session.user);
       loadProfile();
       setWelcome();
@@ -331,16 +347,30 @@ function setWelcome() {
 
 /* ─────────────────────────────────────────────
    PAYWALL
+   checkAccess() is ONLY called for generative
+   actions (generate, save, export) — never
+   for passive browsing panels.
 ───────────────────────────────────────────── */
+
+// Panels that are always free to view — no gate
+var IG_FREE_PANELS = ['dashboard', 'trends', 'calendar'];
+
 function checkAccess() {
+  // ✅ Never block passive browsing panels
+  var activePanel = document.querySelector('.panel.active');
+  if (activePanel) {
+    var panelName = activePanel.id.replace('panel-', '');
+    if (IG_FREE_PANELS.indexOf(panelName) !== -1) return true;
+  }
+
+  // 👑 Admin bypass
+  if (IG_IS_ADMIN) return true;
+
   // Not logged in
   if (!IG_USER) {
     showUpgrade("Create an account to save and unlock more");
     return false;
   }
-
-  // 👑 Admin bypass
-  if (IG_IS_ADMIN) return true;
 
   // Free plan limit
   if (IG_PLAN === 'free' && IG_USES >= IG_LIMIT) {
@@ -357,12 +387,16 @@ function showUpgrade(message) {
 
   var bar = document.createElement('div');
   bar.id = 'upgradeBar';
+  var isLoggedIn = !!IG_USER;
+
   bar.innerHTML =
     '<div class="upgrade-inner">'
     + '<span>' + message + '</span>'
     + '<div style="display:flex;gap:8px;">'
     + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
-    + '<a href="login.html" class="btn btn-secondary">Login</a>'
+    + (!isLoggedIn
+        ? '<a href="login.html" class="btn btn-secondary">Login</a>'
+        : '')
     + '</div></div>';
 
   document.body.appendChild(bar);
@@ -542,8 +576,8 @@ function renderDashTrends() {
   el.innerHTML = _allTrends.length
     ? _allTrends.slice(0, 5).map(trendItemHTML).join('')
     : '<div style="padding:16px;color:var(--text3);font-size:13px">Loading trends…</div>';
-  // Auto-load top trend into generator on first paint
-  if (_allTrends.length) loadTopic(_allTrends[0].topic);
+  // ❌ REMOVED AUTO LOAD — generator only runs when user explicitly clicks a trend
+  // if (_allTrends.length) loadTopic(_allTrends[0].topic);
 }
 
 function renderFullTrends() {
@@ -817,6 +851,7 @@ async function loadBriefing(forceRefresh) {
    QUICK GENERATE (dashboard widget)
 ───────────────────────────────────────────── */
 async function quickGenerate() {
+  if (!checkAccess()) return;
   var topic = document.getElementById('quickTopic').value.trim();
   if (!topic) { toast('⚠️ Enter a topic first'); return; }
   var outEl = document.getElementById('quickOutput');
@@ -1364,6 +1399,7 @@ async function runEvaluation() {
 }
 
 async function evalGetIntro(channel, videos, score, platform) {
+  if (!checkAccess()) return;
   var st = (channel && channel.statistics) || {};
   var name = (channel && channel.snippet && channel.snippet.title) || 'Channel';
   var topVids = videos ? videos.slice(0, 3).map(function(v, i) {
@@ -1381,6 +1417,7 @@ async function evalGetIntro(channel, videos, score, platform) {
 }
 
 async function evalGetIntroTt(profile, videos, score) {
+  if (!checkAccess()) return;
   var name = profile.display_name || 'TikTok account';
   var topVids = videos.slice(0, 3).map(function(v, i) { return (i + 1) + '. ' + fmtN(v.view_count) + ' views, ' + fmtN(v.like_count) + ' likes'; }).join('\n');
   var prompt = 'Evaluate this TikTok account in 3 sentences max. Then 3 bullet action points.\n\nAccount: ' + name + '\nFollowers: ' + fmtN(profile.follower_count) + '\nLikes: ' + fmtN(profile.likes_count) + '\nVideos: ' + (profile.video_count || 0) + '\nScore: ' + score.total + '/100 (' + score.tier + ')\nTop videos:\n' + (topVids || 'N/A');
@@ -1394,6 +1431,7 @@ async function evalGetIntroTt(profile, videos, score) {
 }
 
 function evalSend() {
+  if (!checkAccess()) return;
   var i = document.getElementById('evalInput'); var msg = i.value.trim(); if (!msg) return;
   i.value = ''; evalAsk(msg);
   document.getElementById('evalChips').style.display = 'none';
