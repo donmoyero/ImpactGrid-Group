@@ -16,7 +16,7 @@ var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _eva
 ───────────────────────────────────────────── */
 var IG_USER        = null;
 var IG_PLAN        = 'free'; // free | pro | enterprise
-var IG_USES        = 0;
+var IG_USES        = parseInt(localStorage.getItem('ig_uses') || '0', 10);
 var IG_LIMIT       = 3;
 var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
 var IG_IS_ADMIN    = false;
@@ -764,6 +764,9 @@ function renderDashOpps() {
 }
 
 function loadTopic(topic) {
+  // ✅ Gate at the point of action — not mid-generation
+  if (!checkAccess()) return;
+
   var i1 = document.getElementById('quickTopic'); if (i1) i1.value = topic;
   var i2 = document.getElementById('genTopic'); if (i2) i2.value = topic;
   switchTab('generator', null);
@@ -898,6 +901,11 @@ function calcScore(topic) {
   if (tl.match(/viral|trending|2026|growth/)) s += 0.6;
   if (tl.length < 20) s += 0.3;
   return Math.min(9.9, parseFloat(s.toFixed(1)));
+}
+
+async function generateIdea() {
+  if (!checkAccess()) return;
+  await fullGenerate();
 }
 
 async function fullGenerate() {
