@@ -1378,6 +1378,8 @@ window.addEventListener('load', async function() {
   // Auto-refresh trends every 60 seconds
   setInterval(async function() {
     try {
+      var scrollY = window.scrollY;
+
       await fetchTrends();
       renderDashTrends();
       renderDashOpps();
@@ -1386,6 +1388,8 @@ window.addEventListener('load', async function() {
         renderFullTrends();
       }
       console.log('[Trends] Auto refreshed');
+
+      window.scrollTo(0, scrollY);
     } catch(e) {
       console.warn('[Trends] refresh failed');
     }
@@ -1393,10 +1397,12 @@ window.addEventListener('load', async function() {
 
   // Live feel — re-renders chart + top 3 every 20s so the page always feels alive
   setInterval(async () => {
+    var scrollY = window.scrollY;
     await fetchTrends();
     renderDashTrends();
     renderFullTrends();
     renderTrendChart();
     updateTopTrends();
+    window.scrollTo(0, scrollY);
   }, 20000);
 });
