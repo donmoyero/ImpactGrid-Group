@@ -503,12 +503,12 @@ function runTrendScoring(rawScore, platforms) {
    Turns scores into actionable decision groups
 ───────────────────────────────────────────── */
 function classifyTrend(t) {
-  const velocity   = t.score;
+  const velocity   = t.score;          // 0-10 scale
   const confidence = t.confidence || 60;
 
-  if (velocity >= 9 && confidence >= 80) return 'blowup';
-  if (velocity >= 8)                     return 'rising_fast';
-  if (velocity >= 6.5)                   return 'early';
+  if (velocity >= 8.5 && confidence >= 80) return 'blowup';    // equiv. >=85/100
+  if (velocity >= 7.0)                     return 'rising_fast'; // equiv. >=70/100
+  if (velocity >= 5.0)                     return 'early';      // equiv. >=50/100
   return 'stable';
 }
 
