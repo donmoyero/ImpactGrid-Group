@@ -501,6 +501,50 @@ function renderFullTrends() {
     : '<div style="padding:16px;color:var(--text3)">Loading trends…</div>';
 }
 
+const pointLabelsPlugin = {
+  id: 'pointLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+
+    chart.data.datasets.forEach((dataset, i) => {
+      const meta = chart.getDatasetMeta(i);
+
+      meta.data.forEach((point, index) => {
+        const label = dataset.labels[index];
+        if (!label) return;
+
+        const x = point.x;
+        const y = point.y;
+
+        ctx.save();
+
+        // BOX
+        ctx.fillStyle = '#111';
+        ctx.strokeStyle = '#c97e08';
+        ctx.lineWidth = 1;
+
+        const padding = 6;
+        const textWidth = ctx.measureText(label).width;
+        const boxWidth = textWidth + padding * 2;
+        const boxHeight = 18;
+
+        ctx.beginPath();
+        ctx.roundRect(x - boxWidth/2, y - 30, boxWidth, boxHeight, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        // TEXT
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px DM Sans';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x, y - 18);
+
+        ctx.restore();
+      });
+    });
+  }
+};
+
 function renderTrendChart() {
   const canvas = document.getElementById('trendChart');
   if (!canvas) return;
@@ -512,16 +556,17 @@ function renderTrendChart() {
     trendChartInstance = null;
   }
 
-  var labels = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
+  var topics = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
   var scores = _allTrends.slice(0, 7).map(function(t) { return t.score; });
 
   trendChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: labels,
+      labels: topics,
       datasets: [{
         label: 'Trend Score',
         data: scores,
+        labels: topics,
         borderColor: "#4FB3A5",
         backgroundColor: "rgba(79,179,165,0.1)",
         borderWidth: 2,
@@ -532,6 +577,7 @@ function renderTrendChart() {
         fill: true
       }]
     },
+    plugins: [pointLabelsPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
