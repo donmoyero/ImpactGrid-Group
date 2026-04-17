@@ -786,7 +786,10 @@ async function loadPlatformStatus() {
   }
 }
 
-
+/* ─────────────────────────────────────────────
+   DAILY BRIEFING
+───────────────────────────────────────────── */
+async function loadBriefing(forceRefresh) {
   var el = document.getElementById('briefingText');
   var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
