@@ -814,15 +814,74 @@ function filterTrends(btn, plat) {
     : '<div style="padding:16px;color:var(--text3)">No trends for this filter.</div>';
 }
 
-function renderDashOpps() {
+/* ─────────────────────────────────────────────
+   OPPORTUNITIES — powered by /trends/dijo
+   renderOpportunities(data) accepts the raw
+   Dijo API shape (trend_score, platform_source,
+   dijoScore, etc.) and maps it to opp-cards.
+   renderDashOpps() is a fast synchronous fallback
+   used by the 60s/20s refresh intervals — it
+   re-renders from the already-loaded _allTrends
+   so we don't fire an extra network request on
+   every tick.
+───────────────────────────────────────────── */
+function renderOpportunities(data) {
   var el = document.getElementById('dashOppList');
-  if (!el || !_allTrends.length) return;
-  el.innerHTML = _allTrends.slice(0, 3).map(function(t) {
+  if (!el) return;
+
+  if (!data || !data.length) {
+    el.innerHTML = '<div class="opp-empty">No opportunities yet — check back soon</div>';
+    return;
+  }
+
+  el.innerHTML = data.slice(0, 3).map(function(t) {
+    var platLabel = t.platform_source === 'youtube' ? 'YouTube'
+      : t.platform_source === 'tiktok'   ? 'TikTok'
+      : t.platform_source === 'cross'    ? 'Cross-platform'
+      : 'Google';
+    var platIcon = t.platform_source === 'tiktok'  ? '🎵'
+      : t.platform_source === 'youtube' ? '▶️'
+      : t.platform_source === 'cross'   ? '🚀' : '🔍';
+    var displayScore = t.dijoScore != null
+      ? Math.min(9.9, parseFloat((t.dijoScore / 10).toFixed(1)))
+      : Math.min(9.9, parseFloat(((t.trend_score || 0) / 10).toFixed(1)));
+    var status = t.status || 'rising';
+    var videoMeta = t.video_count ? ' · ' + t.video_count + ' videos' : '';
+
     return '<div class="opp-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
-      + '<div class="opp-header"><span class="opp-topic">' + escH(t.topic) + '</span><span class="opp-score">' + t.score.toFixed(1) + '</span></div>'
-      + '<div class="opp-meta">' + escH(t.platLabel) + ' · ' + t.status + (t.videoCount ? ' · ' + t.videoCount + ' videos' : '') + '</div>'
+      + '<div class="opp-header">'
+      +   '<span class="opp-topic">' + platIcon + ' ' + escH(t.topic) + '</span>'
+      +   '<span class="opp-score">' + displayScore.toFixed(1) + '</span>'
+      + '</div>'
+      + '<div class="opp-meta">' + escH(platLabel) + ' · ' + status + videoMeta + '</div>'
       + '</div>';
   }).join('');
+}
+
+async function loadOpportunities() {
+  try {
+    var res = await fetch(DIJO + '/trends/dijo');
+    var data = await res.json();
+    renderOpportunities(data);
+  } catch(e) {
+    // Dijo unavailable — fall back to local trend data
+    renderDashOpps();
+  }
+}
+
+// Fast in-memory re-render — used by 60s/20s refresh intervals
+function renderDashOpps() {
+  if (!_allTrends.length) return;
+  renderOpportunities(_allTrends.slice(0, 3).map(function(t) {
+    return {
+      topic:           t.topic,
+      platform_source: t.plat === 'yt' ? 'youtube' : t.plat === 'tt' ? 'tiktok' : t.plat === 'cross' ? 'cross' : 'google',
+      trend_score:     (t.score || 0) * 10,
+      dijoScore:       (t.score || 0) * 10,
+      status:          t.status,
+      video_count:     t.videoCount
+    };
+  }));
 }
 
 /* ─────────────────────────────────────────────
@@ -1718,7 +1777,7 @@ window.addEventListener('load', async function() {
   ensureTrends();
   updateTopTrends();
   renderDashTrends();
-  renderDashOpps();
+  loadOpportunities();   // fetches /trends/dijo — real Dijo intelligence
   renderWhatToPost();
   loadBriefing();
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
