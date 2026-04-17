@@ -255,9 +255,7 @@ function checkAuth() {
       setNavUser(session.user);
       loadProfile();
       setWelcome();
-    }
-  });
-}
+
 
 async function loadProfile() {
   const supabase = getSupabase();
@@ -501,14 +499,6 @@ function renderFullTrends() {
     : '<div style="padding:16px;color:var(--text3)">Loading trends…</div>';
 }
 
-const trendLabels = [
-  "Hook Ideas 🔥",
-  "Storytelling",
-  "Reels Growth",
-  "Viral Audio",
-  "Carousel Tips"
-];
-
 function renderTrendChart() {
   const canvas = document.getElementById('trendChart');
   if (!canvas) return;
@@ -523,89 +513,60 @@ function renderTrendChart() {
   var labels = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
   var scores = _allTrends.slice(0, 7).map(function(t) { return t.score; });
 
-  const chartData = {
-    labels: labels,
-    datasets: [{
-      label: 'Trend Score',
-      data: scores,
-      borderColor: 'var(--gold, #f5a623)',
-      backgroundColor: 'rgba(245,166,35,0.08)',
-      borderWidth: 2,
-      pointRadius: 4,
-      tension: 0.4,
-      fill: true
-    }]
-  };
-
   trendChartInstance = new Chart(ctx, {
     type: 'line',
-    data: chartData,
-
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Trend Score',
+        data: scores,
+        borderColor: "#4FB3A5",
+        backgroundColor: "rgba(79,179,165,0.1)",
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBorderColor: "#4FB3A5",
+        pointBackgroundColor: "#fff",
+        tension: 0.4,
+        fill: true
+      }]
+    },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#111",
+          borderColor: "#FFD700",
+          borderWidth: 1
+        }
       },
+
       scales: {
-        y: { min: 0, max: 10, ticks: { color: 'var(--text3)' }, grid: { color: 'var(--border)' } },
-        x: { ticks: { color: 'var(--text3)', maxRotation: 30 }, grid: { display: false } }
+        x: {
+          grid: { color: "rgba(0,0,0,0.05)" },
+          ticks: { color: "#666" }
+        },
+        y: {
+          grid: { color: "rgba(0,0,0,0.05)" },
+          ticks: { color: "#666" }
+        }
+      },
+
+      elements: {
+        line: {
+          tension: 0.4,
+          borderWidth: 2
+        },
+        point: {
+          radius: 4,
+          hoverRadius: 6,
+          backgroundColor: "#fff",
+          borderWidth: 2
+        }
       }
-    },
-
-    plugins: [{
-      id: 'floatingLabels',
-
-      afterDatasetsDraw(chart) {
-        const { ctx } = chart;
-        const meta = chart.getDatasetMeta(0);
-
-        meta.data.forEach((point, i) => {
-          const label = trendLabels[i];
-          if (!label) return;
-
-          const x = point.x;
-          const y = point.y;
-
-          // 🔥 Zig-zag positioning (your "chasing" effect)
-          const offsetY = i % 2 === 0 ? -40 : -65;
-
-          const text = label;
-
-          ctx.save();
-
-          // TEXT STYLE
-          ctx.font = "11px Inter, sans-serif";
-          ctx.textBaseline = "middle";
-
-          const padding = 6;
-          const textWidth = ctx.measureText(text).width;
-          const width = textWidth + padding * 2;
-          const height = 22;
-
-          const boxX = x - width / 2;
-          const boxY = y + offsetY;
-
-          // 🔥 GLOW
-          ctx.shadowColor = "#FFD700";
-          ctx.shadowBlur = 8;
-
-          // 🔥 CARD BACKGROUND
-          ctx.fillStyle = "#111";
-          ctx.strokeStyle = "#FFD700";
-          ctx.lineWidth = 1;
-
-          ctx.fillRect(boxX, boxY, width, height);
-          ctx.strokeRect(boxX, boxY, width, height);
-
-          // 🔥 TEXT
-          ctx.fillStyle = "#fff";
-          ctx.fillText(text, boxX + padding, boxY + height / 2);
-
-          ctx.restore();
-        });
-      }
-    }]
+    }
   });
 }
 
