@@ -12,18 +12,8 @@ var trendChartInstance = null;
 var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
 
 /* ─────────────────────────────────────────────
-   SUBSCRIPTION SYSTEM
-───────────────────────────────────────────── */
-var IG_USER        = null;
-var IG_PLAN        = 'free'; // free | pro | enterprise
-var IG_USES        = parseInt(localStorage.getItem('ig_uses') || '0', 10);
-var IG_LIMIT       = 3;
-var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
-var IG_IS_ADMIN    = false;
-
-/* ─────────────────────────────────────────────
    LOAD USER — called on DOMContentLoaded
-   Syncs IG_USER from Supabase session, then
+   Syncs user from Supabase session, then
    updates greeting + avatar/name UI.
 ───────────────────────────────────────────── */
 async function loadUser() {
@@ -33,14 +23,8 @@ async function loadUser() {
   try {
     var result = await supabase.auth.getUser();
     if (result.data && result.data.user) {
-      IG_USER = result.data.user;
-      console.log("USER SYNCED ✅", IG_USER);
-
-      // 👑 ADMIN DETECTION
-      if (IG_USER && IG_USER.email === IG_ADMIN_EMAIL) {
-        IG_IS_ADMIN = true;
-        console.log("ADMIN MODE 👑");
-      }
+      setUser(result.data.user);
+      console.log("USER SYNCED ✅", getUser());
 
       setWelcome();
       updateUserUI();
@@ -60,15 +44,15 @@ document.addEventListener("DOMContentLoaded", loadUser);
    with fallback to profileName / profileAvatar IDs.
 ───────────────────────────────────────────── */
 function updateUserUI() {
-  if (!IG_USER) return;
+  if (!getUser()) return;
 
   var name =
-    (IG_USER.user_metadata && IG_USER.user_metadata.full_name) ||
-    (IG_USER.email && IG_USER.email.split('@')[0]) ||
+    (getUser().user_metadata && getUser().user_metadata.full_name) ||
+    (getUser().email && getUser().email.split('@')[0]) ||
     'Creator';
 
   var avatar =
-    (IG_USER.user_metadata && IG_USER.user_metadata.avatar_url) || null;
+    (getUser().user_metadata && getUser().user_metadata.avatar_url) || null;
 
   // data-user-name elements
   var nameEls = document.querySelectorAll('[data-user-name]');
@@ -243,14 +227,12 @@ function checkAuth() {
 
   c.auth.getSession().then(async function(r) {
     if (r?.data?.session) {
-      IG_USER = r.data.session.user;
+      setUser(r.data.session.user);
 
       // ✅ ADMIN DETECTION
-      IG_IS_ADMIN = !!(IG_USER.email && IG_USER.email.toLowerCase() === IG_ADMIN_EMAIL.toLowerCase());
-      if (IG_IS_ADMIN) console.log("ADMIN DETECTED ✅ — all limits bypassed");
 
-      setNavUser(IG_USER);
-      setTimeout(function() { setNavUser(IG_USER); }, 150);
+      setNavUser(getUser());
+      setTimeout(function() { setNavUser(getUser()); }, 150);
 
       // ✅ LOAD REAL PROFILE
       await loadProfile();
@@ -262,11 +244,9 @@ function checkAuth() {
 
   c.auth.onAuthStateChange(function(ev, session) {
     if (session?.user) {
-      IG_USER = session.user;
+      setUser(session.user);
 
       // ✅ ADMIN DETECTION
-      IG_IS_ADMIN = !!(IG_USER.email && IG_USER.email.toLowerCase() === IG_ADMIN_EMAIL.toLowerCase());
-      if (IG_IS_ADMIN) console.log("ADMIN DETECTED ✅ — all limits bypassed");
 
       setNavUser(session.user);
       loadProfile();
@@ -323,11 +303,11 @@ async function loadProfile() {
 }
 
 function setWelcome() {
-  if (!IG_USER) return;
+  if (!getUser()) return;
 
   const name =
-    IG_USER.user_metadata?.full_name ||
-    IG_USER.email.split('@')[0] ||
+    getUser().user_metadata?.full_name ||
+    getUser().email.split('@')[0] ||
     'Creator';
 
   const hour = new Date().getHours();
@@ -364,16 +344,16 @@ function checkAccess() {
   }
 
   // 👑 Admin bypass
-  if (IG_IS_ADMIN) return true;
+  if (isAdmin()) return true;
 
   // Not logged in
-  if (!IG_USER) {
+  if (!getUser()) {
     showUpgrade("Create an account to save and unlock more");
     return false;
   }
 
   // Free plan limit
-  if (IG_PLAN === 'free' && IG_USES >= IG_LIMIT) {
+  if (getPlan() === 'free' && getUses() >= 3) {
     showUpgrade("You've hit your free limit — upgrade to continue");
     return false;
   }
@@ -387,7 +367,7 @@ function showUpgrade(message) {
 
   var bar = document.createElement('div');
   bar.id = 'upgradeBar';
-  var isLoggedIn = !!IG_USER;
+  var isLoggedIn = !!getUser();
 
   bar.innerHTML =
     '<div class="upgrade-inner">'
@@ -1098,9 +1078,8 @@ async function fullGenerate() {
 
     var dsc = document.getElementById('dashLastScore'); if (dsc) { dsc.textContent = score.toFixed(1); dsc.style.color = scColor; }
     var dsl = document.getElementById('dashLastLabel'); if (dsl) { dsl.textContent = verdict; dsl.style.color = scColor; }
-    if (!IG_IS_ADMIN) {
-      IG_USES++;
-      localStorage.setItem('ig_uses', IG_USES);
+    if (!isAdmin()) {
+      incrementUses();
     }
     toast('✅ Package generated!');
   } catch(e) {
