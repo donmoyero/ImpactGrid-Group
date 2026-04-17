@@ -415,6 +415,24 @@ function showUpgrade(message) {
   document.head.appendChild(style);
 })();
 
+async function checkCarouselAccess() {
+  await initAuth();
+
+  if (isAdmin()) return true;
+
+  if (!IG_USER) {
+    alert("Login required");
+    return false;
+  }
+
+  if (!canUse("carousel")) {
+    alert("Upgrade for unlimited carousels");
+    return false;
+  }
+
+  return true;
+}
+
 /* ─────────────────────────────────────────────
    DIJO API — 3-sentence max enforced
 ───────────────────────────────────────────── */
@@ -959,6 +977,7 @@ async function generateIdea() {
 
 async function fullGenerate() {
   if (!checkAccess()) return;
+  if (!(await checkCarouselAccess())) return;
   var topic = document.getElementById('genTopic').value.trim();
   if (!topic) { toast('⚠️ Enter a topic first'); return; }
   var platform = document.getElementById('genPlatform').value;
