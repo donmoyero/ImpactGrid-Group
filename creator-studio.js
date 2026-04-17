@@ -501,6 +501,31 @@ function runTrendScoring(rawScore, platforms) {
 }
 
 /* ─────────────────────────────────────────────
+   TREND CLASSIFICATION 🧠
+   Turns scores into actionable decision groups
+───────────────────────────────────────────── */
+function classifyTrend(t) {
+  const velocity   = t.score;
+  const confidence = t.confidence || 60;
+
+  if (velocity >= 9 && confidence >= 80) return 'blowup';
+  if (velocity >= 8)                     return 'rising_fast';
+  if (velocity >= 6.5)                   return 'early';
+  return 'stable';
+}
+
+function buildTrendInsights() {
+  const insights = { blowup: [], rising_fast: [], early: [] };
+
+  _allTrends.forEach(function(t) {
+    const type = classifyTrend(t);
+    if (insights[type]) insights[type].push(t);
+  });
+
+  return insights;
+}
+
+/* ─────────────────────────────────────────────
    TREND DATA
 ───────────────────────────────────────────── */
 async function fetchTrends() {
@@ -581,11 +606,8 @@ function renderDashTrends() {
 }
 
 function renderFullTrends() {
-  var el = document.getElementById('fullTrendList');
-  if (!el) return;
-  el.innerHTML = _allTrends.length
-    ? _allTrends.map(trendItemHTML).join('')
-    : '<div style="padding:16px;color:var(--text3)">Loading trends…</div>';
+  // fullTrendList removed — trends panel now shows the decision dashboard
+  renderWhatToPost();
 }
 
 const pointLabelsPlugin = {
@@ -739,6 +761,12 @@ function runTrendPrediction() {
     <div class="text-sm">Predicted to peak this week</div>
     <div class="text-sm">Best platform: ${top.platLabel || "TikTok"}</div>
   `;
+
+  // Build insights and expose for dashboards / future panels
+  window._trendInsights = buildTrendInsights();
+  console.log('[TrendInsights] 🔥 Blowup:', window._trendInsights.blowup.length,
+    '| ⚡ Rising fast:', window._trendInsights.rising_fast.length,
+    '| 💡 Early:', window._trendInsights.early.length);
 }
 
 function filterTrends(btn, plat) {
@@ -761,6 +789,47 @@ function renderDashOpps() {
       + '<div class="opp-meta">' + escH(t.platLabel) + ' · ' + t.status + (t.videoCount ? ' · ' + t.videoCount + ' videos' : '') + '</div>'
       + '</div>';
   }).join('');
+}
+
+/* ─────────────────────────────────────────────
+   WHAT TO POST THIS WEEK 📅
+   Real score + confidence — not random text
+───────────────────────────────────────────── */
+function renderWhatToPost() {
+  var el = document.getElementById('whatToPostBox');
+  if (!el) return;
+
+  var data = buildTrendInsights();
+
+  function top(arr) {
+    return arr.slice().sort(function(a, b) { return b.score - a.score; }).slice(0, 2);
+  }
+
+  var blow  = top(data.blowup);
+  var fast  = top(data.rising_fast);
+  var early = top(data.early);
+
+  function itemHTML(t) {
+    var platIcon = t.plat === 'tt' ? '🎵' : t.plat === 'yt' ? '▶️' : t.plat === 'cross' ? '🚀' : '🔍';
+    return '<div class="wtp-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content">'
+      + '<strong>' + escH(t.topic) + '</strong>'
+      + '<span class="wtp-meta">' + platIcon + ' ' + escH(t.platLabel) + ' · ' + t.score.toFixed(1) + '/10</span>'
+      + '</div>';
+  }
+
+  function section(icon, label, items, emptyMsg) {
+    return '<div class="wtp-section">'
+      + '<h4>' + icon + ' ' + label + '</h4>'
+      + (items.length
+          ? items.map(itemHTML).join('')
+          : '<div class="wtp-empty">' + emptyMsg + '</div>')
+      + '</div>';
+  }
+
+  el.innerHTML =
+    section('🔥', 'Most likely to blow up',  blow,  'No blowup trends right now — check back soon')
+    + section('⚡', 'Getting popular fast',   fast,  'Nothing surging yet')
+    + section('🟢', 'Still early — get in now', early, 'No early-stage trends detected');
 }
 
 function loadTopic(topic) {
@@ -1595,16 +1664,11 @@ function loadCalendar() {
 }
 
 /* ─────────────────────────────────────────────
-   TOP 3 TRENDS — "What you should post this week"
+   TOP 3 TRENDS — replaced by renderWhatToPost
+   Kept as alias so existing call sites don't break
 ───────────────────────────────────────────── */
 function updateTopTrends() {
-  if (!_allTrends || !_allTrends.length) return;
-
-  const sorted = [..._allTrends].sort((a, b) => b.score - a.score);
-
-  document.getElementById("trend1").textContent = sorted[0]?.title || "-";
-  document.getElementById("trend2").textContent = sorted[1]?.title || "-";
-  document.getElementById("trend3").textContent = sorted[2]?.title || "-";
+  renderWhatToPost();
 }
 
 /* ─────────────────────────────────────────────
@@ -1621,6 +1685,7 @@ window.addEventListener('load', async function() {
   updateTopTrends();
   renderDashTrends();
   renderDashOpps();
+  renderWhatToPost();
   loadBriefing();
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 
@@ -1632,6 +1697,7 @@ window.addEventListener('load', async function() {
       await fetchTrends();
       renderDashTrends();
       renderDashOpps();
+      renderWhatToPost();
       updateTopTrends();
       if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
         renderFullTrends();
@@ -1651,6 +1717,7 @@ window.addEventListener('load', async function() {
     renderDashTrends();
     renderFullTrends();
     renderTrendChart();
+    renderWhatToPost();
     updateTopTrends();
     window.scrollTo(0, scrollY);
   }, 20000);
