@@ -526,12 +526,49 @@ function buildTrendInsights() {
 /* ─────────────────────────────────────────────
    TREND DATA
 ───────────────────────────────────────────── */
+/* renderAll — unified re-render called after any trend fetch */
+function renderAll() {
+  updateBriefing();
+  runTrendPrediction();
+  renderDashTrends();
+  renderDashOpps();
+  renderWhatToPost();
+  updateTopTrends();
+}
+
 async function fetchTrends() {
+  // ── PRIMARY: cross-platform endpoint ─────────────────────────────────────
   try {
-    var res = await fetch(DIJO + '/trends/live?limit=20');
+    var res = await fetch(DIJO + '/trends/cross');
     var data = await res.json();
-    if (data.trends && data.trends.length) {
-      _allTrends = data.trends.map(function(t, i) {
+    if (data && data.length) {
+      _allTrends = data.map(function(t, i) {
+        var plat = t.platform_source === 'youtube' ? 'yt'
+          : t.platform_source === 'tiktok' ? 'tt'
+          : t.platform_source === 'cross' ? 'cross' : 'gt';
+        var platLbl = t.platform_source === 'youtube' ? 'YouTube'
+          : t.platform_source === 'tiktok' ? 'TikTok'
+          : t.platform_source === 'cross' ? 'Cross' : 'Google';
+        return {
+          topic: t.topic,
+          score: runTrendScoring(t.trend_score || 50, ['tiktok', 'youtube', 'google']),
+          plat: plat, platLabel: platLbl,
+          rank: i + 1, hashtags: t.hashtags || [], videoCount: t.video_count || 0,
+          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0,
+          confidence: t.confidence_score || 90
+        };
+      });
+      renderAll();
+      return;
+    }
+  } catch(e) {}
+
+  // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
+  try {
+    var res2 = await fetch(DIJO + '/trends/live?limit=20');
+    var data2 = await res2.json();
+    if (data2.trends && data2.trends.length) {
+      _allTrends = data2.trends.map(function(t, i) {
         var plat = t.platform_source === 'youtube' ? 'yt'
           : t.platform_source === 'tiktok' ? 'tt'
           : t.platform_source === 'cross' ? 'cross' : 'gt';
@@ -547,20 +584,19 @@ async function fetchTrends() {
           confidence: t.confidence_score || (t.platform_source === 'cross' ? 90 : t.platform_source === 'tiktok' ? 75 : t.platform_source === 'youtube' ? 70 : 60)
         };
       });
-      updateBriefing();
-      runTrendPrediction();
+      renderAll();
       return;
     }
   } catch(e) {}
-  // RSS fallback
+
+  // ── FALLBACK: Google RSS ──────────────────────────────────────────────────
   try {
     var rss = await fetch(DIJO + '/trends/google?geo=GB');
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 };
     });
-    updateBriefing();
-    runTrendPrediction();
+    renderAll();
   } catch(e) {}
 }
 
