@@ -586,6 +586,10 @@ function renderTrendChart() {
           const boxX = x - width / 2;
           const boxY = y + offsetY;
 
+          // 🔥 GLOW
+          ctx.shadowColor = "#FFD700";
+          ctx.shadowBlur = 8;
+
           // 🔥 CARD BACKGROUND
           ctx.fillStyle = "#111";
           ctx.strokeStyle = "#FFD700";
