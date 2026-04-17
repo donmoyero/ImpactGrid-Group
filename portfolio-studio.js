@@ -39,12 +39,9 @@ let psState = {
 };
 
 /* ── MONETISATION ───────────────────────────── */
-let IG_USER        = null;
-let IG_PLAN        = "free"; // free | pro | enterprise
 let IG_USES        = parseInt(localStorage.getItem("ig_portfolio_uses") || "0");
 const IG_LIMIT     = 1; // 🔥 portfolio is premium → only 1 free
 const IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
-let IG_IS_ADMIN    = false;
 
 /* ── THEMES — used ONLY for the published portfolio mini-site (buildPortfolioHTML).
    The app UI theme is controlled entirely by shared.css + nav.js toggleTheme().
@@ -73,27 +70,17 @@ async function getUser() {
 }
 
 async function checkPortfolioAccess() {
-  IG_USER = await getUser();
+  await initAuth();
 
-  // ❌ Not logged in
+  if (isAdmin()) return true;
+
   if (!IG_USER) {
-    showUpgradeBar("Sign up to create and save your portfolio");
+    showUpgradeBar("Sign up to create your portfolio");
     return false;
   }
 
-  // 👑 Admin override
-  if (IG_USER.email === IG_ADMIN_EMAIL) {
-    IG_IS_ADMIN = true;
-    IG_PLAN = "enterprise";
-    console.log("👑 Admin mode active");
-  }
-
-  // 👑 Admin bypass
-  if (IG_IS_ADMIN) return true;
-
-  // ❌ Free limit
-  if (IG_PLAN === "free" && IG_USES >= IG_LIMIT) {
-    showUpgradeBar("Upgrade to create unlimited portfolios");
+  if (!canUse("portfolio")) {
+    showUpgradeBar("Upgrade for unlimited portfolios");
     return false;
   }
 
