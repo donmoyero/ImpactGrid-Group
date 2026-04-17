@@ -542,6 +542,8 @@ function renderDashTrends() {
   el.innerHTML = _allTrends.length
     ? _allTrends.slice(0, 5).map(trendItemHTML).join('')
     : '<div style="padding:16px;color:var(--text3);font-size:13px">Loading trends…</div>';
+  // Auto-load top trend into generator on first paint
+  if (_allTrends.length) loadTopic(_allTrends[0].topic);
 }
 
 function renderFullTrends() {
@@ -619,54 +621,51 @@ function renderTrendChart() {
     window.trendChartInstance = null;
   }
 
-  var topics = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
-  var scores = _allTrends.slice(0, 7).map(function(t) { return t.score; });
+  var top7 = _allTrends.slice(0, 7);
+  var topics = top7.map(function(t) { return t.topic.slice(0, 18); });
+  var scores = top7.map(function(t) { return t.score; });
 
   window.trendChartInstance = new Chart(ctx, {
-    type: 'bubble',
+    type: 'line',
     data: {
+      labels: topics,
       datasets: [{
-        label: 'Trend Intelligence',
-        data: _allTrends.slice(0, 7).map(function(t) {
-          return {
-            x: t.videoCount || 1,                          // volume (X axis)
-            y: t.score,                                    // strength (Y axis)
-            r: Math.max(5, (t.totalViews || 0) / 1000000) // impact = bubble size
-          };
+        label: 'Trend Score',
+        data: scores,
+        tension: 0.4,
+        fill: true,
+        backgroundColor: 'rgba(201,126,8,0.10)',
+        borderColor: '#c97e08',
+        borderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: top7.map(function(t) {
+          return t.plat === 'tt'     ? '#ff6464'
+               : t.plat === 'yt'    ? '#FFD700'
+               : t.plat === 'cross' ? '#4FB3A5'
+               :                      '#78b4ff';
         }),
-        backgroundColor: _allTrends.slice(0, 7).map(function(t) {
-          return t.plat === 'tt'    ? 'rgba(255, 100, 100, 0.7)'
-               : t.plat === 'yt'   ? 'rgba(255, 215,   0, 0.7)'
-               : t.plat === 'cross'? 'rgba(79,  179, 165, 0.9)'
-               :                     'rgba(120, 180, 255, 0.7)';
-        }),
-        borderColor: _allTrends.slice(0, 7).map(function(t) {
-          return t.plat === 'tt'    ? '#ff6464'
-               : t.plat === 'yt'   ? '#FFD700'
-               : t.plat === 'cross'? '#4FB3A5'
-               :                     '#78b4ff';
-        }),
-        borderWidth: 2
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1.5
       }]
     },
-    plugins: [pointLabelsPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
-
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#111",
-          borderColor: "#FFD700",
+          backgroundColor: '#111',
+          borderColor: '#c97e08',
           borderWidth: 1,
           callbacks: {
+            title: function(items) { return top7[items[0].dataIndex].topic; },
             label: function(ctx) {
-              var t = _allTrends[ctx.dataIndex];
+              var t = top7[ctx.dataIndex];
               if (!t) return '';
               return [
-                '📌 ' + t.topic,
                 '📊 Score: ' + t.score.toFixed(1),
+                '📌 ' + (t.platLabel || t.plat),
                 '🎬 Videos: ' + (t.videoCount || 0),
                 '👁 Views: ' + fmtN(t.totalViews)
               ];
@@ -674,18 +673,20 @@ function renderTrendChart() {
           }
         }
       },
-
       scales: {
         x: {
-          title: { display: true, text: 'Video Volume', color: '#888', font: { size: 11 } },
-          grid: { color: "rgba(0,0,0,0.05)" },
-          ticks: { color: "#666" }
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { color: '#888', font: { size: 10 }, maxRotation: 30 }
         },
         y: {
-          title: { display: true, text: 'Trend Strength', color: '#888', font: { size: 11 } },
+          beginAtZero: false,
           min: 0, max: 10,
-          grid: { color: "rgba(0,0,0,0.05)" },
-          ticks: { color: "#666" }
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: {
+            color: '#888',
+            font: { size: 10 },
+            callback: function(v) { return v + ''; }
+          }
         }
       }
     }
