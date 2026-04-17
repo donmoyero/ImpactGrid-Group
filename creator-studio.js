@@ -434,6 +434,39 @@ function fmtN(n) { return n ? Number(n).toLocaleString() : '—'; }
 function toScore(s) { return Math.min(9.9, parseFloat((s / 10).toFixed(1))); }
 
 /* ─────────────────────────────────────────────
+   VIRAL INTELLIGENCE SCORING 🧠🔥
+   TikTok = velocity engine ⚡
+   YouTube = validation engine 🎯
+   Google  = demand engine 🔍
+───────────────────────────────────────────── */
+function runTrendScoring(rawScore, platforms) {
+  // Derive sub-scores from raw score (0-100 scale internally)
+  var base = rawScore; // already 0-100
+  var velocityScore   = base * 0.9;
+  var engagementScore = base * 0.8;
+  var commentsScore   = base * 0.7;
+  var recencyScore    = base * 0.85;
+
+  var platformWeight = 1;
+
+  // 🔥 PLATFORM INTELLIGENCE
+  if (platforms.includes('tiktok'))  platformWeight += 0.3;  // velocity king ⚡
+  if (platforms.includes('youtube')) platformWeight += 0.2;  // validation 🎯
+  if (platforms.includes('google'))  platformWeight += 0.1;  // demand 🔍
+
+  var finalScore = Math.min(100,
+    (
+      velocityScore   * 0.45 +
+      engagementScore * 0.25 +
+      commentsScore   * 0.15 +
+      recencyScore    * 0.15
+    ) * platformWeight
+  );
+
+  return Math.min(9.9, parseFloat((finalScore / 10).toFixed(1)));
+}
+
+/* ─────────────────────────────────────────────
    TREND DATA
 ───────────────────────────────────────────── */
 async function fetchTrends() {
@@ -449,9 +482,12 @@ async function fetchTrends() {
           : t.platform_source === 'tiktok' ? 'TikTok'
           : t.platform_source === 'cross' ? 'Cross' : 'Google';
         return {
-          topic: t.topic, score: toScore(t.trend_score), plat: plat, platLabel: platLbl,
+          topic: t.topic,
+          score: runTrendScoring(t.trend_score, [t.platform_source === 'cross' ? 'tiktok' : (t.platform_source || 'google'), t.platform_source === 'cross' ? 'youtube' : '', t.platform_source === 'cross' ? 'google' : ''].filter(Boolean)),
+          plat: plat, platLabel: platLbl,
           rank: i + 1, hashtags: t.hashtags || [], videoCount: t.video_count || 0,
-          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0
+          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0,
+          confidence: t.confidence_score || (t.platform_source === 'cross' ? 90 : t.platform_source === 'tiktok' ? 75 : t.platform_source === 'youtube' ? 70 : 60)
         };
       });
       updateBriefing();
@@ -477,9 +513,24 @@ function trendItemHTML(t) {
   var meta = t.videoCount > 0
     ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
     : t.platLabel + ' · click to generate';
+
+  // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
+  var badge =
+    t.plat === 'tt'    ? '🔥 Viral (TikTok)'
+    : t.plat === 'yt'  ? '🎯 Validated (YouTube)'
+    : t.plat === 'cross' ? '🚀 Multi-Platform'
+    : '🔍 Demand (Google)';
+
+  // Confidence indicator
+  var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
+
   return '<div class="trend-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
     + '<div class="ti-rank">#' + t.rank + '</div>'
-    + '<div class="ti-info"><div class="ti-topic">' + escH(t.topic) + '</div><div class="ti-meta">' + escH(meta) + '</div></div>'
+    + '<div class="ti-info">'
+    +   '<div class="ti-topic">' + escH(t.topic) + '</div>'
+    +   '<div class="ti-meta">' + escH(meta) + '</div>'
+    +   '<div class="ti-badge">' + badge + escH(conf) + '</div>'
+    + '</div>'
     + '<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%"></div></div><div class="ti-score">' + t.score.toFixed(1) + '/10</div></div>'
     + '<div class="ti-plat ' + platCls + '">' + escH(t.platLabel) + '</div>'
     + '</div>';
@@ -572,21 +623,30 @@ function renderTrendChart() {
   var scores = _allTrends.slice(0, 7).map(function(t) { return t.score; });
 
   window.trendChartInstance = new Chart(ctx, {
-    type: 'line',
+    type: 'bubble',
     data: {
-      labels: topics,
       datasets: [{
-        label: 'Trend Score',
-        data: scores,
-        labels: topics,
-        borderColor: "#4FB3A5",
-        backgroundColor: "rgba(79,179,165,0.1)",
-        borderWidth: 2,
-        pointRadius: 4,
-        pointBorderColor: "#4FB3A5",
-        pointBackgroundColor: "#fff",
-        tension: 0.4,
-        fill: true
+        label: 'Trend Intelligence',
+        data: _allTrends.slice(0, 7).map(function(t) {
+          return {
+            x: t.videoCount || 1,                          // volume (X axis)
+            y: t.score,                                    // strength (Y axis)
+            r: Math.max(5, (t.totalViews || 0) / 1000000) // impact = bubble size
+          };
+        }),
+        backgroundColor: _allTrends.slice(0, 7).map(function(t) {
+          return t.plat === 'tt'    ? 'rgba(255, 100, 100, 0.7)'
+               : t.plat === 'yt'   ? 'rgba(255, 215,   0, 0.7)'
+               : t.plat === 'cross'? 'rgba(79,  179, 165, 0.9)'
+               :                     'rgba(120, 180, 255, 0.7)';
+        }),
+        borderColor: _allTrends.slice(0, 7).map(function(t) {
+          return t.plat === 'tt'    ? '#ff6464'
+               : t.plat === 'yt'   ? '#FFD700'
+               : t.plat === 'cross'? '#4FB3A5'
+               :                     '#78b4ff';
+        }),
+        borderWidth: 2
       }]
     },
     plugins: [pointLabelsPlugin],
@@ -599,31 +659,33 @@ function renderTrendChart() {
         tooltip: {
           backgroundColor: "#111",
           borderColor: "#FFD700",
-          borderWidth: 1
+          borderWidth: 1,
+          callbacks: {
+            label: function(ctx) {
+              var t = _allTrends[ctx.dataIndex];
+              if (!t) return '';
+              return [
+                '📌 ' + t.topic,
+                '📊 Score: ' + t.score.toFixed(1),
+                '🎬 Videos: ' + (t.videoCount || 0),
+                '👁 Views: ' + fmtN(t.totalViews)
+              ];
+            }
+          }
         }
       },
 
       scales: {
         x: {
+          title: { display: true, text: 'Video Volume', color: '#888', font: { size: 11 } },
           grid: { color: "rgba(0,0,0,0.05)" },
           ticks: { color: "#666" }
         },
         y: {
+          title: { display: true, text: 'Trend Strength', color: '#888', font: { size: 11 } },
+          min: 0, max: 10,
           grid: { color: "rgba(0,0,0,0.05)" },
           ticks: { color: "#666" }
-        }
-      },
-
-      elements: {
-        line: {
-          tension: 0.4,
-          borderWidth: 2
-        },
-        point: {
-          radius: 4,
-          hoverRadius: 6,
-          backgroundColor: "#fff",
-          borderWidth: 2
         }
       }
     }
@@ -670,8 +732,19 @@ function loadTopic(topic) {
   var i1 = document.getElementById('quickTopic'); if (i1) i1.value = topic;
   var i2 = document.getElementById('genTopic'); if (i2) i2.value = topic;
   switchTab('generator', null);
-  // AUTO GENERATE — click trend → instant generation
-  setTimeout(function() { fullGenerate(); }, 300);
+
+  // FIX 4: AUTO GENERATE with trend-aware context 🧠
+  setTimeout(function() {
+    var trend = _allTrends.find(function(t) { return t.topic === topic; });
+    if (trend) {
+      // Inject trend context into the generator niche field so AI knows the data
+      var nicheEl = document.getElementById('genNiche');
+      if (nicheEl && !nicheEl.value) {
+        nicheEl.value = 'Platform: ' + trend.platLabel + ' · Score: ' + trend.score + ' · ' + (trend.videoCount || 0) + ' videos · ' + fmtN(trend.totalViews) + ' views';
+      }
+    }
+    fullGenerate();
+  }, 300);
   toast('💡 Generating for: ' + topic);
 }
 
@@ -685,9 +758,35 @@ function updateHint(score) {
 }
 
 /* ─────────────────────────────────────────────
-   BRIEFING
+   PLATFORM STATUS — FIX 5
+   Reads /ingestion/status and lights up sidebar dots
+   TikTok = velocity engine ⚡  YouTube = validation 🎯
 ───────────────────────────────────────────── */
-async function loadBriefing(forceRefresh) {
+async function loadPlatformStatus() {
+  try {
+    var res = await fetch(DIJO + '/ingestion/status');
+    if (!res.ok) return;
+    var data = await res.json();
+
+    if (data.youtube && data.youtube.status === 'completed') {
+      var ytDot = document.getElementById('ytSpDot');
+      var ytLbl = document.getElementById('ytSpLabel');
+      if (ytDot) ytDot.className = 'sp-dot live';
+      if (ytLbl) ytLbl.textContent = 'Live';
+    }
+
+    if (data.tiktok && data.tiktok.status === 'completed') {
+      var ttDot = document.getElementById('ttSpDot');
+      var ttLbl = document.getElementById('ttSpLabel');
+      if (ttDot) ttDot.className = 'sp-dot live';
+      if (ttLbl) ttLbl.textContent = 'Live';
+    }
+  } catch(e) {
+    console.warn('[PlatformStatus] unavailable:', e);
+  }
+}
+
+
   var el = document.getElementById('briefingText');
   var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
@@ -1466,6 +1565,7 @@ window.addEventListener('load', async function() {
   initYouTube();
   initTikTok();
   loadCalendar();
+  loadPlatformStatus();   // FIX 5: Real platform status 🟢
   await fetchTrends();
   ensureTrends();
   updateTopTrends();
