@@ -510,7 +510,7 @@ const pointLabelsPlugin = {
       const meta = chart.getDatasetMeta(i);
 
       meta.data.forEach((point, index) => {
-        const label = dataset.labels[index];
+        const label = dataset.labels?.[index];
         if (!label) return;
 
         const x = point.x;
@@ -519,14 +519,16 @@ const pointLabelsPlugin = {
         ctx.save();
 
         // BOX
-        ctx.fillStyle = '#111';
+        ctx.fillStyle = '#0f1117';
         ctx.strokeStyle = '#c97e08';
         ctx.lineWidth = 1;
+
+        ctx.font = '11px DM Sans';
 
         const padding = 6;
         const textWidth = ctx.measureText(label).width;
         const boxWidth = textWidth + padding * 2;
-        const boxHeight = 18;
+        const boxHeight = 20;
 
         ctx.beginPath();
         ctx.roundRect(x - boxWidth/2, y - 30, boxWidth, boxHeight, 6);
@@ -551,15 +553,15 @@ function renderTrendChart() {
 
   const ctx = canvas.getContext('2d');
 
-  if (trendChartInstance) {
-    trendChartInstance.destroy();
-    trendChartInstance = null;
+  if (window.trendChartInstance) {
+    window.trendChartInstance.destroy();
+    window.trendChartInstance = null;
   }
 
   var topics = _allTrends.slice(0, 7).map(function(t) { return t.topic.slice(0, 18); });
   var scores = _allTrends.slice(0, 7).map(function(t) { return t.score; });
 
-  trendChartInstance = new Chart(ctx, {
+  window.trendChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: topics,
