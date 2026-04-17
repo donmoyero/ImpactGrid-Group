@@ -837,5 +837,48 @@
   });
 </script>
 
+<script>
+/* ═══════════════════════════════════════
+   CONFIDENCE → VIRAL LABEL
+   Reformats any .confidence element from
+   "Confidence: 82%" → "THIS WILL GO VIRAL (82%)"
+   Runs on load + watches for dynamic content.
+═══════════════════════════════════════ */
+(function() {
+  function formatConfidence(el) {
+    var text = el.textContent || '';
+    // Match "Confidence: 82%" or "Confidence 82%" or just "82%"
+    var match = text.match(/(\d+)\s*%/);
+    if (!match) return;
+    var pct = parseInt(match[1], 10);
+    var label;
+    if (pct >= 80)      label = 'THIS WILL GO VIRAL';
+    else if (pct >= 65) label = 'HIGH POTENTIAL';
+    else if (pct >= 50) label = 'WORTH POSTING';
+    else                label = 'NICHE PLAY';
+    el.textContent = label + ' (' + pct + '%)';
+    el.setAttribute('data-viral-label', 'true');
+    el.style.fontWeight = '700';
+    el.style.letterSpacing = '.03em';
+    // Colour by confidence tier
+    if (pct >= 80) el.style.color = 'var(--gold, #c97e08)';
+    else if (pct >= 65) el.style.color = 'var(--green, #0fa876)';
+  }
+
+  function scanAll() {
+    document.querySelectorAll('.confidence').forEach(function(el) {
+      if (!el.getAttribute('data-viral-label')) formatConfidence(el);
+    });
+  }
+
+  // Run once DOM is ready
+  scanAll();
+
+  // Watch for dynamically injected trend cards
+  var observer = new MutationObserver(function() { scanAll(); });
+  observer.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
 </body>
 </html>
