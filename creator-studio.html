@@ -270,7 +270,7 @@
             </div>
           </div>
           <div class="card" style="display:flex;align-items:center;gap:12px;">
-            <div data-user-avatar data-ig-avatar class="u-av"></div>
+            <div data-ig-avatar class="u-av"></div>
             <div>
               <div id="dijoGreeting" data-ig-greeting class="text-sm"></div>
               <div id="dijoBrief" class="text-sm"></div>
@@ -845,11 +845,13 @@
 <script src="calendar.js" defer></script>
 <script src="nav.js" defer></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', async function() {
     // renderNav FIRST — injects the nav HTML and fires 'ig-nav-ready'
     if (typeof renderNav === 'function') renderNav('creator-studio.html');
-    // initAuth second — auth.js's initAuth waits for 'ig-nav-ready' via nav.js's _whenNavReady
-    if (typeof initAuth === 'function') initAuth();
+    // initAuth awaited — ensures session resolves before loadUser() fires
+    if (typeof initAuth === 'function') await initAuth();
+    // checkAuth updates the nav avatar/name using nav.js's profile loader
+    if (typeof window.checkAuth === 'function') window.checkAuth();
   });
 </script>
 
