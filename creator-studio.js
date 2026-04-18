@@ -16,63 +16,70 @@ var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _eva
    Syncs user from Supabase session, then
    updates greeting + avatar/name UI.
 ───────────────────────────────────────────── */
-async function loadUser() {
-  // initAuth() in auth.js already called getUser() and set the user via setUser().
-  // We trust that here — no second network round-trip needed.
-  if (!getUser()) {
-    // Fallback: called outside of the initAuth flow (e.g. direct page load edge case)
-    const supabase = getSupabase();
-    if (!supabase) return;
-    try {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) setUser(data.user);
-    } catch(e) {
-      console.warn('[Auth] loadUser fallback failed:', e.message);
-      return;
-    }
-  }
-
-  if (!getUser()) return; // guest — nothing to populate
-
-  console.log('USER SYNCED ✅', getUser()?.email);
-  setWelcome();
-  updateUserUI();
+/* ─────────────────────────────────────────────
+   GET CURRENT USER — single source of truth.
+   nav.js sets window.igUser via _loadProfile()
+   and fires 'ig-user-ready'. Pages MUST NOT call
+   supabase.auth.getUser() themselves — that causes
+   double-auth and race conditions.
+───────────────────────────────────────────── */
+function getCurrentUser() {
+  return window.igUser || null;
 }
 
-// loadUser is called by initAuth() in auth.js after Supabase auth settles.
-// Do not call it here — auth.js is the single trigger to avoid race conditions.
+function loadUser() {
+  // nav.js owns auth. We just read window.igUser.
+  // If it's already set, render immediately.
+  if (window.igUser) {
+    _applyUserUI(window.igUser);
+    return;
+  }
+  // Otherwise wait for nav.js to fire ig-user-ready
+  document.addEventListener('ig-user-ready', function(e) {
+    _applyUserUI(e.detail);
+  }, { once: true });
+}
+
+function _applyUserUI(user) {
+  if (!user) return;
+  console.log('USER SYNCED ✅', user.email);
+
+  // data-ig-greeting (set by nav.js too — this is belt-and-braces)
+  var hour = new Date().getHours();
+  var greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  document.querySelectorAll('[data-ig-greeting]').forEach(function(el) {
+    el.textContent = greeting + ', ' + user.firstName;
+  });
+
+  updateUserUI();
+  if (typeof setWelcome === 'function') setWelcome();
+}
 
 /* ─────────────────────────────────────────────
-   UPDATE USER UI — fills name + avatar elements
-   Uses data-user-name / data-user-avatar attrs,
-   with fallback to profileName / profileAvatar IDs.
+   UPDATE USER UI — fills name + avatar elements.
+   Reads ONLY from window.igUser (set by nav.js).
+   No auth calls — nav.js is the single source.
 ───────────────────────────────────────────── */
 function updateUserUI() {
-  // Priority order:
-  //  1. window.igUser — set by nav.js _loadProfile() from the PROFILES Supabase table
-  //                      (has real full_name + avatar_url stored after signup)
-  //  2. getUser()     — raw auth metadata from the login Supabase (may only have email)
-  var name, avatar;
+  var user = getCurrentUser();
+  if (!user) return;
 
-  if (window.igUser && window.igUser.name) {
-    name   = window.igUser.name;
-    avatar = window.igUser.avatarUrl || null;
-  } else if (typeof getUser === 'function' && getUser()) {
-    name   = (getUser().user_metadata && getUser().user_metadata.full_name)
-             || (getUser().email && getUser().email.split('@')[0])
-             || 'Creator';
-    avatar = (getUser().user_metadata && getUser().user_metadata.avatar_url) || null;
-  } else {
-    return; // not logged in
-  }
+  var name   = user.name   || 'Creator';
+  var avatar = user.avatarUrl || null;
 
-  // data-user-avatar elements (kept for backwards compat)
-  var avatarEls = document.querySelectorAll('[data-user-avatar]');
-  avatarEls.forEach(function(el) {
-    if (avatar) {
-      el.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">';
-    } else {
-      el.textContent = name.charAt(0).toUpperCase();
+  // data-user-avatar (legacy attr)
+  document.querySelectorAll('[data-user-avatar]').forEach(function(el) {
+    el.innerHTML = avatar
+      ? '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">'
+      : name.charAt(0).toUpperCase();
+  });
+
+  // data-ig-avatar (nav.js standard attr — belt-and-braces if nav beat us)
+  document.querySelectorAll('[data-ig-avatar]').forEach(function(el) {
+    if (!el.querySelector('img')) {
+      el.innerHTML = avatar
+        ? '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="' + name + '">'
+        : name.charAt(0).toUpperCase();
     }
   });
 
@@ -81,11 +88,9 @@ function updateUserUI() {
   var cardAv   = document.getElementById('profileAvatar');
   if (cardName) cardName.textContent = name;
   if (cardAv) {
-    if (avatar) {
-      cardAv.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">';
-    } else {
-      cardAv.textContent = name.charAt(0).toUpperCase();
-    }
+    cardAv.innerHTML = avatar
+      ? '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">'
+      : name.charAt(0).toUpperCase();
   }
 }
 
@@ -473,7 +478,9 @@ async function fetchTrends() {
       : src === 'cross'   ? 'Cross' : 'Google';
     var platforms = src === 'cross'
       ? ['tiktok', 'youtube', 'google']
-      : [src === 'yt' ? 'youtube' : src];
+      : src === 'youtube' ? ['youtube']
+      : src === 'tiktok'  ? ['tiktok']
+      : ['google'];
     return {
       topic:        t.topic,
       score:        runTrendScoring(t.trend_score || t.avg_score || 50, platforms),
@@ -576,9 +583,9 @@ function getBest3(trends) {
       .sort(function(a, b) { return b.score - a.score; })[0] || null;
   }
   return {
-    google:  top('gt'),
+    tiktok:  top('tt'),
     youtube: top('yt'),
-    tiktok:  top('tt')
+    google:  top('gt')
   };
 }
 
