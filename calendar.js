@@ -660,8 +660,14 @@ if (document.readyState === 'loading') {
 }
 
 /* ── Nav sync — re-render calendar once user is confirmed ── */
-document.addEventListener('ig-user-ready', function(e) {
-  var user = e.detail;
-  console.log('User ready:', user);
-  if (document.getElementById('calWeekGrid')) renderCalendar();
-}, { once: true });
+if (window.__calendarInitialized) {
+  console.warn('Calendar already initialized');
+} else {
+  window.__calendarInitialized = true;
+
+  document.addEventListener('ig-user-ready', function(e) {
+    var user = e.detail;
+    console.log('User ready:', user);
+    if (document.getElementById('calWeekGrid')) renderCalendar();
+  }, { once: true });
+}
