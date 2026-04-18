@@ -629,14 +629,49 @@ function trendItemHTML(t) {
     + '</div>';
 }
 
+/* ─────────────────────────────────────────────
+   BEST-PER-PLATFORM PICKER
+   Returns the single highest-scoring trend for
+   each platform from the current _allTrends set.
+   Used by renderDashTrends so the dashboard
+   always shows one meaningful pick per source
+   rather than an arbitrary top-5 slice.
+───────────────────────────────────────────── */
+function getBest3(trends) {
+  function top(plat) {
+    return trends
+      .filter(function(t) { return t.plat === plat; })
+      .sort(function(a, b) { return b.score - a.score; })[0] || null;
+  }
+  return {
+    google:  top('gt'),
+    youtube: top('yt'),
+    tiktok:  top('tt')
+  };
+}
+
 function renderDashTrends() {
   var el = document.getElementById('dashTrendList');
   if (!el) return;
-  el.innerHTML = _allTrends.length
-    ? _allTrends.slice(0, 5).map(trendItemHTML).join('')
-    : '<div style="padding:16px;color:var(--text3);font-size:13px">Loading trends…</div>';
-  // ❌ REMOVED AUTO LOAD — generator only runs when user explicitly clicks a trend
-  // if (_allTrends.length) loadTopic(_allTrends[0].topic);
+
+  if (!_allTrends.length) {
+    el.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px">Loading trends…</div>';
+    return;
+  }
+
+  var best = getBest3(_allTrends);
+  var picks = [best.tiktok, best.youtube, best.google].filter(Boolean);
+
+  // If one or more platforms have no data, pad with next-best overall
+  if (picks.length < 3) {
+    var usedTopics = new Set(picks.map(function(t) { return t.topic; }));
+    var extras = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
+    while (picks.length < 3 && extras.length) {
+      picks.push(extras.shift());
+    }
+  }
+
+  el.innerHTML = picks.map(trendItemHTML).join('');
 }
 
 function renderFullTrends() {
