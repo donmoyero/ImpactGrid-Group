@@ -328,17 +328,19 @@
 
   window.setNavUser = function(userObjOrName, email) {
     /* Accept either a full Supabase user object OR legacy (name, email) strings */
-    var name, resolvedEmail;
+    var name, resolvedEmail, avatarUrl;
     if (userObjOrName && typeof userObjOrName === 'object') {
       var u = userObjOrName;
       resolvedEmail = u.email || '';
       name = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name))
              || resolvedEmail.split('@')[0]
              || 'Creator';
+      avatarUrl = (u.user_metadata && u.user_metadata.avatar_url) || '';
     } else {
       name          = userObjOrName || '';
       resolvedEmail = email || '';
       name          = name || resolvedEmail.split('@')[0] || 'Creator';
+      avatarUrl     = '';
     }
 
     var initial = name.charAt(0).toUpperCase();
@@ -349,7 +351,15 @@
     if (guest) guest.style.display = 'none';
     if (user)  user.style.display  = 'flex';
 
-    _setAv(document.getElementById('userAv'), initial);
+    /* Avatar — real photo takes priority over initial */
+    var avEl = document.getElementById('userAv');
+    if (avEl) {
+      if (avatarUrl) {
+        avEl.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" alt="' + name + '"/>';
+      } else {
+        _setAv(avEl, initial);
+      }
+    }
 
     var uName = document.getElementById('userName');
     if (uName) uName.textContent = name.split(' ')[0];
@@ -365,7 +375,14 @@
     if (mobIn)   mobIn.classList.add('show');
     if (mobCard) mobCard.classList.add('show');
 
-    _setAv(document.getElementById('mobUserAv'), initial);
+    var mobAvEl = document.getElementById('mobUserAv');
+    if (mobAvEl) {
+      if (avatarUrl) {
+        mobAvEl.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" alt="' + name + '"/>';
+      } else {
+        _setAv(mobAvEl, initial);
+      }
+    }
 
     var mobUName  = document.getElementById('mobUserName');
     var mobUEmail = document.getElementById('mobUserEmail');
@@ -396,15 +413,87 @@
     }
   }
 
+  /* ─────────────────────────────────────────
+     PROFILE LOADER
+     After session is confirmed, fetches full_name + avatar_url
+     from the 'profiles' table (auth project) so nav AND any page
+     can display the real name without each page managing auth.
+  ───────────────────────────────────────── */
+  async function _loadProfile(authClient, userId, fallbackName, fallbackEmail) {
+    var name      = fallbackName;
+    var avatarUrl = '';
+
+    // Try to fetch richer profile from DB
+    try {
+      var res = await authClient.from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', userId)
+        .single();
+
+      if (res.data) {
+        if (res.data.full_name)  name      = res.data.full_name;
+        if (res.data.avatar_url) avatarUrl = res.data.avatar_url;
+      }
+    } catch(e) { /* profiles table unavailable — use fallback name */ }
+
+    // Cache avatar for _setAv() fallback
+    try { if (avatarUrl) localStorage.setItem('ig_avatar', avatarUrl); } catch(e) {}
+
+    // ── Expose globally so ANY page can use it without touching auth ──
+    window.igUser = {
+      id:        userId,
+      name:      name,
+      email:     fallbackEmail,
+      avatarUrl: avatarUrl,
+      firstName: name.split(' ')[0]
+    };
+
+    // ── Update nav display ──
+    window.setNavUser({ email: fallbackEmail, user_metadata: { full_name: name, avatar_url: avatarUrl } });
+
+    // ── Update any element with data-ig-name (greeting, welcome text etc.) ──
+    document.querySelectorAll('[data-ig-name]').forEach(function(el) {
+      el.textContent = name.split(' ')[0];
+    });
+
+    // ── Update any element with data-ig-greeting ──
+    var hour = new Date().getHours();
+    var greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    document.querySelectorAll('[data-ig-greeting]').forEach(function(el) {
+      el.textContent = greeting + ', ' + name.split(' ')[0];
+    });
+
+    // ── Update any element with data-ig-avatar (img or initial fallback) ──
+    document.querySelectorAll('[data-ig-avatar]').forEach(function(el) {
+      if (avatarUrl) {
+        el.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="' + name + '"/>';
+      } else {
+        el.textContent = name.charAt(0).toUpperCase();
+      }
+    });
+
+    // Dispatch event so pages can react if needed
+    document.dispatchEvent(new CustomEvent('ig-user-ready', { detail: window.igUser }));
+  }
+
   window.checkAuth = async function() {
     _whenNavReady(async function() {
       try {
         var client = _getClient();
         if (!client) return;
+
         var res = await client.auth.getSession();
         if (res.data && res.data.session) {
-          var u = res.data.session.user;
+          var u            = res.data.session.user;
+          var fallbackName = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name))
+                            || (u.email && u.email.split('@')[0])
+                            || 'Creator';
+
+          // Show nav immediately with auth metadata (fast)
           window.setNavUser(u);
+
+          // Then enrich with profiles table (name + avatar) asynchronously
+          _loadProfile(client, u.id, fallbackName, u.email || '');
         } else {
           window.setNavGuest();
         }
