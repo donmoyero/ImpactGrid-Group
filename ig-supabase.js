@@ -35,3 +35,7 @@ function getSupabase() {
 function getContentClient() {
   return getSupabase();
 }
+
+/* ── Expose on window so nav.js, auth.js, and any inline script can reach them ── */
+window.getSupabase      = getSupabase;
+window.getContentClient = getContentClient;
