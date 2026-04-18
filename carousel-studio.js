@@ -244,7 +244,9 @@ function setWelcome() {
    Re-run our UI updates so the greeting/avatar
    reflect the profiles data, not just auth metadata.
 ───────────────────────────────────────────── */
-document.addEventListener('ig-user-ready', function() {
+document.addEventListener('ig-user-ready', function(e) {
+  const user = e.detail;
+  console.log('User ready:', user);
   setWelcome();
   updateUserUI();
 });
