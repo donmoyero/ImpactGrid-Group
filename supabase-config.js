@@ -20,15 +20,43 @@
 
 var IG_CONTENT_URL  = 'https://exeiojgldxqaakkybdij.supabase.co';
 var IG_CONTENT_ANON = 'sb_publishable_ZuzIHR43W_7OpCejLpFyTQ_r5HQYHSq';
+// ↑ This is a publishable (anon) key — safe to include in browser code.
+//   It only grants access to tables with public RLS policies (site_slides, site_content etc.)
 
 var _contentClient = null;
 
 function getContentClient() {
-  if (!_contentClient) {
-    _contentClient = supabase.createClient(IG_CONTENT_URL, IG_CONTENT_ANON);
+  if (_contentClient) return _contentClient;
+
+  // Guard: Supabase SDK must be loaded via <script> before this file runs.
+  // The UMD build exposes window.supabase — if it's missing, log clearly and return null.
+  if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
+    console.error(
+      '[supabase-config] Supabase SDK not loaded. ' +
+      'Ensure <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"> ' +
+      'appears before supabase-config.js in your <script> tags.'
+    );
+    return null;
   }
+
+  try {
+    _contentClient = supabase.createClient(IG_CONTENT_URL, IG_CONTENT_ANON);
+  } catch (e) {
+    console.error('[supabase-config] Failed to create content client:', e.message);
+    return null;
+  }
+
   return _contentClient;
 }
 
-/* Expose on window for inline scripts (index.html etc.) */
-window.contentClient = getContentClient();
+/* Expose on window for inline scripts (index.html etc.)
+   Lazy: called on first use, not at parse time, so SDK load order doesn't matter. */
+window.getContentClient = getContentClient;
+
+/* Also attempt an eager init — succeeds silently if SDK is already loaded,
+   skips silently if not (caller will retry via getContentClient() on demand). */
+(function() {
+  if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+    getContentClient();
+  }
+})();
