@@ -3,7 +3,7 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v5';
+const CACHE_NAME = 'impactgrid-v6'; // bumped — forces discard of stale v5 cache
 
 const CORE_FILES = [
   '/',
