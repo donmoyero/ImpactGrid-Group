@@ -172,6 +172,9 @@
 
     _initNavInteractions();
 
+    /* Signal that nav HTML is in the DOM — auth modules listen for this */
+    document.dispatchEvent(new CustomEvent('ig-nav-ready'));
+
     var logo = document.getElementById('navLogo');
     if (logo) {
       logo.addEventListener('click', function(e) {
@@ -344,7 +347,7 @@
     var guest = document.getElementById('navGuest');
     var user  = document.getElementById('navUser');
     if (guest) guest.style.display = 'none';
-    if (user)  user.style.display  = 'block';
+    if (user)  user.style.display  = 'flex';
 
     _setAv(document.getElementById('userAv'), initial);
 
@@ -384,20 +387,31 @@
     if (mobCard) mobCard.classList.remove('show');
   };
 
+  /* ── Wait for nav HTML to exist before running auth ── */
+  function _whenNavReady(fn) {
+    if (document.getElementById('navGuest')) {
+      fn(); /* nav already rendered (e.g. page called renderNav synchronously) */
+    } else {
+      document.addEventListener('ig-nav-ready', fn, { once: true });
+    }
+  }
+
   window.checkAuth = async function() {
-    try {
-      var client = _getClient();
-      if (!client) return; /* supabase-config.js not loaded — skip silently */
-      var res = await client.auth.getSession();
-      if (res.data && res.data.session) {
-        var u = res.data.session.user;
-        window.setNavUser(u); /* pass full user object — setNavUser handles name/avatar */
-      } else {
+    _whenNavReady(async function() {
+      try {
+        var client = _getClient();
+        if (!client) return;
+        var res = await client.auth.getSession();
+        if (res.data && res.data.session) {
+          var u = res.data.session.user;
+          window.setNavUser(u);
+        } else {
+          window.setNavGuest();
+        }
+      } catch(e) {
         window.setNavGuest();
       }
-    } catch(e) {
-      window.setNavGuest();
-    }
+    });
   };
 
   window.igSignOut = async function() {
@@ -416,11 +430,11 @@
     }
   });
 
-  /* Auto-run after DOM + supabase-config have loaded */
+  /* Auto-run after DOM ready */
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(window.checkAuth, 50); });
+    document.addEventListener('DOMContentLoaded', window.checkAuth);
   } else {
-    setTimeout(window.checkAuth, 50);
+    window.checkAuth();
   }
 
   /* ─────────────────────────────────────────
