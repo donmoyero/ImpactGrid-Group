@@ -54,43 +54,37 @@ function getCalDb() {
   return _calSupabase;
 }
 
-/* ── Get current user ID (supports IG_USER override and Supabase session fallback) ── */
+/* ── Get current user ID (sync — use getCalUserIdAsync() for DB operations) ── */
 function getCalUserId() {
   try {
-    if (window.IG_USER && IG_USER.id) {
-      return IG_USER.id;
-    }
-
-    // fallback to session (extra safety)
-    if (window.supabase) {
-      const session = supabase.auth.getSession();
-      if (session?.data?.session?.user?.id) {
-        return session.data.session.user.id;
-      }
-    }
+    // auth.js sets IG_USER via setUser()
+    if (typeof getUser === 'function' && getUser() && getUser().id) return getUser().id;
+    // nav.js sets window.igUser after profile load
+    if (window.igUser && window.igUser.id) return window.igUser.id;
+    // legacy IG_USER global
+    if (window.IG_USER && window.IG_USER.id) return window.IG_USER.id;
   } catch (e) {}
-
-  return "guest-user"; // NEVER null
+  return 'guest-user'; // NEVER null
 }
 
 /* ── Async version for operations that can await (use this in savePost, calAutoFill) ── */
 async function getCalUserIdAsync() {
   try {
-    if (window.IG_USER && IG_USER.id) return IG_USER.id;
+    // auth.js getUser() — most reliable, already resolved after initAuth()
+    if (typeof getUser === 'function' && getUser() && getUser().id) return getUser().id;
+    // nav.js sets window.igUser after profile load
+    if (window.igUser && window.igUser.id) return window.igUser.id;
+    // legacy IG_USER global
+    if (window.IG_USER && window.IG_USER.id) return window.IG_USER.id;
 
+    // Last resort: ask Supabase directly
     var c = window.getSupabase ? getSupabase() : null;
     if (c && c.auth) {
-      // Supabase v2
       if (typeof c.auth.getSession === 'function') {
         var result = await c.auth.getSession();
         if (result.data && result.data.session && result.data.session.user) {
           return result.data.session.user.id;
         }
-      }
-      // Supabase v1 fallback
-      if (typeof c.auth.user === 'function') {
-        var u = c.auth.user();
-        if (u) return u.id;
       }
     }
   } catch(e) { console.warn('getCalUserIdAsync error:', e); }
@@ -470,17 +464,18 @@ async function calSuggestIdea() {
   try {
     var platName = (CAL_PLATS[_modalPlatSel]||{}).label || 'TikTok';
     var prompt = 'Suggest ONE specific short-form content idea for ' + platName + '. Use current viral topics (TikTok, YouTube, UK trends). Reply with ONLY the idea title, under 40 characters. No quotes, no explanation.';
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res = await fetch('https://impactgrid-dijo.onrender.com/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 60, messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({ message: prompt, mode: 'creator' })
     });
     var data = await res.json();
-    var idea = data.content.map(function(i){ return i.text||''; }).join('').trim().replace(/^["']|["']$/g,'');
+    var idea = (data.reply || '').trim().replace(/^["']|["']$/g, '');
     var input = document.getElementById('calModalInput');
-    if (input) { input.value = idea; input.focus(); }
+    if (input && idea) { input.value = idea; input.focus(); }
+    else throw new Error('empty reply');
   } catch(e) {
-    // Fallback
+    // Fallback ideas if backend is unavailable
     var fallbacks = ['AI productivity short', 'UK street style reel', 'Viking myth hook', 'Side hustle tips', 'Creator behind scenes'];
     var input2 = document.getElementById('calModalInput');
     if (input2) input2.value = fallbacks[Math.floor(Math.random() * fallbacks.length)];
