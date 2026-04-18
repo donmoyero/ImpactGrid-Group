@@ -175,6 +175,13 @@
     /* Signal that nav HTML is in the DOM — auth modules listen for this */
     document.dispatchEvent(new CustomEvent('ig-nav-ready'));
 
+    /* ── Flush any auth event that arrived before nav was rendered ── */
+    if (_bufferedAuthState) {
+      var buf = _bufferedAuthState;
+      _bufferedAuthState = null;
+      _handleAuthEvent(buf.event, buf.session);
+    }
+
     var logo = document.getElementById('navLogo');
     if (logo) {
       logo.addEventListener('click', function(e) {
@@ -425,24 +432,41 @@
      from the 'profiles' table (auth project) so nav AND any page
      can display the real name without each page managing auth.
   ───────────────────────────────────────── */
-  async function _loadProfile(authClient, userId, fallbackName, fallbackEmail) {
+  async function _loadProfile(authClient, userId, fallbackName, fallbackEmail, googleMeta) {
     var name      = fallbackName;
     var avatarUrl = '';
+    googleMeta = googleMeta || {};
 
     // Try to fetch richer profile from DB
     try {
       var res = await authClient.from('profiles')
-        .select('full_name, avatar_url')
+        .select('full_name, avatar_url, animal_avatar')
         .eq('id', userId)
         .single();
 
       if (res.data) {
-        if (res.data.full_name)    name      = res.data.full_name;
-        if (res.data.avatar_url)   avatarUrl = res.data.avatar_url;
+        if (res.data.full_name)  name      = res.data.full_name;
+        if (res.data.avatar_url) avatarUrl = res.data.avatar_url;
         if (!res.data.avatar_url && res.data.animal_avatar) {
-          /* Store animal so _setAv() picks it up */
           try { localStorage.setItem('ig_animal', res.data.animal_avatar); } catch(e) {}
         }
+      } else {
+        /* ── No profile row yet (brand-new Google/OAuth sign-up) ──
+           Auto-create one using Google's user_metadata so their name
+           shows immediately everywhere, not just after they visit Settings. */
+        var googleName   = googleMeta.full_name || googleMeta.name || fallbackName;
+        var googleAvatar = googleMeta.avatar_url || googleMeta.picture || '';
+        try {
+          await authClient.from('profiles').upsert({
+            id:         userId,
+            email:      fallbackEmail,
+            full_name:  googleName,
+            avatar_url: googleAvatar,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+          name      = googleName;
+          avatarUrl = googleAvatar;
+        } catch(e) { /* silently skip if upsert fails */ }
       }
     } catch(e) { /* profiles table unavailable — use fallback name */ }
 
@@ -503,7 +527,7 @@
           window.setNavUser(u);
 
           // Then enrich with profiles table (name + avatar) asynchronously
-          _loadProfile(client, u.id, fallbackName, u.email || '');
+          _loadProfile(client, u.id, fallbackName, u.email || '', u.user_metadata || {});
         } else {
           window.setNavGuest();
         }
@@ -536,38 +560,74 @@
     window.checkAuth();
   }
 
-  /* ── CRITICAL: Also subscribe to auth state changes so Google OAuth (and any
-     delayed session) updates the nav even if DOMContentLoaded already fired ── */
+  /* ── CRITICAL AUTH STATE SUBSCRIPTION ──────────────────────────────
+     Strategy:
+     1. Subscribe to onAuthStateChange IMMEDIATELY (don't wait for nav)
+     2. Buffer the result if nav isn't rendered yet
+     3. Apply buffered result the moment nav renders
+     4. Auto-create profiles row for brand-new Google/OAuth users
+  ─────────────────────────────────────────────────────────────────── */
+
+  var _bufferedAuthState = null; /* { event, session } — held if nav not ready yet */
+
+  function _handleAuthEvent(event, session) {
+    if (event === 'SIGNED_IN' && session) {
+      var u            = session.user;
+      var meta         = u.user_metadata || {};
+      var fallbackName = meta.full_name || meta.name
+                        || (u.email && u.email.split('@')[0])
+                        || 'Creator';
+      var client = _getClient();
+      if (!client) return;
+
+      /* Show nav immediately — don't wait for DB */
+      window.setNavUser(u);
+
+      /* Load/create profile row */
+      _loadProfile(client, u.id, fallbackName, u.email || '', meta);
+
+    } else if (event === 'SIGNED_OUT') {
+      window.setNavGuest();
+      /* Clear cached identity */
+      try { localStorage.removeItem('ig_avatar'); } catch(e) {}
+      try { localStorage.removeItem('ig_animal'); } catch(e) {}
+    }
+  }
+
   (function _subscribeAuthState() {
     function _doSubscribe() {
       var client = _getClient();
-      if (!client) return;
+      if (!client) {
+        /* SDK not ready yet — retry in 100ms (max 20 attempts = 2s) */
+        var attempts = 0;
+        var t = setInterval(function() {
+          attempts++;
+          var c = _getClient();
+          if (c) { clearInterval(t); _attachListener(c); }
+          else if (attempts >= 20) clearInterval(t);
+        }, 100);
+        return;
+      }
+      _attachListener(client);
+    }
+
+    function _attachListener(client) {
       client.auth.onAuthStateChange(function(event, session) {
-        if (event === 'SIGNED_IN' && session) {
-          var u            = session.user;
-          var fallbackName = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name))
-                            || (u.email && u.email.split('@')[0])
-                            || 'Creator';
-          window.setNavUser(u);
-          _loadProfile(client, u.id, fallbackName, u.email || '');
-        } else if (event === 'SIGNED_OUT') {
-          window.setNavGuest();
+        /* If nav is already rendered, handle immediately */
+        if (document.getElementById('navGuest')) {
+          _handleAuthEvent(event, session);
+        } else {
+          /* Buffer it — nav will pick it up when it renders */
+          _bufferedAuthState = { event: event, session: session };
         }
       });
     }
-    /* Wait until nav HTML is ready so setNavUser/setNavGuest can find the elements */
-    _whenNavReady(function() {
-      /* Try immediately — client may already exist */
-      if (_getClient()) {
-        _doSubscribe();
-      } else {
-        /* Client not ready yet (scripts still loading) — retry after a tick */
-        setTimeout(function() {
-          if (_getClient()) _doSubscribe();
-        }, 200);
-      }
-    });
+
+    _doSubscribe();
   })();
+
+  /* ── Also run checkAuth on DOMContentLoaded as safety net ── */
+  /* Auto-run after DOM ready */
 
   /* ─────────────────────────────────────────
      PUBLIC API
