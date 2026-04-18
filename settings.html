@@ -916,7 +916,7 @@
     /* ─── Load profile ─── */
     function loadProfile(user, client) {
       if (!client) client = getSupabase();
-      client.from('profiles').select('*').eq('id', user.id).single()
+      client.from('profiles').select('*').eq('user_id', user.id).single()
         .then(function(res) {
           var p = res.data; if (!p) return;
           if (p.full_name) {
@@ -962,10 +962,10 @@
       var website  = document.getElementById('s-website').value.trim();
 
       var res = await client.from('profiles').upsert({
-        id: user.id, email: user.email,
+        user_id: user.id, email: user.email,
         full_name: full, role, bio, title, location, linkedin, website,
         updated_at: new Date().toISOString()
-      });
+      }, { onConflict: 'user_id' });
 
       if (res.error) {
         showAlert('profile-err', res.error.message);
@@ -1034,7 +1034,7 @@
       const { error: dbError } = await supabase
         .from('profiles')
         .update({ avatar_url: avatarUrl })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
       if (dbError) {
         console.error("DB ERROR:", dbError);
@@ -1158,7 +1158,7 @@
       var sessionRes = await client.auth.getSession();
       if (!sessionRes.data || !sessionRes.data.session) return;
       var uid = sessionRes.data.session.user.id;
-      await client.from('profiles').delete().eq('id', uid);
+      await client.from('profiles').delete().eq('user_id', uid);
       await client.auth.signOut();
       window.location.href = 'index.html';
     }
@@ -1334,7 +1334,7 @@
         var client = getSupabase();
         var sessionRes = await client.auth.getSession();
         if (!sessionRes.data || !sessionRes.data.session) return;
-        await client.from('profiles').update({ avatar_url: null }).eq('id', sessionRes.data.session.user.id);
+        await client.from('profiles').update({ avatar_url: null }).eq('user_id', sessionRes.data.session.user.id);
       })();
     };
 
@@ -1349,7 +1349,7 @@
         var sessionRes = await client.auth.getSession();
         if (sessionRes.data && sessionRes.data.session) {
           await client.from('profiles').update({ animal_avatar: _selectedAnimal })
-            .eq('id', sessionRes.data.session.user.id);
+            .eq('user_id', sessionRes.data.session.user.id);
           /* Update nav avatar to show animal emoji */
           _applyAnimalToNav(_selectedAnimal);
         }
@@ -1384,7 +1384,7 @@
     var _origLoadProfile = loadProfile;
     loadProfile = function(user, client) {
       if (!client) client = getSupabase();
-      client.from('profiles').select('*').eq('id', user.id).single()
+      client.from('profiles').select('*').eq('user_id', user.id).single()
         .then(function(res) {
           var p = res.data; if (!p) { _refreshAvPreview(); return; }
           if (p.full_name) {
