@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    ImpactGrid Group — nav.js
-   Version: 5.0  (creator-first: no login, no dropdowns,
+   Version: 5.1  (creator-first: no login, no dropdowns,
                   direct CTA to Creator Studio)
 
    NAV:  Home | About | Consulting | Contact | Pricing  [Try Creator Studio Free →]
@@ -508,12 +508,37 @@
     document.dispatchEvent(new CustomEvent('ig-user-ready', { detail: window.igUser }));
   }
 
+  /* ─────────────────────────────────────────
+     CHECK AUTH
+     ✅ FIX v5.1: Added retry loop so we wait for the Supabase
+     client to be fully initialised (and session token loaded
+     from localStorage) before querying the profiles table.
+     Previously, checkAuth fired immediately on DOMContentLoaded
+     while ig-supabase.js / auth.js were still setting up the
+     client — meaning profiles queries fired with no auth token
+     → RLS saw auth.uid() = null → 403 Forbidden.
+  ───────────────────────────────────────── */
   window.checkAuth = async function() {
     _whenNavReady(async function() {
       try {
-        var client = _getClient();
-        if (!client) return;
+        // ✅ Retry getting client — auth.js IIFE may not have run yet
+        var client = null;
+        var attempts = 0;
+        while (!client && attempts < 20) {
+          client = _getClient();
+          if (!client) {
+            await new Promise(function(r) { setTimeout(r, 100); });
+          }
+          attempts++;
+        }
+        if (!client) {
+          window.setNavGuest();
+          return;
+        }
 
+        // ✅ getSession() is synchronous from localStorage — fast and reliable.
+        //    getUser() makes a network round-trip; we only need that for server-
+        //    side validation which is handled by RLS. For nav display, session is enough.
         var res = await client.auth.getSession();
         if (res.data && res.data.session) {
           var u            = res.data.session.user;
@@ -521,7 +546,7 @@
                             || (u.email && u.email.split('@')[0])
                             || 'Creator';
 
-          // Show nav immediately with auth metadata (fast)
+          // Show nav immediately — don't wait for DB
           window.setNavUser(u);
 
           // Then enrich with profiles table (name + avatar) asynchronously
@@ -623,9 +648,6 @@
 
     _doSubscribe();
   })();
-
-  /* ── Also run checkAuth on DOMContentLoaded as safety net ── */
-  /* Auto-run after DOM ready */
 
   /* ─────────────────────────────────────────
      PUBLIC API
