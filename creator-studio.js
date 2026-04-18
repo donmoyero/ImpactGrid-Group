@@ -449,6 +449,7 @@ function buildTrendInsights() {
 /* renderAll — unified re-render called after any trend fetch */
 function renderAll() {
   updateBriefing();
+  loadBriefing();        // refresh pulse strip now that _allTrends is populated
   runTrendPrediction();
   renderDashTrends();
   renderDashOpps();
@@ -1132,60 +1133,61 @@ function renderOpportunities(data) {
     return;
   }
 
+  // ── Ensure one card per platform (YouTube → TikTok → Google priority) ──
+  var platOrder = ['youtube', 'tiktok', 'google', 'cross'];
+  var seen = {};
+  var ordered = [];
+  platOrder.forEach(function(p) {
+    var match = data.find(function(t) { return (t.platform_source || 'google') === p && !seen[p]; });
+    if (match) { seen[p] = true; ordered.push(match); }
+  });
+  // Fill remaining slots with any unseen items
+  data.forEach(function(t) {
+    if (ordered.length < 3 && !ordered.includes(t)) ordered.push(t);
+  });
+  var items = ordered.slice(0, 3);
+
+  var platMeta = {
+    youtube: { icon: '▶️', color: '#FFD700', hint: '5–10 min explainer' },
+    tiktok:  { icon: '⚡', color: '#ff6464', hint: '30–60s hook video' },
+    google:  { icon: '🔍', color: '#78b4ff', hint: 'SEO article or Short' },
+    cross:   { icon: '🚀', color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
+  };
+
   var rankLabels = ['#1 Best Pick', '#2 Strong Play', '#3 Worth Watching'];
   var rankColors = ['var(--gold)', 'var(--green)', 'var(--blue2)'];
 
-  el.innerHTML = data.slice(0, 3).map(function(t, idx) {
-    var platLabel = t.platform_source === 'youtube' ? 'YouTube'
-      : t.platform_source === 'tiktok'  ? 'TikTok'
-      : t.platform_source === 'cross'   ? 'Cross-platform'
-      : 'Google';
-    var platIcon = t.platform_source === 'tiktok'  ? '🎵'
-      : t.platform_source === 'youtube' ? '▶️'
-      : t.platform_source === 'cross'   ? '🚀' : '🔍';
-
-    // Score normalisation — handles both shapes:
-    //   /trends/dijo  → dijoScore is 0-100 (velocity*0.4 + engagement*0.3 + boost*0.3)
-    //   renderDashOpps → passes score already on 0-10 scale via _score field
+  el.innerHTML = items.map(function(t, idx) {
+    var src = t.platform_source || 'google';
+    var pm = platMeta[src] || platMeta.google;
     var displayScore;
     if (t._score != null) {
-      // Came from renderDashOpps — already 0-10
       displayScore = Math.min(9.9, parseFloat(t._score.toFixed(1)));
     } else if (t.dijoScore != null && t.dijoScore > 0) {
-      // /trends/dijo — dijoScore is 0-100, convert to 0-10
       displayScore = Math.min(9.9, parseFloat((t.dijoScore / 10).toFixed(1)));
     } else if (t.trend_score != null && t.trend_score > 0) {
-      // trend_score from Supabase is 0-100
       displayScore = Math.min(9.9, parseFloat((t.trend_score / 10).toFixed(1)));
     } else {
-      displayScore = 5.0; // safe default — never show 0.0
+      displayScore = 5.0;
     }
-
     var pct = Math.round((displayScore / 10) * 100);
-    var status = t.status || 'rising';
-    var videoMeta = t.video_count ? t.video_count + ' videos' : '';
     var rankColor = rankColors[idx] || 'var(--text2)';
     var rankLabel = rankLabels[idx] || '';
 
-    // Platform-specific action hint
-    var actionHint = t.platform_source === 'tiktok'  ? 'Post a 30–60s hook video today'
-      : t.platform_source === 'youtube' ? 'Great for a 5–10 min explainer'
-      : t.platform_source === 'cross'   ? 'Works on TikTok + YouTube — post both'
-      : 'High search demand — SEO content wins here';
-
     return '<div class="opp-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">'
       +   '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + rankColor + ';letter-spacing:.08em;text-transform:uppercase">' + rankLabel + '</span>'
       +   '<span style="font-family:\'DM Mono\',monospace;font-size:16px;font-weight:900;color:' + rankColor + '">' + displayScore.toFixed(1) + '</span>'
       + '</div>'
-      + '<div class="opp-header" style="margin-bottom:4px">'
-      +   '<span class="opp-topic">' + platIcon + ' ' + escH(t.topic) + '</span>'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+      +   '<span style="font-size:13px">' + pm.icon + '</span>'
+      +   '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + pm.color + ';letter-spacing:.06em">' + src.toUpperCase() + '</span>'
       + '</div>'
-      + '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-bottom:6px;overflow:hidden">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:5px;line-height:1.3">' + escH(t.topic) + '</div>'
+      + '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-bottom:5px;overflow:hidden">'
       +   '<div style="height:100%;width:' + pct + '%;background:' + rankColor + ';border-radius:99px;transition:width .5s ease"></div>'
       + '</div>'
-      + '<div class="opp-meta" style="margin-bottom:4px">' + escH(platLabel) + ' · ' + escH(status) + (videoMeta ? ' · ' + escH(videoMeta) : '') + '</div>'
-      + '<div style="font-size:10px;color:var(--text3);font-style:italic">' + escH(actionHint) + '</div>'
+      + '<div style="font-size:10px;color:var(--text3);font-style:italic">' + escH(pm.hint) + '</div>'
       + '</div>';
   }).join('');
 }
@@ -1209,24 +1211,30 @@ async function loadOpportunities() {
 }
 
 // Fast in-memory re-render — used by 60s refresh intervals and as fallback.
-// Passes _score (0-10) so renderOpportunities knows not to divide by 10 again.
+// Explicit order: YouTube first, then TikTok, then Google — one per platform.
 function renderDashOpps() {
   if (!_allTrends.length) return;
-  // Use one per platform so the 3 cards are meaningfully different
   var best = getBest3(_allTrends);
-  var picks = [best.tiktok, best.youtube, best.google].filter(Boolean);
-  if (picks.length < 3) {
-    var used = new Set(picks.map(function(t) { return t.topic; }));
-    var extras = _allTrends.filter(function(t) { return !used.has(t.topic); });
-    while (picks.length < 3 && extras.length) picks.push(extras.shift());
+  var platOrder = [
+    { trend: best.youtube, src: 'youtube' },
+    { trend: best.tiktok,  src: 'tiktok'  },
+    { trend: best.google,  src: 'google'  }
+  ].filter(function(p) { return p.trend; });
+  if (platOrder.length < 3) {
+    var usedTopics = new Set(platOrder.map(function(p) { return p.trend.topic; }));
+    var extras = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
+    while (platOrder.length < 3 && extras.length) {
+      var e = extras.shift();
+      platOrder.push({ trend: e, src: e.plat === 'yt' ? 'youtube' : e.plat === 'tt' ? 'tiktok' : e.plat === 'cross' ? 'cross' : 'google' });
+    }
   }
-  renderOpportunities(picks.map(function(t) {
+  renderOpportunities(platOrder.map(function(p) {
     return {
-      topic:           t.topic,
-      platform_source: t.plat === 'yt' ? 'youtube' : t.plat === 'tt' ? 'tiktok' : t.plat === 'cross' ? 'cross' : 'google',
-      _score:          t.score,   // already 0-10 — bypass the /10 division
-      status:          t.status,
-      video_count:     t.videoCount
+      topic:           p.trend.topic,
+      platform_source: p.src,
+      _score:          p.trend.score,
+      status:          p.trend.status,
+      video_count:     p.trend.videoCount
     };
   }));
 }
@@ -1500,25 +1508,71 @@ async function loadBriefing(forceRefresh) {
   var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
   if (!el) return;
+
+  // ── Build compact pulse strip from local trend data ──────────────────────
+  function renderPulseStrip() {
+    if (!_allTrends.length) return false;
+    var best = getBest3(_allTrends);
+    var rows = [
+      { icon: '▶️', label: 'YouTube', trend: best.youtube, color: '#FFD700' },
+      { icon: '⚡', label: 'TikTok',  trend: best.tiktok,  color: '#ff6464' },
+      { icon: '🔍', label: 'Google',  trend: best.google,  color: '#78b4ff' }
+    ].filter(function(r) { return r.trend; });
+    if (!rows.length) return false;
+
+    el.innerHTML = rows.map(function(r) {
+      var t = r.trend;
+      var cls = classifyTrend(t);
+      var badge = cls === 'blowup'      ? '🔥 Blowing up'
+                : cls === 'rising_fast' ? '⚡ Rising fast'
+                : cls === 'early'       ? '🟢 Early signal'
+                : '📊 Stable';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)">'
+        + '<span style="font-size:14px">' + r.icon + '</span>'
+        + '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + r.color + ';min-width:46px;letter-spacing:.06em">' + r.label + '</span>'
+        + '<span style="font-size:12px;color:var(--text1);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</span>'
+        + '<span style="font-size:9px;color:var(--text3);white-space:nowrap">' + badge + '</span>'
+        + '<span style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:800;color:' + r.color + ';min-width:24px;text-align:right">' + t.score.toFixed(1) + '</span>'
+        + '</div>';
+    }).join('') + '<div style="border-bottom:none"></div>';
+
+    if (tagsEl) tagsEl.innerHTML = ''; // hide old tags
+    if (dateEl) {
+      var now = new Date();
+      dateEl.textContent = '📡 ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
+    }
+    return true;
+  }
+
+  // Try local data first (instant), then fall back to API
+  if (renderPulseStrip()) {
+    if (forceRefresh) toast('🧠 Trends refreshed!');
+    return;
+  }
+
+  // Still loading — wait for trends then retry
+  el.innerHTML = '<span class="spinner spinner-gold"></span>';
   try {
     var res = await fetch(DIJO + '/ai/daily-briefing');
     var data = await res.json();
+    // Even if API has data, prefer the compact pulse strip if trends are now loaded
+    if (_allTrends.length && renderPulseStrip()) {
+      if (forceRefresh) toast('🧠 Trends refreshed!');
+      return;
+    }
+    // Fallback: show just the first sentence of the AI briefing (compact)
     if (data.briefing) {
-      el.textContent = data.briefing;
+      var first = data.briefing.split(/[.!?]/)[0].trim();
+      el.textContent = first + '.';
       if (dateEl) {
-        const now = new Date();
-        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        dateEl.textContent = `📡 ${time} · live`;
+        var now2 = new Date();
+        dateEl.textContent = '📡 ' + now2.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
       }
-      if (tagsEl && data.top_trends) {
-        tagsEl.innerHTML = data.top_trends.map(function(t) {
-          return '<span class="b-tag">' + escH(t.topic) + ' ' + Math.round(t.score) + '</span>';
-        }).join('');
-      }
+      if (tagsEl) tagsEl.innerHTML = '';
       if (forceRefresh) toast('🧠 Briefing refreshed!');
     }
   } catch(e) {
-    if (el) el.textContent = 'Dijo briefing unavailable — check back shortly.';
+    if (el) el.textContent = 'Trends unavailable — check back shortly.';
   }
 }
 
