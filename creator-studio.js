@@ -1,2364 +1,1364 @@
-/* ═══════════════════════════════════════════════
-   IMPACTGRID CREATOR STUDIO — creator-studio.js
-   Merged & deduplicated — aligned to HTML IDs
-   v2.1 — Mobile fixes: hamburger X animation,
-           sidebar close button, swipe-to-close
-═══════════════════════════════════════════════ */
+// ================================================================
+//  IMPACTGRID / DIJO — Main Server
+//  server.js
+//
+//  Render env vars required:
+//    GROQ_API_KEY
+//    SUPABASE_URL
+//    SUPABASE_SERVICE_KEY
+//    TIKTOK_CLIENT_KEY
+//    TIKTOK_CLIENT_SECRET
+//    TIKTOK_REDIRECT_URI
+//    YOUTUBE_CLIENT_ID
+//    YOUTUBE_CLIENT_SECRET
+//    YOUTUBE_REDIRECT_URI
+//    YOUTUBE_API_KEY          ← YouTube Data API v3 key (for ingestion)
+//    INSTAGRAM_APP_ID
+//    INSTAGRAM_APP_SECRET
+//    INSTAGRAM_REDIRECT_URI
+//    META_WEBHOOK_VERIFY_TOKEN
+//    PEXELS_API_KEY           ← Pexels API key (for carousel media)
+//    STRIPE_SECRET_KEY        ← Stripe secret key
+//    STRIPE_WEBHOOK_SECRET    ← Stripe webhook signing secret
+// ================================================================
 
-var DIJO = 'https://impactgrid-dijo.onrender.com';
-var _allTrends = [];
-var _selectedStyle = 'Educational';
-var trendChartInstance = null;
-var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
+import express from "express";
+import cors    from "cors";
+import dotenv  from "dotenv";
+import Groq    from "groq-sdk";
+import { startIngestion, addIngestionRoutes } from "./ingestion.js";
+import { generateCarousel }                   from "./carousel-engine.js";
+import { generatePortfolioContent }           from "./portfolio-engine.js";
+import { Resend }                             from "resend";
+import Stripe                                from "stripe";
 
-/* ─────────────────────────────────────────────
-   LOAD USER — called on DOMContentLoaded
-   Syncs user from Supabase session, then
-   updates greeting + avatar/name UI.
-───────────────────────────────────────────── */
-/* ─────────────────────────────────────────────
-   GET CURRENT USER — single source of truth.
-   nav.js sets window.igUser via _loadProfile()
-   and fires 'ig-user-ready'. Pages MUST NOT call
-   supabase.auth.getUser() themselves — that causes
-   double-auth and race conditions.
-───────────────────────────────────────────── */
-function getCurrentUser() {
-  return window.igUser || null;
-}
+dotenv.config();
 
-function loadUser() {
-  // nav.js owns auth. We just read window.igUser.
-  // If it's already set, render immediately.
-  if (window.igUser) {
-    _applyUserUI(window.igUser);
-    return;
-  }
-  // Otherwise wait for nav.js to fire ig-user-ready
-  document.addEventListener('ig-user-ready', function(e) {
-    _applyUserUI(e.detail);
-  }, { once: true });
-}
+const app    = express();
+const resend = new Resend(process.env.RESEND_API_KEY);
+const groq   = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-function _applyUserUI(user) {
-  if (!user) return;
-  console.log('USER SYNCED ✅', user.email);
+app.use(cors());
 
-  // data-ig-greeting (set by nav.js too — this is belt-and-braces)
-  var hour = new Date().getHours();
-  var greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  document.querySelectorAll('[data-ig-greeting]').forEach(function(el) {
-    el.textContent = greeting + ', ' + user.firstName;
-  });
+/* ================================================================
+   STRIPE WEBHOOK
+   ⚠️  Must be BEFORE app.use(express.json()) — Stripe needs raw body
+================================================================ */
+app.post("/stripe-webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
 
-  updateUserUI();
-  if (typeof setWelcome === 'function') setWelcome();
-}
-
-/* ─────────────────────────────────────────────
-   UPDATE USER UI — fills name + avatar elements.
-   Reads ONLY from window.igUser (set by nav.js).
-   No auth calls — nav.js is the single source.
-───────────────────────────────────────────── */
-function updateUserUI() {
-  var user = getCurrentUser();
-  if (!user) return;
-
-  var name   = user.name   || 'Creator';
-  var avatar = user.avatarUrl || null;
-
-  // data-user-avatar (legacy attr)
-  document.querySelectorAll('[data-user-avatar]').forEach(function(el) {
-    el.innerHTML = avatar
-      ? '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">'
-      : name.charAt(0).toUpperCase();
-  });
-
-  // data-ig-avatar (nav.js standard attr — belt-and-braces if nav beat us)
-  document.querySelectorAll('[data-ig-avatar]').forEach(function(el) {
-    if (!el.querySelector('img')) {
-      el.innerHTML = avatar
-        ? '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="' + name + '">'
-        : name.charAt(0).toUpperCase();
-    }
-  });
-
-  // Fallback: named IDs used by some older panels
-  var cardName = document.getElementById('profileName');
-  var cardAv   = document.getElementById('profileAvatar');
-  if (cardName) cardName.textContent = name;
-  if (cardAv) {
-    cardAv.innerHTML = avatar
-      ? '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">'
-      : name.charAt(0).toUpperCase();
-  }
-}
-
-/* ─────────────────────────────────────────────
-   BRIEFING
-───────────────────────────────────────────── */
-
-
-function safeTopic(t) {
-  return t?.topic || 'No data';
-}
-
-function updateBriefing(trends) {
-  const briefEl = document.getElementById('dijoBrief');
-  if (!briefEl) return;
-
-  const src = trends || _allTrends;
-  if (!src || !src.length) {
-    briefEl.textContent = 'No trends yet · Check back later';
-    return;
-  }
-
-  const best = getBest3(src);
-  briefEl.textContent = `📡 ${safeTopic(best.tiktok)} · ${safeTopic(best.youtube)} · ${safeTopic(best.google)}`;
-}
-
-/* ─────────────────────────────────────────────
-   THEME
-───────────────────────────────────────────── */
-function toggleTheme() {
-  var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
-  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
-}
-(function() {
   try {
-    if (localStorage.getItem('ig_theme') === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      var btn = document.getElementById('themeBtn');
-      if (btn) btn.textContent = '☀️';
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error("[Stripe] Webhook signature error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const email   = session.customer_details?.email;
+
+    console.log("[Stripe] Payment received from:", email);
+
+    try {
+      let plan = "pro"; // default
+      // if (session.amount_total > 1300) plan = "enterprise"; // upgrade later
+
+      const { error } = await _aiSupabase
+        .from("users")
+        .update({ plan })
+        .eq("email", email);
+
+      if (error) {
+        console.error("[Stripe] Supabase update error:", error.message);
+      } else {
+        console.log("[Stripe] Plan updated to:", plan, "for", email);
+      }
+    } catch (err) {
+      console.error("[Stripe] Update failed:", err.message);
     }
-  } catch(e) {}
-})();
-
-/* ─────────────────────────────────────────────
-   TABS — matches HTML's switchTab(name, sidebarItem)
-───────────────────────────────────────────── */
-function switchTab(name, sidebarItem) {
-  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.tab-btn:not(.tab-soon)').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.sb-item').forEach(function(i) { i.classList.remove('active'); });
-
-  var panel = document.getElementById('panel-' + name);
-  if (panel) panel.classList.add('active');
-  var tb = document.getElementById('tab-' + name);
-  if (tb) tb.classList.add('active');
-  if (sidebarItem) sidebarItem.classList.add('active');
-
-  var ca = document.getElementById('contentArea');
-  if (ca) ca.scrollTop = 0;
-
-  closeSidebar();
-
-  if (name === 'trends' && _allTrends.length) renderFullTrends();
-  if (name === 'evaluator') initEvaluator();
-  if (name === 'calendar') {
-    if (typeof loadCalendar === 'function') loadCalendar();
   }
-}
 
-/* ─────────────────────────────────────────────
-   SIDEBAR (mobile drawer)
-   openSidebar / closeSidebar are also called
-   from HTML onclick attributes.
-───────────────────────────────────────────── */
-function openSidebar() {
-  var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('mobOverlay');
-  var ham = document.querySelector('.hamburger');
-  if (sb)  sb.classList.add('open');
-  if (ov)  ov.classList.add('open');
-  if (ham) ham.classList.add('is-open');
-  document.body.style.overflow = 'hidden';
-}
-function closeSidebar() {
-  var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('mobOverlay');
-  var ham = document.querySelector('.hamburger');
-  if (sb)  sb.classList.remove('open');
-  if (ov)  ov.classList.remove('open');
-  if (ham) ham.classList.remove('is-open');
-  document.body.style.overflow = '';
-}
-
-/* ─────────────────────────────────────────────
-   USER MENU
-   Nav dropdown is owned by nav.js (toggleDD / #uDrop).
-   This click-outside listener is a safety net only.
-───────────────────────────────────────────── */
-document.addEventListener('click', function(e) {
-  var d = document.getElementById('uDrop');
-  if (d && !e.target.closest('.user-btn')) d.classList.remove('open');
+  res.json({ received: true });
 });
 
-/* ─────────────────────────────────────────────
-   AUTH
-   Nav UI (setNavUser, igSignOut, checkAuth) is
-   fully owned by nav.js — do not duplicate here.
-   Studio-specific auth work lives in loadUser()
-   which is called by auth.js after initAuth().
-───────────────────────────────────────────── */
+app.use(express.json());
 
-// loadProfile() removed — nav.js handles profiles table lookup
-// and exposes window.igUser with name + avatarUrl from the data Supabase.
-// creator-studio.js reads window.igUser via setWelcome() and updateUserUI().
+/* ── Health check ── */
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: "ImpactGrid Dijo", ts: new Date().toISOString() });
+});
 
-function setWelcome() {
-  // nav.js _loadProfile() already set window.igUser from the PROFILES Supabase
-  // and wrote the greeting into [data-ig-greeting] elements automatically.
-  // We still update #dijoGreeting here as a belt-and-braces fallback
-  // (handles the case where ig-user-ready fires before this function runs).
+/* ── Keep-warm ping ── */
+app.get("/ping", (req, res) => res.json({ pong: true }));
 
-  var name;
-  if (window.igUser && window.igUser.name) {
-    name = window.igUser.firstName || window.igUser.name.split(' ')[0];
-  } else if (typeof getUser === 'function' && getUser()) {
-    name = (getUser().user_metadata && getUser().user_metadata.full_name)
-           ? getUser().user_metadata.full_name.split(' ')[0]
-           : (getUser().email && getUser().email.split('@')[0])
-           || 'Creator';
+
+/* ================================================================
+   CHAT ENDPOINT
+================================================================ */
+app.post("/chat", async (req, res) => {
+  try {
+    const { message, mode = "adviser" } = req.body;
+    if (!message) return res.status(400).json({ error: "No message provided" });
+
+    const systemPrompts = {
+      adviser: `You are Dijo, ImpactGrid's AI financial adviser for small business owners.
+You speak plainly and directly — no jargon, no waffle.
+You give specific, actionable financial advice based on the data provided.
+Always be honest even if the news is tough.
+Keep responses concise and practical.
+Format responses clearly with short paragraphs.
+Use bullet points sparingly.`,
+
+      dashboard: `You are Dijo, an AI financial analyst embedded in ImpactGrid.
+Analyse the financial data provided and give clear, specific insights.
+Focus on trends, risks, and opportunities.
+Be direct and numbers-focused.`,
+
+      group: `You are Dijo, ImpactGrid's AI adviser for the ImpactGrid Group platform.
+You help business owners and investors understand financial performance.
+Be professional, clear, and actionable.`,
+
+      creator: `You are the ImpactGrid Creator Intelligence Engine — a data-driven AI that helps creators and businesses identify viral content opportunities.
+You analyse trends and generate optimised content for TikTok, YouTube, and Instagram.
+When asked to generate content, respond with a hook, caption, hashtags, and posting advice.
+Be specific, direct, and data-driven. No generic advice.`,
+
+      carousel: `You are Dijo, ImpactGrid's carousel content engine.
+You generate structured carousel slide content for LinkedIn, Instagram, and TikTok.
+Your output must follow the EXACT format requested — no deviations, no commentary.
+Every headline is SHORT (max 8 words), punchy, and scroll-stopping.
+Every sub-line adds context without padding.
+The first slide is always the hook. The last slide is always a CTA.
+You write like a top creator, not a copywriter. Sharp, real, direct.
+Never write more than is asked for. Format only. No explanations.`
+    };
+
+    const systemPrompt = systemPrompts[mode] || systemPrompts.adviser;
+
+    const completion = await groq.chat.completions.create({
+      model:       "llama-3.3-70b-versatile",
+      max_tokens:  1024,
+      temperature: 0.7,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: message }
+      ]
+    });
+
+    const reply = completion.choices[0]?.message?.content || "I couldn't generate a response.";
+    res.json({ reply });
+
+  } catch (err) {
+    console.error("[Dijo] Error:", err.message);
+    res.status(500).json({ error: "AI service error", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   META WEBHOOK
+================================================================ */
+app.get("/webhook", (req, res) => {
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
+  const mode         = req.query["hub.mode"];
+  const token        = req.query["hub.verify_token"];
+  const challenge    = req.query["hub.challenge"];
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("[Meta Webhook] Verified");
+    res.status(200).send(challenge);
   } else {
-    name = 'Creator';
+    res.status(403).json({ error: "Verification failed" });
   }
-
-  var hour = new Date().getHours();
-  var greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-
-  var greetEl = document.getElementById('dijoGreeting');
-  if (greetEl) greetEl.textContent = greeting + ', ' + name;
-
-  updateBriefing();
-}
-
-/* ─────────────────────────────────────────────
-   ig-user-ready listener
-   nav.js dispatches this after _loadProfile()
-   completes — meaning window.igUser has real
-   full_name + avatar_url from the profiles table.
-   Re-run our UI updates so the greeting/avatar
-   reflect the profiles data, not just auth metadata.
-───────────────────────────────────────────── */
-document.addEventListener('ig-user-ready', function() {
-  setWelcome();
-  updateUserUI();
 });
 
-/* ─────────────────────────────────────────────
-   PAYWALL
-   checkAccess() is ONLY called for generative
-   actions (generate, save, export) — never
-   for passive browsing panels.
-───────────────────────────────────────────── */
-
-// Panels that are always free to view — no gate
-var IG_FREE_PANELS = ['dashboard', 'trends', 'calendar'];
-
-function checkAccess() {
-  // ✅ Never block passive browsing panels
-  var activePanel = document.querySelector('.panel.active');
-  if (activePanel) {
-    var panelName = activePanel.id.replace('panel-', '');
-    if (IG_FREE_PANELS.indexOf(panelName) !== -1) return true;
+app.post("/webhook", (req, res) => {
+  console.log("[Meta Webhook] Event:", JSON.stringify(req.body));
+  if (req.body.object === "instagram") {
+    req.body.entry?.forEach((e) => e.changes?.forEach((c) =>
+      console.log("[Meta Webhook] Instagram:", c.field, c.value)
+    ));
   }
+  res.status(200).send("EVENT_RECEIVED");
+});
 
-  // 👑 Admin bypass
-  if (isAdmin()) return true;
 
-  // Not logged in
-  if (!getUser()) {
-    showUpgrade("Create an account to save and unlock more");
-    return false;
+/* ================================================================
+   TIKTOK ROUTES
+================================================================ */
+app.post("/tiktok/token", async (req, res) => {
+  const { code, redirect_uri, code_verifier } = req.body;
+  if (!code || !code_verifier) return res.status(400).json({ error: "Missing code or code_verifier" });
+  try {
+    const response = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_key:    process.env.TIKTOK_CLIENT_KEY,
+        client_secret: process.env.TIKTOK_CLIENT_SECRET,
+        code,
+        grant_type:    "authorization_code",
+        redirect_uri:  redirect_uri || process.env.TIKTOK_REDIRECT_URI,
+        code_verifier
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) return res.status(400).json({ error: data.error || "Token exchange failed", details: data });
+    res.json({
+      access_token:  data.access_token,
+      open_id:       data.open_id,
+      expires_in:    data.expires_in,
+      refresh_token: data.refresh_token,
+      scope:         data.scope
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Token exchange failed", details: err.message });
   }
+});
 
-  // Free plan limit
-  if (getPlan() === 'free' && getUses() >= 3) {
-    showUpgrade("You've hit your free limit — upgrade to continue");
-    return false;
+app.post("/tiktok/profile", async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const fields = "open_id,avatar_url,display_name,bio_description,is_verified,follower_count,following_count,likes_count,video_count";
+    const response = await fetch(
+      `https://open.tiktokapis.com/v2/user/info/?fields=${fields}`,
+      { method: "GET", headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const data = await response.json();
+    console.log("[TikTok /profile] Response:", JSON.stringify(data).slice(0, 300));
+    if (data?.error?.code && data.error.code !== "ok") {
+      return res.status(400).json({ error: "TikTok profile error", details: data });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("[TikTok /profile] Exception:", err.message);
+    res.status(500).json({ error: "Profile fetch failed", details: err.message });
   }
+});
 
-  return true;
+app.post("/tiktok/videos", async (req, res) => {
+  const { access_token, max_count } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const fields = "id,title,cover_image_url,video_description,duration,like_count,comment_count,share_count,view_count,create_time";
+    const response = await fetch(
+      `https://open.tiktokapis.com/v2/video/list/?fields=${fields}`,
+      {
+        method:  "POST",
+        headers: { "Authorization": "Bearer " + access_token, "Content-Type": "application/json" },
+        body:    JSON.stringify({ max_count: max_count || 10 })
+      }
+    );
+    const data = await response.json();
+    console.log("[TikTok /videos] Status:", response.status, "Response:", JSON.stringify(data).slice(0, 300));
+    if (data?.error?.code && data.error.code !== "ok") {
+      return res.status(400).json({ error: "TikTok videos error", details: data });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("[TikTok /videos] Exception:", err.message);
+    res.status(500).json({ error: "Videos fetch failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/publish", async (req, res) => {
+  const { access_token, video_url, caption, privacy_level } = req.body;
+  if (!access_token || !video_url) return res.status(400).json({ error: "Missing access_token or video_url" });
+  try {
+    const response = await fetch("https://open.tiktokapis.com/v2/post/publish/video/init/", {
+      method:  "POST",
+      headers: { "Authorization": "Bearer " + access_token, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        post_info:   { title: caption || "", privacy_level: privacy_level || "PUBLIC_TO_EVERYONE", disable_duet: false, disable_comment: false, disable_stitch: false },
+        source_info: { source: "PULL_FROM_URL", video_url }
+      })
+    });
+    const data = await response.json();
+    if (!response.ok || (data.error && data.error.code !== "ok")) return res.status(400).json({ error: "Publish failed", details: data });
+    res.json({ publish_id: data.data?.publish_id, status: "publishing" });
+  } catch (err) {
+    res.status(500).json({ error: "Publish failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/share", async (req, res) => {
+  const { access_token, video_url, title } = req.body;
+  if (!access_token || !video_url) return res.status(400).json({ error: "Missing access_token or video_url" });
+  try {
+    const verify = await fetch("https://open.tiktokapis.com/v2/user/info/?fields=open_id", {
+      headers: { "Authorization": "Bearer " + access_token }
+    });
+    if (!verify.ok) return res.status(401).json({ error: "Invalid or expired access token" });
+    res.json({ share_url: video_url, title: title || "", client_key: process.env.TIKTOK_CLIENT_KEY, status: "ready" });
+  } catch (err) {
+    res.status(500).json({ error: "Share failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/refresh", async (req, res) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) return res.status(400).json({ error: "Missing refresh_token" });
+  try {
+    const response = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_key:    process.env.TIKTOK_CLIENT_KEY,
+        client_secret: process.env.TIKTOK_CLIENT_SECRET,
+        grant_type:    "refresh_token",
+        refresh_token
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) return res.status(400).json({ error: "Token refresh failed", details: data });
+    res.json({ access_token: data.access_token, expires_in: data.expires_in, refresh_token: data.refresh_token });
+  } catch (err) {
+    res.status(500).json({ error: "Token refresh failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/save-token", async (req, res) => {
+  const { open_id, access_token, refresh_token, expires_in, scope, display_name, avatar_url } = req.body;
+  if (!open_id || !access_token) return res.status(400).json({ error: "Missing open_id or access_token" });
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const expiresAt = new Date(Date.now() + (expires_in || 86400) * 1000).toISOString();
+    const { error } = await sb.from("tiktok_tokens").upsert({
+      open_id,
+      access_token,
+      refresh_token: refresh_token || "",
+      expires_at:    expiresAt,
+      scope:         scope || "",
+      display_name:  display_name || "",
+      avatar_url:    avatar_url || "",
+      updated_at:    new Date().toISOString()
+    }, { onConflict: "open_id" });
+    if (error) {
+      console.error("[TikTok save-token] Supabase error:", error.message);
+      return res.status(500).json({ error: "Failed to save token", details: error.message });
+    }
+    console.log("[TikTok save-token] Saved token for:", display_name || open_id);
+    res.json({ saved: true, open_id });
+  } catch (err) {
+    console.error("[TikTok save-token] Exception:", err.message);
+    res.status(500).json({ error: "Token save failed", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   INSTAGRAM ROUTES
+================================================================ */
+app.post("/instagram/token", async (req, res) => {
+  const { code, redirect_uri } = req.body;
+  if (!code) return res.status(400).json({ error: "Missing code" });
+  try {
+    const shortRes  = await fetch("https://api.instagram.com/oauth/access_token", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id:     process.env.INSTAGRAM_APP_ID,
+        client_secret: process.env.INSTAGRAM_APP_SECRET,
+        grant_type:    "authorization_code",
+        redirect_uri:  redirect_uri || process.env.INSTAGRAM_REDIRECT_URI,
+        code
+      }).toString()
+    });
+    const shortData = await shortRes.json();
+    if (!shortRes.ok || shortData.error) return res.status(400).json({ error: "Token exchange failed", details: shortData });
+    const longRes  = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_APP_SECRET}&access_token=${shortData.access_token}`);
+    const longData = await longRes.json();
+    if (!longRes.ok || longData.error) return res.json({ access_token: shortData.access_token, user_id: shortData.user_id, expires_in: 3600 });
+    res.json({ access_token: longData.access_token, user_id: shortData.user_id, expires_in: longData.expires_in || 5184000 });
+  } catch (err) {
+    res.status(500).json({ error: "Token exchange failed", details: err.message });
+  }
+});
+
+app.post("/instagram/profile", async (req, res) => {
+  const { access_token, user_id } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const uid  = user_id || "me";
+    const data = await (await fetch(`https://graph.instagram.com/v19.0/${uid}?fields=id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url,website&access_token=${access_token}`)).json();
+    if (data.error) return res.status(400).json({ error: "Failed to fetch profile", details: data });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Profile fetch failed", details: err.message });
+  }
+});
+
+app.post("/instagram/media", async (req, res) => {
+  const { access_token, user_id } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const uid  = user_id || "me";
+    const data = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/media?fields=id,caption,media_type,media_url,thumbnail_url,timestamp,like_count,comments_count,permalink&limit=12&access_token=${access_token}`)).json();
+    if (data.error) return res.status(400).json({ error: "Failed to fetch media", details: data });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Media fetch failed", details: err.message });
+  }
+});
+
+app.post("/instagram/insights", async (req, res) => {
+  const { access_token, user_id } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const uid  = user_id || "me";
+    const data = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/insights?metric=reach,impressions,profile_views,follower_count&period=day&access_token=${access_token}`)).json();
+    if (data.error) return res.status(400).json({ error: "Failed to fetch insights", details: data });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Insights fetch failed", details: err.message });
+  }
+});
+
+app.post("/instagram/publish", async (req, res) => {
+  const { access_token, user_id, image_url, caption } = req.body;
+  if (!access_token || !image_url) return res.status(400).json({ error: "Missing access_token or image_url" });
+  try {
+    const uid           = user_id || "me";
+    const containerData = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/media`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ image_url, caption: caption || "", access_token })
+    })).json();
+    if (containerData.error) return res.status(400).json({ error: "Failed to create container", details: containerData });
+    const publishData = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/media_publish`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ creation_id: containerData.id, access_token })
+    })).json();
+    if (publishData.error) return res.status(400).json({ error: "Failed to publish", details: publishData });
+    res.json({ media_id: publishData.id, status: "published" });
+  } catch (err) {
+    res.status(500).json({ error: "Publish failed", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   YOUTUBE ROUTES
+================================================================ */
+app.post("/youtube/token", async (req, res) => {
+  const { code, redirect_uri } = req.body;
+  if (!code) return res.status(400).json({ error: "Missing code" });
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id:     process.env.YOUTUBE_CLIENT_ID,
+        client_secret: process.env.YOUTUBE_CLIENT_SECRET,
+        redirect_uri:  redirect_uri || process.env.YOUTUBE_REDIRECT_URI,
+        grant_type:    "authorization_code"
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      console.error("[YouTube /token] Error:", data);
+      return res.status(400).json({ error: "Token exchange failed", details: data });
+    }
+    res.json({
+      access_token:  data.access_token,
+      refresh_token: data.refresh_token,
+      expires_in:    data.expires_in,
+      token_type:    data.token_type
+    });
+  } catch (err) {
+    console.error("[YouTube /token] Exception:", err.message);
+    res.status(500).json({ error: "Token exchange failed", details: err.message });
+  }
+});
+
+app.post("/youtube/channel", async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const response = await fetch(
+      "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&mine=true",
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      console.error("[YouTube /channel] Error:", data);
+      return res.status(400).json({ error: "Failed to fetch channel", details: data });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("[YouTube /channel] Exception:", err.message);
+    res.status(500).json({ error: "Channel fetch failed", details: err.message });
+  }
+});
+
+app.post("/youtube/videos", async (req, res) => {
+  const { access_token, max_results } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const channelRes  = await fetch(
+      "https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true",
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const channelData = await channelRes.json();
+    const uploadsId   = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsId) return res.status(404).json({ error: "No uploads playlist found" });
+
+    const videosRes  = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=${max_results || 10}`,
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const videosData = await videosRes.json();
+    if (!videosRes.ok || videosData.error) {
+      console.error("[YouTube /videos] Error:", videosData);
+      return res.status(400).json({ error: "Failed to fetch videos", details: videosData });
+    }
+
+    const videoIds = videosData.items?.map((v) => v.contentDetails.videoId).join(",");
+    if (!videoIds) return res.json({ items: [] });
+
+    const statsRes  = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoIds}`,
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const statsData = await statsRes.json();
+    res.json(statsData);
+  } catch (err) {
+    console.error("[YouTube /videos] Exception:", err.message);
+    res.status(500).json({ error: "Videos fetch failed", details: err.message });
+  }
+});
+
+app.post("/youtube/analytics", async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const endDate   = new Date().toISOString().split("T")[0];
+    const startDate = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const response  = await fetch(
+      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,averageViewDuration,subscribersGained,subscribersLost,likes,comments&dimensions=day&sort=day`,
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      console.error("[YouTube /analytics] Error:", data);
+      return res.status(400).json({ error: "Failed to fetch analytics", details: data });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("[YouTube /analytics] Exception:", err.message);
+    res.status(500).json({ error: "Analytics fetch failed", details: err.message });
+  }
+});
+
+app.post("/youtube/refresh", async (req, res) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) return res.status(400).json({ error: "Missing refresh_token" });
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        refresh_token,
+        client_id:     process.env.YOUTUBE_CLIENT_ID,
+        client_secret: process.env.YOUTUBE_CLIENT_SECRET,
+        grant_type:    "refresh_token"
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) return res.status(400).json({ error: "Token refresh failed", details: data });
+    res.json({ access_token: data.access_token, expires_in: data.expires_in });
+  } catch (err) {
+    console.error("[YouTube /refresh] Exception:", err.message);
+    res.status(500).json({ error: "Token refresh failed", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   GOOGLE TRENDS PROXY
+================================================================ */
+app.get("/trends/google", async (req, res) => {
+  const geo = req.query.geo || "GB";
+  try {
+    const response = await fetch(
+      `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`,
+      { headers: { "User-Agent": "Mozilla/5.0 (compatible; ImpactGrid/1.0)" } }
+    );
+    const xml    = await response.text();
+    const titles = [];
+    const regex  = /<title><!\[CDATA\[([^\]]+)\]\]><\/title>/g;
+    let match;
+    while ((match = regex.exec(xml)) !== null) {
+      if (match[1] !== "Google Trends" && match[1] !== "Daily Search Trends") {
+        titles.push(match[1]);
+      }
+    }
+    res.json({ geo, trends: titles.slice(0, 20), ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[Google Trends] Exception:", err.message);
+    res.status(500).json({ error: "Failed to fetch Google Trends", details: err.message });
+  }
+});
+
+
+/* ── GET /trends/live?limit=20 ── */
+/*
+ *  Used by CaptionEngine.fetchLiveTrends() in carousel-studio.js and
+ *  the creator-studio dashboard trend feed.
+ *  Queries the trends table directly (ordered by trend_score) so all
+ *  platform sources — tiktok | youtube | cross | google — are surfaced.
+ *  Adds `plat` field mapped from platform_source so the frontend
+ *  badge renderer (t.plat === 'tt' / 'yt' / 'cross') works without
+ *  any client-side changes.
+ */
+app.get("/trends/live", async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const { data, error } = await _aiSupabase
+      .from("trends")
+      .select("*")
+      .order("trend_score", { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(error.message);
+
+    const trends = (data || []).map(t => ({
+      topic:           t.topic,
+      trend_score:     t.trend_score,
+      platform_source: t.platform_source,
+      video_count:     t.video_count,
+      total_views:     t.total_views,
+      status:          t.status,
+      confidence_score: t.velocity_score || 60
+    }));
+
+    // 🔥 PRIORITISE CROSS-PLATFORM (THIS IS THE MAGIC)
+    trends.sort((a, b) => {
+      if (a.platform_source === 'cross') return -1;
+      if (b.platform_source === 'cross') return 1;
+      return b.trend_score - a.trend_score;
+    });
+
+    res.json({
+      trends,
+      ts: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("[Trends /live] Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch live trends", details: err.message, trends: [] });
+  }
+});
+
+
+/* ── GET /trends/cross ── */
+/*
+ *  Returns cross-platform trends, prioritising topics that appear
+ *  on multiple platforms (platform_source = 'cross').
+ *  Falls back to the full live feed sorted by cross-platform score.
+ *  This is the PRIMARY endpoint hit by creator-studio.js fetchTrends().
+ */
+app.get("/trends/cross", async (req, res) => {
+  try {
+    const { data, error } = await _aiSupabase
+      .from("trends")
+      .select("*")
+      .order("cross_platform_boost", { ascending: false, nullsLast: true })
+      .order("trend_score",          { ascending: false })
+      .limit(30);
+    if (error) throw new Error(error.message);
+
+    const trends = (data || []).map(t => ({
+      topic:            t.topic,
+      trend_score:      t.trend_score,
+      platform_source:  t.platform_source,
+      video_count:      t.video_count,
+      total_views:      t.total_views,
+      status:           t.status,
+      confidence_score: t.velocity_score || 60,
+      cross_platform_boost: t.cross_platform_boost || 0
+    }));
+
+    // Put genuine cross-platform topics first
+    trends.sort((a, b) => {
+      if (a.platform_source === "cross" && b.platform_source !== "cross") return -1;
+      if (b.platform_source === "cross" && a.platform_source !== "cross") return  1;
+      return b.trend_score - a.trend_score;
+    });
+
+    res.json({ trends, ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[Trends /cross] Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch cross trends", details: err.message, trends: [] });
+  }
+});
+
+
+/* ── GET /trends/cache ── */
+/*
+ *  Reads directly from the trends_cache table — used as the TERTIARY
+ *  fallback in creator-studio.js fetchTrends() when /trends/cross and
+ *  /trends/live both return empty (e.g. Supabase ingestion lag / cold start).
+ *  Richer than the Google RSS fallback: retains platform diversity + video stats.
+ */
+app.get("/trends/cache", async (req, res) => {
+  try {
+    const { data, error } = await _aiSupabase
+      .from("trends_cache")
+      .select("*")
+      .order("score", { ascending: false })
+      .limit(20);
+
+    if (error) throw new Error(error.message);
+
+    res.json({ trends: data || [], ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[Trends /cache] Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch cached trends", details: err.message, trends: [] });
+  }
+});
+
+
+/* ================================================================
+   PHASE 3 — AI RECOMMENDATION LAYER
+================================================================ */
+
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
+const _aiSupabase = createSupabaseClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+async function getTopTrends(limit = 10) {
+  const { data } = await _aiSupabase
+    .from("v_top_trends")
+    .select("*")
+    .limit(limit);
+  return data || [];
 }
 
-function showUpgrade(message) {
-  var existing = document.getElementById('upgradeBar');
-  if (existing) existing.remove();
+async function dijoAI(userPrompt, systemOverride = null) {
+  const system = systemOverride || `You are Dijo, ImpactGrid's Creator Intelligence Engine.
+You analyse real trend data and give creators specific, actionable advice.
+You speak directly and confidently. No waffle, no generic advice.
+Always reference the actual data provided. Be specific about platforms, formats, and timing.
+Format responses clearly. Use short paragraphs. Keep it punchy.`;
 
-  var bar = document.createElement('div');
-  bar.id = 'upgradeBar';
-  var isLoggedIn = !!getUser();
-
-  bar.innerHTML =
-    '<div class="upgrade-inner">'
-    + '<span>' + message + '</span>'
-    + '<div style="display:flex;gap:8px;">'
-    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
-    + (!isLoggedIn
-        ? '<a href="login.html" class="btn btn-secondary">Login</a>'
-        : '')
-    + '</div></div>';
-
-  document.body.appendChild(bar);
-  setTimeout(function() { bar.classList.add('show'); }, 50);
-  setTimeout(function() { bar.remove(); }, 4000);
-}
-
-(function() {
-  var style = document.createElement('style');
-  style.innerHTML = [
-    '#upgradeBar {',
-    '  position: fixed;',
-    '  top: 80px;',
-    '  left: 50%;',
-    '  transform: translateX(-50%) translateY(-20px);',
-    '  background: var(--card);',
-    '  border: 1px solid var(--border);',
-    '  border-radius: 999px;',
-    '  padding: 10px 16px;',
-    '  box-shadow: var(--sh2);',
-    '  opacity: 0;',
-    '  transition: all .3s ease;',
-    '  z-index: 9999;',
-    '}',
-    '#upgradeBar.show {',
-    '  opacity: 1;',
-    '  transform: translateX(-50%) translateY(0);',
-    '}',
-    '.upgrade-inner {',
-    '  display: flex;',
-    '  gap: 12px;',
-    '  align-items: center;',
-    '  font-size: 12px;',
-    '}'
-  ].join('\n');
-  document.head.appendChild(style);
-})();
-
-async function checkCarouselAccess() {
-  if (isAdmin()) return true;
-
-  if (!getUser()) {
-    showUpgrade('Login required to create carousels');
-    return false;
-  }
-
-  if (!canUse('carousel')) {
-    showUpgrade('Upgrade for unlimited carousels');
-    return false;
-  }
-
-  return true;
-}
-
-/* ─────────────────────────────────────────────
-   DIJO API — 3-sentence max enforced
-───────────────────────────────────────────── */
-async function callDijo(message, mode) {
-  var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
-  var res = await fetch(DIJO + '/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: shortPrefix + message, mode: mode || 'creator' })
+  const completion = await groq.chat.completions.create({
+    model:       "llama-3.3-70b-versatile",
+    max_tokens:  1200,
+    temperature: 0.75,
+    messages: [
+      { role: "system", content: system },
+      { role: "user",   content: userPrompt }
+    ]
   });
-  if (!res.ok) {
-    var e = await res.json().catch(function() { return {}; });
-    throw new Error(e.error || 'Dijo error ' + res.status);
+  return completion.choices[0]?.message?.content || "";
+}
+
+let _dailyBriefingCache = { data: null, cachedAt: 0 };
+
+app.post("/ai/recommendations", async (req, res) => {
+  try {
+    const { niche = "", platform = "All", goal = "grow", connected_platforms = [] } = req.body;
+    const trends = await getTopTrends(10);
+    if (!trends.length) {
+      return res.json({ recommendations: [], message: "No trend data yet — check back in 30 minutes." });
+    }
+    const trendContext = trends.map((t, i) =>
+      `${i+1}. "${t.topic}" — Score: ${t.trend_score}/100 | Platform: ${t.platform_source} | Status: ${t.status} | Views: ${Number(t.total_views).toLocaleString()} | IG Prediction: ${t.instagram_prediction}%`
+    ).join("\n");
+    const nicheCtx     = niche ? `Creator niche: ${niche}` : "General creator";
+    const platformCtx  = platform !== "All" ? `Primary platform: ${platform}` : "Multi-platform creator";
+    const connectedCtx = connected_platforms.length ? `Connected platforms: ${connected_platforms.join(", ")}` : "";
+    const prompt = `Here is today's real trend intelligence data from ImpactGrid:\n\n${trendContext}\n\nCreator context:\n- ${nicheCtx}\n- ${platformCtx}\n- Goal: ${goal}\n${connectedCtx}\n\nBased on this REAL data, give me:\n\n1. TOP 3 CONTENT OPPORTUNITIES — for each one:\n   - Topic name\n   - Why it's a good opportunity RIGHT NOW (use the actual scores)\n   - Best platform for this creator\n   - Exact content format (e.g. "60-second explainer", "talking head reaction")\n   - Best posting time (day + time)\n   - One specific hook idea\n\n2. ONE TREND TO AVOID — and why\n\n3. THIS WEEK'S STRATEGY — 2-3 sentences on what to focus on\n\nBe specific. Reference the actual scores and data. No generic advice.`;
+    const reply = await dijoAI(prompt);
+    res.json({ recommendations: parseRecommendations(reply, trends), raw: reply, trends_analysed: trends.length, top_trend: trends[0]?.topic || "", ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[AI /recommendations] Error:", err.message);
+    res.status(500).json({ error: "AI recommendation failed", details: err.message });
   }
-  var data = await res.json();
-  return data.reply || '';
+});
+
+app.post("/ai/content-brief", async (req, res) => {
+  try {
+    const { topic, platform = "TikTok", style = "Educational", niche = "" } = req.body;
+    if (!topic) return res.status(400).json({ error: "Missing topic" });
+    const { data: trendData } = await _aiSupabase.from("trends").select("*").ilike("topic", `%${topic}%`).order("trend_score", { ascending: false }).limit(1);
+    const trend    = trendData?.[0];
+    const trendCtx = trend ? `Trend Score: ${trend.trend_score}/100 | Status: ${trend.status} | Views: ${Number(trend.total_views).toLocaleString()} | Hashtags: ${(trend.hashtags||[]).join(", ")} | IG Prediction: ${trend.instagram_prediction}%` : "Live trending topic";
+    const prompt   = `Create a complete content brief for a creator making a video about: "${topic}"\n\nReal trend data: ${trendCtx}\nPlatform: ${platform}\nStyle: ${style}\n${niche ? `Niche: ${niche}` : ""}\n\nProvide:\n\nHOOK (2 versions):\n- Version A (curiosity): \n- Version B (bold claim):\n\nSCRIPT OUTLINE:\n- 0-3s: Hook\n- 3-15s: Setup/context\n- 15-45s: Core value (3 key points)\n- 45-55s: Proof/example\n- 55-60s: CTA\n\nCAPTION (ready to copy, with emojis):\n\nHASHTAGS (10, mix of niche + trending):\n\nBEST POSTING TIME: Day + time for ${platform}\n\nTHUMBNAIL/COVER IDEA:\n\nTREND WINDOW: How long this topic will stay relevant`;
+    const reply    = await dijoAI(prompt);
+    res.json({ topic, platform, style, brief: reply, trend_score: trend?.trend_score || null, trend_status: trend?.status || "trending", hashtags: trend?.hashtags || [], ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[AI /content-brief] Error:", err.message);
+    res.status(500).json({ error: "Content brief failed", details: err.message });
+  }
+});
+
+app.post("/ai/trend-analysis", async (req, res) => {
+  try {
+    const trends = await getTopTrends(15);
+    if (!trends.length) return res.json({ analysis: "No trend data available yet." });
+    const trendContext  = trends.map((t, i) => `${i+1}. "${t.topic}" | Score: ${t.trend_score} | ${t.platform_source} | ${t.status} | ${Number(t.total_views).toLocaleString()} views | IG: ${t.instagram_prediction}%`).join("\n");
+    const crossPlatform = trends.filter(t => t.platform_source === "cross");
+    const peakTopics    = trends.filter(t => t.status === "peak");
+    const risingTopics  = trends.filter(t => t.status === "rising");
+    const igOpps        = trends.filter(t => t.instagram_prediction >= 50);
+    const prompt        = `Analyse these real ImpactGrid trend scores from ${new Date().toLocaleDateString("en-GB", {weekday:"long",day:"numeric",month:"long"})}:\n\n${trendContext}\n\nSummary stats:\n- Peak topics: ${peakTopics.map(t=>t.topic).join(", ") || "none"}\n- Rising topics: ${risingTopics.map(t=>t.topic).join(", ") || "none"}\n- Cross-platform hits: ${crossPlatform.map(t=>t.topic).join(", ") || "none"}\n- Strong IG predictions: ${igOpps.map(t=>t.topic).join(", ") || "none"}\n\nGive creators:\n1. THE STORY TODAY (2-3 sentences on what the overall trend landscape looks like)\n2. BIGGEST OPPORTUNITY RIGHT NOW (1 topic, why, what to make)\n3. RISING BEFORE IT PEAKS (1 early-stage topic to jump on)\n4. INSTAGRAM PLAY (best topic for IG right now based on predictions)\n5. WHAT TO IGNORE (1-2 topics that look trending but won't convert)\n\nKeep it sharp. Creators are busy — give them signal, not noise.`;
+    const reply = await dijoAI(prompt);
+    res.json({ analysis: reply, trends_count: trends.length, ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[AI /trend-analysis] Error:", err.message);
+    res.status(500).json({ error: "Trend analysis failed", details: err.message });
+  }
+});
+
+app.get("/ai/daily-briefing", async (req, res) => {
+  try {
+    const now    = Date.now();
+    const ONE_HR = 60 * 60 * 1000;
+    if (_dailyBriefingCache.data && (now - _dailyBriefingCache.cachedAt) < ONE_HR) {
+      return res.json({ ..._dailyBriefingCache.data, cached: true });
+    }
+    const trends = await getTopTrends(10);
+    if (!trends.length) return res.json({ briefing: "No trend data yet.", cached: false });
+    const top3         = trends.slice(0, 3);
+    const trendContext = top3.map((t, i) => `${i+1}. "${t.topic}" — ${t.trend_score}/100 — ${t.status} — ${t.platform_source}`).join("\n");
+    const today        = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const prompt       = `You are Dijo. Give creators their daily intelligence briefing for ${today}.\n\nTop 3 trends right now:\n${trendContext}\n\nWrite a sharp 4-5 sentence daily briefing that:\n1. Opens with what's hot today (reference actual topics)\n2. Gives one specific action to take today\n3. Mentions the best platform play right now\n4. Ends with a motivating but realistic note\n\nSound like a smart adviser talking to a creator over morning coffee. Be specific, not generic.`;
+    const briefing     = await dijoAI(prompt);
+    const result = { briefing, top_trends: top3.map(t => ({ topic: t.topic, score: t.trend_score, status: t.status })), date: today, cached: false, ts: new Date().toISOString() };
+    _dailyBriefingCache = { data: result, cachedAt: now };
+    res.json(result);
+  } catch (err) {
+    console.error("[AI /daily-briefing] Error:", err.message);
+    res.status(500).json({ error: "Daily briefing failed", details: err.message });
+  }
+});
+
+function parseRecommendations(text, trends) {
+  const recs    = [];
+  const matches = text.match(/(?:^|\n)\s*\d+\.\s+(?:CONTENT OPPORTUNITY|TOP|OPPORTUNITY)?[:\s]*([^\n]{5,80})/gm) || [];
+  matches.slice(0, 3).forEach((m, i) => {
+    const topic        = m.replace(/^\s*\d+\.\s+(?:CONTENT OPPORTUNITY|TOP|OPPORTUNITY)?[:\s]*/i, "").trim();
+    const matchedTrend = trends.find(t => topic.toLowerCase().includes(t.topic.toLowerCase()));
+    recs.push({ rank: i + 1, topic: topic.slice(0, 80), score: matchedTrend?.trend_score || null, platform: matchedTrend?.platform_source || "multi", ig_prediction: matchedTrend?.instagram_prediction || 0 });
+  });
+  return recs.length ? recs : trends.slice(0, 3).map((t, i) => ({ rank: i + 1, topic: t.topic, score: t.trend_score, platform: t.platform_source, ig_prediction: t.instagram_prediction }));
 }
 
-/* ─────────────────────────────────────────────
-   UTILITIES
-───────────────────────────────────────────── */
-function escH(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function escJ(s) {
-  return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-function fmtN(n) { return n ? Number(n).toLocaleString() : '—'; }
-function toScore(s) { return Math.min(9.9, parseFloat((s / 10).toFixed(1))); }
 
-/* ─────────────────────────────────────────────
-   VIRAL INTELLIGENCE SCORING 🧠🔥
-   TikTok = velocity engine ⚡
-   YouTube = validation engine 🎯
-   Google  = demand engine 🔍
-───────────────────────────────────────────── */
-function runTrendScoring(rawScore, platforms) {
-  // Derive sub-scores from raw score (0-100 scale internally)
-  var base = rawScore; // already 0-100
-  var velocityScore   = base * 0.9;
-  var engagementScore = base * 0.8;
-  var commentsScore   = base * 0.7;
-  var recencyScore    = base * 0.85;
+/* ================================================================
+   CAROUSEL ROUTES
+   POST /carousel/generate  — full AI carousel with media
+   GET  /pexels/video        — proxy Pexels video search
+   GET  /pexels/image        — proxy Pexels image search (NEW v2.3)
+================================================================ */
 
-  var platformWeight = 1;
+/* ── POST /carousel/generate ── */
+app.post("/carousel/generate", async (req, res) => {
+  try {
+    const {
+      topic,
+      platform     = "Instagram",
+      tone         = "Bold & Direct",
+      count        = 7,
+      themeOverride = null
+    } = req.body;
 
-  // 🔥 PLATFORM INTELLIGENCE
-  if (platforms.includes('tiktok'))  platformWeight += 0.3;  // velocity king ⚡
-  if (platforms.includes('youtube')) platformWeight += 0.2;  // validation 🎯
-  if (platforms.includes('google'))  platformWeight += 0.1;  // demand 🔍
+    if (!topic || topic.trim().length < 3) {
+      return res.status(400).json({ error: "Missing or too-short topic" });
+    }
 
-  var finalScore = Math.min(100,
-    (
-      velocityScore   * 0.45 +
-      engagementScore * 0.25 +
-      commentsScore   * 0.15 +
-      recencyScore    * 0.15
-    ) * platformWeight
+    console.log(`[Carousel] Generating ${count}-slide carousel: "${topic}" | ${platform} | ${tone}`);
+
+    const result = await generateCarousel({
+      topic:         topic.trim(),
+      platform,
+      tone,
+      count:         Math.min(Math.max(parseInt(count) || 7, 3), 12),
+      themeOverride
+    });
+
+    console.log(`[Carousel] Done — theme: ${result.theme}, slides: ${result.slideCount}`);
+    res.json(result);
+
+  } catch (err) {
+    console.error("[Carousel /generate] Error:", err.message);
+    res.status(500).json({
+      error:   "Carousel generation failed",
+      details: err.message,
+      fallback: true
+    });
+  }
+});
+
+
+/* ── GET /pexels/video?theme=lifestyle&q=morning+routine ── */
+app.get("/pexels/video", async (req, res) => {
+  const PEXELS_KEY = process.env.PEXELS_API_KEY;
+  if (!PEXELS_KEY) {
+    return res.status(503).json({ error: "Pexels API key not configured", video: null });
+  }
+
+  const { theme = "lifestyle", q = "" } = req.query;
+
+  const THEME_KEYWORDS = {
+    "cozy-home":  ["cozy home interior", "warm living room candle", "fireplace cozy home"],
+    "workspace":  ["modern workspace desk", "laptop working office", "productive home office"],
+    "minimal":    ["minimal interior white", "scandinavian design room", "clean modern apartment"],
+    "luxury":     ["luxury hotel interior", "penthouse apartment luxury", "luxury resort pool"],
+    "lifestyle":  ["lifestyle people happy", "travel adventure outdoor", "fitness workout active"]
+  };
+
+  const fallbacks = THEME_KEYWORDS[theme] || THEME_KEYWORDS["lifestyle"];
+  const queries   = [q, ...fallbacks].filter(Boolean);
+
+  try {
+    for (const query of queries) {
+      const response = await fetch(
+        `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=10&orientation=square&size=medium`,
+        { headers: { Authorization: PEXELS_KEY } }
+      );
+
+      if (!response.ok) {
+        console.warn(`[Pexels] ${response.status} for query: "${query}"`);
+        continue;
+      }
+
+      const data   = await response.json();
+      const videos = (data.videos || []).filter(v => v.duration >= 5 && v.duration <= 30);
+
+      if (videos.length) {
+        const v      = videos[Math.floor(Math.random() * Math.min(3, videos.length))];
+        const hdFile = v.video_files.find(f => f.quality === "hd") || v.video_files[0];
+
+        return res.json({
+          url:      hdFile?.link || null,
+          thumb:    v.image,
+          duration: v.duration,
+          pexelsId: v.id,
+          query
+        });
+      }
+    }
+
+    res.json({ video: null, message: "No suitable video found" });
+
+  } catch (err) {
+    console.error("[Pexels /video] Error:", err.message);
+    res.status(500).json({ error: "Pexels fetch failed", details: err.message, video: null });
+  }
+});
+
+
+/* ── GET /pexels/image?q=cozy+morning+bedroom&theme=cozy-home ── */
+/*
+ *  NEW in v2.3
+ *  Used by the frontend carousel-studio to fetch a single on-topic
+ *  Pexels photo when it needs to override or refresh a slide image.
+ *  Also used as a fallback by the engine's fetchPexelsImage() internally.
+ *
+ *  Query params:
+ *    q        — search query (required)
+ *    theme    — theme hint for fallback queries (optional)
+ *    exclude  — comma-separated Pexels IDs to exclude (optional)
+ */
+app.get("/pexels/image", async (req, res) => {
+  const PEXELS_KEY = process.env.PEXELS_API_KEY;
+  if (!PEXELS_KEY) {
+    return res.status(503).json({ error: "Pexels API key not configured", image: null });
+  }
+
+  const { q = "", theme = "lifestyle", exclude = "" } = req.query;
+
+  if (!q.trim()) {
+    return res.status(400).json({ error: "Missing query parameter: q" });
+  }
+
+  const THEME_FALLBACKS = {
+    "cozy-home":  ["cozy home interior warm", "bedroom natural light", "living room warm"],
+    "workspace":  ["modern workspace desk", "laptop coffee minimal", "home office bright"],
+    "minimal":    ["minimal white interior", "scandinavian clean room", "minimal design space"],
+    "luxury":     ["luxury hotel interior", "premium elegant interior", "luxury apartment"],
+    "lifestyle":  ["lifestyle people happy", "people outdoor active", "travel adventure"],
+  };
+
+  const fallbacks = THEME_FALLBACKS[theme] || THEME_FALLBACKS["lifestyle"];
+  const queries   = [q.trim(), ...fallbacks];
+
+  // Parse excluded IDs
+  const excludeIds = new Set(
+    exclude.split(",").map(s => s.trim()).filter(Boolean).map(Number)
   );
 
-  return Math.min(9.9, parseFloat((finalScore / 10).toFixed(1)));
-}
-
-/* ─────────────────────────────────────────────
-   TREND CLASSIFICATION 🧠
-   Turns scores into actionable decision groups
-───────────────────────────────────────────── */
-function classifyTrend(t) {
-  const velocity   = t.score;
-  const confidence = t.confidence || 60;
-
-  // Confidence gate lowered to 60: Google-only fallback data defaults to 60,
-  // so without this change everything falls through to 'stable' and all three
-  // "What to post" sections show empty. TikTok/YouTube data with real
-  // confidence scores (75-90) still benefit from the higher tier naturally.
-  if (velocity >= 8.5 && confidence >= 60) return 'blowup';
-  if (velocity >= 7.0)                     return 'rising_fast';
-  if (velocity >= 5.0)                     return 'early';
-  return 'stable';
-}
-
-function buildTrendInsights() {
-  const insights = { blowup: [], rising_fast: [], early: [] };
-
-  _allTrends.forEach(function(t) {
-    const type = classifyTrend(t);
-    if (insights[type]) insights[type].push(t);
-  });
-
-  return insights;
-}
-
-/* ─────────────────────────────────────────────
-   TREND DATA
-───────────────────────────────────────────── */
-/* renderAll — unified re-render called after any trend fetch */
-function renderAll() {
-  updateBriefing();
-  loadBriefing();        // refresh pulse strip now that _allTrends is populated
-  runTrendPrediction();
-  renderDashTrends();
-  renderDashOpps();
-  updateTopTrends();
-  // Chart + radar gauges + Dijo pick: always update so data is ready when user switches tab
-  renderTrendChart();
-  renderRadarGauges();
-  renderDijoTopPick();
-}
-
-async function fetchTrends() {
-  // ── Shared mapper — normalises any trend row from any endpoint ────────────
-  function mapTrend(t, i) {
-    // /trends/cross (v_cross_platform_trends view) may use 'source' instead of 'platform_source'
-    var src = t.platform_source || t.source || 'google';
-    var plat = src === 'youtube' ? 'yt'
-      : src === 'tiktok'  ? 'tt'
-      : src === 'cross'   ? 'cross' : 'gt';
-    var platLbl = src === 'youtube' ? 'YouTube'
-      : src === 'tiktok'  ? 'TikTok'
-      : src === 'cross'   ? 'Cross' : 'Google';
-    var platforms = src === 'cross'
-      ? ['tiktok', 'youtube', 'google']
-      : src === 'youtube' ? ['youtube']
-      : src === 'tiktok'  ? ['tiktok']
-      : ['google'];
-    return {
-      topic:        t.topic,
-      score:        runTrendScoring(t.trend_score || t.avg_score || 50, platforms),
-      plat:         plat,
-      platLabel:    platLbl,
-      rank:         i + 1,
-      hashtags:     t.hashtags || [],
-      videoCount:   t.video_count  || t.total_videos || 0,
-      totalViews:   t.total_views  || 0,
-      status:       t.status       || 'rising',
-      igPrediction: t.instagram_prediction || 0,
-      confidence:   t.confidence_score || t.velocity_score ||
-                    (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'youtube' ? 70 : 60)
-    };
-  }
-
-  // ── PRIMARY: cross-platform endpoint ─────────────────────────────────────
-  // NOTE: /trends/cross returns { trends: [...] } NOT a bare array
   try {
-    var ts = Date.now();
-    var res = await fetch(DIJO + '/trends/cross?ts=' + ts);
-    var data = await res.json();
-    // Unwrap either shape: bare array OR { trends: [...] }
-    var crossList = Array.isArray(data) ? data : (data && Array.isArray(data.trends) ? data.trends : null);
-    if (crossList && crossList.length) {
-      _allTrends = crossList.map(mapTrend);
-      renderAll();
-      return;
-    }
-  } catch(e) { console.warn('[fetchTrends] /trends/cross failed:', e.message); }
+    for (const query of queries) {
+      const response = await fetch(
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=square`,
+        { headers: { Authorization: PEXELS_KEY } }
+      );
 
-  // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
-  try {
-    var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now());
-    var data2 = await res2.json();
-    var liveList = Array.isArray(data2) ? data2 : (data2 && Array.isArray(data2.trends) ? data2.trends : null);
-    if (liveList && liveList.length) {
-      _allTrends = liveList.map(mapTrend);
-      renderAll();
-      return;
-    }
-  } catch(e) { console.warn('[fetchTrends] /trends/live failed:', e.message); }
-
-  // ── TERTIARY: trends_cache endpoint ──────────────────────────────────────
-  // Richer than RSS (has platform diversity + video stats); use when cross/live
-  // endpoints return nothing (e.g. Supabase ingestion lag or cold start).
-  try {
-    var res3 = await fetch(DIJO + '/trends/cache?ts=' + Date.now());
-    var data3 = await res3.json();
-    var cacheList = Array.isArray(data3) ? data3 : (data3 && Array.isArray(data3.trends) ? data3.trends : null);
-    if (cacheList && cacheList.length) {
-      console.warn('[fetchTrends] Using /trends/cache — cross/live returned no data');
-      _allTrends = cacheList.map(mapTrend);
-      renderAll();
-      return;
-    }
-  } catch(e) { console.warn('[fetchTrends] /trends/cache failed:', e.message); }
-
-  // ── LAST RESORT: Google RSS ───────────────────────────────────────────────
-  // No platform diversity or video stats — only reached if cache also fails.
-  // If you see this in console regularly, check that /trends/cross and /trends/live
-  // are returning data from Supabase (run /ingestion/debug to inspect).
-  try {
-    console.warn('[fetchTrends] Falling back to Google RSS — cross/live/cache all returned no data');
-    var rss = await fetch(DIJO + '/trends/google?geo=GB');
-    var rd = await rss.json();
-    _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
-      return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
-    });
-    renderAll();
-  } catch(e) { console.error('[fetchTrends] All endpoints failed:', e.message); }
-}
-
-function trendItemHTML(t) {
-  var pct = Math.round((t.score / 10) * 100);
-  var platCls = t.plat === 'yt' ? 'plat-yt' : t.plat === 'tt' ? 'plat-tt' : 'plat-gt';
-  var meta = t.videoCount > 0
-    ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
-    : t.platLabel + ' · click to generate';
-
-  // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
-  var badge =
-    t.plat === 'tt'    ? '⚡ TikTok Viral'
-    : t.plat === 'yt'  ? '🎯 YouTube Validated'
-    : t.plat === 'cross' ? '🚀 Cross-Platform'
-    : '🔍 Search Demand';
-
-  // Confidence indicator
-  var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
-
-  return '<div class="trend-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
-    + '<div class="ti-rank">#' + t.rank + '</div>'
-    + '<div class="ti-info">'
-    +   '<div class="ti-topic">' + escH(t.topic) + '</div>'
-    +   '<div class="ti-meta">' + escH(meta) + '</div>'
-    +   '<div class="ti-badge">' + badge + escH(conf) + '</div>'
-    + '</div>'
-    + '<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%"></div></div><div class="ti-score">' + t.score.toFixed(1) + '/10</div></div>'
-    + '<div class="ti-plat ' + platCls + '">' + escH(t.platLabel) + '</div>'
-    + '</div>';
-}
-
-/* ─────────────────────────────────────────────
-   BEST-PER-PLATFORM PICKER
-   Returns the single highest-scoring trend for
-   each platform from the current _allTrends set.
-   Used by renderDashTrends so the dashboard
-   always shows one meaningful pick per source
-   rather than an arbitrary top-5 slice.
-───────────────────────────────────────────── */
-function getBest3(trends) {
-  function top(plat) {
-    return trends
-      .filter(function(t) { return t.plat === plat; })
-      .sort(function(a, b) { return b.score - a.score; })[0] || null;
-  }
-  return {
-    tiktok:  top('tt'),
-    youtube: top('yt'),
-    google:  top('gt')
-  };
-}
-
-function renderDashTrends() {
-  var el = document.getElementById('dashTrendList');
-  if (!el) return;
-
-  if (!_allTrends.length) {
-    el.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px">Loading trends…</div>';
-    return;
-  }
-
-  // ── Show analytical insight cards — the "why" behind Top Opportunities ──
-  // One best pick per platform with velocity classification + action hint.
-  var best  = getBest3(_allTrends);
-  var picks = [best.tiktok, best.youtube, best.google].filter(Boolean);
-
-  if (picks.length < 3) {
-    var usedTopics = new Set(picks.map(function(t) { return t.topic; }));
-    var extras     = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
-    while (picks.length < 3 && extras.length) picks.push(extras.shift());
-  }
-
-  var platColors = { tt: '#ff6464', yt: '#FFD700', gt: '#78b4ff', cross: '#4FB3A5' };
-  var insightLabels = ['🥇 Top Signal', '🥈 Strong Pick', '🥉 Worth Watching'];
-
-  el.innerHTML = picks.map(function(t, idx) {
-    var color     = platColors[t.plat] || 'var(--gold)';
-    var pct       = Math.round((t.score / 10) * 100);
-    var cls       = classifyTrend(t);
-    var clsLabel  = cls === 'blowup'      ? '🔥 Likely to blow up'
-                  : cls === 'rising_fast' ? '⚡ Getting popular fast'
-                  : cls === 'early'       ? '🟢 Early — get in now'
-                  : '📊 Stable trend';
-    var clsColor  = cls === 'blowup'      ? 'var(--green)'
-                  : cls === 'rising_fast' ? 'var(--gold)'
-                  : cls === 'early'       ? '#4FB3A5'
-                  : 'var(--text3)';
-    var actionHint = t.plat === 'tt'    ? 'Post a 30–60s hook video today'
-                   : t.plat === 'yt'    ? 'Best for a 5–10 min explainer'
-                   : t.plat === 'cross' ? 'Works across TikTok + YouTube'
-                   : 'High search demand — SEO content wins';
-    var vidMeta   = t.videoCount > 0
-      ? fmtN(t.videoCount) + ' videos · ' + fmtN(t.totalViews) + ' views'
-      : t.platLabel + ' trend data';
-
-    return '<div class="trend-item" style="cursor:pointer;position:relative;overflow:hidden" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
-      // animated progress stripe behind the card
-      + '<div style="position:absolute;top:0;left:0;height:3px;width:' + pct + '%;background:' + color + ';border-radius:3px 3px 0 0;transition:width 1s ease"></div>'
-      + '<div class="ti-rank" style="color:' + color + '">' + escH(insightLabels[idx] || ('#' + (idx + 1))) + '</div>'
-      + '<div class="ti-info">'
-      +   '<div class="ti-topic">' + escH(t.topic) + '</div>'
-      +   '<div class="ti-meta">' + escH(vidMeta) + '</div>'
-      +   '<div class="ti-badge" style="color:' + clsColor + '">' + clsLabel + '</div>'
-      +   '<div style="font-size:10px;color:var(--text3);margin-top:2px;font-style:italic">' + escH(actionHint) + '</div>'
-      + '</div>'
-      + '<div class="ti-bar-wrap">'
-      +   '<div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
-      +   '<div class="ti-score" style="color:' + color + '">' + t.score.toFixed(1) + '</div>'
-      + '</div>'
-      + '<div class="ti-plat" style="background:' + color + '20;color:' + color + ';border:1px solid ' + color + '40">' + escH(t.platLabel) + '</div>'
-      + '</div>';
-  }).join('');
-}
-
-function renderFullTrends() {
-  renderTrendChart();
-  renderRadarGauges();
-  renderDijoTopPick();
-}
-
-/* ─────────────────────────────────────────────
-   LIVE PLATFORM METERS
-   Three animated meter cards — TikTok, YouTube,
-   Google — each showing the #1 trend for that
-   platform with a live animated fill bar and
-   pulse dot. Updates every 60s via renderAll().
-───────────────────────────────────────────── */
-function renderPlatformMeters() {
-  var el = document.getElementById('radarGaugesBox'); // legacy — superseded by renderRadarGauges()
-  if (!el) return;
-  if (!_allTrends.length) { el.innerHTML = ''; return; }
-
-  function platBest(plat) {
-    var filtered = _allTrends.filter(function(t) { return t.plat === plat; });
-    if (!filtered.length) return null;
-    return filtered.slice().sort(function(a, b) { return b.score - a.score; })[0];
-  }
-
-  var tt = platBest('tt');
-  var yt = platBest('yt');
-  var gt = platBest('gt');
-
-  var platConfigs = [
-    { key: 'tt', icon: '🎵', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
-    { key: 'yt', icon: '▶️',  label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
-    { key: 'gt', icon: '🔍', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
-  ];
-
-  // Inject keyframes once
-  if (!document.getElementById('_meterKeyframes')) {
-    var style = document.createElement('style');
-    style.id   = '_meterKeyframes';
-    style.textContent = [
-      '@keyframes meterPulse {',
-      '  0%,100% { opacity:1; transform:scale(1); }',
-      '  50%      { opacity:.4; transform:scale(1.5); }',
-      '}',
-      '@keyframes meterFillIn {',
-      '  from { width:0; }',
-      '}',
-      '.live-meter-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden; }',
-      '.live-meter-card:hover { border-color:var(--gold-glo); }',
-      '.lm-stripe { position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0; }',
-      '.lm-head { display:flex;align-items:center;gap:8px;justify-content:space-between; }',
-      '.lm-icon { font-size:18px; }',
-      '.lm-label { font-size:12px;font-weight:700;color:var(--text2); }',
-      '.lm-score { font-family:"DM Mono",monospace;font-size:20px;font-weight:900; }',
-      '.lm-topic { font-size:13px;font-weight:700;color:var(--text1);line-height:1.3;cursor:pointer; }',
-      '.lm-topic:hover { text-decoration:underline; }',
-      '.lm-bar-wrap { height:8px;background:var(--bg2);border-radius:99px;overflow:hidden; }',
-      '.lm-bar-fill { height:100%;border-radius:99px;animation:meterFillIn .8s ease both; }',
-      '.lm-meta { font-size:10px;color:var(--text3);display:flex;align-items:center;gap:6px; }',
-      '.lm-dot { width:6px;height:6px;border-radius:50%;display:inline-block;animation:meterPulse 1.8s ease-in-out infinite; }',
-      '.lm-cls { font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;border:1px solid; }',
-      '.pm-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;padding:4px 0 8px; }'
-    ].join('\n');
-    document.head.appendChild(style);
-  }
-
-  function meterCard(cfg) {
-    if (!cfg.trend) {
-      return '<div class="live-meter-card">'
-        + '<div class="lm-stripe" style="background:' + cfg.color + '30"></div>'
-        + '<div class="lm-head"><span class="lm-icon">' + cfg.icon + '</span><span class="lm-label">' + cfg.label + '</span></div>'
-        + '<div style="font-size:12px;color:var(--text3);padding:8px 0">' + cfg.emptyMsg + '</div>'
-        + '</div>';
-    }
-
-    var t      = cfg.trend;
-    var pct    = Math.round((t.score / 10) * 100);
-    var cls    = classifyTrend(t);
-    var clsLbl = cls === 'blowup' ? '🔥 Blowup' : cls === 'rising_fast' ? '⚡ Rising' : cls === 'early' ? '🟢 Early' : '📊 Stable';
-    var clsClr = cls === 'blowup' ? 'var(--green)' : cls === 'rising_fast' ? 'var(--gold)' : cls === 'early' ? '#4FB3A5' : 'var(--text3)';
-    var vidMeta = t.videoCount > 0
-      ? fmtN(t.videoCount) + ' videos'
-      : (t.confidence ? t.confidence + '% confidence' : 'live data');
-
-    return '<div class="live-meter-card">'
-      + '<div class="lm-stripe" style="background:' + cfg.color + '"></div>'
-      + '<div class="lm-head">'
-      +   '<div style="display:flex;align-items:center;gap:8px">'
-      +     '<span class="lm-icon">' + cfg.icon + '</span>'
-      +     '<span class="lm-label">' + cfg.label + '</span>'
-      +     '<span class="lm-dot" style="background:' + cfg.color + '"></span>'
-      +   '</div>'
-      +   '<span class="lm-score" style="color:' + cfg.color + '">' + t.score.toFixed(1) + '</span>'
-      + '</div>'
-      + '<div class="lm-topic" onclick="loadTopic(\'' + escJ(t.topic) + '\')">' + escH(t.topic) + '</div>'
-      + '<div class="lm-bar-wrap">'
-      +   '<div class="lm-bar-fill" style="width:' + pct + '%;background:' + cfg.color + '"></div>'
-      + '</div>'
-      + '<div class="lm-meta">'
-      +   '<span class="lm-cls" style="color:' + clsClr + ';border-color:' + clsClr + '40">' + clsLbl + '</span>'
-      +   '<span>·</span>'
-      +   '<span>' + escH(vidMeta) + '</span>'
-      + '</div>'
-      + '</div>';
-  }
-
-  el.innerHTML = '<div class="pm-grid">'
-    + platConfigs.map(meterCard).join('')
-    + '</div>';
-}
-
-const pointLabelsPlugin = {
-  id: 'pointLabels',
-  afterDatasetsDraw(chart) {
-    const { ctx } = chart;
-
-    chart.data.datasets.forEach((dataset, i) => {
-      const meta = chart.getDatasetMeta(i);
-
-      meta.data.forEach((point, index) => {
-        const label = dataset.labels?.[index];
-        if (!label) return;
-
-        const x = point.x;
-        const y = point.y;
-
-        ctx.save();
-        ctx.font = '11px DM Sans';
-
-        const padding = 6;
-        const textWidth = ctx.measureText(label).width;
-        const boxWidth = textWidth + padding * 2;
-        const boxHeight = 20;
-
-        // 🔥 AUTO POSITION (key fix)
-        let offsetY = -28;
-
-        // prevent top clipping
-        if (y < 40) offsetY = 20;
-
-        // BOX
-        ctx.fillStyle = '#0f1117';
-        ctx.strokeStyle = '#c97e08';
-        ctx.lineWidth = 1;
-
-        ctx.beginPath();
-        ctx.roundRect(
-          x - boxWidth / 2,
-          y + offsetY,
-          boxWidth,
-          boxHeight,
-          6
-        );
-        ctx.fill();
-        ctx.stroke();
-
-        // TEXT
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, x, y + offsetY + 14);
-
-        ctx.restore();
-      });
-    });
-  }
-};
-
-/* ─────────────────────────────────────────────
-   LIVE TREND CHART
-   Three lines — TikTok (red), YouTube (gold),
-   Google (blue). X-axis = top trend per platform.
-   Chart re-draws every 60s via renderAll().
-   A subtle pulse animation makes it feel live.
-───────────────────────────────────────────── */
-/* ─────────────────────────────────────────────
-   THREE PLATFORM CHARTS
-   One line chart per platform — TikTok, YouTube,
-   Google — each showing their top 3 trending topics
-   with scores on Y axis. Lines rise and fall as
-   scores update every 60s. Clicking a topic label
-   opens the generator pre-filled with that topic.
-───────────────────────────────────────────── */
-var _chartTT = null, _chartYT = null, _chartGT = null;
-// Store historical score snapshots so lines actually move
-var _chartHistory = { tt: {}, yt: {}, gt: {} };
-var _chartHistoryMax = 8; // keep last 8 snapshots per topic
-
-function _recordSnapshot(plat, trends) {
-  var hist = _chartHistory[plat];
-  var now  = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  trends.forEach(function(t) {
-    if (!hist[t.topic]) hist[t.topic] = [];
-    hist[t.topic].push({ time: now, score: t.score });
-    if (hist[t.topic].length > _chartHistoryMax) hist[t.topic].shift();
-  });
-}
-
-function _buildPlatChart(canvasId, emptyId, topicsId, plat, color, label) {
-  var canvas = document.getElementById(canvasId);
-  var emptyEl = document.getElementById(emptyId);
-  var topicsEl = document.getElementById(topicsId);
-  if (!canvas) return null;
-
-  var trends = _allTrends
-    .filter(function(t){ return t.plat === plat; })
-    .slice().sort(function(a,b){ return b.score - a.score; })
-    .slice(0, 3);
-
-  // Show empty state if no data for this platform
-  if (!trends.length) {
-    canvas.style.display = 'none';
-    if (emptyEl) emptyEl.style.display = 'block';
-    if (topicsEl) topicsEl.innerHTML = '';
-    return null;
-  }
-  canvas.style.display = 'block';
-  if (emptyEl) emptyEl.style.display = 'none';
-
-  // Record this snapshot so lines have history to draw
-  _recordSnapshot(plat, trends);
-  var hist = _chartHistory[plat];
-
-  // Build time labels from history of first topic (all share same timestamps)
-  var firstTopic = trends[0].topic;
-  var timeLabels = (hist[firstTopic] || []).map(function(h){ return h.time; });
-  if (timeLabels.length < 2) {
-    // Pad with fake earlier times so there is something to draw
-    var base = timeLabels[0] || 'now';
-    timeLabels = ['-7m', '-6m', '-5m', '-4m', '-3m', '-2m', '-1m', base].slice(-Math.max(timeLabels.length + 1, 2));
-  }
-
-  var datasets = trends.map(function(t, idx) {
-    var alphas = ['ff', 'bb', '77'];
-    var lineColor = color + (alphas[idx] || 'ff');
-    var topicHist = hist[t.topic] || [];
-    // Build data array: null for missing early slots, real score for known
-    var data = timeLabels.map(function(lbl) {
-      var match = topicHist.find(function(h){ return h.time === lbl; });
-      return match ? match.score : null;
-    });
-    // If no history yet, just show current score at last point
-    if (data.every(function(d){ return d === null; })) {
-      data[data.length - 1] = t.score;
-    }
-    return {
-      label: t.topic.length > 18 ? t.topic.slice(0, 18) + '…' : t.topic,
-      _fullTopic: t.topic,
-      data: data,
-      borderColor: color,
-      backgroundColor: color + '18',
-      borderWidth: idx === 0 ? 2.5 : 1.5,
-      borderDash: idx === 0 ? [] : idx === 1 ? [4,2] : [2,2],
-      pointRadius: 4,
-      pointHoverRadius: 7,
-      pointBackgroundColor: color,
-      pointBorderColor: '#fff',
-      pointBorderWidth: 1.5,
-      tension: 0.4,
-      fill: false,
-      spanGaps: true
-    };
-  });
-
-  // Destroy old chart instance
-  var oldChart = plat === 'tt' ? _chartTT : plat === 'yt' ? _chartYT : _chartGT;
-  if (oldChart) { oldChart.destroy(); }
-
-  var ctx = canvas.getContext('2d');
-  var newChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: timeLabels, datasets: datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 700, easing: 'easeInOutQuart' },
-      interaction: { mode: 'index', intersect: false },
-      onClick: function(e, elements) {
-        if (elements && elements.length) {
-          var ds = datasets[elements[0].datasetIndex];
-          if (ds && ds._fullTopic) loadTopic(ds._fullTopic);
-        }
-      },
-      plugins: {
-        legend: { display: false }, // we draw our own topic labels below
-        tooltip: {
-          backgroundColor: '#111',
-          borderColor: color,
-          borderWidth: 1,
-          callbacks: {
-            label: function(item) {
-              if (item.raw === null) return item.dataset.label + ': no data';
-              return item.dataset.label + ': ' + item.raw.toFixed(1) + '/10';
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#666', font: { size: 9 }, maxRotation: 0, maxTicksLimit: 4 }
-        },
-        y: {
-          min: 0, max: 10,
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: {
-            color: '#666', font: { size: 9 },
-            callback: function(v) { return v + '/10'; },
-            stepSize: 2
-          }
-        }
-      }
-    }
-  });
-
-  if (plat === 'tt') _chartTT = newChart;
-  else if (plat === 'yt') _chartYT = newChart;
-  else _chartGT = newChart;
-
-  // Render topic labels below chart — rank, topic name, score bar
-  if (topicsEl) {
-    topicsEl.innerHTML = trends.map(function(t, idx) {
-      var pct = Math.round((t.score / 10) * 100);
-      var cls = classifyTrend(t);
-      var clsIcon = cls === 'blowup' ? '🔥' : cls === 'rising_fast' ? '⚡' : cls === 'early' ? '🟢' : '📊';
-      var dashes = ['solid', 'dashed', 'dotted'];
-      return '<div onclick="loadTopic(\'' + escJ(t.topic) + '\')" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)">'
-        + '<div style="width:14px;height:3px;background:' + color + ';border-radius:2px;flex-shrink:0;opacity:' + (idx===0?1:idx===1?0.7:0.45) + ';border-style:' + dashes[idx] + '"></div>'
-        + '<div style="flex:1;min-width:0">'
-        +   '<div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</div>'
-        +   '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-top:3px;overflow:hidden">'
-        +     '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:99px;transition:width .6s ease"></div>'
-        +   '</div>'
-        + '</div>'
-        + '<div style="font-family:DM Mono,monospace;font-size:11px;font-weight:900;color:' + color + ';flex-shrink:0">' + t.score.toFixed(1) + ' ' + clsIcon + '</div>'
-        + '</div>';
-    }).join('');
-  }
-
-  return newChart;
-}
-
-function renderTrendChart() {
-  _buildPlatChart('chartTT', 'chartTTEmpty', 'chartTTTopics', 'tt', '#ff6464', 'TikTok');
-  _buildPlatChart('chartYT', 'chartYTEmpty', 'chartYTTopics', 'yt', '#FFD700', 'YouTube');
-  _buildPlatChart('chartGT', 'chartGTEmpty', 'chartGTTopics', 'gt', '#78b4ff', 'Google');
-
-  // Pulse live dots
-  ['ttLiveDot','ytLiveDot','gtLiveDot','chartLiveDot'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.style.animation = 'none';
-    void el.offsetWidth;
-    el.style.animation = '';
-  });
-}
-
-async function runTrendPrediction() {
-  const el = document.getElementById('weeklyPrediction');
-  if (!el || !_allTrends || !_allTrends.length) return;
-
-  // Build insights first — used by other panels too
-  window._trendInsights = buildTrendInsights();
-  console.log('[TrendInsights] 🔥 Blowup:', window._trendInsights.blowup.length,
-    '| ⚡ Rising fast:', window._trendInsights.rising_fast.length,
-    '| 💡 Early:', window._trendInsights.early.length);
-
-  // Show loading state immediately — don't leave "Analyzing trends..."
-  const topLocal = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  el.innerHTML = '<span class="spinner spinner-gold"></span>'
-    + '<span style="font-size:12px;color:var(--text3);margin-left:8px">Dijo is picking this week\'s best opportunity…</span>';
-
-  // ── Try Dijo AI briefing first ────────────────────────────────────────────
-  try {
-    var res = await fetch(DIJO + '/ai/daily-briefing');
-    var data = await res.json();
-
-    if (data && data.briefing) {
-      // Match the top trend from briefing data to our local scored list
-      var aiTop = null;
-      if (data.top_trends && data.top_trends.length) {
-        var aiTopicName = data.top_trends[0].topic;
-        aiTop = _allTrends.find(function(t) {
-          return t.topic.toLowerCase() === aiTopicName.toLowerCase();
-        }) || null;
-      }
-      var pick = aiTop || topLocal;
-
-      // Extract a short reason from Dijo's briefing (first sentence only)
-      var reason = '';
-      if (data.briefing) {
-        var firstSentence = data.briefing.split(/[.!?]/)[0];
-        reason = firstSentence.length > 10 && firstSentence.length < 160
-          ? firstSentence.trim()
-          : '';
+      if (!response.ok) {
+        console.warn(`[Pexels /image] ${response.status} for: "${query}"`);
+        continue;
       }
 
-      var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
-      var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-      var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
+      const data   = await response.json();
+      const photos = (data.photos || []).filter(p => !excludeIds.has(p.id));
 
-      el.innerHTML =
-        '<div style="display:flex;flex-direction:column;gap:8px">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-        +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-        +     escH(pick.topic)
-        +   '</div>'
-        +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-        +     pick.score.toFixed(1)
-        +   '</div>'
-        + '</div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-        +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-        +     platIcon + ' ' + escH(pick.platLabel)
-        +   '</span>'
-        +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-        + '</div>'
-        + (reason
-          ? '<div style="font-size:12px;color:var(--text2);line-height:1.5;border-left:2px solid var(--gold);padding-left:8px">'
-            + escH(reason) + '.'
-            + '</div>'
-          : '')
-        + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · ' + escH(data.date || 'This week') + '</div>'
-        + '</div>';
+      if (!photos.length) continue;
 
-      return;
-    }
-  } catch(e) {
-    console.warn('[WeeklyPrediction] AI briefing failed, using local fallback:', e.message);
-  }
+      // Random pick from top 5 to avoid always returning same image
+      const pick = photos[Math.floor(Math.random() * Math.min(5, photos.length))];
 
-  // ── Local fallback — use best scored trend without AI text ────────────────
-  var pick = topLocal;
-  var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
-  var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-  var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
+      console.log(`[Pexels /image] Found: "${query}" → id ${pick.id}`);
 
-  el.innerHTML =
-    '<div style="display:flex;flex-direction:column;gap:8px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-    +     escH(pick.topic)
-    +   '</div>'
-    +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-    +     pick.score.toFixed(1)
-    +   '</div>'
-    + '</div>'
-    + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-    +     platIcon + ' ' + escH(pick.platLabel)
-    +   '</span>'
-    +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-    + '</div>'
-    + '<div style="font-size:12px;color:var(--text2);line-height:1.5">'
-    +   'Highest scored trend across all platforms this week.'
-    + '</div>'
-    + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · local data</div>'
-    + '</div>';
-}
-
-function filterTrends(btn, plat) {
-  document.querySelectorAll('[data-plat]').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
-  var el = document.getElementById('fullTrendList');
-  if (!el) return;
-  var list = plat === 'all' ? _allTrends : _allTrends.filter(function(t) { return t.plat === plat; });
-  el.innerHTML = list.length
-    ? list.map(trendItemHTML).join('')
-    : '<div style="padding:16px;color:var(--text3)">No trends for this filter.</div>';
-}
-
-/* ─────────────────────────────────────────────
-   OPPORTUNITIES — powered by /trends/dijo
-   renderOpportunities(data) accepts the raw
-   Dijo API shape (trend_score, platform_source,
-   dijoScore, etc.) and maps it to opp-cards.
-   renderDashOpps() is a fast synchronous fallback
-   used by the 60s/20s refresh intervals — it
-   re-renders from the already-loaded _allTrends
-   so we don't fire an extra network request on
-   every tick.
-───────────────────────────────────────────── */
-function renderOpportunities(data) {
-  var el = document.getElementById('topOppBox');
-  if (!el) return;
-
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="opp-empty">No opportunities yet — check back soon</div>';
-    return;
-  }
-
-  // ── Ensure one card per platform (YouTube → TikTok → Google priority) ──
-  var platOrder = ['youtube', 'tiktok', 'google', 'cross'];
-  var seen = {};
-  var ordered = [];
-  platOrder.forEach(function(p) {
-    var match = data.find(function(t) { return (t.platform_source || 'google') === p && !seen[p]; });
-    if (match) { seen[p] = true; ordered.push(match); }
-  });
-  // Fill remaining slots with any unseen items
-  data.forEach(function(t) {
-    if (ordered.length < 3 && !ordered.includes(t)) ordered.push(t);
-  });
-  var items = ordered.slice(0, 3);
-
-  var platMeta = {
-    youtube: { icon: '▶️', color: '#FFD700', hint: '5–10 min explainer' },
-    tiktok:  { icon: '⚡', color: '#ff6464', hint: '30–60s hook video' },
-    google:  { icon: '🔍', color: '#78b4ff', hint: 'SEO article or Short' },
-    cross:   { icon: '🚀', color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
-  };
-
-  var rankLabels = ['#1 Best Pick', '#2 Strong Play', '#3 Worth Watching'];
-  var rankColors = ['var(--gold)', 'var(--green)', 'var(--blue2)'];
-
-  el.innerHTML = items.map(function(t, idx) {
-    var src = t.platform_source || 'google';
-    var pm = platMeta[src] || platMeta.google;
-    var displayScore;
-    if (t._score != null) {
-      displayScore = Math.min(9.9, parseFloat(t._score.toFixed(1)));
-    } else if (t.dijoScore != null && t.dijoScore > 0) {
-      displayScore = Math.min(9.9, parseFloat((t.dijoScore / 10).toFixed(1)));
-    } else if (t.trend_score != null && t.trend_score > 0) {
-      displayScore = Math.min(9.9, parseFloat((t.trend_score / 10).toFixed(1)));
-    } else {
-      displayScore = 5.0;
-    }
-    var pct = Math.round((displayScore / 10) * 100);
-    var rankColor = rankColors[idx] || 'var(--text2)';
-    var rankLabel = rankLabels[idx] || '';
-
-    return '<div class="opp-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">'
-      +   '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + rankColor + ';letter-spacing:.08em;text-transform:uppercase">' + rankLabel + '</span>'
-      +   '<span style="font-family:\'DM Mono\',monospace;font-size:16px;font-weight:900;color:' + rankColor + '">' + displayScore.toFixed(1) + '</span>'
-      + '</div>'
-      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
-      +   '<span style="font-size:13px">' + pm.icon + '</span>'
-      +   '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + pm.color + ';letter-spacing:.06em">' + src.toUpperCase() + '</span>'
-      + '</div>'
-      + '<div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:5px;line-height:1.3">' + escH(t.topic) + '</div>'
-      + '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-bottom:5px;overflow:hidden">'
-      +   '<div style="height:100%;width:' + pct + '%;background:' + rankColor + ';border-radius:99px;transition:width .5s ease"></div>'
-      + '</div>'
-      + '<div style="font-size:10px;color:var(--text3);font-style:italic">' + escH(pm.hint) + '</div>'
-      + '</div>';
-  }).join('');
-}
-
-async function loadOpportunities() {
-  try {
-    var res = await fetch(DIJO + '/trends/dijo');
-    var data = await res.json();
-    // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
-    // fall back to local rather than showing "No opportunities"
-    if (data && data.length) {
-      renderOpportunities(data);
-    } else {
-      console.warn('[Opportunities] /trends/dijo returned empty — using local fallback');
-      renderDashOpps();
-    }
-  } catch(e) {
-    console.warn('[Opportunities] /trends/dijo failed:', e.message);
-    renderDashOpps();
-  }
-}
-
-// Fast in-memory re-render — used by 60s refresh intervals and as fallback.
-// Explicit order: YouTube first, then TikTok, then Google — one per platform.
-function renderDashOpps() {
-  if (!_allTrends.length) return;
-  var best = getBest3(_allTrends);
-  var platOrder = [
-    { trend: best.youtube, src: 'youtube' },
-    { trend: best.tiktok,  src: 'tiktok'  },
-    { trend: best.google,  src: 'google'  }
-  ].filter(function(p) { return p.trend; });
-  if (platOrder.length < 3) {
-    var usedTopics = new Set(platOrder.map(function(p) { return p.trend.topic; }));
-    var extras = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
-    while (platOrder.length < 3 && extras.length) {
-      var e = extras.shift();
-      platOrder.push({ trend: e, src: e.plat === 'yt' ? 'youtube' : e.plat === 'tt' ? 'tiktok' : e.plat === 'cross' ? 'cross' : 'google' });
-    }
-  }
-  renderOpportunities(platOrder.map(function(p) {
-    return {
-      topic:           p.trend.topic,
-      platform_source: p.src,
-      _score:          p.trend.score,
-      status:          p.trend.status,
-      video_count:     p.trend.videoCount
-    };
-  }));
-}
-
-/* ─────────────────────────────────────────────
-   WHAT TO POST THIS WEEK 📅
-   Uses buildTrendInsights() classifications first.
-   If any section is empty (common when data has
-   low confidence), fills from best-per-platform
-   so cards never show "No trends" when we have data.
-───────────────────────────────────────────── */
-/* ─────────────────────────────────────────────
-   RADAR GAUGES — three animated fuel-gauge style
-   dials, one per platform (TikTok, YouTube, Google).
-   Each shows the #1 trending topic + live score.
-   The needle animates like a fuel gauge rising and
-   falling as scores change on each 60s refresh.
-───────────────────────────────────────────── */
-function renderRadarGauges() {
-  var el = document.getElementById('radarGaugesBox');
-  if (!el) return;
-
-  // Inject styles once
-  if (!document.getElementById('_radarGaugeStyles')) {
-    var s = document.createElement('style');
-    s.id = '_radarGaugeStyles';
-    s.textContent = `
-      .rg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-      @media(max-width:640px){ .rg-grid { grid-template-columns:1fr; } }
-      .rg-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 16px 14px; display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; overflow:hidden; }
-      .rg-stripe { position:absolute; top:0; left:0; right:0; height:3px; border-radius:3px 3px 0 0; }
-      .rg-label { font-size:11px; font-weight:700; color:var(--text2); letter-spacing:.06em; text-transform:uppercase; font-family:'DM Mono',monospace; }
-      .rg-svg-wrap { width:140px; height:80px; position:relative; }
-      .rg-score-overlay { position:absolute; bottom:0; left:50%; transform:translateX(-50%); text-align:center; line-height:1; }
-      .rg-score-num { font-family:'Syne',sans-serif; font-size:22px; font-weight:900; }
-      .rg-score-unit { font-family:'DM Mono',monospace; font-size:9px; color:var(--text3); }
-      .rg-topic { font-size:13px; font-weight:700; text-align:center; line-height:1.3; cursor:pointer; max-width:160px; }
-      .rg-topic:hover { text-decoration:underline; }
-      .rg-status { font-size:10px; font-weight:700; padding:2px 9px; border-radius:99px; border:1px solid; font-family:'DM Mono',monospace; }
-      .rg-meta { font-size:10px; color:var(--text3); text-align:center; }
-      .rg-dot { width:6px; height:6px; border-radius:50%; display:inline-block; animation:meterPulse 1.8s ease-in-out infinite; margin-right:4px; }
-      .rg-empty { font-size:12px; color:var(--text3); text-align:center; padding:16px 0; }
-    `;
-    document.head.appendChild(s);
-  }
-
-  function platBest(plat) {
-    var arr = _allTrends.filter(function(t){ return t.plat === plat; });
-    if (!arr.length) return null;
-    return arr.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  }
-
-  var cfgs = [
-    { plat:'tt', icon:'🎵', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
-    { plat:'yt', icon:'▶️',  label:'YouTube', color:'#FFD700', trend: platBest('yt') },
-    { plat:'gt', icon:'🔍', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
-  ];
-
-  function gaugeArc(pct, color) {
-    // Half-circle gauge: sweep from 180deg to 0deg
-    // r=54, cx=70, cy=70 (bottom half only shown via viewBox clip)
-    var r = 54, cx = 70, cy = 68;
-    var startAngle = Math.PI;           // left = 0
-    var endAngle   = 0;                 // right = 100%
-    var sweepAngle = startAngle - (startAngle - endAngle) * Math.min(pct / 100, 1);
-    // Background arc
-    var bgX1 = cx + r * Math.cos(Math.PI);
-    var bgY1 = cy + r * Math.sin(Math.PI);
-    var bgX2 = cx + r * Math.cos(0);
-    var bgY2 = cy + r * Math.sin(0);
-    // Active arc
-    var aX2 = cx + r * Math.cos(Math.PI - (Math.PI * pct / 100));
-    var aY2 = cy + r * Math.sin(Math.PI - (Math.PI * pct / 100));
-    var largeArc = pct > 50 ? 1 : 0;
-    // Needle
-    var needleAngle = Math.PI - (Math.PI * pct / 100);
-    var nx = cx + (r - 10) * Math.cos(needleAngle);
-    var ny = cy + (r - 10) * Math.sin(needleAngle);
-
-    return '<svg viewBox="0 0 140 75" xmlns="http://www.w3.org/2000/svg" style="width:140px;height:75px;">'
-      // track
-      + '<path d="M16 68 A54 54 0 0 1 124 68" fill="none" stroke="var(--bg2)" stroke-width="10" stroke-linecap="round"/>'
-      // active fill
-      + (pct > 0
-        ? '<path d="M16 68 A54 54 0 ' + largeArc + ' 1 ' + aX2.toFixed(1) + ' ' + aY2.toFixed(1) + '" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round" style="transition:stroke-dasharray 1s ease"/>'
-        : '')
-      // tick marks
-      + [0,25,50,75,100].map(function(v){
-          var a = Math.PI - (Math.PI * v / 100);
-          var ox = cx + 46 * Math.cos(a); var oy = cy + 46 * Math.sin(a);
-          var ix = cx + 40 * Math.cos(a); var iy = cy + 40 * Math.sin(a);
-          return '<line x1="'+ox.toFixed(1)+'" y1="'+oy.toFixed(1)+'" x2="'+ix.toFixed(1)+'" y2="'+iy.toFixed(1)+'" stroke="var(--border2)" stroke-width="1.5" stroke-linecap="round"/>';
-        }).join('')
-      // needle
-      + '<line x1="'+cx+'" y1="'+cy+'" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" style="transition:all 1s ease"/>'
-      + '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="'+color+'"/>'
-      // min/max labels
-      + '<text x="14" y="76" font-size="8" fill="var(--text3)" font-family="DM Mono,monospace">0</text>'
-      + '<text x="118" y="76" font-size="8" fill="var(--text3)" font-family="DM Mono,monospace">10</text>'
-      + '</svg>';
-  }
-
-  function card(cfg) {
-    if (!cfg.trend) {
-      return '<div class="rg-card">'
-        + '<div class="rg-stripe" style="background:' + cfg.color + '30"></div>'
-        + '<div class="rg-label">' + cfg.icon + ' ' + cfg.label + '</div>'
-        + '<div class="rg-empty">No data yet · refreshes every 30 min</div>'
-        + '</div>';
-    }
-    var t   = cfg.trend;
-    var pct = Math.round((t.score / 10) * 100);
-    var cls = classifyTrend(t);
-    var clsLbl   = cls === 'blowup' ? '🔥 Peak'     : cls === 'rising_fast' ? '⚡ Rising' : cls === 'early' ? '🟢 Early' : '📊 Stable';
-    var clsColor = cls === 'blowup' ? 'var(--green)' : cls === 'rising_fast' ? 'var(--gold)' : cls === 'early' ? '#4FB3A5' : 'var(--text3)';
-    var meta = t.videoCount > 0
-      ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
-      : (t.confidence ? t.confidence + '% confidence' : 'live data');
-
-    return '<div class="rg-card">'
-      + '<div class="rg-stripe" style="background:' + cfg.color + '"></div>'
-      + '<div class="rg-label"><span class="rg-dot" style="background:' + cfg.color + '"></span>' + cfg.icon + ' ' + cfg.label + '</div>'
-      + '<div class="rg-svg-wrap">'
-      +   gaugeArc(pct, cfg.color)
-      +   '<div class="rg-score-overlay">'
-      +     '<div class="rg-score-num" style="color:' + cfg.color + '">' + t.score.toFixed(1) + '</div>'
-      +     '<div class="rg-score-unit">/10</div>'
-      +   '</div>'
-      + '</div>'
-      + '<div class="rg-topic" onclick="loadTopic(\'' + escJ(t.topic) + '\')" style="color:var(--text)">' + escH(t.topic) + '</div>'
-      + '<div class="rg-status" style="color:' + clsColor + ';border-color:' + clsColor + '40">' + clsLbl + '</div>'
-      + '<div class="rg-meta">' + escH(meta) + '</div>'
-      + '</div>';
-  }
-
-  el.innerHTML = '<div class="rg-grid">' + cfgs.map(card).join('') + '</div>';
-}
-
-/* ─────────────────────────────────────────────
-   DIJO TOP PICK — replaces "What to post" section.
-   Picks the single best topic across ALL platforms
-   using dijoScore, then asks Dijo AI why it's the
-   best opportunity right now in one short sentence.
-───────────────────────────────────────────── */
-async function renderDijoTopPick() {
-  var el = document.getElementById('dijoTopPickBox');
-  if (!el) return;
-
-  if (!_allTrends.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px">Loading trend data…</div>';
-    return;
-  }
-
-  // Pick best trend by score
-  var best = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  var platIcon  = best.plat === 'tt' ? '🎵' : best.plat === 'yt' ? '▶️' : best.plat === 'cross' ? '🚀' : '🔍';
-  var platColor = best.plat === 'tt' ? '#ff6464' : best.plat === 'yt' ? '#FFD700' : best.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
-  var cls       = classifyTrend(best);
-  var clsLbl    = cls === 'blowup' ? '🔥 Peak now — post immediately' : cls === 'rising_fast' ? '⚡ Rising fast — get ahead of it' : cls === 'early' ? '🟢 Early stage — first mover advantage' : '📊 Stable trend';
-
-  // Show skeleton immediately
-  var _topicSafe = escJ(best.topic);
-  el.innerHTML =
-    '<div style="display:flex;flex-direction:column;gap:10px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    +   '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text)">' + escH(best.topic) + '</div>'
-    +   '<div style="font-family:DM Mono,monospace;font-size:24px;font-weight:900;color:' + platColor + ';flex-shrink:0">' + best.score.toFixed(1) + '</div>'
-    + '</div>'
-    + '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'
-    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:3px 10px;font-family:DM Mono,monospace">' + platIcon + ' ' + escH(best.platLabel) + '</span>'
-    +   '<span style="font-size:11px;font-weight:700;color:' + platColor + '">' + clsLbl + '</span>'
-    + '</div>'
-    + '<div id="dijoPickReason" style="font-size:13px;color:var(--text2);line-height:1.6;border-left:2px solid var(--gold);padding-left:10px;min-height:20px">'
-    +   '<span class="spinner spinner-gold" style="width:12px;height:12px;border-width:2px;margin-right:6px;vertical-align:middle"></span>'
-    +   '<span style="color:var(--text3);font-size:12px">Dijo is analysing why this is the best opportunity…</span>'
-    + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:4px">'
-    +   '<button onclick="loadTopic(\'' + _topicSafe + '\')" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:Syne,sans-serif">⚡ Generate content for this</button>'
-    +   '<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;align-self:center">Dijo top pick · updated every 30 min</div>'
-    + '</div>'
-    + '</div>';
-
-  // Now fetch the AI reason asynchronously
-  try {
-    var prompt = 'In ONE sentence (max 25 words), explain why "' + best.topic
-      + '" is the best content opportunity right now on ' + best.platLabel
-      + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
-    var res = await fetch(DIJO + '/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: prompt, mode: 'creator' })
-    });
-    var data = await res.json();
-    var reasonEl = document.getElementById('dijoPickReason');
-    if (reasonEl && data.reply) {
-      var reason = data.reply.trim().split(/[.!?]/)[0];
-      reasonEl.textContent = reason + '.';
-    }
-  } catch(e) {
-    var reasonEl = document.getElementById('dijoPickReason');
-    if (reasonEl) reasonEl.textContent = 'Highest scored trend across all platforms right now — strong opportunity for ' + best.platLabel + ' content.';
-  }
-}
-
-function loadTopic(topic) {
-  // ✅ Gate at the point of action — not mid-generation
-  if (!checkAccess()) return;
-
-  var i1 = document.getElementById('quickTopic'); if (i1) i1.value = topic;
-  var i2 = document.getElementById('genTopic'); if (i2) i2.value = topic;
-  switchTab('generator', null);
-
-  // FIX 4: AUTO GENERATE with trend-aware context 🧠
-  setTimeout(function() {
-    var trend = _allTrends.find(function(t) { return t.topic === topic; });
-    if (trend) {
-      // Inject trend context into the generator niche field so AI knows the data
-      var nicheEl = document.getElementById('genNiche');
-      if (nicheEl && !nicheEl.value) {
-        nicheEl.value = 'Platform: ' + trend.platLabel + ' · Score: ' + trend.score + ' · ' + (trend.videoCount || 0) + ' videos · ' + fmtN(trend.totalViews) + ' views';
-      }
-    }
-    fullGenerate();
-  }, 300);
-  toast('💡 Generating for: ' + topic);
-}
-
-/* Dynamic AI hint above generator input */
-function updateHint(score) {
-  var el = document.getElementById('aiHint');
-  if (!el) return;
-  if (score >= 9) el.textContent = '🔥 High viral potential topic';
-  else if (score >= 8) el.textContent = '⚡ Strong trending opportunity';
-  else el.textContent = '💡 Emerging topic — needs strong hook';
-}
-
-/* ─────────────────────────────────────────────
-   PLATFORM STATUS — FIX 5
-   Reads /ingestion/status and lights up sidebar dots
-   TikTok = velocity engine ⚡  YouTube = validation 🎯
-───────────────────────────────────────────── */
-async function loadPlatformStatus() {
-  try {
-    var res = await fetch(DIJO + '/ingestion/status');
-    if (!res.ok) return;
-    var data = await res.json();
-
-    if (data.youtube && data.youtube.status === 'completed') {
-      var ytDot = document.getElementById('ytSpDot');
-      var ytLbl = document.getElementById('ytSpLabel');
-      if (ytDot) ytDot.className = 'sp-dot live';
-      if (ytLbl) ytLbl.textContent = 'Live';
-    }
-
-    if (data.tiktok && data.tiktok.status === 'completed') {
-      var ttDot = document.getElementById('ttSpDot');
-      var ttLbl = document.getElementById('ttSpLabel');
-      if (ttDot) ttDot.className = 'sp-dot live';
-      if (ttLbl) ttLbl.textContent = 'Live';
-    }
-  } catch(e) {
-    console.warn('[PlatformStatus] unavailable:', e);
-  }
-}
-
-/* ─────────────────────────────────────────────
-   DAILY BRIEFING
-───────────────────────────────────────────── */
-async function loadBriefing(forceRefresh) {
-  var el = document.getElementById('briefingText');
-  var tagsEl = document.getElementById('briefingTags');
-  var dateEl = document.getElementById('briefingDate');
-  if (!el) return;
-
-  // ── Build compact pulse strip from local trend data ──────────────────────
-  function renderPulseStrip() {
-    if (!_allTrends.length) return false;
-    var best = getBest3(_allTrends);
-    var rows = [
-      { icon: '▶️', label: 'YouTube', trend: best.youtube, color: '#FFD700' },
-      { icon: '⚡', label: 'TikTok',  trend: best.tiktok,  color: '#ff6464' },
-      { icon: '🔍', label: 'Google',  trend: best.google,  color: '#78b4ff' }
-    ].filter(function(r) { return r.trend; });
-    if (!rows.length) return false;
-
-    el.innerHTML = rows.map(function(r) {
-      var t = r.trend;
-      var cls = classifyTrend(t);
-      var badge = cls === 'blowup'      ? '🔥 Blowing up'
-                : cls === 'rising_fast' ? '⚡ Rising fast'
-                : cls === 'early'       ? '🟢 Early signal'
-                : '📊 Stable';
-      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)">'
-        + '<span style="font-size:14px">' + r.icon + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + r.color + ';min-width:46px;letter-spacing:.06em">' + r.label + '</span>'
-        + '<span style="font-size:12px;color:var(--text1);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</span>'
-        + '<span style="font-size:9px;color:var(--text3);white-space:nowrap">' + badge + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:800;color:' + r.color + ';min-width:24px;text-align:right">' + t.score.toFixed(1) + '</span>'
-        + '</div>';
-    }).join('') + '<div style="border-bottom:none"></div>';
-
-    if (tagsEl) tagsEl.innerHTML = ''; // hide old tags
-    if (dateEl) {
-      var now = new Date();
-      dateEl.textContent = '📡 ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
-    }
-    return true;
-  }
-
-  // Try local data first (instant), then fall back to API
-  if (renderPulseStrip()) {
-    if (forceRefresh) toast('🧠 Trends refreshed!');
-    return;
-  }
-
-  // Still loading — wait for trends then retry
-  el.innerHTML = '<span class="spinner spinner-gold"></span>';
-  try {
-    var res = await fetch(DIJO + '/ai/daily-briefing');
-    var data = await res.json();
-    // Even if API has data, prefer the compact pulse strip if trends are now loaded
-    if (_allTrends.length && renderPulseStrip()) {
-      if (forceRefresh) toast('🧠 Trends refreshed!');
-      return;
-    }
-    // Fallback: show just the first sentence of the AI briefing (compact)
-    if (data.briefing) {
-      var first = data.briefing.split(/[.!?]/)[0].trim();
-      el.textContent = first + '.';
-      if (dateEl) {
-        var now2 = new Date();
-        dateEl.textContent = '📡 ' + now2.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
-      }
-      if (tagsEl) tagsEl.innerHTML = '';
-      if (forceRefresh) toast('🧠 Briefing refreshed!');
-    }
-  } catch(e) {
-    if (el) el.textContent = 'Trends unavailable — check back shortly.';
-  }
-}
-
-/* ─────────────────────────────────────────────
-   QUICK GENERATE (dashboard widget)
-───────────────────────────────────────────── */
-async function quickGenerate() {
-  if (!checkAccess()) return;
-  var topicEl = document.getElementById('quickTopic');
-  if (!topicEl) return;
-  var topic = topicEl.value.trim();
-  if (!topic) { toast('⚠️ Enter a topic first'); return; }
-  var outEl = document.getElementById('quickOutput');
-  outEl.style.display = 'flex';
-  document.getElementById('quickHook').textContent = 'Generating…';
-  document.getElementById('quickCaption').textContent = '';
-  document.getElementById('quickTags').innerHTML = '';
-  try {
-    var reply = await callDijo(
-      'Write a hook, caption, and 6 hashtags for: "' + topic + '". Format:\nHOOK: ...\nCAPTION: ...\nHASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6',
-      'creator'
-    );
-    var lines = reply.split('\n');
-    var hook = '', caption = '', tags = [];
-    lines.forEach(function(l) {
-      if (l.toLowerCase().startsWith('hook:')) hook = l.replace(/^hook:\s*/i, '').trim();
-      else if (l.toLowerCase().startsWith('caption:')) caption = l.replace(/^caption:\s*/i, '').trim();
-      else if (l.toLowerCase().startsWith('hashtags:')) { tags = (l.replace(/^hashtags:\s*/i, '').match(/#[a-zA-Z0-9]+/g) || []); }
-    });
-    if (!tags.length) tags = (reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []).slice(0, 6);
-    document.getElementById('quickHook').textContent = hook || lines[0] || reply.slice(0, 120);
-    document.getElementById('quickCaption').textContent = caption || reply.slice(0, 200);
-    var te = document.getElementById('quickTags'); te.innerHTML = '';
-    tags.forEach(function(t) { var s = document.createElement('span'); s.className = 'ob-tag'; s.textContent = t; te.appendChild(s); });
-    toast('✅ Generated!');
-  } catch(e) {
-    document.getElementById('quickHook').textContent = 'Dijo unavailable — try again.';
-  }
-}
-
-/* ─────────────────────────────────────────────
-   FULL GENERATE
-───────────────────────────────────────────── */
-function selectStyle(el) {
-  document.querySelectorAll('.style-chip').forEach(function(c) { c.classList.remove('active'); });
-  el.classList.add('active');
-  _selectedStyle = el.textContent.trim();
-}
-
-function calcScore(topic) {
-  var tl = topic.toLowerCase(); var s = 6.8;
-  if (tl.match(/ai|chatgpt|automation|tech|llm/)) s += 1.3;
-  if (tl.match(/money|finance|invest|income|business/)) s += 1.0;
-  if (tl.match(/viral|trending|2026|growth/)) s += 0.6;
-  if (tl.length < 20) s += 0.3;
-  return Math.min(9.9, parseFloat(s.toFixed(1)));
-}
-
-async function generateIdea() {
-  if (!checkAccess()) return;
-  await fullGenerate();
-}
-
-async function fullGenerate() {
-  if (!checkAccess()) return;
-  if (!(await checkCarouselAccess())) return;
-  var topic = document.getElementById('genTopic').value.trim();
-  if (!topic) { toast('⚠️ Enter a topic first'); return; }
-  var platform = document.getElementById('genPlatform').value;
-  var niche = document.getElementById('genNiche').value.trim();
-  var btn = document.getElementById('fullGenBtn');
-  var loadEl = document.getElementById('genLoading');
-  var errEl = document.getElementById('genError');
-
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating…';
-  loadEl.classList.add('visible');
-  errEl.classList.remove('visible');
-  document.getElementById('genLoadingMsg').textContent = 'Dijo is building your content package for "' + topic + '"…';
-
-  var score = calcScore(topic);
-  updateHint(score);
-  var scColor = score >= 9 ? 'var(--green)' : score >= 8 ? 'var(--gold)' : score >= 7 ? 'var(--blue2)' : 'var(--text2)';
-  var verdict = score >= 9 ? '🔥 Exceptional' : score >= 8 ? '⚡ Strong opportunity' : score >= 7 ? '📈 Good momentum' : '💡 Emerging';
-  document.getElementById('previewScore').textContent = score.toFixed(1);
-  document.getElementById('previewScore').style.color = scColor;
-  document.getElementById('previewVerdict').textContent = verdict;
-  document.getElementById('previewVerdict').style.color = scColor;
-
-  ['outHook', 'outCaption', 'outOutline'].forEach(function(id) {
-    var el = document.getElementById(id);
-    el.classList.remove('ob-placeholder'); el.textContent = 'Generating…';
-  });
-  document.getElementById('outHashtags').innerHTML = '<span style="color:var(--text3);font-style:italic;font-size:12px">Generating…</span>';
-
-  try {
-    var nicheCtx = niche ? '\nNiche: ' + niche + '.' : '';
-
-    // Inject real trend data if available for this topic
-    var trend = _allTrends.find(function(t) { return t.topic.toLowerCase() === topic.toLowerCase(); });
-    var trendExtra = '';
-    if (trend) {
-      trendExtra = '\n\nReal trend data:'
-        + '\n- Platform: ' + trend.platLabel
-        + '\n- Views: ' + fmtN(trend.totalViews)
-        + '\n- Video count: ' + trend.videoCount
-        + '\n- Trend score: ' + trend.score + '/10'
-        + (trend.hashtags.length ? '\n- Suggested hashtags: ' + trend.hashtags.join(', ') : '');
-    }
-
-    var prompt =
-      'You are a top 1% viral content strategist.\n\n'
-      + 'Topic: "' + topic + '"\n'
-      + 'Platform: ' + platform + '\n'
-      + 'Style: ' + _selectedStyle + '\n'
-      + 'Trend Score: ' + score + '/10'
-      + nicheCtx
-      + trendExtra + '\n\n'
-      + 'Write HIGH-PERFORMING content.\n\n'
-      + 'Rules:\n'
-      + '- Hook must create curiosity or controversy\n'
-      + '- Caption must be short, punchy, scroll-stopping\n'
-      + '- No fluff\n'
-      + '- Make it feel like viral content, not advice\n\n'
-      + 'Format EXACTLY:\n\n'
-      + 'HOOK: ...\n'
-      + 'CAPTION: ...\n'
-      + 'OUTLINE:\n1. ...\n2. ...\n3. ...\n4. ...\n5. ...\n'
-      + 'HASHTAGS: #... #... #...\n'
-      + 'BEST TIME: [best day and time for ' + platform + ']';
-    var reply = await callDijo(prompt, 'creator');
-    var lines = reply.split('\n');
-
-    function extract(label) {
-      var idx = lines.findIndex(function(l) { return l.toLowerCase().startsWith(label.toLowerCase()); });
-      if (idx === -1) return '';
-      return lines[idx].replace(new RegExp('^' + label + '\\s*', 'i'), '').trim();
-    }
-    function extractBlock(label, nextLabel) {
-      var start = lines.findIndex(function(l) { return l.toLowerCase().startsWith(label.toLowerCase()); });
-      if (start === -1) return '';
-      var out = [];
-      for (var i = start + 1; i < lines.length; i++) {
-        if (nextLabel && lines[i].toLowerCase().startsWith(nextLabel.toLowerCase())) break;
-        if (lines[i].match(/^[A-Z ]+:/)) break;
-        out.push(lines[i]);
-      }
-      return out.join('\n').trim();
-    }
-
-    var hook = extract('HOOK:');
-    var caption = extract('CAPTION:');
-    var outline = extractBlock('OUTLINE:', 'HASHTAGS:');
-    var hashLine = extract('HASHTAGS:');
-    var bestTime = extract('BEST TIME:');
-    var tags = (hashLine.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []).concat(reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []);
-    var uniqueTags = []; var seen = {};
-    tags.forEach(function(t) { if (!seen[t]) { seen[t] = 1; uniqueTags.push(t); } });
-
-    document.getElementById('outHook').textContent = hook || lines[0] || '';
-    document.getElementById('outCaption').innerHTML = escH(caption || '').replace(/\n/g, '<br>');
-    document.getElementById('outOutline').innerHTML = escH(outline || '').replace(/\n/g, '<br>');
-    var he = document.getElementById('outHashtags'); he.innerHTML = '';
-    uniqueTags.slice(0, 10).forEach(function(t) { var s = document.createElement('span'); s.className = 'ob-tag'; s.textContent = t; he.appendChild(s); });
-
-    // Populate clickable hashtag bar
-    var bar = document.getElementById('hashtagBar');
-    if (bar) {
-      bar.innerHTML = '';
-      uniqueTags.slice(0, 10).forEach(function(tag) {
-        var el = document.createElement('div');
-        el.className = 'hashtag-chip';
-        el.textContent = tag;
-        el.onclick = function() { navigator.clipboard.writeText(tag).then(function() { toast('📋 ' + tag + ' copied!'); }); };
-        bar.appendChild(el);
+      return res.json({
+        url:      pick.src.large2x || pick.src.large,
+        thumb:    pick.src.medium,
+        pexelsId: pick.id,
+        alt:      pick.alt || "",
+        query,
       });
     }
-    var tg = document.getElementById('outTiming'); tg.innerHTML = '';
-    ['Today', 'Thursday', 'Saturday'].forEach(function(d) {
-      var slot = document.createElement('div'); slot.className = 'timing-slot';
-      slot.innerHTML = '<div class="timing-day">' + d + '</div><div class="timing-time">' + (d === 'Today' && bestTime ? bestTime : '7–9pm') + '</div>';
-      tg.appendChild(slot);
+
+    // All queries exhausted — no image found
+    res.json({ image: null, message: "No image found for query" });
+
+  } catch (err) {
+    console.error("[Pexels /image] Error:", err.message);
+    res.status(500).json({ error: "Pexels image fetch failed", details: err.message, image: null });
+  }
+});
+
+
+/* ================================================================
+   PORTFOLIO ROUTES
+================================================================ */
+
+/* ── POST /portfolio/generate ── */
+app.post("/portfolio/generate", async (req, res) => {
+  try {
+    const {
+      name,
+      niche,
+      bio             = "",
+      location        = "",
+      email           = "",
+      theme           = "dark",
+      services        = [],
+      projects        = [],
+      testimonials    = [],
+      youtube_url     = "",
+      tiktok_url      = "",
+      instagram_url   = "",
+      linkedin_url    = "",
+      twitter_url     = "",
+      total_followers = "",
+      engagement_rate = "",
+      monthly_views   = "",
+      slug            = "",
+    } = req.body;
+
+    if (!name || !niche) {
+      return res.status(400).json({ error: "name and niche are required" });
+    }
+
+    console.log(`[Portfolio /generate] "${name}" | niche: "${niche}" | theme: ${theme}`);
+
+    const result = await generatePortfolioContent({
+      name, niche, bio, location, email, theme,
+      services, projects, testimonials,
+      youtube_url, tiktok_url, instagram_url, linkedin_url, twitter_url,
+      total_followers, engagement_rate, monthly_views,
+      slug: slug || name.toLowerCase().replace(/[^a-z0-9]/g, ""),
     });
 
-    var dsc = document.getElementById('dashLastScore'); if (dsc) { dsc.textContent = score.toFixed(1); dsc.style.color = scColor; }
-    var dsl = document.getElementById('dashLastLabel'); if (dsl) { dsl.textContent = verdict; dsl.style.color = scColor; }
-    if (!isAdmin()) {
-      incrementUses();
-    }
-    toast('✅ Package generated!');
-  } catch(e) {
-    errEl.classList.add('visible');
-    errEl.textContent = '⚠ ' + (e.message || 'Request failed');
-    toast('⚠️ Dijo unavailable — try again');
-  }
+    console.log(`[Portfolio /generate] Done — headline: "${result.ai_headline}"`);
+    res.json(result);
 
-  loadEl.classList.remove('visible');
-  btn.disabled = false; btn.innerHTML = '⚡ Generate Full Package';
-}
-
-/* ─────────────────────────────────────────────
-   AUDIENCE
-───────────────────────────────────────────── */
-async function loadAudience() {
-  var topic = document.getElementById('audTopic').value.trim();
-  if (!topic) { toast('⚠️ Enter a topic'); return; }
-  var btn = document.getElementById('audBtn');
-  btn.disabled = true; btn.textContent = 'Analysing…';
-  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
-  try {
-    var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
-    var reply = await callDijo(prompt, 'creator');
-    var ages = extractAges(reply) || [{ label: '18–24', pct: 30 }, { label: '25–34', pct: 40 }, { label: '35–44', pct: 20 }, { label: '45+', pct: 10 }];
-    var pa = extractPA(reply) || { YouTube: 72, TikTok: 65, Instagram: 58, Google: 78 };
-    var html = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px">'
-      + '<h3 style="font-size:15px;font-weight:800;margin-bottom:8px">👥 ' + escH(topic) + ' — Audience</h3>'
-      + '<div style="font-size:13px;color:var(--text2);line-height:1.75">' + escH(reply.slice(0, 500)) + '</div></div>';
-    html += '<div class="aud-grid"><div class="aud-card"><div class="aud-head">Age Breakdown</div><div class="aud-body">';
-    ages.forEach(function(ag) {
-      html += '<div class="demo-bar"><span class="demo-label">' + ag.label + '</span>'
-        + '<div class="demo-track"><div class="demo-fill" style="width:' + ag.pct + '%"></div></div>'
-        + '<span class="demo-pct">' + ag.pct + '%</span></div>';
+  } catch (err) {
+    console.error("[Portfolio /generate] Error:", err.message);
+    res.status(500).json({
+      error:    "Portfolio generation failed",
+      details:  err.message,
+      fallback: true,
     });
-    html += '</div></div><div class="aud-card"><div class="aud-head">Platform Affinity</div><div class="aud-body">';
-    [{ k: 'YouTube', cls: 'pa-yt' }, { k: 'TikTok', cls: 'pa-tt' }, { k: 'Instagram', cls: 'pa-ig' }, { k: 'Google', cls: 'pa-gt' }].forEach(function(p) {
-      html += '<div class="pa-item"><span class="pa-label">' + p.k + '</span>'
-        + '<div class="pa-track"><div class="pa-fill ' + p.cls + '" style="width:' + (pa[p.k] || 0) + '%"></div></div>'
-        + '<span class="pa-pct">' + (pa[p.k] || 0) + '%</span></div>';
+  }
+});
+
+
+/* ── POST /portfolio/regen ── */
+app.post("/portfolio/regen", async (req, res) => {
+  try {
+    const { section, portfolio } = req.body;
+
+    if (!section || !portfolio) {
+      return res.status(400).json({ error: "section and portfolio are required" });
+    }
+
+    if (!["copy", "media", "legal", "services"].includes(section)) {
+      return res.status(400).json({ error: "section must be: copy | media | legal | services" });
+    }
+
+    console.log(`[Portfolio /regen] section: ${section} | "${portfolio.name}"`);
+
+    const full = await generatePortfolioContent(portfolio);
+
+    const sectionMap = {
+      copy:     { ai_headline: full.ai_headline, ai_tagline: full.ai_tagline, ai_bio: full.ai_bio, ai_meta: full.ai_meta, ai_cta: full.ai_cta },
+      media:    { hero_media: full.hero_media },
+      legal:    { ai_terms: full.ai_terms, ai_privacy: full.ai_privacy },
+      services: { services: full.services },
+    };
+
+    res.json(sectionMap[section]);
+
+  } catch (err) {
+    console.error("[Portfolio /regen] Error:", err.message);
+    res.status(500).json({ error: "Regen failed", details: err.message });
+  }
+});
+
+
+/* ── POST /portfolio/save ── */
+app.post("/portfolio/save", async (req, res) => {
+  try {
+    const { portfolio, session } = req.body;
+
+    if (!portfolio) {
+      return res.status(400).json({ error: "portfolio is required" });
+    }
+
+    console.log(`[Portfolio /save] "${portfolio.name}" | session: ${session || "guest"}`);
+
+    const { data, error } = await _aiSupabase
+      .from("portfolios")
+      .insert([{
+        user_id: session || null,
+        user_session: session || null,
+
+        name: portfolio.name || "",
+        niche: portfolio.niche || "",
+        bio: portfolio.bio || "",
+
+        theme: portfolio.theme || "dark",
+
+        services: portfolio.services || [],
+        projects: portfolio.projects || [],
+        testimonials: portfolio.testimonials || [],
+        hero_media: portfolio.hero_media || [],
+
+        ai_headline: portfolio.ai_headline || "",
+        ai_tagline: portfolio.ai_tagline || "",
+        ai_bio: portfolio.ai_bio || "",
+        ai_cta: portfolio.ai_cta || "",
+
+        total_followers: portfolio.total_followers || "",
+        engagement_rate: portfolio.engagement_rate || "",
+        monthly_views: portfolio.monthly_views || "",
+
+        email: portfolio.email || "",
+
+        slug: (portfolio.name || "creator")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-") + "-" + Date.now()
+      }]);
+
+    if (error) {
+      console.error("[Portfolio /save] Supabase error:", error.message);
+      return res.status(500).json({ error: "Save failed", details: error.message });
+    }
+
+    console.log("[Portfolio /save] Saved successfully");
+    res.json({ saved: true, data });
+
+  } catch (err) {
+    console.error("[Portfolio /save] Exception:", err.message);
+    res.status(500).json({ error: "Save failed", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   BOOK CALL
+================================================================ */
+app.post("/book-call", async (req, res) => {
+  try {
+    const { name, email, date } = req.body;
+
+    if (!name || !email || !date) {
+      return res.json({ error: "Missing fields" });
+    }
+
+    // 🔒 CHECK IF DATE EXISTS
+    const { data: existing } = await _aiSupabase
+      .from("bookings")
+      .select("*")
+      .eq("date", date)
+      .single();
+
+    if (existing) {
+      return res.json({ error: "Date already booked" });
+    }
+
+    // 💾 SAVE BOOKING
+    await _aiSupabase.from("bookings").insert({ name, email, date });
+
+    // 📧 SEND EMAIL (RESEND)
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from:    "support@impactgridgroup.com",
+        to:      ["Ogunmoyerodara@gmail.com"],
+        subject: "New Call Booking",
+        html: `
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Date:</b> ${date}</p>
+        `
+      })
     });
-    html += '</div></div></div>';
-    document.getElementById('audOutput').innerHTML = html;
-    toast('✅ Analysis done!');
-  } catch(e) {
-    document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
-    toast('⚠️ Error — try again');
-  }
-  btn.disabled = false; btn.textContent = 'Analyse';
-}
 
-function extractAges(text) {
-  var groups = [];
-  var m = text.match(/(\d{2}[-–]\d{2,3}\+?)[^\d]{0,8}(\d{1,3})\s*%/g);
-  if (m && m.length >= 3) {
-    m.forEach(function(x) {
-      var p = x.match(/(\d{2}[-–]\d{2,3}\+?).*?(\d{1,3})/);
-      if (p) groups.push({ label: p[1], pct: Math.min(99, parseInt(p[2] || 50)) });
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("[Book Call] Error:", err.message);
+    res.json({ error: "Server error" });
+  }
+});
+
+
+/* ================================================================
+   CONTACT FORM
+================================================================ */
+app.post("/contact", async (req, res) => {
+  const { firstName, email, subject, message } = req.body;
+
+  try {
+    await resend.emails.send({
+      from: "ImpactGrid <support@impactgridgroup.com>",
+      to: "Ogunmoyerodara@gmail.com",
+      subject: `New Contact: ${subject}`,
+      html: `
+        <h3>New Message</h3>
+        <p><strong>Name:</strong> ${firstName}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong><br>${message}</p>
+      `
     });
-    return groups.length >= 3 ? groups : null;
-  }
-  return null;
-}
-function extractPA(text) {
-  var tl = text.toLowerCase();
-  function p(n) { var m = new RegExp(n + '[^0-9]*(\\d{1,3})\\s*%', 'i').exec(tl); return m ? Math.min(100, parseInt(m[1])) : null; }
-  var yt = p('youtube'), tt = p('tiktok'), ig = p('instagram'), gt = p('google');
-  return (yt || tt || ig || gt) ? { YouTube: yt || 70, TikTok: tt || 65, Instagram: ig || 55, Google: gt || 75 } : null;
-}
 
-/* ─────────────────────────────────────────────
-   YOUTUBE
-───────────────────────────────────────────── */
-function initYouTube() {
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+});
+
+
+/* ================================================================
+   KEEPALIVE + INGESTION WATCHDOG
+   ─────────────────────────────────────────────────────────────────
+   Render free tier kills the process after ~15 min of inactivity,
+   which stops all setInterval ingestion jobs. This endpoint is
+   designed to be hit by cron-job.org every 10 minutes so the
+   server never sleeps.
+
+   On every ping it also checks whether ingestion last ran more
+   than 25 minutes ago — if so, it fires a fresh full ingestion
+   cycle immediately so data never goes stale even if the server
+   did restart and lose its scheduled intervals.
+
+   SET UP (free, takes 2 minutes):
+     1. Go to https://cron-job.org and create a free account
+     2. Create a new cronjob:
+          URL:      https://impactgrid-dijo.onrender.com/keepalive
+          Schedule: Every 10 minutes  (* /10 * * * *)
+          Method:   GET
+     3. Save — done. Trends table will have data within 35 minutes.
+================================================================ */
+
+// Track last ingestion time in memory (resets on server restart,
+// which is fine — restart itself triggers a fresh run via startIngestion())
+let _lastIngestionAt = Date.now();
+
+// Wrap the exported startIngestion so we can intercept manual triggers
+// and update _lastIngestionAt. We call it once at startup below.
+async function _triggerIngestion(reason) {
+  console.log(`[Keepalive] Triggering ingestion — reason: ${reason}`);
+  _lastIngestionAt = Date.now();
   try {
-    if (typeof YouTubeAuth === 'undefined') return;
-    var s = YouTubeAuth.getSession();
-    if (s) showYtConnected(s);
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('yt_connected') === '1') {
-      var s2 = YouTubeAuth.getSession();
-      if (s2) showYtConnected(s2);
-      history.replaceState({}, '', 'creator-studio.html');
-    }
-  } catch(e) {}
-}
-
-function showYtConnected(session) {
-  document.getElementById('ytDisconnected').style.display = 'none';
-  document.getElementById('ytConnected').style.display = 'block';
-  var dot = document.getElementById('ytSpDot'); if (dot) dot.className = 'sp-dot live';
-  var label = document.getElementById('ytSpLabel'); if (label) label.innerHTML = '<span style="color:var(--green)">Connected</span>';
-  var badge = document.getElementById('ytSidebarBadge'); if (badge) badge.style.display = 'inline-flex';
-  var ch = session.channel;
-  var name = (ch && ch.snippet && ch.snippet.title) ? ch.snippet.title : 'YouTube';
-  var handle = (ch && ch.snippet && ch.snippet.customUrl) ? ch.snippet.customUrl : '';
-  document.getElementById('ytChannelName').textContent = name;
-  document.getElementById('ytChannelHandle').textContent = handle;
-  var dv = document.getElementById('dashYtVal'); if (dv) { dv.textContent = name; dv.style.color = 'var(--green)'; }
-  if (ch && ch.snippet && ch.snippet.thumbnails && ch.snippet.thumbnails.default) {
-    var av = document.getElementById('ytAv');
-    av.innerHTML = '<img src="' + ch.snippet.thumbnails.default.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-  }
-  if (ch && ch.statistics) {
-    document.getElementById('ytSubs').textContent = fmtN(ch.statistics.subscriberCount);
-    document.getElementById('ytViews').textContent = fmtN(ch.statistics.viewCount);
-    document.getElementById('ytVcount').textContent = fmtN(ch.statistics.videoCount);
-    document.getElementById('evalSubs').textContent = fmtN(ch.statistics.subscriberCount);
-    document.getElementById('evalViews').textContent = fmtN(ch.statistics.viewCount);
-    document.getElementById('evalVcount').textContent = fmtN(ch.statistics.videoCount);
-  }
-  loadYtVideos(session.accessToken);
-}
-
-async function loadYtVideos(token) {
-  var el = document.getElementById('ytVideosList'); if (!el) return;
-  try {
-    var res = await YouTubeAuth.fetchVideos(token, 8);
-    var videos = (res && res.items) ? res.items : [];
-    if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
-    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">'
-      + videos.map(function(v) {
-        var sn = v.snippet || {}; var st = v.statistics || {};
-        var thumb = sn.thumbnails && sn.thumbnails.medium ? sn.thumbnails.medium.url : '';
-        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">▶️</div>')
-          + '<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sn.title || 'Untitled') + '</div>'
-          + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 ' + fmtN(st.viewCount) + ' · ❤️ ' + fmtN(st.likeCount) + ' · 💬 ' + fmtN(st.commentCount) + '</div></div></div>';
-      }).join('') + '</div>';
+    startIngestion();
   } catch(e) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
+    console.error("[Keepalive] Ingestion trigger failed:", e.message);
   }
 }
 
-function disconnectYouTube() {
-  try { YouTubeAuth.clearSession(); } catch(e) {}
-  document.getElementById('ytDisconnected').style.display = 'block';
-  document.getElementById('ytConnected').style.display = 'none';
-  var dot = document.getElementById('ytSpDot'); if (dot) dot.className = 'sp-dot off';
-  var label = document.getElementById('ytSpLabel'); if (label) label.innerHTML = '<span class="connect-link" onclick="switchTab(\'youtube\',null)">Connect</span>';
-  var badge = document.getElementById('ytSidebarBadge'); if (badge) badge.style.display = 'none';
-  var dv = document.getElementById('dashYtVal'); if (dv) { dv.textContent = 'Not connected'; dv.style.color = ''; }
-  _evalChannelData = null; _evalScoreData = null;
-  document.getElementById('evalMain').style.display = 'none';
-  document.getElementById('evalNoAccount').style.display = 'block';
-  toast('👋 YouTube disconnected');
-}
+app.get("/keepalive", async (req, res) => {
+  const now          = Date.now();
+  const msSinceLast  = now - _lastIngestionAt;
+  const minSinceLast = Math.round(msSinceLast / 60000);
+  const shouldRun    = msSinceLast > 25 * 60 * 1000; // 25 minutes
 
-/* ─────────────────────────────────────────────
-   TIKTOK
-───────────────────────────────────────────── */
-function initTikTok() {
-  try {
-    if (typeof TikTokAuth === 'undefined') return;
-    var s = TikTokAuth.getSession();
-    if (s) showTtConnected(s);
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('tt_connected') === '1') {
-      var s2 = TikTokAuth.getSession();
-      if (s2) showTtConnected(s2);
-      history.replaceState({}, '', 'creator-studio.html');
-    }
-  } catch(e) {}
-}
-
-function showTtConnected(session) {
-  document.getElementById('ttDisconnected').style.display = 'none';
-  document.getElementById('ttConnected').style.display = 'block';
-  var dot = document.getElementById('ttSpDot'); if (dot) dot.className = 'sp-dot tt';
-  var badge = document.getElementById('ttSidebarBadge'); if (badge) badge.style.display = 'inline-flex';
-  var pill = document.getElementById('ttTopbarPill'); if (pill) pill.style.display = 'flex';
-  var profile = session.profile || {};
-  var name = profile.display_name || profile.username || 'TikTok';
-  document.getElementById('ttDisplayName').textContent = name;
-  var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = name; dv.style.color = 'var(--tt)'; }
-  var sub = document.getElementById('dashTtSub'); if (sub) sub.innerHTML = '';
-  var label = document.getElementById('ttSpLabel'); if (label) label.innerHTML = '<span style="color:var(--tt)">Connected</span>';
-  fetchTtProfile(session.accessToken);
-  loadTtVideos(session.accessToken);
-}
-
-async function fetchTtProfile(token) {
-  try {
-    var res = await fetch(DIJO + '/tiktok/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: token }) });
-    var data = await res.json();
-    var user = data && data.data && data.data.user ? data.data.user : null;
-    if (!user) return;
-    document.getElementById('ttDisplayName').textContent = user.display_name || 'TikTok';
-    document.getElementById('ttUsername').textContent = user.bio_description ? user.bio_description.slice(0, 40) : '';
-    document.getElementById('ttFollowers').textContent = fmtN(user.follower_count);
-    document.getElementById('ttFollowing').textContent = fmtN(user.following_count);
-    document.getElementById('ttLikes').textContent = fmtN(user.likes_count);
-    document.getElementById('ttVcount').textContent = fmtN(user.video_count);
-    var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = user.display_name || 'TikTok'; dv.style.color = 'var(--tt)'; }
-    if (user.avatar_url) {
-      var av = document.getElementById('ttAv');
-      av.innerHTML = '<img src="' + user.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""/>';
-    }
-    document.getElementById('evalSubs').textContent = fmtN(user.follower_count);
-    document.getElementById('evalSubs').style.color = 'var(--tt)';
-    document.getElementById('evalViews').textContent = fmtN(user.likes_count);
-    document.getElementById('evalVcount').textContent = fmtN(user.video_count);
-    _evalChannelData = { _platform: 'tiktok', snippet: { title: user.display_name || 'TikTok' }, statistics: { subscriberCount: user.follower_count || 0, viewCount: user.likes_count || 0, videoCount: user.video_count || 0 } };
-    try { localStorage.setItem('tt_profile', JSON.stringify(user)); } catch(e) {}
-  } catch(e) { console.warn('[TikTok] Profile fetch failed:', e.message); }
-}
-
-async function loadTtVideos(token) {
-  var el = document.getElementById('ttVideosList'); if (!el) return;
-  try {
-    var res = await fetch(DIJO + '/tiktok/videos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: token, max_count: 12 }) });
-    var data = await res.json();
-    var videos = (data && data.data && data.data.videos) ? data.data.videos : [];
-    if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
-    el.innerHTML = '<div class="video-grid">' + videos.map(function(v) {
-      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '🎵') + '</div>'
-        + '<div class="video-info"><div class="video-title">' + escH(v.title || v.video_description || 'Untitled') + '</div>'
-        + '<div class="video-stats">👁 ' + fmtN(v.view_count) + ' · ❤️ ' + fmtN(v.like_count) + ' · 💬 ' + fmtN(v.comment_count) + '</div></div></div>';
-    }).join('') + '</div>';
-  } catch(e) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
-  }
-}
-
-function disconnectTikTok() {
-  try { TikTokAuth.clearSession(); } catch(e) {}
-  document.getElementById('ttDisconnected').style.display = 'block';
-  document.getElementById('ttConnected').style.display = 'none';
-  var dot = document.getElementById('ttSpDot'); if (dot) dot.className = 'sp-dot off';
-  var badge = document.getElementById('ttSidebarBadge'); if (badge) badge.style.display = 'none';
-  var pill = document.getElementById('ttTopbarPill'); if (pill) pill.style.display = 'none';
-  var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = 'Not connected'; dv.style.color = ''; }
-  var sub = document.getElementById('dashTtSub'); if (sub) sub.innerHTML = '<span class="sc-link" onclick="switchTab(\'tiktok\',null)">Connect →</span>';
-  var label = document.getElementById('ttSpLabel'); if (label) label.innerHTML = '<span class="connect-link" onclick="switchTab(\'tiktok\',null)">Connect</span>';
-  _evalChannelData = null; _evalScoreData = null;
-  document.getElementById('evalMain').style.display = 'none';
-  document.getElementById('evalNoAccount').style.display = 'block';
-  toast('👋 TikTok disconnected — connect a new account');
-}
-
-/* ─────────────────────────────────────────────
-   EVALUATOR
-───────────────────────────────────────────── */
-function initEvaluator() {
-  try {
-    if (typeof YouTubeAuth !== 'undefined') {
-      var s = YouTubeAuth.getSession();
-      if (s && s.channel) { _evalChannelData = s.channel; showEvalMain(s.channel, 'youtube'); return; }
-    }
-    if (typeof TikTokAuth !== 'undefined') {
-      var s2 = TikTokAuth.getSession();
-      if (s2) { showEvalMainTt(s2); return; }
-    }
-  } catch(e) {}
-}
-
-function showEvalMain(channel, platform) {
-  document.getElementById('evalNoAccount').style.display = 'none';
-  document.getElementById('evalLoading').style.display = 'none';
-  document.getElementById('evalMain').style.display = 'block';
-  var name = (channel && channel.snippet && channel.snippet.title) || 'Channel';
-  var handle = (channel && channel.snippet && channel.snippet.customUrl) || platform;
-  document.getElementById('evalChannelName').textContent = name;
-  document.getElementById('evalChannelHandle').textContent = handle;
-  if (channel && channel.snippet && channel.snippet.thumbnails && channel.snippet.thumbnails.default) {
-    document.getElementById('evalAv').innerHTML = '<img src="' + channel.snippet.thumbnails.default.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-  }
-  if (channel && channel.statistics) {
-    document.getElementById('evalSubs').textContent = fmtN(channel.statistics.subscriberCount);
-    document.getElementById('evalViews').textContent = fmtN(channel.statistics.viewCount);
-    document.getElementById('evalVcount').textContent = fmtN(channel.statistics.videoCount);
-  }
-}
-
-function showEvalMainTt(session) {
-  document.getElementById('evalNoAccount').style.display = 'none';
-  document.getElementById('evalLoading').style.display = 'none';
-  document.getElementById('evalMain').style.display = 'block';
-  var profile = session.profile || {};
-  var name = profile.display_name || profile.username || 'TikTok';
-  document.getElementById('evalChannelName').textContent = name;
-  document.getElementById('evalChannelHandle').textContent = 'TikTok';
-  if (profile.avatar_url) document.getElementById('evalAv').innerHTML = '<img src="' + profile.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-  document.getElementById('evalSubs').textContent = fmtN(profile.follower_count);
-  document.getElementById('evalSubs').style.color = 'var(--tt)';
-  document.getElementById('evalViews').textContent = fmtN(profile.likes_count);
-  document.getElementById('evalVcount').textContent = fmtN(profile.video_count);
-  _evalChannelData = { _platform: 'tiktok', snippet: { title: name }, statistics: { subscriberCount: profile.follower_count || 0, viewCount: profile.likes_count || 0, videoCount: profile.video_count || 0 } };
-}
-
-function computeScore(channel, videos) {
-  var st = (channel && channel.statistics) || {};
-  var subs = parseInt(st.subscriberCount || 0), views = parseInt(st.viewCount || 0), vcount = parseInt(st.videoCount || 0);
-  var aScore = subs >= 1000000 ? 20 : subs >= 100000 ? 16 : subs >= 10000 ? 12 : subs >= 1000 ? 8 : subs >= 100 ? 5 : 2;
-  var vpr = subs > 0 ? views / subs : 0;
-  var eScore = vpr >= 200 ? 20 : vpr >= 100 ? 16 : vpr >= 50 ? 12 : vpr >= 20 ? 8 : vpr >= 5 ? 5 : 2;
-  var cScore = vcount >= 200 ? 20 : vcount >= 100 ? 17 : vcount >= 50 ? 14 : vcount >= 20 ? 10 : vcount >= 5 ? 6 : 2;
-  var rScore = 10, lScore = 10;
-  if (videos && videos.length) {
-    var avg = videos.slice(0, 5).reduce(function(s, v) { return s + parseInt((v.statistics && v.statistics.viewCount) || 0); }, 0) / Math.min(5, videos.length);
-    var ratio = subs > 0 ? avg / subs : 0;
-    rScore = ratio >= .5 ? 20 : ratio >= .2 ? 17 : ratio >= .1 ? 13 : ratio >= .05 ? 9 : ratio >= .01 ? 5 : 2;
-    var tv = 0, tl = 0;
-    videos.slice(0, 5).forEach(function(v) { tv += parseInt((v.statistics && v.statistics.viewCount) || 0); tl += parseInt((v.statistics && v.statistics.likeCount) || 0); });
-    var lr = tv > 0 ? tl / tv : 0;
-    lScore = lr >= .06 ? 20 : lr >= .04 ? 17 : lr >= .02 ? 13 : lr >= .01 ? 9 : lr >= .005 ? 5 : 2;
-  }
-  var total = aScore + eScore + cScore + rScore + lScore;
-  return {
-    total: total,
-    ring: total >= 80 ? 'var(--green)' : total >= 65 ? 'var(--gold)' : total >= 50 ? 'var(--blue2)' : 'var(--text2)',
-    verdict: total >= 80 ? '🔥 Top Tier' : total >= 65 ? '⚡ Established' : total >= 50 ? '📈 Growing' : total >= 35 ? '🌱 Early Stage' : '🚀 Just Starting',
-    tier: total >= 80 ? 'Elite' : total >= 65 ? 'Established' : total >= 50 ? 'Growth Stage' : total >= 35 ? 'Emerging' : 'Beginner',
-    metrics: [{ l: 'Audience Size', s: aScore, m: 20 }, { l: 'Engagement', s: eScore, m: 20 }, { l: 'Content Volume', s: cScore, m: 20 }, { l: 'Recent Performance', s: rScore, m: 20 }, { l: 'Like Rate', s: lScore, m: 20 }],
-    raw: { subs: subs, views: views, vcount: vcount, vpr: vpr.toFixed(1) }
+  const status = {
+    ok:               true,
+    ts:               new Date().toISOString(),
+    uptime_secs:      Math.round(process.uptime()),
+    mins_since_ingest: minSinceLast,
+    ingestion_fired:  false
   };
-}
 
-function renderScore(sd) {
-  var ring = document.getElementById('evalRing');
-  var circumference = 314.16;
-  ring.style.stroke = sd.ring;
-  setTimeout(function() { ring.style.strokeDashoffset = circumference - (sd.total / 100) * circumference; }, 80);
-  document.getElementById('evalScoreNum').textContent = sd.total;
-  document.getElementById('evalScoreNum').style.color = sd.ring;
-  document.getElementById('evalVerdict').textContent = sd.verdict;
-  document.getElementById('evalVerdict').style.color = sd.ring;
-  document.getElementById('evalTier').textContent = sd.tier + ' · ' + sd.total + '/100';
-  var barsEl = document.getElementById('evalBars');
-  barsEl.innerHTML = sd.metrics.map(function(m) {
-    var pct = Math.round((m.s / m.m) * 100);
-    return '<div class="eval-metric-row"><div class="eval-metric-label"><span>' + m.l + '</span><span>' + m.s + '/' + m.m + '</span></div>'
-      + '<div class="eval-metric-track"><div class="eval-metric-fill" style="width:0%" data-pct="' + pct + '%"></div></div></div>';
-  }).join('');
-  setTimeout(function() { barsEl.querySelectorAll('.eval-metric-fill').forEach(function(el) { el.style.width = el.dataset.pct; }); }, 200);
-}
-
-async function runEvaluation() {
-  document.getElementById('evalMain').style.display = 'none';
-  document.getElementById('evalNoAccount').style.display = 'none';
-  document.getElementById('evalLoading').style.display = 'block';
-  var ytS = null, ttS = null;
-  try { ytS = YouTubeAuth.getSession(); } catch(e) {}
-  try { ttS = TikTokAuth.getSession(); } catch(e) {}
-
-  if (ytS && ytS.channel) {
-    document.getElementById('evalLoadingMsg').textContent = 'Fetching your YouTube data…';
-    var videos = null;
-    try { var vr = await YouTubeAuth.fetchVideos(ytS.accessToken, 10); videos = vr && vr.items ? vr.items : []; } catch(e) {}
-    var sd = computeScore(ytS.channel, videos); _evalScoreData = sd; _evalChannelData = ytS.channel; _evalVideosData = videos;
-    document.getElementById('evalLoading').style.display = 'none';
-    showEvalMain(ytS.channel, 'youtube'); renderScore(sd);
-    await evalGetIntro(ytS.channel, videos, sd, 'YouTube');
-    toast('✅ Evaluation complete!');
-  } else if (ttS) {
-    document.getElementById('evalLoadingMsg').textContent = 'Fetching your TikTok data…';
-    var ttProfile = ttS.profile || {};
-    try { var pr = await fetch(DIJO + '/tiktok/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: ttS.accessToken }) }); var pd = await pr.json(); if (pd && pd.data && pd.data.user) ttProfile = pd.data.user; } catch(e) {}
-    var ttVids = [];
-    try { var vr2 = await fetch(DIJO + '/tiktok/videos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: ttS.accessToken, max_count: 10 }) }); var vd = await vr2.json(); ttVids = (vd && vd.data && vd.data.videos) || []; } catch(e) {}
-    var ttCh = { _platform: 'tiktok', snippet: { title: ttProfile.display_name || 'TikTok' }, statistics: { subscriberCount: ttProfile.follower_count || 0, viewCount: ttProfile.likes_count || 0, videoCount: ttProfile.video_count || 0 } };
-    var ttVidsForScore = ttVids.map(function(v) { return { statistics: { viewCount: v.view_count || 0, likeCount: v.like_count || 0 } }; });
-    var sd2 = computeScore(ttCh, ttVidsForScore); _evalScoreData = sd2; _evalChannelData = ttCh;
-    document.getElementById('evalLoading').style.display = 'none';
-    showEvalMainTt(ttS); renderScore(sd2);
-    await evalGetIntroTt(ttProfile, ttVids, sd2);
-    toast('✅ TikTok evaluation complete!');
+  if (shouldRun) {
+    status.ingestion_fired = true;
+    // Respond first, then trigger — keeps the cron response fast
+    res.json(status);
+    // POST to our own /ingestion/trigger endpoint internally
+    fetch(`http://localhost:${process.env.PORT || 3000}/ingestion/trigger`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ platform: "all" })
+    }).catch(e => console.error("[Keepalive] Self-trigger failed:", e.message));
+    _lastIngestionAt = now;
   } else {
-    document.getElementById('evalLoading').style.display = 'none';
-    document.getElementById('evalNoAccount').style.display = 'block';
-    toast('⚠️ Connect YouTube or TikTok first');
+    res.json(status);
   }
-}
 
-async function evalGetIntro(channel, videos, score, platform) {
-  if (!checkAccess()) return;
-  var st = (channel && channel.statistics) || {};
-  var name = (channel && channel.snippet && channel.snippet.title) || 'Channel';
-  var topVids = videos ? videos.slice(0, 3).map(function(v, i) {
-    var s = v.statistics || {}; var t = (v.snippet && v.snippet.title) || 'Video';
-    return (i + 1) + '. "' + t + '" — ' + fmtN(s.viewCount) + ' views, ' + fmtN(s.likeCount) + ' likes';
-  }).join('\n') : 'N/A';
-  var prompt = 'Evaluate this ' + platform + ' channel in 3 sentences max. Then 3 bullet action points.\n\nChannel: ' + name + '\nSubscribers: ' + fmtN(st.subscriberCount) + '\nViews: ' + fmtN(st.viewCount) + '\nVideos: ' + (st.videoCount || 0) + '\nScore: ' + score.total + '/100 (' + score.tier + ')\nTop videos:\n' + topVids;
-  try {
-    var reply = await callDijo(prompt, 'creator');
-    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
-    _evalChatHistory = [{ role: 'dijo', content: reply }];
-  } catch(e) {
-    addEvalMsg('dijo', 'Score: <strong>' + score.total + '/100</strong> (' + score.tier + '). Ask me anything about your growth strategy.');
-  }
-}
-
-async function evalGetIntroTt(profile, videos, score) {
-  if (!checkAccess()) return;
-  var name = profile.display_name || 'TikTok account';
-  var topVids = videos.slice(0, 3).map(function(v, i) { return (i + 1) + '. ' + fmtN(v.view_count) + ' views, ' + fmtN(v.like_count) + ' likes'; }).join('\n');
-  var prompt = 'Evaluate this TikTok account in 3 sentences max. Then 3 bullet action points.\n\nAccount: ' + name + '\nFollowers: ' + fmtN(profile.follower_count) + '\nLikes: ' + fmtN(profile.likes_count) + '\nVideos: ' + (profile.video_count || 0) + '\nScore: ' + score.total + '/100 (' + score.tier + ')\nTop videos:\n' + (topVids || 'N/A');
-  try {
-    var reply = await callDijo(prompt, 'creator');
-    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
-    _evalChatHistory = [{ role: 'dijo', content: reply }];
-  } catch(e) {
-    addEvalMsg('dijo', 'TikTok score: <strong>' + score.total + '/100</strong> (' + score.tier + '). Ask me anything.');
-  }
-}
-
-function evalSend() {
-  if (!checkAccess()) return;
-  var i = document.getElementById('evalInput'); var msg = i.value.trim(); if (!msg) return;
-  i.value = ''; evalAsk(msg);
-  document.getElementById('evalChips').style.display = 'none';
-}
-
-async function evalAsk(question) {
-  addEvalMsg('user', escH(question));
-  var ctx = '';
-  if (_evalScoreData && _evalChannelData) {
-    var st = (_evalChannelData.statistics) || {}; var nm = (_evalChannelData.snippet && _evalChannelData.snippet.title) || 'channel';
-    ctx = '[' + nm + ': ' + fmtN(st.subscriberCount) + ' subs/followers, ' + fmtN(st.viewCount) + ' views, ' + (st.videoCount || 0) + ' videos, Score: ' + _evalScoreData.total + '/100 (' + _evalScoreData.tier + ')] ';
-  }
-  var typId = 'typ-' + Date.now();
-  var typEl = document.createElement('div'); typEl.className = 'eval-msg'; typEl.id = typId;
-  typEl.innerHTML = '<div class="eval-av">DJ</div><div class="eval-bubble dijo" style="color:var(--text3);font-style:italic"><span class="spinner spinner-gold" style="width:10px;height:10px;border-width:1.5px"></span> Thinking…</div>';
-  document.getElementById('evalMsgs').appendChild(typEl); scrollEval();
-  try {
-    var reply = await callDijo(ctx + question, 'creator');
-    var te = document.getElementById(typId); if (te) te.remove();
-    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
-    _evalChatHistory.push({ role: 'user', content: question }, { role: 'dijo', content: reply });
-  } catch(e) {
-    var te2 = document.getElementById(typId); if (te2) te2.remove();
-    addEvalMsg('dijo', 'Dijo unavailable — try again in a moment.');
-  }
-}
-
-function addEvalMsg(from, html) {
-  var msgs = document.getElementById('evalMsgs');
-  var div = document.createElement('div'); div.className = 'eval-msg' + (from === 'user' ? ' user' : '');
-  var avHtml = from === 'user' ? '<div class="eval-av you">You</div>' : '<div class="eval-av">DJ</div>';
-  div.innerHTML = avHtml + '<div class="eval-bubble ' + (from === 'user' ? 'user' : 'dijo') + '">' + html + '</div>';
-  msgs.appendChild(div); scrollEval();
-}
-function scrollEval() { var m = document.getElementById('evalMsgs'); if (m) m.scrollTop = m.scrollHeight; }
-function clearEvalChat() {
-  document.getElementById('evalMsgs').innerHTML = '<div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Chat cleared. What would you like to know?</div></div>';
-  _evalChatHistory = []; document.getElementById('evalChips').style.display = 'flex';
-}
-
-/* ─────────────────────────────────────────────
-   COPY HELPERS
-───────────────────────────────────────────── */
-function copyEl(id) {
-  var el = document.getElementById(id); if (!el) return;
-  navigator.clipboard.writeText(el.innerText || el.textContent).then(function() { toast('📋 Copied!'); }).catch(function() {});
-}
-function copyTags(id) {
-  var el = document.getElementById(id); if (!el) return;
-  var text = Array.from(el.querySelectorAll('.ob-tag')).map(function(s) { return s.textContent; }).join(' ');
-  navigator.clipboard.writeText(text).then(function() { toast('📋 Hashtags copied!'); }).catch(function() {});
-}
-
-/* ─────────────────────────────────────────────
-   TOAST
-───────────────────────────────────────────── */
-function toast(msg) {
-  var shelf = document.getElementById('toastShelf');
-  var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
-  shelf.appendChild(el);
-  setTimeout(function() { el.remove(); }, 3400);
-}
-
-/* ─────────────────────────────────────────────
-   KEYBOARD SHORTCUTS
-───────────────────────────────────────────── */
-document.addEventListener('keydown', function(e) {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('sb-item')) {
-    e.preventDefault();
-    e.target.click();
-  }
-  if (e.key === 'Escape') closeSidebar();
+  console.log(`[Keepalive] ping — ${minSinceLast}m since last ingest — fired: ${status.ingestion_fired}`);
 });
 
-/* ─────────────────────────────────────────────
-   TAB NAVIGATION — data-tab event listeners
-   Replaces fragile inline onclick="switchTab(...)"
-───────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('[data-tab]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      switchTab(this.dataset.tab, this);
-    });
-  });
-});
+/* ── /ping — lightweight liveness check used by the frontend ── */
+app.get("/ping", (req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
-/* ─────────────────────────────────────────────
-   SWIPE TO CLOSE SIDEBAR (touch devices)
-───────────────────────────────────────────── */
-(function() {
-  var startX = 0, startY = 0, isDragging = false;
 
-  document.addEventListener('touchstart', function(e) {
-    var sb = document.getElementById('sidebar');
-    if (!sb || !sb.classList.contains('open')) return;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    isDragging = true;
-  }, { passive: true });
+/* ================================================================
+   START SERVER
+================================================================ */
+const PORT = process.env.PORT || 3000;
 
-  document.addEventListener('touchmove', function(e) {
-    if (!isDragging) return;
-    var dx = e.touches[0].clientX - startX;
-    var dy = Math.abs(e.touches[0].clientY - startY);
-    if (dx < -30 && dy < 60) {
-      closeSidebar();
-      isDragging = false;
-    }
-  }, { passive: true });
+// Routes and ingestion must be registered BEFORE listen —
+// any request arriving at startup would 404 if registered inside the callback.
+addIngestionRoutes(app);
+startIngestion();
+_lastIngestionAt = Date.now(); // mark startup as the first ingestion run
 
-  document.addEventListener('touchend', function() { isDragging = false; }, { passive: true });
-})();
-
-/* ─────────────────────────────────────────────
-   CONTENT CALENDAR
-   Rendering is fully owned by calendar.js.
-   loadCalendar() is a no-op shim so any legacy
-   call sites don't throw — calendar.js handles
-   the real work after it initialises.
-───────────────────────────────────────────── */
-function getBestPostTime(i) {
-  var times = ['9:00 AM', '12:30 PM', '6:00 PM', '8:30 PM'];
-  return times[i % times.length];
-}
-
-function loadCalendar() {
-  /* Intentional no-op — calendar.js owns all calendar rendering.
-     Kept so the window.load init call below doesn't throw. */
-}
-
-/* updateTopTrends — alias kept for call sites, now a no-op since
-   radar gauges and Dijo pick are rendered separately */
-function updateTopTrends() {
-  // renderRadarGauges and renderDijoTopPick are called by renderAll / renderFullTrends
-}
-
-/* ─────────────────────────────────────────────
-   INIT
-───────────────────────────────────────────── */
-window.addEventListener('load', async function() {
-  // Auth is handled by auth.js → initAuth() → loadUser().
-  // nav.js runs its own checkAuth() for the nav bar.
-  // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
-  initYouTube();
-  initTikTok();
-  loadCalendar();
-  loadPlatformStatus();
-  await fetchTrends();
-  renderDashTrends();
-  loadOpportunities();
-  renderRadarGauges();
-  renderDijoTopPick();
-  loadBriefing();
-  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
-
-  // Auto-refresh trends every 60 seconds
-  setInterval(async function() {
-    try {
-      var scrollY = window.scrollY;
-      await fetchTrends();
-      renderDashTrends();
-      renderDashOpps();
-      if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
-        renderFullTrends();
-      }
-      console.log('[Trends] Auto refreshed');
-      window.scrollTo(0, scrollY);
-    } catch(e) {
-      console.warn('[Trends] refresh failed');
-    }
-  }, 60000);
+app.listen(PORT, () => {
+  console.log(`ImpactGrid Dijo running on port ${PORT}`);
+  console.log(`[Keepalive] Point cron-job.org at: https://impactgrid-dijo.onrender.com/keepalive (every 10 min)`);
 });
