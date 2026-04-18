@@ -483,68 +483,75 @@ function renderAll() {
 }
 
 async function fetchTrends() {
+  // ── Shared mapper — normalises any trend row from any endpoint ────────────
+  function mapTrend(t, i) {
+    // /trends/cross (v_cross_platform_trends view) may use 'source' instead of 'platform_source'
+    var src = t.platform_source || t.source || 'google';
+    var plat = src === 'youtube' ? 'yt'
+      : src === 'tiktok'  ? 'tt'
+      : src === 'cross'   ? 'cross' : 'gt';
+    var platLbl = src === 'youtube' ? 'YouTube'
+      : src === 'tiktok'  ? 'TikTok'
+      : src === 'cross'   ? 'Cross' : 'Google';
+    var platforms = src === 'cross'
+      ? ['tiktok', 'youtube', 'google']
+      : [src === 'yt' ? 'youtube' : src];
+    return {
+      topic:        t.topic,
+      score:        runTrendScoring(t.trend_score || t.avg_score || 50, platforms),
+      plat:         plat,
+      platLabel:    platLbl,
+      rank:         i + 1,
+      hashtags:     t.hashtags || [],
+      videoCount:   t.video_count  || t.total_videos || 0,
+      totalViews:   t.total_views  || 0,
+      status:       t.status       || 'rising',
+      igPrediction: t.instagram_prediction || 0,
+      confidence:   t.confidence_score || t.velocity_score ||
+                    (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'youtube' ? 70 : 60)
+    };
+  }
+
   // ── PRIMARY: cross-platform endpoint ─────────────────────────────────────
+  // NOTE: /trends/cross returns { trends: [...] } NOT a bare array
   try {
     var ts = Date.now();
     var res = await fetch(DIJO + '/trends/cross?ts=' + ts);
     var data = await res.json();
-    if (data && data.length) {
-      _allTrends = data.map(function(t, i) {
-        var plat = t.platform_source === 'youtube' ? 'yt'
-          : t.platform_source === 'tiktok' ? 'tt'
-          : t.platform_source === 'cross' ? 'cross' : 'gt';
-        var platLbl = t.platform_source === 'youtube' ? 'YouTube'
-          : t.platform_source === 'tiktok' ? 'TikTok'
-          : t.platform_source === 'cross' ? 'Cross' : 'Google';
-        return {
-          topic: t.topic,
-          score: runTrendScoring(t.trend_score || 50, ['tiktok', 'youtube', 'google']),
-          plat: plat, platLabel: platLbl,
-          rank: i + 1, hashtags: t.hashtags || [], videoCount: t.video_count || 0,
-          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0,
-          confidence: t.confidence_score || 90
-        };
-      });
+    // Unwrap either shape: bare array OR { trends: [...] }
+    var crossList = Array.isArray(data) ? data : (data && Array.isArray(data.trends) ? data.trends : null);
+    if (crossList && crossList.length) {
+      _allTrends = crossList.map(mapTrend);
       renderAll();
       return;
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[fetchTrends] /trends/cross failed:', e.message); }
 
   // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
   try {
     var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now());
     var data2 = await res2.json();
-    if (data2.trends && data2.trends.length) {
-      _allTrends = data2.trends.map(function(t, i) {
-        var plat = t.platform_source === 'youtube' ? 'yt'
-          : t.platform_source === 'tiktok' ? 'tt'
-          : t.platform_source === 'cross' ? 'cross' : 'gt';
-        var platLbl = t.platform_source === 'youtube' ? 'YouTube'
-          : t.platform_source === 'tiktok' ? 'TikTok'
-          : t.platform_source === 'cross' ? 'Cross' : 'Google';
-        return {
-          topic: t.topic,
-          score: runTrendScoring(t.trend_score, [t.platform_source === 'cross' ? 'tiktok' : (t.platform_source || 'google'), t.platform_source === 'cross' ? 'youtube' : '', t.platform_source === 'cross' ? 'google' : ''].filter(Boolean)),
-          plat: plat, platLabel: platLbl,
-          rank: i + 1, hashtags: t.hashtags || [], videoCount: t.video_count || 0,
-          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0,
-          confidence: t.confidence_score || (t.platform_source === 'cross' ? 90 : t.platform_source === 'tiktok' ? 75 : t.platform_source === 'youtube' ? 70 : 60)
-        };
-      });
+    var liveList = Array.isArray(data2) ? data2 : (data2 && Array.isArray(data2.trends) ? data2.trends : null);
+    if (liveList && liveList.length) {
+      _allTrends = liveList.map(mapTrend);
       renderAll();
       return;
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[fetchTrends] /trends/live failed:', e.message); }
 
   // ── FALLBACK: Google RSS ──────────────────────────────────────────────────
+  // This is last-resort only — data has no platform diversity or video stats.
+  // If you see this in console regularly, check that /trends/cross and /trends/live
+  // are returning data from Supabase (run /ingestion/debug to inspect).
   try {
+    console.warn('[fetchTrends] Falling back to Google RSS — cross/live endpoints returned no data');
     var rss = await fetch(DIJO + '/trends/google?geo=GB');
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
-      return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 };
+      return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
     });
     renderAll();
-  } catch(e) {}
+  } catch(e) { console.error('[fetchTrends] All endpoints failed:', e.message); }
 }
 
 function trendItemHTML(t) {
