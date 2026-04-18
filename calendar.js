@@ -559,7 +559,7 @@ async function requestNotificationPermission(){
   await new Promise(function(res){ setTimeout(res, 800); });
 
   if (typeof toast === 'function') {
-    toast('📅 Want reminders when it's time to post? Allow notifications when prompted.');
+    toast(`📅 Want reminders when it's time to post? Allow notifications when prompted.`);
   }
   await Notification.requestPermission();
 }
