@@ -118,23 +118,12 @@ function updateBriefing(trends) {
 }
 
 /* ─────────────────────────────────────────────
-   THEME
+   THEME — owned by nav.js (window.toggleTheme).
+   Do NOT redefine toggleTheme here — nav.js runs
+   without defer and sets window.toggleTheme before
+   this file loads. Redefining it here would break
+   the footer and mobile theme buttons.
 ───────────────────────────────────────────── */
-function toggleTheme() {
-  var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
-  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
-}
-(function() {
-  try {
-    if (localStorage.getItem('ig_theme') === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      var btn = document.getElementById('themeBtn');
-      if (btn) btn.textContent = '☀️';
-    }
-  } catch(e) {}
-})();
 
 /* ─────────────────────────────────────────────
    TABS — matches HTML's switchTab(name, sidebarItem)
@@ -163,11 +152,16 @@ function switchTab(name, sidebarItem) {
 }
 
 /* ─────────────────────────────────────────────
-   SIDEBAR (mobile drawer)
-   openSidebar / closeSidebar are also called
-   from HTML onclick attributes.
+   STUDIO SIDEBAR (app drawer — #sidebar)
+   These functions control the studio's own left
+   sidebar (#sidebar), which is separate from
+   nav.js's mobile drawer (#mobSidebar).
+   nav.js owns window.openSidebar / window.closeSidebar
+   for the marketing nav — we must not overwrite those.
+   Instead we define studioOpenSidebar / studioCloseSidebar
+   and also call nav's version so both drawers stay in sync.
 ───────────────────────────────────────────── */
-function openSidebar() {
+function studioOpenSidebar() {
   var sb  = document.getElementById('sidebar');
   var ov  = document.getElementById('mobOverlay');
   var ham = document.querySelector('.hamburger');
@@ -176,15 +170,24 @@ function openSidebar() {
   if (ham) ham.classList.add('is-open');
   document.body.style.overflow = 'hidden';
 }
-function closeSidebar() {
+function studioCloseSidebar() {
   var sb  = document.getElementById('sidebar');
   var ov  = document.getElementById('mobOverlay');
   var ham = document.querySelector('.hamburger');
   if (sb)  sb.classList.remove('open');
   if (ov)  ov.classList.remove('open');
   if (ham) ham.classList.remove('is-open');
+  // Also close nav's mobile drawer if it snuck open
+  var mobSb = document.getElementById('mobSidebar');
+  if (mobSb) mobSb.classList.remove('open');
   document.body.style.overflow = '';
 }
+/* Keep bare names working for HTML onclick="openSidebar()" attributes
+   on the studio page — these shadow nav.js's globals only on this page,
+   but nav.js's #mobSidebar is not used on creator-studio.html so there
+   is no conflict: the studio uses #sidebar, not #mobSidebar. */
+window.openSidebar  = studioOpenSidebar;
+window.closeSidebar = studioCloseSidebar;
 
 /* ─────────────────────────────────────────────
    USER MENU
