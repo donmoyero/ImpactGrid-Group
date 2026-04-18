@@ -57,24 +57,17 @@ const THEMES = {
 
 /* ══════════════════════════════════════════════════════════
    AUTH + ACCESS CONTROL
+   nav.js owns auth — this file reads window.igUser only.
+   No direct supabase.auth calls here.
 ══════════════════════════════════════════════════════════ */
-async function getUser() {
-  try {
-    const sb = window.supabase;
-    if (!sb) return null;
-    const { data } = await sb.auth.getUser();
-    return data?.user || null;
-  } catch {
-    return null;
-  }
+function getCurrentUser() {
+  return window.igUser || null;
 }
 
-async function checkPortfolioAccess() {
-  await initAuth();
-
+function checkPortfolioAccess() {
   if (isAdmin()) return true;
 
-  if (!IG_USER) {
+  if (!getCurrentUser()) {
     showUpgradeBar("Sign up to create your portfolio");
     return false;
   }
@@ -401,7 +394,7 @@ function generateSlug(name) {
    Matches carousel-studio.js callAI pattern exactly
 ══════════════════════════════════════════════════════════ */
 async function startGeneration() {
-  if (!(await checkPortfolioAccess())) return;
+  if (!checkPortfolioAccess()) return;
   const pf = collectOnboardData();
   psState.activePortfolio = pf;
   psState.generating = true;
@@ -1084,6 +1077,12 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(() => { fetch(DIJO_SERVER + "/ping").catch(() => {}); }, 600000);
 
   obValidate();
+});
+
+/* ── Nav sync — mirrors carousel-studio.js pattern ── */
+document.addEventListener('ig-user-ready', function(e) {
+  const user = e.detail;
+  console.log('User ready:', user);
 });
 
 /* ── Contact Form ── */
