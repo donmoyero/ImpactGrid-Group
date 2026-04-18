@@ -54,41 +54,14 @@ function getCalDb() {
   return _calSupabase;
 }
 
-/* ── Get current user ID (sync — use getCalUserIdAsync() for DB operations) ── */
+/* ── Get current user ID — nav.js owns auth, read window.igUser only ── */
 function getCalUserId() {
-  try {
-    // auth.js sets IG_USER via setUser()
-    if (typeof getUser === 'function' && getUser() && getUser().id) return getUser().id;
-    // nav.js sets window.igUser after profile load
-    if (window.igUser && window.igUser.id) return window.igUser.id;
-    // legacy IG_USER global
-    if (window.IG_USER && window.IG_USER.id) return window.IG_USER.id;
-  } catch (e) {}
-  return 'guest-user'; // NEVER null
+  return window.igUser?.id || 'guest-user';
 }
 
-/* ── Async version for operations that can await (use this in savePost, calAutoFill) ── */
+/* ── Async alias — now sync underneath; kept so call sites need no changes ── */
 async function getCalUserIdAsync() {
-  try {
-    // auth.js getUser() — most reliable, already resolved after initAuth()
-    if (typeof getUser === 'function' && getUser() && getUser().id) return getUser().id;
-    // nav.js sets window.igUser after profile load
-    if (window.igUser && window.igUser.id) return window.igUser.id;
-    // legacy IG_USER global
-    if (window.IG_USER && window.IG_USER.id) return window.IG_USER.id;
-
-    // Last resort: ask Supabase directly
-    var c = window.getSupabase ? getSupabase() : null;
-    if (c && c.auth) {
-      if (typeof c.auth.getSession === 'function') {
-        var result = await c.auth.getSession();
-        if (result.data && result.data.session && result.data.session.user) {
-          return result.data.session.user.id;
-        }
-      }
-    }
-  } catch(e) { console.warn('getCalUserIdAsync error:', e); }
-  return 'demo-user';
+  return getCalUserId();
 }
 
 /* ── Niche personalisation ── */
@@ -685,3 +658,10 @@ if (document.readyState === 'loading') {
 } else {
   if (document.getElementById('calWeekGrid')) initCalendar();
 }
+
+/* ── Nav sync — re-render calendar once user is confirmed ── */
+document.addEventListener('ig-user-ready', function(e) {
+  var user = e.detail;
+  console.log('User ready:', user);
+  if (document.getElementById('calWeekGrid')) renderCalendar();
+});
