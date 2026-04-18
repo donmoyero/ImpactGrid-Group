@@ -363,17 +363,67 @@ async function saveNote(dateKey, text) {
 }
 
 /* ── Real Trend Engine ── */
-async function fetchTrends() {
+/* ── Real Trend Engine ─────────────────────────────────────────
+   Reads from _allTrends populated by creator-studio.js fetchTrends().
+   Falls back to fetching /trends/live directly if _allTrends is empty
+   (e.g. calendar is loaded on a page without creator-studio.js).
+   NOTE: This function is intentionally named calFetchTrends (NOT fetchTrends)
+   to avoid overwriting the real fetchTrends() defined in creator-studio.js.
+   calAutoFill calls this one directly.
+─────────────────────────────────────────────────────────────── */
+async function calFetchTrends() {
+  // Best case: creator-studio.js has already loaded real trend data
+  if (window._allTrends && window._allTrends.length) {
+    return window._allTrends.map(function(t) {
+      // Map _allTrends shape → calendar shape
+      // plat: 'tt'|'yt'|'gt'|'cross' → platform: 'tt'|'yt'|'ig'|'li'
+      var platform = t.plat === 'yt' ? 'yt'
+                   : t.plat === 'tt' ? 'tt'
+                   : t.plat === 'cross' ? 'yt'   // cross-platform → default to YouTube for calendar
+                   : 'tt';                         // google → TikTok (short-form fits)
+      return {
+        topic:    t.topic,
+        score:    Math.round(t.score || 50),
+        bestTime: t.plat === 'yt' ? '18:00'
+                : t.plat === 'tt' ? '19:00'
+                : t.plat === 'gt' ? '12:00' : '18:00',
+        platform: platform
+      };
+    });
+  }
+
+  // Fallback: fetch directly from the trends server
+  try {
+    var DIJO_URL = (typeof DIJO !== 'undefined') ? DIJO : 'https://impactgrid-dijo.onrender.com';
+    var res = await fetch(DIJO_URL + '/trends/live?limit=20&ts=' + Date.now());
+    var data = await res.json();
+    var list = data.trends || data || [];
+    if (list.length) {
+      return list.map(function(t) {
+        var src = t.platform_source || 'youtube';
+        var platform = src === 'tiktok' ? 'tt' : src === 'google' ? 'yt' : 'yt';
+        return {
+          topic:    t.topic,
+          score:    Math.round(t.trend_score || 50),
+          bestTime: src === 'tiktok' ? '19:00' : src === 'google' ? '12:00' : '18:00',
+          platform: platform
+        };
+      });
+    }
+  } catch(e) {
+    console.warn('[calendar] calFetchTrends fallback failed:', e.message);
+  }
+
+  // Last resort: static fallback so auto-fill never breaks the UI
   return [
-    { topic: "AI tools creators use",      score: 95, bestTime: "18:30", platform: "tt" },
-    { topic: "Morning routine glow up",    score: 90, bestTime: "09:00", platform: "ig" },
-    { topic: "Side hustle 2026",           score: 88, bestTime: "20:00", platform: "yt" },
-    { topic: "UK street style",            score: 85, bestTime: "17:00", platform: "tt" },
-    { topic: "Productivity hacks",         score: 82, bestTime: "12:00", platform: "li" },
-    { topic: "Budget meal prep UK",        score: 78, bestTime: "19:00", platform: "ig" },
-    { topic: "Viking history myths",       score: 75, bestTime: "20:30", platform: "yt" }
+    { topic: "AI tools creators use",  score: 95, bestTime: "18:30", platform: "tt" },
+    { topic: "Side hustle 2026",       score: 88, bestTime: "20:00", platform: "yt" },
+    { topic: "UK street style",        score: 85, bestTime: "17:00", platform: "tt" },
+    { topic: "Productivity hacks",     score: 82, bestTime: "12:00", platform: "yt" },
+    { topic: "Morning routine",        score: 78, bestTime: "09:00", platform: "tt" },
+    { topic: "Budget meal prep UK",    score: 75, bestTime: "19:00", platform: "yt" },
+    { topic: "Creator behind scenes",  score: 70, bestTime: "20:00", platform: "tt" }
   ];
-  // TODO: replace with real API call to your trends endpoint
 }
 
 /* ── Dijo AI Auto-fill ── */
@@ -383,7 +433,7 @@ async function calAutoFill() {
 
   var weekStart = getWeekStart(calState.weekOffset);
 
-  const allTrends = await fetchTrends();
+  const allTrends = await calFetchTrends();
   // Filter by niche, fall back to all if filter removes everything
   var trends = allTrends.filter(function(t){ return matchesNiche(t.topic); });
   if (!trends.length) trends = allTrends;
