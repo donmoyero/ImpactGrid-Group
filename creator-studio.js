@@ -17,29 +17,29 @@ var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _eva
    updates greeting + avatar/name UI.
 ───────────────────────────────────────────── */
 async function loadUser() {
-  var supabase = getSupabase();
+  const supabase = getSupabase();
   if (!supabase || !supabase.auth) {
-    console.warn("[Auth] loadUser: Supabase not ready");
+    console.warn("[Auth] No auth — continuing as guest");
     return;
   }
 
   try {
-    var result = await supabase.auth.getUser();
-    if (result.data && result.data.user) {
-      setUser(result.data.user);
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      setUser(data.user);
       console.log("USER SYNCED ✅", getUser());
-
       setWelcome();
       updateUserUI();
     } else {
-      console.log("No user found");
+      console.log("[Auth] Guest mode");
     }
   } catch(e) {
-    console.warn("loadUser error:", e);
+    console.warn("[Auth] Auth failed:", e.message);
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadUser);
+// loadUser is called by initAuth() in auth.js after Supabase auth settles.
+// Do not call it here — auth.js is the single trigger to avoid race conditions.
 
 /* ─────────────────────────────────────────────
    UPDATE USER UI — fills name + avatar elements
