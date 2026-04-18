@@ -217,8 +217,8 @@ async function deleteEvent(id){
   if(!confirm('Delete this event and ALL its photos? This cannot be undone.')) return;
   var c = getSupabase();
   try{
-    /* Clean up all storage subfolders (no faces folder anymore) */
-    for(var folder of ['original', 'web', 'selfies', 'celebrant']){
+    /* Clean up all storage subfolders */
+    for(var folder of ['original', 'web', 'thumb', 'selfies', 'celebrant']){
       var { data: files } = await c.storage.from('events').list(id + '/' + folder);
       if(files && files.length)
         await c.storage.from('events').remove(files.map(function(f){ return id + '/' + folder + '/' + f.name; }));
@@ -286,8 +286,9 @@ function handlePhotoInputChange(e){
   e.target.value = '';
 }
 
-/* ── Resize a File/Blob to maxWidth px wide, returns a JPEG Blob ── */
-function resizeImageToWebVersion(file, maxWidth){
+/* ── Resize a File/Blob to maxWidth px wide, returns a JPEG Blob ──
+   quality: 0–1 (e.g. 0.70 for thumbnails, 0.82 for web previews)   ── */
+function resizeImage(file, maxWidth, quality){
   return new Promise(function(resolve){
     var img = new Image();
     var url = URL.createObjectURL(file);
@@ -298,12 +299,18 @@ function resizeImageToWebVersion(file, maxWidth){
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
-      canvas.toBlob(function(blob){ resolve(blob); }, 'image/jpeg', 0.82);
+      canvas.toBlob(function(blob){ resolve(blob); }, 'image/jpeg', quality);
     };
     img.onerror = function(){ URL.revokeObjectURL(url); resolve(file); }; /* fallback to original */
     img.src = url;
   });
 }
+
+/* Thumbnail: max 800px wide, 70% quality → ~80–150 KB, used in gallery grid */
+function resizeImageToThumb(file){ return resizeImage(file, 800, 0.70); }
+
+/* Web preview: max 1400px wide, 82% quality → used for full-screen lightbox view */
+function resizeImageToWebVersion(file){ return resizeImage(file, 1400, 0.82); }
 
 async function uploadPhotos(files){
   if(!selectedEventId){ toast('⚠️', 'No event selected', 'Pick an event first'); return; }
@@ -318,10 +325,11 @@ async function uploadPhotos(files){
       continue;
     }
 
-    var ts       = Date.now() + '-' + Math.random().toString(36).substring(2,8);
-    var origPath = selectedEventId + '/original/' + ts + '.jpg';
-    var webPath  = selectedEventId + '/web/'      + ts + '.jpg';
-    var rowId    = 'prog-' + i;
+    var ts        = Date.now() + '-' + Math.random().toString(36).substring(2,8);
+    var origPath  = selectedEventId + '/original/' + ts + '.jpg';
+    var webPath   = selectedEventId + '/web/'      + ts + '.jpg';
+    var thumbPath = selectedEventId + '/thumb/'    + ts + '.jpg';
+    var rowId     = 'prog-' + i;
 
     prog.innerHTML += '<div id="' + rowId + '" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:6px;">'
       + '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
@@ -344,33 +352,45 @@ async function uploadPhotos(files){
       var c = getSupabase();
 
       /* 1 — Upload original at full resolution */
-      setStatus('Uploading original…', 25, '');
+      setStatus('Uploading original…', 15, '');
       var { error: origErr } = await c.storage.from('events').upload(origPath, file, {
         contentType: 'image/jpeg', upsert: false
       });
       if(origErr) throw origErr;
+      var { data: origUrlData } = c.storage.from('events').getPublicUrl(origPath);
 
-      /* 2 — Generate + upload web-sized preview (max 1400px wide, 82% quality) */
-      setStatus('Creating web preview…', 55, '');
-      var webBlob = await resizeImageToWebVersion(file, 1400);
+      /* 2 — Generate + upload web-sized preview (max 1400px, 82% quality) for lightbox */
+      setStatus('Creating web preview…', 40, '');
+      var webBlob = await resizeImageToWebVersion(file);
+      var webUrl  = origUrlData.publicUrl; /* fallback */
       var { error: webErr } = await c.storage.from('events').upload(webPath, webBlob, {
         contentType: 'image/jpeg', upsert: false
       });
-
-      /* If web upload fails, fall back to using original URL for both */
-      var { data: origUrlData } = c.storage.from('events').getPublicUrl(origPath);
-      var webUrl = origUrlData.publicUrl;
       if(!webErr){
         var { data: webUrlData } = c.storage.from('events').getPublicUrl(webPath);
         webUrl = webUrlData.publicUrl;
       }
 
-      /* 3 — Save to photos table */
-      setStatus('Saving record…', 80, '');
+      /* 3 — Generate + upload thumbnail (max 800px, 70% quality) for gallery grid
+             Target: ~80-150 KB vs 6-8 MB original = ~97% egress reduction per grid view */
+      setStatus('Creating thumbnail…', 65, '');
+      var thumbBlob = await resizeImageToThumb(file);
+      var thumbUrl  = webUrl; /* fallback to web preview if thumb upload fails */
+      var { error: thumbErr } = await c.storage.from('events').upload(thumbPath, thumbBlob, {
+        contentType: 'image/jpeg', upsert: false
+      });
+      if(!thumbErr){
+        var { data: thumbUrlData } = c.storage.from('events').getPublicUrl(thumbPath);
+        thumbUrl = thumbUrlData.publicUrl;
+      }
+
+      /* 4 — Save to photos table */
+      setStatus('Saving record…', 85, '');
       var { error: dbErr } = await c.from('photos').insert({
         event_id    : selectedEventId,
-        preview_url : webUrl,                /* shown in gallery grid — fast to load */
-        original_url: origUrlData.publicUrl  /* used for downloads */
+        preview_url : thumbUrl,              /* gallery grid — tiny, fast (~100 KB) */
+        web_url     : webUrl,                /* lightbox / full-screen view (~400 KB) */
+        original_url: origUrlData.publicUrl  /* download only — full resolution */
       }).select().single();
       if(dbErr) throw dbErr;
 
@@ -425,9 +445,17 @@ async function loadEventPhotos(){
 
     el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;">'
       + data.map(function(p){
+          var viewUrl = p.web_url || p.preview_url;  /* lightbox / full-screen */
+          var dlUrl   = p.original_url || viewUrl;   /* full-res download */
           return '<div style="position:relative;border-radius:var(--r);overflow:hidden;background:var(--bg2);border:1px solid var(--border);">'
             + '<img src="' + esc(p.preview_url) + '" style="width:100%;height:90px;object-fit:cover;" onerror="this.style.background=\'var(--bg3)\'"/>'
-            + '<button onclick="deletePhoto(\'' + p.id + '\',\'' + esc(p.preview_url) + '\',\'' + esc(p.original_url||'') + '\')" '
+            /* View button — opens web-sized version, NOT the original */
+            + '<a href="' + esc(viewUrl) + '" target="_blank" '
+            + 'style="position:absolute;bottom:22px;left:0;right:0;text-align:center;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 0;text-decoration:none;">👁 View</a>'
+            /* Download button — opens original only on explicit click */
+            + '<a href="' + esc(dlUrl) + '" download target="_blank" '
+            + 'style="position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 0;text-decoration:none;">⬇ Download</a>'
+            + '<button onclick="deletePhoto(\'' + p.id + '\',\'' + esc(p.preview_url) + '\',\'' + esc(p.web_url||'') + '\',\'' + esc(p.original_url||'') + '\')" '
             + 'style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:11px;cursor:pointer;">✕</button>'
             + '</div>';
         }).join('')
@@ -437,12 +465,13 @@ async function loadEventPhotos(){
   }
 }
 
-async function deletePhoto(id, previewUrl, originalUrl){
+async function deletePhoto(id, previewUrl, webUrl, originalUrl){
   if(!confirm('Delete this photo?')) return;
   var c    = getSupabase();
   var base = 'https://wedjsnizcvtgptobwugc.supabase.co/storage/v1/object/public/events/';
   try{
     if(previewUrl  && previewUrl.includes(base))  await c.storage.from('events').remove([previewUrl.replace(base, '')]);
+    if(webUrl      && webUrl.includes(base))      await c.storage.from('events').remove([webUrl.replace(base, '')]);
     if(originalUrl && originalUrl.includes(base)) await c.storage.from('events').remove([originalUrl.replace(base, '')]);
   }catch(e){}
   await c.from('photos').delete().eq('id', id);
