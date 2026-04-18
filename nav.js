@@ -116,7 +116,7 @@
                 '<div class="dd-email" id="userEmail"></div>' +
                 '<div class="dd-div"></div>' +
                 '<a href="creator-studio.html">Creator Studio</a>' +
-                '<a href="account.html">Account Settings</a>' +
+                '<a href="settings.html">Account Settings</a>' +
                 '<div class="dd-div"></div>' +
                 '<button onclick="igSignOut()">Sign out</button>' +
               '</div>' +
@@ -314,13 +314,19 @@
     return null;
   }
 
-  /* ── Helper: render avatar into an element (image or initial fallback) ── */
+  /* ── Helper: render avatar into an element (image, animal emoji, or initial fallback) ── */
   function _setAv(el, initial) {
     if (!el) return;
-    var avatar = '';
+    var avatar = ''; var animal = '';
     try { avatar = localStorage.getItem('ig_avatar') || ''; } catch(e) {}
+    try { animal = localStorage.getItem('ig_animal') || ''; } catch(e) {}
     if (avatar) {
       el.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" />';
+    } else if (animal) {
+      /* Animal emoji avatar */
+      el.style.fontSize  = '18px';
+      el.style.background = 'linear-gradient(135deg,#f0f4ff,#e8f0fe)';
+      el.innerHTML = animal;
     } else {
       el.textContent = initial;
     }
@@ -431,8 +437,12 @@
         .single();
 
       if (res.data) {
-        if (res.data.full_name)  name      = res.data.full_name;
-        if (res.data.avatar_url) avatarUrl = res.data.avatar_url;
+        if (res.data.full_name)    name      = res.data.full_name;
+        if (res.data.avatar_url)   avatarUrl = res.data.avatar_url;
+        if (!res.data.avatar_url && res.data.animal_avatar) {
+          /* Store animal so _setAv() picks it up */
+          try { localStorage.setItem('ig_animal', res.data.animal_avatar); } catch(e) {}
+        }
       }
     } catch(e) { /* profiles table unavailable — use fallback name */ }
 
@@ -525,6 +535,39 @@
   } else {
     window.checkAuth();
   }
+
+  /* ── CRITICAL: Also subscribe to auth state changes so Google OAuth (and any
+     delayed session) updates the nav even if DOMContentLoaded already fired ── */
+  (function _subscribeAuthState() {
+    function _doSubscribe() {
+      var client = _getClient();
+      if (!client) return;
+      client.auth.onAuthStateChange(function(event, session) {
+        if (event === 'SIGNED_IN' && session) {
+          var u            = session.user;
+          var fallbackName = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name))
+                            || (u.email && u.email.split('@')[0])
+                            || 'Creator';
+          window.setNavUser(u);
+          _loadProfile(client, u.id, fallbackName, u.email || '');
+        } else if (event === 'SIGNED_OUT') {
+          window.setNavGuest();
+        }
+      });
+    }
+    /* Wait until nav HTML is ready so setNavUser/setNavGuest can find the elements */
+    _whenNavReady(function() {
+      /* Try immediately — client may already exist */
+      if (_getClient()) {
+        _doSubscribe();
+      } else {
+        /* Client not ready yet (scripts still loading) — retry after a tick */
+        setTimeout(function() {
+          if (_getClient()) _doSubscribe();
+        }, 200);
+      }
+    });
+  })();
 
   /* ─────────────────────────────────────────
      PUBLIC API
