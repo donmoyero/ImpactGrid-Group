@@ -217,10 +217,11 @@ function setWelcome() {
   var name;
   if (window.igUser && window.igUser.name) {
     name = window.igUser.firstName || window.igUser.name.split(' ')[0];
-  } else if (typeof getUser === 'function' && getUser()) {
-    name = (getUser().user_metadata && getUser().user_metadata.full_name)
-           ? getUser().user_metadata.full_name.split(' ')[0]
-           : (getUser().email && getUser().email.split('@')[0])
+  } else if (getCurrentUser()) {
+    var _u = getCurrentUser();
+    name = (_u.user_metadata && _u.user_metadata.full_name)
+           ? _u.user_metadata.full_name.split(' ')[0]
+           : (_u.email && _u.email.split('@')[0])
            || 'Creator';
   } else {
     name = 'Creator';
@@ -270,7 +271,7 @@ function checkAccess() {
   if (isAdmin()) return true;
 
   // Not logged in
-  if (!getUser()) {
+  if (!getCurrentUser()) {
     showUpgrade("Create an account to save and unlock more");
     return false;
   }
@@ -290,7 +291,7 @@ function showUpgrade(message) {
 
   var bar = document.createElement('div');
   bar.id = 'upgradeBar';
-  var isLoggedIn = !!getUser();
+  var isLoggedIn = !!getCurrentUser();
 
   bar.innerHTML =
     '<div class="upgrade-inner">'
@@ -338,10 +339,10 @@ function showUpgrade(message) {
   document.head.appendChild(style);
 })();
 
-async function checkCarouselAccess() {
+function checkCarouselAccess() {
   if (isAdmin()) return true;
 
-  if (!getUser()) {
+  if (!getCurrentUser()) {
     showUpgrade('Login required to create carousels');
     return false;
   }
