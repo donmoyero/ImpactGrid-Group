@@ -19,7 +19,7 @@
 ═══════════════════════════════════════════════════════ */
 
 var IG_CONTENT_URL  = 'https://exeiojgldxqaakkybdij.supabase.co';
-var IG_CONTENT_ANON = 'sb_publishable_ZuzIHR43W_7OpCejLpFyTQ_r5HQYHSq';
+var IG_CONTENT_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4ZWlvamdsZHhxYWFra3liZGlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDc4NTcsImV4cCI6MjA4ODkyMzg1N30.aRXgeHqaOxkidwpWVGEOKBQAeo9_C5Fk3Gu5ZlbmxTQ';
 // ↑ This is a publishable (anon) key — safe to include in browser code.
 //   It only grants access to tables with public RLS policies (site_slides, site_content etc.)
 
