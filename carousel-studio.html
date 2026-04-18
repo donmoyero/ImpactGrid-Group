@@ -585,19 +585,29 @@ window.downloadAll = async function(){
 window.addEventListener('load', function(){
   // Render shared nav + footer
   renderNav('carousel-studio.html');
-  // Inject "Carousel Studio" crumb into nav after it renders
+
+  // Inject "Carousel Studio" crumb after the logo
   var navIn = document.querySelector('.nav-in');
   if(navIn){
     var sep = document.createElement('div');
-    sep.className = 'crumb-sep';
-    sep.style.cssText = 'width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 6px;';
+    sep.style.cssText = 'width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 8px;';
     var crumb = document.createElement('span');
-    crumb.className = 'crumb';
-    crumb.style.cssText = 'font-size:11px;color:var(--text3);font-family:var(--fm);letter-spacing:.3px;';
+    crumb.style.cssText = 'font-size:11px;color:var(--text3);font-family:var(--fm);letter-spacing:.3px;white-space:nowrap;';
     crumb.textContent = 'Carousel Studio';
-    var sp = navIn.querySelector('.nav-sp') || navIn.querySelector('.nav-right');
+    var sp = navIn.querySelector('.nav-links') || navIn.querySelector('.nav-right');
     if(sp){ navIn.insertBefore(sep, sp); navIn.insertBefore(crumb, sp); }
   }
+
+  // Measure actual nav height and fit shell exactly beneath it
+  requestAnimationFrame(function(){
+    var nav = document.querySelector('.nav');
+    var shell = document.querySelector('.shell');
+    if(nav && shell){
+      var h = nav.getBoundingClientRect().height;
+      shell.style.marginTop = h + 'px';
+      shell.style.height = 'calc(100vh - ' + h + 'px)';
+    }
+  });
 
   if(typeof ST !== 'undefined'){
     ST.accent = '#f5e400';
