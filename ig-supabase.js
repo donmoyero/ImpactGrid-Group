@@ -7,7 +7,7 @@
 
 /* ── Expose on window so auth.js (and any other module) can read them ── */
 window.SUPABASE_URL      = 'https://wedjsnizcvtgptobwugc.supabase.co';
-window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc'; // full eyJ key here
+window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc';
 
 /* Singleton instance — created once, reused everywhere */
 var _supabaseClient = null;
