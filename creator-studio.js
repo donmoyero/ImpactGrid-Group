@@ -454,11 +454,9 @@ function renderAll() {
   renderDashOpps();
   renderWhatToPost();
   updateTopTrends();
-  // Only re-render chart + meters if the trends tab is currently visible
-  if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
-    renderTrendChart();
-    renderPlatformMeters();
-  }
+  // Chart + meters: always update so data is ready when user switches to tab
+  renderTrendChart();
+  renderPlatformMeters();
 }
 
 async function fetchTrends() {
@@ -592,19 +590,57 @@ function renderDashTrends() {
     return;
   }
 
-  var best = getBest3(_allTrends);
+  // ── Show analytical insight cards — the "why" behind Top Opportunities ──
+  // One best pick per platform with velocity classification + action hint.
+  var best  = getBest3(_allTrends);
   var picks = [best.tiktok, best.youtube, best.google].filter(Boolean);
 
-  // If one or more platforms have no data, pad with next-best overall
   if (picks.length < 3) {
     var usedTopics = new Set(picks.map(function(t) { return t.topic; }));
-    var extras = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
-    while (picks.length < 3 && extras.length) {
-      picks.push(extras.shift());
-    }
+    var extras     = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
+    while (picks.length < 3 && extras.length) picks.push(extras.shift());
   }
 
-  el.innerHTML = picks.map(trendItemHTML).join('');
+  var platColors = { tt: '#ff6464', yt: '#FFD700', gt: '#78b4ff', cross: '#4FB3A5' };
+  var insightLabels = ['🥇 Top Signal', '🥈 Strong Pick', '🥉 Worth Watching'];
+
+  el.innerHTML = picks.map(function(t, idx) {
+    var color     = platColors[t.plat] || 'var(--gold)';
+    var pct       = Math.round((t.score / 10) * 100);
+    var cls       = classifyTrend(t);
+    var clsLabel  = cls === 'blowup'      ? '🔥 Likely to blow up'
+                  : cls === 'rising_fast' ? '⚡ Getting popular fast'
+                  : cls === 'early'       ? '🟢 Early — get in now'
+                  : '📊 Stable trend';
+    var clsColor  = cls === 'blowup'      ? 'var(--green)'
+                  : cls === 'rising_fast' ? 'var(--gold)'
+                  : cls === 'early'       ? '#4FB3A5'
+                  : 'var(--text3)';
+    var actionHint = t.plat === 'tt'    ? 'Post a 30–60s hook video today'
+                   : t.plat === 'yt'    ? 'Best for a 5–10 min explainer'
+                   : t.plat === 'cross' ? 'Works across TikTok + YouTube'
+                   : 'High search demand — SEO content wins';
+    var vidMeta   = t.videoCount > 0
+      ? fmtN(t.videoCount) + ' videos · ' + fmtN(t.totalViews) + ' views'
+      : t.platLabel + ' trend data';
+
+    return '<div class="trend-item" style="cursor:pointer;position:relative;overflow:hidden" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
+      // animated progress stripe behind the card
+      + '<div style="position:absolute;top:0;left:0;height:3px;width:' + pct + '%;background:' + color + ';border-radius:3px 3px 0 0;transition:width 1s ease"></div>'
+      + '<div class="ti-rank" style="color:' + color + '">' + escH(insightLabels[idx] || ('#' + (idx + 1))) + '</div>'
+      + '<div class="ti-info">'
+      +   '<div class="ti-topic">' + escH(t.topic) + '</div>'
+      +   '<div class="ti-meta">' + escH(vidMeta) + '</div>'
+      +   '<div class="ti-badge" style="color:' + clsColor + '">' + clsLabel + '</div>'
+      +   '<div style="font-size:10px;color:var(--text3);margin-top:2px;font-style:italic">' + escH(actionHint) + '</div>'
+      + '</div>'
+      + '<div class="ti-bar-wrap">'
+      +   '<div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
+      +   '<div class="ti-score" style="color:' + color + '">' + t.score.toFixed(1) + '</div>'
+      + '</div>'
+      + '<div class="ti-plat" style="background:' + color + '20;color:' + color + ';border:1px solid ' + color + '40">' + escH(t.platLabel) + '</div>'
+      + '</div>';
+  }).join('');
 }
 
 function renderFullTrends() {
@@ -614,62 +650,106 @@ function renderFullTrends() {
 }
 
 /* ─────────────────────────────────────────────
-   PLATFORM VELOCITY METERS
-   Shows per-platform stats inline above the
-   "What to post" section in the Live Trend tab.
-   Injected into #trendMetersBox (added to HTML).
+   LIVE PLATFORM METERS
+   Three animated meter cards — TikTok, YouTube,
+   Google — each showing the #1 trend for that
+   platform with a live animated fill bar and
+   pulse dot. Updates every 60s via renderAll().
 ───────────────────────────────────────────── */
 function renderPlatformMeters() {
   var el = document.getElementById('trendMetersBox');
   if (!el) return;
-
   if (!_allTrends.length) { el.innerHTML = ''; return; }
 
-  function platStats(plat) {
+  function platBest(plat) {
     var filtered = _allTrends.filter(function(t) { return t.plat === plat; });
     if (!filtered.length) return null;
-    var avg = filtered.reduce(function(s, t) { return s + t.score; }, 0) / filtered.length;
-    var best = filtered.slice().sort(function(a,b){ return b.score - a.score; })[0];
-    return { count: filtered.length, avg: avg, best: best };
+    return filtered.slice().sort(function(a, b) { return b.score - a.score; })[0];
   }
 
-  var tt = platStats('tt');
-  var yt = platStats('yt');
-  var gt = platStats('gt');
-  var cr = platStats('cross');
+  var tt = platBest('tt');
+  var yt = platBest('yt');
+  var gt = platBest('gt');
 
-  function meterCard(icon, label, color, stats, emptyMsg) {
-    if (!stats) {
-      return '<div class="pm-card">'
-        + '<div class="pm-head"><span class="pm-icon">' + icon + '</span><span class="pm-label">' + label + '</span></div>'
-        + '<div class="pm-empty">' + emptyMsg + '</div>'
+  var platConfigs = [
+    { key: 'tt', icon: '🎵', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
+    { key: 'yt', icon: '▶️',  label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
+    { key: 'gt', icon: '🔍', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
+  ];
+
+  // Inject keyframes once
+  if (!document.getElementById('_meterKeyframes')) {
+    var style = document.createElement('style');
+    style.id   = '_meterKeyframes';
+    style.textContent = [
+      '@keyframes meterPulse {',
+      '  0%,100% { opacity:1; transform:scale(1); }',
+      '  50%      { opacity:.4; transform:scale(1.5); }',
+      '}',
+      '@keyframes meterFillIn {',
+      '  from { width:0; }',
+      '}',
+      '.live-meter-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden; }',
+      '.live-meter-card:hover { border-color:var(--gold-glo); }',
+      '.lm-stripe { position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0; }',
+      '.lm-head { display:flex;align-items:center;gap:8px;justify-content:space-between; }',
+      '.lm-icon { font-size:18px; }',
+      '.lm-label { font-size:12px;font-weight:700;color:var(--text2); }',
+      '.lm-score { font-family:"DM Mono",monospace;font-size:20px;font-weight:900; }',
+      '.lm-topic { font-size:13px;font-weight:700;color:var(--text1);line-height:1.3;cursor:pointer; }',
+      '.lm-topic:hover { text-decoration:underline; }',
+      '.lm-bar-wrap { height:8px;background:var(--bg2);border-radius:99px;overflow:hidden; }',
+      '.lm-bar-fill { height:100%;border-radius:99px;animation:meterFillIn .8s ease both; }',
+      '.lm-meta { font-size:10px;color:var(--text3);display:flex;align-items:center;gap:6px; }',
+      '.lm-dot { width:6px;height:6px;border-radius:50%;display:inline-block;animation:meterPulse 1.8s ease-in-out infinite; }',
+      '.lm-cls { font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;border:1px solid; }',
+      '.pm-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;padding:4px 0 8px; }'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
+
+  function meterCard(cfg) {
+    if (!cfg.trend) {
+      return '<div class="live-meter-card">'
+        + '<div class="lm-stripe" style="background:' + cfg.color + '30"></div>'
+        + '<div class="lm-head"><span class="lm-icon">' + cfg.icon + '</span><span class="lm-label">' + cfg.label + '</span></div>'
+        + '<div style="font-size:12px;color:var(--text3);padding:8px 0">' + cfg.emptyMsg + '</div>'
         + '</div>';
     }
-    var pct = Math.round((stats.avg / 10) * 100);
-    return '<div class="pm-card">'
-      + '<div class="pm-head">'
-      +   '<span class="pm-icon">' + icon + '</span>'
-      +   '<span class="pm-label">' + label + '</span>'
-      +   '<span class="pm-count">' + stats.count + ' trend' + (stats.count !== 1 ? 's' : '') + '</span>'
+
+    var t      = cfg.trend;
+    var pct    = Math.round((t.score / 10) * 100);
+    var cls    = classifyTrend(t);
+    var clsLbl = cls === 'blowup' ? '🔥 Blowup' : cls === 'rising_fast' ? '⚡ Rising' : cls === 'early' ? '🟢 Early' : '📊 Stable';
+    var clsClr = cls === 'blowup' ? 'var(--green)' : cls === 'rising_fast' ? 'var(--gold)' : cls === 'early' ? '#4FB3A5' : 'var(--text3)';
+    var vidMeta = t.videoCount > 0
+      ? fmtN(t.videoCount) + ' videos'
+      : (t.confidence ? t.confidence + '% confidence' : 'live data');
+
+    return '<div class="live-meter-card">'
+      + '<div class="lm-stripe" style="background:' + cfg.color + '"></div>'
+      + '<div class="lm-head">'
+      +   '<div style="display:flex;align-items:center;gap:8px">'
+      +     '<span class="lm-icon">' + cfg.icon + '</span>'
+      +     '<span class="lm-label">' + cfg.label + '</span>'
+      +     '<span class="lm-dot" style="background:' + cfg.color + '"></span>'
+      +   '</div>'
+      +   '<span class="lm-score" style="color:' + cfg.color + '">' + t.score.toFixed(1) + '</span>'
       + '</div>'
-      + '<div class="pm-bar-wrap">'
-      +   '<div class="pm-bar-fill" style="width:' + pct + '%;background:' + color + '"></div>'
+      + '<div class="lm-topic" onclick="loadTopic(\'' + escJ(t.topic) + '\')">' + escH(t.topic) + '</div>'
+      + '<div class="lm-bar-wrap">'
+      +   '<div class="lm-bar-fill" style="width:' + pct + '%;background:' + cfg.color + '"></div>'
       + '</div>'
-      + '<div class="pm-stats">'
-      +   '<span class="pm-avg">Avg <strong style="color:' + color + '">' + stats.avg.toFixed(1) + '</strong>/10</span>'
-      +   '<span class="pm-best" onclick="loadTopic(\'' + escJ(stats.best.topic) + '\')" title="Click to generate">'
-      +     '🔝 ' + escH(stats.best.topic.length > 22 ? stats.best.topic.slice(0, 22) + '...' : stats.best.topic)
-      +   '</span>'
+      + '<div class="lm-meta">'
+      +   '<span class="lm-cls" style="color:' + clsClr + ';border-color:' + clsClr + '40">' + clsLbl + '</span>'
+      +   '<span>·</span>'
+      +   '<span>' + escH(vidMeta) + '</span>'
       + '</div>'
       + '</div>';
   }
 
-  el.innerHTML =
-    '<div class="pm-grid">'
-    + meterCard('🎵', 'TikTok',         '#ff6464', tt, 'Not connected yet')
-    + meterCard('▶️',  'YouTube',        '#FFD700', yt, 'Not connected yet')
-    + meterCard('🔍', 'Google Trends',  '#78b4ff', gt, 'No data')
-    + meterCard('🚀', 'Cross-Platform', '#4FB3A5', cr, 'No cross-platform hits yet')
+  el.innerHTML = '<div class="pm-grid">'
+    + platConfigs.map(meterCard).join('')
     + '</div>';
 }
 
@@ -729,87 +809,205 @@ const pointLabelsPlugin = {
   }
 };
 
+/* ─────────────────────────────────────────────
+   LIVE TREND CHART
+   Three lines — TikTok (red), YouTube (gold),
+   Google (blue). X-axis = top trend per platform.
+   Chart re-draws every 60s via renderAll().
+   A subtle pulse animation makes it feel live.
+───────────────────────────────────────────── */
 function renderTrendChart() {
-  const canvas = document.getElementById('trendChart');
+  var canvas = document.getElementById('trendChart');
   if (!canvas) return;
-
-  const ctx = canvas.getContext('2d');
 
   if (window.trendChartInstance) {
     window.trendChartInstance.destroy();
     window.trendChartInstance = null;
   }
 
-  var top7 = _allTrends.slice(0, 7);
-  var topics = top7.map(function(t) { return t.topic.slice(0, 18); });
-  var scores = top7.map(function(t) { return t.score; });
+  // ── Build per-platform top-7 arrays ──────────────────────────────────────
+  function platTop(plat, n) {
+    return _allTrends
+      .filter(function(t) { return t.plat === plat; })
+      .slice().sort(function(a, b) { return b.score - a.score; })
+      .slice(0, n);
+  }
 
+  var ttTrends = platTop('tt',    7);
+  var ytTrends = platTop('yt',    7);
+  var gtTrends = platTop('gt',    7);
+  var crTrends = platTop('cross', 7);
+
+  // ── Unified label set — top topic per platform blended ───────────────────
+  var allTop = _allTrends.slice().sort(function(a, b) { return b.score - a.score; }).slice(0, 7);
+  var labels  = allTop.map(function(t) { return t.topic.length > 16 ? t.topic.slice(0, 16) + '…' : t.topic; });
+
+  // Map each label to each platform's score for that topic (null if no match)
+  function scoreMap(platTrends) {
+    return allTop.map(function(top) {
+      var match = platTrends.find(function(t) { return t.topic === top.topic; });
+      return match ? parseFloat(match.score.toFixed(2)) : null;
+    });
+  }
+
+  var datasets = [];
+
+  if (ttTrends.length) {
+    datasets.push({
+      label:           '🎵 TikTok',
+      data:            scoreMap(ttTrends),
+      tension:         0.45,
+      fill:            false,
+      borderColor:     '#ff6464',
+      backgroundColor: '#ff646430',
+      borderWidth:     2.5,
+      pointRadius:     5,
+      pointHoverRadius: 8,
+      pointBackgroundColor: '#ff6464',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      spanGaps:        true
+    });
+  }
+
+  if (ytTrends.length) {
+    datasets.push({
+      label:           '▶️ YouTube',
+      data:            scoreMap(ytTrends),
+      tension:         0.45,
+      fill:            false,
+      borderColor:     '#FFD700',
+      backgroundColor: '#FFD70030',
+      borderWidth:     2.5,
+      pointRadius:     5,
+      pointHoverRadius: 8,
+      pointBackgroundColor: '#FFD700',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      spanGaps:        true
+    });
+  }
+
+  if (gtTrends.length) {
+    datasets.push({
+      label:           '🔍 Google',
+      data:            scoreMap(gtTrends),
+      tension:         0.45,
+      fill:            false,
+      borderColor:     '#78b4ff',
+      backgroundColor: '#78b4ff30',
+      borderWidth:     2.5,
+      pointRadius:     5,
+      pointHoverRadius: 8,
+      pointBackgroundColor: '#78b4ff',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      spanGaps:        true
+    });
+  }
+
+  if (crTrends.length) {
+    datasets.push({
+      label:           '🚀 Cross',
+      data:            scoreMap(crTrends),
+      tension:         0.45,
+      fill:            false,
+      borderColor:     '#4FB3A5',
+      backgroundColor: '#4FB3A530',
+      borderWidth:     2,
+      borderDash:      [4, 3],
+      pointRadius:     4,
+      pointHoverRadius: 7,
+      pointBackgroundColor: '#4FB3A5',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      spanGaps:        true
+    });
+  }
+
+  // Fallback if somehow no platform data — show all trends as single line
+  if (!datasets.length) {
+    var top7 = _allTrends.slice(0, 7);
+    labels   = top7.map(function(t) { return t.topic.slice(0, 16); });
+    datasets = [{
+      label:           'Trend Score',
+      data:            top7.map(function(t) { return t.score; }),
+      tension:         0.4,
+      fill:            true,
+      backgroundColor: 'rgba(201,126,8,0.10)',
+      borderColor:     '#c97e08',
+      borderWidth:     2,
+      pointRadius:     5,
+      pointHoverRadius: 7,
+      spanGaps:        true
+    }];
+  }
+
+  var ctx = canvas.getContext('2d');
   window.trendChartInstance = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: topics,
-      datasets: [{
-        label: 'Trend Score',
-        data: scores,
-        tension: 0.4,
-        fill: true,
-        backgroundColor: 'rgba(201,126,8,0.10)',
-        borderColor: '#c97e08',
-        borderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: top7.map(function(t) {
-          return t.plat === 'tt'     ? '#ff6464'
-               : t.plat === 'yt'    ? '#FFD700'
-               : t.plat === 'cross' ? '#4FB3A5'
-               :                      '#78b4ff';
-        }),
-        pointBorderColor: '#fff',
-        pointBorderWidth: 1.5
-      }]
-    },
+    data: { labels: labels, datasets: datasets },
     options: {
-      responsive: true,
+      responsive:          true,
       maintainAspectRatio: false,
+      animation: {
+        duration: 800,
+        easing:   'easeInOutQuart'
+      },
+      interaction: {
+        mode:      'index',
+        intersect: false
+      },
       plugins: {
-        legend: { display: false },
+        legend: {
+          display:  true,
+          position: 'top',
+          labels: {
+            color:    '#aaa',
+            font:     { size: 11 },
+            boxWidth: 14,
+            padding:  16
+          }
+        },
         tooltip: {
           backgroundColor: '#111',
-          borderColor: '#c97e08',
-          borderWidth: 1,
+          borderColor:     '#c97e08',
+          borderWidth:     1,
           callbacks: {
-            title: function(items) { return top7[items[0].dataIndex].topic; },
-            label: function(ctx) {
-              var t = top7[ctx.dataIndex];
-              if (!t) return '';
-              return [
-                '📊 Score: ' + t.score.toFixed(1),
-                '📌 ' + (t.platLabel || t.plat),
-                '🎬 Videos: ' + (t.videoCount || 0),
-                '👁 Views: ' + fmtN(t.totalViews)
-              ];
+            label: function(item) {
+              if (item.raw === null) return item.dataset.label + ': no data';
+              return item.dataset.label + ': ' + item.raw.toFixed(1) + '/10';
             }
           }
         }
       },
       scales: {
         x: {
-          grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: { color: '#888', font: { size: 10 }, maxRotation: 30 }
+          grid:  { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#666', font: { size: 10 }, maxRotation: 30 }
         },
         y: {
           beginAtZero: false,
           min: 0, max: 10,
-          grid: { color: 'rgba(0,0,0,0.05)' },
+          grid:  { color: 'rgba(255,255,255,0.04)' },
           ticks: {
-            color: '#888',
-            font: { size: 10 },
-            callback: function(v) { return v + ''; }
+            color: '#666',
+            font:  { size: 10 },
+            callback: function(v) { return v + '/10'; }
           }
         }
       }
     }
   });
+
+  // ── Pulse the live badge next to the chart heading ────────────────────────
+  var liveDot = document.getElementById('chartLiveDot');
+  if (liveDot) {
+    liveDot.style.animation = 'none';
+    // Force reflow then re-apply pulse
+    void liveDot.offsetWidth;
+    liveDot.style.animation = '';
+  }
 }
 
 async function runTrendPrediction() {
@@ -1005,140 +1203,21 @@ function renderOpportunities(data) {
 }
 
 async function loadOpportunities() {
-  // ── TIER 1: Dijo AI recommendations (/ai/recommendations) ────────────────
-  // Sends connected platform context so Dijo can tailor its top 3 picks.
-  // Response includes the raw AI text (hook ideas, formats, posting times)
-  // which renderAIOpportunities parses and displays.
   try {
-    var connectedPlatforms = [];
-    if (typeof YouTubeAuth !== 'undefined' && YouTubeAuth.getSession && YouTubeAuth.getSession()) connectedPlatforms.push('YouTube');
-    if (typeof TikTokAuth  !== 'undefined' && TikTokAuth.getSession  && TikTokAuth.getSession())  connectedPlatforms.push('TikTok');
-
-    var res = await fetch(DIJO + '/ai/recommendations', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        niche:               '',
-        platform:            'All',
-        goal:                'grow',
-        connected_platforms: connectedPlatforms
-      })
-    });
-
-    if (res.ok) {
-      var data = await res.json();
-      if (data.recommendations && data.recommendations.length) {
-        renderAIOpportunities(data.recommendations, data.raw || '');
-        console.log('[Opportunities] AI recommendations loaded ✅');
-        return;
-      }
+    var res = await fetch(DIJO + '/trends/dijo');
+    var data = await res.json();
+    // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
+    // fall back to local rather than showing "No opportunities"
+    if (data && data.length) {
+      renderOpportunities(data);
+    } else {
+      console.warn('[Opportunities] /trends/dijo returned empty — using local fallback');
+      renderDashOpps();
     }
   } catch(e) {
-    console.warn('[Opportunities] /ai/recommendations failed:', e.message);
-  }
-
-  // ── TIER 2: /trends/dijo (scored data, no AI analysis) ───────────────────
-  try {
-    var res2 = await fetch(DIJO + '/trends/dijo');
-    var data2 = await res2.json();
-    if (data2 && data2.length) {
-      renderOpportunities(data2);
-      console.log('[Opportunities] /trends/dijo fallback loaded');
-      return;
-    }
-  } catch(e2) {
-    console.warn('[Opportunities] /trends/dijo failed:', e2.message);
-  }
-
-  // ── TIER 3: local _allTrends (always works) ───────────────────────────────
-  console.warn('[Opportunities] Using local fallback');
-  renderDashOpps();
-}
-
-/* ─────────────────────────────────────────────
-   RENDER AI OPPORTUNITIES
-   Displays Dijo's top 3 recommendations with
-   hook ideas, format, and posting time parsed
-   from the raw AI text. Falls back gracefully
-   if parsing yields nothing usable.
-───────────────────────────────────────────── */
-function renderAIOpportunities(recs, rawText) {
-  var el = document.getElementById('topOppBox');
-  if (!el) return;
-
-  if (!recs || !recs.length) {
+    console.warn('[Opportunities] /trends/dijo failed:', e.message);
     renderDashOpps();
-    return;
   }
-
-  // Parse hook, format, and posting time per opportunity from rawText.
-  // The AI structures its reply as numbered sections so we split on them.
-  var sections = rawText
-    ? rawText.split(/(?=\n?\s*\d+\.\s)/g).filter(function(s) { return s.trim().length > 20; })
-    : [];
-
-  function extractField(text, labels) {
-    // labels is an array of possible header strings
-    for (var li = 0; li < labels.length; li++) {
-      var re = new RegExp(labels[li] + '[:\\s]+([^\\n]{5,120})', 'i');
-      var m  = text.match(re);
-      if (m) return m[1].trim();
-    }
-    return '';
-  }
-
-  var rankLabels = ['#1 Best Pick', '#2 Strong Play', '#3 Worth Watching'];
-  var rankColors = ['var(--gold)', 'var(--green)', 'var(--blue2)'];
-
-  el.innerHTML = recs.slice(0, 3).map(function(rec, idx) {
-    var sec       = sections[idx] || '';
-    var hook      = extractField(sec, ['hook idea', 'hook', 'specific hook']);
-    var format    = extractField(sec, ['content format', 'format', 'exact content format']);
-    var postTime  = extractField(sec, ['best posting time', 'posting time', 'post time']);
-    var whyNow    = extractField(sec, ['why it', 'opportunity right now', 'why']);
-
-    // Score: server returns 0-100, convert to 0-10 display
-    var displayScore = rec.score != null
-      ? Math.min(9.9, parseFloat((rec.score / 10).toFixed(1)))
-      : 6.0;
-    var pct = Math.round((displayScore / 10) * 100);
-
-    var platLabel = rec.platform === 'youtube' ? 'YouTube'
-      : rec.platform === 'tiktok'  ? 'TikTok'
-      : rec.platform === 'cross'   ? 'Cross-platform'
-      : rec.platform === 'multi'   ? 'Multi-platform'
-      : 'Trending';
-    var platIcon = rec.platform === 'tiktok'  ? '🎵'
-      : rec.platform === 'youtube' ? '▶️'
-      : rec.platform === 'cross' || rec.platform === 'multi' ? '🚀'
-      : '🔍';
-
-    var rankColor = rankColors[idx] || 'var(--text2)';
-    var rankLabel = rankLabels[idx] || '';
-
-    // Build the detail rows — only show fields the AI actually returned
-    var detailRows = '';
-    if (hook)     detailRows += '<div style="font-size:11px;color:var(--text2);line-height:1.5"><strong style="color:var(--gold)">Hook:</strong> ' + escH(hook) + '</div>';
-    if (format)   detailRows += '<div style="font-size:11px;color:var(--text2);line-height:1.5"><strong>Format:</strong> ' + escH(format) + '</div>';
-    if (postTime) detailRows += '<div style="font-size:11px;color:var(--text3)">🕐 ' + escH(postTime) + '</div>';
-    if (!detailRows && whyNow) detailRows += '<div style="font-size:11px;color:var(--text2);line-height:1.5">' + escH(whyNow) + '</div>';
-
-    return '<div class="opp-card" onclick="loadTopic(\'' + escJ(rec.topic) + '\')" title="Click to generate content">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">'
-      +   '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + rankColor + ';letter-spacing:.08em;text-transform:uppercase">' + rankLabel + '</span>'
-      +   '<span style="font-family:\'DM Mono\',monospace;font-size:16px;font-weight:900;color:' + rankColor + '">' + displayScore.toFixed(1) + '</span>'
-      + '</div>'
-      + '<div class="opp-header" style="margin-bottom:4px">'
-      +   '<span class="opp-topic">' + platIcon + ' ' + escH(rec.topic) + '</span>'
-      + '</div>'
-      + '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-bottom:8px;overflow:hidden">'
-      +   '<div style="height:100%;width:' + pct + '%;background:' + rankColor + ';border-radius:99px;transition:width .5s ease"></div>'
-      + '</div>'
-      + '<div class="opp-meta" style="margin-bottom:6px">' + escH(platLabel) + (rec.ig_prediction > 0 ? ' · 📸 ' + rec.ig_prediction + '% IG chance' : '') + '</div>'
-      + detailRows
-      + '<div style="font-size:10px;color:var(--text3);font-style:italic;margin-top:6px">⚡ Dijo AI · live data</div>'
-      + '</div>';
-  }).join('');
 }
 
 // Fast in-memory re-render — used by 60s refresh intervals and as fallback.
@@ -1166,11 +1245,19 @@ function renderDashOpps() {
 
 /* ─────────────────────────────────────────────
    WHAT TO POST THIS WEEK 📅
-   Real score + confidence — not random text
+   Uses buildTrendInsights() classifications first.
+   If any section is empty (common when data has
+   low confidence), fills from best-per-platform
+   so cards never show "No trends" when we have data.
 ───────────────────────────────────────────── */
 function renderWhatToPost() {
   var el = document.getElementById('whatToPostBox');
   if (!el) return;
+
+  if (!_allTrends.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">Loading trend data…</div>';
+    return;
+  }
 
   var data = buildTrendInsights();
 
@@ -1182,27 +1269,48 @@ function renderWhatToPost() {
   var fast  = top(data.rising_fast);
   var early = top(data.early);
 
+  // ── Smart fallback — if a section is empty, pull best unused trends ───────
+  var allUsed = new Set(
+    blow.concat(fast).concat(early).map(function(t) { return t.topic; })
+  );
+
+  function fillSection(current, n) {
+    if (current.length >= n) return current;
+    var spares = _allTrends
+      .filter(function(t) { return !allUsed.has(t.topic); })
+      .slice().sort(function(a, b) { return b.score - a.score; });
+    while (current.length < n && spares.length) {
+      var pick = spares.shift();
+      current.push(pick);
+      allUsed.add(pick.topic);
+    }
+    return current;
+  }
+
+  blow  = fillSection(blow,  2);
+  fast  = fillSection(fast,  2);
+  early = fillSection(early, 2);
+
   function itemHTML(t) {
     var platIcon = t.plat === 'tt' ? '🎵' : t.plat === 'yt' ? '▶️' : t.plat === 'cross' ? '🚀' : '🔍';
-    return '<div class="wtp-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content">'
+    var platColor = t.plat === 'tt' ? '#ff6464' : t.plat === 'yt' ? '#FFD700' : t.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
+    return '<div class="wtp-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content" style="cursor:pointer">'
       + '<strong>' + escH(t.topic) + '</strong>'
-      + '<span class="wtp-meta">' + platIcon + ' ' + escH(t.platLabel) + ' · ' + t.score.toFixed(1) + '/10</span>'
+      + '<span class="wtp-meta" style="color:' + platColor + '">' + platIcon + ' ' + escH(t.platLabel) + ' · ' + t.score.toFixed(1) + '/10</span>'
       + '</div>';
   }
 
-  function section(icon, label, items, emptyMsg) {
+  function section(icon, label, items) {
     return '<div class="wtp-section">'
       + '<h4>' + icon + ' ' + label + '</h4>'
-      + (items.length
-          ? items.map(itemHTML).join('')
-          : '<div class="wtp-empty">' + emptyMsg + '</div>')
+      + items.map(itemHTML).join('')
       + '</div>';
   }
 
   el.innerHTML =
-    section('🔥', 'Most likely to blow up',  blow,  'No blowup trends right now — check back soon')
-    + section('⚡', 'Getting popular fast',   fast,  'Nothing surging yet')
-    + section('🟢', 'Still early — get in now', early, 'No early-stage trends detected');
+    section('🔥', 'Most likely to blow up',  blow)
+    + section('⚡', 'Getting popular fast',   fast)
+    + section('🟢', 'Still early — get in now', early);
 }
 
 function loadTopic(topic) {
