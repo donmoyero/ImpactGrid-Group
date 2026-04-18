@@ -343,45 +343,81 @@
       <!-- LIVE TREND -->
       <div class="panel" id="panel-trends">
 
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header">
-            <div class="card-title">
-              📈 What's moving right now
-              <span id="chartLiveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green,#0fa876);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+        <!-- ── THREE PLATFORM CHARTS ── -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px" id="platformChartsGrid">
+
+          <!-- TikTok chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:#ff6464">🎵 TikTok
+                <span id="ttLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6464;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+              </div>
+              <div class="card-tag" style="background:rgba(255,100,100,.1);color:#ff6464;border:1px solid rgba(255,100,100,.2)">Top 3 topics</div>
             </div>
-            <div class="card-tag tag-live-green">LIVE · Updates every 60s</div>
-          </div>
-          <div class="card-body">
-            <div style="height:320px;position:relative;">
-              <canvas id="trendChart"></canvas>
-            </div>
-            <!-- Multi-line chart legend — colours match each platform line -->
-            <div class="chart-legend" style="margin-top:10px">
-              <div class="chart-legend-item"><div class="chart-legend-dot tt"></div>🎵 TikTok</div>
-              <div class="chart-legend-item"><div class="chart-legend-dot yt"></div>▶️ YouTube</div>
-              <div class="chart-legend-item"><div class="chart-legend-dot gt"></div>🔍 Google</div>
-              <div class="chart-legend-item"><div class="chart-legend-dot cross"></div>🚀 Cross-Platform</div>
-            </div>
-            <div class="text-sm" style="margin-top:6px;color:var(--text3)">
-              Each line = one platform · Y axis = trend score (0–10) · Click any point to generate content
+            <div class="card-body">
+              <div style="height:200px;position:relative;">
+                <canvas id="chartTT"></canvas>
+              </div>
+              <div id="chartTTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No TikTok data yet · ingestion runs every 30 min</div>
+              <div id="chartTTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
             </div>
           </div>
+
+          <!-- YouTube chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:#FFD700">▶️ YouTube
+                <span id="ytLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#FFD700;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
+              </div>
+              <div class="card-tag" style="background:rgba(255,215,0,.1);color:#c9a800;border:1px solid rgba(255,215,0,.2)">Top 3 topics</div>
+            </div>
+            <div class="card-body">
+              <div style="height:200px;position:relative;">
+                <canvas id="chartYT"></canvas>
+              </div>
+              <div id="chartYTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No YouTube data yet · ingestion runs every 30 min</div>
+              <div id="chartYTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+            </div>
+          </div>
+
+          <!-- Google chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:#78b4ff">🔍 Google
+                <span id="gtLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#78b4ff;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.6s"></span>
+              </div>
+              <div class="card-tag" style="background:rgba(120,180,255,.1);color:#78b4ff;border:1px solid rgba(120,180,255,.2)">Top 3 topics</div>
+            </div>
+            <div class="card-body">
+              <div style="height:200px;position:relative;">
+                <canvas id="chartGT"></canvas>
+              </div>
+              <div id="chartGTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No Google data yet · ingestion runs every 30 min</div>
+              <div id="chartGTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Radar gauges — rendered by renderRadarGauges() -->
+        <!-- Mobile: stack charts vertically -->
+        <style>
+          @media(max-width:768px){ #platformChartsGrid{ grid-template-columns:1fr !important; } }
+        </style>
+
+        <!-- Fuel gauges — rendered by renderRadarGauges() -->
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
             <div class="card-title">🎯 Platform Momentum
               <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4FB3A5;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
             </div>
-            <div class="card-tag tag-green">Live gauge per platform · click topic to generate</div>
+            <div class="card-tag tag-green">Live gauge · needle moves as topics rise &amp; fall · click to generate</div>
           </div>
           <div class="card-body">
             <div id="radarGaugesBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
           </div>
         </div>
 
-        <!-- Dijo Top Pick — best topic across all platforms + AI reason why -->
+        <!-- Dijo Top Pick -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">🧠 Dijo's Top Pick
@@ -393,6 +429,7 @@
             <div id="dijoTopPickBox"><div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
           </div>
         </div>
+
       </div>
 
       <!-- GENERATOR -->
