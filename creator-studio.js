@@ -1,1765 +1,1220 @@
-/* ═══════════════════════════════════════════════
-   IMPACTGRID CREATOR STUDIO — creator-studio.js
-   Merged & deduplicated — aligned to HTML IDs
-   v2.1 — Mobile fixes: hamburger X animation,
-           sidebar close button, swipe-to-close
-═══════════════════════════════════════════════ */
+// ================================================================
+//  IMPACTGRID / DIJO — Main Server
+//  server.js
+//
+//  Render env vars required:
+//    GROQ_API_KEY
+//    SUPABASE_URL
+//    SUPABASE_SERVICE_KEY
+//    TIKTOK_CLIENT_KEY
+//    TIKTOK_CLIENT_SECRET
+//    TIKTOK_REDIRECT_URI
+//    YOUTUBE_CLIENT_ID
+//    YOUTUBE_CLIENT_SECRET
+//    YOUTUBE_REDIRECT_URI
+//    YOUTUBE_API_KEY          ← YouTube Data API v3 key (for ingestion)
+//    INSTAGRAM_APP_ID
+//    INSTAGRAM_APP_SECRET
+//    INSTAGRAM_REDIRECT_URI
+//    META_WEBHOOK_VERIFY_TOKEN
+//    PEXELS_API_KEY           ← Pexels API key (for carousel media)
+//    STRIPE_SECRET_KEY        ← Stripe secret key
+//    STRIPE_WEBHOOK_SECRET    ← Stripe webhook signing secret
+// ================================================================
 
-var DIJO = 'https://impactgrid-dijo.onrender.com';
-var _allTrends = [];
-var _selectedStyle = 'Educational';
-var trendChartInstance = null;
-var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
+import express from "express";
+import cors    from "cors";
+import dotenv  from "dotenv";
+import Groq    from "groq-sdk";
+import { startIngestion, addIngestionRoutes } from "./ingestion.js";
+import { generateCarousel }                   from "./carousel-engine.js";
+import { generatePortfolioContent }           from "./portfolio-engine.js";
+import { Resend }                             from "resend";
+import Stripe                                from "stripe";
 
-/* ─────────────────────────────────────────────
-   LOAD USER — called on DOMContentLoaded
-   Syncs user from Supabase session, then
-   updates greeting + avatar/name UI.
-───────────────────────────────────────────── */
-async function loadUser() {
-  const supabase = getSupabase();
-  if (!supabase || !supabase.auth) {
-    console.warn("[Auth] No auth — continuing as guest");
-    return;
-  }
+dotenv.config();
+
+const app    = express();
+const resend = new Resend(process.env.RESEND_API_KEY);
+const groq   = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+app.use(cors());
+
+/* ================================================================
+   STRIPE WEBHOOK
+   ⚠️  Must be BEFORE app.use(express.json()) — Stripe needs raw body
+================================================================ */
+app.post("/stripe-webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
 
   try {
-    const { data } = await supabase.auth.getUser();
-    if (data?.user) {
-      setUser(data.user);
-      console.log("USER SYNCED ✅", getUser());
-      setWelcome();
-      updateUserUI();
-    } else {
-      console.log("[Auth] Guest mode");
-    }
-  } catch(e) {
-    console.warn("[Auth] Auth failed:", e.message);
-  }
-}
-
-// loadUser is called by initAuth() in auth.js after Supabase auth settles.
-// Do not call it here — auth.js is the single trigger to avoid race conditions.
-
-/* ─────────────────────────────────────────────
-   UPDATE USER UI — fills name + avatar elements
-   Uses data-user-name / data-user-avatar attrs,
-   with fallback to profileName / profileAvatar IDs.
-───────────────────────────────────────────── */
-function updateUserUI() {
-  if (!getUser()) return;
-
-  var name =
-    (getUser().user_metadata && getUser().user_metadata.full_name) ||
-    (getUser().email && getUser().email.split('@')[0]) ||
-    'Creator';
-
-  var avatar =
-    (getUser().user_metadata && getUser().user_metadata.avatar_url) || null;
-
-  // data-user-name elements
-  var nameEls = document.querySelectorAll('[data-user-name]');
-  nameEls.forEach(function(el) { el.textContent = name; });
-
-  // data-user-avatar elements
-  var avatarEls = document.querySelectorAll('[data-user-avatar]');
-  avatarEls.forEach(function(el) {
-    if (avatar) {
-      el.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">';
-    } else {
-      el.textContent = name.charAt(0).toUpperCase();
-    }
-  });
-
-  // Fallback: also update profileName / profileAvatar by ID
-  var cardName = document.getElementById('profileName');
-  var cardAv   = document.getElementById('profileAvatar');
-  if (cardName) cardName.textContent = name;
-  if (cardAv) {
-    if (avatar) {
-      cardAv.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">';
-    } else {
-      cardAv.textContent = name.charAt(0).toUpperCase();
-    }
-  }
-}
-
-/* ─────────────────────────────────────────────
-   BRIEFING
-───────────────────────────────────────────── */
-
-
-function safeTopic(t) {
-  return t?.topic || 'No data';
-}
-
-function updateBriefing(trends) {
-  const briefEl = document.getElementById('dijoBrief');
-  if (!briefEl) return;
-
-  const src = trends || _allTrends;
-  if (!src || !src.length) {
-    briefEl.textContent = 'No trends yet · Check back later';
-    return;
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error("[Stripe] Webhook signature error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  const best = getBest3(src);
-  briefEl.textContent = `📡 ${safeTopic(best.tiktok)} · ${safeTopic(best.youtube)} · ${safeTopic(best.google)}`;
-}
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const email   = session.customer_details?.email;
 
-/* ─────────────────────────────────────────────
-   THEME
-───────────────────────────────────────────── */
-function toggleTheme() {
-  var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
-  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
-}
-(function() {
-  try {
-    if (localStorage.getItem('ig_theme') === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      var btn = document.getElementById('themeBtn');
-      if (btn) btn.textContent = '☀️';
+    console.log("[Stripe] Payment received from:", email);
+
+    try {
+      let plan = "pro"; // default
+      // if (session.amount_total > 1300) plan = "enterprise"; // upgrade later
+
+      const { error } = await _aiSupabase
+        .from("users")
+        .update({ plan })
+        .eq("email", email);
+
+      if (error) {
+        console.error("[Stripe] Supabase update error:", error.message);
+      } else {
+        console.log("[Stripe] Plan updated to:", plan, "for", email);
+      }
+    } catch (err) {
+      console.error("[Stripe] Update failed:", err.message);
     }
-  } catch(e) {}
-})();
-
-/* ─────────────────────────────────────────────
-   TABS — matches HTML's switchTab(name, sidebarItem)
-───────────────────────────────────────────── */
-function switchTab(name, sidebarItem) {
-  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.tab-btn:not(.tab-soon)').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.sb-item').forEach(function(i) { i.classList.remove('active'); });
-
-  var panel = document.getElementById('panel-' + name);
-  if (panel) panel.classList.add('active');
-  var tb = document.getElementById('tab-' + name);
-  if (tb) tb.classList.add('active');
-  if (sidebarItem) sidebarItem.classList.add('active');
-
-  var ca = document.getElementById('contentArea');
-  if (ca) ca.scrollTop = 0;
-
-  closeSidebar();
-
-  if (name === 'trends' && _allTrends.length) renderFullTrends();
-  if (name === 'evaluator') initEvaluator();
-  if (name === 'calendar') {
-    if (typeof loadCalendar === 'function') loadCalendar();
   }
-}
 
-/* ─────────────────────────────────────────────
-   SIDEBAR (mobile drawer)
-   openSidebar / closeSidebar are also called
-   from HTML onclick attributes.
-───────────────────────────────────────────── */
-function openSidebar() {
-  var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('mobOverlay');
-  var ham = document.querySelector('.hamburger');
-  if (sb)  sb.classList.add('open');
-  if (ov)  ov.classList.add('open');
-  if (ham) ham.classList.add('is-open');
-  document.body.style.overflow = 'hidden';
-}
-function closeSidebar() {
-  var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('mobOverlay');
-  var ham = document.querySelector('.hamburger');
-  if (sb)  sb.classList.remove('open');
-  if (ov)  ov.classList.remove('open');
-  if (ham) ham.classList.remove('is-open');
-  document.body.style.overflow = '';
-}
-
-/* ─────────────────────────────────────────────
-   USER MENU
-   Nav dropdown is owned by nav.js (toggleDD / #uDrop).
-   This click-outside listener is a safety net only.
-───────────────────────────────────────────── */
-document.addEventListener('click', function(e) {
-  var d = document.getElementById('uDrop');
-  if (d && !e.target.closest('.user-btn')) d.classList.remove('open');
+  res.json({ received: true });
 });
 
-/* ─────────────────────────────────────────────
-   AUTH
-   Nav UI (setNavUser, igSignOut, checkAuth) is
-   fully owned by nav.js — do not duplicate here.
-   Studio-specific auth work lives in loadUser()
-   which is called by auth.js after initAuth().
-───────────────────────────────────────────── */
+app.use(express.json());
 
-async function loadProfile() {
-  const supabase = getSupabase();
-  if (!supabase) { console.warn("[Auth] loadProfile: Supabase not ready"); return; }
-  let user;
+/* ── Health check ── */
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: "ImpactGrid Dijo", ts: new Date().toISOString() });
+});
+
+/* ── Keep-warm ping ── */
+app.get("/ping", (req, res) => res.json({ pong: true }));
+
+
+/* ================================================================
+   CHAT ENDPOINT
+================================================================ */
+app.post("/chat", async (req, res) => {
   try {
-    const { data } = await supabase.auth.getUser();
-    user = data?.user;
-  } catch (e) {
-    console.warn("[Auth] loadProfile getUser failed:", e.message);
-    return;
+    const { message, mode = "adviser" } = req.body;
+    if (!message) return res.status(400).json({ error: "No message provided" });
+
+    const systemPrompts = {
+      adviser: `You are Dijo, ImpactGrid's AI financial adviser for small business owners.
+You speak plainly and directly — no jargon, no waffle.
+You give specific, actionable financial advice based on the data provided.
+Always be honest even if the news is tough.
+Keep responses concise and practical.
+Format responses clearly with short paragraphs.
+Use bullet points sparingly.`,
+
+      dashboard: `You are Dijo, an AI financial analyst embedded in ImpactGrid.
+Analyse the financial data provided and give clear, specific insights.
+Focus on trends, risks, and opportunities.
+Be direct and numbers-focused.`,
+
+      group: `You are Dijo, ImpactGrid's AI adviser for the ImpactGrid Group platform.
+You help business owners and investors understand financial performance.
+Be professional, clear, and actionable.`,
+
+      creator: `You are the ImpactGrid Creator Intelligence Engine — a data-driven AI that helps creators and businesses identify viral content opportunities.
+You analyse trends and generate optimised content for TikTok, YouTube, and Instagram.
+When asked to generate content, respond with a hook, caption, hashtags, and posting advice.
+Be specific, direct, and data-driven. No generic advice.`,
+
+      carousel: `You are Dijo, ImpactGrid's carousel content engine.
+You generate structured carousel slide content for LinkedIn, Instagram, and TikTok.
+Your output must follow the EXACT format requested — no deviations, no commentary.
+Every headline is SHORT (max 8 words), punchy, and scroll-stopping.
+Every sub-line adds context without padding.
+The first slide is always the hook. The last slide is always a CTA.
+You write like a top creator, not a copywriter. Sharp, real, direct.
+Never write more than is asked for. Format only. No explanations.`
+    };
+
+    const systemPrompt = systemPrompts[mode] || systemPrompts.adviser;
+
+    const completion = await groq.chat.completions.create({
+      model:       "llama-3.3-70b-versatile",
+      max_tokens:  1024,
+      temperature: 0.7,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: message }
+      ]
+    });
+
+    const reply = completion.choices[0]?.message?.content || "I couldn't generate a response.";
+    res.json({ reply });
+
+  } catch (err) {
+    console.error("[Dijo] Error:", err.message);
+    res.status(500).json({ error: "AI service error", details: err.message });
   }
-  if (!user) return;
+});
 
-  const { data } = await supabase
-    .from('profiles')
-    .select('full_name, avatar_url')
-    .eq('id', user.id)
-    .single();
 
-  if (!data) return;
+/* ================================================================
+   META WEBHOOK
+================================================================ */
+app.get("/webhook", (req, res) => {
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
+  const mode         = req.query["hub.mode"];
+  const token        = req.query["hub.verify_token"];
+  const challenge    = req.query["hub.challenge"];
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("[Meta Webhook] Verified");
+    res.status(200).send(challenge);
+  } else {
+    res.status(403).json({ error: "Verification failed" });
+  }
+});
 
-  const name = data.full_name || (user.email && user.email.split('@')[0]) || 'Creator';
+app.post("/webhook", (req, res) => {
+  console.log("[Meta Webhook] Event:", JSON.stringify(req.body));
+  if (req.body.object === "instagram") {
+    req.body.entry?.forEach((e) => e.changes?.forEach((c) =>
+      console.log("[Meta Webhook] Instagram:", c.field, c.value)
+    ));
+  }
+  res.status(200).send("EVENT_RECEIVED");
+});
 
-  // NAME
-  const nameEl = document.getElementById('userName');
-  if (nameEl) nameEl.textContent = name;
 
-  // AVATAR
-  const avEl = document.getElementById('userAv');
-  if (avEl) {
-    if (data.avatar_url) {
-      avEl.innerHTML =
-        `<img src="${data.avatar_url}?t=${Date.now()}" 
-        style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
-    } else {
-      avEl.textContent = name.charAt(0).toUpperCase();
+/* ================================================================
+   TIKTOK ROUTES
+================================================================ */
+app.post("/tiktok/token", async (req, res) => {
+  const { code, redirect_uri, code_verifier } = req.body;
+  if (!code || !code_verifier) return res.status(400).json({ error: "Missing code or code_verifier" });
+  try {
+    const response = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_key:    process.env.TIKTOK_CLIENT_KEY,
+        client_secret: process.env.TIKTOK_CLIENT_SECRET,
+        code,
+        grant_type:    "authorization_code",
+        redirect_uri:  redirect_uri || process.env.TIKTOK_REDIRECT_URI,
+        code_verifier
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) return res.status(400).json({ error: data.error || "Token exchange failed", details: data });
+    res.json({
+      access_token:  data.access_token,
+      open_id:       data.open_id,
+      expires_in:    data.expires_in,
+      refresh_token: data.refresh_token,
+      scope:         data.scope
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Token exchange failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/profile", async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const fields = "open_id,avatar_url,display_name,bio_description,is_verified,follower_count,following_count,likes_count,video_count";
+    const response = await fetch(
+      `https://open.tiktokapis.com/v2/user/info/?fields=${fields}`,
+      { method: "GET", headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const data = await response.json();
+    console.log("[TikTok /profile] Response:", JSON.stringify(data).slice(0, 300));
+    if (data?.error?.code && data.error.code !== "ok") {
+      return res.status(400).json({ error: "TikTok profile error", details: data });
     }
+    res.json(data);
+  } catch (err) {
+    console.error("[TikTok /profile] Exception:", err.message);
+    res.status(500).json({ error: "Profile fetch failed", details: err.message });
   }
+});
 
-  // PROFILE CARD (if exists)
-  const cardName = document.getElementById('profileName');
-  const cardAv   = document.getElementById('profileAvatar');
-
-  if (cardName) cardName.textContent = name;
-
-  if (cardAv) {
-    if (data.avatar_url) {
-      cardAv.innerHTML =
-        `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
-    } else {
-      cardAv.textContent = name.charAt(0).toUpperCase();
+app.post("/tiktok/videos", async (req, res) => {
+  const { access_token, max_count } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const fields = "id,title,cover_image_url,video_description,duration,like_count,comment_count,share_count,view_count,create_time";
+    const response = await fetch(
+      `https://open.tiktokapis.com/v2/video/list/?fields=${fields}`,
+      {
+        method:  "POST",
+        headers: { "Authorization": "Bearer " + access_token, "Content-Type": "application/json" },
+        body:    JSON.stringify({ max_count: max_count || 10 })
+      }
+    );
+    const data = await response.json();
+    console.log("[TikTok /videos] Status:", response.status, "Response:", JSON.stringify(data).slice(0, 300));
+    if (data?.error?.code && data.error.code !== "ok") {
+      return res.status(400).json({ error: "TikTok videos error", details: data });
     }
+    res.json(data);
+  } catch (err) {
+    console.error("[TikTok /videos] Exception:", err.message);
+    res.status(500).json({ error: "Videos fetch failed", details: err.message });
   }
+});
+
+app.post("/tiktok/publish", async (req, res) => {
+  const { access_token, video_url, caption, privacy_level } = req.body;
+  if (!access_token || !video_url) return res.status(400).json({ error: "Missing access_token or video_url" });
+  try {
+    const response = await fetch("https://open.tiktokapis.com/v2/post/publish/video/init/", {
+      method:  "POST",
+      headers: { "Authorization": "Bearer " + access_token, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        post_info:   { title: caption || "", privacy_level: privacy_level || "PUBLIC_TO_EVERYONE", disable_duet: false, disable_comment: false, disable_stitch: false },
+        source_info: { source: "PULL_FROM_URL", video_url }
+      })
+    });
+    const data = await response.json();
+    if (!response.ok || (data.error && data.error.code !== "ok")) return res.status(400).json({ error: "Publish failed", details: data });
+    res.json({ publish_id: data.data?.publish_id, status: "publishing" });
+  } catch (err) {
+    res.status(500).json({ error: "Publish failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/share", async (req, res) => {
+  const { access_token, video_url, title } = req.body;
+  if (!access_token || !video_url) return res.status(400).json({ error: "Missing access_token or video_url" });
+  try {
+    const verify = await fetch("https://open.tiktokapis.com/v2/user/info/?fields=open_id", {
+      headers: { "Authorization": "Bearer " + access_token }
+    });
+    if (!verify.ok) return res.status(401).json({ error: "Invalid or expired access token" });
+    res.json({ share_url: video_url, title: title || "", client_key: process.env.TIKTOK_CLIENT_KEY, status: "ready" });
+  } catch (err) {
+    res.status(500).json({ error: "Share failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/refresh", async (req, res) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) return res.status(400).json({ error: "Missing refresh_token" });
+  try {
+    const response = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_key:    process.env.TIKTOK_CLIENT_KEY,
+        client_secret: process.env.TIKTOK_CLIENT_SECRET,
+        grant_type:    "refresh_token",
+        refresh_token
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) return res.status(400).json({ error: "Token refresh failed", details: data });
+    res.json({ access_token: data.access_token, expires_in: data.expires_in, refresh_token: data.refresh_token });
+  } catch (err) {
+    res.status(500).json({ error: "Token refresh failed", details: err.message });
+  }
+});
+
+app.post("/tiktok/save-token", async (req, res) => {
+  const { open_id, access_token, refresh_token, expires_in, scope, display_name, avatar_url } = req.body;
+  if (!open_id || !access_token) return res.status(400).json({ error: "Missing open_id or access_token" });
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const expiresAt = new Date(Date.now() + (expires_in || 86400) * 1000).toISOString();
+    const { error } = await sb.from("tiktok_tokens").upsert({
+      open_id,
+      access_token,
+      refresh_token: refresh_token || "",
+      expires_at:    expiresAt,
+      scope:         scope || "",
+      display_name:  display_name || "",
+      avatar_url:    avatar_url || "",
+      updated_at:    new Date().toISOString()
+    }, { onConflict: "open_id" });
+    if (error) {
+      console.error("[TikTok save-token] Supabase error:", error.message);
+      return res.status(500).json({ error: "Failed to save token", details: error.message });
+    }
+    console.log("[TikTok save-token] Saved token for:", display_name || open_id);
+    res.json({ saved: true, open_id });
+  } catch (err) {
+    console.error("[TikTok save-token] Exception:", err.message);
+    res.status(500).json({ error: "Token save failed", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   INSTAGRAM ROUTES
+================================================================ */
+app.post("/instagram/token", async (req, res) => {
+  const { code, redirect_uri } = req.body;
+  if (!code) return res.status(400).json({ error: "Missing code" });
+  try {
+    const shortRes  = await fetch("https://api.instagram.com/oauth/access_token", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id:     process.env.INSTAGRAM_APP_ID,
+        client_secret: process.env.INSTAGRAM_APP_SECRET,
+        grant_type:    "authorization_code",
+        redirect_uri:  redirect_uri || process.env.INSTAGRAM_REDIRECT_URI,
+        code
+      }).toString()
+    });
+    const shortData = await shortRes.json();
+    if (!shortRes.ok || shortData.error) return res.status(400).json({ error: "Token exchange failed", details: shortData });
+    const longRes  = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_APP_SECRET}&access_token=${shortData.access_token}`);
+    const longData = await longRes.json();
+    if (!longRes.ok || longData.error) return res.json({ access_token: shortData.access_token, user_id: shortData.user_id, expires_in: 3600 });
+    res.json({ access_token: longData.access_token, user_id: shortData.user_id, expires_in: longData.expires_in || 5184000 });
+  } catch (err) {
+    res.status(500).json({ error: "Token exchange failed", details: err.message });
+  }
+});
+
+app.post("/instagram/profile", async (req, res) => {
+  const { access_token, user_id } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const uid  = user_id || "me";
+    const data = await (await fetch(`https://graph.instagram.com/v19.0/${uid}?fields=id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url,website&access_token=${access_token}`)).json();
+    if (data.error) return res.status(400).json({ error: "Failed to fetch profile", details: data });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Profile fetch failed", details: err.message });
+  }
+});
+
+app.post("/instagram/media", async (req, res) => {
+  const { access_token, user_id } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const uid  = user_id || "me";
+    const data = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/media?fields=id,caption,media_type,media_url,thumbnail_url,timestamp,like_count,comments_count,permalink&limit=12&access_token=${access_token}`)).json();
+    if (data.error) return res.status(400).json({ error: "Failed to fetch media", details: data });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Media fetch failed", details: err.message });
+  }
+});
+
+app.post("/instagram/insights", async (req, res) => {
+  const { access_token, user_id } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const uid  = user_id || "me";
+    const data = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/insights?metric=reach,impressions,profile_views,follower_count&period=day&access_token=${access_token}`)).json();
+    if (data.error) return res.status(400).json({ error: "Failed to fetch insights", details: data });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Insights fetch failed", details: err.message });
+  }
+});
+
+app.post("/instagram/publish", async (req, res) => {
+  const { access_token, user_id, image_url, caption } = req.body;
+  if (!access_token || !image_url) return res.status(400).json({ error: "Missing access_token or image_url" });
+  try {
+    const uid           = user_id || "me";
+    const containerData = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/media`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ image_url, caption: caption || "", access_token })
+    })).json();
+    if (containerData.error) return res.status(400).json({ error: "Failed to create container", details: containerData });
+    const publishData = await (await fetch(`https://graph.instagram.com/v19.0/${uid}/media_publish`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ creation_id: containerData.id, access_token })
+    })).json();
+    if (publishData.error) return res.status(400).json({ error: "Failed to publish", details: publishData });
+    res.json({ media_id: publishData.id, status: "published" });
+  } catch (err) {
+    res.status(500).json({ error: "Publish failed", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   YOUTUBE ROUTES
+================================================================ */
+app.post("/youtube/token", async (req, res) => {
+  const { code, redirect_uri } = req.body;
+  if (!code) return res.status(400).json({ error: "Missing code" });
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id:     process.env.YOUTUBE_CLIENT_ID,
+        client_secret: process.env.YOUTUBE_CLIENT_SECRET,
+        redirect_uri:  redirect_uri || process.env.YOUTUBE_REDIRECT_URI,
+        grant_type:    "authorization_code"
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      console.error("[YouTube /token] Error:", data);
+      return res.status(400).json({ error: "Token exchange failed", details: data });
+    }
+    res.json({
+      access_token:  data.access_token,
+      refresh_token: data.refresh_token,
+      expires_in:    data.expires_in,
+      token_type:    data.token_type
+    });
+  } catch (err) {
+    console.error("[YouTube /token] Exception:", err.message);
+    res.status(500).json({ error: "Token exchange failed", details: err.message });
+  }
+});
+
+app.post("/youtube/channel", async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const response = await fetch(
+      "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&mine=true",
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      console.error("[YouTube /channel] Error:", data);
+      return res.status(400).json({ error: "Failed to fetch channel", details: data });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("[YouTube /channel] Exception:", err.message);
+    res.status(500).json({ error: "Channel fetch failed", details: err.message });
+  }
+});
+
+app.post("/youtube/videos", async (req, res) => {
+  const { access_token, max_results } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const channelRes  = await fetch(
+      "https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true",
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const channelData = await channelRes.json();
+    const uploadsId   = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsId) return res.status(404).json({ error: "No uploads playlist found" });
+
+    const videosRes  = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=${max_results || 10}`,
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const videosData = await videosRes.json();
+    if (!videosRes.ok || videosData.error) {
+      console.error("[YouTube /videos] Error:", videosData);
+      return res.status(400).json({ error: "Failed to fetch videos", details: videosData });
+    }
+
+    const videoIds = videosData.items?.map((v) => v.contentDetails.videoId).join(",");
+    if (!videoIds) return res.json({ items: [] });
+
+    const statsRes  = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoIds}`,
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const statsData = await statsRes.json();
+    res.json(statsData);
+  } catch (err) {
+    console.error("[YouTube /videos] Exception:", err.message);
+    res.status(500).json({ error: "Videos fetch failed", details: err.message });
+  }
+});
+
+app.post("/youtube/analytics", async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access_token" });
+  try {
+    const endDate   = new Date().toISOString().split("T")[0];
+    const startDate = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const response  = await fetch(
+      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,averageViewDuration,subscribersGained,subscribersLost,likes,comments&dimensions=day&sort=day`,
+      { headers: { "Authorization": "Bearer " + access_token } }
+    );
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      console.error("[YouTube /analytics] Error:", data);
+      return res.status(400).json({ error: "Failed to fetch analytics", details: data });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("[YouTube /analytics] Exception:", err.message);
+    res.status(500).json({ error: "Analytics fetch failed", details: err.message });
+  }
+});
+
+app.post("/youtube/refresh", async (req, res) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) return res.status(400).json({ error: "Missing refresh_token" });
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        refresh_token,
+        client_id:     process.env.YOUTUBE_CLIENT_ID,
+        client_secret: process.env.YOUTUBE_CLIENT_SECRET,
+        grant_type:    "refresh_token"
+      }).toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) return res.status(400).json({ error: "Token refresh failed", details: data });
+    res.json({ access_token: data.access_token, expires_in: data.expires_in });
+  } catch (err) {
+    console.error("[YouTube /refresh] Exception:", err.message);
+    res.status(500).json({ error: "Token refresh failed", details: err.message });
+  }
+});
+
+
+/* ================================================================
+   GOOGLE TRENDS PROXY
+================================================================ */
+app.get("/trends/google", async (req, res) => {
+  const geo = req.query.geo || "GB";
+  try {
+    const response = await fetch(
+      `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`,
+      { headers: { "User-Agent": "Mozilla/5.0 (compatible; ImpactGrid/1.0)" } }
+    );
+    const xml    = await response.text();
+    const titles = [];
+    const regex  = /<title><!\[CDATA\[([^\]]+)\]\]><\/title>/g;
+    let match;
+    while ((match = regex.exec(xml)) !== null) {
+      if (match[1] !== "Google Trends" && match[1] !== "Daily Search Trends") {
+        titles.push(match[1]);
+      }
+    }
+    res.json({ geo, trends: titles.slice(0, 20), ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[Google Trends] Exception:", err.message);
+    res.status(500).json({ error: "Failed to fetch Google Trends", details: err.message });
+  }
+});
+
+
+/* ── GET /trends/live?limit=20 ── */
+/*
+ *  Used by CaptionEngine.fetchLiveTrends() in carousel-studio.js and
+ *  the creator-studio dashboard trend feed.
+ *  Queries the trends table directly (ordered by trend_score) so all
+ *  platform sources — tiktok | youtube | cross | google — are surfaced.
+ *  Adds `plat` field mapped from platform_source so the frontend
+ *  badge renderer (t.plat === 'tt' / 'yt' / 'cross') works without
+ *  any client-side changes.
+ */
+app.get("/trends/live", async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const { data, error } = await _aiSupabase
+      .from("trends")
+      .select("*")
+      .order("trend_score", { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(error.message);
+
+    const trends = (data || []).map(t => ({
+      topic:           t.topic,
+      trend_score:     t.trend_score,
+      platform_source: t.platform_source,
+      video_count:     t.video_count,
+      total_views:     t.total_views,
+      status:          t.status,
+      confidence_score: t.velocity_score || 60
+    }));
+
+    // 🔥 PRIORITISE CROSS-PLATFORM (THIS IS THE MAGIC)
+    trends.sort((a, b) => {
+      if (a.platform_source === 'cross') return -1;
+      if (b.platform_source === 'cross') return 1;
+      return b.trend_score - a.trend_score;
+    });
+
+    res.json({
+      trends,
+      ts: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("[Trends /live] Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch live trends", details: err.message, trends: [] });
+  }
+});
+
+
+/* ================================================================
+   PHASE 3 — AI RECOMMENDATION LAYER
+================================================================ */
+
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
+const _aiSupabase = createSupabaseClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+async function getTopTrends(limit = 10) {
+  const { data } = await _aiSupabase
+    .from("v_top_trends")
+    .select("*")
+    .limit(limit);
+  return data || [];
 }
 
-function setWelcome() {
-  if (!getUser()) return;
+async function dijoAI(userPrompt, systemOverride = null) {
+  const system = systemOverride || `You are Dijo, ImpactGrid's Creator Intelligence Engine.
+You analyse real trend data and give creators specific, actionable advice.
+You speak directly and confidently. No waffle, no generic advice.
+Always reference the actual data provided. Be specific about platforms, formats, and timing.
+Format responses clearly. Use short paragraphs. Keep it punchy.`;
 
-  const name =
-    getUser().user_metadata?.full_name ||
-    (getUser().email && getUser().email.split('@')[0]) ||
-    'Creator';
-
-  const hour = new Date().getHours();
-
-  let greeting = "Good morning";
-  if (hour >= 12 && hour < 18) greeting = "Good afternoon";
-  if (hour >= 18) greeting = "Good evening";
-
-  const greetEl = document.getElementById('dijoGreeting');
-  const briefEl = document.getElementById('dijoBrief');
-
-  if (greetEl) greetEl.textContent = greeting + ", " + name;
-
-  // use real trend count
-  updateBriefing();
-}
-
-/* ─────────────────────────────────────────────
-   PAYWALL
-   checkAccess() is ONLY called for generative
-   actions (generate, save, export) — never
-   for passive browsing panels.
-───────────────────────────────────────────── */
-
-// Panels that are always free to view — no gate
-var IG_FREE_PANELS = ['dashboard', 'trends', 'calendar'];
-
-function checkAccess() {
-  // ✅ Never block passive browsing panels
-  var activePanel = document.querySelector('.panel.active');
-  if (activePanel) {
-    var panelName = activePanel.id.replace('panel-', '');
-    if (IG_FREE_PANELS.indexOf(panelName) !== -1) return true;
-  }
-
-  // 👑 Admin bypass
-  if (isAdmin()) return true;
-
-  // Not logged in
-  if (!getUser()) {
-    showUpgrade("Create an account to save and unlock more");
-    return false;
-  }
-
-  // Free plan limit
-  if (getPlan() === 'free' && getUses() >= 3) {
-    showUpgrade("You've hit your free limit — upgrade to continue");
-    return false;
-  }
-
-  return true;
-}
-
-function showUpgrade(message) {
-  var existing = document.getElementById('upgradeBar');
-  if (existing) existing.remove();
-
-  var bar = document.createElement('div');
-  bar.id = 'upgradeBar';
-  var isLoggedIn = !!getUser();
-
-  bar.innerHTML =
-    '<div class="upgrade-inner">'
-    + '<span>' + message + '</span>'
-    + '<div style="display:flex;gap:8px;">'
-    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
-    + (!isLoggedIn
-        ? '<a href="login.html" class="btn btn-secondary">Login</a>'
-        : '')
-    + '</div></div>';
-
-  document.body.appendChild(bar);
-  setTimeout(function() { bar.classList.add('show'); }, 50);
-  setTimeout(function() { bar.remove(); }, 4000);
-}
-
-(function() {
-  var style = document.createElement('style');
-  style.innerHTML = [
-    '#upgradeBar {',
-    '  position: fixed;',
-    '  top: 80px;',
-    '  left: 50%;',
-    '  transform: translateX(-50%) translateY(-20px);',
-    '  background: var(--card);',
-    '  border: 1px solid var(--border);',
-    '  border-radius: 999px;',
-    '  padding: 10px 16px;',
-    '  box-shadow: var(--sh2);',
-    '  opacity: 0;',
-    '  transition: all .3s ease;',
-    '  z-index: 9999;',
-    '}',
-    '#upgradeBar.show {',
-    '  opacity: 1;',
-    '  transform: translateX(-50%) translateY(0);',
-    '}',
-    '.upgrade-inner {',
-    '  display: flex;',
-    '  gap: 12px;',
-    '  align-items: center;',
-    '  font-size: 12px;',
-    '}'
-  ].join('\n');
-  document.head.appendChild(style);
-})();
-
-async function checkCarouselAccess() {
-  if (isAdmin()) return true;
-
-  if (!getUser()) {
-    showUpgrade('Login required to create carousels');
-    return false;
-  }
-
-  if (!canUse('carousel')) {
-    showUpgrade('Upgrade for unlimited carousels');
-    return false;
-  }
-
-  return true;
-}
-
-/* ─────────────────────────────────────────────
-   DIJO API — 3-sentence max enforced
-───────────────────────────────────────────── */
-async function callDijo(message, mode) {
-  var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
-  var res = await fetch(DIJO + '/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: shortPrefix + message, mode: mode || 'creator' })
+  const completion = await groq.chat.completions.create({
+    model:       "llama-3.3-70b-versatile",
+    max_tokens:  1200,
+    temperature: 0.75,
+    messages: [
+      { role: "system", content: system },
+      { role: "user",   content: userPrompt }
+    ]
   });
-  if (!res.ok) {
-    var e = await res.json().catch(function() { return {}; });
-    throw new Error(e.error || 'Dijo error ' + res.status);
+  return completion.choices[0]?.message?.content || "";
+}
+
+let _dailyBriefingCache = { data: null, cachedAt: 0 };
+
+app.post("/ai/recommendations", async (req, res) => {
+  try {
+    const { niche = "", platform = "All", goal = "grow", connected_platforms = [] } = req.body;
+    const trends = await getTopTrends(10);
+    if (!trends.length) {
+      return res.json({ recommendations: [], message: "No trend data yet — check back in 30 minutes." });
+    }
+    const trendContext = trends.map((t, i) =>
+      `${i+1}. "${t.topic}" — Score: ${t.trend_score}/100 | Platform: ${t.platform_source} | Status: ${t.status} | Views: ${Number(t.total_views).toLocaleString()} | IG Prediction: ${t.instagram_prediction}%`
+    ).join("\n");
+    const nicheCtx     = niche ? `Creator niche: ${niche}` : "General creator";
+    const platformCtx  = platform !== "All" ? `Primary platform: ${platform}` : "Multi-platform creator";
+    const connectedCtx = connected_platforms.length ? `Connected platforms: ${connected_platforms.join(", ")}` : "";
+    const prompt = `Here is today's real trend intelligence data from ImpactGrid:\n\n${trendContext}\n\nCreator context:\n- ${nicheCtx}\n- ${platformCtx}\n- Goal: ${goal}\n${connectedCtx}\n\nBased on this REAL data, give me:\n\n1. TOP 3 CONTENT OPPORTUNITIES — for each one:\n   - Topic name\n   - Why it's a good opportunity RIGHT NOW (use the actual scores)\n   - Best platform for this creator\n   - Exact content format (e.g. "60-second explainer", "talking head reaction")\n   - Best posting time (day + time)\n   - One specific hook idea\n\n2. ONE TREND TO AVOID — and why\n\n3. THIS WEEK'S STRATEGY — 2-3 sentences on what to focus on\n\nBe specific. Reference the actual scores and data. No generic advice.`;
+    const reply = await dijoAI(prompt);
+    res.json({ recommendations: parseRecommendations(reply, trends), raw: reply, trends_analysed: trends.length, top_trend: trends[0]?.topic || "", ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[AI /recommendations] Error:", err.message);
+    res.status(500).json({ error: "AI recommendation failed", details: err.message });
   }
-  var data = await res.json();
-  return data.reply || '';
+});
+
+app.post("/ai/content-brief", async (req, res) => {
+  try {
+    const { topic, platform = "TikTok", style = "Educational", niche = "" } = req.body;
+    if (!topic) return res.status(400).json({ error: "Missing topic" });
+    const { data: trendData } = await _aiSupabase.from("trends").select("*").ilike("topic", `%${topic}%`).order("trend_score", { ascending: false }).limit(1);
+    const trend    = trendData?.[0];
+    const trendCtx = trend ? `Trend Score: ${trend.trend_score}/100 | Status: ${trend.status} | Views: ${Number(trend.total_views).toLocaleString()} | Hashtags: ${(trend.hashtags||[]).join(", ")} | IG Prediction: ${trend.instagram_prediction}%` : "Live trending topic";
+    const prompt   = `Create a complete content brief for a creator making a video about: "${topic}"\n\nReal trend data: ${trendCtx}\nPlatform: ${platform}\nStyle: ${style}\n${niche ? `Niche: ${niche}` : ""}\n\nProvide:\n\nHOOK (2 versions):\n- Version A (curiosity): \n- Version B (bold claim):\n\nSCRIPT OUTLINE:\n- 0-3s: Hook\n- 3-15s: Setup/context\n- 15-45s: Core value (3 key points)\n- 45-55s: Proof/example\n- 55-60s: CTA\n\nCAPTION (ready to copy, with emojis):\n\nHASHTAGS (10, mix of niche + trending):\n\nBEST POSTING TIME: Day + time for ${platform}\n\nTHUMBNAIL/COVER IDEA:\n\nTREND WINDOW: How long this topic will stay relevant`;
+    const reply    = await dijoAI(prompt);
+    res.json({ topic, platform, style, brief: reply, trend_score: trend?.trend_score || null, trend_status: trend?.status || "trending", hashtags: trend?.hashtags || [], ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[AI /content-brief] Error:", err.message);
+    res.status(500).json({ error: "Content brief failed", details: err.message });
+  }
+});
+
+app.post("/ai/trend-analysis", async (req, res) => {
+  try {
+    const trends = await getTopTrends(15);
+    if (!trends.length) return res.json({ analysis: "No trend data available yet." });
+    const trendContext  = trends.map((t, i) => `${i+1}. "${t.topic}" | Score: ${t.trend_score} | ${t.platform_source} | ${t.status} | ${Number(t.total_views).toLocaleString()} views | IG: ${t.instagram_prediction}%`).join("\n");
+    const crossPlatform = trends.filter(t => t.platform_source === "cross");
+    const peakTopics    = trends.filter(t => t.status === "peak");
+    const risingTopics  = trends.filter(t => t.status === "rising");
+    const igOpps        = trends.filter(t => t.instagram_prediction >= 50);
+    const prompt        = `Analyse these real ImpactGrid trend scores from ${new Date().toLocaleDateString("en-GB", {weekday:"long",day:"numeric",month:"long"})}:\n\n${trendContext}\n\nSummary stats:\n- Peak topics: ${peakTopics.map(t=>t.topic).join(", ") || "none"}\n- Rising topics: ${risingTopics.map(t=>t.topic).join(", ") || "none"}\n- Cross-platform hits: ${crossPlatform.map(t=>t.topic).join(", ") || "none"}\n- Strong IG predictions: ${igOpps.map(t=>t.topic).join(", ") || "none"}\n\nGive creators:\n1. THE STORY TODAY (2-3 sentences on what the overall trend landscape looks like)\n2. BIGGEST OPPORTUNITY RIGHT NOW (1 topic, why, what to make)\n3. RISING BEFORE IT PEAKS (1 early-stage topic to jump on)\n4. INSTAGRAM PLAY (best topic for IG right now based on predictions)\n5. WHAT TO IGNORE (1-2 topics that look trending but won't convert)\n\nKeep it sharp. Creators are busy — give them signal, not noise.`;
+    const reply = await dijoAI(prompt);
+    res.json({ analysis: reply, trends_count: trends.length, ts: new Date().toISOString() });
+  } catch (err) {
+    console.error("[AI /trend-analysis] Error:", err.message);
+    res.status(500).json({ error: "Trend analysis failed", details: err.message });
+  }
+});
+
+app.get("/ai/daily-briefing", async (req, res) => {
+  try {
+    const now    = Date.now();
+    const ONE_HR = 60 * 60 * 1000;
+    if (_dailyBriefingCache.data && (now - _dailyBriefingCache.cachedAt) < ONE_HR) {
+      return res.json({ ..._dailyBriefingCache.data, cached: true });
+    }
+    const trends = await getTopTrends(10);
+    if (!trends.length) return res.json({ briefing: "No trend data yet.", cached: false });
+    const top3         = trends.slice(0, 3);
+    const trendContext = top3.map((t, i) => `${i+1}. "${t.topic}" — ${t.trend_score}/100 — ${t.status} — ${t.platform_source}`).join("\n");
+    const today        = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const prompt       = `You are Dijo. Give creators their daily intelligence briefing for ${today}.\n\nTop 3 trends right now:\n${trendContext}\n\nWrite a sharp 4-5 sentence daily briefing that:\n1. Opens with what's hot today (reference actual topics)\n2. Gives one specific action to take today\n3. Mentions the best platform play right now\n4. Ends with a motivating but realistic note\n\nSound like a smart adviser talking to a creator over morning coffee. Be specific, not generic.`;
+    const briefing     = await dijoAI(prompt);
+    const result = { briefing, top_trends: top3.map(t => ({ topic: t.topic, score: t.trend_score, status: t.status })), date: today, cached: false, ts: new Date().toISOString() };
+    _dailyBriefingCache = { data: result, cachedAt: now };
+    res.json(result);
+  } catch (err) {
+    console.error("[AI /daily-briefing] Error:", err.message);
+    res.status(500).json({ error: "Daily briefing failed", details: err.message });
+  }
+});
+
+function parseRecommendations(text, trends) {
+  const recs    = [];
+  const matches = text.match(/(?:^|\n)\s*\d+\.\s+(?:CONTENT OPPORTUNITY|TOP|OPPORTUNITY)?[:\s]*([^\n]{5,80})/gm) || [];
+  matches.slice(0, 3).forEach((m, i) => {
+    const topic        = m.replace(/^\s*\d+\.\s+(?:CONTENT OPPORTUNITY|TOP|OPPORTUNITY)?[:\s]*/i, "").trim();
+    const matchedTrend = trends.find(t => topic.toLowerCase().includes(t.topic.toLowerCase()));
+    recs.push({ rank: i + 1, topic: topic.slice(0, 80), score: matchedTrend?.trend_score || null, platform: matchedTrend?.platform_source || "multi", ig_prediction: matchedTrend?.instagram_prediction || 0 });
+  });
+  return recs.length ? recs : trends.slice(0, 3).map((t, i) => ({ rank: i + 1, topic: t.topic, score: t.trend_score, platform: t.platform_source, ig_prediction: t.instagram_prediction }));
 }
 
-/* ─────────────────────────────────────────────
-   UTILITIES
-───────────────────────────────────────────── */
-function escH(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function escJ(s) {
-  return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-function fmtN(n) { return n ? Number(n).toLocaleString() : '—'; }
-function toScore(s) { return Math.min(9.9, parseFloat((s / 10).toFixed(1))); }
 
-/* ─────────────────────────────────────────────
-   VIRAL INTELLIGENCE SCORING 🧠🔥
-   TikTok = velocity engine ⚡
-   YouTube = validation engine 🎯
-   Google  = demand engine 🔍
-───────────────────────────────────────────── */
-function runTrendScoring(rawScore, platforms) {
-  // Derive sub-scores from raw score (0-100 scale internally)
-  var base = rawScore; // already 0-100
-  var velocityScore   = base * 0.9;
-  var engagementScore = base * 0.8;
-  var commentsScore   = base * 0.7;
-  var recencyScore    = base * 0.85;
+/* ================================================================
+   CAROUSEL ROUTES
+   POST /carousel/generate  — full AI carousel with media
+   GET  /pexels/video        — proxy Pexels video search
+   GET  /pexels/image        — proxy Pexels image search (NEW v2.3)
+================================================================ */
 
-  var platformWeight = 1;
+/* ── POST /carousel/generate ── */
+app.post("/carousel/generate", async (req, res) => {
+  try {
+    const {
+      topic,
+      platform     = "Instagram",
+      tone         = "Bold & Direct",
+      count        = 7,
+      themeOverride = null
+    } = req.body;
 
-  // 🔥 PLATFORM INTELLIGENCE
-  if (platforms.includes('tiktok'))  platformWeight += 0.3;  // velocity king ⚡
-  if (platforms.includes('youtube')) platformWeight += 0.2;  // validation 🎯
-  if (platforms.includes('google'))  platformWeight += 0.1;  // demand 🔍
+    if (!topic || topic.trim().length < 3) {
+      return res.status(400).json({ error: "Missing or too-short topic" });
+    }
 
-  var finalScore = Math.min(100,
-    (
-      velocityScore   * 0.45 +
-      engagementScore * 0.25 +
-      commentsScore   * 0.15 +
-      recencyScore    * 0.15
-    ) * platformWeight
+    console.log(`[Carousel] Generating ${count}-slide carousel: "${topic}" | ${platform} | ${tone}`);
+
+    const result = await generateCarousel({
+      topic:         topic.trim(),
+      platform,
+      tone,
+      count:         Math.min(Math.max(parseInt(count) || 7, 3), 12),
+      themeOverride
+    });
+
+    console.log(`[Carousel] Done — theme: ${result.theme}, slides: ${result.slideCount}`);
+    res.json(result);
+
+  } catch (err) {
+    console.error("[Carousel /generate] Error:", err.message);
+    res.status(500).json({
+      error:   "Carousel generation failed",
+      details: err.message,
+      fallback: true
+    });
+  }
+});
+
+
+/* ── GET /pexels/video?theme=lifestyle&q=morning+routine ── */
+app.get("/pexels/video", async (req, res) => {
+  const PEXELS_KEY = process.env.PEXELS_API_KEY;
+  if (!PEXELS_KEY) {
+    return res.status(503).json({ error: "Pexels API key not configured", video: null });
+  }
+
+  const { theme = "lifestyle", q = "" } = req.query;
+
+  const THEME_KEYWORDS = {
+    "cozy-home":  ["cozy home interior", "warm living room candle", "fireplace cozy home"],
+    "workspace":  ["modern workspace desk", "laptop working office", "productive home office"],
+    "minimal":    ["minimal interior white", "scandinavian design room", "clean modern apartment"],
+    "luxury":     ["luxury hotel interior", "penthouse apartment luxury", "luxury resort pool"],
+    "lifestyle":  ["lifestyle people happy", "travel adventure outdoor", "fitness workout active"]
+  };
+
+  const fallbacks = THEME_KEYWORDS[theme] || THEME_KEYWORDS["lifestyle"];
+  const queries   = [q, ...fallbacks].filter(Boolean);
+
+  try {
+    for (const query of queries) {
+      const response = await fetch(
+        `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=10&orientation=square&size=medium`,
+        { headers: { Authorization: PEXELS_KEY } }
+      );
+
+      if (!response.ok) {
+        console.warn(`[Pexels] ${response.status} for query: "${query}"`);
+        continue;
+      }
+
+      const data   = await response.json();
+      const videos = (data.videos || []).filter(v => v.duration >= 5 && v.duration <= 30);
+
+      if (videos.length) {
+        const v      = videos[Math.floor(Math.random() * Math.min(3, videos.length))];
+        const hdFile = v.video_files.find(f => f.quality === "hd") || v.video_files[0];
+
+        return res.json({
+          url:      hdFile?.link || null,
+          thumb:    v.image,
+          duration: v.duration,
+          pexelsId: v.id,
+          query
+        });
+      }
+    }
+
+    res.json({ video: null, message: "No suitable video found" });
+
+  } catch (err) {
+    console.error("[Pexels /video] Error:", err.message);
+    res.status(500).json({ error: "Pexels fetch failed", details: err.message, video: null });
+  }
+});
+
+
+/* ── GET /pexels/image?q=cozy+morning+bedroom&theme=cozy-home ── */
+/*
+ *  NEW in v2.3
+ *  Used by the frontend carousel-studio to fetch a single on-topic
+ *  Pexels photo when it needs to override or refresh a slide image.
+ *  Also used as a fallback by the engine's fetchPexelsImage() internally.
+ *
+ *  Query params:
+ *    q        — search query (required)
+ *    theme    — theme hint for fallback queries (optional)
+ *    exclude  — comma-separated Pexels IDs to exclude (optional)
+ */
+app.get("/pexels/image", async (req, res) => {
+  const PEXELS_KEY = process.env.PEXELS_API_KEY;
+  if (!PEXELS_KEY) {
+    return res.status(503).json({ error: "Pexels API key not configured", image: null });
+  }
+
+  const { q = "", theme = "lifestyle", exclude = "" } = req.query;
+
+  if (!q.trim()) {
+    return res.status(400).json({ error: "Missing query parameter: q" });
+  }
+
+  const THEME_FALLBACKS = {
+    "cozy-home":  ["cozy home interior warm", "bedroom natural light", "living room warm"],
+    "workspace":  ["modern workspace desk", "laptop coffee minimal", "home office bright"],
+    "minimal":    ["minimal white interior", "scandinavian clean room", "minimal design space"],
+    "luxury":     ["luxury hotel interior", "premium elegant interior", "luxury apartment"],
+    "lifestyle":  ["lifestyle people happy", "people outdoor active", "travel adventure"],
+  };
+
+  const fallbacks = THEME_FALLBACKS[theme] || THEME_FALLBACKS["lifestyle"];
+  const queries   = [q.trim(), ...fallbacks];
+
+  // Parse excluded IDs
+  const excludeIds = new Set(
+    exclude.split(",").map(s => s.trim()).filter(Boolean).map(Number)
   );
 
-  return Math.min(9.9, parseFloat((finalScore / 10).toFixed(1)));
-}
-
-/* ─────────────────────────────────────────────
-   TREND CLASSIFICATION 🧠
-   Turns scores into actionable decision groups
-───────────────────────────────────────────── */
-function classifyTrend(t) {
-  const velocity   = t.score;          // 0-10 scale
-  const confidence = t.confidence || 60;
-
-  if (velocity >= 8.5 && confidence >= 80) return 'blowup';    // equiv. >=85/100
-  if (velocity >= 7.0)                     return 'rising_fast'; // equiv. >=70/100
-  if (velocity >= 5.0)                     return 'early';      // equiv. >=50/100
-  return 'stable';
-}
-
-function buildTrendInsights() {
-  const insights = { blowup: [], rising_fast: [], early: [] };
-
-  _allTrends.forEach(function(t) {
-    const type = classifyTrend(t);
-    if (insights[type]) insights[type].push(t);
-  });
-
-  return insights;
-}
-
-/* ─────────────────────────────────────────────
-   TREND DATA
-───────────────────────────────────────────── */
-/* renderAll — unified re-render called after any trend fetch */
-function renderAll() {
-  updateBriefing();
-  runTrendPrediction();
-  renderDashTrends();
-  renderDashOpps();
-  renderWhatToPost();
-  updateTopTrends();
-}
-
-async function fetchTrends() {
-  // ── PRIMARY: cross-platform endpoint ─────────────────────────────────────
   try {
-    var ts = Date.now();
-    var res = await fetch(DIJO + '/trends/cross?ts=' + ts);
-    var data = await res.json();
-    if (data && data.length) {
-      _allTrends = data.map(function(t, i) {
-        var plat = t.platform_source === 'youtube' ? 'yt'
-          : t.platform_source === 'tiktok' ? 'tt'
-          : t.platform_source === 'cross' ? 'cross' : 'gt';
-        var platLbl = t.platform_source === 'youtube' ? 'YouTube'
-          : t.platform_source === 'tiktok' ? 'TikTok'
-          : t.platform_source === 'cross' ? 'Cross' : 'Google';
-        return {
-          topic: t.topic,
-          score: runTrendScoring(t.trend_score || 50, ['tiktok', 'youtube', 'google']),
-          plat: plat, platLabel: platLbl,
-          rank: i + 1, hashtags: t.hashtags || [], videoCount: t.video_count || 0,
-          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0,
-          confidence: t.confidence_score || 90
-        };
-      });
-      renderAll();
-      return;
-    }
-  } catch(e) {}
+    for (const query of queries) {
+      const response = await fetch(
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=square`,
+        { headers: { Authorization: PEXELS_KEY } }
+      );
 
-  // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
-  try {
-    var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now());
-    var data2 = await res2.json();
-    if (data2.trends && data2.trends.length) {
-      _allTrends = data2.trends.map(function(t, i) {
-        var plat = t.platform_source === 'youtube' ? 'yt'
-          : t.platform_source === 'tiktok' ? 'tt'
-          : t.platform_source === 'cross' ? 'cross' : 'gt';
-        var platLbl = t.platform_source === 'youtube' ? 'YouTube'
-          : t.platform_source === 'tiktok' ? 'TikTok'
-          : t.platform_source === 'cross' ? 'Cross' : 'Google';
-        return {
-          topic: t.topic,
-          score: runTrendScoring(t.trend_score, [t.platform_source === 'cross' ? 'tiktok' : (t.platform_source || 'google'), t.platform_source === 'cross' ? 'youtube' : '', t.platform_source === 'cross' ? 'google' : ''].filter(Boolean)),
-          plat: plat, platLabel: platLbl,
-          rank: i + 1, hashtags: t.hashtags || [], videoCount: t.video_count || 0,
-          totalViews: t.total_views || 0, status: t.status || 'rising', igPrediction: t.instagram_prediction || 0,
-          confidence: t.confidence_score || (t.platform_source === 'cross' ? 90 : t.platform_source === 'tiktok' ? 75 : t.platform_source === 'youtube' ? 70 : 60)
-        };
-      });
-      renderAll();
-      return;
-    }
-  } catch(e) {}
-
-  // ── FALLBACK: Google RSS ──────────────────────────────────────────────────
-  try {
-    var rss = await fetch(DIJO + '/trends/google?geo=GB');
-    var rd = await rss.json();
-    _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
-      return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 };
-    });
-    renderAll();
-  } catch(e) {}
-}
-
-function trendItemHTML(t) {
-  var pct = Math.round((t.score / 10) * 100);
-  var platCls = t.plat === 'yt' ? 'plat-yt' : t.plat === 'tt' ? 'plat-tt' : 'plat-gt';
-  var meta = t.videoCount > 0
-    ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
-    : t.platLabel + ' · click to generate';
-
-  // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
-  var badge =
-    t.plat === 'tt'    ? '⚡ TikTok Viral'
-    : t.plat === 'yt'  ? '🎯 YouTube Validated'
-    : t.plat === 'cross' ? '🚀 Cross-Platform'
-    : '🔍 Search Demand';
-
-  // Confidence indicator
-  var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
-
-  return '<div class="trend-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
-    + '<div class="ti-rank">#' + t.rank + '</div>'
-    + '<div class="ti-info">'
-    +   '<div class="ti-topic">' + escH(t.topic) + '</div>'
-    +   '<div class="ti-meta">' + escH(meta) + '</div>'
-    +   '<div class="ti-badge">' + badge + escH(conf) + '</div>'
-    + '</div>'
-    + '<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%"></div></div><div class="ti-score">' + t.score.toFixed(1) + '/10</div></div>'
-    + '<div class="ti-plat ' + platCls + '">' + escH(t.platLabel) + '</div>'
-    + '</div>';
-}
-
-/* ─────────────────────────────────────────────
-   BEST-PER-PLATFORM PICKER
-   Returns the single highest-scoring trend for
-   each platform from the current _allTrends set.
-   Used by renderDashTrends so the dashboard
-   always shows one meaningful pick per source
-   rather than an arbitrary top-5 slice.
-───────────────────────────────────────────── */
-function getBest3(trends) {
-  function top(plat) {
-    return trends
-      .filter(function(t) { return t.plat === plat; })
-      .sort(function(a, b) { return b.score - a.score; })[0] || null;
-  }
-  return {
-    google:  top('gt'),
-    youtube: top('yt'),
-    tiktok:  top('tt')
-  };
-}
-
-function renderDashTrends() {
-  var el = document.getElementById('dashTrendList');
-  if (!el) return;
-
-  if (!_allTrends.length) {
-    el.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px">Loading trends…</div>';
-    return;
-  }
-
-  var best = getBest3(_allTrends);
-  var picks = [best.tiktok, best.youtube, best.google].filter(Boolean);
-
-  // If one or more platforms have no data, pad with next-best overall
-  if (picks.length < 3) {
-    var usedTopics = new Set(picks.map(function(t) { return t.topic; }));
-    var extras = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
-    while (picks.length < 3 && extras.length) {
-      picks.push(extras.shift());
-    }
-  }
-
-  el.innerHTML = picks.map(trendItemHTML).join('');
-}
-
-function renderFullTrends() {
-  // fullTrendList removed — trends panel now shows the decision dashboard
-  renderWhatToPost();
-}
-
-const pointLabelsPlugin = {
-  id: 'pointLabels',
-  afterDatasetsDraw(chart) {
-    const { ctx } = chart;
-
-    chart.data.datasets.forEach((dataset, i) => {
-      const meta = chart.getDatasetMeta(i);
-
-      meta.data.forEach((point, index) => {
-        const label = dataset.labels?.[index];
-        if (!label) return;
-
-        const x = point.x;
-        const y = point.y;
-
-        ctx.save();
-        ctx.font = '11px DM Sans';
-
-        const padding = 6;
-        const textWidth = ctx.measureText(label).width;
-        const boxWidth = textWidth + padding * 2;
-        const boxHeight = 20;
-
-        // 🔥 AUTO POSITION (key fix)
-        let offsetY = -28;
-
-        // prevent top clipping
-        if (y < 40) offsetY = 20;
-
-        // BOX
-        ctx.fillStyle = '#0f1117';
-        ctx.strokeStyle = '#c97e08';
-        ctx.lineWidth = 1;
-
-        ctx.beginPath();
-        ctx.roundRect(
-          x - boxWidth / 2,
-          y + offsetY,
-          boxWidth,
-          boxHeight,
-          6
-        );
-        ctx.fill();
-        ctx.stroke();
-
-        // TEXT
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, x, y + offsetY + 14);
-
-        ctx.restore();
-      });
-    });
-  }
-};
-
-function renderTrendChart() {
-  const canvas = document.getElementById('trendChart');
-  if (!canvas) return;
-
-  const ctx = canvas.getContext('2d');
-
-  if (window.trendChartInstance) {
-    window.trendChartInstance.destroy();
-    window.trendChartInstance = null;
-  }
-
-  var top7 = _allTrends.slice(0, 7);
-  var topics = top7.map(function(t) { return t.topic.slice(0, 18); });
-  var scores = top7.map(function(t) { return t.score; });
-
-  window.trendChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: topics,
-      datasets: [{
-        label: 'Trend Score',
-        data: scores,
-        tension: 0.4,
-        fill: true,
-        backgroundColor: 'rgba(201,126,8,0.10)',
-        borderColor: '#c97e08',
-        borderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: top7.map(function(t) {
-          return t.plat === 'tt'     ? '#ff6464'
-               : t.plat === 'yt'    ? '#FFD700'
-               : t.plat === 'cross' ? '#4FB3A5'
-               :                      '#78b4ff';
-        }),
-        pointBorderColor: '#fff',
-        pointBorderWidth: 1.5
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#111',
-          borderColor: '#c97e08',
-          borderWidth: 1,
-          callbacks: {
-            title: function(items) { return top7[items[0].dataIndex].topic; },
-            label: function(ctx) {
-              var t = top7[ctx.dataIndex];
-              if (!t) return '';
-              return [
-                '📊 Score: ' + t.score.toFixed(1),
-                '📌 ' + (t.platLabel || t.plat),
-                '🎬 Videos: ' + (t.videoCount || 0),
-                '👁 Views: ' + fmtN(t.totalViews)
-              ];
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: { color: '#888', font: { size: 10 }, maxRotation: 30 }
-        },
-        y: {
-          beginAtZero: false,
-          min: 0, max: 10,
-          grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: {
-            color: '#888',
-            font: { size: 10 },
-            callback: function(v) { return v + ''; }
-          }
-        }
+      if (!response.ok) {
+        console.warn(`[Pexels /image] ${response.status} for: "${query}"`);
+        continue;
       }
+
+      const data   = await response.json();
+      const photos = (data.photos || []).filter(p => !excludeIds.has(p.id));
+
+      if (!photos.length) continue;
+
+      // Random pick from top 5 to avoid always returning same image
+      const pick = photos[Math.floor(Math.random() * Math.min(5, photos.length))];
+
+      console.log(`[Pexels /image] Found: "${query}" → id ${pick.id}`);
+
+      return res.json({
+        url:      pick.src.large2x || pick.src.large,
+        thumb:    pick.src.medium,
+        pexelsId: pick.id,
+        alt:      pick.alt || "",
+        query,
+      });
     }
-  });
-}
 
-function runTrendPrediction() {
-  const el = document.getElementById("weeklyPrediction");
-  if (!el || !_allTrends || !_allTrends.length) return;
+    // All queries exhausted — no image found
+    res.json({ image: null, message: "No image found for query" });
 
-  // pick strongest trend
-  const top = _allTrends.sort((a,b)=>b.score-a.score)[0];
-
-  el.innerHTML = `
-    <div class="h3">${top.topic}</div>
-    <div class="text-sm">Predicted to peak this week</div>
-    <div class="text-sm">Best platform: ${top.platLabel || "TikTok"}</div>
-  `;
-
-  // Build insights and expose for dashboards / future panels
-  window._trendInsights = buildTrendInsights();
-  console.log('[TrendInsights] 🔥 Blowup:', window._trendInsights.blowup.length,
-    '| ⚡ Rising fast:', window._trendInsights.rising_fast.length,
-    '| 💡 Early:', window._trendInsights.early.length);
-}
-
-function filterTrends(btn, plat) {
-  document.querySelectorAll('[data-plat]').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
-  var el = document.getElementById('fullTrendList');
-  if (!el) return;
-  var list = plat === 'all' ? _allTrends : _allTrends.filter(function(t) { return t.plat === plat; });
-  el.innerHTML = list.length
-    ? list.map(trendItemHTML).join('')
-    : '<div style="padding:16px;color:var(--text3)">No trends for this filter.</div>';
-}
-
-/* ─────────────────────────────────────────────
-   OPPORTUNITIES — powered by /trends/dijo
-   renderOpportunities(data) accepts the raw
-   Dijo API shape (trend_score, platform_source,
-   dijoScore, etc.) and maps it to opp-cards.
-   renderDashOpps() is a fast synchronous fallback
-   used by the 60s/20s refresh intervals — it
-   re-renders from the already-loaded _allTrends
-   so we don't fire an extra network request on
-   every tick.
-───────────────────────────────────────────── */
-function renderOpportunities(data) {
-  var el = document.getElementById('topOppBox');
-  if (!el) return;
-
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="opp-empty">No opportunities yet — check back soon</div>';
-    return;
+  } catch (err) {
+    console.error("[Pexels /image] Error:", err.message);
+    res.status(500).json({ error: "Pexels image fetch failed", details: err.message, image: null });
   }
+});
 
-  el.innerHTML = data.slice(0, 3).map(function(t) {
-    var platLabel = t.platform_source === 'youtube' ? 'YouTube'
-      : t.platform_source === 'tiktok'   ? 'TikTok'
-      : t.platform_source === 'cross'    ? 'Cross-platform'
-      : 'Google';
-    var platIcon = t.platform_source === 'tiktok'  ? '🎵'
-      : t.platform_source === 'youtube' ? '▶️'
-      : t.platform_source === 'cross'   ? '🚀' : '🔍';
-    var displayScore = t.dijoScore != null
-      ? Math.min(9.9, parseFloat((t.dijoScore / 10).toFixed(1)))
-      : Math.min(9.9, parseFloat(((t.trend_score || 0) / 10).toFixed(1)));
-    var status = t.status || 'rising';
-    var videoMeta = t.video_count ? ' · ' + t.video_count + ' videos' : '';
 
-    return '<div class="opp-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
-      + '<div class="opp-header">'
-      +   '<span class="opp-topic">' + platIcon + ' ' + escH(t.topic) + '</span>'
-      +   '<span class="opp-score">' + displayScore.toFixed(1) + '</span>'
-      + '</div>'
-      + '<div class="opp-meta">' + escH(platLabel) + ' · ' + status + videoMeta + '</div>'
-      + '</div>';
-  }).join('');
-}
+/* ================================================================
+   PORTFOLIO ROUTES
+================================================================ */
 
-async function loadOpportunities() {
+/* ── POST /portfolio/generate ── */
+app.post("/portfolio/generate", async (req, res) => {
   try {
-    var res = await fetch(DIJO + '/trends/dijo');
-    var data = await res.json();
-    renderOpportunities(data);
-  } catch(e) {
-    // Dijo unavailable — fall back to local trend data
-    renderDashOpps();
-  }
-}
+    const {
+      name,
+      niche,
+      bio             = "",
+      location        = "",
+      email           = "",
+      theme           = "dark",
+      services        = [],
+      projects        = [],
+      testimonials    = [],
+      youtube_url     = "",
+      tiktok_url      = "",
+      instagram_url   = "",
+      linkedin_url    = "",
+      twitter_url     = "",
+      total_followers = "",
+      engagement_rate = "",
+      monthly_views   = "",
+      slug            = "",
+    } = req.body;
 
-// Fast in-memory re-render — used by 60s/20s refresh intervals
-function renderDashOpps() {
-  if (!_allTrends.length) return;
-  renderOpportunities(_allTrends.slice(0, 3).map(function(t) {
-    return {
-      topic:           t.topic,
-      platform_source: t.plat === 'yt' ? 'youtube' : t.plat === 'tt' ? 'tiktok' : t.plat === 'cross' ? 'cross' : 'google',
-      trend_score:     (t.score || 0) * 10,
-      dijoScore:       (t.score || 0) * 10,
-      status:          t.status,
-      video_count:     t.videoCount
+    if (!name || !niche) {
+      return res.status(400).json({ error: "name and niche are required" });
+    }
+
+    console.log(`[Portfolio /generate] "${name}" | niche: "${niche}" | theme: ${theme}`);
+
+    const result = await generatePortfolioContent({
+      name, niche, bio, location, email, theme,
+      services, projects, testimonials,
+      youtube_url, tiktok_url, instagram_url, linkedin_url, twitter_url,
+      total_followers, engagement_rate, monthly_views,
+      slug: slug || name.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    });
+
+    console.log(`[Portfolio /generate] Done — headline: "${result.ai_headline}"`);
+    res.json(result);
+
+  } catch (err) {
+    console.error("[Portfolio /generate] Error:", err.message);
+    res.status(500).json({
+      error:    "Portfolio generation failed",
+      details:  err.message,
+      fallback: true,
+    });
+  }
+});
+
+
+/* ── POST /portfolio/regen ── */
+app.post("/portfolio/regen", async (req, res) => {
+  try {
+    const { section, portfolio } = req.body;
+
+    if (!section || !portfolio) {
+      return res.status(400).json({ error: "section and portfolio are required" });
+    }
+
+    if (!["copy", "media", "legal", "services"].includes(section)) {
+      return res.status(400).json({ error: "section must be: copy | media | legal | services" });
+    }
+
+    console.log(`[Portfolio /regen] section: ${section} | "${portfolio.name}"`);
+
+    const full = await generatePortfolioContent(portfolio);
+
+    const sectionMap = {
+      copy:     { ai_headline: full.ai_headline, ai_tagline: full.ai_tagline, ai_bio: full.ai_bio, ai_meta: full.ai_meta, ai_cta: full.ai_cta },
+      media:    { hero_media: full.hero_media },
+      legal:    { ai_terms: full.ai_terms, ai_privacy: full.ai_privacy },
+      services: { services: full.services },
     };
-  }));
-}
 
-/* ─────────────────────────────────────────────
-   WHAT TO POST THIS WEEK 📅
-   Real score + confidence — not random text
-───────────────────────────────────────────── */
-function renderWhatToPost() {
-  var el = document.getElementById('whatToPostBox');
-  if (!el) return;
+    res.json(sectionMap[section]);
 
-  var data = buildTrendInsights();
-
-  function top(arr) {
-    return arr.slice().sort(function(a, b) { return b.score - a.score; }).slice(0, 2);
+  } catch (err) {
+    console.error("[Portfolio /regen] Error:", err.message);
+    res.status(500).json({ error: "Regen failed", details: err.message });
   }
-
-  var blow  = top(data.blowup);
-  var fast  = top(data.rising_fast);
-  var early = top(data.early);
-
-  function itemHTML(t) {
-    var platIcon = t.plat === 'tt' ? '🎵' : t.plat === 'yt' ? '▶️' : t.plat === 'cross' ? '🚀' : '🔍';
-    return '<div class="wtp-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content">'
-      + '<strong>' + escH(t.topic) + '</strong>'
-      + '<span class="wtp-meta">' + platIcon + ' ' + escH(t.platLabel) + ' · ' + t.score.toFixed(1) + '/10</span>'
-      + '</div>';
-  }
-
-  function section(icon, label, items, emptyMsg) {
-    return '<div class="wtp-section">'
-      + '<h4>' + icon + ' ' + label + '</h4>'
-      + (items.length
-          ? items.map(itemHTML).join('')
-          : '<div class="wtp-empty">' + emptyMsg + '</div>')
-      + '</div>';
-  }
-
-  el.innerHTML =
-    section('🔥', 'Most likely to blow up',  blow,  'No blowup trends right now — check back soon')
-    + section('⚡', 'Getting popular fast',   fast,  'Nothing surging yet')
-    + section('🟢', 'Still early — get in now', early, 'No early-stage trends detected');
-}
-
-function loadTopic(topic) {
-  // ✅ Gate at the point of action — not mid-generation
-  if (!checkAccess()) return;
-
-  var i1 = document.getElementById('quickTopic'); if (i1) i1.value = topic;
-  var i2 = document.getElementById('genTopic'); if (i2) i2.value = topic;
-  switchTab('generator', null);
-
-  // FIX 4: AUTO GENERATE with trend-aware context 🧠
-  setTimeout(function() {
-    var trend = _allTrends.find(function(t) { return t.topic === topic; });
-    if (trend) {
-      // Inject trend context into the generator niche field so AI knows the data
-      var nicheEl = document.getElementById('genNiche');
-      if (nicheEl && !nicheEl.value) {
-        nicheEl.value = 'Platform: ' + trend.platLabel + ' · Score: ' + trend.score + ' · ' + (trend.videoCount || 0) + ' videos · ' + fmtN(trend.totalViews) + ' views';
-      }
-    }
-    fullGenerate();
-  }, 300);
-  toast('💡 Generating for: ' + topic);
-}
-
-/* Dynamic AI hint above generator input */
-function updateHint(score) {
-  var el = document.getElementById('aiHint');
-  if (!el) return;
-  if (score >= 9) el.textContent = '🔥 High viral potential topic';
-  else if (score >= 8) el.textContent = '⚡ Strong trending opportunity';
-  else el.textContent = '💡 Emerging topic — needs strong hook';
-}
-
-/* ─────────────────────────────────────────────
-   PLATFORM STATUS — FIX 5
-   Reads /ingestion/status and lights up sidebar dots
-   TikTok = velocity engine ⚡  YouTube = validation 🎯
-───────────────────────────────────────────── */
-async function loadPlatformStatus() {
-  try {
-    var res = await fetch(DIJO + '/ingestion/status');
-    if (!res.ok) return;
-    var data = await res.json();
-
-    if (data.youtube && data.youtube.status === 'completed') {
-      var ytDot = document.getElementById('ytSpDot');
-      var ytLbl = document.getElementById('ytSpLabel');
-      if (ytDot) ytDot.className = 'sp-dot live';
-      if (ytLbl) ytLbl.textContent = 'Live';
-    }
-
-    if (data.tiktok && data.tiktok.status === 'completed') {
-      var ttDot = document.getElementById('ttSpDot');
-      var ttLbl = document.getElementById('ttSpLabel');
-      if (ttDot) ttDot.className = 'sp-dot live';
-      if (ttLbl) ttLbl.textContent = 'Live';
-    }
-  } catch(e) {
-    console.warn('[PlatformStatus] unavailable:', e);
-  }
-}
-
-/* ─────────────────────────────────────────────
-   DAILY BRIEFING
-───────────────────────────────────────────── */
-async function loadBriefing(forceRefresh) {
-  var el = document.getElementById('briefingText');
-  var tagsEl = document.getElementById('briefingTags');
-  var dateEl = document.getElementById('briefingDate');
-  if (!el) return;
-  try {
-    var res = await fetch(DIJO + '/ai/daily-briefing');
-    var data = await res.json();
-    if (data.briefing) {
-      el.textContent = data.briefing;
-      if (dateEl) {
-        const now = new Date();
-        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        dateEl.textContent = `📡 ${time} · live`;
-      }
-      if (tagsEl && data.top_trends) {
-        tagsEl.innerHTML = data.top_trends.map(function(t) {
-          return '<span class="b-tag">' + escH(t.topic) + ' ' + Math.round(t.score) + '</span>';
-        }).join('');
-      }
-      if (forceRefresh) toast('🧠 Briefing refreshed!');
-    }
-  } catch(e) {
-    if (el) el.textContent = 'Dijo briefing unavailable — check back shortly.';
-  }
-}
-
-/* ─────────────────────────────────────────────
-   QUICK GENERATE (dashboard widget)
-───────────────────────────────────────────── */
-async function quickGenerate() {
-  if (!checkAccess()) return;
-  var topic = document.getElementById('quickTopic').value.trim();
-  if (!topic) { toast('⚠️ Enter a topic first'); return; }
-  var outEl = document.getElementById('quickOutput');
-  outEl.style.display = 'flex';
-  document.getElementById('quickHook').textContent = 'Generating…';
-  document.getElementById('quickCaption').textContent = '';
-  document.getElementById('quickTags').innerHTML = '';
-  try {
-    var reply = await callDijo(
-      'Write a hook, caption, and 6 hashtags for: "' + topic + '". Format:\nHOOK: ...\nCAPTION: ...\nHASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6',
-      'creator'
-    );
-    var lines = reply.split('\n');
-    var hook = '', caption = '', tags = [];
-    lines.forEach(function(l) {
-      if (l.toLowerCase().startsWith('hook:')) hook = l.replace(/^hook:\s*/i, '').trim();
-      else if (l.toLowerCase().startsWith('caption:')) caption = l.replace(/^caption:\s*/i, '').trim();
-      else if (l.toLowerCase().startsWith('hashtags:')) { tags = (l.replace(/^hashtags:\s*/i, '').match(/#[a-zA-Z0-9]+/g) || []); }
-    });
-    if (!tags.length) tags = (reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []).slice(0, 6);
-    document.getElementById('quickHook').textContent = hook || lines[0] || reply.slice(0, 120);
-    document.getElementById('quickCaption').textContent = caption || reply.slice(0, 200);
-    var te = document.getElementById('quickTags'); te.innerHTML = '';
-    tags.forEach(function(t) { var s = document.createElement('span'); s.className = 'ob-tag'; s.textContent = t; te.appendChild(s); });
-    toast('✅ Generated!');
-  } catch(e) {
-    document.getElementById('quickHook').textContent = 'Dijo unavailable — try again.';
-  }
-}
-
-/* ─────────────────────────────────────────────
-   FULL GENERATE
-───────────────────────────────────────────── */
-function selectStyle(el) {
-  document.querySelectorAll('.style-chip').forEach(function(c) { c.classList.remove('active'); });
-  el.classList.add('active');
-  _selectedStyle = el.textContent.trim();
-}
-
-function calcScore(topic) {
-  var tl = topic.toLowerCase(); var s = 6.8;
-  if (tl.match(/ai|chatgpt|automation|tech|llm/)) s += 1.3;
-  if (tl.match(/money|finance|invest|income|business/)) s += 1.0;
-  if (tl.match(/viral|trending|2026|growth/)) s += 0.6;
-  if (tl.length < 20) s += 0.3;
-  return Math.min(9.9, parseFloat(s.toFixed(1)));
-}
-
-async function generateIdea() {
-  if (!checkAccess()) return;
-  await fullGenerate();
-}
-
-async function fullGenerate() {
-  if (!checkAccess()) return;
-  if (!(await checkCarouselAccess())) return;
-  var topic = document.getElementById('genTopic').value.trim();
-  if (!topic) { toast('⚠️ Enter a topic first'); return; }
-  var platform = document.getElementById('genPlatform').value;
-  var niche = document.getElementById('genNiche').value.trim();
-  var btn = document.getElementById('fullGenBtn');
-  var loadEl = document.getElementById('genLoading');
-  var errEl = document.getElementById('genError');
-
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating…';
-  loadEl.classList.add('visible');
-  errEl.classList.remove('visible');
-  document.getElementById('genLoadingMsg').textContent = 'Dijo is building your content package for "' + topic + '"…';
-
-  var score = calcScore(topic);
-  updateHint(score);
-  var scColor = score >= 9 ? 'var(--green)' : score >= 8 ? 'var(--gold)' : score >= 7 ? 'var(--blue2)' : 'var(--text2)';
-  var verdict = score >= 9 ? '🔥 Exceptional' : score >= 8 ? '⚡ Strong opportunity' : score >= 7 ? '📈 Good momentum' : '💡 Emerging';
-  document.getElementById('previewScore').textContent = score.toFixed(1);
-  document.getElementById('previewScore').style.color = scColor;
-  document.getElementById('previewVerdict').textContent = verdict;
-  document.getElementById('previewVerdict').style.color = scColor;
-
-  ['outHook', 'outCaption', 'outOutline'].forEach(function(id) {
-    var el = document.getElementById(id);
-    el.classList.remove('ob-placeholder'); el.textContent = 'Generating…';
-  });
-  document.getElementById('outHashtags').innerHTML = '<span style="color:var(--text3);font-style:italic;font-size:12px">Generating…</span>';
-
-  try {
-    var nicheCtx = niche ? '\nNiche: ' + niche + '.' : '';
-
-    // Inject real trend data if available for this topic
-    var trend = _allTrends.find(function(t) { return t.topic.toLowerCase() === topic.toLowerCase(); });
-    var trendExtra = '';
-    if (trend) {
-      trendExtra = '\n\nReal trend data:'
-        + '\n- Platform: ' + trend.platLabel
-        + '\n- Views: ' + fmtN(trend.totalViews)
-        + '\n- Video count: ' + trend.videoCount
-        + '\n- Trend score: ' + trend.score + '/10'
-        + (trend.hashtags.length ? '\n- Suggested hashtags: ' + trend.hashtags.join(', ') : '');
-    }
-
-    var prompt =
-      'You are a top 1% viral content strategist.\n\n'
-      + 'Topic: "' + topic + '"\n'
-      + 'Platform: ' + platform + '\n'
-      + 'Style: ' + _selectedStyle + '\n'
-      + 'Trend Score: ' + score + '/10'
-      + nicheCtx
-      + trendExtra + '\n\n'
-      + 'Write HIGH-PERFORMING content.\n\n'
-      + 'Rules:\n'
-      + '- Hook must create curiosity or controversy\n'
-      + '- Caption must be short, punchy, scroll-stopping\n'
-      + '- No fluff\n'
-      + '- Make it feel like viral content, not advice\n\n'
-      + 'Format EXACTLY:\n\n'
-      + 'HOOK: ...\n'
-      + 'CAPTION: ...\n'
-      + 'OUTLINE:\n1. ...\n2. ...\n3. ...\n4. ...\n5. ...\n'
-      + 'HASHTAGS: #... #... #...\n'
-      + 'BEST TIME: [best day and time for ' + platform + ']';
-    var reply = await callDijo(prompt, 'creator');
-    var lines = reply.split('\n');
-
-    function extract(label) {
-      var idx = lines.findIndex(function(l) { return l.toLowerCase().startsWith(label.toLowerCase()); });
-      if (idx === -1) return '';
-      return lines[idx].replace(new RegExp('^' + label + '\\s*', 'i'), '').trim();
-    }
-    function extractBlock(label, nextLabel) {
-      var start = lines.findIndex(function(l) { return l.toLowerCase().startsWith(label.toLowerCase()); });
-      if (start === -1) return '';
-      var out = [];
-      for (var i = start + 1; i < lines.length; i++) {
-        if (nextLabel && lines[i].toLowerCase().startsWith(nextLabel.toLowerCase())) break;
-        if (lines[i].match(/^[A-Z ]+:/)) break;
-        out.push(lines[i]);
-      }
-      return out.join('\n').trim();
-    }
-
-    var hook = extract('HOOK:');
-    var caption = extract('CAPTION:');
-    var outline = extractBlock('OUTLINE:', 'HASHTAGS:');
-    var hashLine = extract('HASHTAGS:');
-    var bestTime = extract('BEST TIME:');
-    var tags = (hashLine.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []).concat(reply.match(/#[a-zA-Z][a-zA-Z0-9]*/g) || []);
-    var uniqueTags = []; var seen = {};
-    tags.forEach(function(t) { if (!seen[t]) { seen[t] = 1; uniqueTags.push(t); } });
-
-    document.getElementById('outHook').textContent = hook || lines[0] || '';
-    document.getElementById('outCaption').innerHTML = escH(caption || '').replace(/\n/g, '<br>');
-    document.getElementById('outOutline').innerHTML = escH(outline || '').replace(/\n/g, '<br>');
-    var he = document.getElementById('outHashtags'); he.innerHTML = '';
-    uniqueTags.slice(0, 10).forEach(function(t) { var s = document.createElement('span'); s.className = 'ob-tag'; s.textContent = t; he.appendChild(s); });
-
-    // Populate clickable hashtag bar
-    var bar = document.getElementById('hashtagBar');
-    if (bar) {
-      bar.innerHTML = '';
-      uniqueTags.slice(0, 10).forEach(function(tag) {
-        var el = document.createElement('div');
-        el.className = 'hashtag-chip';
-        el.textContent = tag;
-        el.onclick = function() { navigator.clipboard.writeText(tag).then(function() { toast('📋 ' + tag + ' copied!'); }); };
-        bar.appendChild(el);
-      });
-    }
-    var tg = document.getElementById('outTiming'); tg.innerHTML = '';
-    ['Today', 'Thursday', 'Saturday'].forEach(function(d) {
-      var slot = document.createElement('div'); slot.className = 'timing-slot';
-      slot.innerHTML = '<div class="timing-day">' + d + '</div><div class="timing-time">' + (d === 'Today' && bestTime ? bestTime : '7–9pm') + '</div>';
-      tg.appendChild(slot);
-    });
-
-    var dsc = document.getElementById('dashLastScore'); if (dsc) { dsc.textContent = score.toFixed(1); dsc.style.color = scColor; }
-    var dsl = document.getElementById('dashLastLabel'); if (dsl) { dsl.textContent = verdict; dsl.style.color = scColor; }
-    if (!isAdmin()) {
-      incrementUses();
-    }
-    toast('✅ Package generated!');
-  } catch(e) {
-    errEl.classList.add('visible');
-    errEl.textContent = '⚠ ' + (e.message || 'Request failed');
-    toast('⚠️ Dijo unavailable — try again');
-  }
-
-  loadEl.classList.remove('visible');
-  btn.disabled = false; btn.innerHTML = '⚡ Generate Full Package';
-}
-
-/* ─────────────────────────────────────────────
-   AUDIENCE
-───────────────────────────────────────────── */
-async function loadAudience() {
-  var topic = document.getElementById('audTopic').value.trim();
-  if (!topic) { toast('⚠️ Enter a topic'); return; }
-  var btn = document.getElementById('audBtn');
-  btn.disabled = true; btn.textContent = 'Analysing…';
-  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
-  try {
-    var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
-    var reply = await callDijo(prompt, 'creator');
-    var ages = extractAges(reply) || [{ label: '18–24', pct: 30 }, { label: '25–34', pct: 40 }, { label: '35–44', pct: 20 }, { label: '45+', pct: 10 }];
-    var pa = extractPA(reply) || { YouTube: 72, TikTok: 65, Instagram: 58, Google: 78 };
-    var html = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px">'
-      + '<h3 style="font-size:15px;font-weight:800;margin-bottom:8px">👥 ' + escH(topic) + ' — Audience</h3>'
-      + '<div style="font-size:13px;color:var(--text2);line-height:1.75">' + escH(reply.slice(0, 500)) + '</div></div>';
-    html += '<div class="aud-grid"><div class="aud-card"><div class="aud-head">Age Breakdown</div><div class="aud-body">';
-    ages.forEach(function(ag) {
-      html += '<div class="demo-bar"><span class="demo-label">' + ag.label + '</span>'
-        + '<div class="demo-track"><div class="demo-fill" style="width:' + ag.pct + '%"></div></div>'
-        + '<span class="demo-pct">' + ag.pct + '%</span></div>';
-    });
-    html += '</div></div><div class="aud-card"><div class="aud-head">Platform Affinity</div><div class="aud-body">';
-    [{ k: 'YouTube', cls: 'pa-yt' }, { k: 'TikTok', cls: 'pa-tt' }, { k: 'Instagram', cls: 'pa-ig' }, { k: 'Google', cls: 'pa-gt' }].forEach(function(p) {
-      html += '<div class="pa-item"><span class="pa-label">' + p.k + '</span>'
-        + '<div class="pa-track"><div class="pa-fill ' + p.cls + '" style="width:' + (pa[p.k] || 0) + '%"></div></div>'
-        + '<span class="pa-pct">' + (pa[p.k] || 0) + '%</span></div>';
-    });
-    html += '</div></div></div>';
-    document.getElementById('audOutput').innerHTML = html;
-    toast('✅ Analysis done!');
-  } catch(e) {
-    document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
-    toast('⚠️ Error — try again');
-  }
-  btn.disabled = false; btn.textContent = 'Analyse';
-}
-
-function extractAges(text) {
-  var groups = [];
-  var m = text.match(/(\d{2}[-–]\d{2,3}\+?)[^\d]{0,8}(\d{1,3})\s*%/g);
-  if (m && m.length >= 3) {
-    m.forEach(function(x) {
-      var p = x.match(/(\d{2}[-–]\d{2,3}\+?).*?(\d{1,3})/);
-      if (p) groups.push({ label: p[1], pct: Math.min(99, parseInt(p[2] || 50)) });
-    });
-    return groups.length >= 3 ? groups : null;
-  }
-  return null;
-}
-function extractPA(text) {
-  var tl = text.toLowerCase();
-  function p(n) { var m = new RegExp(n + '[^0-9]*(\\d{1,3})\\s*%', 'i').exec(tl); return m ? Math.min(100, parseInt(m[1])) : null; }
-  var yt = p('youtube'), tt = p('tiktok'), ig = p('instagram'), gt = p('google');
-  return (yt || tt || ig || gt) ? { YouTube: yt || 70, TikTok: tt || 65, Instagram: ig || 55, Google: gt || 75 } : null;
-}
-
-/* ─────────────────────────────────────────────
-   YOUTUBE
-───────────────────────────────────────────── */
-function initYouTube() {
-  try {
-    if (typeof YouTubeAuth === 'undefined') return;
-    var s = YouTubeAuth.getSession();
-    if (s) showYtConnected(s);
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('yt_connected') === '1') {
-      var s2 = YouTubeAuth.getSession();
-      if (s2) showYtConnected(s2);
-      history.replaceState({}, '', 'creator-studio.html');
-    }
-  } catch(e) {}
-}
-
-function showYtConnected(session) {
-  document.getElementById('ytDisconnected').style.display = 'none';
-  document.getElementById('ytConnected').style.display = 'block';
-  var dot = document.getElementById('ytSpDot'); if (dot) dot.className = 'sp-dot live';
-  var label = document.getElementById('ytSpLabel'); if (label) label.innerHTML = '<span style="color:var(--green)">Connected</span>';
-  var badge = document.getElementById('ytSidebarBadge'); if (badge) badge.style.display = 'inline-flex';
-  var ch = session.channel;
-  var name = (ch && ch.snippet && ch.snippet.title) ? ch.snippet.title : 'YouTube';
-  var handle = (ch && ch.snippet && ch.snippet.customUrl) ? ch.snippet.customUrl : '';
-  document.getElementById('ytChannelName').textContent = name;
-  document.getElementById('ytChannelHandle').textContent = handle;
-  var dv = document.getElementById('dashYtVal'); if (dv) { dv.textContent = name; dv.style.color = 'var(--green)'; }
-  if (ch && ch.snippet && ch.snippet.thumbnails && ch.snippet.thumbnails.default) {
-    var av = document.getElementById('ytAv');
-    av.innerHTML = '<img src="' + ch.snippet.thumbnails.default.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-  }
-  if (ch && ch.statistics) {
-    document.getElementById('ytSubs').textContent = fmtN(ch.statistics.subscriberCount);
-    document.getElementById('ytViews').textContent = fmtN(ch.statistics.viewCount);
-    document.getElementById('ytVcount').textContent = fmtN(ch.statistics.videoCount);
-    document.getElementById('evalSubs').textContent = fmtN(ch.statistics.subscriberCount);
-    document.getElementById('evalViews').textContent = fmtN(ch.statistics.viewCount);
-    document.getElementById('evalVcount').textContent = fmtN(ch.statistics.videoCount);
-  }
-  loadYtVideos(session.accessToken);
-}
-
-async function loadYtVideos(token) {
-  var el = document.getElementById('ytVideosList'); if (!el) return;
-  try {
-    var res = await YouTubeAuth.fetchVideos(token, 8);
-    var videos = (res && res.items) ? res.items : [];
-    if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
-    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">'
-      + videos.map(function(v) {
-        var sn = v.snippet || {}; var st = v.statistics || {};
-        var thumb = sn.thumbnails && sn.thumbnails.medium ? sn.thumbnails.medium.url : '';
-        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">▶️</div>')
-          + '<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sn.title || 'Untitled') + '</div>'
-          + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 ' + fmtN(st.viewCount) + ' · ❤️ ' + fmtN(st.likeCount) + ' · 💬 ' + fmtN(st.commentCount) + '</div></div></div>';
-      }).join('') + '</div>';
-  } catch(e) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
-  }
-}
-
-function disconnectYouTube() {
-  try { YouTubeAuth.clearSession(); } catch(e) {}
-  document.getElementById('ytDisconnected').style.display = 'block';
-  document.getElementById('ytConnected').style.display = 'none';
-  var dot = document.getElementById('ytSpDot'); if (dot) dot.className = 'sp-dot off';
-  var label = document.getElementById('ytSpLabel'); if (label) label.innerHTML = '<span class="connect-link" onclick="switchTab(\'youtube\',null)">Connect</span>';
-  var badge = document.getElementById('ytSidebarBadge'); if (badge) badge.style.display = 'none';
-  var dv = document.getElementById('dashYtVal'); if (dv) { dv.textContent = 'Not connected'; dv.style.color = ''; }
-  _evalChannelData = null; _evalScoreData = null;
-  document.getElementById('evalMain').style.display = 'none';
-  document.getElementById('evalNoAccount').style.display = 'block';
-  toast('👋 YouTube disconnected');
-}
-
-/* ─────────────────────────────────────────────
-   TIKTOK
-───────────────────────────────────────────── */
-function initTikTok() {
-  try {
-    if (typeof TikTokAuth === 'undefined') return;
-    var s = TikTokAuth.getSession();
-    if (s) showTtConnected(s);
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('tt_connected') === '1') {
-      var s2 = TikTokAuth.getSession();
-      if (s2) showTtConnected(s2);
-      history.replaceState({}, '', 'creator-studio.html');
-    }
-  } catch(e) {}
-}
-
-function showTtConnected(session) {
-  document.getElementById('ttDisconnected').style.display = 'none';
-  document.getElementById('ttConnected').style.display = 'block';
-  var dot = document.getElementById('ttSpDot'); if (dot) dot.className = 'sp-dot tt';
-  var badge = document.getElementById('ttSidebarBadge'); if (badge) badge.style.display = 'inline-flex';
-  var pill = document.getElementById('ttTopbarPill'); if (pill) pill.style.display = 'flex';
-  var profile = session.profile || {};
-  var name = profile.display_name || profile.username || 'TikTok';
-  document.getElementById('ttDisplayName').textContent = name;
-  var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = name; dv.style.color = 'var(--tt)'; }
-  var sub = document.getElementById('dashTtSub'); if (sub) sub.innerHTML = '';
-  var label = document.getElementById('ttSpLabel'); if (label) label.innerHTML = '<span style="color:var(--tt)">Connected</span>';
-  fetchTtProfile(session.accessToken);
-  loadTtVideos(session.accessToken);
-}
-
-async function fetchTtProfile(token) {
-  try {
-    var res = await fetch(DIJO + '/tiktok/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: token }) });
-    var data = await res.json();
-    var user = data && data.data && data.data.user ? data.data.user : null;
-    if (!user) return;
-    document.getElementById('ttDisplayName').textContent = user.display_name || 'TikTok';
-    document.getElementById('ttUsername').textContent = user.bio_description ? user.bio_description.slice(0, 40) : '';
-    document.getElementById('ttFollowers').textContent = fmtN(user.follower_count);
-    document.getElementById('ttFollowing').textContent = fmtN(user.following_count);
-    document.getElementById('ttLikes').textContent = fmtN(user.likes_count);
-    document.getElementById('ttVcount').textContent = fmtN(user.video_count);
-    var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = user.display_name || 'TikTok'; dv.style.color = 'var(--tt)'; }
-    if (user.avatar_url) {
-      var av = document.getElementById('ttAv');
-      av.innerHTML = '<img src="' + user.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""/>';
-    }
-    document.getElementById('evalSubs').textContent = fmtN(user.follower_count);
-    document.getElementById('evalSubs').style.color = 'var(--tt)';
-    document.getElementById('evalViews').textContent = fmtN(user.likes_count);
-    document.getElementById('evalVcount').textContent = fmtN(user.video_count);
-    _evalChannelData = { _platform: 'tiktok', snippet: { title: user.display_name || 'TikTok' }, statistics: { subscriberCount: user.follower_count || 0, viewCount: user.likes_count || 0, videoCount: user.video_count || 0 } };
-    try { localStorage.setItem('tt_profile', JSON.stringify(user)); } catch(e) {}
-  } catch(e) { console.warn('[TikTok] Profile fetch failed:', e.message); }
-}
-
-async function loadTtVideos(token) {
-  var el = document.getElementById('ttVideosList'); if (!el) return;
-  try {
-    var res = await fetch(DIJO + '/tiktok/videos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: token, max_count: 12 }) });
-    var data = await res.json();
-    var videos = (data && data.data && data.data.videos) ? data.data.videos : [];
-    if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
-    el.innerHTML = '<div class="video-grid">' + videos.map(function(v) {
-      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '🎵') + '</div>'
-        + '<div class="video-info"><div class="video-title">' + escH(v.title || v.video_description || 'Untitled') + '</div>'
-        + '<div class="video-stats">👁 ' + fmtN(v.view_count) + ' · ❤️ ' + fmtN(v.like_count) + ' · 💬 ' + fmtN(v.comment_count) + '</div></div></div>';
-    }).join('') + '</div>';
-  } catch(e) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
-  }
-}
-
-function disconnectTikTok() {
-  try { TikTokAuth.clearSession(); } catch(e) {}
-  document.getElementById('ttDisconnected').style.display = 'block';
-  document.getElementById('ttConnected').style.display = 'none';
-  var dot = document.getElementById('ttSpDot'); if (dot) dot.className = 'sp-dot off';
-  var badge = document.getElementById('ttSidebarBadge'); if (badge) badge.style.display = 'none';
-  var pill = document.getElementById('ttTopbarPill'); if (pill) pill.style.display = 'none';
-  var dv = document.getElementById('dashTtVal'); if (dv) { dv.textContent = 'Not connected'; dv.style.color = ''; }
-  var sub = document.getElementById('dashTtSub'); if (sub) sub.innerHTML = '<span class="sc-link" onclick="switchTab(\'tiktok\',null)">Connect →</span>';
-  var label = document.getElementById('ttSpLabel'); if (label) label.innerHTML = '<span class="connect-link" onclick="switchTab(\'tiktok\',null)">Connect</span>';
-  _evalChannelData = null; _evalScoreData = null;
-  document.getElementById('evalMain').style.display = 'none';
-  document.getElementById('evalNoAccount').style.display = 'block';
-  toast('👋 TikTok disconnected — connect a new account');
-}
-
-/* ─────────────────────────────────────────────
-   EVALUATOR
-───────────────────────────────────────────── */
-function initEvaluator() {
-  try {
-    if (typeof YouTubeAuth !== 'undefined') {
-      var s = YouTubeAuth.getSession();
-      if (s && s.channel) { _evalChannelData = s.channel; showEvalMain(s.channel, 'youtube'); return; }
-    }
-    if (typeof TikTokAuth !== 'undefined') {
-      var s2 = TikTokAuth.getSession();
-      if (s2) { showEvalMainTt(s2); return; }
-    }
-  } catch(e) {}
-}
-
-function showEvalMain(channel, platform) {
-  document.getElementById('evalNoAccount').style.display = 'none';
-  document.getElementById('evalLoading').style.display = 'none';
-  document.getElementById('evalMain').style.display = 'block';
-  var name = (channel && channel.snippet && channel.snippet.title) || 'Channel';
-  var handle = (channel && channel.snippet && channel.snippet.customUrl) || platform;
-  document.getElementById('evalChannelName').textContent = name;
-  document.getElementById('evalChannelHandle').textContent = handle;
-  if (channel && channel.snippet && channel.snippet.thumbnails && channel.snippet.thumbnails.default) {
-    document.getElementById('evalAv').innerHTML = '<img src="' + channel.snippet.thumbnails.default.url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-  }
-  if (channel && channel.statistics) {
-    document.getElementById('evalSubs').textContent = fmtN(channel.statistics.subscriberCount);
-    document.getElementById('evalViews').textContent = fmtN(channel.statistics.viewCount);
-    document.getElementById('evalVcount').textContent = fmtN(channel.statistics.videoCount);
-  }
-}
-
-function showEvalMainTt(session) {
-  document.getElementById('evalNoAccount').style.display = 'none';
-  document.getElementById('evalLoading').style.display = 'none';
-  document.getElementById('evalMain').style.display = 'block';
-  var profile = session.profile || {};
-  var name = profile.display_name || profile.username || 'TikTok';
-  document.getElementById('evalChannelName').textContent = name;
-  document.getElementById('evalChannelHandle').textContent = 'TikTok';
-  if (profile.avatar_url) document.getElementById('evalAv').innerHTML = '<img src="' + profile.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
-  document.getElementById('evalSubs').textContent = fmtN(profile.follower_count);
-  document.getElementById('evalSubs').style.color = 'var(--tt)';
-  document.getElementById('evalViews').textContent = fmtN(profile.likes_count);
-  document.getElementById('evalVcount').textContent = fmtN(profile.video_count);
-  _evalChannelData = { _platform: 'tiktok', snippet: { title: name }, statistics: { subscriberCount: profile.follower_count || 0, viewCount: profile.likes_count || 0, videoCount: profile.video_count || 0 } };
-}
-
-function computeScore(channel, videos) {
-  var st = (channel && channel.statistics) || {};
-  var subs = parseInt(st.subscriberCount || 0), views = parseInt(st.viewCount || 0), vcount = parseInt(st.videoCount || 0);
-  var aScore = subs >= 1000000 ? 20 : subs >= 100000 ? 16 : subs >= 10000 ? 12 : subs >= 1000 ? 8 : subs >= 100 ? 5 : 2;
-  var vpr = subs > 0 ? views / subs : 0;
-  var eScore = vpr >= 200 ? 20 : vpr >= 100 ? 16 : vpr >= 50 ? 12 : vpr >= 20 ? 8 : vpr >= 5 ? 5 : 2;
-  var cScore = vcount >= 200 ? 20 : vcount >= 100 ? 17 : vcount >= 50 ? 14 : vcount >= 20 ? 10 : vcount >= 5 ? 6 : 2;
-  var rScore = 10, lScore = 10;
-  if (videos && videos.length) {
-    var avg = videos.slice(0, 5).reduce(function(s, v) { return s + parseInt((v.statistics && v.statistics.viewCount) || 0); }, 0) / Math.min(5, videos.length);
-    var ratio = subs > 0 ? avg / subs : 0;
-    rScore = ratio >= .5 ? 20 : ratio >= .2 ? 17 : ratio >= .1 ? 13 : ratio >= .05 ? 9 : ratio >= .01 ? 5 : 2;
-    var tv = 0, tl = 0;
-    videos.slice(0, 5).forEach(function(v) { tv += parseInt((v.statistics && v.statistics.viewCount) || 0); tl += parseInt((v.statistics && v.statistics.likeCount) || 0); });
-    var lr = tv > 0 ? tl / tv : 0;
-    lScore = lr >= .06 ? 20 : lr >= .04 ? 17 : lr >= .02 ? 13 : lr >= .01 ? 9 : lr >= .005 ? 5 : 2;
-  }
-  var total = aScore + eScore + cScore + rScore + lScore;
-  return {
-    total: total,
-    ring: total >= 80 ? 'var(--green)' : total >= 65 ? 'var(--gold)' : total >= 50 ? 'var(--blue2)' : 'var(--text2)',
-    verdict: total >= 80 ? '🔥 Top Tier' : total >= 65 ? '⚡ Established' : total >= 50 ? '📈 Growing' : total >= 35 ? '🌱 Early Stage' : '🚀 Just Starting',
-    tier: total >= 80 ? 'Elite' : total >= 65 ? 'Established' : total >= 50 ? 'Growth Stage' : total >= 35 ? 'Emerging' : 'Beginner',
-    metrics: [{ l: 'Audience Size', s: aScore, m: 20 }, { l: 'Engagement', s: eScore, m: 20 }, { l: 'Content Volume', s: cScore, m: 20 }, { l: 'Recent Performance', s: rScore, m: 20 }, { l: 'Like Rate', s: lScore, m: 20 }],
-    raw: { subs: subs, views: views, vcount: vcount, vpr: vpr.toFixed(1) }
-  };
-}
-
-function renderScore(sd) {
-  var ring = document.getElementById('evalRing');
-  var circumference = 314.16;
-  ring.style.stroke = sd.ring;
-  setTimeout(function() { ring.style.strokeDashoffset = circumference - (sd.total / 100) * circumference; }, 80);
-  document.getElementById('evalScoreNum').textContent = sd.total;
-  document.getElementById('evalScoreNum').style.color = sd.ring;
-  document.getElementById('evalVerdict').textContent = sd.verdict;
-  document.getElementById('evalVerdict').style.color = sd.ring;
-  document.getElementById('evalTier').textContent = sd.tier + ' · ' + sd.total + '/100';
-  var barsEl = document.getElementById('evalBars');
-  barsEl.innerHTML = sd.metrics.map(function(m) {
-    var pct = Math.round((m.s / m.m) * 100);
-    return '<div class="eval-metric-row"><div class="eval-metric-label"><span>' + m.l + '</span><span>' + m.s + '/' + m.m + '</span></div>'
-      + '<div class="eval-metric-track"><div class="eval-metric-fill" style="width:0%" data-pct="' + pct + '%"></div></div></div>';
-  }).join('');
-  setTimeout(function() { barsEl.querySelectorAll('.eval-metric-fill').forEach(function(el) { el.style.width = el.dataset.pct; }); }, 200);
-}
-
-async function runEvaluation() {
-  document.getElementById('evalMain').style.display = 'none';
-  document.getElementById('evalNoAccount').style.display = 'none';
-  document.getElementById('evalLoading').style.display = 'block';
-  var ytS = null, ttS = null;
-  try { ytS = YouTubeAuth.getSession(); } catch(e) {}
-  try { ttS = TikTokAuth.getSession(); } catch(e) {}
-
-  if (ytS && ytS.channel) {
-    document.getElementById('evalLoadingMsg').textContent = 'Fetching your YouTube data…';
-    var videos = null;
-    try { var vr = await YouTubeAuth.fetchVideos(ytS.accessToken, 10); videos = vr && vr.items ? vr.items : []; } catch(e) {}
-    var sd = computeScore(ytS.channel, videos); _evalScoreData = sd; _evalChannelData = ytS.channel; _evalVideosData = videos;
-    document.getElementById('evalLoading').style.display = 'none';
-    showEvalMain(ytS.channel, 'youtube'); renderScore(sd);
-    await evalGetIntro(ytS.channel, videos, sd, 'YouTube');
-    toast('✅ Evaluation complete!');
-  } else if (ttS) {
-    document.getElementById('evalLoadingMsg').textContent = 'Fetching your TikTok data…';
-    var ttProfile = ttS.profile || {};
-    try { var pr = await fetch(DIJO + '/tiktok/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: ttS.accessToken }) }); var pd = await pr.json(); if (pd && pd.data && pd.data.user) ttProfile = pd.data.user; } catch(e) {}
-    var ttVids = [];
-    try { var vr2 = await fetch(DIJO + '/tiktok/videos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_token: ttS.accessToken, max_count: 10 }) }); var vd = await vr2.json(); ttVids = (vd && vd.data && vd.data.videos) || []; } catch(e) {}
-    var ttCh = { _platform: 'tiktok', snippet: { title: ttProfile.display_name || 'TikTok' }, statistics: { subscriberCount: ttProfile.follower_count || 0, viewCount: ttProfile.likes_count || 0, videoCount: ttProfile.video_count || 0 } };
-    var ttVidsForScore = ttVids.map(function(v) { return { statistics: { viewCount: v.view_count || 0, likeCount: v.like_count || 0 } }; });
-    var sd2 = computeScore(ttCh, ttVidsForScore); _evalScoreData = sd2; _evalChannelData = ttCh;
-    document.getElementById('evalLoading').style.display = 'none';
-    showEvalMainTt(ttS); renderScore(sd2);
-    await evalGetIntroTt(ttProfile, ttVids, sd2);
-    toast('✅ TikTok evaluation complete!');
-  } else {
-    document.getElementById('evalLoading').style.display = 'none';
-    document.getElementById('evalNoAccount').style.display = 'block';
-    toast('⚠️ Connect YouTube or TikTok first');
-  }
-}
-
-async function evalGetIntro(channel, videos, score, platform) {
-  if (!checkAccess()) return;
-  var st = (channel && channel.statistics) || {};
-  var name = (channel && channel.snippet && channel.snippet.title) || 'Channel';
-  var topVids = videos ? videos.slice(0, 3).map(function(v, i) {
-    var s = v.statistics || {}; var t = (v.snippet && v.snippet.title) || 'Video';
-    return (i + 1) + '. "' + t + '" — ' + fmtN(s.viewCount) + ' views, ' + fmtN(s.likeCount) + ' likes';
-  }).join('\n') : 'N/A';
-  var prompt = 'Evaluate this ' + platform + ' channel in 3 sentences max. Then 3 bullet action points.\n\nChannel: ' + name + '\nSubscribers: ' + fmtN(st.subscriberCount) + '\nViews: ' + fmtN(st.viewCount) + '\nVideos: ' + (st.videoCount || 0) + '\nScore: ' + score.total + '/100 (' + score.tier + ')\nTop videos:\n' + topVids;
-  try {
-    var reply = await callDijo(prompt, 'creator');
-    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
-    _evalChatHistory = [{ role: 'dijo', content: reply }];
-  } catch(e) {
-    addEvalMsg('dijo', 'Score: <strong>' + score.total + '/100</strong> (' + score.tier + '). Ask me anything about your growth strategy.');
-  }
-}
-
-async function evalGetIntroTt(profile, videos, score) {
-  if (!checkAccess()) return;
-  var name = profile.display_name || 'TikTok account';
-  var topVids = videos.slice(0, 3).map(function(v, i) { return (i + 1) + '. ' + fmtN(v.view_count) + ' views, ' + fmtN(v.like_count) + ' likes'; }).join('\n');
-  var prompt = 'Evaluate this TikTok account in 3 sentences max. Then 3 bullet action points.\n\nAccount: ' + name + '\nFollowers: ' + fmtN(profile.follower_count) + '\nLikes: ' + fmtN(profile.likes_count) + '\nVideos: ' + (profile.video_count || 0) + '\nScore: ' + score.total + '/100 (' + score.tier + ')\nTop videos:\n' + (topVids || 'N/A');
-  try {
-    var reply = await callDijo(prompt, 'creator');
-    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
-    _evalChatHistory = [{ role: 'dijo', content: reply }];
-  } catch(e) {
-    addEvalMsg('dijo', 'TikTok score: <strong>' + score.total + '/100</strong> (' + score.tier + '). Ask me anything.');
-  }
-}
-
-function evalSend() {
-  if (!checkAccess()) return;
-  var i = document.getElementById('evalInput'); var msg = i.value.trim(); if (!msg) return;
-  i.value = ''; evalAsk(msg);
-  document.getElementById('evalChips').style.display = 'none';
-}
-
-async function evalAsk(question) {
-  addEvalMsg('user', escH(question));
-  var ctx = '';
-  if (_evalScoreData && _evalChannelData) {
-    var st = (_evalChannelData.statistics) || {}; var nm = (_evalChannelData.snippet && _evalChannelData.snippet.title) || 'channel';
-    ctx = '[' + nm + ': ' + fmtN(st.subscriberCount) + ' subs/followers, ' + fmtN(st.viewCount) + ' views, ' + (st.videoCount || 0) + ' videos, Score: ' + _evalScoreData.total + '/100 (' + _evalScoreData.tier + ')] ';
-  }
-  var typId = 'typ-' + Date.now();
-  var typEl = document.createElement('div'); typEl.className = 'eval-msg'; typEl.id = typId;
-  typEl.innerHTML = '<div class="eval-av">DJ</div><div class="eval-bubble dijo" style="color:var(--text3);font-style:italic"><span class="spinner spinner-gold" style="width:10px;height:10px;border-width:1.5px"></span> Thinking…</div>';
-  document.getElementById('evalMsgs').appendChild(typEl); scrollEval();
-  try {
-    var reply = await callDijo(ctx + question, 'creator');
-    var te = document.getElementById(typId); if (te) te.remove();
-    addEvalMsg('dijo', reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'));
-    _evalChatHistory.push({ role: 'user', content: question }, { role: 'dijo', content: reply });
-  } catch(e) {
-    var te2 = document.getElementById(typId); if (te2) te2.remove();
-    addEvalMsg('dijo', 'Dijo unavailable — try again in a moment.');
-  }
-}
-
-function addEvalMsg(from, html) {
-  var msgs = document.getElementById('evalMsgs');
-  var div = document.createElement('div'); div.className = 'eval-msg' + (from === 'user' ? ' user' : '');
-  var avHtml = from === 'user' ? '<div class="eval-av you">You</div>' : '<div class="eval-av">DJ</div>';
-  div.innerHTML = avHtml + '<div class="eval-bubble ' + (from === 'user' ? 'user' : 'dijo') + '">' + html + '</div>';
-  msgs.appendChild(div); scrollEval();
-}
-function scrollEval() { var m = document.getElementById('evalMsgs'); if (m) m.scrollTop = m.scrollHeight; }
-function clearEvalChat() {
-  document.getElementById('evalMsgs').innerHTML = '<div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Chat cleared. What would you like to know?</div></div>';
-  _evalChatHistory = []; document.getElementById('evalChips').style.display = 'flex';
-}
-
-/* ─────────────────────────────────────────────
-   COPY HELPERS
-───────────────────────────────────────────── */
-function copyEl(id) {
-  var el = document.getElementById(id); if (!el) return;
-  navigator.clipboard.writeText(el.innerText || el.textContent).then(function() { toast('📋 Copied!'); }).catch(function() {});
-}
-function copyTags(id) {
-  var el = document.getElementById(id); if (!el) return;
-  var text = Array.from(el.querySelectorAll('.ob-tag')).map(function(s) { return s.textContent; }).join(' ');
-  navigator.clipboard.writeText(text).then(function() { toast('📋 Hashtags copied!'); }).catch(function() {});
-}
-
-/* ─────────────────────────────────────────────
-   TOAST
-───────────────────────────────────────────── */
-function toast(msg) {
-  var shelf = document.getElementById('toastShelf');
-  var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
-  shelf.appendChild(el);
-  setTimeout(function() { el.remove(); }, 3400);
-}
-
-/* ─────────────────────────────────────────────
-   KEYBOARD SHORTCUTS
-───────────────────────────────────────────── */
-document.addEventListener('keydown', function(e) {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('sb-item')) {
-    e.preventDefault();
-    e.target.click();
-  }
-  if (e.key === 'Escape') closeSidebar();
 });
 
-/* ─────────────────────────────────────────────
-   TAB NAVIGATION — data-tab event listeners
-   Replaces fragile inline onclick="switchTab(...)"
-───────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('[data-tab]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      switchTab(this.dataset.tab, this);
-    });
-  });
+
+/* ── POST /portfolio/save ── */
+app.post("/portfolio/save", async (req, res) => {
+  try {
+    const { portfolio, session } = req.body;
+
+    if (!portfolio) {
+      return res.status(400).json({ error: "portfolio is required" });
+    }
+
+    console.log(`[Portfolio /save] "${portfolio.name}" | session: ${session || "guest"}`);
+
+    const { data, error } = await _aiSupabase
+      .from("portfolios")
+      .insert([{
+        user_id: session || null,
+        user_session: session || null,
+
+        name: portfolio.name || "",
+        niche: portfolio.niche || "",
+        bio: portfolio.bio || "",
+
+        theme: portfolio.theme || "dark",
+
+        services: portfolio.services || [],
+        projects: portfolio.projects || [],
+        testimonials: portfolio.testimonials || [],
+        hero_media: portfolio.hero_media || [],
+
+        ai_headline: portfolio.ai_headline || "",
+        ai_tagline: portfolio.ai_tagline || "",
+        ai_bio: portfolio.ai_bio || "",
+        ai_cta: portfolio.ai_cta || "",
+
+        total_followers: portfolio.total_followers || "",
+        engagement_rate: portfolio.engagement_rate || "",
+        monthly_views: portfolio.monthly_views || "",
+
+        email: portfolio.email || "",
+
+        slug: (portfolio.name || "creator")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-") + "-" + Date.now()
+      }]);
+
+    if (error) {
+      console.error("[Portfolio /save] Supabase error:", error.message);
+      return res.status(500).json({ error: "Save failed", details: error.message });
+    }
+
+    console.log("[Portfolio /save] Saved successfully");
+    res.json({ saved: true, data });
+
+  } catch (err) {
+    console.error("[Portfolio /save] Exception:", err.message);
+    res.status(500).json({ error: "Save failed", details: err.message });
+  }
 });
 
-/* ─────────────────────────────────────────────
-   SWIPE TO CLOSE SIDEBAR (touch devices)
-───────────────────────────────────────────── */
-(function() {
-  var startX = 0, startY = 0, isDragging = false;
 
-  document.addEventListener('touchstart', function(e) {
-    var sb = document.getElementById('sidebar');
-    if (!sb || !sb.classList.contains('open')) return;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    isDragging = true;
-  }, { passive: true });
+/* ================================================================
+   BOOK CALL
+================================================================ */
+app.post("/book-call", async (req, res) => {
+  try {
+    const { name, email, date } = req.body;
 
-  document.addEventListener('touchmove', function(e) {
-    if (!isDragging) return;
-    var dx = e.touches[0].clientX - startX;
-    var dy = Math.abs(e.touches[0].clientY - startY);
-    if (dx < -30 && dy < 60) {
-      closeSidebar();
-      isDragging = false;
+    if (!name || !email || !date) {
+      return res.json({ error: "Missing fields" });
     }
-  }, { passive: true });
 
-  document.addEventListener('touchend', function() { isDragging = false; }, { passive: true });
-})();
+    // 🔒 CHECK IF DATE EXISTS
+    const { data: existing } = await _aiSupabase
+      .from("bookings")
+      .select("*")
+      .eq("date", date)
+      .single();
 
-/* ─────────────────────────────────────────────
-   CONTENT CALENDAR
-   Rendering is fully owned by calendar.js.
-   loadCalendar() is a no-op shim so any legacy
-   call sites don't throw — calendar.js handles
-   the real work after it initialises.
-───────────────────────────────────────────── */
-function getBestPostTime(i) {
-  var times = ['9:00 AM', '12:30 PM', '6:00 PM', '8:30 PM'];
-  return times[i % times.length];
-}
-
-function loadCalendar() {
-  /* Intentional no-op — calendar.js owns all calendar rendering.
-     Kept so the window.load init call below doesn't throw. */
-}
-
-/* ─────────────────────────────────────────────
-   TOP 3 TRENDS — replaced by renderWhatToPost
-   Kept as alias so existing call sites don't break
-───────────────────────────────────────────── */
-function updateTopTrends() {
-  renderWhatToPost();
-}
-
-/* ─────────────────────────────────────────────
-   INIT
-───────────────────────────────────────────── */
-window.addEventListener('load', async function() {
-  // Auth is handled by auth.js → initAuth() → loadUser().
-  // nav.js runs its own checkAuth() for the nav bar.
-  // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
-  initYouTube();
-  initTikTok();
-  loadCalendar();
-  loadPlatformStatus();
-  await fetchTrends();
-  updateTopTrends();
-  renderDashTrends();
-  loadOpportunities();
-  renderWhatToPost();
-  loadBriefing();
-  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
-
-  // Auto-refresh trends every 60 seconds
-  setInterval(async function() {
-    try {
-      var scrollY = window.scrollY;
-      await fetchTrends();
-      renderDashTrends();
-      renderDashOpps();
-      renderWhatToPost();
-      updateTopTrends();
-      if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
-        renderFullTrends();
-      }
-      console.log('[Trends] Auto refreshed');
-      window.scrollTo(0, scrollY);
-    } catch(e) {
-      console.warn('[Trends] refresh failed');
+    if (existing) {
+      return res.json({ error: "Date already booked" });
     }
-  }, 60000);
+
+    // 💾 SAVE BOOKING
+    await _aiSupabase.from("bookings").insert({ name, email, date });
+
+    // 📧 SEND EMAIL (RESEND)
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from:    "support@impactgridgroup.com",
+        to:      ["Ogunmoyerodara@gmail.com"],
+        subject: "New Call Booking",
+        html: `
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Date:</b> ${date}</p>
+        `
+      })
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("[Book Call] Error:", err.message);
+    res.json({ error: "Server error" });
+  }
+});
+
+
+/* ================================================================
+   CONTACT FORM
+================================================================ */
+app.post("/contact", async (req, res) => {
+  const { firstName, email, subject, message } = req.body;
+
+  try {
+    await resend.emails.send({
+      from: "ImpactGrid <support@impactgridgroup.com>",
+      to: "Ogunmoyerodara@gmail.com",
+      subject: `New Contact: ${subject}`,
+      html: `
+        <h3>New Message</h3>
+        <p><strong>Name:</strong> ${firstName}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong><br>${message}</p>
+      `
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+});
+
+
+/* ================================================================
+   START SERVER
+================================================================ */
+const PORT = process.env.PORT || 3000;
+
+// Routes and ingestion must be registered BEFORE listen —
+// any request arriving at startup would 404 if registered inside the callback.
+addIngestionRoutes(app);
+startIngestion();
+
+app.listen(PORT, () => {
+  console.log(`ImpactGrid Dijo running on port ${PORT}`);
 });
