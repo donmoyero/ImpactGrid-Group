@@ -297,6 +297,55 @@
     .act-info h4 { font-size: 13px; font-weight: 600; }
     .act-info p  { font-size: 11px; color: var(--text3); font-family: var(--fm); margin-top: 2px; }
 
+    /* ── Animal Avatar Picker ── */
+    .animal-picker-wrap {
+      margin-top: 20px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .animal-picker-label {
+      font-size: 12px; font-weight: 700; color: var(--text2);
+      margin-bottom: 10px; display: flex; align-items: center; gap: 7px;
+    }
+    .animal-picker-label span {
+      font-size: 10px; font-family: var(--fm); letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text3);
+      background: var(--bg2); border: 1px solid var(--border2);
+      padding: 2px 7px; border-radius: 4px;
+    }
+    .animal-grid {
+      display: grid; grid-template-columns: repeat(8, 1fr);
+      gap: 6px; margin-bottom: 10px;
+    }
+    @media (max-width: 600px) { .animal-grid { grid-template-columns: repeat(6, 1fr); } }
+    @media (max-width: 400px) { .animal-grid { grid-template-columns: repeat(5, 1fr); } }
+
+    .animal-opt {
+      aspect-ratio: 1; border-radius: 12px;
+      border: 2px solid var(--border); background: var(--bg2);
+      font-size: 22px; cursor: pointer; transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .animal-opt:hover { border-color: var(--gold); transform: scale(1.08); background: var(--gold-dim); }
+    .animal-opt.selected {
+      border-color: var(--gold); background: var(--gold-dim);
+      box-shadow: 0 0 0 3px var(--gold-glo);
+    }
+    .animal-opt.selected::after {
+      content: '✓'; position: absolute; bottom: 2px; right: 3px;
+      font-size: 8px; font-weight: 900; color: var(--gold);
+      font-family: var(--fb);
+    }
+
+    /* Avatar circle in settings showing animal emoji */
+    .av-circle.av-animal {
+      font-size: 38px;
+      background: linear-gradient(135deg, #f0f4ff, #e8f0fe);
+    }
+    [data-theme="dark"] .av-circle.av-animal {
+      background: linear-gradient(135deg, #1a1f2e, #1e2640);
+    }
+
     /* ── Responsive ── */
     @media (max-width: 860px) {
       .settings-wrap { grid-template-columns: 1fr; padding-top: calc(var(--nav-h) + 20px); }
@@ -387,17 +436,32 @@
             <div class="av-row">
               <div class="av-circle" id="s-av">
                 <span id="s-av-init">?</span>
-                <img id="s-av-img" src="" alt="" style="display:none" />
+                <img id="s-av-img" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" />
+                <span id="s-av-animal" style="display:none;font-size:38px;line-height:1;"></span>
               </div>
               <div class="av-info">
                 <h4>Profile Photo</h4>
-                <p>JPG or PNG. Max 2MB. Shown on your network profile.</p>
+                <p>Upload a photo, or choose a unique animal avatar below.</p>
                 <div class="av-btns">
                   <label>
                     <input type="file" id="s-av-upload" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])" />
-                    Upload photo
+                    📷 Upload photo
                   </label>
+                  <button class="btn-sm btn-sm-ghost" onclick="clearAvatarPhoto()" id="av-clear-btn" style="display:none;">✕ Remove photo</button>
                 </div>
+              </div>
+            </div>
+
+            <!-- Animal Avatar Picker -->
+            <div class="animal-picker-wrap">
+              <div class="animal-picker-label">
+                Choose an animal avatar <span>or upload a photo above</span>
+              </div>
+              <div class="animal-grid" id="animalGrid">
+                <!-- Populated by JS -->
+              </div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--fm);">
+                Your animal avatar shows on your profile when no photo is uploaded. Click to select, click again to deselect.
               </div>
             </div>
 
@@ -953,6 +1017,18 @@
       var img = document.getElementById('s-av-img');
       img.src = avatarUrl; img.style.display = 'block';
       try { localStorage.setItem('ig_avatar', avatarUrl); } catch(e) {}
+      /* Clear animal selection — photo takes priority */
+      _selectedAnimal = null;
+      try { localStorage.removeItem('ig_animal'); } catch(e) {}
+      document.querySelectorAll('.animal-opt').forEach(function(el) { el.classList.remove('selected'); });
+      var anim   = document.getElementById('s-av-animal');
+      var init   = document.getElementById('s-av-init');
+      var circle = document.getElementById('s-av');
+      if (anim)   { anim.style.display = 'none'; }
+      if (init)   { init.style.display = 'none'; }
+      if (circle) { circle.classList.remove('av-animal'); }
+      var clearBtn = document.getElementById('av-clear-btn');
+      if (clearBtn) clearBtn.style.display = '';
 
       // save to database
       const { error: dbError } = await supabase
@@ -1163,6 +1239,197 @@
       document.getElementById('opt-light').classList.toggle('active', t === 'light');
       document.getElementById('opt-dark').classList.toggle('active',  t === 'dark');
     }
+
+    /* ─── Animal avatars ─── */
+    var ANIMALS = [
+      '🦁','🐯','🐻','🦊','🐺','🦝','🐼','🐨',
+      '🦄','🐸','🐧','🦋','🦩','🦚','🦜','🐦',
+      '🐬','🦭','🦈','🐙','🦕','🦖','🦔','🐿️',
+      '🦦','🦥','🦘','🦙','🦛','🦏','🐘','🦒',
+      '🐆','🐅','🦓','🦌','🐂','🐃','🐄','🐖',
+      '🦫','🦬','🐑','🦙','🐐','🦃','🦤','🪶',
+      '🐓','🦢','🦆','🦅','🦉','🦇','🐝','🪲',
+      '🐛','🦗','🕷️','🦞','🦀','🦑','🦐','🐡'
+    ];
+
+    var _selectedAnimal = null; /* emoji string or null */
+
+    function _buildAnimalGrid() {
+      var grid = document.getElementById('animalGrid');
+      if (!grid) return;
+      grid.innerHTML = ANIMALS.map(function(a) {
+        return '<div class="animal-opt" data-animal="' + a + '" onclick="selectAnimal(\'' + encodeURIComponent(a) + '\')" title="' + a + '">' + a + '</div>';
+      }).join('');
+    }
+
+    window.selectAnimal = function(encoded) {
+      var a = decodeURIComponent(encoded);
+      if (_selectedAnimal === a) {
+        /* Clicking same animal again → deselect */
+        _selectedAnimal = null;
+        document.querySelectorAll('.animal-opt').forEach(function(el) { el.classList.remove('selected'); });
+        /* Revert preview to initial/photo */
+        _refreshAvPreview();
+        /* Remove from localStorage */
+        try { localStorage.removeItem('ig_animal'); } catch(e) {}
+        return;
+      }
+      _selectedAnimal = a;
+      document.querySelectorAll('.animal-opt').forEach(function(el) {
+        el.classList.toggle('selected', el.dataset.animal === a);
+      });
+      /* Show animal in preview circle */
+      var img    = document.getElementById('s-av-img');
+      var init   = document.getElementById('s-av-init');
+      var anim   = document.getElementById('s-av-animal');
+      var circle = document.getElementById('s-av');
+      if (img)  { img.style.display  = 'none'; }
+      if (init) { init.style.display = 'none'; }
+      if (anim) { anim.style.display = ''; anim.textContent = a; }
+      if (circle) { circle.classList.add('av-animal'); }
+      try { localStorage.setItem('ig_animal', a); } catch(e) {}
+    };
+
+    function _refreshAvPreview() {
+      var img    = document.getElementById('s-av-img');
+      var init   = document.getElementById('s-av-init');
+      var anim   = document.getElementById('s-av-animal');
+      var circle = document.getElementById('s-av');
+      var cachedPhoto  = ''; try { cachedPhoto  = localStorage.getItem('ig_avatar') || ''; } catch(e) {}
+      var cachedAnimal = ''; try { cachedAnimal = localStorage.getItem('ig_animal') || ''; } catch(e) {}
+
+      if (circle) circle.classList.remove('av-animal');
+      if (cachedPhoto) {
+        if (img)  { img.src = cachedPhoto; img.style.display = 'block'; }
+        if (init) { init.style.display = 'none'; }
+        if (anim) { anim.style.display = 'none'; }
+        var clearBtn = document.getElementById('av-clear-btn');
+        if (clearBtn) clearBtn.style.display = '';
+      } else if (cachedAnimal) {
+        _selectedAnimal = cachedAnimal;
+        if (img)   { img.style.display  = 'none'; }
+        if (init)  { init.style.display = 'none'; }
+        if (anim)  { anim.style.display = ''; anim.textContent = cachedAnimal; }
+        if (circle){ circle.classList.add('av-animal'); }
+        /* Mark grid selection */
+        document.querySelectorAll('.animal-opt').forEach(function(el) {
+          el.classList.toggle('selected', el.dataset.animal === cachedAnimal);
+        });
+      } else {
+        if (img)  { img.style.display  = 'none'; }
+        if (anim) { anim.style.display = 'none'; }
+        if (init) { init.style.display = ''; }
+      }
+    }
+
+    window.clearAvatarPhoto = function() {
+      try { localStorage.removeItem('ig_avatar'); } catch(e) {}
+      var img = document.getElementById('s-av-img');
+      if (img) { img.src = ''; img.style.display = 'none'; }
+      var clearBtn = document.getElementById('av-clear-btn');
+      if (clearBtn) clearBtn.style.display = 'none';
+      _refreshAvPreview();
+      /* Also clear from DB */
+      (async function() {
+        var client = getSupabase();
+        var sessionRes = await client.auth.getSession();
+        if (!sessionRes.data || !sessionRes.data.session) return;
+        await client.from('profiles').update({ avatar_url: null }).eq('id', sessionRes.data.session.user.id);
+      })();
+    };
+
+    /* Patch saveProfile to also save animal_avatar field */
+    var _origSaveProfile = saveProfile;
+    saveProfile = async function() {
+      /* First run normal save */
+      await _origSaveProfile();
+      /* Then save animal selection */
+      if (_selectedAnimal !== null) {
+        var client = getSupabase();
+        var sessionRes = await client.auth.getSession();
+        if (sessionRes.data && sessionRes.data.session) {
+          await client.from('profiles').update({ animal_avatar: _selectedAnimal })
+            .eq('id', sessionRes.data.session.user.id);
+          /* Update nav avatar to show animal emoji */
+          _applyAnimalToNav(_selectedAnimal);
+        }
+      }
+    };
+
+    function _applyAnimalToNav(animal) {
+      /* Update desktop nav avatar */
+      var avEl = document.getElementById('userAv');
+      if (avEl) {
+        avEl.style.fontSize = '18px';
+        avEl.style.background = 'linear-gradient(135deg,#f0f4ff,#e8f0fe)';
+        avEl.innerHTML = animal;
+      }
+      /* Update mobile sidebar avatar */
+      var mobAv = document.getElementById('mobUserAv');
+      if (mobAv) {
+        mobAv.style.fontSize = '18px';
+        mobAv.style.background = 'linear-gradient(135deg,#f0f4ff,#e8f0fe)';
+        mobAv.innerHTML = animal;
+      }
+      try { localStorage.setItem('ig_animal', animal); } catch(e) {}
+    }
+
+    /* On page load: build grid, restore saved animal from profile */
+    document.addEventListener('DOMContentLoaded', function() {
+      _buildAnimalGrid();
+      /* loadProfile will call _refreshAvPreview() after it runs — handled below */
+    });
+
+    /* Patch loadProfile to restore animal selection from DB */
+    var _origLoadProfile = loadProfile;
+    loadProfile = function(user, client) {
+      if (!client) client = getSupabase();
+      client.from('profiles').select('*').eq('id', user.id).single()
+        .then(function(res) {
+          var p = res.data; if (!p) { _refreshAvPreview(); return; }
+          if (p.full_name) {
+            var pts = p.full_name.split(' ');
+            document.getElementById('s-first').value = pts[0] || '';
+            document.getElementById('s-last').value  = pts.slice(1).join(' ') || '';
+            setInitials(p.full_name);
+          }
+          if (p.role) {
+            document.getElementById('s-role').value = p.role;
+            document.getElementById('stat-role').textContent = p.role.charAt(0).toUpperCase() + p.role.slice(1);
+          }
+          if (p.bio)      document.getElementById('s-bio').value      = p.bio;
+          if (p.title)    document.getElementById('s-title').value    = p.title;
+          if (p.location) document.getElementById('s-location').value = p.location;
+          if (p.linkedin) document.getElementById('s-linkedin').value = p.linkedin;
+          if (p.website)  document.getElementById('s-website').value  = p.website;
+          /* Photo takes priority */
+          if (p.avatar_url) {
+            var img = document.getElementById('s-av-img');
+            if (img) { img.src = p.avatar_url; img.style.display = 'block'; }
+            try { localStorage.setItem('ig_avatar', p.avatar_url); } catch(e) {}
+            var clearBtn = document.getElementById('av-clear-btn');
+            if (clearBtn) clearBtn.style.display = '';
+          } else if (p.animal_avatar) {
+            /* No photo — use animal */
+            try { localStorage.setItem('ig_animal', p.animal_avatar); } catch(e) {}
+            _selectedAnimal = p.animal_avatar;
+            document.querySelectorAll('.animal-opt').forEach(function(el) {
+              el.classList.toggle('selected', el.dataset.animal === p.animal_avatar);
+            });
+            var anim   = document.getElementById('s-av-animal');
+            var init   = document.getElementById('s-av-init');
+            var imgEl  = document.getElementById('s-av-img');
+            var circle = document.getElementById('s-av');
+            if (anim)   { anim.style.display = ''; anim.textContent = p.animal_avatar; }
+            if (init)   { init.style.display = 'none'; }
+            if (imgEl)  { imgEl.style.display = 'none'; }
+            if (circle) { circle.classList.add('av-animal'); }
+            _applyAnimalToNav(p.animal_avatar);
+          } else {
+            _refreshAvPreview();
+          }
+        }).catch(function() { _refreshAvPreview(); });
+    };
 
     /* ─── Helpers ─── */
     function showAlert(id, msg) {
