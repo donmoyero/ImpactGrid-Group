@@ -664,4 +664,4 @@ document.addEventListener('ig-user-ready', function(e) {
   var user = e.detail;
   console.log('User ready:', user);
   if (document.getElementById('calWeekGrid')) renderCalendar();
-});
+}, { once: true });
