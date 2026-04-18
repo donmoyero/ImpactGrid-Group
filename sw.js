@@ -3,7 +3,7 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v3';
+const CACHE_NAME = 'impactgrid-v4';
 
 const CORE_FILES = [
   '/',
@@ -75,26 +75,24 @@ self.addEventListener('fetch', function(event) {
   /* Only handle GET requests */
   if (event.request.method !== 'GET') return;
 
-  /* Skip external API calls — never cache these */
-  var url = event.request.url;
-  if (url.includes('supabase.co')) return;
-  if (url.includes('anthropic.com')) return;
-  if (url.includes('onrender.com')) return;
-  if (url.includes('graph.facebook.com')) return;
-  if (url.includes('api.tiktok.com')) return;
-  if (url.includes('googleapis.com')) return;
-  if (url.includes('fonts.gstatic.com')) return;
-  if (url.includes('cdn.jsdelivr.net')) return;
+  /* Skip non http/https schemes — fixes chrome-extension:// cache error */
+  if (!event.request.url.startsWith('http')) return;
+
+  /* Skip all cross-origin requests — only cache same-origin */
+  try {
+    var reqUrl = new URL(event.request.url);
+    if (reqUrl.origin !== self.location.origin) return;
+  } catch(e) { return; }
 
   event.respondWith(
     /* Always try network first */
     fetch(event.request)
       .then(function(response) {
-        /* Cache valid same-origin responses */
+        /* Only cache basic (same-origin) 200 responses */
         if (
           response &&
           response.status === 200 &&
-          response.type !== 'opaque'
+          response.type === 'basic'
         ) {
           var clone = response.clone();
           caches.open(CACHE_NAME).then(function(cache) {
