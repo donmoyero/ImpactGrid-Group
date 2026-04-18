@@ -524,12 +524,27 @@ async function fetchTrends() {
     }
   } catch(e) { console.warn('[fetchTrends] /trends/live failed:', e.message); }
 
-  // ── FALLBACK: Google RSS ──────────────────────────────────────────────────
-  // This is last-resort only — data has no platform diversity or video stats.
+  // ── TERTIARY: trends_cache endpoint ──────────────────────────────────────
+  // Richer than RSS (has platform diversity + video stats); use when cross/live
+  // endpoints return nothing (e.g. Supabase ingestion lag or cold start).
+  try {
+    var res3 = await fetch(DIJO + '/trends/cache?ts=' + Date.now());
+    var data3 = await res3.json();
+    var cacheList = Array.isArray(data3) ? data3 : (data3 && Array.isArray(data3.trends) ? data3.trends : null);
+    if (cacheList && cacheList.length) {
+      console.warn('[fetchTrends] Using /trends/cache — cross/live returned no data');
+      _allTrends = cacheList.map(mapTrend);
+      renderAll();
+      return;
+    }
+  } catch(e) { console.warn('[fetchTrends] /trends/cache failed:', e.message); }
+
+  // ── LAST RESORT: Google RSS ───────────────────────────────────────────────
+  // No platform diversity or video stats — only reached if cache also fails.
   // If you see this in console regularly, check that /trends/cross and /trends/live
   // are returning data from Supabase (run /ingestion/debug to inspect).
   try {
-    console.warn('[fetchTrends] Falling back to Google RSS — cross/live endpoints returned no data');
+    console.warn('[fetchTrends] Falling back to Google RSS — cross/live/cache all returned no data');
     var rss = await fetch(DIJO + '/trends/google?geo=GB');
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
