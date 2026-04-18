@@ -20,7 +20,18 @@
     return;
   }
 
-  window.supabaseClient = window.supabase.createClient(url, key);
+  // ✅ FIX: storageKey matches ig-supabase.js so both modules share the same
+  //         session from localStorage — previously auth.js used the default key
+  //         which meant the session saved at login was invisible to ig-supabase.js,
+  //         causing every profiles request to fire with no token → 403 Forbidden.
+  window.supabaseClient = window.supabase.createClient(url, key, {
+    auth: {
+      persistSession:     true,
+      autoRefreshToken:   true,
+      detectSessionInUrl: true,
+      storageKey:         'ig-auth-token'
+    }
+  });
   console.log("[Auth] Supabase client ready");
 })();
 
