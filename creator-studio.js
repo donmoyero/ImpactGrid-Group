@@ -687,7 +687,7 @@ function renderPlatformMeters() {
       + '</div>'
       + '<div class="pm-stats">'
       +   '<span class="pm-avg">Avg <strong style="color:' + color + '">' + stats.avg.toFixed(1) + '</strong>/10</span>'
-      +   '<span class="pm-best" onclick="loadTopic('' + escJ(stats.best.topic) + '')" title="Click to generate">'
+      +   '<span class="pm-best" onclick="loadTopic(\'' + escJ(stats.best.topic) + '\')" title="Click to generate">'
       +     '🔝 ' + escH(stats.best.topic.length > 22 ? stats.best.topic.slice(0, 22) + '...' : stats.best.topic)
       +   '</span>'
       + '</div>'
@@ -976,26 +976,60 @@ function renderOpportunities(data) {
     return;
   }
 
-  el.innerHTML = data.slice(0, 3).map(function(t) {
+  var rankLabels = ['#1 Best Pick', '#2 Strong Play', '#3 Worth Watching'];
+  var rankColors = ['var(--gold)', 'var(--green)', 'var(--blue2)'];
+
+  el.innerHTML = data.slice(0, 3).map(function(t, idx) {
     var platLabel = t.platform_source === 'youtube' ? 'YouTube'
-      : t.platform_source === 'tiktok'   ? 'TikTok'
-      : t.platform_source === 'cross'    ? 'Cross-platform'
+      : t.platform_source === 'tiktok'  ? 'TikTok'
+      : t.platform_source === 'cross'   ? 'Cross-platform'
       : 'Google';
     var platIcon = t.platform_source === 'tiktok'  ? '🎵'
       : t.platform_source === 'youtube' ? '▶️'
       : t.platform_source === 'cross'   ? '🚀' : '🔍';
-    var displayScore = t.dijoScore != null
-      ? Math.min(9.9, parseFloat((t.dijoScore / 10).toFixed(1)))
-      : Math.min(9.9, parseFloat(((t.trend_score || 0) / 10).toFixed(1)));
-    var status = t.status || 'rising';
-    var videoMeta = t.video_count ? ' · ' + t.video_count + ' videos' : '';
 
-    return '<div class="opp-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
-      + '<div class="opp-header">'
-      +   '<span class="opp-topic">' + platIcon + ' ' + escH(t.topic) + '</span>'
-      +   '<span class="opp-score">' + displayScore.toFixed(1) + '</span>'
+    // Score normalisation — handles both shapes:
+    //   /trends/dijo  → dijoScore is 0-100 (velocity*0.4 + engagement*0.3 + boost*0.3)
+    //   renderDashOpps → passes score already on 0-10 scale via _score field
+    var displayScore;
+    if (t._score != null) {
+      // Came from renderDashOpps — already 0-10
+      displayScore = Math.min(9.9, parseFloat(t._score.toFixed(1)));
+    } else if (t.dijoScore != null && t.dijoScore > 0) {
+      // /trends/dijo — dijoScore is 0-100, convert to 0-10
+      displayScore = Math.min(9.9, parseFloat((t.dijoScore / 10).toFixed(1)));
+    } else if (t.trend_score != null && t.trend_score > 0) {
+      // trend_score from Supabase is 0-100
+      displayScore = Math.min(9.9, parseFloat((t.trend_score / 10).toFixed(1)));
+    } else {
+      displayScore = 5.0; // safe default — never show 0.0
+    }
+
+    var pct = Math.round((displayScore / 10) * 100);
+    var status = t.status || 'rising';
+    var videoMeta = t.video_count ? t.video_count + ' videos' : '';
+    var rankColor = rankColors[idx] || 'var(--text2)';
+    var rankLabel = rankLabels[idx] || '';
+
+    // Platform-specific action hint
+    var actionHint = t.platform_source === 'tiktok'  ? 'Post a 30–60s hook video today'
+      : t.platform_source === 'youtube' ? 'Great for a 5–10 min explainer'
+      : t.platform_source === 'cross'   ? 'Works on TikTok + YouTube — post both'
+      : 'High search demand — SEO content wins here';
+
+    return '<div class="opp-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">'
+      +   '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + rankColor + ';letter-spacing:.08em;text-transform:uppercase">' + rankLabel + '</span>'
+      +   '<span style="font-family:\'DM Mono\',monospace;font-size:16px;font-weight:900;color:' + rankColor + '">' + displayScore.toFixed(1) + '</span>'
       + '</div>'
-      + '<div class="opp-meta">' + escH(platLabel) + ' · ' + status + videoMeta + '</div>'
+      + '<div class="opp-header" style="margin-bottom:4px">'
+      +   '<span class="opp-topic">' + platIcon + ' ' + escH(t.topic) + '</span>'
+      + '</div>'
+      + '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-bottom:6px;overflow:hidden">'
+      +   '<div style="height:100%;width:' + pct + '%;background:' + rankColor + ';border-radius:99px;transition:width .5s ease"></div>'
+      + '</div>'
+      + '<div class="opp-meta" style="margin-bottom:4px">' + escH(platLabel) + ' · ' + escH(status) + (videoMeta ? ' · ' + escH(videoMeta) : '') + '</div>'
+      + '<div style="font-size:10px;color:var(--text3);font-style:italic">' + escH(actionHint) + '</div>'
       + '</div>';
   }).join('');
 }
@@ -1004,22 +1038,37 @@ async function loadOpportunities() {
   try {
     var res = await fetch(DIJO + '/trends/dijo');
     var data = await res.json();
-    renderOpportunities(data);
+    // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
+    // fall back to local rather than showing "No opportunities"
+    if (data && data.length) {
+      renderOpportunities(data);
+    } else {
+      console.warn('[Opportunities] /trends/dijo returned empty — using local fallback');
+      renderDashOpps();
+    }
   } catch(e) {
-    // Dijo unavailable — fall back to local trend data
+    console.warn('[Opportunities] /trends/dijo failed:', e.message);
     renderDashOpps();
   }
 }
 
-// Fast in-memory re-render — used by 60s/20s refresh intervals
+// Fast in-memory re-render — used by 60s refresh intervals and as fallback.
+// Passes _score (0-10) so renderOpportunities knows not to divide by 10 again.
 function renderDashOpps() {
   if (!_allTrends.length) return;
-  renderOpportunities(_allTrends.slice(0, 3).map(function(t) {
+  // Use one per platform so the 3 cards are meaningfully different
+  var best = getBest3(_allTrends);
+  var picks = [best.tiktok, best.youtube, best.google].filter(Boolean);
+  if (picks.length < 3) {
+    var used = new Set(picks.map(function(t) { return t.topic; }));
+    var extras = _allTrends.filter(function(t) { return !used.has(t.topic); });
+    while (picks.length < 3 && extras.length) picks.push(extras.shift());
+  }
+  renderOpportunities(picks.map(function(t) {
     return {
       topic:           t.topic,
       platform_source: t.plat === 'yt' ? 'youtube' : t.plat === 'tt' ? 'tiktok' : t.plat === 'cross' ? 'cross' : 'google',
-      trend_score:     (t.score || 0) * 10,
-      dijoScore:       (t.score || 0) * 10,
+      _score:          t.score,   // already 0-10 — bypass the /10 division
       status:          t.status,
       video_count:     t.videoCount
     };
