@@ -40,7 +40,20 @@ function getContentClient() {
   }
 
   try {
-    _contentClient = supabase.createClient(IG_CONTENT_URL, IG_CONTENT_ANON);
+    // ✅ FIX: persistSession:false stops the content client from ever storing
+    //         or reading an auth session. Without this, the Supabase SDK was
+    //         automatically calling auth/v1/user on the CONTENT project
+    //         (exeiojgldxqaakkybdij) to validate the token it found in default
+    //         localStorage — causing a 403 because that project has no auth users.
+    //         storageKey isolates this client from ig-auth-token used by auth.js.
+    _contentClient = supabase.createClient(IG_CONTENT_URL, IG_CONTENT_ANON, {
+      auth: {
+        persistSession:     false, // content client never stores a session
+        autoRefreshToken:   false, // no token to refresh
+        detectSessionInUrl: false, // never intercept OAuth redirects
+        storageKey:         'ig-content-token' // isolated — never clashes with ig-auth-token
+      }
+    });
   } catch (e) {
     console.error('[supabase-config] Failed to create content client:', e.message);
     return null;
