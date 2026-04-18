@@ -551,17 +551,13 @@ function calEsc(s) {
 /* ── Notifications ── */
 /* ── Ask for notification permission only when it makes sense ──
    Called after Auto-Fill so the user has context for why we need it. ── */
-async function requestNotificationPermission(){
-  if (!("Notification" in window)) return;
-  if (Notification.permission !== "default") return; // already granted or denied
-
-  /* Small delay so the calendar has visibly filled before the prompt */
-  await new Promise(function(res){ setTimeout(res, 800); });
-
-  if (typeof toast === 'function') {
-    toast('Want reminders? Allow notifications to get posting alerts.');
-  }
-  await Notification.requestPermission();
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'default') return;
+  setTimeout(function() {
+    if (typeof toast === 'function') toast('Want reminders? Allow notifications to get posting alerts.');
+    setTimeout(function() { Notification.requestPermission(); }, 900);
+  }, 800);
 }
 
 function sendNotification(title, body){
