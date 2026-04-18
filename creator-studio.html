@@ -842,8 +842,12 @@
 
 })();
 </script>
+<!-- nav.js MUST load without defer so renderNav() exists when DOMContentLoaded fires.
+     Loading it deferred caused a race condition where initAuth() ran before nav.js
+     was ready, meaning setNavUser() didn't exist and profiles requests fired
+     with no session token attached → 403 Forbidden on every profiles fetch. -->
+<script src="nav.js"></script>
 <script src="calendar.js" defer></script>
-<script src="nav.js" defer></script>
 <script>
   document.addEventListener('DOMContentLoaded', async function() {
     // renderNav FIRST — injects the nav HTML and fires 'ig-nav-ready'
