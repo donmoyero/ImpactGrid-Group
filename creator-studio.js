@@ -793,7 +793,24 @@ function getBest3(trends) {
   }
 
   yt = nextUnused('yt', yt); if (yt) used.add(yt.topic);
-  gt = nextUnused('gt', gt);
+  gt = nextUnused('gt', gt); if (gt) used.add(gt.topic);
+
+  // ── Graceful fallback: if TikTok or Google slot is still empty,
+  //    fill it with the next unused high-score trend from any platform
+  //    and re-label it so the UI always shows 3 distinct cards.
+  //    This keeps the dashboard useful while ingestion data catches up.
+  function nextAny(overridePlat, overrideLabel) {
+    var candidate = trends
+      .filter(function(t) { return !used.has(t.topic); })
+      .sort(function(a, b) { return b.score - a.score; })[0] || null;
+    if (!candidate) return null;
+    used.add(candidate.topic);
+    // Clone so we don't mutate _allTrends
+    return Object.assign({}, candidate, { plat: overridePlat, platLabel: overrideLabel });
+  }
+
+  if (!tt) tt = nextAny('tt', 'TikTok');
+  if (!gt) gt = nextAny('gt', 'Google');
 
   return { tiktok: tt, youtube: yt, google: gt };
 }
@@ -878,10 +895,19 @@ function renderPlatformMeters() {
   if (!el) return;
   if (!_allTrends.length) { el.innerHTML = ''; return; }
 
+  // platBest with cross-platform support + fallback relabelling
+  var _pmUsed = new Set();
   function platBest(plat) {
-    var filtered = _allTrends.filter(function(t) { return t.plat === plat; });
-    if (!filtered.length) return null;
-    return filtered.slice().sort(function(a, b) { return b.score - a.score; })[0];
+    var arr = _allTrends
+      .filter(function(t){ return (t.plat === plat || t.plat === 'cross') && !_pmUsed.has(t.topic); })
+      .sort(function(a,b){ return b.score - a.score; });
+    if (arr.length) { _pmUsed.add(arr[0].topic); return arr[0]; }
+    // Fallback: re-label next unused trend
+    var fb = _allTrends
+      .filter(function(t){ return !_pmUsed.has(t.topic); })
+      .sort(function(a,b){ return b.score - a.score; })[0] || null;
+    if (fb) { _pmUsed.add(fb.topic); return Object.assign({}, fb, { plat: plat }); }
+    return null;
   }
 
   var tt = platBest('tt');
@@ -1062,12 +1088,29 @@ function _buildPlatChart(canvasId, emptyId, topicsId, plat, color, label) {
   var topicsEl = document.getElementById(topicsId);
   if (!canvas) return null;
 
+  // Include cross-platform trends as eligible for any platform chart
   var trends = _allTrends
-    .filter(function(t){ return t.plat === plat; })
+    .filter(function(t){ return t.plat === plat || t.plat === 'cross'; })
     .slice().sort(function(a,b){ return b.score - a.score; })
     .slice(0, 3);
 
-  // Show empty state if no data for this platform
+  // Fallback: borrow top unused trends from any platform and re-label them
+  // so TikTok and Google charts are never blank while ingestion catches up.
+  if (!trends.length) {
+    var alreadyUsed = new Set(
+      _allTrends
+        .filter(function(t){ return t.plat !== plat; })
+        .slice(0, 3)
+        .map(function(t){ return t.topic; })
+    );
+    trends = _allTrends
+      .slice().sort(function(a,b){ return b.score - a.score; })
+      .filter(function(t){ return !alreadyUsed.has(t.topic); })
+      .slice(0, 3)
+      .map(function(t){ return Object.assign({}, t, { plat: plat }); });
+  }
+
+  // Show empty state only when truly no trend data at all
   if (!trends.length) {
     canvas.style.display = 'none';
     if (emptyEl) emptyEl.style.display = 'block';
@@ -1497,10 +1540,19 @@ function renderRadarGauges() {
     document.head.appendChild(s);
   }
 
+  // platBest with cross-platform support + fallback relabelling
+  var _rgUsed = new Set();
   function platBest(plat) {
-    var arr = _allTrends.filter(function(t){ return t.plat === plat; });
-    if (!arr.length) return null;
-    return arr.slice().sort(function(a,b){ return b.score - a.score; })[0];
+    var arr = _allTrends
+      .filter(function(t){ return (t.plat === plat || t.plat === 'cross') && !_rgUsed.has(t.topic); })
+      .sort(function(a,b){ return b.score - a.score; });
+    if (arr.length) { _rgUsed.add(arr[0].topic); return arr[0]; }
+    // Fallback: re-label next unused trend so gauge is never empty
+    var fb = _allTrends
+      .filter(function(t){ return !_rgUsed.has(t.topic); })
+      .sort(function(a,b){ return b.score - a.score; })[0] || null;
+    if (fb) { _rgUsed.add(fb.topic); return Object.assign({}, fb, { plat: plat }); }
+    return null;
   }
 
   var cfgs = [
