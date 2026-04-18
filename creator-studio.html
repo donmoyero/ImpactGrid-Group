@@ -130,9 +130,9 @@
 .cal-modal-cancel{padding:10px 16px;border-radius:9px;border:1px solid var(--border2);background:var(--card);color:var(--text2);font-size:13px;cursor:pointer}
 
 /* ── Platform Velocity Meters ── */
-.pm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:860px){.pm-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:480px){.pm-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.pm-grid{grid-template-columns:1fr}}
 .pm-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .pm-head{display:flex;align-items:center;gap:6px}
 .pm-icon{font-size:15px;flex-shrink:0}
@@ -345,28 +345,41 @@
 
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
-            <div class="card-title">📈 What's moving right now</div>
-            <div class="card-tag tag-live-green">LIVE</div>
+            <div class="card-title">
+              📈 What's moving right now
+              <span id="chartLiveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green,#0fa876);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+            </div>
+            <div class="card-tag tag-live-green">LIVE · Updates every 60s</div>
           </div>
           <div class="card-body">
             <div style="height:320px;position:relative;">
               <canvas id="trendChart"></canvas>
             </div>
-            <!-- FIX 3: Bubble chart legend -->
-            <div class="chart-legend">
-              <div class="chart-legend-item"><div class="chart-legend-dot tt"></div>🔥 TikTok (Viral)</div>
-              <div class="chart-legend-item"><div class="chart-legend-dot yt"></div>🎯 YouTube (Validated)</div>
-              <div class="chart-legend-item"><div class="chart-legend-dot cross"></div>🚀 Multi-Platform</div>
-              <div class="chart-legend-item"><div class="chart-legend-dot gt"></div>🔍 Google (Demand)</div>
+            <!-- Multi-line chart legend — colours match each platform line -->
+            <div class="chart-legend" style="margin-top:10px">
+              <div class="chart-legend-item"><div class="chart-legend-dot tt"></div>🎵 TikTok</div>
+              <div class="chart-legend-item"><div class="chart-legend-dot yt"></div>▶️ YouTube</div>
+              <div class="chart-legend-item"><div class="chart-legend-dot gt"></div>🔍 Google</div>
+              <div class="chart-legend-item"><div class="chart-legend-dot cross"></div>🚀 Cross-Platform</div>
             </div>
-            <div class="text-sm" style="margin-top:8px;color:var(--text3)">
-              Bubble size = total views &middot; X axis = video volume &middot; Y axis = trend strength
+            <div class="text-sm" style="margin-top:6px;color:var(--text3)">
+              Each line = one platform · Y axis = trend score (0–10) · Click any point to generate content
             </div>
           </div>
         </div>
 
-        <!-- Platform velocity meters — rendered by renderPlatformMeters() -->
-        <div id="trendMetersBox" style="margin-bottom:16px"></div>
+        <!-- Platform live meter cards — rendered by renderPlatformMeters() -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">⚡ Platform Velocity
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4FB3A5;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
+            </div>
+            <div class="card-tag tag-green">Top pick per platform</div>
+          </div>
+          <div class="card-body">
+            <div id="trendMetersBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
+          </div>
+        </div>
 
         <div class="card">
           <div class="card-header">
