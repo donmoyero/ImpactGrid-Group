@@ -74,32 +74,58 @@ async function initAuth() {
     console.warn("[Auth] getUser failed:", e.message);
     return;
   }
-  IG_USER = data?.user || null;
 
-  if (!IG_USER) return;
+  // Use the public setter — never write IG_USER directly
+  setUser(data?.user || null);
+
+  if (!getUser()) return;
+
+  _applyRoles(getUser());
+
+  console.log("AUTH READY:", {
+    user: getUser()?.email,
+    plan: IG_PLAN,
+    admin: IG_IS_ADMIN
+  });
+
+  // Notify creator-studio.js — pass the already-resolved user so
+  // loadUser() doesn't need a second getUser() network call
+  if (typeof loadUser === 'function') loadUser();
+
+  // Listen for auth state changes (OAuth redirects, sign-out, token refresh)
+  // Registered once here so there's a single source of truth
+  sb.auth.onAuthStateChange(function(event, session) {
+    var u = session ? session.user : null;
+    setUser(u);
+    if (u) {
+      _applyRoles(u);
+      if (typeof window.setNavUser === 'function') window.setNavUser(u);
+      if (typeof loadUser === 'function') loadUser();
+    } else {
+      IG_IS_ADMIN = false;
+      IG_PLAN = 'free';
+      if (typeof window.setNavGuest === 'function') window.setNavGuest();
+    }
+  });
+}
+
+// ── Internal: derive plan + admin from a user object ─────────────────────
+function _applyRoles(user) {
+  if (!user) return;
 
   // 👑 ADMIN
   if (
-    IG_USER.email === "admin@impactgridgroup.com" ||
-    IG_USER.user_metadata?.role === "admin"
+    user.email === "admin@impactgridgroup.com" ||
+    user.user_metadata?.role === "admin"
   ) {
     IG_IS_ADMIN = true;
     IG_PLAN = "enterprise";
   }
 
-  // 💳 PLAN (REAL SOURCE)
-  if (IG_USER.user_metadata?.plan) {
-    IG_PLAN = IG_USER.user_metadata.plan;
+  // 💳 PLAN (real source: user_metadata.plan)
+  if (user.user_metadata?.plan) {
+    IG_PLAN = user.user_metadata.plan;
   }
-
-  console.log("AUTH READY:", {
-    user: IG_USER?.email,
-    plan: IG_PLAN,
-    admin: IG_IS_ADMIN
-  });
-
-  // Notify creator-studio.js that auth is settled — it updates UI
-  if (typeof loadUser === 'function') loadUser();
 }
 
 function isAdmin() {
