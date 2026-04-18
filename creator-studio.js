@@ -454,6 +454,162 @@ function buildTrendInsights() {
 /* ─────────────────────────────────────────────
    TREND DATA
 ───────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────
+   COMBINED CHART + WINNER BOX
+   updateChart()     — renders a single line chart
+     with one dataset per platform (TikTok/YouTube/
+     Google), each showing their top 5 scored topics.
+     Uses t.plat ('tt','yt','gt') — NOT t.platform.
+   updateWinnerBox() — highlights the single best
+     topic across all platforms with a score badge.
+   getWinner()       — pure helper, does NOT mutate
+     the source array (uses spread copy).
+───────────────────────────────────────────── */
+var _trendChartInstance = null;
+
+function getWinner(trends) {
+  if (!trends || !trends.length) return null;
+  return trends.slice().sort(function(a, b) { return b.score - a.score; })[0];
+}
+
+function updateWinnerBox() {
+  var el = document.getElementById('trendWinner');
+  if (!el) return;
+
+  var winner = getWinner(_allTrends);
+  if (!winner) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">No trend data yet</div>';
+    return;
+  }
+
+  var level     = winner.score > 8 ? 'HIGH 📈'   : winner.score > 5 ? 'MEDIUM ⚖️' : 'LOW 📉';
+  var clsColor  = winner.score > 8 ? 'var(--green)' : winner.score > 5 ? 'var(--gold)' : 'var(--text3)';
+  var platIcon  = winner.plat === 'tt' ? '🎵' : winner.plat === 'yt' ? '▶️' : winner.plat === 'cross' ? '🚀' : '🔍';
+  var platColor = winner.plat === 'tt' ? '#ff6464' : winner.plat === 'yt' ? '#FFD700' : winner.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
+  var cls       = classifyTrend(winner);
+  var clsLbl    = cls === 'blowup' ? '🔥 Likely to blow up' : cls === 'rising_fast' ? '⚡ Rising fast' : cls === 'early' ? '🟢 Early signal' : '📊 Stable';
+
+  el.innerHTML =
+    '<div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:18px 16px">'
+    + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">🏆 Winning Trend</div>'
+    + '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.25;color:var(--text)">' + escH(winner.topic) + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    +   '<span style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:900;color:' + clsColor + '">' + winner.score.toFixed(1) + '</span>'
+    +   '<span style="font-size:10px;font-weight:700;color:' + clsColor + '">' + level + '</span>'
+    + '</div>'
+    + '<div style="font-size:11px;color:' + platColor + ';font-weight:700">' + platIcon + ' ' + escH(winner.platLabel) + '</div>'
+    + '<div style="font-size:11px;color:var(--text3)">' + clsLbl + '</div>'
+    + '<button onclick="loadTopic(\'' + escJ(winner.topic) + '\')" style="margin-top:4px;padding:8px 14px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:\'Syne\',sans-serif;align-self:flex-start">⚡ Generate</button>'
+    + '</div>';
+}
+
+function updateChart() {
+  var canvas = document.getElementById('trendChart');
+  if (!canvas || !_allTrends.length) return;
+
+  // Top 5 per platform by score — uses t.plat ('tt','yt','gt'), NOT t.platform
+  function topN(plat, n) {
+    return _allTrends
+      .filter(function(t) { return t.plat === plat; })
+      .slice().sort(function(a, b) { return b.score - a.score; })
+      .slice(0, n);
+  }
+
+  var tt = topN('tt', 5);
+  var yt = topN('yt', 5);
+  var gt = topN('gt', 5);
+
+  // Build a unified label set — topic names from whichever platform has most data
+  var primary = tt.length >= yt.length && tt.length >= gt.length ? tt
+              : yt.length >= gt.length ? yt : gt;
+  var labels = primary.map(function(t) {
+    return t.topic.length > 16 ? t.topic.slice(0, 16) + '…' : t.topic;
+  });
+  if (!labels.length) { labels = ['1','2','3','4','5']; }
+
+  // Align scores to label count — pad with null if platform has fewer topics
+  function alignScores(arr) {
+    return labels.map(function(_, i) { return arr[i] ? arr[i].score : null; });
+  }
+
+  var datasets = [];
+  if (tt.length) datasets.push({
+    label: '🎵 TikTok',
+    data: alignScores(tt),
+    borderColor: '#ff6464',
+    backgroundColor: 'rgba(255,100,100,0.08)',
+    tension: 0.4, pointRadius: 4, pointHoverRadius: 7,
+    pointBackgroundColor: '#ff6464', pointBorderColor: '#fff', pointBorderWidth: 1.5,
+    borderWidth: 2, fill: false, spanGaps: true
+  });
+  if (yt.length) datasets.push({
+    label: '▶️ YouTube',
+    data: alignScores(yt),
+    borderColor: '#FFD700',
+    backgroundColor: 'rgba(255,215,0,0.08)',
+    tension: 0.4, pointRadius: 4, pointHoverRadius: 7,
+    pointBackgroundColor: '#FFD700', pointBorderColor: '#fff', pointBorderWidth: 1.5,
+    borderWidth: 2, fill: false, spanGaps: true
+  });
+  if (gt.length) datasets.push({
+    label: '🔍 Google',
+    data: alignScores(gt),
+    borderColor: '#78b4ff',
+    backgroundColor: 'rgba(120,180,255,0.08)',
+    tension: 0.4, pointRadius: 4, pointHoverRadius: 7,
+    pointBackgroundColor: '#78b4ff', pointBorderColor: '#fff', pointBorderWidth: 1.5,
+    borderWidth: 2, fill: false, spanGaps: true
+  });
+
+  if (!datasets.length) return;
+
+  // Destroy previous instance before creating new
+  if (_trendChartInstance) { _trendChartInstance.destroy(); _trendChartInstance = null; }
+
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var gridCol = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  var tickCol = isDark ? '#666' : '#999';
+
+  _trendChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 600, easing: 'easeInOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { color: tickCol, font: { size: 11 }, boxWidth: 12, padding: 14 }
+        },
+        tooltip: {
+          backgroundColor: '#111',
+          callbacks: {
+            label: function(ctx) {
+              if (ctx.raw === null) return ctx.dataset.label + ': no data';
+              // Map back to original topic name from the correct platform array
+              var src = ctx.dataset.label.includes('TikTok') ? tt
+                      : ctx.dataset.label.includes('YouTube') ? yt : gt;
+              var t = src[ctx.dataIndex];
+              return t ? t.topic + ' · ' + ctx.raw.toFixed(1) + '/10' : ctx.raw.toFixed(1) + '/10';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: gridCol }, ticks: { color: tickCol, font: { size: 10 }, maxRotation: 30 } },
+        y: { min: 0, max: 10, grid: { color: gridCol }, ticks: { color: tickCol, font: { size: 10 }, callback: function(v) { return v + '/10'; }, stepSize: 2 } }
+      }
+    }
+  });
+
+  // Also update winner box every time chart updates
+  updateWinnerBox();
+}
+
 /* renderAll — unified re-render called after any trend fetch */
 function renderAll() {
   updateBriefing();
@@ -466,6 +622,8 @@ function renderAll() {
   renderTrendChart();
   renderRadarGauges();
   renderDijoTopPick();
+  // Combined cross-platform chart + winner box (trends panel summary row)
+  updateChart();
 }
 
 async function fetchTrends() {
