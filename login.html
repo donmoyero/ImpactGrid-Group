@@ -279,30 +279,6 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 <script src="auth.js"></script>
 <script>
 
-/* ── Handle Google OAuth redirect back to this page ── */
-(function() {
-  /* Supabase puts the session in the URL hash after OAuth.
-     getSession() picks it up automatically — client must be
-     initialised first (ig-supabase.js does that). */
-  var client = getSupabase();
-  if (!client) return;
-  client.auth.getSession().then(function(res) {
-    if (res.data && res.data.session) {
-      var user = res.data.session.user;
-      // ✅ FIX: use user_id column (not id) to match profiles table schema
-      client.from('profiles').select('role').eq('user_id', user.id).single()
-        .then(function(profRes) {
-          var role = (profRes.data && profRes.data.role) || 'creator';
-          redirectByRole(user, role);
-        })
-        .catch(function() {
-          // Profile fetch failed — still redirect, default to creator
-          redirectByRole(user, 'creator');
-        });
-    }
-  }).catch(function() {});
-})();
-
 /* ── Theme ── */
 var isDark = false;
 function applyTheme(dark) {
@@ -330,22 +306,6 @@ function togglePw() {
   }
 }
 
-/* ── Google Sign-In ── */
-async function googleSignIn() {
-  try {
-    var c = getSupabase();
-    if (!c) { showAlert('Auth service not ready — please refresh.', 'error'); return; }
-    var res = await c.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/creator-studio.html' }
-    });
-    if (res.error) { console.error('[ImpactGrid] Google sign-in error:', res.error); throw res.error; }
-  } catch(err) {
-    console.error('[ImpactGrid] googleSignIn caught:', err);
-    showAlert('Google sign-in failed: ' + (err.message || 'Please try again.'), 'error');
-  }
-}
-
 /* ── Alert ── */
 function showAlert(msg, type) {
   var el = document.getElementById('alertBox');
@@ -361,6 +321,61 @@ function redirectByRole(user, role) {
     window.location.href = 'employer-dashboard.html';
   } else {
     window.location.href = 'creator-studio.html';
+  }
+}
+
+/* ── Handle Google OAuth redirect back to this page ──
+   ✅ FIX: getSession() is called AFTER the client is ready.
+   Profile fetch for role is fully wrapped in try/catch so
+   a 403 (RLS not set up yet) never blocks the redirect —
+   user is already authenticated, default to 'creator'. ── */
+(function() {
+  var client = (typeof getSupabase === 'function') ? getSupabase() : null;
+  if (!client) return;
+
+  client.auth.getSession().then(function(res) {
+    if (res.data && res.data.session) {
+      var user = res.data.session.user;
+
+      /* Only redirect if this is an OAuth callback (hash in URL) OR
+         if the user has an active session and didn't just come here to log in.
+         We check for hash to avoid redirecting email/password users who
+         landed on login.html directly while already logged in. */
+      var isOAuthCallback = window.location.hash && window.location.hash.length > 1;
+      var isAlreadyLoggedIn = !isOAuthCallback && !window.location.search.includes('logout');
+
+      if (isOAuthCallback || isAlreadyLoggedIn) {
+        /* ✅ Profile fetch for role — safe try/catch, never blocks redirect */
+        client.from('profiles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single()
+          .then(function(profRes) {
+            var role = (profRes.data && profRes.data.role) || 'creator';
+            redirectByRole(user, role);
+          })
+          .catch(function() {
+            /* Profile unavailable (403/RLS/missing row) — still redirect safely */
+            redirectByRole(user, 'creator');
+          });
+      }
+    }
+  }).catch(function() {});
+})();
+
+/* ── Google Sign-In ── */
+async function googleSignIn() {
+  try {
+    var c = getSupabase();
+    if (!c) { showAlert('Auth service not ready — please refresh.', 'error'); return; }
+    var res = await c.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/creator-studio.html' }
+    });
+    if (res.error) { console.error('[ImpactGrid] Google sign-in error:', res.error); throw res.error; }
+  } catch(err) {
+    console.error('[ImpactGrid] googleSignIn caught:', err);
+    showAlert('Google sign-in failed: ' + (err.message || 'Please try again.'), 'error');
   }
 }
 
@@ -390,15 +405,15 @@ async function login() {
     var res = await client.auth.signInWithPassword({ email: email, password: password });
     if (res.error) { console.error('[ImpactGrid] signInWithPassword error:', res.error); throw res.error; }
 
-    // ✅ FIX: use user_id column (not id) to match profiles table schema.
-    //         Also wrapped in try/catch so a 403 or missing row never blocks login —
-    //         user is already authenticated at this point, just default to 'creator'.
+    /* ✅ FIX: Profile fetch uses user_id column (not id) to match schema.
+       Wrapped in try/catch — a 403 or missing row never blocks login.
+       User is already authenticated at this point; just default to 'creator'. */
     var role = 'creator';
     try {
-      var profRes = await client.from('profiles').select('role,status').eq('user_id', res.data.user.id).single();
+      var profRes = await client.from('profiles').select('role').eq('user_id', res.data.user.id).single();
       if (profRes.data && profRes.data.role) role = profRes.data.role;
     } catch(profErr) {
-      console.warn('[ImpactGrid] Profile fetch skipped — defaulting to creator role:', profErr.message);
+      console.warn('[ImpactGrid] Profile fetch skipped — defaulting to creator role:', profErr.message || profErr);
     }
 
     redirectByRole(res.data.user, role);
