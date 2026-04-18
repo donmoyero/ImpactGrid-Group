@@ -703,13 +703,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  /* ── Supabase credentials — must be set before auth.js runs ── */
-  window.SUPABASE_URL      = "https://your-project.supabase.co";  // ← replace
-  window.SUPABASE_ANON_KEY = "your-anon-key";                     // ← replace
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<!-- ig-supabase.js sets window.SUPABASE_URL + SUPABASE_ANON_KEY then creates the client.
+     It must run after the SDK (above) and before auth.js (below). -->
 <script src="ig-supabase.js"></script>
 <script src="auth.js"></script>
 <script src="tiktok-auth.js" defer></script>
@@ -717,12 +713,6 @@
 <script src="instagram-auth.js" defer></script>
 <script src="creator-ai.js" defer></script>
 <script src="creator-studio.js" defer></script>
-<script>
-  /* initAuth runs after all deferred scripts have executed */
-  document.addEventListener('DOMContentLoaded', function() {
-    if (typeof initAuth === 'function') initAuth();
-  });
-</script>
 
 <script>
 /* ══════════════════════════════════════════
@@ -823,7 +813,10 @@
 <script src="nav.js" defer></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // renderNav FIRST — injects the nav HTML and fires 'ig-nav-ready'
     if (typeof renderNav === 'function') renderNav('creator-studio.html');
+    // initAuth second — auth.js's initAuth waits for 'ig-nav-ready' via nav.js's _whenNavReady
+    if (typeof initAuth === 'function') initAuth();
   });
 </script>
 
