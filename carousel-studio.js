@@ -417,16 +417,45 @@ var IG_IS_ADMIN    = false;
 
 async function getUser() {
   try {
+    // Prefer nav.js's already-authenticated client (avoids double-init race)
+    if (typeof getSupabase === 'function') {
+      const client = getSupabase();
+      if (client) {
+        const { data } = await client.auth.getSession();
+        return data?.session?.user || null;
+      }
+    }
+    // nav.js populates window.igUser after auth resolves — use it if available
+    if (window.igUser && window.igUser.id) {
+      return { id: window.igUser.id, email: window.igUser.email };
+    }
+    // Last resort: raw supabase SDK
     const sb = window.supabase;
     if (!sb) return null;
-    const { data } = await sb.auth.getUser();
-    return data?.user || null;
+    const sbClient = sb.createClient
+      ? sb.createClient(
+          'https://wedjsnizcvtgptobwugc.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc'
+        )
+      : sb;
+    const { data } = await sbClient.auth.getSession();
+    return data?.session?.user || null;
   } catch {
     return null;
   }
 }
 
 async function checkCarouselAccess() {
+  // Wait up to 2s for nav.js to finish its auth resolution before checking
+  if (!window.igUser) {
+    await new Promise(function(resolve) {
+      var done = false;
+      function finish() { if (!done) { done = true; resolve(); } }
+      document.addEventListener('ig-user-ready', finish, { once: true });
+      setTimeout(finish, 2000);
+    });
+  }
+
   IG_USER = await getUser();
 
   // ❌ Not logged in
