@@ -308,7 +308,8 @@ function togglePw() {
 /* ── Google Sign-In ── */
 async function googleSignIn() {
   try {
-    var c = getContentClient();
+    var c = getSupabase();
+    if (!c) { showAlert('Auth service not ready — please refresh.', 'error'); return; }
     var res = await c.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin + '/creator-studio.html' }
@@ -355,7 +356,8 @@ async function login() {
   btn.innerHTML = 'Signing in <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
 
   try {
-    var client = getContentClient();
+    var client = getSupabase();
+    if (!client) { showAlert('Auth service not ready — please refresh.', 'error'); btn.disabled = false; btn.innerHTML = 'Sign In →'; return; }
     var res = await client.auth.signInWithPassword({ email: email, password: password });
     if (res.error) { console.error('[ImpactGrid] signInWithPassword error:', res.error); throw res.error; }
 
@@ -379,7 +381,8 @@ async function login() {
 /* ── Auto-redirect if already logged in ── */
 document.addEventListener('DOMContentLoaded', async function() {
   try {
-    var client = getContentClient();
+    var client = getSupabase();
+    if (!client) return;
     var res = await client.auth.getSession();
     if (res.data && res.data.session) {
       var user    = res.data.session.user;
