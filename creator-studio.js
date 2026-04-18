@@ -95,17 +95,21 @@ function ensureTrends() {
   }
 }
 
+function safeTopic(t) {
+  return t?.topic || '—';
+}
+
 function updateBriefing() {
   const briefEl = document.getElementById('dijoBrief');
   if (!briefEl) return;
 
-  // if trends already loaded
-  if (_allTrends && _allTrends.length) {
-    const count = Math.min(_allTrends.length, 5);
-    briefEl.textContent = count + " trends rising · Best time: 6PM";
-  } else {
-    briefEl.textContent = "No trends yet · Check back later";
+  if (!_allTrends || !_allTrends.length) {
+    briefEl.textContent = 'No trends yet · Check back later';
+    return;
   }
+
+  const best = getBest3(_allTrends);
+  briefEl.textContent = `📡 ${safeTopic(best.tiktok)} · ${safeTopic(best.youtube)} · ${safeTopic(best.google)}`;
 }
 
 /* ─────────────────────────────────────────────
