@@ -6,9 +6,18 @@ var IG_IS_ADMIN = false;
 
 async function initAuth() {
   const sb = window.supabase;
-  if (!sb) return;
+  if (!sb) {
+    console.warn("[Auth] Supabase not loaded — skipping initAuth");
+    return;
+  }
 
-  const { data } = await sb.auth.getUser();
+  let data;
+  try {
+    ({ data } = await sb.auth.getUser());
+  } catch (e) {
+    console.warn("[Auth] getUser failed:", e.message);
+    return;
+  }
   IG_USER = data?.user || null;
 
   if (!IG_USER) return;
