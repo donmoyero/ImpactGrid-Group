@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="carousel-studio.css"/>
 <link rel="stylesheet" href="carousel-studio-additions.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ── Resolve --ig-yellow → shared token so dark/light mode inherits correctly ── */
 :root { --ig-yellow: var(--brand-primary); }
@@ -540,20 +541,43 @@ window.cancelDl = function(){ _dlCancelled=true; hideDlProgress(); toast('Downlo
 
 window.downloadAll = async function(){
   if(!window.ST || !ST.slides.length){ toast('Generate a carousel first'); return; }
-  if(typeof html2canvas === 'undefined'){ toast('💡 html2canvas not loaded — use Export → PNG'); return; }
+  if(typeof html2canvas === 'undefined'){ toast('💡 html2canvas not loaded — please refresh'); return; }
   _dlCancelled = false;
   var total = ST.slides.length, blobs = [];
   showDlProgress('Preparing slides…', 0);
   var origCur = ST.cur;
+  var canvas = document.getElementById('slideCanvas');
+  var displayW = canvas.offsetWidth || 620;
+  var targetPx = 1080;
+  var exportScale = Math.round((targetPx / displayW) * 10) / 10;
+
   for(var i=0; i<total; i++){
     if(_dlCancelled) break;
     ST.cur = i; renderSlide(); updateCounter();
-    await new Promise(function(r){ setTimeout(r, 320); });
+
+    // Wait for render + images
+    await new Promise(function(r){ setTimeout(r, 600); });
+    var imgs = canvas.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(function(img){
+      if(img.complete) return Promise.resolve();
+      return new Promise(function(res){
+        img.onload = res; img.onerror = res;
+        setTimeout(res, 2000);
+      });
+    }));
+    await new Promise(function(r){ setTimeout(r, 300); });
+
     updateDlProgress('Capturing slide '+(i+1)+' of '+total+'…', Math.round((i/total)*80));
     try{
-      var canvas = document.getElementById('slideCanvas');
-      var c = await html2canvas(canvas,{useCORS:true,allowTaint:false,scale:2,backgroundColor:null});
-      await new Promise(function(res,rej){
+      var c = await html2canvas(canvas,{
+        useCORS:true,
+        allowTaint:true,
+        scale:exportScale,
+        backgroundColor:'#111111',
+        imageTimeout:8000,
+        logging:false
+      });
+      await new Promise(function(res){
         c.toBlob(function(blob){
           if(blob) blobs.push({blob:blob,name:'ImpactGrid-slide-'+String(i+1).padStart(2,'0')+'.png'});
           res();
@@ -582,7 +606,7 @@ window.downloadAll = async function(){
     }catch(e){ console.warn('[downloadAll] save failed:',e); }
   }
   hideDlProgress();
-  toast('✦ '+blobs.length+' slides saved');
+  toast('✦ '+blobs.length+' slides saved at 1080px');
 };
 
 // ── 7. INIT
