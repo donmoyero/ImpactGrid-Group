@@ -452,11 +452,11 @@ function renderAll() {
   runTrendPrediction();
   renderDashTrends();
   renderDashOpps();
-  renderWhatToPost();
   updateTopTrends();
-  // Chart + meters: always update so data is ready when user switches to tab
+  // Chart + radar gauges + Dijo pick: always update so data is ready when user switches tab
   renderTrendChart();
-  renderPlatformMeters();
+  renderRadarGauges();
+  renderDijoTopPick();
 }
 
 async function fetchTrends() {
@@ -645,8 +645,8 @@ function renderDashTrends() {
 
 function renderFullTrends() {
   renderTrendChart();
-  renderPlatformMeters();
-  renderWhatToPost();
+  renderRadarGauges();
+  renderDijoTopPick();
 }
 
 /* ─────────────────────────────────────────────
@@ -657,7 +657,7 @@ function renderFullTrends() {
    pulse dot. Updates every 60s via renderAll().
 ───────────────────────────────────────────── */
 function renderPlatformMeters() {
-  var el = document.getElementById('trendMetersBox');
+  var el = document.getElementById('radarGaugesBox'); // legacy — superseded by renderRadarGauges()
   if (!el) return;
   if (!_allTrends.length) { el.innerHTML = ''; return; }
 
@@ -1250,67 +1250,196 @@ function renderDashOpps() {
    low confidence), fills from best-per-platform
    so cards never show "No trends" when we have data.
 ───────────────────────────────────────────── */
-function renderWhatToPost() {
-  var el = document.getElementById('whatToPostBox');
+/* ─────────────────────────────────────────────
+   RADAR GAUGES — three animated fuel-gauge style
+   dials, one per platform (TikTok, YouTube, Google).
+   Each shows the #1 trending topic + live score.
+   The needle animates like a fuel gauge rising and
+   falling as scores change on each 60s refresh.
+───────────────────────────────────────────── */
+function renderRadarGauges() {
+  var el = document.getElementById('radarGaugesBox');
+  if (!el) return;
+
+  // Inject styles once
+  if (!document.getElementById('_radarGaugeStyles')) {
+    var s = document.createElement('style');
+    s.id = '_radarGaugeStyles';
+    s.textContent = `
+      .rg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+      @media(max-width:640px){ .rg-grid { grid-template-columns:1fr; } }
+      .rg-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 16px 14px; display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; overflow:hidden; }
+      .rg-stripe { position:absolute; top:0; left:0; right:0; height:3px; border-radius:3px 3px 0 0; }
+      .rg-label { font-size:11px; font-weight:700; color:var(--text2); letter-spacing:.06em; text-transform:uppercase; font-family:'DM Mono',monospace; }
+      .rg-svg-wrap { width:140px; height:80px; position:relative; }
+      .rg-score-overlay { position:absolute; bottom:0; left:50%; transform:translateX(-50%); text-align:center; line-height:1; }
+      .rg-score-num { font-family:'Syne',sans-serif; font-size:22px; font-weight:900; }
+      .rg-score-unit { font-family:'DM Mono',monospace; font-size:9px; color:var(--text3); }
+      .rg-topic { font-size:13px; font-weight:700; text-align:center; line-height:1.3; cursor:pointer; max-width:160px; }
+      .rg-topic:hover { text-decoration:underline; }
+      .rg-status { font-size:10px; font-weight:700; padding:2px 9px; border-radius:99px; border:1px solid; font-family:'DM Mono',monospace; }
+      .rg-meta { font-size:10px; color:var(--text3); text-align:center; }
+      .rg-dot { width:6px; height:6px; border-radius:50%; display:inline-block; animation:meterPulse 1.8s ease-in-out infinite; margin-right:4px; }
+      .rg-empty { font-size:12px; color:var(--text3); text-align:center; padding:16px 0; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function platBest(plat) {
+    var arr = _allTrends.filter(function(t){ return t.plat === plat; });
+    if (!arr.length) return null;
+    return arr.slice().sort(function(a,b){ return b.score - a.score; })[0];
+  }
+
+  var cfgs = [
+    { plat:'tt', icon:'🎵', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
+    { plat:'yt', icon:'▶️',  label:'YouTube', color:'#FFD700', trend: platBest('yt') },
+    { plat:'gt', icon:'🔍', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
+  ];
+
+  function gaugeArc(pct, color) {
+    // Half-circle gauge: sweep from 180deg to 0deg
+    // r=54, cx=70, cy=70 (bottom half only shown via viewBox clip)
+    var r = 54, cx = 70, cy = 68;
+    var startAngle = Math.PI;           // left = 0
+    var endAngle   = 0;                 // right = 100%
+    var sweepAngle = startAngle - (startAngle - endAngle) * Math.min(pct / 100, 1);
+    // Background arc
+    var bgX1 = cx + r * Math.cos(Math.PI);
+    var bgY1 = cy + r * Math.sin(Math.PI);
+    var bgX2 = cx + r * Math.cos(0);
+    var bgY2 = cy + r * Math.sin(0);
+    // Active arc
+    var aX2 = cx + r * Math.cos(Math.PI - (Math.PI * pct / 100));
+    var aY2 = cy + r * Math.sin(Math.PI - (Math.PI * pct / 100));
+    var largeArc = pct > 50 ? 1 : 0;
+    // Needle
+    var needleAngle = Math.PI - (Math.PI * pct / 100);
+    var nx = cx + (r - 10) * Math.cos(needleAngle);
+    var ny = cy + (r - 10) * Math.sin(needleAngle);
+
+    return '<svg viewBox="0 0 140 75" xmlns="http://www.w3.org/2000/svg" style="width:140px;height:75px;">'
+      // track
+      + '<path d="M16 68 A54 54 0 0 1 124 68" fill="none" stroke="var(--bg2)" stroke-width="10" stroke-linecap="round"/>'
+      // active fill
+      + (pct > 0
+        ? '<path d="M16 68 A54 54 0 ' + largeArc + ' 1 ' + aX2.toFixed(1) + ' ' + aY2.toFixed(1) + '" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round" style="transition:stroke-dasharray 1s ease"/>'
+        : '')
+      // tick marks
+      + [0,25,50,75,100].map(function(v){
+          var a = Math.PI - (Math.PI * v / 100);
+          var ox = cx + 46 * Math.cos(a); var oy = cy + 46 * Math.sin(a);
+          var ix = cx + 40 * Math.cos(a); var iy = cy + 40 * Math.sin(a);
+          return '<line x1="'+ox.toFixed(1)+'" y1="'+oy.toFixed(1)+'" x2="'+ix.toFixed(1)+'" y2="'+iy.toFixed(1)+'" stroke="var(--border2)" stroke-width="1.5" stroke-linecap="round"/>';
+        }).join('')
+      // needle
+      + '<line x1="'+cx+'" y1="'+cy+'" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" style="transition:all 1s ease"/>'
+      + '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="'+color+'"/>'
+      // min/max labels
+      + '<text x="14" y="76" font-size="8" fill="var(--text3)" font-family="DM Mono,monospace">0</text>'
+      + '<text x="118" y="76" font-size="8" fill="var(--text3)" font-family="DM Mono,monospace">10</text>'
+      + '</svg>';
+  }
+
+  function card(cfg) {
+    if (!cfg.trend) {
+      return '<div class="rg-card">'
+        + '<div class="rg-stripe" style="background:' + cfg.color + '30"></div>'
+        + '<div class="rg-label">' + cfg.icon + ' ' + cfg.label + '</div>'
+        + '<div class="rg-empty">No data yet · refreshes every 30 min</div>'
+        + '</div>';
+    }
+    var t   = cfg.trend;
+    var pct = Math.round((t.score / 10) * 100);
+    var cls = classifyTrend(t);
+    var clsLbl   = cls === 'blowup' ? '🔥 Peak'     : cls === 'rising_fast' ? '⚡ Rising' : cls === 'early' ? '🟢 Early' : '📊 Stable';
+    var clsColor = cls === 'blowup' ? 'var(--green)' : cls === 'rising_fast' ? 'var(--gold)' : cls === 'early' ? '#4FB3A5' : 'var(--text3)';
+    var meta = t.videoCount > 0
+      ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
+      : (t.confidence ? t.confidence + '% confidence' : 'live data');
+
+    return '<div class="rg-card">'
+      + '<div class="rg-stripe" style="background:' + cfg.color + '"></div>'
+      + '<div class="rg-label"><span class="rg-dot" style="background:' + cfg.color + '"></span>' + cfg.icon + ' ' + cfg.label + '</div>'
+      + '<div class="rg-svg-wrap">'
+      +   gaugeArc(pct, cfg.color)
+      +   '<div class="rg-score-overlay">'
+      +     '<div class="rg-score-num" style="color:' + cfg.color + '">' + t.score.toFixed(1) + '</div>'
+      +     '<div class="rg-score-unit">/10</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="rg-topic" onclick="loadTopic('' + escJ(t.topic) + '')" style="color:var(--text)">' + escH(t.topic) + '</div>'
+      + '<div class="rg-status" style="color:' + clsColor + ';border-color:' + clsColor + '40">' + clsLbl + '</div>'
+      + '<div class="rg-meta">' + escH(meta) + '</div>'
+      + '</div>';
+  }
+
+  el.innerHTML = '<div class="rg-grid">' + cfgs.map(card).join('') + '</div>';
+}
+
+/* ─────────────────────────────────────────────
+   DIJO TOP PICK — replaces "What to post" section.
+   Picks the single best topic across ALL platforms
+   using dijoScore, then asks Dijo AI why it's the
+   best opportunity right now in one short sentence.
+───────────────────────────────────────────── */
+async function renderDijoTopPick() {
+  var el = document.getElementById('dijoTopPickBox');
   if (!el) return;
 
   if (!_allTrends.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">Loading trend data…</div>';
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px">Loading trend data…</div>';
     return;
   }
 
-  var data = buildTrendInsights();
+  // Pick best trend by score
+  var best = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
+  var platIcon  = best.plat === 'tt' ? '🎵' : best.plat === 'yt' ? '▶️' : best.plat === 'cross' ? '🚀' : '🔍';
+  var platColor = best.plat === 'tt' ? '#ff6464' : best.plat === 'yt' ? '#FFD700' : best.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
+  var cls       = classifyTrend(best);
+  var clsLbl    = cls === 'blowup' ? '🔥 Peak now — post immediately' : cls === 'rising_fast' ? '⚡ Rising fast — get ahead of it' : cls === 'early' ? '🟢 Early stage — first mover advantage' : '📊 Stable trend';
 
-  function top(arr) {
-    return arr.slice().sort(function(a, b) { return b.score - a.score; }).slice(0, 2);
-  }
-
-  var blow  = top(data.blowup);
-  var fast  = top(data.rising_fast);
-  var early = top(data.early);
-
-  // ── Smart fallback — if a section is empty, pull best unused trends ───────
-  var allUsed = new Set(
-    blow.concat(fast).concat(early).map(function(t) { return t.topic; })
-  );
-
-  function fillSection(current, n) {
-    if (current.length >= n) return current;
-    var spares = _allTrends
-      .filter(function(t) { return !allUsed.has(t.topic); })
-      .slice().sort(function(a, b) { return b.score - a.score; });
-    while (current.length < n && spares.length) {
-      var pick = spares.shift();
-      current.push(pick);
-      allUsed.add(pick.topic);
-    }
-    return current;
-  }
-
-  blow  = fillSection(blow,  2);
-  fast  = fillSection(fast,  2);
-  early = fillSection(early, 2);
-
-  function itemHTML(t) {
-    var platIcon = t.plat === 'tt' ? '🎵' : t.plat === 'yt' ? '▶️' : t.plat === 'cross' ? '🚀' : '🔍';
-    var platColor = t.plat === 'tt' ? '#ff6464' : t.plat === 'yt' ? '#FFD700' : t.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
-    return '<div class="wtp-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')" title="Click to generate content" style="cursor:pointer">'
-      + '<strong>' + escH(t.topic) + '</strong>'
-      + '<span class="wtp-meta" style="color:' + platColor + '">' + platIcon + ' ' + escH(t.platLabel) + ' · ' + t.score.toFixed(1) + '/10</span>'
-      + '</div>';
-  }
-
-  function section(icon, label, items) {
-    return '<div class="wtp-section">'
-      + '<h4>' + icon + ' ' + label + '</h4>'
-      + items.map(itemHTML).join('')
-      + '</div>';
-  }
-
+  // Show skeleton immediately
   el.innerHTML =
-    section('🔥', 'Most likely to blow up',  blow)
-    + section('⚡', 'Getting popular fast',   fast)
-    + section('🟢', 'Still early — get in now', early);
+    '<div style="display:flex;flex-direction:column;gap:10px">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+    +   '<div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text)">' + escH(best.topic) + '</div>'
+    +   '<div style="font-family:'DM Mono',monospace;font-size:24px;font-weight:900;color:' + platColor + ';flex-shrink:0">' + best.score.toFixed(1) + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'
+    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:3px 10px;font-family:'DM Mono',monospace">' + platIcon + ' ' + escH(best.platLabel) + '</span>'
+    +   '<span style="font-size:11px;font-weight:700;color:' + platColor + '">' + clsLbl + '</span>'
+    + '</div>'
+    + '<div id="dijoPickReason" style="font-size:13px;color:var(--text2);line-height:1.6;border-left:2px solid var(--gold);padding-left:10px;min-height:20px">'
+    +   '<span class="spinner spinner-gold" style="width:12px;height:12px;border-width:2px;margin-right:6px;vertical-align:middle"></span>'
+    +   '<span style="color:var(--text3);font-size:12px">Dijo is analysing why this is the best opportunity…</span>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    +   '<button onclick="loadTopic('' + escJ(best.topic) + '')" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:'Syne',sans-serif">⚡ Generate content for this</button>'
+    +   '<div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;align-self:center">Dijo's top pick · updated every 30 min</div>'
+    + '</div>'
+    + '</div>';
+
+  // Now fetch the AI reason asynchronously
+  try {
+    var prompt = 'In ONE sentence (max 25 words), explain why "' + best.topic
+      + '" is the best content opportunity right now on ' + best.platLabel
+      + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
+    var res = await fetch(DIJO + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt, mode: 'creator' })
+    });
+    var data = await res.json();
+    var reasonEl = document.getElementById('dijoPickReason');
+    if (reasonEl && data.reply) {
+      var reason = data.reply.trim().split(/[.!?]/)[0];
+      reasonEl.textContent = reason + '.';
+    }
+  } catch(e) {
+    var reasonEl = document.getElementById('dijoPickReason');
+    if (reasonEl) reasonEl.textContent = 'Highest scored trend across all platforms right now — strong opportunity for ' + best.platLabel + ' content.';
+  }
 }
 
 function loadTopic(topic) {
@@ -2126,12 +2255,10 @@ function loadCalendar() {
      Kept so the window.load init call below doesn't throw. */
 }
 
-/* ─────────────────────────────────────────────
-   TOP 3 TRENDS — replaced by renderWhatToPost
-   Kept as alias so existing call sites don't break
-───────────────────────────────────────────── */
+/* updateTopTrends — alias kept for call sites, now a no-op since
+   radar gauges and Dijo pick are rendered separately */
 function updateTopTrends() {
-  renderWhatToPost();
+  // renderRadarGauges and renderDijoTopPick are called by renderAll / renderFullTrends
 }
 
 /* ─────────────────────────────────────────────
@@ -2146,10 +2273,10 @@ window.addEventListener('load', async function() {
   loadCalendar();
   loadPlatformStatus();
   await fetchTrends();
-  updateTopTrends();
   renderDashTrends();
   loadOpportunities();
-  renderWhatToPost();
+  renderRadarGauges();
+  renderDijoTopPick();
   loadBriefing();
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 
@@ -2160,8 +2287,6 @@ window.addEventListener('load', async function() {
       await fetchTrends();
       renderDashTrends();
       renderDashOpps();
-      renderWhatToPost();
-      updateTopTrends();
       if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
         renderFullTrends();
       }
