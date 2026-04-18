@@ -1498,7 +1498,7 @@ function setFmt(f){
   c.className='slide-canvas';
   if(f==='portrait') c.classList.add('portrait');
   else if(f==='landscape') c.classList.add('landscape');
-  else if(f==='story'){ c.style.width='312px'; c.style.height='556px'; }
+  else if(f==='story'){ c.style.width='372px'; c.style.height='664px'; }
   if(f!=='story'){ c.style.width=''; c.style.height=''; }
 }
 function shuffleAssets(){ST.assetOffset=(ST.assetOffset+1)%10;buildStrip();renderSlide();toast('🔀 New assets selected');}
@@ -1622,13 +1622,13 @@ function doExport(){
   } else if(ST.exportType==='png'){
     exportSlidesAsPNG();
   } else if(ST.exportType==='video'){
-    toast('📹 Full MP4 export coming soon — screenshot each slide for now.');
+    exportSlidesAsMP4();
   }
 }
 
 async function exportSlidesAsPNG(){
   if(typeof html2canvas==='undefined'){
-    toast('💡 html2canvas not loaded');
+    toast('💡 html2canvas not loaded — please refresh the page');
     return;
   }
 
@@ -1637,39 +1637,146 @@ async function exportSlidesAsPNG(){
     return;
   }
 
-  toast('📦 Preparing full carousel...');
+  toast('📦 Preparing full carousel…');
 
   var originalIndex=ST.cur;
+  var canvas=document.getElementById('slideCanvas');
+  // Output at 1080px (Instagram native) regardless of display size
+  var displayW=canvas.offsetWidth||620;
+  var targetPx=1080;
+  var exportScale=Math.round((targetPx/displayW)*10)/10;
 
   for(var i=0;i<ST.slides.length;i++){
     ST.cur=i;
     renderSlide();
 
-    await new Promise(function(r){setTimeout(r,300);}); // allow render
+    // Wait for background images to paint — poll until all imgs inside canvas are complete
+    await new Promise(function(r){setTimeout(r,600);});
+    var imgs=canvas.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(function(img){
+      if(img.complete) return Promise.resolve();
+      return new Promise(function(res){
+        img.onload=res; img.onerror=res;
+        setTimeout(res,2000); // safety cap
+      });
+    }));
+    // Extra settle time for CSS background-image transitions
+    await new Promise(function(r){setTimeout(r,300);});
 
-    var canvas=document.getElementById('slideCanvas');
+    try{
+      var c=await html2canvas(canvas,{
+        useCORS:true,
+        allowTaint:true,
+        scale:exportScale,
+        backgroundColor:'#111111',
+        imageTimeout:8000,
+        logging:false
+      });
 
-    var c=await html2canvas(canvas,{
-      useCORS:true,
-      allowTaint:false,
-      scale:2,
-      backgroundColor:null
-    });
+      await new Promise(function(resolve){
+        c.toBlob(function(blob){
+          if(blob){
+            triggerBlobDownload(blob,'ImpactGrid-slide-'+String(i+1).padStart(2,'0')+'.png');
+          }
+          resolve();
+        },'image/png');
+      });
+    }catch(e){
+      console.warn('[exportSlidesAsPNG] slide '+(i+1)+' failed:',e);
+      toast('⚠️ Slide '+(i+1)+' capture failed — skipped');
+    }
 
-    await new Promise(function(resolve){
-      c.toBlob(function(blob){
-        triggerBlobDownload(blob,'ImpactGrid-slide-'+(i+1)+'.png');
-        resolve();
-      },'image/png');
-    });
-
-    await new Promise(function(r){setTimeout(r,200);}); // spacing between downloads
+    await new Promise(function(r){setTimeout(r,400);});
   }
 
   ST.cur=originalIndex;
   renderSlide();
 
-  toast('✓ Full carousel downloaded');
+  toast('✓ '+ST.slides.length+' slides saved at 1080px');
+}
+
+async function exportSlidesAsMP4(){
+  if(typeof html2canvas==='undefined'){
+    toast('💡 html2canvas not loaded — please refresh the page');
+    return;
+  }
+  if(!ST.slides.length){
+    toast('Generate a carousel first');
+    return;
+  }
+
+  // Check MediaRecorder support
+  var mimeType = '';
+  var candidates = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'];
+  for(var m=0;m<candidates.length;m++){
+    if(MediaRecorder.isTypeSupported(candidates[m])){ mimeType=candidates[m]; break; }
+  }
+  if(!mimeType){
+    toast('⚠️ Your browser doesn\'t support video recording — try Chrome');
+    return;
+  }
+
+  toast('🎬 Building video — please wait…');
+
+  var canvas=document.getElementById('slideCanvas');
+  var displayW=canvas.offsetWidth||620;
+  var displayH=canvas.offsetHeight||620;
+  // Create an offscreen canvas at 1080×1080 for recording
+  var offCanvas=document.createElement('canvas');
+  offCanvas.width=1080; offCanvas.height=1080;
+  var ctx=offCanvas.getContext('2d');
+
+  var originalIndex=ST.cur;
+  var chunks=[];
+  var stream=offCanvas.captureStream(30);
+  var recorder=new MediaRecorder(stream,{mimeType:mimeType,videoBitsPerSecond:8000000});
+  recorder.ondataavailable=function(e){ if(e.data&&e.data.size>0) chunks.push(e.data); };
+
+  var secPerSlide=3; // seconds per slide in video
+  var fps=30;
+  var framesPerSlide=secPerSlide*fps;
+
+  recorder.start();
+
+  var scale=1080/displayW;
+
+  for(var i=0;i<ST.slides.length;i++){
+    ST.cur=i; renderSlide();
+    // Wait for slide + images
+    await new Promise(function(r){setTimeout(r,700);});
+    var imgs=canvas.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(function(img){
+      if(img.complete) return Promise.resolve();
+      return new Promise(function(res){ img.onload=res; img.onerror=res; setTimeout(res,2000); });
+    }));
+    await new Promise(function(r){setTimeout(r,300);});
+
+    // Capture slide to offscreen canvas
+    try{
+      var captured=await html2canvas(canvas,{
+        useCORS:true,allowTaint:true,scale:scale,
+        backgroundColor:'#111111',imageTimeout:8000,logging:false
+      });
+      // Hold this frame for secPerSlide seconds
+      for(var f=0;f<framesPerSlide;f++){
+        ctx.drawImage(captured,0,0,1080,1080);
+        await new Promise(function(r){setTimeout(r,1000/fps);});
+      }
+    }catch(e){
+      console.warn('[exportMP4] slide '+(i+1)+' failed:',e);
+    }
+    toast('🎬 Slide '+(i+1)+' of '+ST.slides.length+' rendered…');
+  }
+
+  recorder.stop();
+  ST.cur=originalIndex; renderSlide();
+
+  await new Promise(function(r){ recorder.onstop=r; });
+
+  var ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+  var blob=new Blob(chunks,{type:mimeType});
+  triggerBlobDownload(blob,'ImpactGrid-carousel.'+ext);
+  toast('✓ Video downloaded ('+ST.slides.length+' slides · '+secPerSlide+'s each)');
 }
 
 function triggerBlobDownload(blob,filename){
