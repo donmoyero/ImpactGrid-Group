@@ -2388,19 +2388,16 @@ window.addEventListener('load', async function() {
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 
   // Auto-refresh trends every 60 seconds
+  // fetchTrends() → renderAll() already updates everything on success.
+  // renderRadarGauges + renderDijoTopPick are included so gauges and
+  // the winner box don't go stale between full page loads.
   setInterval(async function() {
     try {
       var scrollY = window.scrollY;
-      await fetchTrends();
-      renderDashTrends();
-      renderDashOpps();
-      if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
-        renderFullTrends();
-      }
-      console.log('[Trends] Auto refreshed');
+      await fetchTrends(); // calls renderAll() internally on success
       window.scrollTo(0, scrollY);
     } catch(e) {
-      console.warn('[Trends] refresh failed');
+      console.warn('[Trends] Auto-refresh failed:', e.message);
     }
   }, 60000);
 });
