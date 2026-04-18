@@ -315,10 +315,22 @@
      window.checkAuth() so individual pages can call it if needed.
   ───────────────────────────────────────── */
 
+  /* ── Self-contained Supabase client — nav.js owns auth, no external dependency ── */
+  var _navClient = null;
   function _getClient() {
-    if (typeof getSupabase === 'function')      return getSupabase();
-    if (typeof getContentClient === 'function') return getContentClient();
-    return null;
+    if (_navClient) return _navClient;
+    // If another script already created a client, reuse it
+    if (typeof getSupabase === 'function')      return (_navClient = getSupabase());
+    if (typeof getContentClient === 'function') return (_navClient = getContentClient());
+    // Create our own — nav.js is the auth owner
+    var sb = window.supabase;
+    if (sb && sb.createClient) {
+      _navClient = sb.createClient(
+        'https://wedjsnizcvtgptobwugc.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc'
+      );
+    }
+    return _navClient;
   }
 
   /* ── Helper: render avatar into an element (image, animal emoji, or initial fallback) ── */
