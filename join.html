@@ -567,6 +567,7 @@ function checkStrength(input, barId, labelId) {
 async function googleSignIn() {
   try {
     var c = getSupabase();
+    if (!c) { alert('Auth service not ready — please refresh the page.'); return; }
     var res = await c.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin + '/creator-studio.html' }
@@ -574,7 +575,14 @@ async function googleSignIn() {
     if (res.error) { console.error('[ImpactGrid] Google sign-in error:', res.error); throw res.error; }
   } catch(err) {
     console.error('[ImpactGrid] googleSignIn caught:', err);
-    alert('Google sign-in failed: ' + (err.message || 'Please try again.'));
+    /* Show error in whichever form card is currently visible */
+    var visibleAlert = document.querySelector('.form-card.visible .alert');
+    if (visibleAlert) {
+      visibleAlert.textContent = 'Google sign-in failed: ' + (err.message || 'Please try again.');
+      visibleAlert.className = 'alert error show';
+    } else {
+      alert('Google sign-in failed: ' + (err.message || 'Please try again.'));
+    }
   }
 }
 
@@ -636,6 +644,7 @@ async function joinCreator() {
 
   if (!fname || !lname) { showAlert('pro-alert', 'Please enter your first and last name.', 'error'); return; }
   if (!email)           { showAlert('pro-alert', 'Please enter your email address.', 'error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('pro-alert', 'Please enter a valid email address.', 'error'); return; }
   if (!pass || pass.length < 8) { showAlert('pro-alert', 'Password must be at least 8 characters.', 'error'); return; }
   if (pass !== pass2)   { showAlert('pro-alert', 'Passwords do not match. Please check and try again.', 'error'); return; }
 
@@ -643,6 +652,7 @@ async function joinCreator() {
 
   try {
     var c = getSupabase();
+    if (!c) throw new Error('Auth service not ready — please refresh and try again.');
     var res = await c.auth.signUp({
       email: email,
       password: pass,
@@ -685,6 +695,7 @@ async function joinEmployer() {
   if (!name)    { showAlert('emp-alert', 'Please enter your name.', 'error'); return; }
   if (!company) { showAlert('emp-alert', 'Please enter your company name.', 'error'); return; }
   if (!email)   { showAlert('emp-alert', 'Please enter your email address.', 'error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('emp-alert', 'Please enter a valid email address.', 'error'); return; }
   if (!pass || pass.length < 8) { showAlert('emp-alert', 'Password must be at least 8 characters.', 'error'); return; }
   if (pass !== pass2) { showAlert('emp-alert', 'Passwords do not match. Please check and try again.', 'error'); return; }
 
@@ -692,6 +703,7 @@ async function joinEmployer() {
 
   try {
     var c = getSupabase();
+    if (!c) throw new Error('Auth service not ready — please refresh and try again.');
     var res = await c.auth.signUp({
       email: email, password: pass,
       options: { data: { full_name: name, role: 'employer', company_name: company } }
@@ -720,6 +732,17 @@ async function joinEmployer() {
 
 /* ── Init ── */
 (function() {
+  /* Auto-redirect if already logged in */
+  var c = (typeof getSupabase === 'function') ? getSupabase() : null;
+  if (c) {
+    c.auth.getSession().then(function(r) {
+      if (r.data && r.data.session) {
+        window.location.href = 'creator-studio.html';
+      }
+    }).catch(function() {});
+  }
+
+  /* Pre-select account type from URL param (?type=employer or ?type=creator) */
   var params = new URLSearchParams(window.location.search);
   var type = params.get('type');
   if (type === 'employer') selectType('employer');
