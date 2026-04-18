@@ -97,6 +97,9 @@ async function initAuth() {
     plan: IG_PLAN,
     admin: IG_IS_ADMIN
   });
+
+  // Notify creator-studio.js that auth is settled — it updates UI
+  if (typeof loadUser === 'function') loadUser();
 }
 
 function isAdmin() {
