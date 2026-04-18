@@ -1005,21 +1005,140 @@ function renderOpportunities(data) {
 }
 
 async function loadOpportunities() {
+  // ── TIER 1: Dijo AI recommendations (/ai/recommendations) ────────────────
+  // Sends connected platform context so Dijo can tailor its top 3 picks.
+  // Response includes the raw AI text (hook ideas, formats, posting times)
+  // which renderAIOpportunities parses and displays.
   try {
-    var res = await fetch(DIJO + '/trends/dijo');
-    var data = await res.json();
-    // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
-    // fall back to local rather than showing "No opportunities"
-    if (data && data.length) {
-      renderOpportunities(data);
-    } else {
-      console.warn('[Opportunities] /trends/dijo returned empty — using local fallback');
-      renderDashOpps();
+    var connectedPlatforms = [];
+    if (typeof YouTubeAuth !== 'undefined' && YouTubeAuth.getSession && YouTubeAuth.getSession()) connectedPlatforms.push('YouTube');
+    if (typeof TikTokAuth  !== 'undefined' && TikTokAuth.getSession  && TikTokAuth.getSession())  connectedPlatforms.push('TikTok');
+
+    var res = await fetch(DIJO + '/ai/recommendations', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        niche:               '',
+        platform:            'All',
+        goal:                'grow',
+        connected_platforms: connectedPlatforms
+      })
+    });
+
+    if (res.ok) {
+      var data = await res.json();
+      if (data.recommendations && data.recommendations.length) {
+        renderAIOpportunities(data.recommendations, data.raw || '');
+        console.log('[Opportunities] AI recommendations loaded ✅');
+        return;
+      }
     }
   } catch(e) {
-    console.warn('[Opportunities] /trends/dijo failed:', e.message);
-    renderDashOpps();
+    console.warn('[Opportunities] /ai/recommendations failed:', e.message);
   }
+
+  // ── TIER 2: /trends/dijo (scored data, no AI analysis) ───────────────────
+  try {
+    var res2 = await fetch(DIJO + '/trends/dijo');
+    var data2 = await res2.json();
+    if (data2 && data2.length) {
+      renderOpportunities(data2);
+      console.log('[Opportunities] /trends/dijo fallback loaded');
+      return;
+    }
+  } catch(e2) {
+    console.warn('[Opportunities] /trends/dijo failed:', e2.message);
+  }
+
+  // ── TIER 3: local _allTrends (always works) ───────────────────────────────
+  console.warn('[Opportunities] Using local fallback');
+  renderDashOpps();
+}
+
+/* ─────────────────────────────────────────────
+   RENDER AI OPPORTUNITIES
+   Displays Dijo's top 3 recommendations with
+   hook ideas, format, and posting time parsed
+   from the raw AI text. Falls back gracefully
+   if parsing yields nothing usable.
+───────────────────────────────────────────── */
+function renderAIOpportunities(recs, rawText) {
+  var el = document.getElementById('topOppBox');
+  if (!el) return;
+
+  if (!recs || !recs.length) {
+    renderDashOpps();
+    return;
+  }
+
+  // Parse hook, format, and posting time per opportunity from rawText.
+  // The AI structures its reply as numbered sections so we split on them.
+  var sections = rawText
+    ? rawText.split(/(?=\n?\s*\d+\.\s)/g).filter(function(s) { return s.trim().length > 20; })
+    : [];
+
+  function extractField(text, labels) {
+    // labels is an array of possible header strings
+    for (var li = 0; li < labels.length; li++) {
+      var re = new RegExp(labels[li] + '[:\\s]+([^\\n]{5,120})', 'i');
+      var m  = text.match(re);
+      if (m) return m[1].trim();
+    }
+    return '';
+  }
+
+  var rankLabels = ['#1 Best Pick', '#2 Strong Play', '#3 Worth Watching'];
+  var rankColors = ['var(--gold)', 'var(--green)', 'var(--blue2)'];
+
+  el.innerHTML = recs.slice(0, 3).map(function(rec, idx) {
+    var sec       = sections[idx] || '';
+    var hook      = extractField(sec, ['hook idea', 'hook', 'specific hook']);
+    var format    = extractField(sec, ['content format', 'format', 'exact content format']);
+    var postTime  = extractField(sec, ['best posting time', 'posting time', 'post time']);
+    var whyNow    = extractField(sec, ['why it', 'opportunity right now', 'why']);
+
+    // Score: server returns 0-100, convert to 0-10 display
+    var displayScore = rec.score != null
+      ? Math.min(9.9, parseFloat((rec.score / 10).toFixed(1)))
+      : 6.0;
+    var pct = Math.round((displayScore / 10) * 100);
+
+    var platLabel = rec.platform === 'youtube' ? 'YouTube'
+      : rec.platform === 'tiktok'  ? 'TikTok'
+      : rec.platform === 'cross'   ? 'Cross-platform'
+      : rec.platform === 'multi'   ? 'Multi-platform'
+      : 'Trending';
+    var platIcon = rec.platform === 'tiktok'  ? '🎵'
+      : rec.platform === 'youtube' ? '▶️'
+      : rec.platform === 'cross' || rec.platform === 'multi' ? '🚀'
+      : '🔍';
+
+    var rankColor = rankColors[idx] || 'var(--text2)';
+    var rankLabel = rankLabels[idx] || '';
+
+    // Build the detail rows — only show fields the AI actually returned
+    var detailRows = '';
+    if (hook)     detailRows += '<div style="font-size:11px;color:var(--text2);line-height:1.5"><strong style="color:var(--gold)">Hook:</strong> ' + escH(hook) + '</div>';
+    if (format)   detailRows += '<div style="font-size:11px;color:var(--text2);line-height:1.5"><strong>Format:</strong> ' + escH(format) + '</div>';
+    if (postTime) detailRows += '<div style="font-size:11px;color:var(--text3)">🕐 ' + escH(postTime) + '</div>';
+    if (!detailRows && whyNow) detailRows += '<div style="font-size:11px;color:var(--text2);line-height:1.5">' + escH(whyNow) + '</div>';
+
+    return '<div class="opp-card" onclick="loadTopic(\'' + escJ(rec.topic) + '\')" title="Click to generate content">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">'
+      +   '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + rankColor + ';letter-spacing:.08em;text-transform:uppercase">' + rankLabel + '</span>'
+      +   '<span style="font-family:\'DM Mono\',monospace;font-size:16px;font-weight:900;color:' + rankColor + '">' + displayScore.toFixed(1) + '</span>'
+      + '</div>'
+      + '<div class="opp-header" style="margin-bottom:4px">'
+      +   '<span class="opp-topic">' + platIcon + ' ' + escH(rec.topic) + '</span>'
+      + '</div>'
+      + '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-bottom:8px;overflow:hidden">'
+      +   '<div style="height:100%;width:' + pct + '%;background:' + rankColor + ';border-radius:99px;transition:width .5s ease"></div>'
+      + '</div>'
+      + '<div class="opp-meta" style="margin-bottom:6px">' + escH(platLabel) + (rec.ig_prediction > 0 ? ' · 📸 ' + rec.ig_prediction + '% IG chance' : '') + '</div>'
+      + detailRows
+      + '<div style="font-size:10px;color:var(--text3);font-style:italic;margin-top:6px">⚡ Dijo AI · live data</div>'
+      + '</div>';
+  }).join('');
 }
 
 // Fast in-memory re-render — used by 60s refresh intervals and as fallback.
