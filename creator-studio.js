@@ -178,81 +178,21 @@ function closeSidebar() {
 
 /* ─────────────────────────────────────────────
    USER MENU
+   Nav dropdown is owned by nav.js (toggleDD / #uDrop).
+   This click-outside listener is a safety net only.
 ───────────────────────────────────────────── */
-function toggleUserMenu() {
-  document.getElementById('userDrop').classList.toggle('open');
-}
 document.addEventListener('click', function(e) {
-  var d = document.getElementById('userDrop');
+  var d = document.getElementById('uDrop');
   if (d && !e.target.closest('.user-btn')) d.classList.remove('open');
 });
 
 /* ─────────────────────────────────────────────
    AUTH
+   Nav UI (setNavUser, igSignOut, checkAuth) is
+   fully owned by nav.js — do not duplicate here.
+   Studio-specific auth work lives in loadUser()
+   which is called by auth.js after initAuth().
 ───────────────────────────────────────────── */
-function setNavUser(user) {
-  if (!user) return;
-  var email = user.email || '';
-  var name = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name))
-    || email.split('@')[0] || 'Creator';
-  var guest = document.getElementById('navGuest');
-  var userBox = document.getElementById('navUser');
-  if (guest) guest.style.display = 'none';
-  if (userBox) userBox.style.display = 'flex';
-  var avEl = document.getElementById('userAv');
-  var nameEl = document.getElementById('userName');
-  var emailEl = document.getElementById('userEmail');
-  if (avEl) avEl.textContent = (name.charAt(0) || '?').toUpperCase();
-  if (nameEl) nameEl.textContent = name.split(' ')[0];
-  if (emailEl) emailEl.textContent = email;
-}
-window.igSignOut = async function() {
-  try { var c = getSupabase(); if (c) await c.auth.signOut(); } catch(e) {}
-  window.location.href = 'index.html';
-};
-function checkAuth() {
-  var c = getSupabase();
-  if (!c) { console.log("SUPABASE NOT READY ❌"); return; }
-
-  // 🔥 TEMP DEBUG — remove once session confirmed
-  c.auth.getSession().then(function(r) {
-    console.log("SESSION:", r);
-    if (r?.data?.session) {
-      console.log("USER FOUND ✅:", r.data.session.user);
-    } else {
-      console.log("NO SESSION ❌");
-    }
-  });
-
-  c.auth.getSession().then(async function(r) {
-    if (r?.data?.session) {
-      setUser(r.data.session.user);
-
-      // ✅ ADMIN DETECTION
-
-      setNavUser(getUser());
-      setTimeout(function() { setNavUser(getUser()); }, 150);
-
-      // ✅ LOAD REAL PROFILE
-      await loadProfile();
-
-      // ✅ PERSONAL WELCOME
-      setWelcome();
-    }
-  });
-
-  c.auth.onAuthStateChange(function(ev, session) {
-    if (session?.user) {
-      setUser(session.user);
-
-      // ✅ ADMIN DETECTION
-
-      setNavUser(session.user);
-      loadProfile();
-      setWelcome();
-    }
-  });
-}
 
 async function loadProfile() {
   const supabase = getSupabase();
@@ -275,7 +215,7 @@ async function loadProfile() {
 
   if (!data) return;
 
-  const name = data.full_name || user.email.split('@')[0];
+  const name = data.full_name || (user.email && user.email.split('@')[0]) || 'Creator';
 
   // NAME
   const nameEl = document.getElementById('userName');
@@ -314,7 +254,7 @@ function setWelcome() {
 
   const name =
     getUser().user_metadata?.full_name ||
-    getUser().email.split('@')[0] ||
+    (getUser().email && getUser().email.split('@')[0]) ||
     'Creator';
 
   const hour = new Date().getHours();
@@ -423,17 +363,15 @@ function showUpgrade(message) {
 })();
 
 async function checkCarouselAccess() {
-  await initAuth();
-
   if (isAdmin()) return true;
 
-  if (!IG_USER) {
-    alert("Login required");
+  if (!getUser()) {
+    showUpgrade('Login required to create carousels');
     return false;
   }
 
-  if (!canUse("carousel")) {
-    alert("Upgrade for unlimited carousels");
+  if (!canUse('carousel')) {
+    showUpgrade('Upgrade for unlimited carousels');
     return false;
   }
 
@@ -827,7 +765,7 @@ function renderTrendChart() {
 }
 
 function runTrendPrediction() {
-  const el = document.getElementById("trendPrediction");
+  const el = document.getElementById("weeklyPrediction");
   if (!el || !_allTrends || !_allTrends.length) return;
 
   // pick strongest trend
@@ -869,7 +807,7 @@ function filterTrends(btn, plat) {
    every tick.
 ───────────────────────────────────────────── */
 function renderOpportunities(data) {
-  var el = document.getElementById('dashOppList');
+  var el = document.getElementById('topOppBox');
   if (!el) return;
 
   if (!data || !data.length) {
@@ -1764,6 +1702,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* ─────────────────────────────────────────────
    CONTENT CALENDAR
+   Rendering is fully owned by calendar.js.
+   loadCalendar() is a no-op shim so any legacy
+   call sites don't throw — calendar.js handles
+   the real work after it initialises.
 ───────────────────────────────────────────── */
 function getBestPostTime(i) {
   var times = ['9:00 AM', '12:30 PM', '6:00 PM', '8:30 PM'];
@@ -1771,36 +1713,8 @@ function getBestPostTime(i) {
 }
 
 function loadCalendar() {
-  var el = document.getElementById('calendarContainer');
-  if (!el) return;
-
-  if (typeof calState !== 'undefined' && Object.keys(calState.posts).length === 0) {
-    el.innerHTML = `
-      <div style="padding:14px;color:var(--text2);font-size:13px">
-        📅 No content yet<br><br>
-        Dijo will suggest what to post automatically.
-      </div>
-    `;
-    return;
-  }
-
-  var container = el;
-  var today = new Date();
-  container.innerHTML = '';
-
-  var hasContent = false;
-  for (var i = 0; i < 7; i++) {
-    var d = new Date();
-    d.setDate(today.getDate() + i);
-    var day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
-    var bestTime = getBestPostTime(i);
-    container.innerHTML += '<div class="calendar-day"><strong>' + day + '</strong><span>⏰ ' + bestTime + '</span></div>';
-    hasContent = true;
-  }
-
-  if (!hasContent) {
-    container.innerHTML = '<div style="padding:14px;color:var(--text2);font-size:13px">📅 No content scheduled yet<br><br>Generate content and your calendar will update automatically.</div>';
-  }
+  /* Intentional no-op — calendar.js owns all calendar rendering.
+     Kept so the window.load init call below doesn't throw. */
 }
 
 /* ─────────────────────────────────────────────
@@ -1815,19 +1729,17 @@ function updateTopTrends() {
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('load', async function() {
-  checkAuth();
+  // Auth is handled by auth.js → initAuth() → loadUser().
+  // nav.js runs its own checkAuth() for the nav bar.
+  // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
   initYouTube();
   initTikTok();
   loadCalendar();
-  loadPlatformStatus();   // FIX 5: Real platform status 🟢
+  loadPlatformStatus();
   await fetchTrends();
-  if (!_allTrends || !_allTrends.length) {
-    var el = document.getElementById('topTrends');
-    if (el) el.innerHTML = '<div>No live data</div>';
-  }
   updateTopTrends();
   renderDashTrends();
-  loadOpportunities();   // fetches /trends/dijo — real Dijo intelligence
+  loadOpportunities();
   renderWhatToPost();
   loadBriefing();
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
@@ -1836,7 +1748,6 @@ window.addEventListener('load', async function() {
   setInterval(async function() {
     try {
       var scrollY = window.scrollY;
-
       await fetchTrends();
       renderDashTrends();
       renderDashOpps();
@@ -1846,22 +1757,9 @@ window.addEventListener('load', async function() {
         renderFullTrends();
       }
       console.log('[Trends] Auto refreshed');
-
       window.scrollTo(0, scrollY);
     } catch(e) {
       console.warn('[Trends] refresh failed');
     }
   }, 60000);
-
-  // Live feel — re-renders chart + top 3 every 20s so the page always feels alive
-  setInterval(async () => {
-    var scrollY = window.scrollY;
-    await fetchTrends();
-    renderDashTrends();
-    renderFullTrends();
-    renderTrendChart();
-    renderWhatToPost();
-    updateTopTrends();
-    window.scrollTo(0, scrollY);
-  }, 20000);
 });
