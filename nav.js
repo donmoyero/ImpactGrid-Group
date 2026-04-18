@@ -437,11 +437,11 @@
     var avatarUrl = '';
     googleMeta = googleMeta || {};
 
-    // Try to fetch richer profile from DB
+    // Try to fetch richer profile from DB — profiles table uses user_id not id
     try {
       var res = await authClient.from('profiles')
         .select('full_name, avatar_url, animal_avatar')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (res.data) {
@@ -451,22 +451,20 @@
           try { localStorage.setItem('ig_animal', res.data.animal_avatar); } catch(e) {}
         }
       } else {
-        /* ── No profile row yet (brand-new Google/OAuth sign-up) ──
-           Auto-create one using Google's user_metadata so their name
-           shows immediately everywhere, not just after they visit Settings. */
+        /* No profile row yet — auto-create from Google/OAuth metadata */
         var googleName   = googleMeta.full_name || googleMeta.name || fallbackName;
         var googleAvatar = googleMeta.avatar_url || googleMeta.picture || '';
         try {
           await authClient.from('profiles').upsert({
-            id:         userId,
+            user_id:    userId,
             email:      fallbackEmail,
             full_name:  googleName,
             avatar_url: googleAvatar,
             updated_at: new Date().toISOString()
-          }, { onConflict: 'id' });
+          }, { onConflict: 'user_id' });
           name      = googleName;
           avatarUrl = googleAvatar;
-        } catch(e) { /* silently skip if upsert fails */ }
+        } catch(e) {}
       }
     } catch(e) { /* profiles table unavailable — use fallback name */ }
 
