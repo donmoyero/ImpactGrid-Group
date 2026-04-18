@@ -577,14 +577,14 @@ async function joinCreator() {
     if (res.error) { console.error('[ImpactGrid] Creator signUp error:', res.error); throw res.error; }
     var userId = res.data.user ? res.data.user.id : null;
     if (userId) {
-      /* Only upsert columns that are guaranteed to exist in your profiles table */
+      /* user_id is the conflict column in profiles (not id) — matches login.html + nav.js */
       await c.from('profiles').upsert({
-        id:         userId,
+        user_id:    userId,
         full_name:  fullName,
         email:      email,
         role:       'creator',
         updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
+      }, { onConflict: 'user_id' });
     }
     showSuccess('creator', fname, 'creator-studio.html');
   } catch(err) {
@@ -630,7 +630,7 @@ async function joinEmployer() {
     var userId = res.data.user ? res.data.user.id : null;
     if (userId) {
       await c.from('profiles').upsert({
-        id:           userId,
+        user_id:    userId,
         full_name:    name,
         email:        email,
         role:         'employer',
@@ -639,7 +639,7 @@ async function joinEmployer() {
         company_size: size || null,
         website:      website || null,
         updated_at:   new Date().toISOString()
-      }, { onConflict: 'id' });
+      }, { onConflict: 'user_id' });
     }
     showSuccess('employer', name.split(' ')[0], 'employer-dashboard.html');
   } catch(err) {
