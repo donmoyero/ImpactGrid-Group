@@ -28,11 +28,12 @@
 
   /* ── Top-level nav links ── */
   var NAV_LINKS = [
-    { href: 'index.html',    label: 'Home' },
-    { href: 'about.html',    label: 'About' },
-    { href: 'consulting.html', label: 'Consulting' },
-    { href: 'contact.html',  label: 'Contact' },
-    { href: 'pricing.html',  label: 'Pricing' },
+    { href: 'index.html',          label: 'Home' },
+    { href: 'about.html',          label: 'About' },
+    { href: 'consulting.html',     label: 'Consulting' },
+    { href: 'creator-studio.html', label: 'Creator Studio' },
+    { href: 'contact.html',        label: 'Contact' },
+    { href: 'pricing.html',        label: 'Pricing' },
   ];
 
   /* ─────────────────────────────────────────
@@ -49,9 +50,9 @@
       { href:'index.html',          label:'Home' },
       { href:'about.html',          label:'About' },
       { href:'consulting.html',     label:'Consulting' },
+      { href:'creator-studio.html', label:'Creator Studio' },
       { href:'contact.html',        label:'Contact' },
       { href:'pricing.html',        label:'Pricing' },
-      { href:'creator-studio.html', label:'Try Creator Studio Free →' },
     ].map(function(l) {
       var cls = l.href === activePage ? ' class="active"' : '';
       return '<a href="' + l.href + '"' + cls + ' onclick="closeSidebar()">' + l.label + '</a>';
