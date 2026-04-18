@@ -816,163 +816,120 @@ const pointLabelsPlugin = {
    Chart re-draws every 60s via renderAll().
    A subtle pulse animation makes it feel live.
 ───────────────────────────────────────────── */
-function renderTrendChart() {
-  var canvas = document.getElementById('trendChart');
-  if (!canvas) return;
+/* ─────────────────────────────────────────────
+   THREE PLATFORM CHARTS
+   One line chart per platform — TikTok, YouTube,
+   Google — each showing their top 3 trending topics
+   with scores on Y axis. Lines rise and fall as
+   scores update every 60s. Clicking a topic label
+   opens the generator pre-filled with that topic.
+───────────────────────────────────────────── */
+var _chartTT = null, _chartYT = null, _chartGT = null;
+// Store historical score snapshots so lines actually move
+var _chartHistory = { tt: {}, yt: {}, gt: {} };
+var _chartHistoryMax = 8; // keep last 8 snapshots per topic
 
-  if (window.trendChartInstance) {
-    window.trendChartInstance.destroy();
-    window.trendChartInstance = null;
+function _recordSnapshot(plat, trends) {
+  var hist = _chartHistory[plat];
+  var now  = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  trends.forEach(function(t) {
+    if (!hist[t.topic]) hist[t.topic] = [];
+    hist[t.topic].push({ time: now, score: t.score });
+    if (hist[t.topic].length > _chartHistoryMax) hist[t.topic].shift();
+  });
+}
+
+function _buildPlatChart(canvasId, emptyId, topicsId, plat, color, label) {
+  var canvas = document.getElementById(canvasId);
+  var emptyEl = document.getElementById(emptyId);
+  var topicsEl = document.getElementById(topicsId);
+  if (!canvas) return null;
+
+  var trends = _allTrends
+    .filter(function(t){ return t.plat === plat; })
+    .slice().sort(function(a,b){ return b.score - a.score; })
+    .slice(0, 3);
+
+  // Show empty state if no data for this platform
+  if (!trends.length) {
+    canvas.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    if (topicsEl) topicsEl.innerHTML = '';
+    return null;
+  }
+  canvas.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Record this snapshot so lines have history to draw
+  _recordSnapshot(plat, trends);
+  var hist = _chartHistory[plat];
+
+  // Build time labels from history of first topic (all share same timestamps)
+  var firstTopic = trends[0].topic;
+  var timeLabels = (hist[firstTopic] || []).map(function(h){ return h.time; });
+  if (timeLabels.length < 2) {
+    // Pad with fake earlier times so there is something to draw
+    var base = timeLabels[0] || 'now';
+    timeLabels = ['-7m', '-6m', '-5m', '-4m', '-3m', '-2m', '-1m', base].slice(-Math.max(timeLabels.length + 1, 2));
   }
 
-  // ── Build per-platform top-7 arrays ──────────────────────────────────────
-  function platTop(plat, n) {
-    return _allTrends
-      .filter(function(t) { return t.plat === plat; })
-      .slice().sort(function(a, b) { return b.score - a.score; })
-      .slice(0, n);
-  }
-
-  var ttTrends = platTop('tt',    7);
-  var ytTrends = platTop('yt',    7);
-  var gtTrends = platTop('gt',    7);
-  var crTrends = platTop('cross', 7);
-
-  // ── Unified label set — top topic per platform blended ───────────────────
-  var allTop = _allTrends.slice().sort(function(a, b) { return b.score - a.score; }).slice(0, 7);
-  var labels  = allTop.map(function(t) { return t.topic.length > 16 ? t.topic.slice(0, 16) + '…' : t.topic; });
-
-  // Map each label to each platform's score for that topic (null if no match)
-  function scoreMap(platTrends) {
-    return allTop.map(function(top) {
-      var match = platTrends.find(function(t) { return t.topic === top.topic; });
-      return match ? parseFloat(match.score.toFixed(2)) : null;
+  var datasets = trends.map(function(t, idx) {
+    var alphas = ['ff', 'bb', '77'];
+    var lineColor = color + (alphas[idx] || 'ff');
+    var topicHist = hist[t.topic] || [];
+    // Build data array: null for missing early slots, real score for known
+    var data = timeLabels.map(function(lbl) {
+      var match = topicHist.find(function(h){ return h.time === lbl; });
+      return match ? match.score : null;
     });
-  }
-
-  var datasets = [];
-
-  if (ttTrends.length) {
-    datasets.push({
-      label:           '🎵 TikTok',
-      data:            scoreMap(ttTrends),
-      tension:         0.45,
-      fill:            false,
-      borderColor:     '#ff6464',
-      backgroundColor: '#ff646430',
-      borderWidth:     2.5,
-      pointRadius:     5,
-      pointHoverRadius: 8,
-      pointBackgroundColor: '#ff6464',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 1.5,
-      spanGaps:        true
-    });
-  }
-
-  if (ytTrends.length) {
-    datasets.push({
-      label:           '▶️ YouTube',
-      data:            scoreMap(ytTrends),
-      tension:         0.45,
-      fill:            false,
-      borderColor:     '#FFD700',
-      backgroundColor: '#FFD70030',
-      borderWidth:     2.5,
-      pointRadius:     5,
-      pointHoverRadius: 8,
-      pointBackgroundColor: '#FFD700',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 1.5,
-      spanGaps:        true
-    });
-  }
-
-  if (gtTrends.length) {
-    datasets.push({
-      label:           '🔍 Google',
-      data:            scoreMap(gtTrends),
-      tension:         0.45,
-      fill:            false,
-      borderColor:     '#78b4ff',
-      backgroundColor: '#78b4ff30',
-      borderWidth:     2.5,
-      pointRadius:     5,
-      pointHoverRadius: 8,
-      pointBackgroundColor: '#78b4ff',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 1.5,
-      spanGaps:        true
-    });
-  }
-
-  if (crTrends.length) {
-    datasets.push({
-      label:           '🚀 Cross',
-      data:            scoreMap(crTrends),
-      tension:         0.45,
-      fill:            false,
-      borderColor:     '#4FB3A5',
-      backgroundColor: '#4FB3A530',
-      borderWidth:     2,
-      borderDash:      [4, 3],
-      pointRadius:     4,
+    // If no history yet, just show current score at last point
+    if (data.every(function(d){ return d === null; })) {
+      data[data.length - 1] = t.score;
+    }
+    return {
+      label: t.topic.length > 18 ? t.topic.slice(0, 18) + '…' : t.topic,
+      _fullTopic: t.topic,
+      data: data,
+      borderColor: color,
+      backgroundColor: color + '18',
+      borderWidth: idx === 0 ? 2.5 : 1.5,
+      borderDash: idx === 0 ? [] : idx === 1 ? [4,2] : [2,2],
+      pointRadius: 4,
       pointHoverRadius: 7,
-      pointBackgroundColor: '#4FB3A5',
+      pointBackgroundColor: color,
       pointBorderColor: '#fff',
       pointBorderWidth: 1.5,
-      spanGaps:        true
-    });
-  }
+      tension: 0.4,
+      fill: false,
+      spanGaps: true
+    };
+  });
 
-  // Fallback if somehow no platform data — show all trends as single line
-  if (!datasets.length) {
-    var top7 = _allTrends.slice(0, 7);
-    labels   = top7.map(function(t) { return t.topic.slice(0, 16); });
-    datasets = [{
-      label:           'Trend Score',
-      data:            top7.map(function(t) { return t.score; }),
-      tension:         0.4,
-      fill:            true,
-      backgroundColor: 'rgba(201,126,8,0.10)',
-      borderColor:     '#c97e08',
-      borderWidth:     2,
-      pointRadius:     5,
-      pointHoverRadius: 7,
-      spanGaps:        true
-    }];
-  }
+  // Destroy old chart instance
+  var oldChart = plat === 'tt' ? _chartTT : plat === 'yt' ? _chartYT : _chartGT;
+  if (oldChart) { oldChart.destroy(); }
 
   var ctx = canvas.getContext('2d');
-  window.trendChartInstance = new Chart(ctx, {
+  var newChart = new Chart(ctx, {
     type: 'line',
-    data: { labels: labels, datasets: datasets },
+    data: { labels: timeLabels, datasets: datasets },
     options: {
-      responsive:          true,
+      responsive: true,
       maintainAspectRatio: false,
-      animation: {
-        duration: 800,
-        easing:   'easeInOutQuart'
-      },
-      interaction: {
-        mode:      'index',
-        intersect: false
+      animation: { duration: 700, easing: 'easeInOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      onClick: function(e, elements) {
+        if (elements && elements.length) {
+          var ds = datasets[elements[0].datasetIndex];
+          if (ds && ds._fullTopic) loadTopic(ds._fullTopic);
+        }
       },
       plugins: {
-        legend: {
-          display:  true,
-          position: 'top',
-          labels: {
-            color:    '#aaa',
-            font:     { size: 11 },
-            boxWidth: 14,
-            padding:  16
-          }
-        },
+        legend: { display: false }, // we draw our own topic labels below
         tooltip: {
           backgroundColor: '#111',
-          borderColor:     '#c97e08',
-          borderWidth:     1,
+          borderColor: color,
+          borderWidth: 1,
           callbacks: {
             label: function(item) {
               if (item.raw === null) return item.dataset.label + ': no data';
@@ -983,31 +940,62 @@ function renderTrendChart() {
       },
       scales: {
         x: {
-          grid:  { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#666', font: { size: 10 }, maxRotation: 30 }
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#666', font: { size: 9 }, maxRotation: 0, maxTicksLimit: 4 }
         },
         y: {
-          beginAtZero: false,
           min: 0, max: 10,
-          grid:  { color: 'rgba(255,255,255,0.04)' },
+          grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: {
-            color: '#666',
-            font:  { size: 10 },
-            callback: function(v) { return v + '/10'; }
+            color: '#666', font: { size: 9 },
+            callback: function(v) { return v + '/10'; },
+            stepSize: 2
           }
         }
       }
     }
   });
 
-  // ── Pulse the live badge next to the chart heading ────────────────────────
-  var liveDot = document.getElementById('chartLiveDot');
-  if (liveDot) {
-    liveDot.style.animation = 'none';
-    // Force reflow then re-apply pulse
-    void liveDot.offsetWidth;
-    liveDot.style.animation = '';
+  if (plat === 'tt') _chartTT = newChart;
+  else if (plat === 'yt') _chartYT = newChart;
+  else _chartGT = newChart;
+
+  // Render topic labels below chart — rank, topic name, score bar
+  if (topicsEl) {
+    topicsEl.innerHTML = trends.map(function(t, idx) {
+      var pct = Math.round((t.score / 10) * 100);
+      var cls = classifyTrend(t);
+      var clsIcon = cls === 'blowup' ? '🔥' : cls === 'rising_fast' ? '⚡' : cls === 'early' ? '🟢' : '📊';
+      var dashes = ['solid', 'dashed', 'dotted'];
+      return '<div onclick="loadTopic(\'' + escJ(t.topic) + '\')" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)">'
+        + '<div style="width:14px;height:3px;background:' + color + ';border-radius:2px;flex-shrink:0;opacity:' + (idx===0?1:idx===1?0.7:0.45) + ';border-style:' + dashes[idx] + '"></div>'
+        + '<div style="flex:1;min-width:0">'
+        +   '<div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</div>'
+        +   '<div style="height:3px;background:var(--bg2);border-radius:99px;margin-top:3px;overflow:hidden">'
+        +     '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:99px;transition:width .6s ease"></div>'
+        +   '</div>'
+        + '</div>'
+        + '<div style="font-family:DM Mono,monospace;font-size:11px;font-weight:900;color:' + color + ';flex-shrink:0">' + t.score.toFixed(1) + ' ' + clsIcon + '</div>'
+        + '</div>';
+    }).join('');
   }
+
+  return newChart;
+}
+
+function renderTrendChart() {
+  _buildPlatChart('chartTT', 'chartTTEmpty', 'chartTTTopics', 'tt', '#ff6464', 'TikTok');
+  _buildPlatChart('chartYT', 'chartYTEmpty', 'chartYTTopics', 'yt', '#FFD700', 'YouTube');
+  _buildPlatChart('chartGT', 'chartGTEmpty', 'chartGTTopics', 'gt', '#78b4ff', 'Google');
+
+  // Pulse live dots
+  ['ttLiveDot','ytLiveDot','gtLiveDot','chartLiveDot'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  });
 }
 
 async function runTrendPrediction() {
