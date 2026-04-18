@@ -84,31 +84,23 @@ function updateUserUI() {
 /* ─────────────────────────────────────────────
    BRIEFING
 ───────────────────────────────────────────── */
-function ensureTrends() {
-  if (!_allTrends || !_allTrends.length) {
-    // simple fallback so UI never looks broken
-    _allTrends = [
-      { topic: "AI content ideas", score: 9.2, plat: 'gt', platLabel: 'Google', rank: 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 },
-      { topic: "Faceless videos", score: 8.8, plat: 'gt', platLabel: 'Google', rank: 2, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 },
-      { topic: "Make money online", score: 8.5, plat: 'gt', platLabel: 'Google', rank: 3, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0 }
-    ];
-  }
-}
+
 
 function safeTopic(t) {
-  return t?.topic || '—';
+  return t?.topic || 'No data';
 }
 
-function updateBriefing() {
+function updateBriefing(trends) {
   const briefEl = document.getElementById('dijoBrief');
   if (!briefEl) return;
 
-  if (!_allTrends || !_allTrends.length) {
+  const src = trends || _allTrends;
+  if (!src || !src.length) {
     briefEl.textContent = 'No trends yet · Check back later';
     return;
   }
 
-  const best = getBest3(_allTrends);
+  const best = getBest3(src);
   briefEl.textContent = `📡 ${safeTopic(best.tiktok)} · ${safeTopic(best.youtube)} · ${safeTopic(best.google)}`;
 }
 
@@ -543,7 +535,8 @@ function renderAll() {
 async function fetchTrends() {
   // ── PRIMARY: cross-platform endpoint ─────────────────────────────────────
   try {
-    var res = await fetch(DIJO + '/trends/cross');
+    var ts = Date.now();
+    var res = await fetch(DIJO + '/trends/cross?ts=' + ts);
     var data = await res.json();
     if (data && data.length) {
       _allTrends = data.map(function(t, i) {
@@ -569,7 +562,7 @@ async function fetchTrends() {
 
   // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
   try {
-    var res2 = await fetch(DIJO + '/trends/live?limit=20');
+    var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now());
     var data2 = await res2.json();
     if (data2.trends && data2.trends.length) {
       _allTrends = data2.trends.map(function(t, i) {
@@ -1038,7 +1031,11 @@ async function loadBriefing(forceRefresh) {
     var data = await res.json();
     if (data.briefing) {
       el.textContent = data.briefing;
-      if (dateEl) dateEl.textContent = (data.date || '') + (data.cached ? ' · cached' : ' · live');
+      if (dateEl) {
+        const now = new Date();
+        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        dateEl.textContent = `📡 ${time} · live`;
+      }
       if (tagsEl && data.top_trends) {
         tagsEl.innerHTML = data.top_trends.map(function(t) {
           return '<span class="b-tag">' + escH(t.topic) + ' ' + Math.round(t.score) + '</span>';
@@ -1813,7 +1810,10 @@ window.addEventListener('load', async function() {
   loadCalendar();
   loadPlatformStatus();   // FIX 5: Real platform status 🟢
   await fetchTrends();
-  ensureTrends();
+  if (!_allTrends || !_allTrends.length) {
+    var el = document.getElementById('topTrends');
+    if (el) el.innerHTML = '<div>No live data</div>';
+  }
   updateTopTrends();
   renderDashTrends();
   loadOpportunities();   // fetches /trends/dijo — real Dijo intelligence
