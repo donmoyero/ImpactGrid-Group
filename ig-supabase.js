@@ -5,18 +5,18 @@
    admin.html works without any code changes.
 ═══════════════════════════════════════════════════════ */
 
-var SUPABASE_URL  = 'https://wedjsnizcvtgptobwugc.supabase.co';
-// 🚨 REPLACE THIS with your real anon public key from:
-//    Supabase Dashboard → Settings → API → "anon public"
-//    It must start with: eyJhbGciOiJIUzI1NiIs...
-var SUPABASE_ANON = 'sb_publishable_7pp0dEBXmrEpiqsfF9SI-A_X0EWrmrW';
+/* ── Expose on window so auth.js (and any other module) can read them ── */
+window.SUPABASE_URL      = 'https://wedjsnizcvtgptobwugc.supabase.co';
+window.SUPABASE_ANON_KEY = 'sb_publishable_7pp0dEBXmrEpiqsfF9SI-A_X0EWrmrW';
 
 /* Singleton instance — created once, reused everywhere */
 var _supabaseClient = null;
 
 function getSupabase() {
+  /* If auth.js already created window.supabaseClient, reuse it — one client only */
+  if (window.supabaseClient) return window.supabaseClient;
   if (!_supabaseClient) {
-    _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+    _supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
       auth: {
         persistSession    : true,
         autoRefreshToken  : true,
@@ -24,6 +24,8 @@ function getSupabase() {
         storageKey        : 'ig-auth-token'
       }
     });
+    /* Store on window so auth.js / nav.js can also reach it */
+    window.supabaseClient = _supabaseClient;
   }
   return _supabaseClient;
 }
