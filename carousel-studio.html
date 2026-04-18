@@ -48,15 +48,10 @@
 </style>
 </head>
 <body class="carousel-studio">
-<div class="shell">
-
-<!-- Shared Nav -->
+<!-- Shared Nav (outside .shell — shared.css makes it position:fixed) -->
 <div id="ig-nav"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="nav.js"></script>
-<script>
-  renderNav('carousel-studio.html');
-</script>
+
+<div class="shell">
 
 <!-- ══ LEFT PANEL ══ -->
 <aside class="left">
@@ -423,6 +418,8 @@
 <div class="toast-shelf" id="toastShelf"></div>
 
 <!-- ══ MAIN ENGINE (v4.5 — includes Caption Engine) ══ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="nav.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="carousel-studio.js"></script>
 
@@ -586,6 +583,22 @@ window.downloadAll = async function(){
 
 // ── 7. INIT
 window.addEventListener('load', function(){
+  // Render shared nav + footer
+  renderNav('carousel-studio.html');
+  // Inject "Carousel Studio" crumb into nav after it renders
+  var navIn = document.querySelector('.nav-in');
+  if(navIn){
+    var sep = document.createElement('div');
+    sep.className = 'crumb-sep';
+    sep.style.cssText = 'width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 6px;';
+    var crumb = document.createElement('span');
+    crumb.className = 'crumb';
+    crumb.style.cssText = 'font-size:11px;color:var(--text3);font-family:var(--fm);letter-spacing:.3px;';
+    crumb.textContent = 'Carousel Studio';
+    var sp = navIn.querySelector('.nav-sp') || navIn.querySelector('.nav-right');
+    if(sp){ navIn.insertBefore(sep, sp); navIn.insertBefore(crumb, sp); }
+  }
+
   if(typeof ST !== 'undefined'){
     ST.accent = '#f5e400';
     ST.brand  = 'www.impactgridgroup.com';
@@ -594,6 +607,12 @@ window.addEventListener('load', function(){
     fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
   }, 600000);
 });
+</script>
+
+<div id="ig-footer"></div>
+<script>
+  // Render footer after DOM ready
+  if(typeof renderFooter === 'function') renderFooter();
 </script>
 </body>
 </html>
