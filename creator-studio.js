@@ -449,12 +449,16 @@ function runTrendScoring(rawScore, platforms) {
    Turns scores into actionable decision groups
 ───────────────────────────────────────────── */
 function classifyTrend(t) {
-  const velocity   = t.score;          // 0-10 scale
+  const velocity   = t.score;
   const confidence = t.confidence || 60;
 
-  if (velocity >= 8.5 && confidence >= 80) return 'blowup';    // equiv. >=85/100
-  if (velocity >= 7.0)                     return 'rising_fast'; // equiv. >=70/100
-  if (velocity >= 5.0)                     return 'early';      // equiv. >=50/100
+  // Confidence gate lowered to 60: Google-only fallback data defaults to 60,
+  // so without this change everything falls through to 'stable' and all three
+  // "What to post" sections show empty. TikTok/YouTube data with real
+  // confidence scores (75-90) still benefit from the higher tier naturally.
+  if (velocity >= 8.5 && confidence >= 60) return 'blowup';
+  if (velocity >= 7.0)                     return 'rising_fast';
+  if (velocity >= 5.0)                     return 'early';
   return 'stable';
 }
 
@@ -480,6 +484,11 @@ function renderAll() {
   renderDashOpps();
   renderWhatToPost();
   updateTopTrends();
+  // Only re-render chart + meters if the trends tab is currently visible
+  if (document.getElementById('panel-trends') && document.getElementById('panel-trends').classList.contains('active')) {
+    renderTrendChart();
+    renderPlatformMeters();
+  }
 }
 
 async function fetchTrends() {
@@ -629,8 +638,69 @@ function renderDashTrends() {
 }
 
 function renderFullTrends() {
-  // fullTrendList removed — trends panel now shows the decision dashboard
+  renderTrendChart();
+  renderPlatformMeters();
   renderWhatToPost();
+}
+
+/* ─────────────────────────────────────────────
+   PLATFORM VELOCITY METERS
+   Shows per-platform stats inline above the
+   "What to post" section in the Live Trend tab.
+   Injected into #trendMetersBox (added to HTML).
+───────────────────────────────────────────── */
+function renderPlatformMeters() {
+  var el = document.getElementById('trendMetersBox');
+  if (!el) return;
+
+  if (!_allTrends.length) { el.innerHTML = ''; return; }
+
+  function platStats(plat) {
+    var filtered = _allTrends.filter(function(t) { return t.plat === plat; });
+    if (!filtered.length) return null;
+    var avg = filtered.reduce(function(s, t) { return s + t.score; }, 0) / filtered.length;
+    var best = filtered.slice().sort(function(a,b){ return b.score - a.score; })[0];
+    return { count: filtered.length, avg: avg, best: best };
+  }
+
+  var tt = platStats('tt');
+  var yt = platStats('yt');
+  var gt = platStats('gt');
+  var cr = platStats('cross');
+
+  function meterCard(icon, label, color, stats, emptyMsg) {
+    if (!stats) {
+      return '<div class="pm-card">'
+        + '<div class="pm-head"><span class="pm-icon">' + icon + '</span><span class="pm-label">' + label + '</span></div>'
+        + '<div class="pm-empty">' + emptyMsg + '</div>'
+        + '</div>';
+    }
+    var pct = Math.round((stats.avg / 10) * 100);
+    return '<div class="pm-card">'
+      + '<div class="pm-head">'
+      +   '<span class="pm-icon">' + icon + '</span>'
+      +   '<span class="pm-label">' + label + '</span>'
+      +   '<span class="pm-count">' + stats.count + ' trend' + (stats.count !== 1 ? 's' : '') + '</span>'
+      + '</div>'
+      + '<div class="pm-bar-wrap">'
+      +   '<div class="pm-bar-fill" style="width:' + pct + '%;background:' + color + '"></div>'
+      + '</div>'
+      + '<div class="pm-stats">'
+      +   '<span class="pm-avg">Avg <strong style="color:' + color + '">' + stats.avg.toFixed(1) + '</strong>/10</span>'
+      +   '<span class="pm-best" onclick="loadTopic('' + escJ(stats.best.topic) + '')" title="Click to generate">'
+      +     '🔝 ' + escH(stats.best.topic.length > 22 ? stats.best.topic.slice(0, 22) + '...' : stats.best.topic)
+      +   '</span>'
+      + '</div>'
+      + '</div>';
+  }
+
+  el.innerHTML =
+    '<div class="pm-grid">'
+    + meterCard('🎵', 'TikTok',         '#ff6464', tt, 'Not connected yet')
+    + meterCard('▶️',  'YouTube',        '#FFD700', yt, 'Not connected yet')
+    + meterCard('🔍', 'Google Trends',  '#78b4ff', gt, 'No data')
+    + meterCard('🚀', 'Cross-Platform', '#4FB3A5', cr, 'No cross-platform hits yet')
+    + '</div>';
 }
 
 const pointLabelsPlugin = {
