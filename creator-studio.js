@@ -18,7 +18,10 @@ var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _eva
 ───────────────────────────────────────────── */
 async function loadUser() {
   var supabase = getSupabase();
-  if (!supabase) return;
+  if (!supabase || !supabase.auth) {
+    console.warn("[Auth] loadUser: Supabase not ready");
+    return;
+  }
 
   try {
     var result = await supabase.auth.getUser();
@@ -253,7 +256,15 @@ function checkAuth() {
 
 async function loadProfile() {
   const supabase = getSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  if (!supabase) { console.warn("[Auth] loadProfile: Supabase not ready"); return; }
+  let user;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data?.user;
+  } catch (e) {
+    console.warn("[Auth] loadProfile getUser failed:", e.message);
+    return;
+  }
   if (!user) return;
 
   const { data } = await supabase
