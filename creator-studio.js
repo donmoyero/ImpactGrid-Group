@@ -507,9 +507,15 @@ async function fetchTrends() {
     var crossList = Array.isArray(data) ? data : (data && Array.isArray(data.trends) ? data.trends : null);
     if (crossList && crossList.length) {
       _allTrends = crossList.map(mapTrend);
+      console.log('[fetchTrends] ✅ /trends/cross loaded', _allTrends.length, 'trends —',
+        _allTrends.filter(function(t){return t.plat==='tt';}).length, 'TikTok,',
+        _allTrends.filter(function(t){return t.plat==='yt';}).length, 'YouTube,',
+        _allTrends.filter(function(t){return t.plat==='gt';}).length, 'Google,',
+        _allTrends.filter(function(t){return t.plat==='cross';}).length, 'Cross');
       renderAll();
       return;
     }
+    console.warn('[fetchTrends] /trends/cross returned empty list');
   } catch(e) { console.warn('[fetchTrends] /trends/cross failed:', e.message); }
 
   // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
@@ -519,24 +525,44 @@ async function fetchTrends() {
     var liveList = Array.isArray(data2) ? data2 : (data2 && Array.isArray(data2.trends) ? data2.trends : null);
     if (liveList && liveList.length) {
       _allTrends = liveList.map(mapTrend);
+      console.log('[fetchTrends] ✅ /trends/live loaded', _allTrends.length, 'trends');
       renderAll();
       return;
     }
+    console.warn('[fetchTrends] /trends/live returned empty list');
   } catch(e) { console.warn('[fetchTrends] /trends/live failed:', e.message); }
 
-  // ── FALLBACK: Google RSS ──────────────────────────────────────────────────
-  // This is last-resort only — data has no platform diversity or video stats.
-  // If you see this in console regularly, check that /trends/cross and /trends/live
-  // are returning data from Supabase (run /ingestion/debug to inspect).
+  // ── TERTIARY: trends_cache endpoint ──────────────────────────────────────
+  // Richer than RSS (has platform diversity + video stats); use when cross/live
+  // both return empty (e.g. Supabase ingestion lag or cold start).
   try {
-    console.warn('[fetchTrends] Falling back to Google RSS — cross/live endpoints returned no data');
+    var res3 = await fetch(DIJO + '/trends/cache?ts=' + Date.now());
+    var data3 = await res3.json();
+    var cacheList = Array.isArray(data3) ? data3 : (data3 && Array.isArray(data3.trends) ? data3.trends : null);
+    if (cacheList && cacheList.length) {
+      _allTrends = cacheList.map(mapTrend);
+      console.warn('[fetchTrends] ⚠️ /trends/cache loaded', _allTrends.length, 'trends (cross/live empty)');
+      renderAll();
+      return;
+    }
+    console.warn('[fetchTrends] /trends/cache returned empty list');
+  } catch(e) { console.warn('[fetchTrends] /trends/cache failed:', e.message); }
+
+  // ── LAST RESORT: Google RSS ───────────────────────────────────────────────
+  // No platform diversity or video stats — only reached if all above fail.
+  // If you see this regularly, check /ingestion/debug on Dijo.
+  try {
+    console.warn('[fetchTrends] 🔴 Falling back to Google RSS — all endpoints returned no data');
     var rss = await fetch(DIJO + '/trends/google?geo=GB');
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
     });
-    renderAll();
-  } catch(e) { console.error('[fetchTrends] All endpoints failed:', e.message); }
+    if (_allTrends.length) {
+      console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics');
+      renderAll();
+    }
+  } catch(e) { console.error('[fetchTrends] 🔴 All endpoints failed:', e.message); }
 }
 
 function trendItemHTML(t) {
@@ -577,16 +603,38 @@ function trendItemHTML(t) {
    rather than an arbitrary top-5 slice.
 ───────────────────────────────────────────── */
 function getBest3(trends) {
+  // Cross-platform trends count as candidates for all three platforms.
+  // Without this, plat==='cross' rows are invisible to per-platform filters
+  // and the extras fill-in loop ends up grabbing duplicates (e.g. 3 YouTube).
   function top(plat) {
     return trends
-      .filter(function(t) { return t.plat === plat; })
+      .filter(function(t) { return t.plat === plat || t.plat === 'cross'; })
       .sort(function(a, b) { return b.score - a.score; })[0] || null;
   }
-  return {
-    tiktok:  top('tt'),
-    youtube: top('yt'),
-    google:  top('gt')
-  };
+  var tt = top('tt');
+  var yt = top('yt');
+  var gt = top('gt');
+
+  // De-duplicate: if the same cross topic won multiple slots, replace lower-
+  // priority slots with the next best non-duplicate.
+  var used = new Set();
+  if (tt) used.add(tt.topic);
+
+  function nextUnused(plat, current) {
+    if (!current || !used.has(current.topic)) return current;
+    var candidate = trends
+      .filter(function(t) {
+        return (t.plat === plat || t.plat === 'cross') && !used.has(t.topic);
+      })
+      .sort(function(a, b) { return b.score - a.score; })[0] || null;
+    if (candidate) used.add(candidate.topic);
+    return candidate;
+  }
+
+  yt = nextUnused('yt', yt); if (yt) used.add(yt.topic);
+  gt = nextUnused('gt', gt);
+
+  return { tiktok: tt, youtube: yt, google: gt };
 }
 
 function renderDashTrends() {
