@@ -427,6 +427,10 @@ async function calAutoFill() {
     await db.from('calendar_posts').delete().eq('user_id', userId).in('date', datesToClear);
     await db.from('calendar_posts').insert(calState.postsArrayForSupabase(userId));
   }
+
+  /* Ask for notification permission now — user has just filled their calendar
+     so the prompt has clear context. Only fires if not already decided. */
+  requestNotificationPermission();
 }
 
 /* ── Dijo suggest for modal ── */
@@ -545,12 +549,19 @@ function calEsc(s) {
 }
 
 /* ── Notifications ── */
+/* ── Ask for notification permission only when it makes sense ──
+   Called after Auto-Fill so the user has context for why we need it. ── */
 async function requestNotificationPermission(){
   if (!("Notification" in window)) return;
+  if (Notification.permission !== "default") return; // already granted or denied
 
-  if (Notification.permission === "default"){
-    await Notification.requestPermission();
+  /* Small delay so the calendar has visibly filled before the prompt */
+  await new Promise(function(res){ setTimeout(res, 800); });
+
+  if (typeof toast === 'function') {
+    toast('📅 Want reminders when it's time to post? Allow notifications when prompted.');
   }
+  await Notification.requestPermission();
 }
 
 function sendNotification(title, body){
@@ -643,7 +654,6 @@ function checkReminders() {
 function initCalendar() {
   loadFromSupabase(); // loads from DB, auto-fills if empty, then renders
 
-  requestNotificationPermission();
   startAIReminders();
   startDijoNudges();
   checkMissedTrends();
