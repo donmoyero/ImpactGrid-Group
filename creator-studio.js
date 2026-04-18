@@ -48,21 +48,25 @@ async function loadUser() {
    with fallback to profileName / profileAvatar IDs.
 ───────────────────────────────────────────── */
 function updateUserUI() {
-  if (!getUser()) return;
+  // Priority order:
+  //  1. window.igUser — set by nav.js _loadProfile() from the PROFILES Supabase table
+  //                      (has real full_name + avatar_url stored after signup)
+  //  2. getUser()     — raw auth metadata from the login Supabase (may only have email)
+  var name, avatar;
 
-  var name =
-    (getUser().user_metadata && getUser().user_metadata.full_name) ||
-    (getUser().email && getUser().email.split('@')[0]) ||
-    'Creator';
+  if (window.igUser && window.igUser.name) {
+    name   = window.igUser.name;
+    avatar = window.igUser.avatarUrl || null;
+  } else if (typeof getUser === 'function' && getUser()) {
+    name   = (getUser().user_metadata && getUser().user_metadata.full_name)
+             || (getUser().email && getUser().email.split('@')[0])
+             || 'Creator';
+    avatar = (getUser().user_metadata && getUser().user_metadata.avatar_url) || null;
+  } else {
+    return; // not logged in
+  }
 
-  var avatar =
-    (getUser().user_metadata && getUser().user_metadata.avatar_url) || null;
-
-  // data-user-name elements
-  var nameEls = document.querySelectorAll('[data-user-name]');
-  nameEls.forEach(function(el) { el.textContent = name; });
-
-  // data-user-avatar elements
+  // data-user-avatar elements (kept for backwards compat)
   var avatarEls = document.querySelectorAll('[data-user-avatar]');
   avatarEls.forEach(function(el) {
     if (avatar) {
@@ -72,7 +76,7 @@ function updateUserUI() {
     }
   });
 
-  // Fallback: also update profileName / profileAvatar by ID
+  // Fallback: named IDs used by some older panels
   var cardName = document.getElementById('profileName');
   var cardAv   = document.getElementById('profileAvatar');
   if (cardName) cardName.textContent = name;
@@ -195,83 +199,49 @@ document.addEventListener('click', function(e) {
    which is called by auth.js after initAuth().
 ───────────────────────────────────────────── */
 
-async function loadProfile() {
-  const supabase = getSupabase();
-  if (!supabase) { console.warn("[Auth] loadProfile: Supabase not ready"); return; }
-  let user;
-  try {
-    const { data } = await supabase.auth.getUser();
-    user = data?.user;
-  } catch (e) {
-    console.warn("[Auth] loadProfile getUser failed:", e.message);
-    return;
-  }
-  if (!user) return;
-
-  const { data } = await supabase
-    .from('profiles')
-    .select('full_name, avatar_url')
-    .eq('id', user.id)
-    .single();
-
-  if (!data) return;
-
-  const name = data.full_name || (user.email && user.email.split('@')[0]) || 'Creator';
-
-  // NAME
-  const nameEl = document.getElementById('userName');
-  if (nameEl) nameEl.textContent = name;
-
-  // AVATAR
-  const avEl = document.getElementById('userAv');
-  if (avEl) {
-    if (data.avatar_url) {
-      avEl.innerHTML =
-        `<img src="${data.avatar_url}?t=${Date.now()}" 
-        style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
-    } else {
-      avEl.textContent = name.charAt(0).toUpperCase();
-    }
-  }
-
-  // PROFILE CARD (if exists)
-  const cardName = document.getElementById('profileName');
-  const cardAv   = document.getElementById('profileAvatar');
-
-  if (cardName) cardName.textContent = name;
-
-  if (cardAv) {
-    if (data.avatar_url) {
-      cardAv.innerHTML =
-        `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
-    } else {
-      cardAv.textContent = name.charAt(0).toUpperCase();
-    }
-  }
-}
+// loadProfile() removed — nav.js handles profiles table lookup
+// and exposes window.igUser with name + avatarUrl from the data Supabase.
+// creator-studio.js reads window.igUser via setWelcome() and updateUserUI().
 
 function setWelcome() {
-  if (!getUser()) return;
+  // nav.js _loadProfile() already set window.igUser from the PROFILES Supabase
+  // and wrote the greeting into [data-ig-greeting] elements automatically.
+  // We still update #dijoGreeting here as a belt-and-braces fallback
+  // (handles the case where ig-user-ready fires before this function runs).
 
-  const name =
-    getUser().user_metadata?.full_name ||
-    (getUser().email && getUser().email.split('@')[0]) ||
-    'Creator';
+  var name;
+  if (window.igUser && window.igUser.name) {
+    name = window.igUser.firstName || window.igUser.name.split(' ')[0];
+  } else if (typeof getUser === 'function' && getUser()) {
+    name = (getUser().user_metadata && getUser().user_metadata.full_name)
+           ? getUser().user_metadata.full_name.split(' ')[0]
+           : (getUser().email && getUser().email.split('@')[0])
+           || 'Creator';
+  } else {
+    name = 'Creator';
+  }
 
-  const hour = new Date().getHours();
+  var hour = new Date().getHours();
+  var greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
-  let greeting = "Good morning";
-  if (hour >= 12 && hour < 18) greeting = "Good afternoon";
-  if (hour >= 18) greeting = "Good evening";
+  var greetEl = document.getElementById('dijoGreeting');
+  if (greetEl) greetEl.textContent = greeting + ', ' + name;
 
-  const greetEl = document.getElementById('dijoGreeting');
-  const briefEl = document.getElementById('dijoBrief');
-
-  if (greetEl) greetEl.textContent = greeting + ", " + name;
-
-  // use real trend count
   updateBriefing();
 }
+
+/* ─────────────────────────────────────────────
+   ig-user-ready listener
+   nav.js dispatches this after _loadProfile()
+   completes — meaning window.igUser has real
+   full_name + avatar_url from the profiles table.
+   Re-run our UI updates so the greeting/avatar
+   reflect the profiles data, not just auth metadata.
+───────────────────────────────────────────── */
+document.addEventListener('ig-user-ready', function() {
+  setWelcome();
+  updateUserUI();
+});
 
 /* ─────────────────────────────────────────────
    PAYWALL
