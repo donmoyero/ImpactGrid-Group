@@ -1368,7 +1368,7 @@ function renderRadarGauges() {
       +     '<div class="rg-score-unit">/10</div>'
       +   '</div>'
       + '</div>'
-      + '<div class="rg-topic" onclick="loadTopic('' + escJ(t.topic) + '')" style="color:var(--text)">' + escH(t.topic) + '</div>'
+      + '<div class="rg-topic" onclick="loadTopic(\'' + escJ(t.topic) + '\')" style="color:var(--text)">' + escH(t.topic) + '</div>'
       + '<div class="rg-status" style="color:' + clsColor + ';border-color:' + clsColor + '40">' + clsLbl + '</div>'
       + '<div class="rg-meta">' + escH(meta) + '</div>'
       + '</div>';
@@ -1400,14 +1400,15 @@ async function renderDijoTopPick() {
   var clsLbl    = cls === 'blowup' ? '🔥 Peak now — post immediately' : cls === 'rising_fast' ? '⚡ Rising fast — get ahead of it' : cls === 'early' ? '🟢 Early stage — first mover advantage' : '📊 Stable trend';
 
   // Show skeleton immediately
+  var _topicSafe = escJ(best.topic);
   el.innerHTML =
     '<div style="display:flex;flex-direction:column;gap:10px">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    +   '<div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text)">' + escH(best.topic) + '</div>'
-    +   '<div style="font-family:'DM Mono',monospace;font-size:24px;font-weight:900;color:' + platColor + ';flex-shrink:0">' + best.score.toFixed(1) + '</div>'
+    +   '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text)">' + escH(best.topic) + '</div>'
+    +   '<div style="font-family:DM Mono,monospace;font-size:24px;font-weight:900;color:' + platColor + ';flex-shrink:0">' + best.score.toFixed(1) + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'
-    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:3px 10px;font-family:'DM Mono',monospace">' + platIcon + ' ' + escH(best.platLabel) + '</span>'
+    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:3px 10px;font-family:DM Mono,monospace">' + platIcon + ' ' + escH(best.platLabel) + '</span>'
     +   '<span style="font-size:11px;font-weight:700;color:' + platColor + '">' + clsLbl + '</span>'
     + '</div>'
     + '<div id="dijoPickReason" style="font-size:13px;color:var(--text2);line-height:1.6;border-left:2px solid var(--gold);padding-left:10px;min-height:20px">'
@@ -1415,8 +1416,8 @@ async function renderDijoTopPick() {
     +   '<span style="color:var(--text3);font-size:12px">Dijo is analysing why this is the best opportunity…</span>'
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:4px">'
-    +   '<button onclick="loadTopic('' + escJ(best.topic) + '')" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:'Syne',sans-serif">⚡ Generate content for this</button>'
-    +   '<div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;align-self:center">Dijo's top pick · updated every 30 min</div>'
+    +   '<button onclick="loadTopic(\'' + _topicSafe + '\')" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:Syne,sans-serif">⚡ Generate content for this</button>'
+    +   '<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;align-self:center">Dijo top pick · updated every 30 min</div>'
     + '</div>'
     + '</div>';
 
