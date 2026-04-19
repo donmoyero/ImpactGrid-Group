@@ -1637,11 +1637,11 @@ async function exportSlidesAsPNG(){
     return;
   }
 
-  toast('📦 Preparing full carousel…');
+  if(typeof showDlProgress==='function') showDlProgress('Preparing slides…', 0);
+  else toast('📦 Preparing full carousel…');
 
   var originalIndex=ST.cur;
   var canvas=document.getElementById('slideCanvas');
-  // Output at 1080px (Instagram native) regardless of display size
   var displayW=canvas.offsetWidth||620;
   var targetPx=1080;
   var exportScale=Math.round((targetPx/displayW)*10)/10;
@@ -1650,18 +1650,19 @@ async function exportSlidesAsPNG(){
     ST.cur=i;
     renderSlide();
 
-    // Wait for background images to paint — poll until all imgs inside canvas are complete
     await new Promise(function(r){setTimeout(r,600);});
     var imgs=canvas.querySelectorAll('img');
     await Promise.all(Array.from(imgs).map(function(img){
       if(img.complete) return Promise.resolve();
       return new Promise(function(res){
         img.onload=res; img.onerror=res;
-        setTimeout(res,2000); // safety cap
+        setTimeout(res,2000);
       });
     }));
-    // Extra settle time for CSS background-image transitions
     await new Promise(function(r){setTimeout(r,300);});
+
+    var pct=Math.round(((i+0.5)/ST.slides.length)*90);
+    if(typeof updateDlProgress==='function') updateDlProgress('Downloading slide '+(i+1)+' of '+ST.slides.length+'…', pct);
 
     try{
       var c=await html2canvas(canvas,{
@@ -1691,7 +1692,9 @@ async function exportSlidesAsPNG(){
 
   ST.cur=originalIndex;
   renderSlide();
-
+  if(typeof updateDlProgress==='function') updateDlProgress('Done!', 100);
+  await new Promise(function(r){setTimeout(r,700);});
+  if(typeof hideDlProgress==='function') hideDlProgress();
   toast('✓ '+ST.slides.length+' slides saved at 1080px');
 }
 
@@ -1705,78 +1708,154 @@ async function exportSlidesAsMP4(){
     return;
   }
 
-  // Check MediaRecorder support
-  var mimeType = '';
-  var candidates = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'];
-  for(var m=0;m<candidates.length;m++){
-    if(MediaRecorder.isTypeSupported(candidates[m])){ mimeType=candidates[m]; break; }
-  }
-  if(!mimeType){
-    toast('⚠️ Your browser doesn\'t support video recording — try Chrome');
-    return;
-  }
-
-  toast('🎬 Building video — please wait…');
-
   var canvas=document.getElementById('slideCanvas');
   var displayW=canvas.offsetWidth||620;
-  var displayH=canvas.offsetHeight||620;
-  // Create an offscreen canvas at 1080×1080 for recording
-  var offCanvas=document.createElement('canvas');
-  offCanvas.width=1080; offCanvas.height=1080;
-  var ctx=offCanvas.getContext('2d');
-
-  var originalIndex=ST.cur;
-  var chunks=[];
-  var stream=offCanvas.captureStream(30);
-  var recorder=new MediaRecorder(stream,{mimeType:mimeType,videoBitsPerSecond:8000000});
-  recorder.ondataavailable=function(e){ if(e.data&&e.data.size>0) chunks.push(e.data); };
-
-  var secPerSlide=3; // seconds per slide in video
+  var scale=Math.round((1080/displayW)*10)/10;
+  var total=ST.slides.length;
+  var secPerSlide=3;
   var fps=30;
-  var framesPerSlide=secPerSlide*fps;
+  var originalIndex=ST.cur;
 
-  recorder.start();
+  // ── Show bottom progress bar ──
+  if(typeof showDlProgress==='function') showDlProgress('Initialising MP4 export…', 2);
+  else toast('🎬 Building MP4…');
 
-  var scale=1080/displayW;
-
-  for(var i=0;i<ST.slides.length;i++){
+  // ── STEP 1: Capture each slide as PNG frames ──
+  var frameBlobs=[]; // one blob per slide (we'll stamp each for secPerSlide seconds)
+  for(var i=0;i<total;i++){
+    if(typeof _dlCancelled!=='undefined' && _dlCancelled){ hideDlProgress && hideDlProgress(); return; }
     ST.cur=i; renderSlide();
-    // Wait for slide + images
     await new Promise(function(r){setTimeout(r,700);});
     var imgs=canvas.querySelectorAll('img');
     await Promise.all(Array.from(imgs).map(function(img){
       if(img.complete) return Promise.resolve();
-      return new Promise(function(res){ img.onload=res; img.onerror=res; setTimeout(res,2000); });
+      return new Promise(function(res){ img.onload=res; img.onerror=res; setTimeout(res,2500); });
     }));
     await new Promise(function(r){setTimeout(r,300);});
 
-    // Capture slide to offscreen canvas
+    var pct=Math.round(((i+1)/total)*50);
+    if(typeof updateDlProgress==='function') updateDlProgress('Capturing slide '+(i+1)+' of '+total+'…', pct);
+
     try{
       var captured=await html2canvas(canvas,{
         useCORS:true,allowTaint:true,scale:scale,
         backgroundColor:'#111111',imageTimeout:8000,logging:false
       });
-      // Hold this frame for secPerSlide seconds
-      for(var f=0;f<framesPerSlide;f++){
-        ctx.drawImage(captured,0,0,1080,1080);
-        await new Promise(function(r){setTimeout(r,1000/fps);});
-      }
+      var blob=await new Promise(function(res){
+        captured.toBlob(function(b){ res(b); },'image/png');
+      });
+      frameBlobs.push(blob);
     }catch(e){
-      console.warn('[exportMP4] slide '+(i+1)+' failed:',e);
+      console.warn('[exportMP4] slide '+(i+1)+' capture failed:',e);
+      frameBlobs.push(null);
     }
-    toast('🎬 Slide '+(i+1)+' of '+ST.slides.length+' rendered…');
+  }
+
+  ST.cur=originalIndex; renderSlide();
+
+  // ── STEP 2: Try FFmpeg.wasm conversion to real MP4 ──
+  var ffmpegAvailable = typeof FFmpegWASM !== 'undefined' || (typeof window.FFmpeg !== 'undefined');
+  var useFFmpeg = false;
+
+  if(ffmpegAvailable){
+    try{
+      if(typeof updateDlProgress==='function') updateDlProgress('Loading MP4 encoder…', 52);
+      var FFmpegLib = window.FFmpeg || FFmpegWASM;
+      var ffmpeg = new FFmpegLib.FFmpeg();
+      await ffmpeg.load({
+        coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+        wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+      });
+      useFFmpeg = true;
+
+      // Write each frame PNG to FFmpeg virtual FS (repeated for secPerSlide seconds)
+      var frameIdx=0;
+      for(var s=0;s<frameBlobs.length;s++){
+        var blob2=frameBlobs[s];
+        if(!blob2) continue;
+        var buf=await blob2.arrayBuffer();
+        var frameCount=secPerSlide*fps;
+        for(var f=0;f<frameCount;f++){
+          var fname='frame'+String(frameIdx).padStart(5,'0')+'.png';
+          await ffmpeg.writeFile(fname, new Uint8Array(buf));
+          frameIdx++;
+        }
+        var encPct=52+Math.round(((s+1)/frameBlobs.length)*30);
+        if(typeof updateDlProgress==='function') updateDlProgress('Encoding slide '+(s+1)+'…', encPct);
+      }
+
+      if(typeof updateDlProgress==='function') updateDlProgress('Muxing MP4…', 84);
+      await ffmpeg.exec([
+        '-framerate', String(fps),
+        '-i', 'frame%05d.png',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-preset', 'fast',
+        '-crf', '22',
+        '-movflags', '+faststart',
+        'output.mp4'
+      ]);
+
+      if(typeof updateDlProgress==='function') updateDlProgress('Finalising MP4…', 95);
+      var mp4Data=await ffmpeg.readFile('output.mp4');
+      var mp4Blob=new Blob([mp4Data.buffer], {type:'video/mp4'});
+      triggerBlobDownload(mp4Blob,'ImpactGrid-carousel.mp4');
+      if(typeof hideDlProgress==='function') hideDlProgress();
+      toast('✓ MP4 downloaded ('+total+' slides · '+secPerSlide+'s each)');
+      return;
+    }catch(ffErr){
+      console.warn('[exportMP4] FFmpeg failed, falling back to WebM:',ffErr);
+      useFFmpeg=false;
+    }
+  }
+
+  // ── STEP 3: Fallback — MediaRecorder WebM (if FFmpeg unavailable/failed) ──
+  if(typeof updateDlProgress==='function') updateDlProgress('Building video…', 55);
+
+  var mimeType='';
+  var candidates=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  for(var m=0;m<candidates.length;m++){
+    if(MediaRecorder.isTypeSupported(candidates[m])){ mimeType=candidates[m]; break; }
+  }
+  if(!mimeType){
+    if(typeof hideDlProgress==='function') hideDlProgress();
+    toast('⚠️ Your browser can\'t encode video — try Chrome or Firefox');
+    return;
+  }
+
+  var offCanvas=document.createElement('canvas');
+  offCanvas.width=1080; offCanvas.height=1080;
+  var ctx=offCanvas.getContext('2d');
+  var chunks=[];
+  var stream=offCanvas.captureStream(fps);
+  var recorder=new MediaRecorder(stream,{mimeType:mimeType,videoBitsPerSecond:8000000});
+  recorder.ondataavailable=function(e){ if(e.data&&e.data.size>0) chunks.push(e.data); };
+  recorder.start();
+
+  for(var si=0;si<frameBlobs.length;si++){
+    var fb=frameBlobs[si];
+    if(!fb){ continue; }
+    var img2=new Image();
+    var burl=URL.createObjectURL(fb);
+    await new Promise(function(res){ img2.onload=res; img2.src=burl; });
+    var holdFrames=secPerSlide*fps;
+    for(var hf=0;hf<holdFrames;hf++){
+      ctx.drawImage(img2,0,0,1080,1080);
+      await new Promise(function(r){setTimeout(r,1000/fps);});
+    }
+    URL.revokeObjectURL(burl);
+    var wPct=55+Math.round(((si+1)/frameBlobs.length)*35);
+    if(typeof updateDlProgress==='function') updateDlProgress('Encoding slide '+(si+1)+' of '+frameBlobs.length+'…', wPct);
   }
 
   recorder.stop();
-  ST.cur=originalIndex; renderSlide();
-
   await new Promise(function(r){ recorder.onstop=r; });
 
-  var ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
-  var blob=new Blob(chunks,{type:mimeType});
-  triggerBlobDownload(blob,'ImpactGrid-carousel.'+ext);
-  toast('✓ Video downloaded ('+ST.slides.length+' slides · '+secPerSlide+'s each)');
+  if(typeof updateDlProgress==='function') updateDlProgress('Saving video…', 98);
+  var webmBlob=new Blob(chunks,{type:mimeType});
+  triggerBlobDownload(webmBlob,'ImpactGrid-carousel.webm');
+  if(typeof hideDlProgress==='function') hideDlProgress();
+  toast('✓ Video saved as .webm — Chrome plays it natively');
 }
 
 function triggerBlobDownload(blob,filename){
