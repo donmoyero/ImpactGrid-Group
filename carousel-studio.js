@@ -903,15 +903,15 @@ function fallbackSlides(topic, platform, tone, count){
    ───────────────────────────────────────────────────────── */
 function clearLayouts(){
   ['sContent','sSplit','sCorner','sDual','sBand','sEditorial','sQuote','sStat','sGrid','sTopStrip','sBottomStrip',
-   'sEditorialCover','sEditorialCollage','sHabitCover','sHabitSlide'].forEach(function(id){
+   'sEditorialCover','sEditorialCollage','sEditorialCollage3','sHabitCover','sHabitSlide'].forEach(function(id){
     var el=document.getElementById(id);
-    if(el){el.innerHTML='';el.className=el.className.replace(/\bhidden\b/g,'').trim()+' hidden';}
+    if(el){el.innerHTML='';el.classList.add('hidden');}
   });
 }
 
 function showLayout(id){
   var el=document.getElementById(id);
-  if(el) el.className=el.className.replace(/\bhidden\b/g,'').trim();
+  if(el) el.classList.remove('hidden');
 }
 
 function ensureContainer(id){
@@ -943,10 +943,12 @@ function renderSlide(){
     })();
 
   var thirdUrl=(function(){
+    if(slide.thirdImage&&slide.thirdImage.url) return slide.thirdImage.url;
     var excludeIds=[];
-    if(slide.primaryImage) excludeIds.push(slide.primaryImage.id);
+    if(slide.primaryImage&&slide.primaryImage.id) excludeIds.push(slide.primaryImage.id);
+    if(slide.secondImage&&slide.secondImage.id) excludeIds.push(slide.secondImage.id);
     var a=pickThirdAsset(theme,excludeIds,ST.cur);
-    return a?a.url:null;
+    return (a&&a.url)?a.url:(secondUrl||primaryUrl||null);
   })();
 
   var assetMeta=slide.primaryImage||{tone:'neutral',brightness:'medium'};
@@ -1129,7 +1131,7 @@ function renderSlide(){
       var mid=Math.ceil(words.length/2);
       var line1=words.slice(0,mid).join(' ');
       var line2=words.slice(mid).join(' ');
-      var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max(slide.headline.length,6))));
+      var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max((slide.headline||'Habits That Changed My Life').length,6))));
       hcTitle.innerHTML='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
         +'<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(line2||line1)+'</div>';
       hcEl.appendChild(hcTitle);
@@ -1247,8 +1249,8 @@ function renderSlide(){
     case 'EDITORIAL_COLLAGE_3':{
       sBgImg.style.opacity='0';
       sBg.style.background='#f0ebe1';
-      var ec3El=ensureContainer('sEditorialCollage');
-      showLayout('sEditorialCollage');
+      var ec3El=ensureContainer('sEditorialCollage3');
+      showLayout('sEditorialCollage3');
       ec3El.innerHTML='';
       ec3El.style.cssText='position:absolute;inset:0;z-index:4;background:#f0ebe1;';
       var ec3Badge=document.createElement('div');
