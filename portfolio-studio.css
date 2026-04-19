@@ -529,3 +529,131 @@ input, textarea, select { font-family: inherit; color: var(--text); outline: non
 
 /* ob-ai-text — text block inside the Dijo AI generate box */
 .ob-ai-text { display: flex; flex-direction: column; gap: 4px; }
+
+
+/* ══════════════════════════════════════════
+   USER PLAN BANNER — dashboard top strip
+   Populated automatically from window.igUser
+   (set by nav.js from ig-supabase profiles table).
+   No extra Supabase call needed on this page.
+══════════════════════════════════════════ */
+.ps-user-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 48px;
+}
+
+/* Tighten padding on mobile to match dash-hero-text */
+@media(max-width:900px) {
+  .ps-user-banner { padding: 12px 20px; }
+}
+
+.ps-user-banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ps-welcome {
+  font-family: var(--fh);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.02em;
+}
+
+.ps-plan-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Plan badge pill */
+.ps-plan-badge {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--fm);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface3);
+  color: var(--text3);
+  border: 1px solid var(--border);
+}
+
+/* Professional — gold tint */
+.ps-plan-badge.plan-professional {
+  background: rgba(201,126,8,.12);
+  color: var(--gold);
+  border-color: rgba(201,126,8,.35);
+}
+
+/* Enterprise — stronger gold */
+.ps-plan-badge.plan-enterprise {
+  background: linear-gradient(135deg, rgba(201,126,8,.18), rgba(45,110,219,.08));
+  color: var(--gold);
+  border-color: rgba(201,126,8,.45);
+}
+
+/* Trial / usage counter text */
+.ps-trial-info {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--fm);
+}
+.ps-trial-info.ok   { color: var(--green); }
+.ps-trial-info.warn { color: var(--red); font-weight: 600; }
+
+/* Upgrade link shown for free / professional */
+.ps-upgrade-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  text-decoration: none;
+  font-family: var(--fm);
+  white-space: nowrap;
+  padding: 5px 12px;
+  border: 1px solid rgba(201,126,8,.35);
+  border-radius: 999px;
+  background: rgba(201,126,8,.07);
+  transition: background .15s, border-color .15s;
+}
+.ps-upgrade-link:hover {
+  background: rgba(201,126,8,.14);
+  border-color: var(--gold);
+}
+
+/* ══════════════════════════════════════════
+   EXPIRED PORTFOLIO CARD
+   Free-plan portfolios older than 7 days get
+   .expired added by psMarkExpiredPortfolios()
+══════════════════════════════════════════ */
+.pf-card.expired {
+  opacity: 0.45;
+  pointer-events: none;
+  position: relative;
+  filter: grayscale(0.4);
+}
+.pf-card.expired::after {
+  content: '⏱ Expired — 7-day free limit';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red);
+  background: rgba(0,0,0,.03);
+  border-radius: inherit;
+  font-family: var(--fm);
+  letter-spacing: .04em;
+  pointer-events: none;
+}
