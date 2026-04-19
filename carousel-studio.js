@@ -415,7 +415,7 @@ var IG_LIMIT       = 3;
 var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
 var IG_IS_ADMIN    = false;
 
-async function getUser() {
+async function getCarouselUser() {
   try {
     // Prefer nav.js's already-authenticated client (avoids double-init race)
     if (typeof getSupabase === 'function') {
@@ -456,7 +456,7 @@ async function checkCarouselAccess() {
     });
   }
 
-  IG_USER = await getUser();
+  IG_USER = await getCarouselUser();
 
   // ❌ Not logged in
   if (!IG_USER) {
