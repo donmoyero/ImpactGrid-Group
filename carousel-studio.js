@@ -407,13 +407,28 @@ function normalizeSlidesDeck(slides){
 var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#2563eb',brand:'',userImages:{},assetOffset:0,exportType:'png',fontPair:'syne',trendHashtags:[]};
 var currentTrend = null;
 
-/* ── MONETISATION ───────────────────────────── */
+/* ── MONETISATION ───────────────────────────────────────────────────
+   Plans: 'free' (3 AI uses/mo) | 'professional' (100/mo) | 'enterprise' (unlimited)
+   The AI use counter is SHARED across all tools — stored in Supabase
+   profiles.ai_uses_month and cached in localStorage as 'ig_ai_uses'.
+   nav.js fetches + resets the counter each session and fires 'ig-plan-ready'.
+─────────────────────────────────────────────────────────────────── */
 var IG_USER        = null;
-var IG_PLAN        = "free"; // free | pro | enterprise
-var IG_USES        = parseInt(localStorage.getItem("ig_carousel_uses") || "0");
-var IG_LIMIT       = 3;
+var IG_PLAN        = (function(){ try { return localStorage.getItem('ig_plan') || 'free'; } catch(e){ return 'free'; } })();
+var IG_AI_USES     = (function(){ try { return parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e){ return 0; } })();
 var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
 var IG_IS_ADMIN    = false;
+
+// Plan limits (shared across all tools)
+var IG_LIMITS = { free: 3, professional: 100, enterprise: Infinity };
+
+/* Keep plan + usage in sync when nav.js resolves them from the DB */
+document.addEventListener('ig-plan-ready', function(e) {
+  if (!e.detail) return;
+  if (e.detail.plan)   IG_PLAN    = e.detail.plan;
+  if (typeof e.detail.aiUses === 'number') IG_AI_USES = e.detail.aiUses;
+  if (IG_PLAN === 'enterprise') IG_IS_ADMIN = true;
+});
 
 async function getCarouselUser() {
   try {
@@ -464,23 +479,48 @@ async function checkCarouselAccess() {
     return false;
   }
 
-  // 👑 Admin override
-  if (IG_USER.email === IG_ADMIN_EMAIL) {
-    IG_IS_ADMIN = true;
-    IG_PLAN = "enterprise";
-    console.log("👑 Admin mode active");
+  // Sync plan + usage from window.igUser (set by nav.js from DB — most authoritative)
+  if (window.igUser) {
+    if (window.igUser.plan)                     IG_PLAN    = window.igUser.plan;
+    if (typeof window.igUser.aiUses === 'number') IG_AI_USES = window.igUser.aiUses;
+  } else {
+    try { IG_PLAN    = localStorage.getItem('ig_plan')    || IG_PLAN;    } catch(e) {}
+    try { IG_AI_USES = parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
   }
 
-  // 👑 Admin bypass
-  if (IG_IS_ADMIN) return true;
+  // 👑 Admin / enterprise — unlimited, no counter
+  if (IG_USER.email === IG_ADMIN_EMAIL || IG_PLAN === 'enterprise') {
+    IG_IS_ADMIN = true;
+    return true;
+  }
 
-  // ❌ Free limit reached
-  if (IG_PLAN === "free" && IG_USES >= IG_LIMIT) {
-    showUpgradeBar("Free limit reached — upgrade for unlimited carousels");
+  // Check shared monthly limit for this plan
+  var limit = IG_LIMITS[IG_PLAN] || IG_LIMITS.free;
+  if (IG_AI_USES >= limit) {
+    var planLabel = IG_PLAN === 'professional' ? 'Professional' : 'Free';
+    showUpgradeBar(planLabel + ' limit reached (' + limit + '/mo) — upgrade for more');
     return false;
   }
 
   return true;
+}
+
+/* Increment the shared AI use counter in Supabase + localStorage */
+async function incrementAIUse() {
+  IG_AI_USES++;
+  try { localStorage.setItem('ig_ai_uses', String(IG_AI_USES)); } catch(e) {}
+  if (window.igUser && window.igUser.id) {
+    try {
+      var client = (typeof getSupabase === 'function') ? getSupabase() : null;
+      if (client) {
+        await client.from('profiles')
+          .update({ ai_uses_month: IG_AI_USES })
+          .eq('user_id', window.igUser.id);
+      }
+    } catch(e) {}
+  }
+  // Keep igUser in sync
+  if (window.igUser) window.igUser.aiUses = IG_AI_USES;
 }
 
 var FONT_PAIRS={
@@ -631,8 +671,7 @@ async function generate(){
   btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate';
   btn.disabled=false;
   if (!IG_IS_ADMIN) {
-    IG_USES++;
-    localStorage.setItem("ig_carousel_uses", IG_USES);
+    incrementAIUse(); // shared counter — updates Supabase + localStorage
   }
   toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any text to edit');
 
