@@ -485,6 +485,7 @@
         // ── Plan ──
         var plan = res.data.plan || 'free';
         try { localStorage.setItem('ig_plan', plan); } catch(e) {}
+        try { localStorage.setItem('ig_user_id', userId); } catch(e) {} // needed by portfolio-studio savePortfolioToDB
 
         // ── Shared AI usage counter — reset monthly ──
         var now        = new Date();
