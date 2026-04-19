@@ -3,962 +3,664 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<meta name="mobile-web-app-capable" content="yes">
-<title>Creator Studio — ImpactGrid</title>
-<meta name="description" content="ImpactGrid Creator Studio — intelligence dashboard, trend feed, AI generator, YouTube & TikTok analytics."/>
-<link rel="icon" href="logo.png">
-<link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#c97e08"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="ImpactGrid"/>
-<link rel="apple-touch-icon" href="logo.png"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<title>Carousel Studio — ImpactGrid</title>
+<!-- fonts loaded by shared.css @import — no duplicate link tags needed -->
 <link rel="stylesheet" href="shared.css"/>
-<link rel="stylesheet" href="creator-studio.css"/>
+<link rel="stylesheet" href="carousel-studio.css"/>
+<link rel="stylesheet" href="carousel-studio-additions.css"/>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 <style>
-/* ═══════════════════════════════════════
-   CONTENT CALENDAR — inline styles
-   (keeps calendar self-contained so it
-   works even if creator-studio.css changes)
-═══════════════════════════════════════ */
+/* ── Resolve --ig-yellow → shared token so dark/light mode inherits correctly ── */
+:root { --ig-yellow: var(--brand-primary); }
+/* ── Carousel-page-only extras (no overrides, no !important) ── */
 
-/* Header */
-.cal-header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
-.cal-header-left{display:flex;align-items:center;gap:10px}
-.cal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:900;letter-spacing:-.02em}
-.cal-ai-badge{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);background:rgba(201,126,8,.08);border:1px solid rgba(201,126,8,.2);border-radius:20px;padding:3px 10px}
-.cal-header-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.cal-nav-btn{width:30px;height:30px;border-radius:8px;background:var(--card);border:1px solid var(--border2);font-size:16px;font-weight:700;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center}
-.cal-nav-btn:hover{border-color:var(--gold);color:var(--gold)}
-.cal-week-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);min-width:160px;text-align:center}
-.cal-today-btn{padding:6px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border2);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer}
-.cal-today-btn:hover{border-color:var(--gold);color:var(--gold)}
-.cal-autofill-btn{padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:12px;font-weight:700;cursor:pointer;border:none}
-[data-theme="dark"] .cal-autofill-btn{color:#07090f}
-.cal-autofill-btn:disabled{opacity:.6;cursor:not-allowed}
+/* Inline editable fields */
+.editable-field { position:relative; cursor:text; border-radius:4px; transition:.15s; }
+.editable-field:hover { background:var(--gold-dim); outline:1px dashed var(--gold-glo); }
+.editable-field:focus { outline:2px solid var(--gold); background:var(--gold-dim); cursor:text; min-width:40px; min-height:20px; }
 
-/* Explainer */
-.cal-explainer{background:var(--blue-dim,rgba(45,110,219,.07));border:1px solid rgba(45,110,219,.18);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.6}
-.cal-explainer-inner{display:flex;align-items:flex-start;gap:10px}
-.cal-explainer-icon{font-size:18px;flex-shrink:0;margin-top:1px}
-.cal-explainer-close{margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 0 0 8px;flex-shrink:0}
+/* Apply-all toggle */
+.apply-all-wrap { display:flex; align-items:center; gap:7px; margin-bottom:6px; padding:6px 8px; background:var(--gold-dim); border-radius:6px; border:1px solid var(--gold-glo); }
+.apply-all-wrap label { font-size:10px; font-family:var(--fm); color:var(--gold); cursor:pointer; }
+.apply-all-toggle { accent-color:var(--gold); width:13px; height:13px; cursor:pointer; }
 
-/* Filter row */
-.cal-filter-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:14px}
-.cal-plat-btn{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border2);background:var(--card);color:var(--text2);cursor:pointer;transition:all .2s}
-.cal-plat-btn:hover{border-color:var(--gold);color:var(--gold)}
-.cal-plat-btn.active-all,.cal-plat-btn.active-yt,.cal-plat-btn.active-tt,.cal-plat-btn.active-ig,.cal-plat-btn.active-li{background:var(--gold);color:#fff;border-color:var(--gold)}
-[data-theme="dark"] .cal-plat-btn.active-all,[data-theme="dark"] .cal-plat-btn.active-yt,[data-theme="dark"] .cal-plat-btn.active-tt,[data-theme="dark"] .cal-plat-btn.active-ig,[data-theme="dark"] .cal-plat-btn.active-li{color:#07090f}
-.cal-niche-wrap{margin-left:auto;display:flex;align-items:center;gap:7px}
-.cal-niche-label{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
-.cal-niche-sel{padding:5px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-size:12px;cursor:pointer}
+/* User guide tooltip */
+.user-guide {
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  background:var(--card); border:1px solid var(--gold-glo);
+  border-radius:8px; padding:7px 14px;
+  font-size:10px; font-family:var(--fm); color:var(--gold);
+  white-space:nowrap; z-index:20; pointer-events:none; letter-spacing:.3px;
+  animation:fadeGuide 4s ease forwards;
+}
+@keyframes fadeGuide { 0%{opacity:0} 10%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
 
-/* Stats bar */
-.cal-stats-bar{display:flex;align-items:center;gap:20px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;flex-wrap:wrap}
-.cal-stat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px}
-.cal-stat-num{font-family:'Syne',sans-serif;font-size:20px;font-weight:900}
-.cal-stat-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
-.cal-create-today-btn{margin-left:auto;padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;white-space:nowrap}
-[data-theme="dark"] .cal-create-today-btn{color:#07090f}
-.cal-create-today-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px var(--gold-glo)}
+/* Hashtag section */
+#hashtagSection { display:block; }
 
-/* Week grid */
-.cal-week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-height:400px}
-@media(max-width:860px){.cal-week-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:540px){.cal-week-grid{grid-template-columns:repeat(2,1fr)}}
-.cal-loading{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px;color:var(--text3);font-size:13px}
+/* Download progress cancel */
+.dl-progress-cancel { font-size:10px; color:var(--text3); cursor:pointer; text-align:right; transition:.15s; }
+.dl-progress-cancel:hover { color:var(--gold); }
 
-/* Day column */
-.cal-day-col{background:var(--card);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;transition:border-color .2s,box-shadow .2s;min-height:320px}
-.cal-day-col.today{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-glo)}
-.cal-day-head{padding:10px 10px 8px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:2px}
-.cal-day-name-lbl{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
-.cal-day-num-lbl{font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--text);line-height:1}
-.cal-day-num-lbl.today{color:var(--gold)}
-.cal-day-count{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);background:var(--bg2);border-radius:4px;padding:1px 5px}
-.cal-day-body{flex:1;padding:8px 7px;display:flex;flex-direction:column;gap:5px;overflow-y:auto}
-
-/* Post chips */
-.cal-post-chip{display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .15s;line-height:1.3}
-.cal-post-chip:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.cal-chip-yt{background:rgba(255,64,64,.1);border-color:rgba(255,64,64,.2);color:#ff4040}
-.cal-chip-tt{background:rgba(255,45,85,.1);border-color:rgba(255,45,85,.2);color:#ff2d55}
-.cal-chip-ig{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.2);color:var(--purple,#7c3aed)}
-.cal-chip-li{background:rgba(45,110,219,.1);border-color:rgba(45,110,219,.2);color:var(--blue,#2d6edb)}
-.cal-chip-del{margin-left:auto;opacity:.5;font-size:10px;padding:1px 3px;border-radius:3px;flex-shrink:0}
-.cal-chip-del:hover{opacity:1;background:rgba(217,79,59,.15);color:var(--red)}
-
-/* Trend momentum badge */
-.cal-momentum{font-size:10px;flex-shrink:0}
-.cal-score{font-family:'DM Mono',monospace;font-size:9px;background:rgba(201,126,8,.12);color:var(--gold);border-radius:4px;padding:1px 5px;flex-shrink:0;white-space:nowrap}
-
-/* Day note textarea */
-.cal-note{width:100%;padding:6px 8px;border-radius:7px;border:1px dashed var(--border2);background:var(--bg2);color:var(--text);font-size:11px;font-family:'DM Sans',sans-serif;resize:none;min-height:48px;margin-top:4px;transition:border-color .2s}
-.cal-note:focus{outline:none;border-color:var(--gold);border-style:solid}
-.cal-note::placeholder{color:var(--text3)}
-
-/* Add slot */
-.cal-add-slot{text-align:center;padding:6px;border-radius:7px;font-size:11px;color:var(--text3);border:1px dashed var(--border);cursor:pointer;transition:all .2s;margin-top:auto}
-.cal-add-slot:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
-
-/* Modal */
-.cal-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
-.cal-modal-overlay.open{display:flex}
-.cal-modal{background:var(--card);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,.24);overflow:hidden}
-.cal-modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.cal-modal-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:900}
-.cal-modal-close{background:none;border:none;font-size:16px;color:var(--text3);cursor:pointer;padding:4px}
-.cal-modal-body{padding:16px 20px;display:flex;flex-direction:column;gap:4px}
-.cal-modal-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;display:block}
-.cal-modal-input{width:100%;padding:10px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif}
-.cal-modal-input:focus{outline:none;border-color:var(--gold)}
-.cal-dijo-suggest-btn{margin-top:6px;padding:7px 14px;border-radius:8px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start}
-.cal-modal-plats{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
-.cal-modal-plat{padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--card);font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s}
-.cal-modal-plat.sel-yt{background:rgba(255,64,64,.12);border-color:#ff4040;color:#ff4040}
-.cal-modal-plat.sel-tt{background:rgba(255,45,85,.12);border-color:#ff2d55;color:#ff2d55}
-.cal-modal-plat.sel-ig{background:rgba(124,58,237,.12);border-color:var(--purple);color:var(--purple)}
-.cal-modal-plat.sel-li{background:rgba(45,110,219,.12);border-color:var(--blue);color:var(--blue)}
-.cal-modal-status{width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;margin-top:4px}
-.cal-modal-notes{width:100%;padding:10px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;min-height:80px;resize:vertical;margin-top:4px}
-.cal-modal-notes:focus,.cal-modal-status:focus{outline:none;border-color:var(--gold)}
-.cal-modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:9px;justify-content:flex-end}
-.cal-modal-save{padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer}
-[data-theme="dark"] .cal-modal-save{color:#07090f}
-.cal-modal-cancel{padding:10px 16px;border-radius:9px;border:1px solid var(--border2);background:var(--card);color:var(--text2);font-size:13px;cursor:pointer}
-
-/* ── Platform Velocity Meters ── */
-.pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-@media(max-width:860px){.pm-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:480px){.pm-grid{grid-template-columns:1fr}}
-.pm-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.pm-head{display:flex;align-items:center;gap:6px}
-.pm-icon{font-size:15px;flex-shrink:0}
-.pm-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;flex:1}
-.pm-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0}
-.pm-bar-wrap{height:5px;background:var(--bg2);border-radius:99px;overflow:hidden}
-.pm-bar-fill{height:100%;border-radius:99px;transition:width .6s ease}
-.pm-stats{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
-.pm-avg{font-size:11px;color:var(--text2)}
-.pm-best{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
-.pm-best:hover{color:var(--gold)}
-.pm-empty{font-size:11px;color:var(--text3);font-style:italic}
-
-/* ── FIX 2: Platform power badges — defined in creator-studio.css ── */
-
-/* ── FIX 3: Bubble chart legend ───────────────── */
-.chart-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-top:6px;padding:0 4px}
-.chart-legend-item{display:flex;align-items:center;gap:5px}
-.chart-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.chart-legend-dot.tt{background:#ff6464}
-.chart-legend-dot.yt{background:#FFD700}
-.chart-legend-dot.cross{background:#4FB3A5}
-.chart-legend-dot.gt{background:#78b4ff}
+/* Caption AI loading state */
+.cap-ai-loading { opacity:.6; font-style:italic; }
 </style>
 </head>
-<body>
-
+<body class="carousel-studio">
+<!-- Shared Nav (outside .shell — shared.css makes it position:fixed) -->
 <div id="ig-nav"></div>
 
-<!-- TICKER -->
-<div class="ticker">
-  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
-  <div class="ticker-track">
-    <div class="ticker-scroll" id="tickerScroll">
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
-      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
-      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
-      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
-      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
+<div class="shell">
+
+<!-- ══ LEFT PANEL ══ -->
+<aside class="left">
+  <div class="ph">
+    <div class="ph-top">
+      <div class="ph-title">✦ AI Carousel Creator</div>
+      <div class="ph-tools">
+        <div class="ph-tgrp">
+          <button class="tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+          <span class="tlbl" id="zoomLbl">100%</span>
+          <button class="tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        </div>
+        <div class="ph-tgrp">
+          <button class="tb" title="Shuffle images" onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
+          <button class="tb" title="Regenerate" onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+          <button class="tb" title="Reset text positions" onclick="resetTextOffsets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="ph-sub">Describe your content. Dijo picks the theme, writes real captions with live trend context &amp; designs every slide.</div>
+  </div>
+  <div class="pb">
+
+    <div class="field">
+      <label class="lbl">What's your carousel about?</label>
+      <textarea class="ftextarea" id="topicInput"
+        placeholder="e.g. 5 habits that helped me hit £10K/month as a creator…"
+        oninput="onTopicInput()"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="lbl">Platform</label>
+      <select class="fselect" id="platSelect">
+        <option value="Instagram">Instagram</option>
+        <option value="LinkedIn">LinkedIn</option>
+        <option value="TikTok">TikTok</option>
+        <option value="Twitter/X">Twitter / X</option>
+        <option value="Pinterest">Pinterest</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="lbl">Tone</label>
+      <select class="fselect" id="toneSelect">
+        <option value="Bold & Direct">Bold &amp; Direct</option>
+        <option value="Conversational">Conversational</option>
+        <option value="Professional">Professional</option>
+        <option value="Inspirational">Inspirational</option>
+        <option value="Educational">Educational</option>
+        <option value="Playful">Playful</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="lbl">Slides</label>
+      <div class="cnt-row">
+        <button class="cnt-btn" onclick="chgCount(-1)">−</button>
+        <div class="cnt-inner">
+          <div class="cnt-val" id="cntVal">7</div>
+          <div class="cnt-sub">slides</div>
+        </div>
+        <button class="cnt-btn" onclick="chgCount(1)">+</button>
+      </div>
+    </div>
+
+    <div class="intel-card" id="intelCard">
+      <div class="intel-top">
+        <div class="intel-dot" id="intelDot"></div>
+        <span class="intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span>
+        <span class="intel-val" id="intelVal">Waiting for topic…</span>
+      </div>
+      <div class="intel-bar">
+        <div class="intel-seg" id="iseg0"></div>
+        <div class="intel-seg" id="iseg1"></div>
+        <div class="intel-seg" id="iseg2"></div>
+        <div class="intel-seg" id="iseg3"></div>
+        <div class="intel-seg" id="iseg4"></div>
+      </div>
+    </div>
+
+    <div class="field" id="assetPreviewField" style="display:none">
+      <label class="lbl">Auto-selected assets</label>
+      <div class="asset-row" id="assetRow"></div>
+    </div>
+
+    <!-- FORMAT / CANVAS SIZE -->
+    <div class="field">
+      <label class="lbl">Canvas Format</label>
+      <div class="fmt-row">
+        <button class="fmt-btn active" id="fmtSquare" onclick="setFmt('square')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          Square
+        </button>
+        <button class="fmt-btn" id="fmtPortrait" onclick="setFmt('portrait')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="14"><rect x="3" y="1" width="18" height="22" rx="2"/></svg>
+          Portrait
+        </button>
+        <button class="fmt-btn" id="fmtLandscape" onclick="setFmt('landscape')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="9"><rect x="1" y="5" width="22" height="14" rx="2"/></svg>
+          Landscape
+        </button>
+        <button class="fmt-btn" id="fmtStory" onclick="setFmt('story')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="9" height="14"><rect x="4" y="1" width="16" height="22" rx="2"/></svg>
+          Story
+        </button>
+      </div>
+    </div>
+
+    <!-- OVERRIDE BACKGROUND — moved from right panel -->
+    <div class="field">
+      <label class="lbl">Background Image</label>
+      <div class="dzone" id="dzone" onclick="document.getElementById('imgUp').click()"
+           ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
+        <div class="dzone-icon">🖼️</div>
+        <p><strong style="color:var(--gold)">Upload image</strong> or drag &amp; drop<br/>
+        <span style="font-size:10px;color:var(--text3)">Replaces AI-selected background</span></p>
+      </div>
+      <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
+    </div>
+
+    <button class="gen-btn" id="genBtn" onclick="generate()" disabled>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Generate with Dijo
+    </button>
+
+  </div>
+</aside>
+
+<!-- ══ CENTER ══ -->
+<main class="center">
+
+  <div class="canvas-wrap" id="canvasWrap">
+
+    <!-- Empty state -->
+    <div class="empty" id="emptyState">
+      <div class="empty-icon">
+        <img src="logo.png" alt="" style="width:38px;height:38px;object-fit:contain;filter:brightness(0) saturate(100%) invert(91%) sepia(90%) saturate(800%) hue-rotate(5deg) brightness(105%)"
+             onerror="this.outerHTML='✦'"/>
+      </div>
+      <div class="empty-title">Carousel Studio <span style="color:var(--ig-yellow)">v4.5</span></div>
+      <div class="empty-sub">Type your topic on the left. Dijo writes punchy copy,<br/>pulls live trends for captions &amp; builds every slide.</div>
+      <div class="quick-prompts">
+        <div class="qp" onclick="prefill('5 habits that helped me hit £10K per month as a creator')">
+          <span class="qp-icon">💰</span>
+          <div class="qp-text"><strong>Creator income tips</strong><span>5 habits that helped me hit £10K/month</span></div>
+        </div>
+        <div class="qp" onclick="prefill('The morning routine that tripled my productivity')">
+          <span class="qp-icon">⚡</span>
+          <div class="qp-text"><strong>Productivity</strong><span>The morning routine that changed everything</span></div>
+        </div>
+        <div class="qp" onclick="prefill('Why most people never grow on Instagram and how to fix it')">
+          <span class="qp-icon">📈</span>
+          <div class="qp-text"><strong>Growth strategy</strong><span>Why most people never grow on Instagram</span></div>
+        </div>
+        <div class="qp" onclick="prefill('How I transformed my home into a cozy sanctuary on a budget')">
+          <span class="qp-icon">🏡</span>
+          <div class="qp-text"><strong>Home &amp; lifestyle</strong><span>Cozy sanctuary transformation on a budget</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide canvas -->
+    <div class="slide-wrap" id="slideWrap">
+      <div class="slide-canvas" id="slideCanvas">
+
+        <!-- Loading overlay -->
+        <div class="loading-ov" id="loadingOv">
+          <div class="loading-inner">
+            <div class="loading-ring"></div>
+            <div class="loading-title">Dijo is thinking…</div>
+            <div class="loading-hint" id="loadingHint">Detecting theme from your topic</div>
+          </div>
+        </div>
+
+        <!-- Background -->
+        <div class="s-bg" id="sBg">
+          <div class="s-bg-img" id="sBgImg"></div>
+        </div>
+
+        <!-- Video layer -->
+        <div id="sBgVideo" style="display:none;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;"></div>
+
+        <!-- Overlay z-index 3 -->
+        <div class="s-overlay" id="sOverlay" style="position:absolute;inset:0;z-index:3;"></div>
+        <!-- Texture z-index 4 -->
+        <div class="s-texture" id="sTexture" style="position:absolute;inset:0;z-index:4;pointer-events:none;"></div>
+
+        <!-- All layout containers z-index 5 -->
+        <div class="s-content layout-bottom hidden" id="sContent" style="z-index:5"></div>
+        <div class="s-split-wrap hidden" id="sSplit" style="z-index:5"></div>
+        <div class="s-corner-float hidden" id="sCorner" style="z-index:5"></div>
+        <div class="s-dual-wrap hidden" id="sDual" style="z-index:5">
+          <div class="s-dual-main" id="sDualMain"></div>
+          <div class="s-dual-overlay"></div>
+          <div class="s-dual-thumb" id="sDualThumb"></div>
+          <div class="s-dual-text" id="sDualText"></div>
+        </div>
+        <div class="s-band-wrap hidden" id="sBand" style="z-index:5"><div id="sBandInner"></div></div>
+        <div class="s-editorial hidden" id="sEditorial" style="z-index:5"><div class="s-editorial-bg-num" id="sEditorialBgNum"></div></div>
+        <div class="s-quote-wrap hidden" id="sQuote" style="z-index:5"></div>
+        <div class="s-stat-wrap hidden" id="sStat" style="z-index:5"><div class="s-stat-strip" id="sStatStrip" style="display:none"></div></div>
+        <div class="s-grid-wrap hidden" id="sGrid" style="z-index:5"></div>
+        <div class="hidden" id="sTopStrip" style="z-index:5"></div>
+        <div class="hidden" id="sBottomStrip" style="z-index:5"></div>
+        <div class="hidden" id="sEditorialCover" style="z-index:5"></div>
+        <div class="hidden" id="sEditorialCollage" style="z-index:5"></div>
+        <div class="hidden" id="sEditorialCollage3" style="z-index:5"></div>
+        <div class="hidden" id="sHabitCover" style="z-index:5"></div>
+        <div class="hidden" id="sHabitSlide" style="z-index:5"></div>
+
+        <!-- Always-on chrome z-index 10 -->
+        <div class="s-slide-num" id="sNum" style="z-index:10">1 / 7</div>
+        <div class="s-brand" id="sBrand" style="z-index:10"></div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Thumbnail strip -->
+  <div class="strip" id="strip"></div>
+
+</main>
+
+<!-- ══ RIGHT EDIT PANEL ══ -->
+<aside class="right">
+  <div class="rh">
+    <span class="rh-title">✦ Edit Slide</span>
+    <div class="rh-actions">
+      <div class="slide-nav">
+        <button class="snb" onclick="prevSlide()" title="Previous slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="sctr" id="slideCtr">0 / 0</span>
+        <button class="snb" onclick="nextSlide()" title="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+      <button class="rh-icon-btn" onclick="openExport()" title="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+      <button class="rh-icon-btn" onclick="downloadAll()" title="Download all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg></button>
+    </div>
+  </div>
+  <div class="rb">
+
+    <!-- Guide hint -->
+    <div style="padding:8px 10px;background:rgba(245,228,0,.05);border-radius:8px;border:1px solid rgba(245,228,0,.1);font-size:10px;color:rgba(245,228,0,.6);font-family:'Space Mono',monospace;line-height:1.6;letter-spacing:.2px;">
+      💡 <strong style="color:var(--ig-yellow)">Click any text or number</strong> on the slide to edit it directly.
+    </div>
+
+    <div class="esec">
+      <div class="esec-title">Layout</div>
+      <div class="apply-all-wrap">
+        <input type="checkbox" class="apply-all-toggle" id="applyAllToggle" checked/>
+        <label for="applyAllToggle">Apply layout change to ALL slides</label>
+      </div>
+      <div class="layout-badge" id="layoutBadge">—</div>
+      <div class="layout-switcher">
+        <button class="layout-btn" onclick="changeLayout('FULL_BLEED')" title="Full image background">Full Bleed</button>
+        <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')" title="Image top, text bottom">Bot Strip</button>
+        <button class="layout-btn" onclick="changeLayout('TOP_STRIP')" title="Text top, image bottom">Top Strip</button>
+        <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')" title="Bold colour band over image">Band</button>
+        <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')" title="Two images with text">Dual Img</button>
+        <button class="layout-btn" onclick="changeLayout('STAT_HERO')" title="Big number hero slide">Stat</button>
+        <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')" title="Editorial magazine cover">Ed. Cover</button>
+        <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')" title="Editorial collage">Ed. Collage</button>
+        <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')" title="Three-photo editorial">Ed. Col×3</button>
+        <button class="layout-btn" onclick="changeLayout('HABIT_COVER')" title="Habit cover">Habit Cover</button>
+      </div>
+    </div>
+
+    <div class="esec" id="eStatSection">
+      <div class="esec-title">Stat / Number</div>
+      <input type="text" class="finput" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
+    </div>
+<textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
+    </div>
+
+    <!-- CAPTION -->
+    <div class="esec">
+      <div class="esec-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Caption</span>
+        <span style="font-size:9px;font-family:'Space Mono',monospace;color:rgba(245,228,0,.4)" id="capAiLabel">AI-written</span>
+      </div>
+      <textarea class="ftextarea" id="eCap" style="min-height:80px" placeholder="AI caption loads after generation…" oninput="updateCap()"></textarea>
+      <button class="copy-btn" onclick="copyCaption()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy Caption
+      </button>
+    </div>
+
+    <!-- HASHTAGS — 5 scored tags, right panel only, never on slide -->
+    <div class="esec" id="hashtagSection">
+      <div class="esec-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Trending Hashtags</span>
+        <span style="font-size:9px;font-family:'Space Mono',monospace;color:rgba(245,228,0,.4)">5 tags</span>
+      </div>
+      <div class="hashtag-chips" id="hashtagChips"></div>
+      <button class="hashtag-copy-all" onclick="copyHashtags()" id="hashtagCopyBtn" style="display:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy All 5 Hashtags
+      </button>
+    </div>
+
+    <div class="esec">
+      <div class="esec-title">Accent Colour</div>
+      <div class="cdots" id="cdots">
+        <div class="cdot on" style="background:#f5e400" onclick="setAccent('#f5e400',this)" title="Impact Grid Yellow"></div>
+        <div class="cdot" style="background:#2563eb" onclick="setAccent('#2563eb',this)"></div>
+        <div class="cdot" style="background:#c9a84c" onclick="setAccent('#c9a84c',this)"></div>
+        <div class="cdot" style="background:#ef4444" onclick="setAccent('#ef4444',this)"></div>
+        <div class="cdot" style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
+        <div class="cdot" style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
+        <div class="cdot" style="background:#0891b2" onclick="setAccent('#0891b2',this)"></div>
+        <div class="cdot" style="background:#ea580c" onclick="setAccent('#ea580c',this)"></div>
+        <div class="cdot" style="background:#fff;border-color:rgba(255,255,255,.2)" onclick="setAccent('#ffffff',this)"></div>
+      </div>
+    </div>
+
+    <div class="esec">
+      <div class="esec-title">Font Style</div>
+      <div class="font-switcher">
+        <button class="font-btn active" data-pair="syne" onclick="setFontPair('syne')">Syne</button>
+        <button class="font-btn" data-pair="cormorant" onclick="setFontPair('cormorant')">Serif</button>
+        <button class="font-btn" data-pair="playfair" onclick="setFontPair('playfair')">Playfair</button>
+        <button class="font-btn" data-pair="inter" onclick="setFontPair('inter')">Inter</button>
+      </div>
+    </div>
+
+  </div>
+</aside>
+
+</div><!-- /shell -->
+
+<!-- ══ EXPORT MODAL ══ -->
+<div class="modal-bg" id="exportModal">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-title" style="color:var(--ig-yellow)">Export Carousel</span>
+      <button onclick="closeExport()" style="width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.4)">✕</button>
+    </div>
+    <div class="mc">
+      <div class="exp-opt sel" id="eoPng" onclick="selExport('png')">
+        <span class="exp-icon">🖼️</span>
+        <div><div class="exp-title">PNG Images</div><div class="exp-sub">Download all slides as PNG</div></div>
+        <div class="exp-radio"></div>
+      </div>
+      <div class="exp-opt" id="eoCopy" onclick="selExport('copy')">
+        <span class="exp-icon">📋</span>
+        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + AI captions + hashtags</div></div>
+        <div class="exp-radio"></div>
+      </div>
+      <div class="exp-opt" id="eoJson" onclick="selExport('json')">
+        <span class="exp-icon">{ }</span>
+        <div><div class="exp-title">JSON Data</div><div class="exp-sub">Full structured data — import into other tools</div></div>
+        <div class="exp-radio"></div>
+      </div>
+      <div class="exp-opt" id="eoVideo" onclick="selExport('video')">
+        <span class="exp-icon">🎬</span>
+        <div><div class="exp-title">Animated Video</div><div class="exp-sub">MP4 export — coming soon</div></div>
+        <div class="exp-radio"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeExport()">Cancel</button>
+      <button class="btn-pri" onclick="doExport()">Export</button>
     </div>
   </div>
 </div>
 
-
-<div class="app-layout">
-
-  <!-- SIDEBAR -->
-  <div class="app-sidebar">
-  <aside class="sidebar" id="sidebar">
-    <div class="sb-close-btn">
-      <div class="sb-close-inner">
-        <img src="logo.png" alt="ImpactGrid" onerror="this.style.display='none'"/>
-        ImpactGrid
-      </div>
-      <button class="sb-x" onclick="closeSidebar()" aria-label="Close menu">✕</button>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">Intelligence</div>
-      <div class="sb-item active" data-tab="dashboard"><span class="sb-icon">📊</span>Dashboard<span class="sb-badge live">Live</span></div>
-      <div class="sb-item" data-tab="trends"><span class="sb-icon">📈</span>Live Trend</div>
-      <div class="sb-item" data-tab="generator"><span class="sb-icon">✍️</span>AI Generator</div>
-      <div class="sb-item" data-tab="audience"><span class="sb-icon">👥</span>Audience</div>
-      <div class="sb-item" data-tab="evaluator"><span class="sb-icon">🎯</span>Dijo Evaluator<span class="sb-badge live">AI</span></div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">Create</div>
-      <div class="sb-item" data-tab="calendar">
-        <span class="sb-icon">📅</span>
-        Content Calendar
-      </div>
-      <a class="sb-item" href="carousel-studio.html"><span class="sb-icon">🎨</span>Carousel Studio</a>
-      <a class="sb-item" href="portfolio-studio.html"><span class="sb-icon">🌐</span>Portfolio Studio</a>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">Platforms</div>
-      <div class="sb-item" data-tab="youtube"><span class="sb-icon">▶️</span>YouTube<span class="sb-badge live" id="ytSidebarBadge" style="display:none">Live</span></div>
-      <div class="sb-item" data-tab="tiktok"><span class="sb-icon">🎵</span>TikTok<span class="sb-badge tt" id="ttSidebarBadge" style="display:none">Live</span></div>
-      <div class="sb-item" style="opacity:.45;cursor:not-allowed"><span class="sb-icon">📸</span>Instagram<span class="sb-badge soon">Soon</span></div>
-    </div>
-    <div class="sb-platforms">
-      <div class="sb-plat-title">Platform Status</div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Dijo AI</span><span style="font-size:11px;color:var(--green)">Active</span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Google Trends</span><span style="font-size:11px;color:var(--green)">Live</span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ytSpDot"></span>YouTube</span><span style="font-size:11px" id="ytSpLabel"><span class="connect-link" data-tab="youtube">Connect</span></span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ttSpDot"></span>TikTok</span><span style="font-size:11px" id="ttSpLabel"><span class="connect-link" data-tab="tiktok">Connect</span></span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot soon"></span>Instagram</span><span style="font-size:11px;color:var(--blue2)">Coming Soon</span></div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">System</div>
-
-      <a class="sb-item" href="settings.html">
-        <span class="sb-icon">⚙️</span>
-        Settings
-      </a>
-      <div class="sb-item" id="installSideBtn" style="display:none;cursor:pointer" onclick="document.getElementById('installSideBtn').onclick && document.getElementById('installSideBtn').onclick()">
-        <span class="sb-icon">📲</span>
-        Install App
-      </div>
-    </div>
-  </aside>
-  </div><!-- /.app-sidebar -->
-
-  <!-- MAIN -->
-  <div class="app-main">
-  <div class="main">
-    <div class="tabs-bar">
-      <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard">📊 Dashboard</button>
-      <button class="tab-btn" id="tab-trends" data-tab="trends">📈 Live Trend</button>
-      <button class="tab-btn" id="tab-generator" data-tab="generator">✍️ Generator</button>
-      <button class="tab-btn" id="tab-audience" data-tab="audience">👥 Audience</button>
-      <button class="tab-btn" id="tab-evaluator" data-tab="evaluator">🎯 Evaluator</button>
-      <button class="tab-btn" id="tab-calendar" data-tab="calendar">📅 Calendar</button>
-      <button class="tab-btn" id="tab-youtube" data-tab="youtube">▶️ YouTube</button>
-      <button class="tab-btn" id="tab-tiktok" data-tab="tiktok">🎵 TikTok</button>
-      <button class="tab-btn tab-soon">📸 Instagram<span class="soon-badge">Soon</span></button>
-    </div>
-
-    <div class="content-area" id="contentArea">
-
-      <!-- DASHBOARD -->
-      <div class="panel active" id="panel-dashboard">
-        <div class="stat-grid">
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">📊 Weekly Trend Prediction</div>
-              <div class="card-tag tag-gold">AI</div>
-            </div>
-            <div class="card-body" id="weeklyPrediction">
-              <div class="text-sm">Analyzing trends...</div>
-            </div>
-          </div>
-          <div class="card" style="display:flex;align-items:center;gap:12px;">
-            <div data-ig-avatar class="u-av"></div>
-            <div>
-              <div id="dijoGreeting" data-ig-greeting class="text-sm"></div>
-              <div id="dijoBrief" class="text-sm"></div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="sc-label">YouTube</div>
-            <div class="sc-val-sm" id="dashYtVal" style="color:var(--text2)">Not connected</div>
-            <div class="sc-delta"><span class="sc-link" data-tab="youtube">Connect →</span></div>
-          </div>
-          <div class="stat-card">
-            <div class="sc-label">TikTok</div>
-            <div class="sc-val-sm" id="dashTtVal" style="color:var(--text2)">Not connected</div>
-            <div class="sc-delta" id="dashTtSub"><span class="sc-link" data-tab="tiktok">Connect →</span></div>
-          </div>
-        </div>
-
-        <div class="briefing-card">
-          <div class="briefing-head">
-            <div class="briefing-av">📡</div>
-            <div>
-              <div class="briefing-title">What’s Trending Now</div>
-              <div class="briefing-meta" id="briefingDate">Loading…</div>
-            </div>
-            <button onclick="loadBriefing(true)" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Refresh</button>
-          </div>
-          <div class="briefing-text" id="briefingText" style="padding:4px 0"><span class="spinner spinner-gold"></span></div>
-          <div class="briefing-tags" id="briefingTags" style="display:none"></div>
-        </div>
-
-        <div class="two-col">
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">📡 Top Trends</span>
-              <span class="card-tag tag-green" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.3">Live · Multi-Platform Intelligence</span>
-            </div>
-            <div class="card-body">
-              <div class="trend-list" id="dashTrendList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner spinner-gold"></span> Fetching trends…</div></div>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div class="card">
-              <div class="card-header"><span class="card-title">⚡ Top Opportunities</span><span class="card-tag tag-gold">Highest Scored</span></div>
-              <div class="card-body" id="topOppBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Quick launch cards -->
-        <div class="quick-launch-grid">
-          <a class="quick-launch-card" href="carousel-studio.html" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);text-decoration:none;display:block">
-            <div class="qlc-icon">🎨</div>
-            <div class="qlc-title">Carousel Studio</div>
-            <div class="qlc-desc">AI-designed carousel slides</div>
-          </a>
-          <a class="quick-launch-card" href="portfolio-studio.html" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border:1px solid rgba(79,142,247,.2);text-decoration:none;display:block">
-            <div class="qlc-icon">🌐</div>
-            <div class="qlc-title">Portfolio Studio</div>
-            <div class="qlc-desc">Your creator link-in-bio</div>
-          </a>
-          <div class="quick-launch-card" data-tab="evaluator" style="background:linear-gradient(135deg,#0a0f0a,#1a3a1a);border:1px solid rgba(15,168,118,.2)">
-            <div class="qlc-icon">🎯</div>
-            <div class="qlc-title">Dijo Evaluator</div>
-            <div class="qlc-desc">Score your channel with AI</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- LIVE TREND -->
-      <div class="panel" id="panel-trends">
-
-        <!-- ── THREE PLATFORM CHARTS ── -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px" id="platformChartsGrid">
-
-          <!-- TikTok chart -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title" style="color:#ff6464">🎵 TikTok
-                <span id="ttLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6464;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
-              </div>
-              <div class="card-tag" style="background:rgba(255,100,100,.1);color:#ff6464;border:1px solid rgba(255,100,100,.2)">Top 3 topics</div>
-            </div>
-            <div class="card-body">
-              <div style="height:200px;position:relative;">
-                <canvas id="chartTT"></canvas>
-              </div>
-              <div id="chartTTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No TikTok data yet · ingestion runs every 30 min</div>
-              <div id="chartTTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
-            </div>
-          </div>
-
-          <!-- YouTube chart -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title" style="color:#FFD700">▶️ YouTube
-                <span id="ytLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#FFD700;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
-              </div>
-              <div class="card-tag" style="background:rgba(255,215,0,.1);color:#c9a800;border:1px solid rgba(255,215,0,.2)">Top 3 topics</div>
-            </div>
-            <div class="card-body">
-              <div style="height:200px;position:relative;">
-                <canvas id="chartYT"></canvas>
-              </div>
-              <div id="chartYTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No YouTube data yet · ingestion runs every 30 min</div>
-              <div id="chartYTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
-            </div>
-          </div>
-
-          <!-- Google chart -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title" style="color:#78b4ff">🔍 Google
-                <span id="gtLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#78b4ff;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.6s"></span>
-              </div>
-              <div class="card-tag" style="background:rgba(120,180,255,.1);color:#78b4ff;border:1px solid rgba(120,180,255,.2)">Top 3 topics</div>
-            </div>
-            <div class="card-body">
-              <div style="height:200px;position:relative;">
-                <canvas id="chartGT"></canvas>
-              </div>
-              <div id="chartGTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No Google data yet · ingestion runs every 30 min</div>
-              <div id="chartGTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Mobile: stack charts vertically -->
-        <style>
-          @media(max-width:768px){ #platformChartsGrid{ grid-template-columns:1fr !important; } }
-        </style>
-
-        <!-- Cross-platform trend chart -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header">
-            <div class="card-title">📊 Cross-Platform Score Chart
-              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
-            </div>
-            <div class="card-tag tag-gold">All platforms · top topics by score</div>
-          </div>
-          <div class="card-body">
-            <div style="height:180px;position:relative;">
-              <canvas id="trendChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- Fuel gauges — rendered by renderRadarGauges() -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header">
-            <div class="card-title">🎯 Platform Momentum
-              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4FB3A5;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
-            </div>
-            <div class="card-tag tag-green">Live gauge · needle moves as topics rise &amp; fall · click to generate</div>
-          </div>
-          <div class="card-body">
-            <div id="radarGaugesBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
-          </div>
-        </div>
-
-        <!-- Dijo Top Pick -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🧠 Dijo's Top Pick
-              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
-            </div>
-            <div class="card-tag tag-gold">Best topic across all platforms · AI explains why</div>
-          </div>
-          <div class="card-body">
-            <div id="dijoTopPickBox"><div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- GENERATOR -->
-      <div class="panel" id="panel-generator">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <h2 style="font-size:20px">AI Content Generator</h2>
-          <span class="card-tag tag-gold">Dijo AI</span>
-        </div>
-        <div id="genLoading" class="gen-loading"><span class="spinner"></span><span id="genLoadingMsg">Generating…</span></div>
-        <div class="ai-hint" id="aiHint">💡 Enter a topic — Dijo will generate high-performing content based on trends.</div>
-        <div class="gen-layout">
-          <div class="gen-input-area">
-            <div class="input-group"><label class="input-label">Topic</label><input type="text" class="form-input" id="genTopic" placeholder="e.g. AI productivity tools, UK street style…" onkeydown="if(event.key==='Enter')fullGenerate()"/></div>
-            <div class="input-group"><label class="input-label">Platform</label><select class="form-select" id="genPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option><option>All Platforms</option></select></div>
-            <div class="input-group"><label class="input-label">Style</label><div class="style-chips"><button class="style-chip active" onclick="selectStyle(this)">Educational</button><button class="style-chip" onclick="selectStyle(this)">Entertaining</button><button class="style-chip" onclick="selectStyle(this)">Motivational</button><button class="style-chip" onclick="selectStyle(this)">Hot Take</button></div></div>
-            <div class="input-group"><label class="input-label">Niche (optional)</label><input type="text" class="form-input" id="genNiche" placeholder="e.g. finance, fitness, fashion…"/></div>
-            <button class="gen-btn" onclick="fullGenerate()" id="fullGenBtn">⚡ Generate Full Package</button>
-            <div id="genError" class="gen-error"></div>
-            <div class="score-card">
-              <div class="score-label">Trend Score™</div>
-              <div class="score-num" id="previewScore">—</div>
-              <div class="score-verdict" id="previewVerdict">Enter a topic to score</div>
-            </div>
-          </div>
-          <div class="gen-output">
-            <div class="output-block"><div class="ob-header"><span>Video Hook</span><button class="copy-btn" onclick="copyEl('outHook')">Copy</button></div><div class="ob-body ob-placeholder" id="outHook">Your hook appears here…</div></div>
-            <div class="output-block"><div class="ob-header"><span>Caption</span><button class="copy-btn" onclick="copyEl('outCaption')">Copy</button></div><div class="ob-body ob-placeholder" id="outCaption">Your caption appears here…</div></div>
-            <div class="hashtag-bar">
-              <div class="hashtag-bar-title">Suggested Hashtags</div>
-              <div class="hashtag-bar-list" id="hashtagBar"></div>
-            </div>
-            <div class="output-block"><div class="ob-header"><span>Content Outline</span><button class="copy-btn" onclick="copyEl('outOutline')">Copy</button></div><div class="ob-body ob-placeholder" id="outOutline">Your outline appears here…</div></div>
-            <div class="output-block"><div class="ob-header"><span>Hashtags</span><button class="copy-btn" onclick="copyTags('outHashtags')">Copy</button></div><div class="ob-tags" id="outHashtags"><span style="color:var(--text3);font-style:italic;font-size:12px">Hashtags appear here…</span></div></div>
-            <div class="output-block"><div class="ob-header"><span>Best Posting Time</span></div><div class="timing-grid" id="outTiming"><div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div></div></div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- CALENDAR -->
-      <div class="panel" id="panel-calendar">
-
-        <!-- Header row -->
-        <div class="cal-header-row">
-          <div class="cal-header-left">
-            <h2 class="cal-title">📅 Content Calendar</h2>
-            <span class="cal-ai-badge"><span class="live-dot"></span>Dijo AI · Auto-filled</span>
-          </div>
-          <div class="cal-header-right">
-            <button class="cal-nav-btn" onclick="calPrevWeek()">‹</button>
-            <span class="cal-week-label" id="calWeekLabel">Loading…</span>
-            <button class="cal-nav-btn" onclick="calNextWeek()">›</button>
-            <button class="cal-today-btn" onclick="calGoToday()">Today</button>
-            <button class="cal-autofill-btn" id="calAutoBtn" onclick="calAutoFill()">✨ Auto-Fill</button>
-          </div>
-        </div>
-
-        <!-- How it works explanation (dismissable) -->
-        <div class="cal-explainer" id="calExplainer">
-          <div class="cal-explainer-inner">
-            <span class="cal-explainer-icon">🧠</span>
-            <div>
-              <strong>How this works:</strong> Dijo scans live trends every week and scores each topic. The highest-scoring topics are automatically dropped into your calendar with the best time to post. You'll get a notification when it's time. Add your own ideas in the note box under each day — Dijo will remind you about those too.
-            </div>
-            <button class="cal-explainer-close" onclick="document.getElementById('calExplainer').style.display='none'">✕</button>
-          </div>
-        </div>
-
-        <!-- Platform filter -->
-        <div class="cal-filter-row">
-          <button class="cal-plat-btn active-all" onclick="calSetFilter('all',this)">All</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('yt',this)">▶️ YouTube</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('tt',this)">🎵 TikTok</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('ig',this)">📸 Instagram</button>
-          <button class="cal-plat-btn" onclick="calSetFilter('li',this)">💼 LinkedIn</button>
-          <div class="cal-niche-wrap">
-            <label class="cal-niche-label">Niche:</label>
-            <select class="cal-niche-sel" id="calNicheSelect" onchange="setUserNiche(this.value)">
-              <option value="all">All Topics</option>
-              <option value="creator">Creator / AI</option>
-              <option value="fitness">Fitness / Health</option>
-              <option value="finance">Finance / Business</option>
-              <option value="lifestyle">Lifestyle / Fashion</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Stats bar -->
-        <div class="cal-stats-bar">
-          <div class="cal-stat"><span class="cal-stat-num" id="calStatTotal">0</span><span class="cal-stat-lbl">This week</span></div>
-          <div class="cal-stat"><span class="cal-stat-num" style="color:var(--yt)" id="calStatYt">0</span><span class="cal-stat-lbl">YouTube</span></div>
-          <div class="cal-stat"><span class="cal-stat-num" style="color:var(--tt,#ff2d55)" id="calStatTt">0</span><span class="cal-stat-lbl">TikTok</span></div>
-          <div class="cal-stat"><span class="cal-stat-num" style="color:var(--purple)" id="calStatIg">0</span><span class="cal-stat-lbl">Instagram</span></div>
-          <div class="cal-stat"><span class="cal-stat-num" style="color:var(--green)" id="calStatDone">0</span><span class="cal-stat-lbl">✓ Published</span></div>
-          <button class="cal-create-today-btn" onclick="generateFromCalendar()">⚡ Create Today's Post</button>
-        </div>
-
-        <!-- Week grid — calendar.js renders into this -->
-        <div class="cal-week-grid" id="calWeekGrid">
-          <div class="cal-loading">
-            <span class="spinner spinner-gold"></span>
-            <span>Dijo is scanning this week's top trends…</span>
-          </div>
-        </div>
-
-        <!-- Modal overlay for add/edit post -->
-        <div class="cal-modal-overlay" id="calModalOverlay" onclick="if(event.target===this)closeModal()">
-          <div class="cal-modal">
-            <div class="cal-modal-header">
-              <span class="cal-modal-title" id="calModalTitle">Add Post</span>
-              <button class="cal-modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div class="cal-modal-body">
-              <label class="cal-modal-label">Topic</label>
-              <input class="cal-modal-input" id="calModalInput" type="text" placeholder="What's the content about?"/>
-              <button class="cal-dijo-suggest-btn" id="calDijoSuggestBtn" onclick="calSuggestIdea()">✨ Suggest with Dijo</button>
-              <label class="cal-modal-label" style="margin-top:12px">Platform</label>
-              <div class="cal-modal-plats">
-                <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')">🎵 TikTok</button>
-                <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')">▶️ YouTube</button>
-                <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')">📸 Instagram</button>
-                <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')">💼 LinkedIn</button>
-              </div>
-              <label class="cal-modal-label" style="margin-top:12px">Status</label>
-              <select class="cal-modal-status" id="calModalStatus">
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled ⏰</option>
-                <option value="published">Published ✓</option>
-              </select>
-              <label class="cal-modal-label" style="margin-top:12px">Notes</label>
-              <textarea class="cal-modal-notes" id="calModalNotes" placeholder="Add any notes, angles, or ideas…"></textarea>
-            </div>
-            <div class="cal-modal-footer">
-              <button class="cal-modal-save" onclick="savePost()">Save Post</button>
-              <button class="cal-modal-cancel" onclick="closeModal()">Cancel</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- AUDIENCE -->
-      <div class="panel" id="panel-audience">
-        <h2 style="font-size:20px;margin-bottom:6px">Audience Intelligence</h2>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
-        <div style="display:flex;gap:10px;margin-bottom:20px">
-          <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
-          <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
-        </div>
-        <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
-      </div>
-
-      <!-- EVALUATOR -->
-      <div class="panel" id="panel-evaluator">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <h2 style="font-size:20px">Dijo Evaluator</h2>
-          <span class="card-tag tag-gold">AI · Real Data</span>
-        </div>
-        <div id="evalNoAccount">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:40px;text-align:center">
-            <div style="font-size:44px;margin-bottom:14px">🔌</div>
-            <h3 style="font-size:18px;margin-bottom:8px">Connect an Account First</h3>
-            <p style="font-size:14px;color:var(--text2);max-width:380px;margin:0 auto 20px">Dijo needs your real channel data to evaluate and advise you.</p>
-            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-              <button data-tab="youtube" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff4040,#ff6060);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect YouTube →</button>
-              <button data-tab="tiktok" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff2d55,#ff6688);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect TikTok →</button>
-            </div>
-          </div>
-        </div>
-        <div id="evalLoading" style="display:none;text-align:center;padding:48px"><span class="spinner spinner-gold" style="width:22px;height:22px;border-width:3px"></span><p style="margin-top:14px;font-size:14px;color:var(--text3)" id="evalLoadingMsg">Analysing your channel…</p></div>
-        <div id="evalMain" style="display:none">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-            <div id="evalAv" style="width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">▶️</div>
-            <div style="flex:1;min-width:0"><div id="evalChannelName" style="font-weight:700;font-size:14px;margin-bottom:1px">—</div><div id="evalChannelHandle" style="font-size:11px;color:var(--text3)">—</div></div>
-            <button onclick="runEvaluation()" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0">⚡ Re-evaluate</button>
-          </div>
-          <div class="eval-layout">
-            <div>
-              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:12px;text-align:center">
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Creator Score</div>
-                <div style="position:relative;width:120px;height:120px;margin:0 auto 14px">
-                  <svg viewBox="0 0 120 120" style="width:120px;height:120px;transform:rotate(-90deg)">
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
-                    <circle id="evalRing" cx="60" cy="60" r="50" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .4s"/>
-                  </svg>
-                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-                    <div id="evalScoreNum" style="font-family:'Syne',sans-serif;font-size:30px;font-weight:900;letter-spacing:-.04em;color:var(--gold)">—</div>
-                    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:1px">/100</div>
-                  </div>
-                </div>
-                <div id="evalVerdict" style="font-size:14px;font-weight:700;margin-bottom:3px">—</div>
-                <div id="evalTier" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">—</div>
-              </div>
-              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px">
-                <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Score Breakdown</div>
-                <div style="padding:14px 18px;display:flex;flex-direction:column;gap:12px" id="evalBars"></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Subscribers</div><div class="sc-val" style="font-size:16px;color:var(--yt)" id="evalSubs">—</div></div>
-                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Total Views</div><div class="sc-val" style="font-size:16px" id="evalViews">—</div></div>
-                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Videos</div><div class="sc-val" style="font-size:16px;color:var(--green)" id="evalVcount">—</div></div>
-              </div>
-            </div>
-            <div class="eval-chat">
-              <div class="eval-chat-head">
-                <div class="eval-av">DJ</div>
-                <div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">Dijo Adviser</div><div style="font-size:10px;color:var(--green);font-family:'DM Mono',monospace">Always On</div></div>
-                <button onclick="clearEvalChat()" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Clear</button>
-              </div>
-              <div class="eval-msgs" id="evalMsgs">
-                <div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Connect YouTube or TikTok then hit <strong>Evaluate</strong> — I'll score your channel and tell you exactly what to do next.</div></div>
-              </div>
-              <div class="eval-chips" id="evalChips">
-                <button class="eval-chip" onclick="evalAsk('How do I grow faster?')">Grow faster?</button>
-                <button class="eval-chip" onclick="evalAsk('What content should I make next?')">Content ideas?</button>
-                <button class="eval-chip" onclick="evalAsk('Give me a 30-day action plan.')">30-day plan</button>
-              </div>
-              <div class="eval-input-row">
-                <input type="text" class="eval-input" id="evalInput" placeholder="Ask Dijo about your channel…" onkeydown="if(event.key==='Enter')evalSend()"/>
-                <button class="eval-send" onclick="evalSend()">➤</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- YOUTUBE -->
-      <div class="panel" id="panel-youtube">
-        <div id="ytDisconnected">
-          <div class="connect-wrap">
-            <div style="font-size:48px;margin-bottom:16px">▶️</div>
-            <h2 style="font-size:22px;margin-bottom:10px">Connect Your YouTube Channel</h2>
-            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real channel stats, video performance, and subscriber data — live from YouTube Data API.</p>
-            <div id="ytErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
-            <button class="connect-btn yt" onclick="YouTubeAuth.connect(this)">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-              Connect YouTube
-            </button>
-            <div class="feat-grid">
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Channel Stats</h4><p>Real subscriber count, views, and video count.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, and comments per video.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Dijo Evaluator</h4><p>AI score and actionable growth advice.</p></div>
-            </div>
-          </div>
-        </div>
-        <div id="ytConnected" style="display:none">
-          <div class="card" style="margin-bottom:14px">
-            <div class="card-header">
-              <span class="card-title">✅ YouTube Connected</span>
-              <div class="connected-header">
-                <span class="card-tag tag-green">Live Data</span>
-                <button class="disconnect-btn" onclick="if(confirm('Disconnect YouTube?'))disconnectYouTube()">✕ Disconnect</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <div id="ytAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,96,96,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">▶️</div>
-                <div><div id="ytChannelName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ytChannelHandle" style="font-size:12px;color:var(--text3)">—</div></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Subscribers</div><div id="ytSubs" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--yt)">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Views</div><div id="ytViews" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ytVcount" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--green)">—</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent Videos</span><span class="card-tag tag-green">Live</span></div><div class="card-body" id="ytVideosList"><div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div></div></div>
-        </div>
-      </div>
-
-      <!-- TIKTOK -->
-      <div class="panel" id="panel-tiktok">
-        <div id="ttDisconnected">
-          <div class="connect-wrap">
-            <div style="font-size:48px;margin-bottom:16px">🎵</div>
-            <h2 style="font-size:22px;margin-bottom:10px">Connect Your TikTok Account</h2>
-            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real profile stats, video performance, and audience data — via the official TikTok API.</p>
-            <div id="ttErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
-            <button class="connect-btn tt" id="ttConnectBtn" onclick="TikTokAuth.connect(this)">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg>
-              Connect with TikTok
-            </button>
-            <div class="feat-grid">
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Profile Stats</h4><p>Real follower count, likes, and video count.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, comments, and shares per video.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Dijo Evaluator</h4><p>AI score and growth advice for your account.</p></div>
-            </div>
-          </div>
-        </div>
-        <div id="ttConnected" style="display:none">
-          <div class="card" style="margin-bottom:14px">
-            <div class="card-header">
-              <span class="card-title">✅ TikTok Connected</span>
-              <div class="connected-header">
-                <span class="card-tag tag-tt">Live Data</span>
-                <button class="disconnect-btn" onclick="if(confirm('Disconnect TikTok? This will clear the session so a new account can connect.'))disconnectTikTok()">✕ Disconnect</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <div id="ttAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,45,85,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">🎵</div>
-                <div><div id="ttDisplayName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ttUsername" style="font-size:12px;color:var(--text3)">—</div></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Followers</div><div id="ttFollowers" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--tt)">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Following</div><div id="ttFollowing" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Likes</div><div id="ttLikes" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--gold)">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ttVcount" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--green)">—</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent TikToks</span><span class="card-tag tag-tt">Live</span></div><div class="card-body" id="ttVideosList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(255,45,85,.2);border-top-color:var(--tt)"></span> Loading…</div></div></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-  </div><!-- /.main -->
-  </div><!-- /.app-main -->
-</div><!-- /.app-layout -->
-
-<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 <div class="toast-shelf" id="toastShelf"></div>
 
-<!-- ═══ DOWNLOAD BAR (bottom, app-store style) ═══ -->
-<div class="download-bar" id="downloadBar">
-  <img src="logo.png" class="dl-icon" alt="ImpactGrid"
-       onerror="this.style.display='none'"/>
-  <div class="dl-text">
-    <div class="dl-title">ImpactGrid</div>
-    <div class="dl-sub" id="dlSub">Add to your home screen — free</div>
-  </div>
-  <!-- Android / Desktop -->
-  <button class="dl-btn" id="dlBtn">
-    ⬇ Download App
-  </button>
-  <!-- iOS hint shown instead -->
-  <div class="dl-ios-hint" id="dlIOSHint">
-    Tap <strong>Share ⬆️</strong> then <strong>"Add to Home Screen"</strong>
-  </div>
-  <button class="dl-dismiss" id="dlDismiss" title="Dismiss">✕</button>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- ✅ FIX: Pinned to exact version — avoids silent breakage from @2 latest drift -->
+<!-- ══ MAIN ENGINE (v4.5 — includes Caption Engine) ══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- ✅ FIX: nav.js loads FIRST (no defer) so renderNav() + checkAuth() exist
-     before ig-supabase.js creates the client and auth.js calls initAuth().
-     Previous order (auth.js → nav.js) meant the session was read before
-     nav.js existed → profiles queries fired with no token → 403. -->
-<script src="nav.js"></script>
-<!-- ig-supabase.js sets window.SUPABASE_URL + SUPABASE_ANON_KEY then creates the client.
-     Must run after SDK + nav.js, before auth.js. -->
 <script src="ig-supabase.js"></script>
 <script src="auth.js"></script>
-<script src="tiktok-auth.js" defer></script>
-<script src="youtube-auth.js" defer></script>
-<script src="instagram-auth.js" defer></script>
-<script src="creator-ai.js" defer></script>
-<script src="creator-studio.js" defer></script>
+<script src="nav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="carousel-studio.js"></script>
 
 <script>
-/* ══════════════════════════════════════════
-   IMPACTGRID — DOWNLOAD / INSTALL LOGIC
-   Works on: Android Chrome, desktop Chrome/Edge, iOS Safari
-══════════════════════════════════════════ */
-(function() {
-  var deferredPrompt  = null;
-  var bar    = document.getElementById('downloadBar');
-  var dlBtn  = document.getElementById('dlBtn');
-  var dlDismiss = document.getElementById('dlDismiss');
-  var dlSub  = document.getElementById('dlSub');
-  var dlIOSHint = document.getElementById('dlIOSHint');
-  var installSideBtn = document.getElementById('installSideBtn');
+/* ══════════════════════════════════════════════════════════
+   CAROUSEL STUDIO v4.5 PATCHES
+   Brand lock · Apply-all layout · Guide tooltip · Download
+══════════════════════════════════════════════════════════ */
 
-  /* Already installed as PWA — hide everything silently */
-  if (
-    window.navigator.standalone === true ||
-    window.matchMedia('(display-mode: standalone)').matches
-  ) {
-    if (installSideBtn) installSideBtn.style.display = 'none';
-    return;
-  }
-
-  /* Don't show again this session if user dismissed */
-  try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
-
-  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
-  function isSafari() { return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
-
-  function showBar() {
-    try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
-    if (!bar) return;
-
-    if (isIOS() && isSafari()) {
-      /* iOS: hide the button, show the share hint instead */
-      if (dlBtn) dlBtn.style.display = 'none';
-      if (dlIOSHint) dlIOSHint.style.display = 'block';
-      if (dlSub) dlSub.textContent = 'Install on your iPhone — takes 3 taps';
-    } else {
-      if (dlBtn) dlBtn.style.display = 'inline-flex';
-      if (dlIOSHint) dlIOSHint.style.display = 'none';
-    }
-
-    bar.classList.add('visible');
-    if (installSideBtn) installSideBtn.style.display = 'flex';
-  }
-
-  function hideBar() {
-    if (bar) bar.classList.remove('visible');
-    if (installSideBtn) installSideBtn.style.display = 'none';
-    try { sessionStorage.setItem('ig-dl-dismissed', '1'); } catch(e) {}
-  }
-
-  /* Expose so sidebar button can call it */
-  window.dismissPWABanner = hideBar;
-
-  /* Dismiss button */
-  if (dlDismiss) dlDismiss.onclick = hideBar;
-
-  /* ── Android / Desktop: capture install prompt ── */
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    /* Show after 5s — feels natural not desperate */
-    setTimeout(showBar, 5000);
-  });
-
-  /* ── iOS Safari: show after 5s ── */
-  if (isIOS() && isSafari()) {
-    setTimeout(showBar, 5000);
-  }
-
-  /* ── Install button click ── */
-  async function triggerInstall() {
-    if (!deferredPrompt) return; /* iOS path handled by hint, no prompt needed */
-    deferredPrompt.prompt();
-    var result = await deferredPrompt.userChoice;
-    /* Hide bar whether accepted OR dismissed — no zombie banner */
-    hideBar();
-    deferredPrompt = null;
-  }
-
-  if (dlBtn) dlBtn.onclick = triggerInstall;
-  if (installSideBtn) installSideBtn.onclick = triggerInstall;
-
-  /* ── Post-install celebration ── */
-  window.addEventListener('appinstalled', function() {
-    hideBar();
-    if (typeof toast === 'function') {
-      toast('🔥 ImpactGrid installed — you\'re ready to grow');
-    }
-  });
-
+// ── 1. BRAND — hardcoded, never editable
+(function patchBrand(){
+  var BRAND = 'www.impactgridgroup.com';
+  if(typeof ST !== 'undefined') ST.brand = BRAND;
+  window.updateBrand = function(){};
+  window.getIGBrand  = function(){ return BRAND; };
 })();
-</script>
-<script src="calendar.js" defer></script>
-<script>
-  // ✅ nav.js, ig-supabase.js and auth.js are all loaded above (no defer).
-  // By the time DOMContentLoaded fires, all three are fully parsed and executed.
-  // Order: renderNav → initAuth (awaited) → checkAuth
-  // renderNav injects the nav HTML + fires 'ig-nav-ready' so checkAuth's
-  // _whenNavReady() resolves immediately rather than waiting on the event.
-  document.addEventListener('DOMContentLoaded', async function() {
-    if (typeof renderNav === 'function') renderNav('creator-studio.html');
-    if (typeof initAuth === 'function') await initAuth();
-    if (typeof window.checkAuth === 'function') window.checkAuth();
+
+// ── 2. DEFAULT ACCENT = IG Yellow
+window.addEventListener('load', function(){
+  if(typeof ST !== 'undefined'){
+    ST.accent = '#f5e400';
+    ST.brand  = 'www.impactgridgroup.com';
+  }
+});
+
+// ── 3. APPLY LAYOUT TO ALL SLIDES
+var _origChangeLayout = window.changeLayout;
+window.changeLayout = function(newLayout){
+  if(!window.ST || !window.ST.slides.length) return;
+  var blocked = ['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
+  if(blocked.indexOf(newLayout) !== -1){ toast('Layout unavailable'); return; }
+  var applyAll = document.getElementById('applyAllToggle');
+  if(applyAll && applyAll.checked){
+    ST.slides.forEach(function(s){ s.layout = newLayout; });
+    buildStrip(); renderSlide(); fillEdit();
+    toast('Layout → ' + newLayout.replace(/_/g,' ') + ' · all slides');
+  } else {
+    ST.slides[ST.cur].layout = newLayout;
+    renderSlide(); fillEdit();
+    toast('Layout → ' + newLayout.replace(/_/g,' '));
+  }
+};
+
+// ── 4. GUIDE TOOLTIP after generation
+var _guideShown = false;
+function showGuide(){
+  if(_guideShown) return; _guideShown = true;
+  var wrap = document.querySelector('.canvas-wrap');
+  if(!wrap) return;
+  var tip = document.createElement('div');
+  tip.className = 'user-guide';
+  tip.textContent = '✦ Click any text or number on the slide to edit it directly';
+  wrap.appendChild(tip);
+  setTimeout(function(){ if(tip.parentNode) tip.remove(); }, 4500);
+}
+
+// Hook guide + caption label into generate
+var _genOrig = window.generate;
+window.generate = async function(){
+  await _genOrig.apply(this, arguments);
+  setTimeout(showGuide, 1400);
+  // Mark caption as loading while enrichDeck runs
+  var capEl = document.getElementById('eCap');
+  var capLbl = document.getElementById('capAiLabel');
+  if(capEl){ capEl.classList.add('cap-ai-loading'); }
+  if(capLbl){ capLbl.textContent = '✦ Writing…'; }
+  // enrichDeck is called from generate() in carousel-studio.js automatically
+  // Wait for it to settle then refresh UI
+  setTimeout(function(){
+    if(capEl){ capEl.classList.remove('cap-ai-loading'); }
+    if(capLbl){ capLbl.textContent = 'AI-written'; }
+    if(typeof fillEdit === 'function') fillEdit();
+  }, ST && ST.slides ? ST.slides.length * 1800 + 2000 : 15000);
+};
+
+// ── 5. VIDEO LAYER FIX
+window.addEventListener('load', function(){
+  var vid = document.getElementById('sBgVideo');
+  if(vid){
+    vid.style.position='absolute'; vid.style.inset='0';
+    vid.style.zIndex='2'; vid.style.overflow='hidden';
+    vid.style.pointerEvents='none';
+  }
+});
+
+// ── 6. DOWNLOAD ALL — with progress toast + iOS Safari support
+function isSafariIOS(){
+  return /iP(ad|hone|od)/.test(navigator.userAgent) && /WebKit/.test(navigator.userAgent) && !window.MSStream;
+}
+
+var _dlCancelled = false;
+
+function showDlProgress(label, pct){
+  var bar = document.getElementById('dlProgressBar');
+  if(bar){ bar.classList.add('show'); }
+  updateDlProgress(label, pct||0);
+}
+function updateDlProgress(label, pct){
+  var lbl = document.getElementById('dlBarLabel');
+  var fill = document.getElementById('dlBarFill');
+  var pctEl = document.getElementById('dlBarPct');
+  if(lbl) lbl.textContent = label;
+  if(fill) fill.style.width = pct + '%';
+  if(pctEl) pctEl.textContent = Math.round(pct) + '%';
+}
+function hideDlProgress(){
+  var bar = document.getElementById('dlProgressBar');
+  if(bar){ bar.classList.remove('show'); }
+}
+window.cancelDl = function(){ _dlCancelled=true; hideDlProgress(); toast('Download cancelled'); };
+
+window.downloadAll = async function(){
+  if(!window.ST || !ST.slides.length){ toast('Generate a carousel first'); return; }
+  if(typeof html2canvas === 'undefined'){ toast('💡 html2canvas not loaded — please refresh'); return; }
+  _dlCancelled = false;
+  var total = ST.slides.length, blobs = [];
+  showDlProgress('Preparing slides…', 0);
+  var origCur = ST.cur;
+  var canvas = document.getElementById('slideCanvas');
+  var displayW = canvas.offsetWidth || 620;
+  var targetPx = 1080;
+  var exportScale = Math.round((targetPx / displayW) * 10) / 10;
+
+  for(var i=0; i<total; i++){
+    if(_dlCancelled) break;
+    ST.cur = i; renderSlide(); updateCounter();
+
+    // Wait for render + images
+    await new Promise(function(r){ setTimeout(r, 600); });
+    var imgs = canvas.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(function(img){
+      if(img.complete) return Promise.resolve();
+      return new Promise(function(res){
+        img.onload = res; img.onerror = res;
+        setTimeout(res, 2000);
+      });
+    }));
+    await new Promise(function(r){ setTimeout(r, 300); });
+
+    updateDlProgress('Capturing slide '+(i+1)+' of '+total+'…', Math.round((i/total)*80));
+    try{
+      var c = await html2canvas(canvas,{
+        useCORS:true,
+        allowTaint:true,
+        scale:exportScale,
+        backgroundColor:'#111111',
+        imageTimeout:8000,
+        logging:false
+      });
+      await new Promise(function(res){
+        c.toBlob(function(blob){
+          if(blob) blobs.push({blob:blob,name:'ImpactGrid-slide-'+String(i+1).padStart(2,'0')+'.png'});
+          res();
+        },'image/png');
+      });
+    }catch(e){ console.warn('[downloadAll] Capture failed slide',i+1,e); }
+  }
+  ST.cur = origCur; renderSlide(); updateCounter(); fillEdit();
+  if(_dlCancelled || !blobs.length){ hideDlProgress(); return; }
+  updateDlProgress('Downloading '+blobs.length+' slides…', 85);
+  if(isSafariIOS() && navigator.share && navigator.canShare){
+    var files = blobs.map(function(b){ return new File([b.blob],b.name,{type:'image/png'}); });
+    if(navigator.canShare({files:files})){ hideDlProgress(); try{ await navigator.share({files:files,title:'ImpactGrid Carousel'}); }catch(e){} return; }
+  }
+  for(var j=0; j<blobs.length; j++){
+    if(_dlCancelled) break;
+    updateDlProgress('Saving '+(j+1)+' of '+blobs.length, 85+Math.round((j/blobs.length)*15));
+    try{
+      var url=URL.createObjectURL(blobs[j].blob);
+      var a2=document.createElement('a');
+      a2.href=url; a2.download=blobs[j].name;
+      a2.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
+      document.body.appendChild(a2); a2.click();
+      await new Promise(function(r){ setTimeout(r,400); });
+      document.body.removeChild(a2); URL.revokeObjectURL(url);
+    }catch(e){ console.warn('[downloadAll] save failed:',e); }
+  }
+  hideDlProgress();
+  toast('✦ '+blobs.length+' slides saved at 1080px');
+};
+
+// ── 7. INIT
+window.addEventListener('load', function(){
+  // Render shared nav + footer
+  renderNav('carousel-studio.html');
+
+  // Inject "Carousel Studio" crumb after the logo
+  var navIn = document.querySelector('.nav-in');
+  if(navIn){
+    var sep = document.createElement('div');
+    sep.style.cssText = 'width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 8px;';
+    var crumb = document.createElement('span');
+    crumb.style.cssText = 'font-size:11px;color:var(--text3);font-family:var(--fm);letter-spacing:.3px;white-space:nowrap;';
+    crumb.textContent = 'Carousel Studio';
+    var sp = navIn.querySelector('.nav-links') || navIn.querySelector('.nav-right');
+    if(sp){ navIn.insertBefore(sep, sp); navIn.insertBefore(crumb, sp); }
+  }
+
+  // Measure actual nav height and fit shell exactly beneath it
+  requestAnimationFrame(function(){
+    var nav = document.querySelector('.nav');
+    var shell = document.querySelector('.shell');
+    if(nav && shell){
+      var h = nav.getBoundingClientRect().height;
+      shell.style.marginTop = h + 'px';
+      shell.style.height = 'calc(100vh - ' + h + 'px)';
+    }
   });
+
+  if(typeof ST !== 'undefined'){
+    ST.accent = '#f5e400';
+    ST.brand  = 'www.impactgridgroup.com';
+  }
+  setInterval(function(){
+    fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
+  }, 600000);
+});
 </script>
 
+<!-- ══ BOTTOM DOWNLOAD PROGRESS BAR ══ -->
+<div id="dlProgressBar">
+  <div class="dl-bar-top">
+    <span class="dl-bar-label" id="dlBarLabel">Preparing…</span>
+    <div style="display:flex;align-items:center;gap:0">
+      <span class="dl-bar-pct" id="dlBarPct">0%</span>
+      <span class="dl-bar-cancel" onclick="cancelDl()">Cancel</span>
+    </div>
+  </div>
+  <div class="dl-bar-track">
+    <div class="dl-bar-fill" id="dlBarFill" style="width:0%"></div>
+  </div>
+</div>
+
+<div id="ig-footer"></div>
 <script>
-/* ═══════════════════════════════════════
-   CONFIDENCE → VIRAL LABEL
-   Reformats any .confidence element from
-   "Confidence: 82%" → "THIS WILL GO VIRAL (82%)"
-   Runs on load + watches for dynamic content.
-═══════════════════════════════════════ */
-(function() {
-  function formatConfidence(el) {
-    var text = el.textContent || '';
-    // Match "Confidence: 82%" or "Confidence 82%" or just "82%"
-    var match = text.match(/(\d+)\s*%/);
-    if (!match) return;
-    var pct = parseInt(match[1], 10);
-    var label;
-    if (pct >= 80)      label = 'THIS WILL GO VIRAL';
-    else if (pct >= 65) label = 'HIGH POTENTIAL';
-    else if (pct >= 50) label = 'WORTH POSTING';
-    else                label = 'NICHE PLAY';
-    el.textContent = label + ' (' + pct + '%)';
-    el.setAttribute('data-viral-label', 'true');
-    el.style.fontWeight = '700';
-    el.style.letterSpacing = '.03em';
-    // Colour by confidence tier
-    if (pct >= 80) el.style.color = 'var(--gold, #c97e08)';
-    else if (pct >= 65) el.style.color = 'var(--green, #0fa876)';
-  }
-
-  function scanAll() {
-    document.querySelectorAll('.confidence').forEach(function(el) {
-      if (!el.getAttribute('data-viral-label')) formatConfidence(el);
-    });
-  }
-
-  // Run once DOM is ready
-  scanAll();
-
-  // Watch for dynamically injected trend cards
-  var observer = new MutationObserver(function() { scanAll(); });
-  observer.observe(document.body, { childList: true, subtree: true });
-})();
+  // Render footer after DOM ready
+  if(typeof renderFooter === 'function') renderFooter();
 </script>
-
 </body>
 </html>
