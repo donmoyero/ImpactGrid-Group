@@ -7,35 +7,9 @@
 <meta name="description" content="Sign in to your ImpactGrid Creator Studio."/>
 <link rel="icon" href="favicon.ico"/>
 <link rel="manifest" href="manifest.json"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="shared.css"/>
-:root {
-  --bg:#f2f4fb; --bg2:#e6eaf5; --bg3:#d9dff0;
-  --card:#ffffff;
-  --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.13);
-  --text:#0d1017; --text2:#4a5068; --text3:#9099b8;
-  --gold:#c97e08; --gold2:#a86505;
-  --gold-dim:rgba(201,126,8,0.09); --gold-glo:rgba(201,126,8,0.22);
-  --green:#0fa876; --green-dim:rgba(15,168,118,0.10);
-  --red:#d94f3b; --red-dim:rgba(217,79,59,0.08);
-  --r:10px; --r2:16px;
-  --fd:'Syne',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
-}
-[data-theme="dark"] {
-  --bg:#07090f; --bg2:#0d1017; --bg3:#111520;
-  --card:#151a28;
-  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
-  --text:#eef0f6; --text2:#8a91a8; --text3:#4a5068;
-  --gold:#f0b429; --gold2:#ffd166;
-  --gold-dim:rgba(240,180,41,0.10); --gold-glo:rgba(240,180,41,0.25);
-  --green:#2dd4a0; --green-dim:rgba(45,212,160,0.10);
-  --red:#f75f4f; --red-dim:rgba(247,95,79,0.10);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--fb);-webkit-font-smoothing:antialiased;}
-a{color:inherit;text-decoration:none;}
-button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
+<style>
+/* login.html — page-specific styles only. Tokens/reset/nav/fonts → shared.css + nav.js */
 
 /* ── background glow ── */
 .login-bg{position:fixed;inset:0;pointer-events:none;z-index:0;
@@ -46,34 +20,6 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
   background:
     radial-gradient(ellipse 55% 55% at 20% 30%, rgba(240,180,41,.07), transparent),
     radial-gradient(ellipse 40% 40% at 80% 70%, rgba(79,142,247,.04), transparent);}
-
-/* ── nav ── */
-.nav{position:fixed;top:0;left:0;right:0;height:56px;z-index:100;
-  background:rgba(242,244,251,.92);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);}
-[data-theme="dark"] .nav{background:rgba(7,9,15,.88);}
-.nav-in{max-width:1100px;margin:0 auto;padding:0 24px;height:100%;
-  display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{display:flex;align-items:center;gap:9px;
-  font-family:var(--fd);font-weight:900;font-size:15px;letter-spacing:-.03em;}
-.nav-logo-img{width:26px;height:26px;object-fit:contain;border-radius:6px;}
-.nav-logo-mark{width:26px;height:26px;border-radius:7px;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  display:none;align-items:center;justify-content:center;
-  font-size:10px;font-weight:900;color:#fff;}
-[data-theme="dark"] .nav-logo-mark{color:#07090f;}
-.nav-right{display:flex;align-items:center;gap:8px;}
-.nav-theme{width:32px;height:32px;border-radius:8px;background:var(--card);
-  border:1px solid var(--border2);display:flex;align-items:center;
-  justify-content:center;font-size:13px;transition:border-color .2s;}
-.nav-theme:hover{border-color:var(--gold);}
-.nav-link{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;
-  color:var(--text2);border:1px solid var(--border2);transition:all .2s;}
-.nav-link:hover{color:var(--text);border-color:var(--border2);}
-.nav-cta{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;transition:all .2s;}
-[data-theme="dark"] .nav-cta{color:#07090f;}
-.nav-cta:hover{box-shadow:0 4px 16px var(--gold-glo);transform:translateY(-1px);}
 
 /* ── page layout ── */
 .page{min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -191,11 +137,16 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
 </head>
 <body>
 
+<!-- Scripts: SDK → credentials → auth → nav (required load order) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="ig-supabase.js"></script>
+<script src="auth.js"></script>
+<script src="nav.js"></script>
+
 <div class="login-bg"></div>
 
-<!-- Shared Nav -->
+<!-- Shared Nav (renderNav called after nav.js loads) -->
 <div id="ig-nav"></div>
-<script src="nav.js"></script>
 <script>renderNav('login.html');</script>
 
 <!-- page -->
@@ -262,24 +213,9 @@ button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="ig-supabase.js"></script>
-<script src="auth.js"></script>
 <script>
 
-/* ── Theme ── */
-var isDark = false;
-function applyTheme(dark) {
-  isDark = dark;
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  var tb = document.getElementById('themeBtn');
-  if (tb) tb.textContent = dark ? '☀️' : '🌙';
-  try { localStorage.setItem('ig_theme', dark ? 'dark' : 'light'); } catch(e) {}
-}
-function toggleTheme() { applyTheme(!isDark); }
-(function() {
-  try { if (localStorage.getItem('ig_theme') === 'dark') applyTheme(true); } catch(e) {}
-})();
+/* Theme handled by nav.js — do not redeclare here */
 
 /* ── Password eye toggle ── */
 function togglePw() {
