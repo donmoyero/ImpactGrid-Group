@@ -207,12 +207,22 @@ async function psMarkExpiredPortfolios() {
 
   if (!expired.length) return;
 
-  // Delete each from DB
+  // Delete each through Render server (uses service role key — bypasses RLS)
+  var userId = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id');
   for (var i = 0; i < expired.length; i++) {
     var pf = expired[i];
     try {
-      await sbFetch('/portfolios?id=eq.' + pf.id, 'DELETE');
-      console.log('[Portfolio] Deleted expired portfolio:', pf.id);
+      var r = await fetch('https://impactgrid-dijo.onrender.com/portfolio/delete', {
+        method:  'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id: pf.id, session: userId })
+      });
+      var d = await r.json();
+      if (d.success) {
+        console.log('[Portfolio] Deleted expired portfolio:', pf.id);
+      } else {
+        console.warn('[Portfolio] Expired delete failed:', pf.id, d.error);
+      }
     } catch(e) {
       console.warn('[Portfolio] Could not delete expired portfolio:', pf.id, e.message);
     }
@@ -410,6 +420,40 @@ async function savePortfolioToDB(pf){
   }
 }
 
+/* Delete a portfolio — routes through Render server so service role
+   key bypasses RLS. Scoped to the current user/session. */
+async function deletePortfolio(id) {
+  const pf = psState.portfolios.find(p => p.id === id);
+  if (!pf) return;
+
+  const label = pf.name ? `"${pf.name}"` : 'this portfolio';
+  if (!confirm(`Delete ${label}? This can't be undone.`)) return;
+
+  const userId = (window.igUser && window.igUser.id)
+    || localStorage.getItem('ig_user_id');
+
+  try {
+    const res  = await fetch('https://impactgrid-dijo.onrender.com/portfolio/delete', {
+      method:  'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id, session: userId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Portfolio deleted');
+      // Remove from local state immediately — no need to re-fetch
+      psState.portfolios = psState.portfolios.filter(p => p.id !== id);
+      renderDashGrid();
+    } else {
+      showToast('Delete failed — please try again');
+      console.error('[Portfolio] Delete failed:', data.error);
+    }
+  } catch (err) {
+    showToast('Delete failed — server error');
+    console.error('[Portfolio] Delete exception:', err.message);
+  }
+}
+
 /* ══════════════════════════════════════════════════════════
    DASHBOARD
 ══════════════════════════════════════════════════════════ */
@@ -450,6 +494,7 @@ function renderDashGrid() {
           ? `<button class="pf-card-action primary" onclick="copyLink('${pf.slug}')">Copy Link</button>`
           : `<button class="pf-card-action primary" onclick="openPortfolio('${pf.id}','publish')">Publish</button>`
         }
+        <button class="pf-card-action danger" onclick="deletePortfolio('${pf.id}')">Delete</button>
       </div>`;
     grid.appendChild(card);
   });
