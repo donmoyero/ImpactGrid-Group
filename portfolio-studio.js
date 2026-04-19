@@ -19,8 +19,9 @@
 
 /* ── CONFIG ─────────────────────────────────────────────── */
 const DIJO_SERVER  = "https://impactgrid-dijo.onrender.com";
-const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";    // ← swap
-const SUPABASE_KEY = "YOUR_ANON_KEY";                        // ← swap
+// ✅ FIX: use credentials already set by ig-supabase.js — no duplicates, no placeholders
+const SUPABASE_URL = window.SUPABASE_URL      || "";
+const SUPABASE_KEY = window.SUPABASE_ANON_KEY || "";
 
 /* ── SESSION ID ─────────────────────────────────────────── */
 let SESSION_ID = localStorage.getItem("ig_session");
@@ -39,9 +40,12 @@ let psState = {
 };
 
 /* ── MONETISATION ───────────────────────────── */
-let IG_USES        = parseInt(localStorage.getItem("ig_portfolio_uses") || "0");
-const IG_LIMIT     = 1; // 🔥 portfolio is premium → only 1 free
-const IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
+// ✅ FIX: IG_USES is declared as var in auth.js — redeclaring with let here
+// causes "Identifier already declared" SyntaxError that breaks the entire file.
+// Use a portfolio-specific counter instead.
+let PS_USES        = parseInt(localStorage.getItem("ig_portfolio_uses") || "0");
+const IG_LIMIT     = 1; // portfolio is premium → only 1 free
+// IG_ADMIN_EMAIL removed — isAdmin() from auth.js already handles this
 
 /* ── THEMES — used ONLY for the published portfolio mini-site (buildPortfolioHTML).
    The app UI theme is controlled entirely by shared.css + nav.js toggleTheme().
@@ -441,8 +445,8 @@ async function startGeneration() {
     /* Save to Supabase */
     await savePortfolioToDB(pf);
     if (!IG_IS_ADMIN) {
-      IG_USES++;
-      localStorage.setItem("ig_portfolio_uses", IG_USES);
+      PS_USES++;
+      localStorage.setItem("ig_portfolio_uses", PS_USES);
     }
     psState.portfolios.unshift(pf);
 
