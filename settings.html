@@ -1733,17 +1733,19 @@
 
         /* Portfolio usage */
         var pfLimit  = limits.portfolios;
-        var pfCount  = 0; /* We don't store this locally — show limit only */
-        var pfLabel  = pfLimit === 0 ? 'Not available on this plan'
-                     : pfLimit >= 999 ? 'Unlimited'
+        var pfLabel  = pfLimit >= 999 ? 'Unlimited'
                      : pfLimit + ' portfolio' + (pfLimit > 1 ? 's' : '') + ' included'
-                     + (plan === 'free' ? ' · saved for 7 days' : ' · permanently saved');
+                     + (plan === 'free' ? ' · deleted after 7 days' : ' · permanently saved');
+        var pfSub    = plan === 'free'
+                     ? 'Free plan: up to 3 portfolios, each kept for 7 days'
+                     : plan === 'professional'
+                       ? '1 live portfolio saved permanently'
+                       : 'Up to 3 live portfolios saved permanently';
 
         grid.innerHTML = [
           _usageBar('AI Uses This Month',  aiUses + ' used',  aiPct,  aiClass,  aiCountClass, aiRemain,
             aiLimit === Infinity ? '' : 'Resets on the 1st of each month'),
-          _usageBar('Portfolio Slots', pfLabel, pfLimit === 0 ? 100 : 0, pfLimit === 0 ? 'full' : 'ok',
-            pfLimit === 0 ? 'warn' : 'ok', pfLimit === 0 ? 'Upgrade to Professional for 1 portfolio' : 'Included in your plan', ''),
+          _usageBar('Portfolio Slots', pfLabel, 0, 'ok', 'ok', pfSub, ''),
         ].join('');
       }
 
