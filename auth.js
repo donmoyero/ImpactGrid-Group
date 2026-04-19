@@ -9,6 +9,10 @@
 //
 //  auth.js reads those — it does NOT maintain its own counters.
 //  canUse() and isAdmin() delegate to the shared system.
+//
+//  Free plan limits (authoritative):
+//    portfolio: 3 (deleted from DB after 7 days — enforced server-side)
+//    carousel:  3  |  ai_uses: 3  |  evaluator: 3  |  content_plan: 3
 // ═══════════════════════════════════════════════════════════
 
 // ── Supabase client init ─────────────────────────────────────────────────
@@ -46,11 +50,11 @@ var IG_IS_ADMIN = false;
 // Plans: 'free' | 'professional' | 'enterprise'
 var IG_PLAN_LIMITS = {
   ai_uses:     { free: 3, professional: 100, enterprise: Infinity },
-  portfolio:   { free: 0, professional: 1,   enterprise: 3        },
+  portfolio:   { free: 3, professional: 1,   enterprise: 3        },
   carousel:    { free: 3, professional: 100, enterprise: Infinity },
   generator:   { free: 3, professional: 100, enterprise: Infinity },
   evaluator:   { free: 3, professional: 10,  enterprise: Infinity },
-  content_plan:{ free: 3, professional: 4,   enterprise: Infinity }
+  content_plan:{ free: 3, professional: 99,  enterprise: Infinity }
 };
 
 // ── Public accessors ─────────────────────────────────────────────────────
