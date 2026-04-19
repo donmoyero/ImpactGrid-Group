@@ -41,13 +41,55 @@ let psState = {
   generating:      false,
 };
 
-/* ── MONETISATION ───────────────────────────── */
-// ✅ FIX: IG_USES is declared as var in auth.js — redeclaring with let here
-// causes "Identifier already declared" SyntaxError that breaks the entire file.
-// Use a portfolio-specific counter instead.
-let PS_USES        = parseInt(localStorage.getItem("ig_portfolio_uses") || "0");
-const IG_LIMIT     = 1; // portfolio is premium → only 1 free
-// IG_ADMIN_EMAIL removed — isAdmin() from auth.js already handles this
+/* ── MONETISATION ─────────────────────────────────────────────────────
+   Portfolio limits (from pricing page):
+     free         → 0 portfolios
+     professional → 1 portfolio
+     enterprise   → 3 portfolios
+
+   Generation costs 1 shared AI use (ig_ai_uses, reset monthly).
+   AI limits: free=3/mo, professional=100/mo, enterprise=unlimited.
+   Both sourced from window.igUser (set by nav.js from profiles DB).
+─────────────────────────────────────────────────────────────────────── */
+const PS_ADMIN_EMAIL = "admin@impactgridgroup.com";
+
+const PS_PORTFOLIO_LIMITS = { free: 0, professional: 1, enterprise: 3 };
+const PS_AI_LIMITS        = { free: 3, professional: 100, enterprise: Infinity };
+
+function _getPlan() {
+  if (window.igUser && window.igUser.plan) return window.igUser.plan;
+  try { return localStorage.getItem('ig_plan') || 'free'; } catch(e) { return 'free'; }
+}
+function _getAIUses() {
+  if (window.igUser && typeof window.igUser.aiUses === 'number') return window.igUser.aiUses;
+  try { return parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) { return 0; }
+}
+function _isAdmin() {
+  var user = window.igUser || getCurrentUser();
+  if (!user) return false;
+  if (user.email === PS_ADMIN_EMAIL) return true;
+  if (_getPlan() === 'enterprise') return true;
+  return false;
+}
+
+/* Increment shared AI counter: localStorage + window.igUser + Supabase profiles */
+async function incrementAIUse() {
+  var next = _getAIUses() + 1;
+  try { localStorage.setItem('ig_ai_uses', String(next)); } catch(e) {}
+  if (window.igUser) window.igUser.aiUses = next;
+  try {
+    var client = (typeof getSupabase === 'function') ? getSupabase() : null;
+    if (client && window.igUser && window.igUser.id) {
+      await client.from('profiles')
+        .update({ ai_uses_month: next })
+        .eq('user_id', window.igUser.id);
+    }
+  } catch(e) {}
+}
+
+/* Safe shims in case auth.js defines these differently */
+if (typeof isAdmin === 'undefined')  { window.isAdmin  = _isAdmin; }
+if (typeof canUse  === 'undefined')  { window.canUse   = function() { return true; }; }
 
 /* ── THEMES — used ONLY for the published portfolio mini-site (buildPortfolioHTML).
    The app UI theme is controlled entirely by shared.css + nav.js toggleTheme().
@@ -70,16 +112,51 @@ function getCurrentUser() {
   return window.igUser || null;
 }
 
-function checkPortfolioAccess() {
-  if (isAdmin()) return true;
+async function checkPortfolioAccess() {
+  // Wait up to 2s for nav.js to resolve igUser from the DB
+  if (!window.igUser) {
+    await new Promise(function(resolve) {
+      var done = false;
+      function finish() { if (!done) { done = true; resolve(); } }
+      document.addEventListener('ig-user-ready', finish, { once: true });
+      setTimeout(finish, 2000);
+    });
+  }
 
-  if (!getCurrentUser()) {
-    showUpgradeBar("Sign up to create your portfolio");
+  // Must be logged in
+  if (!window.igUser && !getCurrentUser()) {
+    showUpgradeBar("Sign in to create your portfolio");
     return false;
   }
 
-  if (!canUse("portfolio")) {
-    showUpgradeBar("Upgrade for unlimited portfolios");
+  // Admin / enterprise always allowed
+  if (typeof _isAdmin === 'function' ? _isAdmin() : isAdmin()) return true;
+
+  var plan = _getPlan();
+
+  // Free plan: portfolio creation blocked
+  if (plan === 'free') {
+    showUpgradeBar("Upgrade to Professional to create a portfolio");
+    return false;
+  }
+
+  // Check portfolio slot limit for this plan
+  var portfolioLimit = PS_PORTFOLIO_LIMITS[plan] || 0;
+  var existing       = (psState.portfolios || []).length;
+  if (existing >= portfolioLimit) {
+    showUpgradeBar(
+      plan === 'professional'
+        ? "Professional plan includes 1 portfolio — upgrade to Enterprise for 3"
+        : "Portfolio limit reached for your plan"
+    );
+    return false;
+  }
+
+  // Check shared AI use limit
+  var aiLimit = PS_AI_LIMITS[plan] || PS_AI_LIMITS.free;
+  var aiUses  = _getAIUses();
+  if (aiUses >= aiLimit) {
+    showUpgradeBar("Monthly AI limit reached (" + aiLimit + " uses) — upgrade for more");
     return false;
   }
 
@@ -103,25 +180,17 @@ function confirmBackToDash() {
    SUPABASE HELPERS
 ══════════════════════════════════════════════════════════ */
 async function sbFetch(path, method = "GET", body = null) {
-  // ✅ FIX: get the real user JWT from the AUTH project client (ig-supabase.js)
-  //         so RLS on the content project can verify the user.
-  //         Falls back to anon key if not logged in.
-  let authToken = SUPABASE_KEY;
-  try {
-    const authClient = window.getSupabase ? window.getSupabase() : null;
-    if (authClient) {
-      const { data } = await authClient.auth.getSession();
-      if (data?.session?.access_token) authToken = data.session.access_token;
-    }
-  } catch (e) {}
-
+  // The portfolios table is on the CONTENT project (exeiojgldxqaakkybdij).
+  // That project has no auth users, so sending a JWT from the auth project
+  // causes 401 "No suitable key" errors. We use the anon key only.
+  // Row ownership is scoped by user_id or session_id in the query itself.
   const opts = {
     method,
     headers: {
       "Content-Type":  "application/json",
-      "apikey":        SUPABASE_KEY,          // content project anon key (required by PostgREST)
-      "Authorization": "Bearer " + authToken, // real user JWT from auth project
-      "x-session-id":  SESSION_ID,            // matches RLS header policies
+      "apikey":        SUPABASE_KEY,          // content project anon key
+      "Authorization": "Bearer " + SUPABASE_KEY, // anon — no JWT cross-project
+      "x-session-id":  SESSION_ID,
       "Prefer":        method === "POST" ? "return=representation" : "",
     },
   };
@@ -134,8 +203,14 @@ async function sbFetch(path, method = "GET", body = null) {
 
 async function loadPortfolios() {
   try {
+    // Prefer filtering by user_id (stable across devices) if available,
+    // fall back to session_id (anonymous / first-load).
+    const userId = window.igUser && window.igUser.id;
+    const filter = userId
+      ? `user_id=eq.${userId}`
+      : `user_session=eq.${SESSION_ID}`;
     const data = await sbFetch(
-      `/portfolios?user_session=eq.${SESSION_ID}&order=created_at.desc&select=*`
+      `/portfolios?${filter}&order=created_at.desc&select=*`
     );
     psState.portfolios = data || [];
   } catch (e) {
@@ -459,9 +534,8 @@ async function startGeneration() {
 
     /* Save to Supabase */
     await savePortfolioToDB(pf);
-    if (!isAdmin()) {
-      PS_USES++;
-      localStorage.setItem("ig_portfolio_uses", PS_USES);
+    if (!_isAdmin()) {
+      await incrementAIUse();
     }
     psState.portfolios.unshift(pf);
 
@@ -1098,10 +1172,10 @@ document.addEventListener("DOMContentLoaded", () => {
   obValidate();
 });
 
-/* ── Nav sync — mirrors carousel-studio.js pattern ── */
+/* ── Nav sync: once igUser is resolved, reload portfolios with real user_id ── */
 document.addEventListener('ig-user-ready', function(e) {
-  const user = e.detail;
-  console.log('User ready:', user);
+  // Re-load portfolios now that we have a real user_id to filter by
+  loadPortfolios();
 });
 
 /* ── Contact Form ── */
