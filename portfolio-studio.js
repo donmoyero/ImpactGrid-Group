@@ -711,7 +711,11 @@ function collectOnboardData() {
     testimonials,
     hero_media:      [],
     published:       false,
-    slug:            generateSlug(g("obName")),
+    // Reuse existing slug if portfolio already exists — never regenerate
+    // a new random slug or the upsert will create a duplicate row instead
+    // of updating the existing one.
+    slug:            (psState.activePortfolio && psState.activePortfolio.slug)
+                       || generateSlug(g("obName")),
   };
 }
 
