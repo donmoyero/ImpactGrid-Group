@@ -1,16 +1,24 @@
 /* ═══════════════════════════════════════════════════════
    ImpactGrid Group — nav.js
-   Version: 5.1  (creator-first: no login, no dropdowns,
-                  direct CTA to Creator Studio)
+   Version: 5.2  (audit fix: removed hardcoded credentials,
+                  removed getContentClient() auth fallback)
 
-   NAV:  Home | About | Consulting | Contact | Pricing  [Try Creator Studio Free →]
+   NAV:  Home | About | Consulting | Contact | Pricing
    Mobile sidebar mirrors same links.
 
+   REQUIRED LOAD ORDER on every page:
+     1. supabase.min.js  (CDN)
+     2. plan-config.js
+     3. supabase-config.js
+     4. ig-supabase.js   ← sets window.SUPABASE_URL + ANON_KEY
+     5. auth.js
+     6. nav.js           ← this file
+     7. [page-specific JS]
+
    HOW TO USE:
-   1. <div id="ig-nav"></div>  at top of body
-   2. <div id="ig-footer"></div> at bottom of body
-   3. Load: nav.js
-   4. Call: renderNav('yourpage.html'); renderFooter();
+     1. <div id="ig-nav"></div>    — top of <body>
+     2. <div id="ig-footer"></div> — bottom of <body>
+     3. Call: renderNav('yourpage.html'); renderFooter();
 ═══════════════════════════════════════════════════════ */
 
 (function() {
@@ -318,16 +326,28 @@
   var _navClient = null;
   function _getClient() {
     if (_navClient) return _navClient;
-    // If another script already created a client, reuse it
-    if (typeof getSupabase === 'function')      return (_navClient = getSupabase());
-    if (typeof getContentClient === 'function') return (_navClient = getContentClient());
-    // Create our own — nav.js is the auth owner
+    // Prefer the dedicated auth client from ig-supabase.js / auth.js
+    if (typeof getSupabase === 'function')    return (_navClient = getSupabase());
+    if (typeof getAuthClient === 'function')  return (_navClient = getAuthClient());
+    // NEVER fall back to getContentClient() — that is the content project,
+    // not the auth project. Using it for auth causes 403s on the profiles table.
+    // Create our own auth client using credentials set by ig-supabase.js
     var sb = window.supabase;
     if (sb && sb.createClient) {
-      _navClient = sb.createClient(
-        'https://wedjsnizcvtgptobwugc.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc'
-      );
+      var _url = window.SUPABASE_URL;
+      var _key = window.SUPABASE_ANON_KEY;
+      if (!_url || !_key) {
+        console.warn('[Nav] SUPABASE_URL / SUPABASE_ANON_KEY not set — is ig-supabase.js loaded before nav.js?');
+        return null;
+      }
+      _navClient = sb.createClient(_url, _key, {
+        auth: {
+          persistSession    : true,
+          autoRefreshToken  : true,
+          detectSessionInUrl: true,
+          storageKey        : 'ig-auth-token'
+        }
+      });
     }
     return _navClient;
   }
