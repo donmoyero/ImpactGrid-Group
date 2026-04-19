@@ -369,10 +369,14 @@ async function loadPortfolios() {
 async function savePortfolioToDB(pf){
 
   // Require authenticated user — no anonymous saving
-  const userId = localStorage.getItem("ig_user_id");
+  // Check window.igUser first (set by nav.js) then fall back to localStorage.
+  // This prevents admins and fast-loading users from hitting the sign-in wall
+  // before ig_user_id has been written to localStorage.
+  const userId = (window.igUser && window.igUser.id)
+    || localStorage.getItem('ig_user_id');
 
   if (!userId) {
-    showUpgradeBar("Login required to save your portfolio");
+    showUpgradeBar('Sign in to save your portfolio', false);
     return false;
   }
 
@@ -1435,17 +1439,17 @@ function showUpgradeBar(message, isLoggedIn) {
     document.body.appendChild(el);
   }
 
-  // Only show Login button if user is genuinely not authenticated
-  var loginBtn = isLoggedIn
-    ? ''
-    : '<a href="login.html" class="btn btn-secondary">Login</a>';
+  // isLoggedIn true  → hit plan limit → show Upgrade only
+  // isLoggedIn false/undefined → not authenticated → show Sign in only
+  var buttons = (isLoggedIn === true)
+    ? '<a href="pricing.html" class="btn btn-primary">Upgrade plan</a>'
+    : '<a href="login.html" class="btn btn-secondary">Sign in</a>';
 
   el.innerHTML =
     '<div class="upgrade-inner">'
     + '<span>' + message + '</span>'
     + '<div style="display:flex;gap:8px;">'
-    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
-    + loginBtn
+    + buttons
     + '</div></div>';
 
   el.classList.add("show");
