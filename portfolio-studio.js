@@ -112,31 +112,145 @@ function getCurrentUser() {
   return window.igUser || null;
 }
 
+/* ══════════════════════════════════════════════════════════
+   DASHBOARD BANNER
+   Reads window.igUser populated by nav.js from ig-supabase.
+   No extra Supabase call — all data already loaded by nav.js.
+══════════════════════════════════════════════════════════ */
+function psBannerInit() {
+  var banner    = document.getElementById('psUserBanner');
+  var welcome   = document.getElementById('psWelcome');
+  var badge     = document.getElementById('psPlanBadge');
+  var trialInfo = document.getElementById('psTrialInfo');
+  var upLink    = document.getElementById('psUpgradeLink');
+
+  if (!banner) return;
+
+  var plan    = _getPlan();           // 'free' | 'professional' | 'enterprise'
+  var aiUses  = _getAIUses();         // number used this month
+  var aiLimit = PS_AI_LIMITS[plan] !== undefined ? PS_AI_LIMITS[plan] : PS_AI_LIMITS.free;
+  var user    = window.igUser || {};
+  var name    = user.firstName || (user.name ? user.name.split(' ')[0] : '') || '';
+
+  // Welcome greeting
+  if (welcome) {
+    welcome.textContent = name
+      ? 'Welcome back, ' + name + ' \u{1F44B}'
+      : 'Welcome back \u{1F44B}';
+  }
+
+  // Plan badge
+  if (badge) {
+    var planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+    badge.textContent = planLabel;
+    badge.className   = 'ps-plan-badge plan-' + plan;
+  }
+
+  // Trial / usage counter
+  if (trialInfo) {
+    if (plan === 'free') {
+      var remaining = Math.max(0, aiLimit - aiUses);
+      if (remaining === 0) {
+        trialInfo.textContent = 'No AI uses left this month';
+        trialInfo.className   = 'ps-trial-info warn';
+      } else {
+        trialInfo.textContent = remaining + ' of ' + aiLimit + ' free uses remaining this month';
+        trialInfo.className   = 'ps-trial-info ' + (remaining <= 1 ? 'warn' : 'ok');
+      }
+    } else if (plan === 'professional') {
+      var proRemaining = Math.max(0, aiLimit - aiUses);
+      trialInfo.textContent = proRemaining + ' of ' + aiLimit + ' AI uses left this month';
+      trialInfo.className   = 'ps-trial-info ' + (proRemaining < 10 ? 'warn' : 'ok');
+    } else {
+      // enterprise — unlimited
+      trialInfo.textContent = 'Unlimited AI uses';
+      trialInfo.className   = 'ps-trial-info ok';
+    }
+  }
+
+  // Upgrade link — hide for enterprise
+  if (upLink) {
+    if (plan === 'enterprise') {
+      upLink.style.display = 'none';
+    } else {
+      upLink.style.display = 'inline-flex';
+      upLink.textContent   = plan === 'free' ? 'Upgrade to Pro \u2192' : 'Upgrade to Enterprise \u2192';
+    }
+  }
+
+  banner.style.display = 'flex';
+}
+
+/* Mark free-user portfolios older than 7 days as expired */
+function psMarkExpiredPortfolios() {
+  var plan = _getPlan();
+  if (plan !== 'free') return; // only free users have 7-day limit
+
+  var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  var now = Date.now();
+
+  document.querySelectorAll('.pf-card[data-created]').forEach(function(card) {
+    var ts = new Date(card.getAttribute('data-created')).getTime();
+    if (!isNaN(ts) && (now - ts) > SEVEN_DAYS) {
+      card.classList.add('expired');
+    }
+  });
+}
+
+/* Gated create button — runs plan/auth check before opening onboard screen */
+async function psHandleCreate() {
+  var allowed = await checkPortfolioAccess();
+  if (allowed) showScreen('screenOnboard');
+}
+
+/* ── checkPortfolioAccess ──────────────────────────────────
+   Fixed: waits for BOTH ig-user-ready AND ig-plan-ready events
+   (whichever fires first), extended timeout to 5s, and falls
+   back to a direct getSession() check so a logged-in user is
+   never incorrectly treated as a guest even on slow connections.
+   showUpgradeBar now receives isLoggedIn flag so the Login
+   button is hidden when the user is already authenticated.
+─────────────────────────────────────────────────────────── */
 async function checkPortfolioAccess() {
-  // Wait up to 2s for nav.js to resolve igUser from the DB
+  // Wait up to 5s for nav.js to resolve igUser + plan from ig-supabase
   if (!window.igUser) {
     await new Promise(function(resolve) {
       var done = false;
       function finish() { if (!done) { done = true; resolve(); } }
       document.addEventListener('ig-user-ready', finish, { once: true });
-      setTimeout(finish, 2000);
+      document.addEventListener('ig-plan-ready', finish, { once: true }); // fires earlier
+      setTimeout(finish, 5000); // extended from 2s → 5s for slow connections
     });
   }
 
-  // Must be logged in
-  if (!window.igUser && !getCurrentUser()) {
-    showUpgradeBar("Sign in to create your portfolio");
+  // Determine login state — prefer igUser, fall back to direct session check
+  var loggedIn = !!window.igUser;
+  var plan     = _getPlan(); // reads igUser.plan first, then localStorage
+
+  if (!loggedIn) {
+    // Last resort: ask the auth Supabase client directly
+    var client = (typeof getSupabase === 'function') ? getSupabase() : null;
+    if (client) {
+      try {
+        var sess = await client.auth.getSession();
+        loggedIn = !!(sess.data && sess.data.session);
+        // plan was written to localStorage by nav.js already — _getPlan() picks it up
+      } catch(e) {}
+    }
+  }
+
+  // Not logged in at all
+  if (!loggedIn) {
+    showUpgradeBar('Sign in to create your portfolio', false);
     return false;
   }
 
   // Admin / enterprise always allowed
-  if (typeof _isAdmin === 'function' ? _isAdmin() : isAdmin()) return true;
-
-  var plan = _getPlan();
+  if (_isAdmin()) return true;
 
   // Free plan: portfolio creation blocked
   if (plan === 'free') {
-    showUpgradeBar("Upgrade to Professional to create a portfolio");
+    showUpgradeBar('Upgrade to Professional to create a portfolio', true);
     return false;
   }
 
@@ -146,17 +260,18 @@ async function checkPortfolioAccess() {
   if (existing >= portfolioLimit) {
     showUpgradeBar(
       plan === 'professional'
-        ? "Professional plan includes 1 portfolio — upgrade to Enterprise for 3"
-        : "Portfolio limit reached for your plan"
+        ? 'Professional plan includes 1 portfolio \u2014 upgrade to Enterprise for 3'
+        : 'Portfolio limit reached for your plan',
+      true
     );
     return false;
   }
 
   // Check shared AI use limit
-  var aiLimit = PS_AI_LIMITS[plan] || PS_AI_LIMITS.free;
+  var aiLimit = PS_AI_LIMITS[plan] !== undefined ? PS_AI_LIMITS[plan] : PS_AI_LIMITS.free;
   var aiUses  = _getAIUses();
-  if (aiUses >= aiLimit) {
-    showUpgradeBar("Monthly AI limit reached (" + aiLimit + " uses) — upgrade for more");
+  if (isFinite(aiLimit) && aiUses >= aiLimit) {
+    showUpgradeBar('Monthly AI limit reached (' + aiLimit + ' uses) \u2014 upgrade for more', true);
     return false;
   }
 
@@ -281,6 +396,8 @@ function renderDashGrid() {
   psState.portfolios.forEach(pf => {
     const card  = document.createElement("div");
     card.className = "pf-card";
+    // data-created used by psMarkExpiredPortfolios() to grey out free-plan cards > 7 days old
+    if (pf.created_at) card.setAttribute("data-created", pf.created_at);
     const thumb = pf.hero_media && pf.hero_media[0] ? pf.hero_media[0].url : "";
     card.innerHTML = `
       <div class="pf-card-thumb">
@@ -301,6 +418,9 @@ function renderDashGrid() {
       </div>`;
     grid.appendChild(card);
   });
+
+  // Mark expired portfolios for free-plan users (7-day limit)
+  psMarkExpiredPortfolios();
 }
 
 function openPortfolio(id, action) {
@@ -488,7 +608,7 @@ function generateSlug(name) {
    Matches carousel-studio.js callAI pattern exactly
 ══════════════════════════════════════════════════════════ */
 async function startGeneration() {
-  if (!checkPortfolioAccess()) return;
+  if (!(await checkPortfolioAccess())) return;
   const pf = collectOnboardData();
   psState.activePortfolio = pf;
   psState.generating = true;
@@ -1149,6 +1269,7 @@ function showToast(msg){ const s = document.getElementById("psToastShelf"); if(!
 document.addEventListener("DOMContentLoaded", () => {
   addServiceRow("obServicesList");
   loadPortfolios();
+  psBannerInit(); // populate plan banner from window.igUser (may be null at this point — refreshed on ig-user-ready)
 
   // Onboard colour picker sync
   const cp = document.getElementById("obAccentColor");
@@ -1176,6 +1297,11 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener('ig-user-ready', function(e) {
   // Re-load portfolios now that we have a real user_id to filter by
   loadPortfolios();
+  // Refresh the plan banner with the now-populated igUser data
+  psBannerInit();
+  // After portfolios reload, mark expired cards for free users
+  // Small delay so renderDashGrid() has finished inserting the cards
+  setTimeout(psMarkExpiredPortfolios, 300);
 });
 
 /* ── Contact Form ── */
@@ -1233,7 +1359,7 @@ async function sendInquiry(){
 /* ══════════════════════════════════════════════════════════
    UPGRADE BAR
 ══════════════════════════════════════════════════════════ */
-function showUpgradeBar(message) {
+function showUpgradeBar(message, isLoggedIn) {
   let el = document.getElementById("upgradeBar");
 
   if (!el) {
@@ -1242,19 +1368,24 @@ function showUpgradeBar(message) {
     document.body.appendChild(el);
   }
 
+  // Only show Login button if user is genuinely not authenticated
+  var loginBtn = isLoggedIn
+    ? ''
+    : '<a href="login.html" class="btn btn-secondary">Login</a>';
+
   el.innerHTML =
     '<div class="upgrade-inner">'
     + '<span>' + message + '</span>'
     + '<div style="display:flex;gap:8px;">'
     + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
-    + '<a href="login.html" class="btn btn-secondary">Login</a>'
+    + loginBtn
     + '</div></div>';
 
   el.classList.add("show");
 
   setTimeout(() => {
     el.classList.remove("show");
-  }, 4000);
+  }, 5000); // slightly longer so user can read it
 }
 
 (function() {
