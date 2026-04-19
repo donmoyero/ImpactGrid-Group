@@ -1316,6 +1316,7 @@ function renderSlide(){
   });
 
   updateThumbActive();
+  applyTextOffsets();
   makeEditable();
 }
 
@@ -1342,52 +1343,162 @@ function buildSplitTextHTML(slide,accent2,pText,pBg){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ─────────────────────────────────────────────────────────
-   INLINE EDITING
+   INLINE EDITING + DRAG TO REPOSITION
    ───────────────────────────────────────────────────────── */
+
+var EDITABLE_CLASSES = ['s-headline','s-body','s-cta','s-tag','s-stat-num','s-quote-text','s-quote-attr','s-grid-header','s-grid-ptxt'];
+
 function makeEditable(){
   var canvas = document.getElementById('slideCanvas');
   if(!canvas) return;
-  // All text elements across every layout — headline, body, cta, tag, stat, quote, brand
-  var editableSelectors = [
-    '.s-headline','.s-body','.s-cta','.s-tag',
-    '.s-stat-num','.s-quote-text','.s-quote-attr',
-    '.s-grid-header','.s-grid-ptxt',
-    '.s-split-text .s-headline','.s-split-text .s-body',
-    '.s-dual-text .s-headline','.s-dual-text .s-body',
-    '.s-editorial .s-headline','.s-editorial .s-body',
-    '.s-stat-wrap .s-headline','.s-stat-wrap .s-body'
-  ];
-  var targets = canvas.querySelectorAll(editableSelectors.join(','));
-  targets.forEach(function(el){
-    if(el.dataset.editable === '1') return;
-    el.dataset.editable = '1';
-    el.style.cursor = 'text';
-    el.title = 'Click to edit';
-    el.addEventListener('click', function(e){
-      e.stopPropagation();
-      startInlineEdit(el);
-    });
+  var sel = EDITABLE_CLASSES.map(function(c){return '.'+c;}).join(',');
+  var targets = canvas.querySelectorAll(sel);
+  targets.forEach(function(el, i){
+    // Assign a stable drag key based on class + position in type
+    if(!el.dataset.dragKey){
+      var cls = EDITABLE_CLASSES.find(function(c){return el.classList.contains(c);})||'el';
+      var peers = Array.from(canvas.querySelectorAll('.'+cls));
+      el.dataset.dragKey = cls + '_' + peers.indexOf(el);
+    }
+    if(el.dataset.interactBound === '1') return;
+    el.dataset.interactBound = '1';
+    attachDragAndEdit(el);
   });
-  if(!canvas.dataset.editDelegated){
-    canvas.dataset.editDelegated = '1';
-    canvas.addEventListener('click', function(e){
-      var t = e.target;
-      while(t && t !== canvas){
-        var isEditable = t.classList.contains('s-headline') ||
-                         t.classList.contains('s-body') ||
-                         t.classList.contains('s-cta') ||
-                         t.classList.contains('s-tag') ||
-                         t.classList.contains('s-stat-num') ||
-                         t.classList.contains('s-quote-text') ||
-                         t.classList.contains('s-quote-attr') ||
-                         t.classList.contains('s-grid-header') ||
-                         t.classList.contains('s-grid-ptxt') ||
-                         t.dataset.editKey;
-        if(isEditable){ startInlineEdit(t); return; }
-        t = t.parentElement;
+}
+
+function attachDragAndEdit(el){
+  var downX, downY, startLeft, startTop, didMove, dragKey, isAbsolute;
+  var canvas = document.getElementById('slideCanvas');
+
+  el.addEventListener('pointerdown', function(e){
+    if(el.dataset.editing === '1') return;
+    e.stopPropagation();
+    didMove = false;
+    downX = e.clientX;
+    downY = e.clientY;
+    dragKey = el.dataset.dragKey;
+
+    // Compute current rendered position relative to canvas
+    var cRect = canvas.getBoundingClientRect();
+    var eRect = el.getBoundingClientRect();
+
+    // Read any saved offset
+    var offsets = (ST.slides[ST.cur] && ST.slides[ST.cur].textOffsets) || {};
+    var saved = offsets[dragKey] || {x:0, y:0};
+
+    isAbsolute = window.getComputedStyle(el).position === 'absolute';
+
+    // Store canvas-relative top-left of element (without transform)
+    startLeft = eRect.left - cRect.left;
+    startTop  = eRect.top  - cRect.top;
+
+    el.setPointerCapture(e.pointerId);
+    el.style.userSelect = 'none';
+
+    function onMove(e2){
+      var dx = e2.clientX - downX;
+      var dy = e2.clientY - downY;
+      if(!didMove && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      if(!didMove){
+        didMove = true;
+        el.style.cursor = 'grabbing';
+        // Promote to absolute if needed, preserving visual position
+        if(!isAbsolute){
+          var cRect2 = canvas.getBoundingClientRect();
+          var eRect2 = el.getBoundingClientRect();
+          var absL = eRect2.left - cRect2.left;
+          var absT = eRect2.top  - cRect2.top;
+          el.style.position = 'absolute';
+          el.style.left = absL + 'px';
+          el.style.top  = absT + 'px';
+          el.style.width = eRect2.width + 'px';
+          el.style.margin = '0';
+          isAbsolute = true;
+          startLeft = absL;
+          startTop  = absT;
+        }
+        el.style.zIndex = '999';
+        el.style.outline = '2px solid rgba(255,255,255,0.5)';
+        el.style.outlineOffset = '4px';
+        el.style.borderRadius = '3px';
       }
-    });
-  }
+      // Clamp within canvas
+      var cW = canvas.offsetWidth;
+      var cH = canvas.offsetHeight;
+      var newL = Math.max(0, Math.min(cW - el.offsetWidth,  startLeft + dx));
+      var newT = Math.max(0, Math.min(cH - el.offsetHeight, startTop  + dy));
+      el.style.left = newL + 'px';
+      el.style.top  = newT + 'px';
+    }
+
+    function onUp(e2){
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.style.userSelect = '';
+      el.style.cursor = '';
+      if(didMove){
+        el.style.zIndex = '';
+        el.style.outline = '';
+        el.style.outlineOffset = '';
+        // Save the new position as an offset from original
+        var cRect3 = canvas.getBoundingClientRect();
+        var eRect3 = el.getBoundingClientRect();
+        var finalL = parseFloat(el.style.left)||0;
+        var finalT = parseFloat(el.style.top)||0;
+        if(!ST.slides[ST.cur].textOffsets) ST.slides[ST.cur].textOffsets = {};
+        ST.slides[ST.cur].textOffsets[dragKey] = {
+          x: finalL,
+          y: finalT,
+          absolute: true
+        };
+      } else {
+        // Short click with no movement = edit
+        startInlineEdit(el);
+      }
+    }
+
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+  });
+
+  // Show grab cursor on hover (unless editing)
+  el.addEventListener('mouseenter', function(){
+    if(el.dataset.editing !== '1') el.style.cursor = 'grab';
+  });
+  el.addEventListener('mouseleave', function(){
+    if(el.dataset.editing !== '1') el.style.cursor = '';
+  });
+}
+
+function applyTextOffsets(){
+  var canvas = document.getElementById('slideCanvas');
+  if(!canvas) return;
+  var offsets = (ST.slides[ST.cur] && ST.slides[ST.cur].textOffsets) || {};
+  Object.keys(offsets).forEach(function(key){
+    var saved = offsets[key];
+    if(!saved || !saved.absolute) return;
+    var cls = key.split('_')[0];
+    var idx = parseInt(key.split('_')[1])||0;
+    var peers = Array.from(canvas.querySelectorAll('.'+cls));
+    var el = peers[idx];
+    if(!el) return;
+    // Promote and reposition
+    if(window.getComputedStyle(el).position !== 'absolute'){
+      el.style.width = el.offsetWidth + 'px';
+      el.style.margin = '0';
+      el.style.position = 'absolute';
+    }
+    el.style.left = saved.x + 'px';
+    el.style.top  = saved.y + 'px';
+    el.style.zIndex = '50';
+  });
+}
+
+function resetTextOffsets(){
+  if(!ST.slides[ST.cur]) return;
+  ST.slides[ST.cur].textOffsets = {};
+  renderSlide();
+  toast('↩ Text positions reset');
 }
 
 function startInlineEdit(el){
@@ -1517,7 +1628,8 @@ function fillEdit(){
   if(eBody) eBody.value=s.body||s.subline||'';
   var capEl=document.getElementById('eCap');
   if(capEl) capEl.value=buildCaption(s);
-  document.getElementById('editNum').textContent='Slide '+(ST.cur+1);
+  var editNum=document.getElementById('editNum');
+  if(editNum) editNum.textContent='Slide '+(ST.cur+1);
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=(s.layout||'').replace(/_/g,' ');
   var statSec=document.getElementById('eStatSection');
@@ -1528,13 +1640,15 @@ function fillEdit(){
   if(statInput) statInput.value=s.stat||'';
   var quoteInput=document.getElementById('eQuote');
   if(quoteInput) quoteInput.value=s.quote||'';
-  populateHashtagPanel(s);
+  if(typeof populateHashtagPanel==='function') populateHashtagPanel(s);
 }
 
 function liveEdit(){
   if(!ST.slides.length) return;
-  ST.slides[ST.cur].headline=document.getElementById('eHead').value;
-  ST.slides[ST.cur].body=document.getElementById('eBody').value;
+  var eHead=document.getElementById('eHead');
+  var eBody=document.getElementById('eBody');
+  if(eHead) ST.slides[ST.cur].headline=eHead.value;
+  if(eBody) ST.slides[ST.cur].body=eBody.value;
   renderSlide();
 }
 
