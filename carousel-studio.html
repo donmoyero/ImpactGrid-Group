@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="carousel-studio.css"/>
 <link rel="stylesheet" href="carousel-studio-additions.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 <style>
 /* ── Resolve --ig-yellow → shared token so dark/light mode inherits correctly ── */
 :root { --ig-yellow: var(--brand-primary); }
@@ -518,24 +520,21 @@ function isSafariIOS(){
 var _dlCancelled = false;
 
 function showDlProgress(label, pct){
-  var existing = document.getElementById('dlProgressToast');
-  if(existing) existing.remove();
-  var t = document.createElement('div');
-  t.id = 'dlProgressToast'; t.className = 'dl-progress-toast';
-  t.innerHTML = '<div class="dl-progress-label" id="dlProgressLabel">'+label+'</div>'
-    +'<div class="dl-progress-bar"><div class="dl-progress-fill" id="dlProgressFill" style="width:'+(pct||0)+'%"></div></div>'
-    +'<div class="dl-progress-cancel" onclick="cancelDl()">Cancel</div>';
-  document.body.appendChild(t);
+  var bar = document.getElementById('dlProgressBar');
+  if(bar){ bar.classList.add('show'); }
+  updateDlProgress(label, pct||0);
 }
 function updateDlProgress(label, pct){
-  var lbl=document.getElementById('dlProgressLabel');
-  var fill=document.getElementById('dlProgressFill');
-  if(lbl) lbl.textContent=label;
-  if(fill) fill.style.width=pct+'%';
+  var lbl = document.getElementById('dlBarLabel');
+  var fill = document.getElementById('dlBarFill');
+  var pctEl = document.getElementById('dlBarPct');
+  if(lbl) lbl.textContent = label;
+  if(fill) fill.style.width = pct + '%';
+  if(pctEl) pctEl.textContent = Math.round(pct) + '%';
 }
 function hideDlProgress(){
-  var t=document.getElementById('dlProgressToast');
-  if(t) t.remove();
+  var bar = document.getElementById('dlProgressBar');
+  if(bar){ bar.classList.remove('show'); }
 }
 window.cancelDl = function(){ _dlCancelled=true; hideDlProgress(); toast('Download cancelled'); };
 
@@ -646,6 +645,20 @@ window.addEventListener('load', function(){
   }, 600000);
 });
 </script>
+
+<!-- ══ BOTTOM DOWNLOAD PROGRESS BAR ══ -->
+<div id="dlProgressBar">
+  <div class="dl-bar-top">
+    <span class="dl-bar-label" id="dlBarLabel">Preparing…</span>
+    <div style="display:flex;align-items:center;gap:0">
+      <span class="dl-bar-pct" id="dlBarPct">0%</span>
+      <span class="dl-bar-cancel" onclick="cancelDl()">Cancel</span>
+    </div>
+  </div>
+  <div class="dl-bar-track">
+    <div class="dl-bar-fill" id="dlBarFill" style="width:0%"></div>
+  </div>
+</div>
 
 <div id="ig-footer"></div>
 <script>
