@@ -42,10 +42,13 @@ let psState = {
 };
 
 /* ── MONETISATION ─────────────────────────────────────────────────────
-   Portfolio limits (from pricing page):
-     free         → 0 portfolios
-     professional → 1 portfolio
-     enterprise   → 3 portfolios
+   All plan limits come from plan-config.js (window.IG_PLAN_CONFIG).
+   Do NOT define limits here — edit plan-config.js only.
+
+   Portfolio limits (current):
+     free         → 3 portfolios (deleted from DB after 7 days)
+     professional → 1 portfolio  (permanent while subscription active)
+     enterprise   → 3 portfolios (permanent)
 
    Generation costs 1 shared AI use (ig_ai_uses, reset monthly).
    AI limits: free=3/mo, professional=100/mo, enterprise=unlimited.
@@ -53,8 +56,11 @@ let psState = {
 ─────────────────────────────────────────────────────────────────────── */
 const PS_ADMIN_EMAIL = "admin@impactgridgroup.com";
 
-const PS_PORTFOLIO_LIMITS = { free: 0, professional: 1, enterprise: 3 };
-const PS_AI_LIMITS        = { free: 3, professional: 100, enterprise: Infinity };
+/* Read limits from plan-config.js — fall back to safe defaults if not loaded yet */
+function _getPlanCfg(plan) {
+  return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
+    || { portfolios: 0, ai_uses: 3 };
+}
 
 function _getPlan() {
   if (window.igUser && window.igUser.plan) return window.igUser.plan;
@@ -128,7 +134,7 @@ function psBannerInit() {
 
   var plan    = _getPlan();           // 'free' | 'professional' | 'enterprise'
   var aiUses  = _getAIUses();         // number used this month
-  var aiLimit = PS_AI_LIMITS[plan] !== undefined ? PS_AI_LIMITS[plan] : PS_AI_LIMITS.free;
+  var aiLimit = _getPlanCfg(plan).ai_uses;
   var user    = window.igUser || {};
   var name    = user.firstName || (user.name ? user.name.split(' ')[0] : '') || '';
 
@@ -141,8 +147,7 @@ function psBannerInit() {
 
   // Plan badge
   if (badge) {
-    var planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
-    badge.textContent = planLabel;
+    badge.textContent = (typeof igPlanLabel === 'function') ? igPlanLabel(plan) : plan.charAt(0).toUpperCase() + plan.slice(1);
     badge.className   = 'ps-plan-badge plan-' + plan;
   }
 
@@ -181,20 +186,35 @@ function psBannerInit() {
   banner.style.display = 'flex';
 }
 
-/* Mark free-user portfolios older than 7 days as expired */
-function psMarkExpiredPortfolios() {
+/* Delete free-user portfolios older than 7 days from DB, then re-render */
+async function psMarkExpiredPortfolios() {
   var plan = _getPlan();
   if (plan !== 'free') return; // only free users have 7-day limit
 
   var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
   var now = Date.now();
 
-  document.querySelectorAll('.pf-card[data-created]').forEach(function(card) {
-    var ts = new Date(card.getAttribute('data-created')).getTime();
-    if (!isNaN(ts) && (now - ts) > SEVEN_DAYS) {
-      card.classList.add('expired');
-    }
+  // Find expired portfolios in local state
+  var expired = (psState.portfolios || []).filter(function(pf) {
+    if (!pf.created_at) return false;
+    return (now - new Date(pf.created_at).getTime()) > SEVEN_DAYS;
   });
+
+  if (!expired.length) return;
+
+  // Delete each from DB
+  for (var i = 0; i < expired.length; i++) {
+    var pf = expired[i];
+    try {
+      await sbFetch('/portfolios?id=eq.' + pf.id, 'DELETE');
+      console.log('[Portfolio] Deleted expired portfolio:', pf.id);
+    } catch(e) {
+      console.warn('[Portfolio] Could not delete expired portfolio:', pf.id, e.message);
+    }
+  }
+
+  // Reload dashboard to reflect deletions
+  await loadPortfolios();
 }
 
 /* Gated create button — runs plan/auth check before opening onboard screen */
@@ -248,30 +268,24 @@ async function checkPortfolioAccess() {
   // Admin / enterprise always allowed
   if (_isAdmin()) return true;
 
-  // Free plan: portfolio creation blocked
-  if (plan === 'free') {
-    showUpgradeBar('Upgrade to Professional to create a portfolio', true);
-    return false;
-  }
-
-  // Check portfolio slot limit for this plan
-  var portfolioLimit = PS_PORTFOLIO_LIMITS[plan] || 0;
+  // Check portfolio slot limit for this plan (reads from plan-config.js)
+  var portfolioLimit = _getPlanCfg(plan).portfolios || 0;
   var existing       = (psState.portfolios || []).length;
   if (existing >= portfolioLimit) {
-    showUpgradeBar(
-      plan === 'professional'
-        ? 'Professional plan includes 1 portfolio \u2014 upgrade to Enterprise for 3'
-        : 'Portfolio limit reached for your plan',
-      true
-    );
+    var msg = plan === 'free'
+      ? 'Free plan includes up to 3 portfolios — upgrade to keep them permanently'
+      : plan === 'professional'
+        ? 'Professional plan includes 1 portfolio — upgrade to Enterprise for 3'
+        : 'Portfolio limit reached for your plan';
+    showUpgradeBar(msg, true);
     return false;
   }
 
   // Check shared AI use limit
-  var aiLimit = PS_AI_LIMITS[plan] !== undefined ? PS_AI_LIMITS[plan] : PS_AI_LIMITS.free;
+  var aiLimit = _getPlanCfg(plan).ai_uses;
   var aiUses  = _getAIUses();
   if (isFinite(aiLimit) && aiUses >= aiLimit) {
-    showUpgradeBar('Monthly AI limit reached (' + aiLimit + ' uses) \u2014 upgrade for more', true);
+    showUpgradeBar('Monthly AI limit reached (' + aiLimit + ' uses) — upgrade for more', true);
     return false;
   }
 
@@ -396,7 +410,7 @@ function renderDashGrid() {
   psState.portfolios.forEach(pf => {
     const card  = document.createElement("div");
     card.className = "pf-card";
-    // data-created used by psMarkExpiredPortfolios() to grey out free-plan cards > 7 days old
+    // data-created used by psMarkExpiredPortfolios() to detect and delete rows older than 7 days for free users
     if (pf.created_at) card.setAttribute("data-created", pf.created_at);
     const thumb = pf.hero_media && pf.hero_media[0] ? pf.hero_media[0].url : "";
     card.innerHTML = `
@@ -426,10 +440,46 @@ function renderDashGrid() {
 function openPortfolio(id, action) {
   const pf = psState.portfolios.find(p => p.id === id);
   if (!pf) return;
+
+  // Issue #6 — Published portfolios are locked from editing.
+  // A published portfolio is live and public; silent edits would change
+  // the live page without the user re-publishing. Force them to unpublish first.
+  if (action === 'edit' && pf.published) {
+    showToast('This portfolio is live — unpublish it first to make changes.');
+    // Still show the builder in read-only preview so they can see it,
+    // but disable the Save/Publish buttons.
+    psState.activePortfolio = JSON.parse(JSON.stringify(pf));
+    populateBuilder(pf);
+    showScreen('screenBuilder');
+    // Disable save/publish controls
+    var saveBtn    = document.querySelector('.bl-save-btn');
+    var publishBtn = document.getElementById('blPublishBtn');
+    if (saveBtn)    { saveBtn.disabled = true;    saveBtn.title    = 'Unpublish to edit'; }
+    if (publishBtn) { publishBtn.disabled = true; publishBtn.title = 'Already published'; }
+    // Show a persistent banner in the builder
+    var footer = document.querySelector('.bl-footer');
+    if (footer && !document.getElementById('blLockedNotice')) {
+      var notice = document.createElement('div');
+      notice.id = 'blLockedNotice';
+      notice.style.cssText = 'width:100%;text-align:center;font-size:11px;color:var(--gold);font-family:var(--fm);padding:6px 0 0;letter-spacing:.3px;';
+      notice.textContent = '✦ Portfolio is live — unpublish to edit';
+      footer.appendChild(notice);
+    }
+    return;
+  }
+
+  // Re-enable controls if they were previously locked (user navigated back from a published portfolio)
+  var saveBtn    = document.querySelector('.bl-save-btn');
+  var publishBtn = document.getElementById('blPublishBtn');
+  if (saveBtn)    { saveBtn.disabled = false;    saveBtn.title    = ''; }
+  if (publishBtn) { publishBtn.disabled = false; publishBtn.title = ''; }
+  var notice = document.getElementById('blLockedNotice');
+  if (notice) notice.remove();
+
   psState.activePortfolio = JSON.parse(JSON.stringify(pf));
   populateBuilder(pf);
-  showScreen("screenBuilder");
-  if (action === "publish") publishPortfolio();
+  showScreen('screenBuilder');
+  if (action === 'publish') publishPortfolio();
 }
 
 function copyLink(slug) {
