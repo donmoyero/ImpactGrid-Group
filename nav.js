@@ -451,7 +451,7 @@
     // Try to fetch richer profile from DB — profiles table uses user_id not id
     try {
       var res = await authClient.from('profiles')
-        .select('full_name, avatar_url, animal_avatar')
+        .select('full_name, avatar_url, animal_avatar, plan, ai_uses_month, ai_uses_reset')
         .eq('user_id', userId)
         .single();
 
@@ -461,6 +461,28 @@
         if (!res.data.avatar_url && res.data.animal_avatar) {
           try { localStorage.setItem('ig_animal', res.data.animal_avatar); } catch(e) {}
         }
+
+        // ── Plan ──
+        var plan = res.data.plan || 'free';
+        try { localStorage.setItem('ig_plan', plan); } catch(e) {}
+
+        // ── Shared AI usage counter — reset monthly ──
+        var now        = new Date();
+        var resetDate  = res.data.ai_uses_reset ? new Date(res.data.ai_uses_reset) : null;
+        var aiUses     = res.data.ai_uses_month || 0;
+        var needsReset = !resetDate
+                         || resetDate.getFullYear() !== now.getFullYear()
+                         || resetDate.getMonth()    !== now.getMonth();
+        if (needsReset) {
+          try {
+            await authClient.from('profiles').update({
+              ai_uses_month: 0,
+              ai_uses_reset: now.toISOString()
+            }).eq('user_id', userId);
+          } catch(e) {}
+          aiUses = 0;
+        }
+        try { localStorage.setItem('ig_ai_uses', String(aiUses)); } catch(e) {}
       } else {
         /* No profile row yet — auto-create from Google/OAuth metadata */
         var googleName   = googleMeta.full_name || googleMeta.name || fallbackName;
@@ -483,13 +505,22 @@
     try { if (avatarUrl) localStorage.setItem('ig_avatar', avatarUrl); } catch(e) {}
 
     // ── Expose globally so ANY page can use it without touching auth ──
+    var _cachedPlan   = 'free';
+    var _cachedAiUses = 0;
+    try { _cachedPlan   = localStorage.getItem('ig_plan')    || 'free'; } catch(e) {}
+    try { _cachedAiUses = parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
     window.igUser = {
       id:        userId,
       name:      name,
       email:     fallbackEmail,
       avatarUrl: avatarUrl,
-      firstName: name.split(' ')[0]
+      firstName: name.split(' ')[0],
+      plan:      _cachedPlan,    // 'free' | 'professional' | 'enterprise'
+      aiUses:    _cachedAiUses   // shared cross-tool monthly counter
     };
+
+    // Dispatch plan-ready event so tools can react immediately
+    document.dispatchEvent(new CustomEvent('ig-plan-ready', { detail: { plan: _cachedPlan, aiUses: _cachedAiUses } }));
 
     // ── Update nav display ──
     window.setNavUser({ email: fallbackEmail, user_metadata: { full_name: name, avatar_url: avatarUrl } });
@@ -623,8 +654,10 @@
     } else if (event === 'SIGNED_OUT') {
       window.setNavGuest();
       /* Clear cached identity */
-      try { localStorage.removeItem('ig_avatar'); } catch(e) {}
-      try { localStorage.removeItem('ig_animal'); } catch(e) {}
+      try { localStorage.removeItem('ig_avatar');   } catch(e) {}
+      try { localStorage.removeItem('ig_animal');   } catch(e) {}
+      try { localStorage.removeItem('ig_plan');     } catch(e) {}
+      try { localStorage.removeItem('ig_ai_uses');  } catch(e) {}
     }
   }
 
