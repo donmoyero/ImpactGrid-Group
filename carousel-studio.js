@@ -1104,7 +1104,7 @@ function renderSlide(){
       var qh='';
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-bottom:28px;"></div>';
       qh+='<div style="font-family:Georgia,serif;font-size:72px;line-height:0.5;color:'+accent2+';opacity:0.55;margin-bottom:20px;align-self:flex-start;">\u201C</div>';
-      qh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
+      qh+='<div class="s-quote-text" style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
       qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-top:28px;"></div>';
       if(slide.tag) qh+='<div style="margin-top:16px;font-size:10px;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';opacity:0.8;">'+esc(slide.tag)+'</div>';
       if(slide.body&&!slide.quote) qh+='<div class="s-body" style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
@@ -1173,7 +1173,7 @@ function renderSlide(){
       var scriptWordCount=Math.min(2,Math.ceil(words2.length/3));
       var normalWords=words2.slice(0,-scriptWordCount);
       var scriptWords=words2.slice(-scriptWordCount);
-      var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max(slide.headline.length,6))));
+      var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max((slide.headline||'').length||6,6))));
       var ecTitle=document.createElement('div');
       ecTitle.style.cssText='position:absolute;bottom:50px;left:18px;right:18px;z-index:2;';
       ecTitle.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
@@ -1353,210 +1353,170 @@ function makeEditable(){
   if(!canvas) return;
   var sel = EDITABLE_CLASSES.map(function(c){return '.'+c;}).join(',');
   var targets = canvas.querySelectorAll(sel);
-  targets.forEach(function(el, i){
-    // Assign a stable drag key based on class + position in type
-    if(!el.dataset.dragKey){
-      var cls = EDITABLE_CLASSES.find(function(c){return el.classList.contains(c);})||'el';
-      var peers = Array.from(canvas.querySelectorAll('.'+cls));
-      el.dataset.dragKey = cls + '_' + peers.indexOf(el);
-    }
-    if(el.dataset.interactBound === '1') return;
-    el.dataset.interactBound = '1';
+  targets.forEach(function(el){
+    var cls = EDITABLE_CLASSES.find(function(c){return el.classList.contains(c);})||'el';
+    var peers = Array.from(canvas.querySelectorAll('.'+cls));
+    if(!el.dataset.dragKey) el.dataset.dragKey = cls+'_'+peers.indexOf(el);
+    if(el.dataset.interactBound==='1') return;
+    el.dataset.interactBound='1';
     attachDragAndEdit(el);
   });
 }
 
 function attachDragAndEdit(el){
-  var downX, downY, startLeft, startTop, didMove, dragKey, isAbsolute;
   var canvas = document.getElementById('slideCanvas');
+  var downX, downY, startLeft, startTop, didMove, isAbsolute;
 
   el.addEventListener('pointerdown', function(e){
-    if(el.dataset.editing === '1') return;
+    if(el.dataset.editing==='1') return;
     e.stopPropagation();
     didMove = false;
-    downX = e.clientX;
-    downY = e.clientY;
-    dragKey = el.dataset.dragKey;
-
-    // Compute current rendered position relative to canvas
+    downX = e.clientX; downY = e.clientY;
     var cRect = canvas.getBoundingClientRect();
     var eRect = el.getBoundingClientRect();
-
-    // Read any saved offset
-    var offsets = (ST.slides[ST.cur] && ST.slides[ST.cur].textOffsets) || {};
-    var saved = offsets[dragKey] || {x:0, y:0};
-
-    isAbsolute = window.getComputedStyle(el).position === 'absolute';
-
-    // Store canvas-relative top-left of element (without transform)
+    isAbsolute = window.getComputedStyle(el).position==='absolute';
     startLeft = eRect.left - cRect.left;
     startTop  = eRect.top  - cRect.top;
-
     el.setPointerCapture(e.pointerId);
-    el.style.userSelect = 'none';
+    el.style.userSelect='none';
 
     function onMove(e2){
-      var dx = e2.clientX - downX;
-      var dy = e2.clientY - downY;
-      if(!didMove && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      var dx=e2.clientX-downX, dy=e2.clientY-downY;
+      if(!didMove && Math.abs(dx)<4 && Math.abs(dy)<4) return;
       if(!didMove){
-        didMove = true;
-        el.style.cursor = 'grabbing';
-        // Promote to absolute if needed, preserving visual position
+        didMove=true;
         if(!isAbsolute){
-          var cRect2 = canvas.getBoundingClientRect();
-          var eRect2 = el.getBoundingClientRect();
-          var absL = eRect2.left - cRect2.left;
-          var absT = eRect2.top  - cRect2.top;
-          el.style.position = 'absolute';
-          el.style.left = absL + 'px';
-          el.style.top  = absT + 'px';
-          el.style.width = eRect2.width + 'px';
-          el.style.margin = '0';
-          isAbsolute = true;
-          startLeft = absL;
-          startTop  = absT;
+          var cR=canvas.getBoundingClientRect(), eR=el.getBoundingClientRect();
+          startLeft=eR.left-cR.left; startTop=eR.top-cR.top;
+          el.style.position='absolute';
+          el.style.width=eR.width+'px';
+          el.style.margin='0';
+          isAbsolute=true;
         }
-        el.style.zIndex = '999';
-        el.style.outline = '2px solid rgba(255,255,255,0.5)';
-        el.style.outlineOffset = '4px';
-        el.style.borderRadius = '3px';
+        el.style.left=startLeft+'px'; el.style.top=startTop+'px';
+        el.style.zIndex='999';
+        el.style.outline='2px solid rgba(255,255,255,0.6)';
+        el.style.outlineOffset='4px';
+        el.style.borderRadius='3px';
+        el.style.cursor='grabbing';
       }
-      // Clamp within canvas
-      var cW = canvas.offsetWidth;
-      var cH = canvas.offsetHeight;
-      var newL = Math.max(0, Math.min(cW - el.offsetWidth,  startLeft + dx));
-      var newT = Math.max(0, Math.min(cH - el.offsetHeight, startTop  + dy));
-      el.style.left = newL + 'px';
-      el.style.top  = newT + 'px';
+      var cW=canvas.offsetWidth, cH=canvas.offsetHeight;
+      var newL=Math.max(0,Math.min(cW-el.offsetWidth,  startLeft+dx));
+      var newT=Math.max(0,Math.min(cH-el.offsetHeight, startTop+dy));
+      el.style.left=newL+'px'; el.style.top=newT+'px';
     }
 
-    function onUp(e2){
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerup', onUp);
-      el.style.userSelect = '';
-      el.style.cursor = '';
+    function onUp(){
+      el.removeEventListener('pointermove',onMove);
+      el.removeEventListener('pointerup',onUp);
+      el.style.userSelect='';
       if(didMove){
-        el.style.zIndex = '';
-        el.style.outline = '';
-        el.style.outlineOffset = '';
-        // Save the new position as an offset from original
-        var cRect3 = canvas.getBoundingClientRect();
-        var eRect3 = el.getBoundingClientRect();
-        var finalL = parseFloat(el.style.left)||0;
-        var finalT = parseFloat(el.style.top)||0;
-        if(!ST.slides[ST.cur].textOffsets) ST.slides[ST.cur].textOffsets = {};
-        ST.slides[ST.cur].textOffsets[dragKey] = {
-          x: finalL,
-          y: finalT,
-          absolute: true
+        el.style.zIndex=''; el.style.outline=''; el.style.outlineOffset=''; el.style.cursor='';
+        if(!ST.slides[ST.cur].textOffsets) ST.slides[ST.cur].textOffsets={};
+        ST.slides[ST.cur].textOffsets[el.dataset.dragKey]={
+          x:parseFloat(el.style.left)||0,
+          y:parseFloat(el.style.top)||0,
+          absolute:true
         };
       } else {
-        // Short click with no movement = edit
         startInlineEdit(el);
       }
     }
 
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointermove',onMove);
+    el.addEventListener('pointerup',onUp);
   });
 
-  // Show grab cursor on hover (unless editing)
-  el.addEventListener('mouseenter', function(){
-    if(el.dataset.editing !== '1') el.style.cursor = 'grab';
-  });
-  el.addEventListener('mouseleave', function(){
-    if(el.dataset.editing !== '1') el.style.cursor = '';
-  });
+  el.addEventListener('mouseenter',function(){ if(el.dataset.editing!=='1') el.style.cursor='grab'; });
+  el.addEventListener('mouseleave',function(){ if(el.dataset.editing!=='1') el.style.cursor=''; });
 }
 
 function applyTextOffsets(){
-  var canvas = document.getElementById('slideCanvas');
+  var canvas=document.getElementById('slideCanvas');
   if(!canvas) return;
-  var offsets = (ST.slides[ST.cur] && ST.slides[ST.cur].textOffsets) || {};
+  var offsets=(ST.slides[ST.cur]&&ST.slides[ST.cur].textOffsets)||{};
   Object.keys(offsets).forEach(function(key){
-    var saved = offsets[key];
-    if(!saved || !saved.absolute) return;
-    var cls = key.split('_')[0];
-    var idx = parseInt(key.split('_')[1])||0;
-    var peers = Array.from(canvas.querySelectorAll('.'+cls));
-    var el = peers[idx];
+    var saved=offsets[key];
+    if(!saved||!saved.absolute) return;
+    var cls=key.split('_')[0];
+    var idx=parseInt(key.split('_')[1])||0;
+    var peers=Array.from(canvas.querySelectorAll('.'+cls));
+    var el=peers[idx];
     if(!el) return;
-    // Promote and reposition
-    if(window.getComputedStyle(el).position !== 'absolute'){
-      el.style.width = el.offsetWidth + 'px';
-      el.style.margin = '0';
-      el.style.position = 'absolute';
+    if(window.getComputedStyle(el).position!=='absolute'){
+      el.style.width=el.offsetWidth+'px';
+      el.style.margin='0';
+      el.style.position='absolute';
     }
-    el.style.left = saved.x + 'px';
-    el.style.top  = saved.y + 'px';
-    el.style.zIndex = '50';
+    el.style.left=saved.x+'px';
+    el.style.top=saved.y+'px';
+    el.style.zIndex='50';
   });
 }
 
 function resetTextOffsets(){
   if(!ST.slides[ST.cur]) return;
-  ST.slides[ST.cur].textOffsets = {};
+  ST.slides[ST.cur].textOffsets={};
   renderSlide();
-  toast('↩ Text positions reset');
+  toast('\u21a9 Text positions reset');
 }
 
 function startInlineEdit(el){
-  if(el.dataset.editing === '1') return;
-  el.dataset.editing = '1';
-  var original = el.textContent;
-  el.setAttribute('contenteditable', 'true');
-  el.style.outline = '2px solid rgba(255,255,255,0.6)';
-  el.style.outlineOffset = '4px';
-  el.style.borderRadius = '3px';
-  el.style.minWidth = '40px';
-  el.style.cursor = 'text';
+  if(el.dataset.editing==='1') return;
+  el.dataset.editing='1';
+  var original=el.textContent;
+  el.setAttribute('contenteditable','true');
+  el.style.outline='2px solid rgba(255,255,255,0.6)';
+  el.style.outlineOffset='4px';
+  el.style.borderRadius='3px';
+  el.style.minWidth='40px';
+  el.style.cursor='text';
   el.focus();
-  var range = document.createRange();
+  var range=document.createRange();
   range.selectNodeContents(el);
-  var sel = window.getSelection();
+  var sel=window.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
   function commit(){
     el.removeAttribute('contenteditable');
-    el.dataset.editing = '0';
-    el.style.outline = '';
-    el.style.outlineOffset = '';
-    el.style.borderRadius = '';
-    var newText = el.textContent.trim();
-    if(!newText) el.textContent = original;
-    if(ST.slides && ST.slides[ST.cur]){
-      var s = ST.slides[ST.cur];
-      var txt = el.textContent.trim();
+    el.dataset.editing='0';
+    el.style.outline='';
+    el.style.outlineOffset='';
+    el.style.borderRadius='';
+    el.style.cursor='';
+    var newText=el.textContent.trim();
+    if(!newText) el.textContent=original;
+    if(ST.slides&&ST.slides[ST.cur]){
+      var s=ST.slides[ST.cur];
+      var txt=el.textContent.trim();
       if(el.classList.contains('s-headline')||el.classList.contains('s-title')){
-        s.headline = txt;
+        s.headline=txt;
       } else if(el.classList.contains('s-body')){
-        s.body = txt;
+        s.body=txt;
       } else if(el.classList.contains('s-cta')){
-        s.cta = txt.replace(/\s*→\s*$/, '');
+        s.cta=txt.replace(/\s*→\s*$/,'');
       } else if(el.classList.contains('s-tag')){
-        s.tag = txt;
+        s.tag=txt;
       } else if(el.classList.contains('s-stat-num')){
-        s.stat = txt;
-        var eStatEl = document.getElementById('eStat');
-        if(eStatEl) eStatEl.value = txt;
+        s.stat=txt;
+        var eStatEl=document.getElementById('eStat');
+        if(eStatEl) eStatEl.value=txt;
       } else if(el.classList.contains('s-quote-text')){
-        s.quote = txt; s.headline = txt;
-        var eQuoteEl = document.getElementById('eQuote');
-        if(eQuoteEl) eQuoteEl.value = txt;
+        s.quote=txt; s.headline=txt;
+        var eQuoteEl=document.getElementById('eQuote');
+        if(eQuoteEl) eQuoteEl.value=txt;
       } else if(el.classList.contains('s-quote-attr')){
-        s.quoteAttr = txt;
+        s.quoteAttr=txt;
       } else if(el.classList.contains('s-grid-header')){
-        s.headline = txt;
+        s.headline=txt;
       } else if(el.classList.contains('s-grid-ptxt')){
-        // find which point this is and update
-        var pts = el.closest('.s-grid-wrap') && el.closest('.s-grid-wrap').querySelectorAll('.s-grid-ptxt');
-        if(pts && s.points){ pts.forEach(function(p,i){ if(p===el && s.points[i]) s.points[i]=txt; }); }
+        var pts=el.closest('.s-grid-wrap')&&el.closest('.s-grid-wrap').querySelectorAll('.s-grid-ptxt');
+        if(pts&&s.points){ pts.forEach(function(p,i){ if(p===el&&s.points[i]) s.points[i]=txt; }); }
       }
     }
   }
-  el.addEventListener('blur', commit, {once:true});
-  el.addEventListener('keydown', function(e){
+  el.addEventListener('blur',commit,{once:true});
+  el.addEventListener('keydown',function(e){
     if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();el.blur();}
     if(e.key==='Escape'){el.textContent=original;el.blur();}
   });
