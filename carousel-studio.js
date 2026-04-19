@@ -419,8 +419,12 @@ var IG_AI_USES     = (function(){ try { return parseInt(localStorage.getItem('ig
 var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
 var IG_IS_ADMIN    = false;
 
-// Plan limits (shared across all tools)
-var IG_LIMITS = { free: 3, professional: 100, enterprise: Infinity };
+// AI use limit — always read live from plan-config.js so changes in one place propagate everywhere
+function _getCarouselAILimit(plan) {
+  return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
+    ? window.IG_PLAN_CONFIG[plan].ai_uses
+    : (plan === 'professional' ? 100 : plan === 'enterprise' ? Infinity : 3);
+}
 
 /* Keep plan + usage in sync when nav.js resolves them from the DB */
 document.addEventListener('ig-plan-ready', function(e) {
@@ -444,14 +448,11 @@ async function getCarouselUser() {
     if (window.igUser && window.igUser.id) {
       return { id: window.igUser.id, email: window.igUser.email };
     }
-    // Last resort: raw supabase SDK
+    // Last resort: raw supabase SDK using globals set by ig-supabase.js
     const sb = window.supabase;
-    if (!sb) return null;
+    if (!sb || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
     const sbClient = sb.createClient
-      ? sb.createClient(
-          'https://wedjsnizcvtgptobwugc.supabase.co',
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc'
-        )
+      ? sb.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
       : sb;
     const { data } = await sbClient.auth.getSession();
     return data?.session?.user || null;
@@ -495,9 +496,9 @@ async function checkCarouselAccess() {
   }
 
   // Check shared monthly limit for this plan
-  var limit = IG_LIMITS[IG_PLAN] || IG_LIMITS.free;
+  var limit = _getCarouselAILimit(IG_PLAN);
   if (IG_AI_USES >= limit) {
-    var planLabel = IG_PLAN === 'professional' ? 'Professional' : 'Free';
+    var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : (IG_PLAN.charAt(0).toUpperCase() + IG_PLAN.slice(1));
     showUpgradeBar(planLabel + ' limit reached (' + limit + '/mo) — upgrade for more');
     return false;
   }
@@ -2153,7 +2154,7 @@ document.addEventListener('keydown',function(e){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({message:prompt,mode:'creator'})
       });
-      if(!res.ok) throw new Error('Caption API '+res.status);
+      if(!res.ok) throw new Error('captions_unavailable_' + res.status);
       var data = await res.json();
       return (data.reply||'').trim();
     }catch(e){
