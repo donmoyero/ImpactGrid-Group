@@ -19,9 +19,11 @@
 
 /* ── CONFIG ─────────────────────────────────────────────── */
 const DIJO_SERVER  = "https://impactgrid-dijo.onrender.com";
-// ✅ FIX: use credentials already set by ig-supabase.js — no duplicates, no placeholders
-const SUPABASE_URL = window.SUPABASE_URL      || "";
-const SUPABASE_KEY = window.SUPABASE_ANON_KEY || "";
+// ✅ FIX: portfolios table lives on the CONTENT project (exeiojgldxqaakkybdij),
+//         NOT the auth project (wedjsnizcvtgptobwugc).
+//         Using IG_CONTENT_URL / IG_CONTENT_ANON set by supabase-config.js.
+const SUPABASE_URL = window.IG_CONTENT_URL  || "https://exeiojgldxqaakkybdij.supabase.co";
+const SUPABASE_KEY = window.IG_CONTENT_ANON || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4ZWlvamdsZHhxYWFra3liZGlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDc4NTcsImV4cCI6MjA4ODkyMzg1N30.aRXgeHqaOxkidwpWVGEOKBQAeo9_C5Fk3Gu5ZlbmxTQ";
 
 /* ── SESSION ID ─────────────────────────────────────────── */
 let SESSION_ID = localStorage.getItem("ig_session");
@@ -101,12 +103,25 @@ function confirmBackToDash() {
    SUPABASE HELPERS
 ══════════════════════════════════════════════════════════ */
 async function sbFetch(path, method = "GET", body = null) {
+  // ✅ FIX: get the real user JWT from the AUTH project client (ig-supabase.js)
+  //         so RLS on the content project can verify the user.
+  //         Falls back to anon key if not logged in.
+  let authToken = SUPABASE_KEY;
+  try {
+    const authClient = window.getSupabase ? window.getSupabase() : null;
+    if (authClient) {
+      const { data } = await authClient.auth.getSession();
+      if (data?.session?.access_token) authToken = data.session.access_token;
+    }
+  } catch (e) {}
+
   const opts = {
     method,
     headers: {
       "Content-Type":  "application/json",
-      "apikey":        SUPABASE_KEY,
-      "Authorization": "Bearer " + SUPABASE_KEY,
+      "apikey":        SUPABASE_KEY,          // content project anon key (required by PostgREST)
+      "Authorization": "Bearer " + authToken, // real user JWT from auth project
+      "x-session-id":  SESSION_ID,            // matches RLS header policies
       "Prefer":        method === "POST" ? "return=representation" : "",
     },
   };
@@ -444,7 +459,7 @@ async function startGeneration() {
 
     /* Save to Supabase */
     await savePortfolioToDB(pf);
-    if (!IG_IS_ADMIN) {
+    if (!isAdmin()) {
       PS_USES++;
       localStorage.setItem("ig_portfolio_uses", PS_USES);
     }
