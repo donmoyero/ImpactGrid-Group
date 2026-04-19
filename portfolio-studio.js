@@ -549,7 +549,7 @@ function openPortfolio(id, action) {
 }
 
 function copyLink(slug) {
-  navigator.clipboard.writeText(`https://impactgrid.app/p/${slug}`).catch(() => {});
+  navigator.clipboard.writeText(`https://impactgrid.app/p.html?slug=${slug}`).catch(() => {});
   showToast("✓ Link copied!");
 }
 
@@ -866,7 +866,7 @@ function populateBuilder(pf) {
     if (cv) cv.textContent = pf.accent_color;
   }
   const pill = document.getElementById("previewUrlPill");
-  if (pill) pill.textContent = `impactgrid.app/p/${pf.slug}`;
+  if (pill) pill.textContent = `impactgrid.app/p.html?slug=${pf.slug}`;
   renderHeroMediaStrip(pf.hero_media || []);
   rebuildServiceRows(pf.services || []);
   // Set active theme button
@@ -1265,14 +1265,14 @@ async function publishPortfolio() {
   if (!ok) return;
 
   const linkEl = document.getElementById("pubLinkText");
-  if (linkEl) linkEl.textContent = `impactgrid.app/p/${pf.slug}`;
+  if (linkEl) linkEl.textContent = `impactgrid.app/p.html?slug=${pf.slug}`;
   setValue("pubViewCount", "0");
   setValue("pubEnqCount",  "0");
   setValue("pubDaysLive",  "0");
 
   showScreen("screenPublished");
   spawnConfetti();
-  navigator.clipboard.writeText(`https://impactgrid.app/p/${pf.slug}`).catch(() => {});
+  navigator.clipboard.writeText(`https://impactgrid.app/p.html?slug=${pf.slug}`).catch(() => {});
   showToast("🚀 Published! Link copied.");
   loadPortfolios();
 }
