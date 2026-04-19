@@ -34,12 +34,17 @@ if (!SESSION_ID) {
 
 /* ── STATE ──────────────────────────────────────────────── */
 let psState = {
-  currentStep:     1,
-  selectedTheme:   null,   // theme for the output portfolio site; app UI theme is controlled by shared.css + nav.js
-  portfolios:      [],
-  activePortfolio: null,
-  generating:      false,
+  currentStep:      1,
+  selectedTheme:    null,
+  portfolios:       [],
+  activePortfolio:  null,
+  generating:       false,
+  portfoliosLoaded: false,  // true once the first loadPortfolios() call resolves
 };
+
+// Holds the in-flight loadPortfolios() promise so checkPortfolioAccess()
+// can await it instead of reading psState.portfolios while it's still empty.
+let _portfoliosLoadPromise = null;
 
 /* ── MONETISATION ─────────────────────────────────────────────────────
    All plan limits come from plan-config.js (window.IG_PLAN_CONFIG).
@@ -268,6 +273,14 @@ async function checkPortfolioAccess() {
   // Admin / enterprise always allowed
   if (_isAdmin()) return true;
 
+  // Issue #13 — Race condition fix: ensure psState.portfolios reflects the real
+  // DB count before checking the slot limit. If loadPortfolios() hasn't resolved
+  // yet (user tapped Create before the initial fetch finished), await it now.
+  // This is a no-op on normal page loads where the fetch completes first.
+  if (!psState.portfoliosLoaded && _portfoliosLoadPromise) {
+    await _portfoliosLoadPromise;
+  }
+
   // Check portfolio slot limit for this plan (reads from plan-config.js)
   var portfolioLimit = _getPlanCfg(plan).portfolios || 0;
   var existing       = (psState.portfolios || []).length;
@@ -331,22 +344,26 @@ async function sbFetch(path, method = "GET", body = null) {
 }
 
 async function loadPortfolios() {
-  try {
-    // Prefer filtering by user_id (stable across devices) if available,
-    // fall back to session_id (anonymous / first-load).
-    const userId = window.igUser && window.igUser.id;
-    const filter = userId
-      ? `user_id=eq.${userId}`
-      : `user_session=eq.${SESSION_ID}`;
-    const data = await sbFetch(
-      `/portfolios?${filter}&order=created_at.desc&select=*`
-    );
-    psState.portfolios = data || [];
-  } catch (e) {
-    console.warn("[Portfolio] Could not load from Supabase:", e.message);
-    psState.portfolios = [];
-  }
-  renderDashGrid();
+  // Capture this call as the in-flight promise so checkPortfolioAccess()
+  // can await it if it fires before the fetch resolves (race condition fix).
+  _portfoliosLoadPromise = (async function() {
+    try {
+      const userId = window.igUser && window.igUser.id;
+      const filter = userId
+        ? `user_id=eq.${userId}`
+        : `user_session=eq.${SESSION_ID}`;
+      const data = await sbFetch(
+        `/portfolios?${filter}&order=created_at.desc&select=*`
+      );
+      psState.portfolios = data || [];
+    } catch (e) {
+      console.warn("[Portfolio] Could not load from Supabase:", e.message);
+      psState.portfolios = [];
+    }
+    psState.portfoliosLoaded = true;
+    renderDashGrid();
+  })();
+  return _portfoliosLoadPromise;
 }
 
 async function savePortfolioToDB(pf){
