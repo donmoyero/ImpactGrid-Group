@@ -527,7 +527,7 @@
       <!-- ══ MAIN ══ -->
       <main class="s-main">
 
-        <div style="margin-bottom:20px;">
+        <div id="guest-notice" style="margin-bottom:20px;">
           <a href="creator-studio.html" class="btn btn-gold">
             Open Creator Studio →
           </a>
@@ -670,7 +670,7 @@
 
           <div class="s-card s-card-danger">
             <div class="s-card-head">
-              <div><h3>Danger Zone</h3><p>Permanent and irreversible actions. Proceed with extreme caution.</p></div>
+              <div><h3>Danger Zone</h3><p>These actions can't be undone. Be careful.</p></div>
             </div>
             <div class="sec-item" style="padding-top:0">
               <div class="sec-info">
@@ -785,9 +785,7 @@
               <div><h3>Login Activity</h3><p>Recent sign-in events on your account.</p></div>
               <span class="chip chip-blue">Coming Soon</span>
             </div>
-            <div id="activity-log">
-              <!-- Populated by JS with mock data for now -->
-            </div>
+            <div id="activity-log"></div>
           </div>
         </section>
 
@@ -1018,7 +1016,7 @@
               <div class="plan-card" id="pc-free">
                 <div class="plan-card-name">Free</div>
                 <div class="plan-card-price">£0 <span>/mo</span></div>
-                <div class="plan-card-desc">3 AI uses/mo · Carousel Studio · No portfolio · Data wiped after 30 days</div>
+                <div class="plan-card-desc">3 AI uses/mo · Carousel Studio · Up to 3 portfolios · Saved items deleted after 7 days</div>
                 <span class="plan-card-cta current-label" id="pc-free-cta">Current plan</span>
               </div>
               <div class="plan-card" id="pc-professional">
@@ -1046,6 +1044,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="ig-supabase.js"></script>
+  <script src="supabase-config.js"></script>
   <script src="auth.js"></script>
   <script src="nav.js"></script>
   <script>
@@ -1364,22 +1363,14 @@
       window.location.href = 'index.html';
     }
 
-    /* ─── Activity log (mock until real data is available) ─── */
+    /* ─── Activity log ─── */
     function buildActivityLog() {
-      var items = [
-        { color:'green', title:'Signed in',          time:'Today, just now',          detail:'This device' },
-        { color:'blue',  title:'Profile updated',    time:'Yesterday',                detail:'Name and bio changed' },
-        { color:'gold',  title:'Password changed',   time:'3 days ago',               detail:'Security update' },
-        { color:'green', title:'Signed in',          time:'5 days ago',               detail:'Chrome on Windows' },
-      ];
       var el = document.getElementById('activity-log');
       if (!el) return;
-      el.innerHTML = items.map(function(i) {
-        return '<div class="activity-item">' +
-          '<div class="act-dot ' + (i.color !== 'gold' ? i.color : '') + '"></div>' +
-          '<div class="act-info"><h4>' + i.title + '</h4><p>' + i.time + ' · ' + i.detail + '</p></div>' +
-          '</div>';
-      }).join('');
+      el.innerHTML =
+        '<div style="padding:18px 0 4px;font-size:13px;color:var(--text3);line-height:1.6;">' +
+          'Your recent sign-ins will appear here soon.' +
+        '</div>';
     }
 
     /* ─── Integrations ─── */
@@ -1407,9 +1398,16 @@
       document.getElementById(prefix+'-action').innerHTML =
         '<button class="btn-sm btn-sm-gold" onclick="'+fnMap[prefix]+'()">Connect</button>';
     }
-    function connectInstagram() { if(typeof window.startInstagramAuth==='function') window.startInstagramAuth(); else window.location.href='instagram-callback.html'; }
-    function connectTikTok()    { if(typeof window.startTikTokAuth==='function')    window.startTikTokAuth();    else window.location.href='tiktok-callback.html'; }
-    function connectYouTube()   { if(typeof window.startYouTubeAuth==='function')   window.startYouTubeAuth();   else window.location.href='youtube-callback.html'; }
+    function connectInstagram() { _showComingSoon('Instagram publishing is coming soon — we\'ll let you know when it\'s ready.'); }
+    function connectTikTok()    { _showComingSoon('TikTok publishing is coming soon — we\'ll let you know when it\'s ready.'); }
+    function connectYouTube()   { _showComingSoon('YouTube connection is coming soon — we\'ll let you know when it\'s ready.'); }
+    function _showComingSoon(msg) {
+      var t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border2);border-radius:999px;padding:10px 20px;font-size:13px;font-family:var(--fb);color:var(--text);box-shadow:var(--sh2);z-index:9999;white-space:nowrap;';
+      t.textContent = '✦ ' + msg;
+      document.body.appendChild(t);
+      setTimeout(function() { t.remove(); }, 4000);
+    }
 
     /* ─── Preferences ─── */
     function loadPreferences() {
@@ -1641,11 +1639,26 @@
        No extra Supabase call needed — nav.js already did it.
     ════════════════════════════════════════════════════════ */
 
-    /* Plan definitions — mirrors portfolio-studio.js */
+    /* Plan limits — read from plan-config.js (single source of truth).
+       Translate IG_PLAN_CONFIG keys to the shape renderPlanPanel() expects. */
+    function _buildPlanLimits(planKey) {
+      var cfg = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[planKey]) || {};
+      return {
+        ai:          cfg.ai_uses          !== undefined ? cfg.ai_uses          : 3,
+        portfolios:  cfg.portfolios        !== undefined ? cfg.portfolios        : 0,
+        carousels:   cfg.carousels         !== undefined ? cfg.carousels         : 0,
+        adviser:     cfg.adviser           !== undefined ? cfg.adviser           : 0,
+        evaluator:   cfg.evaluator         !== undefined ? cfg.evaluator         : 3,
+        contentPlan: cfg.content_plan      !== undefined ? cfg.content_plan      : 3,
+        _retention:  cfg.data_retention_days !== null && cfg.data_retention_days !== undefined
+                       ? cfg.data_retention_days + ' days'
+                       : (planKey === 'enterprise' ? 'Forever' : 'While active'),
+      };
+    }
     var PLAN_LIMITS = {
-      free:         { ai: 3,        portfolios: 0, carousels: 0,  adviser: 0,   evaluator: 3,  contentPlan: 3  },
-      professional: { ai: 100,      portfolios: 1, carousels: 20, adviser: 50,  evaluator: 10, contentPlan: 99 },
-      enterprise:   { ai: Infinity, portfolios: 3, carousels: 999,adviser: 999, evaluator: 999,contentPlan: 999}
+      free:         _buildPlanLimits('free'),
+      professional: _buildPlanLimits('professional'),
+      enterprise:   _buildPlanLimits('enterprise'),
     };
 
     var PLAN_META = {
@@ -1657,7 +1670,7 @@
     /* Tools available per plan */
     var ALL_TOOLS = [
       { icon:'🎠', name:'Carousel Studio',   href:'carousel-studio.html',  plans:['free','professional','enterprise'], limit:{ free:'3 AI uses/mo', professional:'100 AI uses/mo', enterprise:'Unlimited' } },
-      { icon:'💼', name:'Portfolio Studio',  href:'portfolio-studio.html', plans:['professional','enterprise'],         limit:{ free:'Upgrade to Pro', professional:'1 portfolio', enterprise:'3 portfolios' } },
+      { icon:'💼', name:'Portfolio Studio',  href:'portfolio-studio.html', plans:['free','professional','enterprise'], limit:{ free:'3 portfolios (7-day)', professional:'1 portfolio', enterprise:'3 portfolios' } },
       { icon:'📊', name:'Creator Studio',    href:'creator-studio.html',   plans:['free','professional','enterprise'], limit:{ free:'Read-only', professional:'Full access', enterprise:'Full access' } },
       { icon:'🤖', name:'Dijo Adviser',      href:'creator-studio.html',   plans:['professional','enterprise'],         limit:{ free:'Upgrade to Pro', professional:'50 msgs/mo', enterprise:'Unlimited' } },
       { icon:'🔍', name:'Dijo Evaluator',    href:'creator-studio.html',   plans:['free','professional','enterprise'], limit:{ free:'3/mo', professional:'10/mo', enterprise:'Unlimited' } },
@@ -1721,7 +1734,10 @@
         /* Portfolio usage */
         var pfLimit  = limits.portfolios;
         var pfCount  = 0; /* We don't store this locally — show limit only */
-        var pfLabel  = pfLimit === 0 ? 'Not available on Free plan' : pfLimit >= 999 ? 'Unlimited' : pfLimit + ' portfolio' + (pfLimit > 1 ? 's' : '') + ' included';
+        var pfLabel  = pfLimit === 0 ? 'Not available on this plan'
+                     : pfLimit >= 999 ? 'Unlimited'
+                     : pfLimit + ' portfolio' + (pfLimit > 1 ? 's' : '') + ' included'
+                     + (plan === 'free' ? ' · saved for 7 days' : ' · permanently saved');
 
         grid.innerHTML = [
           _usageBar('AI Uses This Month',  aiUses + ' used',  aiPct,  aiClass,  aiCountClass, aiRemain,
@@ -1752,8 +1768,12 @@
       var tbody = document.getElementById('featureTableBody');
       if (tbody) {
         var extraRows = {
-          _retention: { free:'30 days', professional:'While active', enterprise:'Forever' },
-          _support:   { free:'None',    professional:'Email',         enterprise:'Priority (24hr)' }
+          _retention: {
+            free:         (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.free         && window.IG_PLAN_CONFIG.free.data_retention_days)         ? window.IG_PLAN_CONFIG.free.data_retention_days + ' days'         : '7 days',
+            professional: (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.professional && window.IG_PLAN_CONFIG.professional.data_retention_days === null) ? 'While active' : 'While active',
+            enterprise:   'Forever'
+          },
+          _support: { free:'None', professional:'Email', enterprise:'Priority (24hr)' }
         };
         tbody.innerHTML = FEATURE_ROWS.map(function(row) {
           var rawVal = row.key.startsWith('_')
@@ -1808,6 +1828,8 @@
     });
     document.addEventListener('ig-user-ready', function() {
       renderPlanPanel();
+      var notice = document.getElementById('guest-notice');
+      if (notice) notice.style.display = 'none';
     });
     document.addEventListener('ig-plan-ready', function() {
       renderPlanPanel();
