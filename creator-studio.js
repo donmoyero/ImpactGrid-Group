@@ -721,7 +721,9 @@ async function fetchTrends() {
     var rss = await fetch(DIJO + '/trends/google?geo=GB');
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
-      return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
+      // Rank-based scoring: top trends score higher so they clear blowup/rising thresholds
+      var rankScore = Math.max(5.0, 9.5 - (i * 0.25));
+      return { topic: topic, score: rankScore, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: i < 3 ? 'peak' : i < 8 ? 'rising' : 'emerging', igPrediction: 0, confidence: 65 };
     }); window._allTrends = _allTrends;
     if (_allTrends.length) {
       console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics');
