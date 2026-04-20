@@ -1000,7 +1000,7 @@ function renderPlatformMeters() {
     + '</div>';
 }
 
-const pointLabelsPlugin = {
+window.pointLabelsPlugin = window.pointLabelsPlugin || {
   id: 'pointLabels',
   afterDatasetsDraw(chart) {
     const { ctx } = chart;
