@@ -3,29 +3,50 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v6'; // bumped — forces discard of stale v5 cache
+const CACHE_NAME = 'impactgrid-v7'; // bumped — forces discard of stale v6 cache
 
 const CORE_FILES = [
   '/',
   '/index.html',
-  '/creator-studio.html',
   '/shared.css',
-  '/creator-studio.css',
-  '/creator-studio.js',
-  '/creator-ai.js',
   '/nav.js',
   '/manifest.json',
   '/logo.png',
   '/dijo-mascot.png',
+  '/auth.js',
+  '/ig-supabase.js',
+  '/supabase-config.js',
+  '/plan-config.js',
+  /* Creator Studio */
+  '/creator-studio.html',
+  '/creator-studio.css',
+  '/creator-studio.js',
+  '/creator-ai.js',
   '/calendar.js',
+  /* Portfolio Studio */
+  '/portfolio-studio.html',
+  '/portfolio-studio.css',
+  '/portfolio-studio.js',
+  '/p.html',
+  /* Carousel Studio */
+  '/carousel-studio.html',
+  '/carousel-studio.css',
+  '/carousel-studio.js',
+  '/carousel-studio-additions.css',
+  /* Auth & account */
   '/login.html',
   '/join.html',
   '/settings.html',
+  '/pricing.html',
+  '/success.html',
+  /* Info pages */
   '/jobs.html',
   '/dijo.html',
   '/about.html',
   '/privacy.html',
-  '/terms.html'
+  '/terms.html',
+  '/contact.html',
+  '/network.html'
 ];
 
 /* ── Install: pre-cache core files ── */
