@@ -300,6 +300,12 @@
         html += '<div class="cal-post-btns">';
         html += '<button class="cal-btn cal-btn-edit" onclick="window.calEditPost(\'' + slot.id + '\')">✏️ Edit</button>';
         html += '<button class="cal-btn cal-btn-gen"  onclick="window.calGeneratePost(\'' + escJ(post.topic) + '\')">⚡ Generate</button>';
+        /* Notification bell — shows active state if a timer is queued */
+        var notifActive = hasActiveNotif(slot.id);
+        html += '<button class="cal-btn cal-btn-notif' + (notifActive ? ' notif-on' : '') + '" '
+              + 'onclick="window.calEnableSlotNotif(\'' + slot.id + '\')" '
+              + 'title="' + (notifActive ? 'Reminder set for ' + escH(post.postTime) : 'Set posting reminder') + '">'
+              + (notifActive ? '🔔' : '🔕') + '</button>';
         html += '<button class="cal-btn cal-btn-del"  onclick="window.calDeletePost(\'' + slot.id + '\')">✕</button>';
         html += '</div>';
         html += '</div>'; // .cal-post-body
@@ -320,6 +326,11 @@
           html += '</div>';
         }
         html += '<button class="cal-add-btn" onclick="window.openModal(\'' + slot.id + '\')">＋ Add your own</button>';
+        /* Nudge to enable notifications if not yet granted */
+        if ('Notification' in window && Notification.permission === 'default') {
+          html += '<button class="cal-notif-nudge" onclick="window.calRequestNotifFromUI()">'
+                + '🔔 Enable posting reminders</button>';
+        }
       }
 
       html += '</div>'; // .cal-slot-card
@@ -367,9 +378,10 @@
     });
 
     saveTodayPosts();
+    scheduleAllNotifications();
     renderGrid();
     renderStats();
-    if (typeof toast === 'function') toast('✨ Auto-filled ' + filled + ' posts for today!');
+    if (typeof toast === 'function') toast('✨ Auto-filled ' + filled + ' posts for today!' + (Notification.permission === 'granted' ? ' 🔔 Reminders set.' : ''));
 
     if (btn) {
       btn.textContent = '✅ Done!';
@@ -401,6 +413,7 @@
       createdAt:  new Date().toISOString()
     };
     saveTodayPosts();
+    schedulePostNotification(slotId, _posts[slotId]);
     renderGrid();
     renderStats();
     if (typeof toast === 'function') toast('✅ Scheduled: ' + trend.topic);
@@ -530,20 +543,35 @@
     };
 
     saveTodayPosts();
+    schedulePostNotification(slotId, _posts[slotId]);
     closeModal();
     renderGrid();
     renderStats();
-    if (typeof toast === 'function') toast('✅ Post saved!');
+    if (typeof toast === 'function') toast('✅ Post saved!' + (Notification.permission === 'granted' ? ' 🔔 Reminder set.' : ''));
   };
 
   /* ─── DELETE POST ────────────────────────────────────────────── */
   window.calDeletePost = function (slotId) {
     if (!_posts[slotId]) return;
     delete _posts[slotId];
+    cancelNotification(slotId);
     saveTodayPosts();
     renderGrid();
     renderStats();
     if (typeof toast === 'function') toast('🗑 Removed');
+  };
+
+  /* ─── REQUEST NOTIF FROM UI BUTTON ──────────────────────────── */
+  window.calRequestNotifFromUI = function () {
+    requestNotifPermission(function (granted) {
+      if (granted) {
+        scheduleAllNotifications();
+        if (typeof toast === 'function') toast('🔔 Posting reminders enabled!');
+      } else {
+        if (typeof toast === 'function') toast('🔕 Notifications blocked — check browser settings');
+      }
+      renderGrid(); /* Refresh to hide the nudge button */
+    });
   };
 
   /* ─── GENERATE FROM CALENDAR ─────────────────────────────────── */
@@ -995,6 +1023,30 @@
       }
       .cal-modal-cancel:hover { background: var(--bg2); }
 
+      .cal-btn-notif { color: var(--text3); }
+      .cal-btn-notif:hover { background: rgba(255,200,0,.1); color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.3)); }
+      .cal-btn-notif.notif-on { color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.4)); background: var(--gold-dim, rgba(201,126,8,.08)); }
+
+      /* Notification nudge banner in empty slots */
+      .cal-notif-nudge {
+        width: 100%;
+        padding: 7px;
+        border-radius: 9px;
+        border: 1px dashed rgba(201,126,8,.35);
+        background: transparent;
+        color: var(--gold);
+        font-size: 11px;
+        font-weight: 700;
+        font-family: 'DM Mono', monospace;
+        cursor: pointer;
+        text-align: center;
+        transition: all .15s;
+      }
+      .cal-notif-nudge:hover {
+        background: var(--gold-dim, rgba(201,126,8,.08));
+        border-style: solid;
+      }
+
       /* Filter active */
       .cal-plat-btn.active-all,
       .cal-plat-btn.active-filter {
@@ -1022,10 +1074,149 @@
     document.head.appendChild(s);
   }
 
+  /* ─── NOTIFICATIONS ──────────────────────────────────────────── */
+
+  /* Registry of pending notification timers so we can cancel/reschedule */
+  var _notifTimers = {};   // slotId → timeoutId
+
+  /* Ask for permission once — silently if already granted/denied */
+  function requestNotifPermission(callback) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      if (callback) callback(true);
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      if (callback) callback(false);
+      return;
+    }
+    Notification.requestPermission().then(function (perm) {
+      if (callback) callback(perm === 'granted');
+    });
+  }
+
+  /*
+   * parseTimeToDate(timeStr)
+   * Converts a string like "7:00 PM" or "9:00 AM" into a Date for TODAY.
+   * Returns null if the time is already past.
+   */
+  function parseTimeToDate(timeStr) {
+    var m = String(timeStr).match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return null;
+    var hrs = parseInt(m[1], 10);
+    var min = parseInt(m[2], 10);
+    var mer = m[3].toUpperCase();
+    if (mer === 'PM' && hrs !== 12) hrs += 12;
+    if (mer === 'AM' && hrs === 12) hrs = 0;
+    var target = new Date();
+    target.setHours(hrs, min, 0, 0);
+    /* Already past? Don't schedule */
+    if (target <= new Date()) return null;
+    return target;
+  }
+
+  /*
+   * schedulePostNotification(slotId, post)
+   * Sets a browser notification to fire at the post's predicted posting time.
+   * Cancels any existing timer for the same slot first.
+   */
+  function schedulePostNotification(slotId, post) {
+    if (!post || !post.postTime) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    /* Clear any old timer for this slot */
+    if (_notifTimers[slotId]) {
+      clearTimeout(_notifTimers[slotId]);
+      delete _notifTimers[slotId];
+    }
+
+    var fireAt = parseTimeToDate(post.postTime);
+    if (!fireAt) return;   /* Time already passed today */
+
+    var delay    = fireAt.getTime() - Date.now();
+    var pm       = PLAT[post.plat] || PLAT.tt;
+    var slotMeta = SLOTS.find(function (s) { return s.id === slotId; }) || SLOTS[0];
+
+    _notifTimers[slotId] = setTimeout(function () {
+      /* Prefer service worker notifications (more reliable / works when tab hidden) */
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type:    'SHOW_NOTIFICATION',
+          title:   '⏰ Time to post on ' + pm.label + '!',
+          body:    pm.icon + ' ' + (post.topic || 'Your scheduled post') + '\n' + slotMeta.label + ' · ' + post.postTime,
+          url:     '/creator-studio.html#calendar',
+          tag:     'ig-cal-' + slotId
+        });
+      } else {
+        /* Fallback: direct Notification API */
+        try {
+          new Notification('⏰ Time to post on ' + pm.label + '!', {
+            body:    pm.icon + ' ' + (post.topic || 'Your scheduled post') + '\n' + slotMeta.label + ' · ' + post.postTime,
+            icon:    '/logo.png',
+            badge:   '/logo.png',
+            tag:     'ig-cal-' + slotId,
+            renotify: true
+          });
+        } catch (e) { /* ignore — e.g. insecure context */ }
+      }
+      delete _notifTimers[slotId];
+    }, delay);
+  }
+
+  /* Schedule notifications for all posts that have a future postTime */
+  function scheduleAllNotifications() {
+    if (Notification.permission !== 'granted') return;
+    Object.keys(_posts).forEach(function (slotId) {
+      schedulePostNotification(slotId, _posts[slotId]);
+    });
+  }
+
+  /* Cancel all pending notification timers (e.g. when a post is deleted) */
+  function cancelNotification(slotId) {
+    if (_notifTimers[slotId]) {
+      clearTimeout(_notifTimers[slotId]);
+      delete _notifTimers[slotId];
+    }
+  }
+
+  /* Public: let user enable reminders for a specific slot from the UI */
+  window.calEnableSlotNotif = function (slotId) {
+    requestNotifPermission(function (granted) {
+      if (!granted) {
+        if (typeof toast === 'function') toast('🔕 Notifications blocked — enable them in browser settings');
+        return;
+      }
+      var post = _posts[slotId];
+      if (!post) {
+        if (typeof toast === 'function') toast('⚠️ Add a post to this slot first');
+        return;
+      }
+      schedulePostNotification(slotId, post);
+      var fireAt = parseTimeToDate(post.postTime);
+      if (fireAt) {
+        if (typeof toast === 'function') toast('🔔 Reminder set for ' + post.postTime + '!');
+      } else {
+        if (typeof toast === 'function') toast('⚠️ That posting time has already passed today');
+      }
+      renderGrid(); /* refresh button state */
+    });
+  };
+
+  /* Helper — is a notification already queued for this slot? */
+  function hasActiveNotif(slotId) {
+    return !!_notifTimers[slotId];
+  }
+
   /* ─── PUBLIC ENTRY POINT ─────────────────────────────────────── */
   window.loadCalendar = function () {
     loadTodayPosts();
     pruneOldDays();
+
+    /* Request notification permission early (non-blocking) */
+    requestNotifPermission(function (granted) {
+      if (granted) scheduleAllNotifications();
+    });
+
     renderGrid();
 
     // If trends aren't ready yet, wait and re-render once they arrive
