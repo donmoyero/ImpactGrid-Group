@@ -1,241 +1,1627 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<title>Consulting — ImpactGrid</title>
-<meta name="description" content="ImpactGrid Consulting — expert creator strategy, brand growth, and content intelligence for creators and businesses."/>
-<link rel="icon" href="logo.png">
+<title>Carousel Studio · ImpactGrid</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<!-- shared.css is the SINGLE SOURCE — all tokens, nav, buttons, typography -->
 <link rel="stylesheet" href="shared.css"/>
+
 <style>
-.services-grid {
+/* ═══════════════════════════════════════════════════════
+   CAROUSEL STUDIO — page-specific styles only.
+   All design tokens (colours, fonts, radii, shadows)
+   come from shared.css.  Do NOT redefine them here.
+═══════════════════════════════════════════════════════ */
+
+/* ── Shell fills the viewport below the fixed nav ─── */
+.cs-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding-top: var(--nav-h);
+  overflow: hidden;
+}
+
+/* ── Sub-nav / studio topbar ─────────────────────── */
+.cs-topbar {
+  flex-shrink: 0;
+  height: 46px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.cs-topbar::-webkit-scrollbar { display: none; }
+
+.cs-crumb {
+  font-size: 11px; font-family: var(--fm);
+  color: var(--text3); letter-spacing: .06em; white-space: nowrap;
+}
+.cs-sep { width: 1px; height: 16px; background: var(--border2); flex-shrink: 0; }
+.cs-sp  { flex: 1 1 auto; min-width: 0; }
+
+/* Small buttons used in topbar */
+.cs-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 8px;
+  font-size: 11.5px; font-weight: 600; font-family: var(--fb);
+  color: var(--text2); border: 1px solid var(--border2);
+  background: var(--card); white-space: nowrap;
+  transition: all .2s; cursor: pointer; flex-shrink: 0;
+}
+.cs-btn:hover { color: var(--text); border-color: var(--gold); }
+.cs-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+/* User / plan pill */
+.cs-plan-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 4px;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 99px; flex-shrink: 0;
+}
+.cs-plan-av {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900; color: #fff; flex-shrink: 0; overflow: hidden;
+}
+[data-theme="dark"] .cs-plan-av { color: #07090f; }
+.cs-plan-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.cs-plan-name  { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+.cs-plan-badge { font-size: 9px; font-family: var(--fm); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+.cs-plan-uses  { font-size: 10px; font-family: var(--fm); color: var(--text3); white-space: nowrap; }
+.cs-plan-uses.warn   { color: var(--gold); }
+.cs-plan-uses.danger { color: var(--red); }
+
+/* ── Three-column workspace ───────────────────────── */
+.cs-workspace {
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
-  margin-top: 32px;
-}
-.service-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 26px;
-  transition: border-color .2s, box-shadow .2s;
-}
-.service-card:hover {
-  border-color: var(--gold-glo);
-  box-shadow: 0 6px 24px rgba(201,126,8,.07);
-}
-.service-icon { font-size: 28px; margin-bottom: 12px; }
-.service-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 17px; font-weight: 800;
-  color: var(--text); margin-bottom: 7px;
-}
-.service-desc {
-  font-size: 14px; color: var(--text2); line-height: 1.65;
+  grid-template-columns: 280px 1fr 280px;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.process-steps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-top: 32px;
+/* ── LEFT PANEL ────────────────────────────────────── */
+.cs-left {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
 }
-.process-step {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 22px;
+.cs-left-head {
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
-.step-num {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--gold);
-  margin-bottom: 9px;
+.cs-left-title {
+  font-family: var(--fd); font-size: 15px; font-weight: 900;
+  letter-spacing: -.02em; color: var(--text);
 }
-.step-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 15px; font-weight: 800;
-  color: var(--text); margin-bottom: 6px;
+.cs-left-sub {
+  font-size: 11.5px; color: var(--text3); margin-top: 4px; line-height: 1.55;
 }
-.step-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.cs-left-body {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.cs-left-body::-webkit-scrollbar { width: 4px; }
+.cs-left-body::-webkit-scrollbar-track { background: transparent; }
+.cs-left-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
-.cta-block {
-  background: linear-gradient(135deg, #1a1814, #2a2318);
-  border: 1px solid rgba(201,126,8,.2);
-  border-radius: 20px;
-  padding: 52px 40px;
-  text-align: center;
-  margin-top: 16px;
-}
-.cta-block h2 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(22px, 4vw, 34px);
-  font-weight: 900; color: #fff;
-  letter-spacing: -.025em; margin-bottom: 12px;
-}
-.cta-block h2 em { color: var(--gold); font-style: normal; }
-.cta-block p {
-  font-size: 15px; color: rgba(255,255,255,.6);
-  max-width: 440px; margin: 0 auto 26px; line-height: 1.7;
+/* Form labels */
+.cs-label {
+  display: block; font-size: 11px; font-family: var(--fm);
+  font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 6px;
 }
 
-@media (max-width: 600px) {
-  .cta-block { padding: 36px 22px; }
+/* Form inputs — only used in studio context */
+.cs-textarea {
+  width: 100%; padding: 10px 12px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--r); color: var(--text); font-family: var(--fb);
+  font-size: 13.5px; line-height: 1.55; transition: all .2s;
+  outline: none; resize: none; min-height: 80px;
+}
+.cs-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.cs-textarea::placeholder { color: var(--text3); }
+
+.cs-select {
+  width: 100%; padding: 9px 32px 9px 12px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--r); color: var(--text); font-family: var(--fb);
+  font-size: 13px; transition: all .2s; outline: none;
+  appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239099b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.cs-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+
+.cs-input {
+  width: 100%; padding: 9px 12px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--r); color: var(--text); font-family: var(--fb);
+  font-size: 13px; transition: all .2s; outline: none;
+}
+.cs-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.cs-input::placeholder { color: var(--text3); }
+
+/* Slide count row */
+.cs-cnt-row { display: flex; align-items: center; }
+.cs-cnt-btn {
+  width: 34px; height: 34px;
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text2); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s;
+}
+.cs-cnt-btn:first-child { border-radius: var(--r) 0 0 var(--r); }
+.cs-cnt-btn:last-child  { border-radius: 0 var(--r) var(--r) 0; }
+.cs-cnt-btn:hover { border-color: var(--gold); color: var(--gold); }
+.cs-cnt-inner {
+  flex: 1; background: var(--bg3);
+  border: 1px solid var(--border2); border-left: none; border-right: none;
+  text-align: center; padding: 6px 0;
+}
+.cs-cnt-val { font-family: var(--fd); font-size: 20px; font-weight: 900; color: var(--text); line-height: 1; }
+.cs-cnt-sub { font-size: 9px; font-family: var(--fm); color: var(--text3); letter-spacing: .06em; text-transform: uppercase; margin-top: 1px; }
+
+/* Intel card */
+.cs-intel {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 12px 14px; transition: border-color .3s;
+}
+.cs-intel.active { border-color: var(--gold); background: var(--gold-dim); }
+.cs-intel-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.cs-intel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); transition: background .3s; flex-shrink: 0; }
+.cs-intel.active .cs-intel-dot { background: var(--gold); box-shadow: 0 0 6px var(--gold-glo); }
+.cs-intel-lbl { font-size: 9px; font-family: var(--fm); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); flex: 1; }
+.cs-intel-val { font-size: 11px; font-weight: 600; color: var(--text2); font-family: var(--fb); }
+.cs-intel.active .cs-intel-val { color: var(--gold); }
+.cs-intel-bar { display: flex; gap: 3px; }
+.cs-intel-seg { flex: 1; height: 3px; border-radius: 99px; background: var(--border2); transition: background .4s; }
+.cs-intel-seg.on { background: var(--gold); }
+
+/* Asset thumbnails */
+.cs-asset-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.cs-asset-th { width: 46px; height: 46px; border-radius: 8px; overflow: hidden; background: var(--bg3); flex-shrink: 0; opacity: 0; transition: opacity .35s; }
+.cs-asset-th.loaded { opacity: 1; }
+.cs-asset-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Format buttons row in left panel */
+.cs-fmt-row { display: flex; gap: 4px; }
+.cs-fmt-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 7px 6px; border-radius: 8px; font-size: 11px; font-weight: 600;
+  font-family: var(--fb); color: var(--text2);
+  background: var(--card); border: 1px solid var(--border2);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.cs-fmt-btn:hover { border-color: var(--gold); color: var(--gold); }
+.cs-fmt-btn.active { background: var(--gold-dim); border-color: var(--gold-glo); color: var(--gold); }
+
+/* Drop zone */
+.cs-dzone {
+  border: 1.5px dashed var(--border2); border-radius: var(--r);
+  padding: 14px 12px; text-align: center; cursor: pointer;
+  transition: all .2s; color: var(--text3);
+}
+.cs-dzone:hover, .cs-dzone.over { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.cs-dzone-icon { font-size: 20px; margin-bottom: 4px; }
+.cs-dzone p { font-size: 11px; line-height: 1.5; }
+
+/* Apply-all toggle */
+.cs-apply-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px; background: var(--gold-dim);
+  border-radius: 6px; border: 1px solid var(--gold-glo); margin-bottom: 6px;
+}
+.cs-apply-row label { font-size: 10px; font-family: var(--fm); color: var(--gold); cursor: pointer; }
+.cs-apply-toggle { accent-color: var(--gold); width: 13px; height: 13px; cursor: pointer; }
+
+/* Generate button */
+.cs-gen-btn {
+  width: 100%; padding: 13px 18px; border-radius: var(--r);
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #fff; font-family: var(--fd); font-size: 14px; font-weight: 900;
+  letter-spacing: -.01em; display: flex; align-items: center;
+  justify-content: center; gap: 7px; cursor: pointer;
+  transition: all .2s; border: none;
+  box-shadow: 0 4px 16px var(--gold-glo);
+}
+[data-theme="dark"] .cs-gen-btn { color: #07090f; }
+.cs-gen-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--sh-gold); }
+.cs-gen-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.cs-gen-btn .spin {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+  border-radius: 50%; animation: cs-spin .7s linear infinite;
+}
+[data-theme="dark"] .cs-gen-btn .spin { border-color: rgba(0,0,0,.2); border-top-color: #07090f; }
+@keyframes cs-spin { to { transform: rotate(360deg); } }
+
+/* ── CENTER ─────────────────────────────────────────── */
+.cs-center {
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg); min-width: 0;
+}
+
+/* Toolbar above canvas */
+.cs-toolbar {
+  flex-shrink: 0; display: flex; align-items: center;
+  gap: 2px; padding: 0 12px; height: 42px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+}
+.cs-tgrp {
+  display: flex; align-items: center; gap: 1px;
+  padding: 0 4px; border-right: 1px solid var(--border);
+}
+.cs-tgrp:last-of-type { border-right: none; }
+.cs-tb {
+  width: 30px; height: 30px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); transition: all .15s; background: none; border: none; cursor: pointer;
+}
+.cs-tb svg { width: 14px; height: 14px; }
+.cs-tb:hover { background: var(--bg2); color: var(--text); }
+.cs-tb.on { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
+.cs-tlbl { font-size: 11px; font-family: var(--fm); color: var(--text3); padding: 0 6px; white-space: nowrap; }
+.cs-tsp  { flex: 1; }
+.cs-slide-nav { display: flex; align-items: center; gap: 2px; }
+.cs-snb {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); cursor: pointer; transition: all .15s; background: none; border: none;
+}
+.cs-snb svg { width: 14px; height: 14px; }
+.cs-snb:hover { background: var(--bg2); color: var(--text); }
+.cs-sctr { font-size: 11px; font-family: var(--fm); color: var(--text3); padding: 0 6px; white-space: nowrap; }
+
+/* Canvas scroll area */
+.cs-canvas-wrap {
+  flex: 1; overflow: auto;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 12px; position: relative;
+}
+.cs-canvas-wrap::-webkit-scrollbar { width: 6px; }
+.cs-canvas-wrap::-webkit-scrollbar-track { background: transparent; }
+.cs-canvas-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Slide stage */
+.slide-wrap {
+  position: relative; display: flex;
+  align-items: center; justify-content: center;
+}
+.slide-canvas {
+  position: relative; width: 480px; height: 480px;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 20px 64px rgba(0,0,0,.28), 0 0 0 1px rgba(255,255,255,.06);
+  background: #0d1017; flex-shrink: 0;
+  transition: width .3s, height .3s;
+}
+.slide-canvas.portrait  { width: 384px; height: 480px; }
+.slide-canvas.landscape { width: 640px; height: 360px; }
+.slide-canvas.story     { width: 270px; height: 480px; }
+
+/* Empty state */
+.cs-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 24px; text-align: center; gap: 12px;
+}
+.cs-empty-icon  { font-size: 36px; }
+.cs-empty-title { font-family: var(--fd); font-size: 22px; font-weight: 900; color: var(--text); }
+.cs-empty-sub   { font-size: 13px; color: var(--text3); max-width: 300px; line-height: 1.6; }
+.cs-quick-prompts { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 340px; margin-top: 4px; }
+.cs-qp {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--r);
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  cursor: pointer; transition: all .2s; text-align: left;
+}
+.cs-qp:hover { background: var(--gold-dim); border-color: var(--gold-glo); }
+.cs-qp-icon { font-size: 18px; flex-shrink: 0; }
+.cs-qp-text strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
+.cs-qp-text span   { font-size: 11px; color: var(--text3); }
+
+/* User guide tooltip */
+.user-guide {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--card); border: 1px solid var(--gold-glo);
+  border-radius: 8px; padding: 7px 14px;
+  font-size: 10px; font-family: var(--fm); color: var(--gold);
+  white-space: nowrap; z-index: 20; pointer-events: none; letter-spacing: .3px;
+  animation: fadeGuide 4s ease forwards;
+}
+@keyframes fadeGuide { 0%{opacity:0} 10%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+
+/* Thumbnail strip */
+.cs-strip {
+  flex-shrink: 0; display: flex; gap: 6px;
+  padding: 10px 16px; overflow-x: auto;
+  border-top: 1px solid var(--border);
+  background: var(--bg2); min-height: 72px; align-items: center;
+}
+.cs-strip::-webkit-scrollbar { height: 4px; }
+.cs-strip::-webkit-scrollbar-track { background: transparent; }
+.cs-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Thumbnail items — carousel-studio.js creates .sthumb elements */
+.sthumb {
+  flex-shrink: 0; width: 48px; height: 48px;
+  border-radius: 8px; border: 2px solid transparent;
+  cursor: pointer; overflow: hidden; background: var(--bg3);
+  transition: all .15s; position: relative;
+}
+.sthumb:hover { border-color: var(--gold-glo); }
+.sthumb.active { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold-glo); }
+.sthumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sthumb-num {
+  position: absolute; bottom: 2px; right: 3px;
+  font-size: 10px; font-family: var(--fm); color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.7);
+}
+
+/* Loading overlay */
+.loading-ov {
+  position: absolute; inset: 0; z-index: 50;
+  background: rgba(7,9,15,.82); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center;
+  border-radius: inherit;
+}
+.loading-ov.show { display: flex; }
+.loading-inner { text-align: center; }
+.loading-ring {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(201,126,8,.2); border-top-color: var(--gold);
+  animation: cs-spin .75s linear infinite; margin: 0 auto 14px;
+}
+.loading-title { font-family: var(--fd); font-size: 15px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+.loading-hint  { font-size: 11.5px; color: var(--text3); font-family: var(--fm); }
+
+/* Slide canvas layer classes (used by carousel-studio.js) */
+.s-bg          { position: absolute; inset: 0; }
+.s-bg-img      { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.s-overlay     { position: absolute; inset: 0; }
+.s-texture     { position: absolute; inset: 0; pointer-events: none; }
+.s-content     { position: absolute; inset: 0; }
+.s-split-wrap  { position: absolute; inset: 0; display: flex; }
+.s-split-img   { width: 50%; height: 100%; background-size: cover; background-position: center; }
+.s-split-text  { width: 50%; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 24px; }
+.s-corner-float{ position: absolute; inset: 0; }
+.s-corner-img  { position: absolute; }
+.s-corner-text { position: absolute; }
+.s-dual-wrap   { position: absolute; inset: 0; }
+.s-dual-main   { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.s-dual-overlay{ position: absolute; inset: 0; }
+.s-dual-thumb  { position: absolute; }
+.s-dual-text   { position: absolute; }
+.s-band-wrap   { position: absolute; inset: 0; }
+.s-editorial   { position: absolute; inset: 0; }
+.s-editorial-bg-num { position: absolute; }
+.s-quote-wrap  { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 32px; }
+.s-stat-wrap   { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.s-stat-strip  { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; }
+.s-grid-wrap   { position: absolute; inset: 0; }
+.s-slide-num   { position: absolute; bottom: 14px; right: 16px; font-size: 10px; font-family: var(--fm); color: rgba(255,255,255,.45); z-index: 10; }
+.s-brand       { position: absolute; bottom: 14px; left: 16px; font-size: 10px; font-family: var(--fm); color: rgba(255,255,255,.45); z-index: 10; }
+.hidden { display: none !important; }
+
+/* ── RIGHT PANEL ──────────────────────────────────── */
+.cs-right {
+  background: var(--bg2); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.cs-right-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.cs-rh-title { font-family: var(--fd); font-size: 13px; font-weight: 900; color: var(--text); }
+.cs-rh-actions { display: flex; align-items: center; gap: 4px; }
+.cs-icon-btn {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); cursor: pointer; transition: all .15s;
+  background: none; border: none;
+}
+.cs-icon-btn svg { width: 13px; height: 13px; }
+.cs-icon-btn:hover { background: var(--bg3); color: var(--text); }
+.cs-right-body {
+  flex: 1; overflow-y: auto; padding: 14px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.cs-right-body::-webkit-scrollbar { width: 4px; }
+.cs-right-body::-webkit-scrollbar-track { background: transparent; }
+.cs-right-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Edit sections */
+.cs-esec { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.cs-esec:last-child { border-bottom: none; }
+.cs-esec-title {
+  font-size: 9px; font-family: var(--fm); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 8px;
+}
+
+/* Layout switcher — uses .layout-btn (old class) so carousel-studio.js active toggling works */
+.layout-badge {
+  display: inline-block; padding: 3px 8px; border-radius: 6px;
+  background: var(--purple-dim); border: 1px solid rgba(124,58,237,.2);
+  font-size: 10px; font-family: var(--fm); color: var(--purple); margin-bottom: 8px;
+}
+.layout-switcher { display: flex; flex-wrap: wrap; gap: 4px; }
+.layout-btn {
+  padding: 4px 9px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; font-family: var(--fb);
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text2); cursor: pointer; transition: all .15s;
+}
+.layout-btn:hover  { border-color: var(--purple); color: var(--purple); background: var(--purple-dim); }
+.layout-btn.active { background: var(--purple-dim); border-color: rgba(124,58,237,.4); color: var(--purple); }
+
+/* Font switcher — uses .font-btn (old class) so carousel-studio.js toggling works */
+.font-switcher { display: flex; flex-wrap: wrap; gap: 4px; }
+.font-btn {
+  padding: 4px 9px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; font-family: var(--fb);
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text2); cursor: pointer; transition: all .15s;
+}
+.font-btn:hover  { border-color: var(--gold); color: var(--gold); }
+.font-btn.active { background: var(--gold-dim); border-color: var(--gold-glo); color: var(--gold); }
+
+/* Caption copy button */
+.cs-copy-btn {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 6px; padding: 5px 10px; border-radius: 7px;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  border: 1px solid var(--border2); background: var(--card);
+  cursor: pointer; transition: all .2s;
+}
+.cs-copy-btn:hover { color: var(--text); border-color: var(--gold); }
+
+/* Hashtag chips — uses .hashtag-chip (old class) so carousel-studio.js chip creation works */
+.cs-hashtag-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.hashtag-chip {
+  padding: 3px 8px; border-radius: 99px;
+  font-size: 10px; font-family: var(--fm);
+  background: var(--blue-dim); border: 1px solid rgba(45,110,219,.2);
+  color: var(--blue); cursor: pointer; transition: all .15s;
+}
+.hashtag-chip:hover { background: var(--blue); color: #fff; }
+
+/* Accent dots — uses .cdot (old class) so setAccent() toggling works */
+.cs-cdots { display: flex; flex-wrap: wrap; gap: 6px; }
+.cdot {
+  width: 22px; height: 22px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: all .15s; box-shadow: 0 1px 4px rgba(0,0,0,.18);
+}
+.cdot.on, .cdot:hover { border-color: rgba(255,255,255,.7); transform: scale(1.18); }
+
+/* Caption AI loading state */
+.cap-ai-loading { opacity: .6; font-style: italic; }
+
+/* ── EXPORT MODAL ─────────────────────────────────── */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: var(--r2); width: 100%; max-width: 440px;
+  box-shadow: var(--sh2); overflow: hidden;
+}
+.mh {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+}
+.mh-title { font-family: var(--fd); font-size: 16px; font-weight: 900; color: var(--text); }
+.mc { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+.mf {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border);
+}
+
+/* Export option rows — uses old .exp-opt/.sel so carousel-studio.js selExport() works */
+.exp-opt {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--r);
+  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
+}
+.exp-opt:hover { border-color: var(--gold); background: var(--gold-dim); }
+.exp-opt.sel { border-color: var(--gold); background: var(--gold-dim); }
+.exp-icon  { font-size: 20px; flex-shrink: 0; }
+.exp-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.exp-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.exp-radio {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border2); margin-left: auto; flex-shrink: 0; transition: all .15s;
+}
+.exp-opt.sel .exp-radio { border-color: var(--gold); background: var(--gold); }
+
+/* Shared modal buttons (reuse shared.css .btn pattern) */
+.btn-sec {
+  padding: 9px 18px; border-radius: var(--r);
+  font-size: 13px; font-weight: 600; font-family: var(--fb);
+  color: var(--text2); border: 1px solid var(--border2);
+  background: var(--card); cursor: pointer; transition: all .2s;
+}
+.btn-sec:hover { border-color: var(--gold); color: var(--text); }
+.btn-pri {
+  padding: 9px 18px; border-radius: var(--r);
+  font-size: 13px; font-weight: 700; font-family: var(--fb);
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #fff; border: none; cursor: pointer; transition: all .2s;
+}
+[data-theme="dark"] .btn-pri { color: #07090f; }
+.btn-pri:hover { transform: translateY(-1px); box-shadow: var(--sh-gold); }
+
+/* Toast shelf */
+.toast-shelf {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 99999; display: flex; flex-direction: column;
+  align-items: center; gap: 6px; pointer-events: none;
+}
+.toast {
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text); font-size: 12.5px; font-weight: 600;
+  padding: 9px 16px; border-radius: 99px;
+  box-shadow: var(--sh2); pointer-events: none;
+  animation: fadeUp .25s ease both;
+  white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Download progress bar */
+#dlProgressBar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--card); border-top: 1px solid var(--border2);
+  padding: 10px 16px 14px; z-index: 9990;
+  display: none; flex-direction: column; gap: 6px;
+  box-shadow: 0 -8px 24px rgba(0,0,0,.12);
+}
+#dlProgressBar.show { display: flex; }
+.dl-bar-top { display: flex; align-items: center; justify-content: space-between; }
+.dl-bar-label { font-size: 12px; font-family: var(--fm); color: var(--text2); }
+.dl-bar-pct   { font-size: 11px; font-family: var(--fm); color: var(--gold); margin-right: 8px; }
+.dl-bar-cancel { font-size: 10px; color: var(--text3); cursor: pointer; transition: .15s; }
+.dl-bar-cancel:hover { color: var(--gold); }
+.dl-bar-track { height: 4px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+.dl-bar-fill  { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 99px; transition: width .2s; }
+
+/* Animation used by toast and modal */
+@keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+/* ── MOBILE ─────────────────────────────────────────── */
+.cs-mob-left-btn, .cs-mob-right-btn { display: none; }
+
+@media (max-width: 860px) {
+  .cs-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    position: relative;
+  }
+  .cs-left, .cs-right {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 800;
+    /* Use dvh so panel fills viewport correctly on mobile browsers with address bar */
+    height: 78dvh; height: 78vh;
+    border-radius: 20px 20px 0 0;
+    border: 1px solid var(--border2);
+    box-shadow: 0 -16px 48px rgba(0,0,0,.3);
+    transform: translateY(102%);
+    transition: transform .35s cubic-bezier(.4,0,.2,1);
+    /* Ensure flex column works end-to-end so cs-left-body can scroll */
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  /* Drag handle — rendered as first child div so it participates in flexbox */
+  .cs-mob-handle {
+    width: 36px; height: 4px; background: var(--border2);
+    border-radius: 99px; margin: 12px auto 0;
+    flex-shrink: 0;
+  }
+  /* Remove pseudo-element drag handle (replaced by real div above) */
+  .cs-left::before, .cs-right::before { display: none; }
+  .cs-left.open, .cs-right.open { transform: translateY(0); }
+  /* Left panel: make body section scrollable with explicit height */
+  .cs-left .cs-left-body {
+    flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    /* Extra bottom padding so Generate button clears iOS home indicator */
+    padding-bottom: 32px;
+  }
+  /* Make textarea tall enough to see on mobile without scrolling first */
+  .cs-left .cs-textarea { min-height: 72px; font-size: 16px; /* 16px prevents iOS zoom on focus */ }
+  .cs-left .cs-select, .cs-left .cs-input { font-size: 16px; }
+  .cs-center { grid-column: 1; grid-row: 1; overflow: hidden; }
+  .cs-mob-left-btn, .cs-mob-right-btn { display: inline-flex !important; }
+  .cs-panel-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 790;
+  }
+  .cs-panel-overlay.open { display: block; }
+  .slide-canvas { width: 320px !important; height: 320px !important; }
+}
+
+@media (max-width: 520px) {
+  .slide-canvas { width: 270px !important; height: 270px !important; }
+  .cs-plan-name, .cs-plan-badge { display: none; }
+  .cs-left, .cs-right { height: 82dvh; height: 82vh; }
 }
 </style>
 </head>
 <body>
 
+<!-- ══════════ SHARED NAV — nav.js injects here ══════════ -->
 <div id="ig-nav"></div>
 
-<!-- HERO -->
-<div class="page-hero">
-  <div class="page-hero-grid"></div>
-  <div class="page-hero-inner">
-    <div class="chip chip-gold" style="margin-bottom:20px">💼 Consulting</div>
-    <h1 class="page-hero-title">Strategy that turns<br><em>creators into brands</em></h1>
-    <p class="page-hero-sub">Expert-led consulting for creators and businesses who want to grow smarter — with real data, AI-backed strategy, and hands-on guidance.</p>
+<!-- ══════════ MOBILE PANEL OVERLAY ══════════ -->
+<div class="cs-panel-overlay" id="csPanelOverlay" onclick="closeAllPanels()"></div>
+
+<!-- ══════════ APP SHELL ══════════ -->
+<div class="cs-shell">
+
+  <!-- Studio sub-nav / topbar -->
+  <div class="cs-topbar">
+
+    <!-- Mobile: open left (generate) panel -->
+    <button class="cs-btn cs-mob-left-btn" onclick="toggleLeftPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Generate
+    </button>
+
+    <span class="cs-crumb">carousel-studio</span>
+    <div class="cs-sep"></div>
+
+    <!-- Plan pill — filled by updatePlanPill() when ig-user-ready fires -->
+    <div class="cs-plan-pill" id="csPlanPill" style="display:none">
+      <div class="cs-plan-av" id="csPlanAv">?</div>
+      <span class="cs-plan-name"  id="csPlanName">Creator</span>
+      <span class="cs-plan-badge" id="csPlanBadge">FREE</span>
+      <span class="cs-plan-uses"  id="csPlanUses"></span>
+    </div>
+
+    <div class="cs-sp"></div>
+
+    <button class="cs-btn" onclick="downloadAll()" title="Download all slides">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+      Download
+    </button>
+    <button class="cs-btn" onclick="openExport()" title="Export options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+    <button class="cs-btn" onclick="copyAll()" title="Copy all text">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy All
+    </button>
+
+    <!-- Mobile: open right (edit) panel -->
+    <button class="cs-btn cs-mob-right-btn" onclick="toggleRightPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Edit Slide
+    </button>
+  </div><!-- /topbar -->
+
+  <!-- Three-column workspace -->
+  <div class="cs-workspace">
+
+    <!-- ═══ LEFT PANEL — Generate ═══ -->
+    <aside class="cs-left" id="csLeft">
+      <!-- Mobile drag handle (flex child so it doesn't steal height from scrollable body) -->
+      <div class="cs-mob-handle"></div>
+      <div class="cs-left-head">
+        <div class="cs-left-title">✦ AI Carousel Creator</div>
+        <div class="cs-left-sub">Describe your content. Dijo picks the theme, writes real captions with live trend context &amp; designs every slide.</div>
+      </div>
+      <div class="cs-left-body">
+
+        <div>
+          <label class="cs-label">What's your carousel about?</label>
+          <textarea class="cs-textarea" id="topicInput"
+            placeholder="e.g. 5 habits that helped me hit £10K/month as a creator…"
+            oninput="onTopicInput()" style="min-height:88px"></textarea>
+        </div>
+
+        <div>
+          <label class="cs-label">Platform</label>
+          <select class="cs-select" id="platSelect">
+            <option value="Instagram">Instagram</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Twitter/X">Twitter / X</option>
+            <option value="Pinterest">Pinterest</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="cs-label">Tone</label>
+          <select class="cs-select" id="toneSelect">
+            <option value="Bold &amp; Direct">Bold &amp; Direct</option>
+            <option value="Conversational">Conversational</option>
+            <option value="Professional">Professional</option>
+            <option value="Inspirational">Inspirational</option>
+            <option value="Educational">Educational</option>
+            <option value="Playful">Playful</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="cs-label">Slides</label>
+          <div class="cs-cnt-row">
+            <button class="cs-cnt-btn" onclick="chgCount(-1)">−</button>
+            <div class="cs-cnt-inner">
+              <div class="cs-cnt-val" id="cntVal">7</div>
+              <div class="cs-cnt-sub">slides</div>
+            </div>
+            <button class="cs-cnt-btn" onclick="chgCount(1)">+</button>
+          </div>
+        </div>
+
+        <!-- Dijo Intelligence card — id used by carousel-studio.js -->
+        <div class="cs-intel" id="intelCard">
+          <div class="cs-intel-top">
+            <div class="cs-intel-dot" id="intelDot"></div>
+            <span class="cs-intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span>
+            <span class="cs-intel-val" id="intelVal">Waiting for topic…</span>
+          </div>
+          <div class="cs-intel-bar">
+            <div class="cs-intel-seg" id="iseg0"></div>
+            <div class="cs-intel-seg" id="iseg1"></div>
+            <div class="cs-intel-seg" id="iseg2"></div>
+            <div class="cs-intel-seg" id="iseg3"></div>
+            <div class="cs-intel-seg" id="iseg4"></div>
+          </div>
+        </div>
+
+        <!-- Asset preview — shown after theme detection -->
+        <div id="assetPreviewField" style="display:none">
+          <label class="cs-label">Auto-selected assets</label>
+          <div class="cs-asset-row" id="assetRow"></div>
+        </div>
+
+        <!-- Canvas format -->
+        <div>
+          <label class="cs-label">Canvas Format</label>
+          <div class="cs-fmt-row">
+            <button class="cs-fmt-btn active" id="fmtSquare" onclick="setFmt('square')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+              Square
+            </button>
+            <button class="cs-fmt-btn" id="fmtPortrait" onclick="setFmt('portrait')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="13"><rect x="3" y="1" width="18" height="22" rx="2"/></svg>
+              Portrait
+            </button>
+            <button class="cs-fmt-btn" id="fmtLandscape" onclick="setFmt('landscape')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="9"><rect x="1" y="5" width="22" height="14" rx="2"/></svg>
+              Wide
+            </button>
+          </div>
+        </div>
+
+        <!-- Background image upload -->
+        <div>
+          <label class="cs-label">Background Image</label>
+          <div class="cs-dzone" id="dzone"
+            onclick="document.getElementById('imgUp').click()"
+            ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
+            <div class="cs-dzone-icon">🖼️</div>
+            <p><strong style="color:var(--gold)">Upload image</strong> or drag &amp; drop<br/>
+            <span style="font-size:10px;color:var(--text3)">Replaces AI-selected background</span></p>
+          </div>
+          <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
+        </div>
+
+        <button class="cs-gen-btn" id="genBtn" onclick="generate()" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate with Dijo
+        </button>
+
+      </div>
+    </aside>
+
+    <!-- ═══ CENTER — Canvas ═══ -->
+    <main class="cs-center">
+
+      <!-- Toolbar -->
+      <div class="cs-toolbar">
+        <div class="cs-tgrp">
+          <button class="cs-tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+          <span class="cs-tlbl" id="zoomLbl">100%</span>
+          <button class="cs-tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        </div>
+        <div class="cs-tgrp">
+          <button class="cs-tb on" id="fmtSquare"   onclick="setFmt('square')"    title="Square 1:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
+          <button class="cs-tb"    id="fmtPortrait"  onclick="setFmt('portrait')"  title="Portrait 4:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
+          <button class="cs-tb"    id="fmtLandscape" onclick="setFmt('landscape')" title="Landscape 16:9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></button>
+        </div>
+        <div class="cs-tgrp">
+          <button class="cs-tb" title="Shuffle assets"   onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
+          <button class="cs-tb" title="Regenerate"       onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+          <button class="cs-tb" title="Reset text offsets" onclick="resetTextOffsets && resetTextOffsets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+        </div>
+        <div class="cs-tsp"></div>
+        <div class="cs-slide-nav">
+          <button class="cs-snb" onclick="prevSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="cs-sctr" id="slideCtr">0 / 0</span>
+          <button class="cs-snb" onclick="nextSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+
+      <!-- Canvas scroll area -->
+      <div class="cs-canvas-wrap" id="canvasWrap">
+
+        <!-- Empty state -->
+        <div class="cs-empty" id="emptyState">
+          <div class="cs-empty-icon">
+            <img src="logo.png" alt="" style="width:38px;height:38px;object-fit:contain;filter:brightness(0) saturate(100%) invert(91%) sepia(90%) saturate(800%) hue-rotate(5deg) brightness(105%)"
+                 onerror="this.outerHTML='✦'"/>
+          </div>
+          <div class="cs-empty-title">Carousel Studio <span style="color:var(--gold)">v4.5</span></div>
+          <div class="cs-empty-sub">Type your topic on the left. Dijo writes punchy copy,<br/>pulls live trends for captions &amp; builds every slide.</div>
+          <div class="cs-quick-prompts">
+            <div class="cs-qp" onclick="prefill('5 habits that helped me hit £10K per month as a creator')">
+              <span class="cs-qp-icon">💰</span>
+              <div class="cs-qp-text"><strong>Creator income tips</strong><span>5 habits that helped me hit £10K/month</span></div>
+            </div>
+            <div class="cs-qp" onclick="prefill('The morning routine that tripled my productivity')">
+              <span class="cs-qp-icon">⚡</span>
+              <div class="cs-qp-text"><strong>Productivity</strong><span>The morning routine that changed everything</span></div>
+            </div>
+            <div class="cs-qp" onclick="prefill('Why most people never grow on Instagram and how to fix it')">
+              <span class="cs-qp-icon">📈</span>
+              <div class="cs-qp-text"><strong>Growth strategy</strong><span>Why most people never grow on Instagram</span></div>
+            </div>
+            <div class="cs-qp" onclick="prefill('How I transformed my home into a cozy sanctuary on a budget')">
+              <span class="cs-qp-icon">🏡</span>
+              <div class="cs-qp-text"><strong>Home &amp; lifestyle</strong><span>Cozy sanctuary transformation on a budget</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide canvas — carousel-studio.js writes into these IDs -->
+        <div class="slide-wrap" id="slideWrap" style="display:none">
+          <div class="slide-canvas" id="slideCanvas">
+
+            <!-- Loading overlay -->
+            <div class="loading-ov" id="loadingOv">
+              <div class="loading-inner">
+                <div class="loading-ring"></div>
+                <div class="loading-title">Dijo is thinking…</div>
+                <div class="loading-hint" id="loadingHint">Detecting theme from your topic</div>
+              </div>
+            </div>
+
+            <!-- Background -->
+            <div class="s-bg" id="sBg">
+              <div class="s-bg-img" id="sBgImg"></div>
+            </div>
+
+            <!-- Video layer -->
+            <div id="sBgVideo" style="display:none;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;"></div>
+
+            <!-- Overlay z-3, texture z-4 -->
+            <div class="s-overlay" id="sOverlay" style="position:absolute;inset:0;z-index:3;"></div>
+            <div class="s-texture" id="sTexture" style="position:absolute;inset:0;z-index:4;pointer-events:none;"></div>
+
+            <!-- All layout containers z-5 -->
+            <div class="s-content layout-bottom hidden" id="sContent" style="z-index:5"></div>
+            <div class="s-split-wrap hidden" id="sSplit" style="z-index:5"></div>
+            <div class="s-corner-float hidden" id="sCorner" style="z-index:5"></div>
+            <div class="s-dual-wrap hidden" id="sDual" style="z-index:5">
+              <div class="s-dual-main"    id="sDualMain"></div>
+              <div class="s-dual-overlay"></div>
+              <div class="s-dual-thumb"   id="sDualThumb"></div>
+              <div class="s-dual-text"    id="sDualText"></div>
+            </div>
+            <div class="s-band-wrap hidden" id="sBand" style="z-index:5"><div id="sBandInner"></div></div>
+            <div class="s-editorial hidden" id="sEditorial" style="z-index:5"><div class="s-editorial-bg-num" id="sEditorialBgNum"></div></div>
+            <div class="s-quote-wrap hidden" id="sQuote" style="z-index:5"></div>
+            <div class="s-stat-wrap hidden"  id="sStat"  style="z-index:5"><div class="s-stat-strip" id="sStatStrip" style="display:none"></div></div>
+            <div class="s-grid-wrap hidden"  id="sGrid"  style="z-index:5"></div>
+            <div class="hidden" id="sTopStrip"          style="z-index:5"></div>
+            <div class="hidden" id="sBottomStrip"        style="z-index:5"></div>
+            <div class="hidden" id="sEditorialCover"     style="z-index:5"></div>
+            <div class="hidden" id="sEditorialCollage"   style="z-index:5"></div>
+            <div class="hidden" id="sEditorialCollage3"  style="z-index:5"></div>
+            <div class="hidden" id="sHabitCover"         style="z-index:5"></div>
+            <div class="hidden" id="sHabitSlide"         style="z-index:5"></div>
+
+            <!-- Always-on chrome z-10 -->
+            <div class="s-slide-num" id="sNum" style="z-index:10">1 / 7</div>
+            <div class="s-brand"     id="sBrand" style="z-index:10"></div>
+
+          </div>
+        </div>
+
+      </div><!-- /canvas-wrap -->
+
+      <!-- Thumbnail strip -->
+      <div class="cs-strip" id="strip"></div>
+
+    </main>
+
+    <!-- ═══ RIGHT PANEL — Edit Slide ═══ -->
+    <aside class="cs-right" id="csRight">
+      <!-- Mobile drag handle -->
+      <div class="cs-mob-handle"></div>
+      <div class="cs-right-head">
+        <span class="cs-rh-title">✦ Edit Slide</span>
+        <div class="cs-rh-actions">
+          <!-- Slide nav in right panel header -->
+          <button class="cs-icon-btn" onclick="prevSlide()" title="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span style="font-size:11px;font-family:var(--fm);color:var(--text3);padding:0 4px" id="editNum">—</span>
+          <button class="cs-icon-btn" onclick="nextSlide()" title="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+          <button class="cs-icon-btn" onclick="openExport()" title="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+          <button class="cs-icon-btn" onclick="downloadAll()" title="Download all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg></button>
+        </div>
+      </div>
+      <div class="cs-right-body">
+
+        <!-- Edit tip -->
+        <div style="padding:8px 10px;background:var(--gold-dim);border-radius:8px;border:1px solid var(--gold-glo);font-size:10px;color:var(--gold);font-family:var(--fm);line-height:1.6;letter-spacing:.2px;margin-bottom:12px;">
+          💡 <strong>Click any text or number</strong> on the slide to edit it directly.
+        </div>
+
+        <!-- Layout -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">Layout</div>
+          <div class="cs-apply-row">
+            <input type="checkbox" class="cs-apply-toggle" id="applyAllToggle" checked/>
+            <label for="applyAllToggle">Apply layout change to ALL slides</label>
+          </div>
+          <div class="layout-badge" id="layoutBadge">—</div>
+          <div class="layout-switcher">
+            <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
+            <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
+            <button class="layout-btn" onclick="changeLayout('TOP_STRIP')">Top Strip</button>
+            <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')">Band</button>
+            <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')">Dual Img</button>
+            <button class="layout-btn" onclick="changeLayout('STAT_HERO')">Stat</button>
+            <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')">Ed. Cover</button>
+            <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')">Ed. Collage</button>
+            <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')">Ed. Col×3</button>
+            <button class="layout-btn" onclick="changeLayout('HABIT_COVER')">Habit Cover</button>
+          </div>
+        </div>
+
+        <!-- Headline -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">Headline</div>
+          <textarea class="cs-textarea" id="eHead" style="min-height:60px" oninput="liveEdit()"></textarea>
+        </div>
+
+        <!-- Body -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">Body Copy</div>
+          <textarea class="cs-textarea" id="eBody" style="min-height:72px" oninput="liveEdit()"></textarea>
+        </div>
+
+        <!-- Stat (shown only for STAT_HERO) -->
+        <div class="cs-esec" id="eStatSection" style="display:none">
+          <div class="cs-esec-title">Stat / Number</div>
+          <input type="text" class="cs-input" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
+        </div>
+
+        <!-- Quote (shown only for QUOTE_PULL) -->
+        <div class="cs-esec" id="eQuoteSection" style="display:none">
+          <div class="cs-esec-title">Quote / Pull Quote</div>
+          <textarea class="cs-textarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
+        </div>
+
+        <!-- Caption -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">
+            Caption
+            <span id="capAiLabel" style="margin-left:6px;font-size:9px;color:var(--gold);font-family:var(--fm)">AI-written</span>
+          </div>
+          <textarea class="cs-textarea" id="eCap" style="min-height:72px" oninput="updateCap()"></textarea>
+          <button class="cs-copy-btn" onclick="copyCaption()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Caption
+          </button>
+        </div>
+
+        <!-- Hashtags -->
+        <div class="cs-esec" id="hashtagSection" style="display:none">
+          <div class="cs-esec-title">Trending Hashtags</div>
+          <div class="cs-hashtag-chips" id="hashtagChips"></div>
+          <button class="cs-copy-btn" id="hashtagCopyBtn" onclick="copyHashtags()" style="display:none;margin-top:8px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy All 5 Hashtags
+          </button>
+        </div>
+
+        <!-- Accent colour -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">Accent Colour</div>
+          <div class="cs-cdots" id="cdots">
+            <div class="cdot on"  style="background:#f5e400" onclick="setAccent('#f5e400',this)" title="Impact Grid Yellow"></div>
+            <div class="cdot"     style="background:#2563eb" onclick="setAccent('#2563eb',this)"></div>
+            <div class="cdot"     style="background:#c9a84c" onclick="setAccent('#c9a84c',this)"></div>
+            <div class="cdot"     style="background:#ef4444" onclick="setAccent('#ef4444',this)"></div>
+            <div class="cdot"     style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
+            <div class="cdot"     style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
+            <div class="cdot"     style="background:#0891b2" onclick="setAccent('#0891b2',this)"></div>
+            <div class="cdot"     style="background:#ea580c" onclick="setAccent('#ea580c',this)"></div>
+            <div class="cdot"     style="background:#fff;border-color:rgba(255,255,255,.2)" onclick="setAccent('#ffffff',this)"></div>
+          </div>
+        </div>
+
+        <!-- Font style -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">Font Style</div>
+          <div class="font-switcher">
+            <button class="font-btn active" data-pair="syne"      onclick="setFontPair('syne')">Syne</button>
+            <button class="font-btn"        data-pair="cormorant" onclick="setFontPair('cormorant')">Serif</button>
+            <button class="font-btn"        data-pair="playfair"  onclick="setFontPair('playfair')">Playfair</button>
+            <button class="font-btn"        data-pair="inter"     onclick="setFontPair('inter')">Inter</button>
+          </div>
+        </div>
+
+        <!-- Brand name -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">Brand Name</div>
+          <input type="text" class="cs-input" id="brandInput" placeholder="Your Brand" oninput="updateBrand()"/>
+        </div>
+
+      </div>
+    </aside>
+
+  </div><!-- /cs-workspace -->
+
+</div><!-- /cs-shell -->
+
+<!-- ══════════ EXPORT MODAL ══════════ -->
+<div class="modal-bg" id="exportModal">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-title" style="color:var(--gold)">Export Carousel</span>
+      <button onclick="closeExport()" style="width:26px;height:26px;border-radius:7px;background:rgba(128,128,128,.1);color:var(--text3)">✕</button>
+    </div>
+    <div class="mc">
+      <div class="exp-opt sel" id="eoPng" onclick="selExport('png')">
+        <span class="exp-icon">🖼️</span>
+        <div><div class="exp-title">PNG Images</div><div class="exp-sub">Download all slides as PNG (1080px)</div></div>
+        <div class="exp-radio"></div>
+      </div>
+      <div class="exp-opt" id="eoCopy" onclick="selExport('copy')">
+        <span class="exp-icon">📋</span>
+        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + AI captions + hashtags</div></div>
+        <div class="exp-radio"></div>
+      </div>
+      <div class="exp-opt" id="eoJson" onclick="selExport('json')">
+        <span class="exp-icon">{ }</span>
+        <div><div class="exp-title">JSON Data</div><div class="exp-sub">Full structured data — import into other tools</div></div>
+        <div class="exp-radio"></div>
+      </div>
+      <div class="exp-opt" id="eoVideo" onclick="selExport('video')">
+        <span class="exp-icon">🎬</span>
+        <div><div class="exp-title">Animated Video (MP4)</div><div class="exp-sub">Each slide shown for 3 s · exported as MP4</div></div>
+        <div class="exp-radio"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeExport()">Cancel</button>
+      <button class="btn-pri" onclick="doExport()">Export</button>
+    </div>
   </div>
 </div>
 
-<!-- SERVICES -->
-<section class="section">
-  <p style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">What we offer</p>
-  <h2 class="h2">Services built for creators</h2>
-  <p class="text" style="color:var(--text2);max-width:500px;margin-top:8px">Whether you're a solo creator or a growing brand, we have a tier that fits where you are right now.</p>
+<!-- Toast shelf -->
+<div class="toast-shelf" id="toastShelf"></div>
 
-  <div class="services-grid">
-    <div class="service-card">
-      <div class="service-icon">📊</div>
-      <div class="service-title">Content Strategy</div>
-      <div class="service-desc">We analyse your niche, audit your content, and build a 90-day roadmap aligned with trending topics and your audience's psychology.</div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🚀</div>
-      <div class="service-title">Channel Growth Sprint</div>
-      <div class="service-desc">A focused 30-day engagement to identify your biggest growth levers and help you execute fast. Ideal for creators stuck under 10K.</div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🤖</div>
-      <div class="service-title">AI Workflow Setup</div>
-      <div class="service-desc">We plug ImpactGrid's AI tools directly into your content process — from ideation to posting — so you create more in less time.</div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">💡</div>
-      <div class="service-title">Brand Partnerships</div>
-      <div class="service-desc">Positioning, media kit creation, and outreach strategy to help you land brand deals that fit your audience and pay what you're worth.</div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">📈</div>
-      <div class="service-title">Analytics & Reporting</div>
-      <div class="service-desc">Monthly deep-dive reports on your YouTube, TikTok, and Instagram performance — with clear actions, not just charts.</div>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🎯</div>
-      <div class="service-title">1-to-1 Advisory</div>
-      <div class="service-desc">Direct access to an ImpactGrid strategist. Monthly calls and bespoke advice for creators who want a thought partner in their corner.</div>
+<!-- Download progress bar -->
+<div id="dlProgressBar">
+  <div class="dl-bar-top">
+    <span class="dl-bar-label" id="dlBarLabel">Preparing…</span>
+    <div style="display:flex;align-items:center;gap:0">
+      <span class="dl-bar-pct" id="dlBarPct">0%</span>
+      <span class="dl-bar-cancel" onclick="cancelDl()">Cancel</span>
     </div>
   </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="section" style="background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-  <p style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">How it works</p>
-  <h2 class="h2">Simple. Fast. No fluff.</h2>
-  <p class="text" style="color:var(--text2);max-width:460px;margin-top:8px">Most clients have a clear direction within the first week.</p>
-
-  <div class="process-steps">
-    <div class="process-step">
-      <div class="step-num">Step 01</div>
-      <div class="step-title">Book a Free Call</div>
-      <div class="step-desc">30 minutes. We learn about your goals, your current setup, and where you're stuck.</div>
-    </div>
-    <div class="process-step">
-      <div class="step-num">Step 02</div>
-      <div class="step-title">Audit & Diagnose</div>
-      <div class="step-desc">We run a full audit of your content and analytics using ImpactGrid's real data tools.</div>
-    </div>
-    <div class="process-step">
-      <div class="step-num">Step 03</div>
-      <div class="step-title">Build Your Roadmap</div>
-      <div class="step-desc">A clear, prioritised plan tailored to your platform, niche, and growth stage. No generic advice.</div>
-    </div>
-    <div class="process-step">
-      <div class="step-num">Step 04</div>
-      <div class="step-title">Execute Together</div>
-      <div class="step-desc">We stay in your corner as you implement — adjusting strategy as your data comes in.</div>
-    </div>
+  <div class="dl-bar-track">
+    <div class="dl-bar-fill" id="dlBarFill" style="width:0%"></div>
   </div>
-</section>
+</div>
 
-<!-- CTA -->
-<section class="section">
-  <div class="cta-block">
-    <h2>Ready to grow <em>with intention</em>?</h2>
-    <p>Book a free 30-minute strategy call. No pitch, no pressure — just clarity on your next move.</p>
-    <a href="contact.html" class="btn btn-primary" style="font-size:15px;padding:13px 28px">Book Your Free Call →</a>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="footer">
-  <div class="wrap">
-    <div class="footer-grid">
-      <div class="f-brand">
-        <div style="display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:900;font-size:15px;">
-          <img src="logo.png" onerror="this.style.display='none'" style="width:26px;height:26px;object-fit:contain;border-radius:5px;"/>
-          ImpactGrid
-        </div>
-        <p>Creator intelligence for the next generation of content makers.</p>
-      </div>
-      <div class="fc">
-        <h4>Product</h4>
-        <a href="creator-studio.html">Creator Studio</a>
-        <a href="consulting.html">Consulting</a>
-        <a href="pricing.html">Pricing</a>
-      </div>
-      <div class="fc">
-        <h4>Company</h4>
-        <a href="about.html">About</a>
-        <a href="contact.html">Contact Us</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-      </div>
-      <div class="fc">
-        <h4>Support</h4>
-        <a href="contact.html">Help Centre</a>
-        <a href="mailto:support@impactgridgroup.com">Email Support</a>
-        <a href="pricing.html">Plans &amp; Pricing</a>
-      </div>
-    </div>
-    <div class="footer-bot">
-      <span>© 2026 ImpactGrid Group Ltd.</span>
-      <div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
-      <button class="footer-tbtn" id="footerTBtn" onclick="toggleTheme()">🌙 Dark Mode</button>
-    </div>
-  </div>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ══════════ SCRIPTS ══════════
+     Load order matches nav.js requirements:
+     supabase → plan-config → supabase-config → ig-supabase → plan-gate → auth → nav → html2canvas → carousel-studio
+-->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="plan-config.js"></script>
+<script src="supabase-config.js"></script>
 <script src="ig-supabase.js"></script>
+<script src="plan-gate.js"></script>
 <script src="auth.js"></script>
-<script src="nav.js" defer></script>
+<script src="nav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="carousel-studio.js"></script>
+
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    if (typeof renderNav === 'function') renderNav('consulting.html');
-    if (typeof initAuth === 'function') initAuth();
+/* ══════════════════════════════════════════════════════════
+   CAROUSEL STUDIO INTEGRATION LAYER
+   Connects shared nav/auth to carousel-studio.js.
+   Keeps all patching here so carousel-studio.js is untouched.
+══════════════════════════════════════════════════════════ */
+
+// ── 1. INIT NAV + SHELL HEIGHT ───────────────────────────
+window.addEventListener('load', function() {
+
+  // Render shared nav and footer (from nav.js)
+  if (typeof renderNav === 'function') renderNav('carousel-studio.html');
+  if (typeof window.checkAuth === 'function') window.checkAuth();
+
+  // Inject "Carousel Studio" breadcrumb into nav
+  requestAnimationFrame(function() {
+    var navIn = document.querySelector('.nav-in');
+    if (navIn) {
+      var sep   = document.createElement('div');
+      sep.style.cssText = 'width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 8px;';
+      var crumb = document.createElement('span');
+      crumb.style.cssText = 'font-size:11px;color:var(--text3);font-family:var(--fm);letter-spacing:.3px;white-space:nowrap;';
+      crumb.textContent = 'Carousel Studio';
+      var sp = navIn.querySelector('.nav-links') || navIn.querySelector('.nav-right');
+      if (sp) { navIn.insertBefore(sep, sp); navIn.insertBefore(crumb, sp); }
+    }
+
+    // Fit shell exactly beneath the fixed nav
+    var nav   = document.querySelector('.nav');
+    var shell = document.querySelector('.cs-shell');
+    if (nav && shell) {
+      var h = nav.getBoundingClientRect().height;
+      shell.style.paddingTop = h + 'px';
+      shell.style.height     = '100vh';
+    }
   });
 
-  function toggleTheme() {
-    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
-    var btn = document.getElementById('footerTBtn');
-    if (btn) btn.textContent = dark ? '🌙 Dark Mode' : '☀️ Light Mode';
+  // Default accent + brand in ST
+  if (typeof ST !== 'undefined') {
+    ST.accent = '#f5e400';
+    ST.brand  = 'www.impactgridgroup.com';
+    if (document.getElementById('brandInput'))
+      document.getElementById('brandInput').value = 'www.impactgridgroup.com';
   }
+
+  // Server keep-alive ping every 10 min
+  setInterval(function() {
+    fetch('https://impactgrid-dijo.onrender.com/ping').catch(function() {});
+  }, 600000);
+});
+
+// ── 2. PLAN PILL ─────────────────────────────────────────
+function updatePlanPill() {
+  var user  = window.igUser || {};
+  var plan  = user.plan  || (function(){ try { return localStorage.getItem('ig_plan') || 'free'; } catch(e){ return 'free'; } })();
+  var uses  = typeof user.aiUses === 'number' ? user.aiUses : (function(){ try { return parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e){ return 0; } })();
+  var cfg   = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) || { label: 'Free', ai_uses: 3 };
+  var limit = cfg.ai_uses;
+  var name  = user.firstName || user.name || (function(){ try { return localStorage.getItem('ig_name') || ''; } catch(e){ return ''; } })();
+
+  var pill    = document.getElementById('csPlanPill');
+  var avEl    = document.getElementById('csPlanAv');
+  var nameEl  = document.getElementById('csPlanName');
+  var badgeEl = document.getElementById('csPlanBadge');
+  var usesEl  = document.getElementById('csPlanUses');
+  if (!pill) return;
+
+  pill.style.display = 'inline-flex';
+
+  // Avatar
+  var avatar = '', animal = '';
+  try { avatar = localStorage.getItem('ig_avatar') || ''; } catch(e) {}
+  try { animal = localStorage.getItem('ig_animal') || ''; } catch(e) {}
+  if (avatar) {
+    avEl.innerHTML = '<img src="' + avatar + '" alt=""/>';
+  } else if (animal) {
+    avEl.style.background = 'linear-gradient(135deg,#f0f4ff,#e8f0fe)';
+    avEl.style.fontSize = '12px';
+    avEl.textContent = animal;
+  } else if (name) {
+    avEl.textContent = name.charAt(0).toUpperCase();
+  } else {
+    avEl.textContent = '?';
+  }
+
+  if (nameEl && name) nameEl.textContent = name.split(' ')[0];
+
+  if (badgeEl) {
+    badgeEl.textContent = cfg.label ? cfg.label.toUpperCase() : plan.toUpperCase();
+    if (plan === 'enterprise' || plan === 'admin') badgeEl.style.color = 'var(--purple)';
+    else if (plan === 'professional')              badgeEl.style.color = 'var(--gold)';
+    else                                           badgeEl.style.color = 'var(--text3)';
+  }
+
+  if (usesEl) {
+    if (!isFinite(limit)) {
+      usesEl.textContent = '∞ uses';
+      usesEl.className   = 'cs-plan-uses';
+    } else {
+      var remaining = Math.max(0, limit - uses);
+      usesEl.textContent = remaining + ' left';
+      usesEl.className   = 'cs-plan-uses' + (remaining === 0 ? ' danger' : remaining <= 1 ? ' warn' : '');
+    }
+  }
+}
+document.addEventListener('ig-user-ready', updatePlanPill);
+document.addEventListener('ig-plan-ready', updatePlanPill);
+
+// ── 3. BRAND LOCK ────────────────────────────────────────
+// Brand is always www.impactgridgroup.com — never editable
+(function patchBrand() {
+  var BRAND = 'www.impactgridgroup.com';
+  window.addEventListener('load', function() {
+    if (typeof ST !== 'undefined') ST.brand = BRAND;
+    var bi = document.getElementById('brandInput');
+    if (bi) { bi.value = BRAND; bi.disabled = true; bi.style.opacity = '.5'; }
+  });
+  // Override updateBrand so JS calls are no-ops
+  window.updateBrand = function() {};
+  window.getIGBrand  = function() { return BRAND; };
+})();
+
+// ── 4. APPLY LAYOUT TO ALL SLIDES ───────────────────────
+// Wrap carousel-studio.js changeLayout after it's loaded
+window.addEventListener('load', function() {
+  var _origChangeLayout = window.changeLayout;
+  if (typeof _origChangeLayout !== 'function') return;
+  window.changeLayout = function(newLayout) {
+    if (!window.ST || !window.ST.slides.length) return;
+    // These layouts have no separate render path in v4.5 — block them
+    var blocked = ['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
+    if (blocked.indexOf(newLayout) !== -1) { toast('Layout unavailable in this version'); return; }
+    var applyAll = document.getElementById('applyAllToggle');
+    if (applyAll && applyAll.checked) {
+      ST.slides.forEach(function(s) { s.layout = newLayout; });
+      if (typeof buildStrip  === 'function') buildStrip();
+      if (typeof renderSlide === 'function') renderSlide();
+      if (typeof fillEdit    === 'function') fillEdit();
+      toast('Layout → ' + newLayout.replace(/_/g, ' ') + ' · all slides');
+    } else {
+      _origChangeLayout(newLayout);
+    }
+  };
+});
+
+// ── 5. GUIDE TOOLTIP after first generation ─────────────
+var _guideShown = false;
+function showGuide() {
+  if (_guideShown) return; _guideShown = true;
+  var wrap = document.getElementById('canvasWrap');
+  if (!wrap) return;
+  var tip = document.createElement('div');
+  tip.className   = 'user-guide';
+  tip.textContent = '✦ Click any text or number on the slide to edit it directly';
+  wrap.appendChild(tip);
+  setTimeout(function() { if (tip.parentNode) tip.remove(); }, 4500);
+}
+
+// Wrap generate() to show guide tooltip + mark caption as loading
+window.addEventListener('load', function() {
+  var _genOrig = window.generate;
+  if (typeof _genOrig !== 'function') {
+    console.warn('[Patch] generate() not found on window — guide patch skipped');
+    return;
+  }
+  window.generate = async function() {
+    await _genOrig.apply(this, arguments);
+    setTimeout(showGuide, 1400);
+    var capEl  = document.getElementById('eCap');
+    var capLbl = document.getElementById('capAiLabel');
+    if (capEl)  capEl.classList.add('cap-ai-loading');
+    if (capLbl) capLbl.textContent = '✦ Writing…';
+    setTimeout(function() {
+      if (capEl)  capEl.classList.remove('cap-ai-loading');
+      if (capLbl) capLbl.textContent = 'AI-written';
+      if (typeof fillEdit === 'function') fillEdit();
+    }, window.ST && ST.slides ? ST.slides.length * 1800 + 2000 : 15000);
+  };
+});
+
+// ── 6. VIDEO LAYER FIX ───────────────────────────────────
+window.addEventListener('load', function() {
+  var vid = document.getElementById('sBgVideo');
+  if (vid) {
+    vid.style.position = 'absolute'; vid.style.inset = '0';
+    vid.style.zIndex   = '2'; vid.style.overflow = 'hidden';
+    vid.style.pointerEvents = 'none';
+  }
+});
+
+// ── 7. MOBILE PANEL HELPERS ─────────────────────────────
+function toggleLeftPanel() {
+  var el = document.getElementById('csLeft');
+  var ov = document.getElementById('csPanelOverlay');
+  var isOpen = el.classList.contains('open');
+  closeAllPanels();
+  if (!isOpen) {
+    el.classList.add('open'); ov.classList.add('open');
+    // Focus the textarea after the slide-up animation completes
+    setTimeout(function() {
+      var ta = document.getElementById('topicInput');
+      if (ta) ta.focus();
+    }, 380);
+  }
+}
+function toggleRightPanel() {
+  var el = document.getElementById('csRight');
+  var ov = document.getElementById('csPanelOverlay');
+  var isOpen = el.classList.contains('open');
+  closeAllPanels();
+  if (!isOpen) { el.classList.add('open'); ov.classList.add('open'); }
+}
+function closeAllPanels() {
+  var left  = document.getElementById('csLeft');
+  var right = document.getElementById('csRight');
+  var ov    = document.getElementById('csPanelOverlay');
+  if (left)  left.classList.remove('open');
+  if (right) right.classList.remove('open');
+  if (ov)    ov.classList.remove('open');
+}
+
+// ── 8. DOWNLOAD ALL with progress bar ───────────────────
+function isSafariIOS() {
+  return /iP(ad|hone|od)/.test(navigator.userAgent) &&
+         /WebKit/.test(navigator.userAgent) && !window.MSStream;
+}
+
+var _dlCancelled = false;
+
+function showDlProgress(label, pct) {
+  var bar = document.getElementById('dlProgressBar');
+  if (bar) bar.classList.add('show');
+  updateDlProgress(label, pct || 0);
+}
+function updateDlProgress(label, pct) {
+  var lbl  = document.getElementById('dlBarLabel');
+  var fill = document.getElementById('dlBarFill');
+  var pctEl = document.getElementById('dlBarPct');
+  if (lbl)  lbl.textContent  = label;
+  if (fill) fill.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+}
+function hideDlProgress() {
+  var bar = document.getElementById('dlProgressBar');
+  if (bar) bar.classList.remove('show');
+}
+window.cancelDl = function() { _dlCancelled = true; hideDlProgress(); toast('Download cancelled'); };
+
+window.downloadAll = async function() {
+  if (!window.ST || !ST.slides.length) { toast('Generate a carousel first'); return; }
+  if (typeof html2canvas === 'undefined') { toast('💡 html2canvas not loaded — please refresh'); return; }
+  _dlCancelled = false;
+  var total = ST.slides.length, blobs = [];
+  showDlProgress('Preparing slides…', 0);
+  var origCur    = ST.cur;
+  var canvas     = document.getElementById('slideCanvas');
+  var displayW   = canvas.offsetWidth || 480;
+  var targetPx   = 1080;
+  var exportScale = Math.round((targetPx / displayW) * 10) / 10;
+
+  for (var i = 0; i < total; i++) {
+    if (_dlCancelled) break;
+    ST.cur = i;
+    if (typeof renderSlide  === 'function') renderSlide();
+    if (typeof updateCounter === 'function') updateCounter();
+
+    // Wait for render + images
+    await new Promise(function(r) { setTimeout(r, 600); });
+    var imgs = canvas.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(function(img) {
+      if (img.complete) return Promise.resolve();
+      return new Promise(function(res) {
+        img.onload = res; img.onerror = res; setTimeout(res, 2000);
+      });
+    }));
+    await new Promise(function(r) { setTimeout(r, 300); });
+
+    updateDlProgress('Capturing slide ' + (i + 1) + ' of ' + total + '…', Math.round((i / total) * 80));
+    try {
+      var c = await html2canvas(canvas, {
+        useCORS: true, allowTaint: true,
+        scale: exportScale, backgroundColor: '#111111',
+        imageTimeout: 8000, logging: false
+      });
+      await new Promise(function(res) {
+        c.toBlob(function(blob) {
+          if (blob) blobs.push({ blob: blob, name: 'ImpactGrid-slide-' + String(i + 1).padStart(2, '0') + '.png' });
+          res();
+        }, 'image/png');
+      });
+    } catch(e) { console.warn('[downloadAll] Capture failed slide', i + 1, e); }
+  }
+
+  ST.cur = origCur;
+  if (typeof renderSlide  === 'function') renderSlide();
+  if (typeof updateCounter === 'function') updateCounter();
+  if (typeof fillEdit      === 'function') fillEdit();
+
+  if (_dlCancelled || !blobs.length) { hideDlProgress(); return; }
+
+  updateDlProgress('Downloading ' + blobs.length + ' slides…', 85);
+
+  // iOS Safari: use Web Share API
+  if (isSafariIOS() && navigator.share && navigator.canShare) {
+    var files = blobs.map(function(b) { return new File([b.blob], b.name, { type: 'image/png' }); });
+    if (navigator.canShare({ files: files })) {
+      hideDlProgress();
+      try { await navigator.share({ files: files, title: 'ImpactGrid Carousel' }); } catch(e) {}
+      return;
+    }
+  }
+
+  for (var j = 0; j < blobs.length; j++) {
+    if (_dlCancelled) break;
+    updateDlProgress('Saving ' + (j + 1) + ' of ' + blobs.length, 85 + Math.round((j / blobs.length) * 15));
+    try {
+      var url = URL.createObjectURL(blobs[j].blob);
+      var a   = document.createElement('a');
+      a.href = url; a.download = blobs[j].name;
+      a.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
+      document.body.appendChild(a); a.click();
+      await new Promise(function(r) { setTimeout(r, 400); });
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    } catch(e) { console.warn('[downloadAll] save failed:', e); }
+  }
+
+  hideDlProgress();
+  toast('✦ ' + blobs.length + ' slides saved at 1080px');
+};
+
+// ── 9. MP4 VIDEO EXPORT via MediaRecorder ───────────────
+// Renders each slide to an off-screen canvas, streams the
+// frames into a MediaRecorder, and saves the resulting webm/mp4.
+// Duration per slide: 3 seconds. Total = slides × 3 s.
+window.exportAsVideo = async function() {
+  if (!window.ST || !ST.slides.length) { toast('Generate a carousel first'); return; }
+  if (typeof html2canvas === 'undefined') { toast('💡 Refresh the page — html2canvas not loaded'); return; }
+
+  // Check MediaRecorder support
+  var mimeType = '';
+  var candidates = ['video/mp4;codecs=h264', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  for (var m = 0; m < candidates.length; m++) {
+    if (MediaRecorder.isTypeSupported(candidates[m])) { mimeType = candidates[m]; break; }
+  }
+  if (!mimeType) { toast('⚠️ Your browser does not support video recording. Try Chrome or Edge.'); return; }
+
+  var total      = ST.slides.length;
+  var SLIDE_MS   = 3000;          // ms each slide is shown
+  var FPS        = 25;
+  var canvas     = document.getElementById('slideCanvas');
+  var W          = canvas.offsetWidth  || 480;
+  var H          = canvas.offsetHeight || 480;
+  var exportScale = Math.round((1080 / W) * 10) / 10;
+  var origCur    = ST.cur;
+  var chunks     = [];
+
+  showDlProgress('Starting video export…', 0);
+
+  // Create an off-screen canvas at the export resolution
+  var offCanvas = document.createElement('canvas');
+  offCanvas.width  = Math.round(W * exportScale);
+  offCanvas.height = Math.round(H * exportScale);
+  var offCtx    = offCanvas.getContext('2d');
+
+  // Set up MediaRecorder on the off-screen canvas stream
+  var stream   = offCanvas.captureStream(FPS);
+  var recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 8000000 });
+  recorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+  var recordPromise = new Promise(function(resolve) {
+    recorder.onstop = resolve;
+  });
+
+  recorder.start();
+
+  for (var i = 0; i < total; i++) {
+    if (_dlCancelled) break;
+    ST.cur = i;
+    if (typeof renderSlide   === 'function') renderSlide();
+    if (typeof updateCounter === 'function') updateCounter();
+
+    updateDlProgress('Rendering slide ' + (i + 1) + ' of ' + total + '…', Math.round((i / total) * 85));
+
+    // Wait for render + images
+    await new Promise(function(r) { setTimeout(r, 500); });
+    var imgs = canvas.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(function(img) {
+      if (img.complete) return Promise.resolve();
+      return new Promise(function(res) { img.onload = res; img.onerror = res; setTimeout(res, 2000); });
+    }));
+    await new Promise(function(r) { setTimeout(r, 200); });
+
+    // Capture the slide to our off-screen canvas via html2canvas
+    try {
+      var captured = await html2canvas(canvas, {
+        useCORS: true, allowTaint: true,
+        scale: exportScale, backgroundColor: '#111111',
+        imageTimeout: 8000, logging: false
+      });
+      // Draw into off-screen canvas, hold for SLIDE_MS ms by drawing FPS frames per second
+      var frameCount  = Math.round((SLIDE_MS / 1000) * FPS);
+      var frameDeltaMs = SLIDE_MS / frameCount;
+      for (var f = 0; f < frameCount; f++) {
+        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+        offCtx.drawImage(captured, 0, 0, offCanvas.width, offCanvas.height);
+        await new Promise(function(r) { setTimeout(r, frameDeltaMs); });
+      }
+    } catch(e) {
+      console.warn('[exportAsVideo] html2canvas failed slide', i + 1, e);
+      // Blank frame for the duration if capture fails
+      offCtx.fillStyle = '#111';
+      offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+      await new Promise(function(r) { setTimeout(r, SLIDE_MS); });
+    }
+  }
+
+  recorder.stop();
+  await recordPromise;
+
+  // Restore original slide
+  ST.cur = origCur;
+  if (typeof renderSlide   === 'function') renderSlide();
+  if (typeof updateCounter === 'function') updateCounter();
+  if (typeof fillEdit      === 'function') fillEdit();
+
+  if (_dlCancelled) { hideDlProgress(); return; }
+
+  updateDlProgress('Saving video…', 96);
+  var ext   = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+  var blob  = new Blob(chunks, { type: mimeType });
+  var url   = URL.createObjectURL(blob);
+  var a     = document.createElement('a');
+  a.href    = url;
+  a.download = 'ImpactGrid-carousel.' + ext;
+  a.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
+  document.body.appendChild(a); a.click();
+  setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 3000);
+
+  hideDlProgress();
+  toast('✦ Video saved — ' + total + ' slides · ' + (total * 3) + 's · ' + ext.toUpperCase());
+};
+
+// Patch doExport() video branch once carousel-studio.js has loaded
+window.addEventListener('load', function() {
+  var _origDoExport = window.doExport;
+  if (typeof _origDoExport !== 'function') return;
+  window.doExport = function() {
+    if (window.ST && ST.exportType === 'video') {
+      closeExport();
+      window.exportAsVideo();
+    } else {
+      _origDoExport();
+    }
+  };
+});
+
+// ── 10. setFmt PATCH — sync cs-fmt-btn active state ─────
+// carousel-studio.js setFmt() adds .on to #fmtX toolbar buttons.
+// Also sync the left-panel format buttons which use .active.
+window.addEventListener('load', function() {
+  var _origSetFmt = window.setFmt;
+  if (typeof _origSetFmt !== 'function') return;
+  window.setFmt = function(f) {
+    _origSetFmt(f);
+    document.querySelectorAll('.cs-fmt-btn').forEach(function(btn) {
+      var id = btn.id || '';
+      btn.classList.toggle('active', id === 'fmt' + f.charAt(0).toUpperCase() + f.slice(1));
+    });
+  };
+});
 </script>
 
+<div id="ig-footer"></div>
+<script>
+  if (typeof renderFooter === 'function') renderFooter();
+</script>
 </body>
 </html>
