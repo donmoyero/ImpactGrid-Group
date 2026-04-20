@@ -1016,19 +1016,19 @@
               <div class="plan-card" id="pc-free">
                 <div class="plan-card-name">Free</div>
                 <div class="plan-card-price">£0 <span>/mo</span></div>
-                <div class="plan-card-desc">3 AI uses/mo · Carousel Studio · Up to 3 portfolios · Saved items deleted after 7 days</div>
+                <div class="plan-card-desc" id="pc-free-desc">3 AI uses/mo · Up to 3 carousels · Up to 3 portfolios · Data deleted after 7 days</div>
                 <span class="plan-card-cta current-label" id="pc-free-cta">Current plan</span>
               </div>
               <div class="plan-card" id="pc-professional">
                 <div class="plan-card-name">Professional</div>
                 <div class="plan-card-price">£8.99 <span>/mo</span></div>
-                <div class="plan-card-desc">100 AI uses/mo · 1 portfolio · 20 saved carousels · Email support</div>
+                <div class="plan-card-desc" id="pc-professional-desc">100 AI uses/mo · 1 portfolio · Up to 20 carousels · Email support</div>
                 <a href="https://buy.stripe.com/cNiaEQgYEgpO0Akgik8N206" target="_blank" class="plan-card-cta gold" id="pc-professional-cta">Get Professional →</a>
               </div>
               <div class="plan-card" id="pc-enterprise">
                 <div class="plan-card-name">Enterprise</div>
                 <div class="plan-card-price">£13.99 <span>/mo</span></div>
-                <div class="plan-card-desc">Unlimited AI · 3 portfolios · Priority support · Consulting access</div>
+                <div class="plan-card-desc" id="pc-enterprise-desc">Unlimited AI · 3 portfolios · Unlimited carousels · Priority support</div>
                 <a href="https://buy.stripe.com/28E28k4bS8Xmera2ru8N207" target="_blank" class="plan-card-cta gold" id="pc-enterprise-cta">Get Enterprise →</a>
               </div>
             </div>
@@ -1045,6 +1045,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="ig-supabase.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="plan-config.js"></script>
+  <script src="plan-gate.js"></script>
   <script src="auth.js"></script>
   <script src="nav.js"></script>
   <script>
@@ -1794,6 +1796,41 @@
           '</tr>';
         }).join('');
       }
+
+      /* ── Plan cards: fill descriptions from IG_PLAN_CONFIG (single source of truth) ── */
+      (function() {
+        var cfg = window.IG_PLAN_CONFIG || {};
+        var descs = {
+          free: (function(c) {
+            if (!c) return '';
+            var ai  = c.ai_uses + ' AI uses/mo';
+            var car = 'Up to ' + c.carousels + ' carousels';
+            var pf  = 'Up to ' + c.portfolios + ' portfolios';
+            var ret = c.data_retention_days ? 'data deleted after ' + c.data_retention_days + ' days' : '';
+            return [ai, car, pf, ret].filter(Boolean).join(' · ');
+          })(cfg.free),
+          professional: (function(c) {
+            if (!c) return '';
+            var ai  = c.ai_uses + ' AI uses/mo';
+            var pf  = c.portfolios + ' live portfolio';
+            var car = 'Up to ' + c.carousels + ' carousels';
+            var sup = c.support ? c.support + ' support' : '';
+            return [ai, pf, car, sup].filter(Boolean).join(' · ');
+          })(cfg.professional),
+          enterprise: (function(c) {
+            if (!c) return '';
+            var ai  = 'Unlimited AI';
+            var pf  = c.portfolios + ' portfolios';
+            var car = 'Unlimited carousels';
+            var sup = c.support ? c.support + ' support' : '';
+            return [ai, pf, car, sup].filter(Boolean).join(' · ');
+          })(cfg.enterprise)
+        };
+        ['free','professional','enterprise'].forEach(function(p) {
+          var el = document.getElementById('pc-' + p + '-desc');
+          if (el && descs[p]) el.textContent = descs[p];
+        });
+      })();
 
       /* ── Plan cards: mark current ── */
       ['free','professional','enterprise'].forEach(function(p) {
