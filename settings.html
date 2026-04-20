@@ -474,6 +474,81 @@
       background: var(--bg3); border: 1px solid var(--border2);
       color: var(--text3); padding: 1px 5px; border-radius: 4px;
     }
+
+    /* ── Trial Exhausted Blur Overlay ── */
+    .trial-blur-wrap {
+      position: relative;
+    }
+    .trial-blur-wrap .trial-blur-content {
+      filter: blur(4px);
+      pointer-events: none;
+      user-select: none;
+      transition: filter 0.3s ease;
+    }
+    .trial-blur-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(var(--card-rgb, 255,255,255), 0.55);
+      backdrop-filter: blur(2px);
+      border-radius: var(--r2);
+      z-index: 10;
+    }
+    [data-theme="dark"] .trial-blur-overlay {
+      background: rgba(10,13,22,0.55);
+    }
+    .trial-blur-card {
+      background: var(--card); border: 1.5px solid var(--gold-glo);
+      border-radius: var(--r2); padding: 24px 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14), var(--sh-gold);
+      text-align: center; max-width: 320px; width: 90%;
+    }
+    .trial-blur-icon { font-size: 32px; margin-bottom: 10px; }
+    .trial-blur-card h4 {
+      font-family: var(--fd); font-size: 17px; font-weight: 900;
+      letter-spacing: -0.02em; margin-bottom: 6px; color: var(--text);
+    }
+    .trial-blur-card p {
+      font-size: 12.5px; color: var(--text2); line-height: 1.6; margin-bottom: 16px;
+    }
+    .trial-blur-card a {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border-radius: var(--r);
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #fff; font-size: 13px; font-weight: 700; font-family: var(--fb);
+      text-decoration: none; transition: .2s;
+    }
+    [data-theme="dark"] .trial-blur-card a { color: #07090f; }
+    .trial-blur-card a:hover { transform: translateY(-1px); box-shadow: var(--sh-gold); }
+    .trial-blur-card .trial-reset {
+      font-size: 10px; font-family: var(--fm); color: var(--text3);
+      margin-top: 10px; letter-spacing: 0.05em;
+    }
+
+    /* ── Trial exhausted top banner ── */
+    .trial-exhausted-banner {
+      display: none;
+      align-items: center; gap: 12px;
+      background: linear-gradient(135deg, rgba(217,79,59,0.1), rgba(217,79,59,0.05));
+      border: 1.5px solid rgba(217,79,59,0.3);
+      border-radius: var(--r2); padding: 14px 18px;
+      margin-bottom: 18px;
+    }
+    .trial-exhausted-banner.show { display: flex; }
+    .trial-exhausted-banner .teb-icon { font-size: 22px; flex-shrink: 0; }
+    .trial-exhausted-banner .teb-text { flex: 1; min-width: 0; }
+    .trial-exhausted-banner .teb-text strong {
+      display: block; font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 2px;
+    }
+    .trial-exhausted-banner .teb-text span {
+      font-size: 12px; color: var(--text2);
+    }
+    .trial-exhausted-banner a {
+      flex-shrink: 0; padding: 8px 14px; border-radius: var(--r);
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #fff; font-size: 12px; font-weight: 700; font-family: var(--fb);
+      text-decoration: none; white-space: nowrap;
+    }
+    [data-theme="dark"] .trial-exhausted-banner a { color: #07090f; }
   </style>
 </head>
 <body>
@@ -952,6 +1027,16 @@
         <!-- ─── PLAN & USAGE ─── -->
         <section class="s-panel" id="panel-plan">
 
+          <!-- Trial exhausted banner — shown by JS when aiPct >= 100 -->
+          <div class="trial-exhausted-banner" id="trialExhaustedBanner">
+            <div class="teb-icon">🔒</div>
+            <div class="teb-text">
+              <strong>You've used all your free AI credits this month</strong>
+              <span>AI-powered tools are locked until you upgrade or your credits reset on the 1st.</span>
+            </div>
+            <a href="pricing.html">Upgrade →</a>
+          </div>
+
           <!-- Current Plan Hero -->
           <div class="s-card">
             <div class="s-card-head">
@@ -977,34 +1062,40 @@
           </div>
 
           <!-- Tool Access — shows what's available on current plan -->
-          <div class="s-card">
-            <div class="s-card-head">
-              <div><h3>Your Tools</h3><p>All ImpactGrid tools — click to open. Locked tools require a plan upgrade.</p></div>
-            </div>
-            <div class="tools-grid" id="toolsGrid">
-              <!-- JS renders tool links here -->
-            </div>
-          </div>
+          <!-- trial-blur-wrap is activated by JS when free trial AI uses are exhausted -->
+          <div class="trial-blur-wrap" id="toolsBlurWrap">
+            <div class="trial-blur-content" id="toolsBlurContent">
+              <div class="s-card">
+                <div class="s-card-head">
+                  <div><h3>Your Tools</h3><p>All ImpactGrid tools — click to open. Locked tools require a plan upgrade.</p></div>
+                </div>
+                <div class="tools-grid" id="toolsGrid">
+                  <!-- JS renders tool links here -->
+                </div>
+              </div>
 
-          <!-- Feature table -->
-          <div class="s-card">
-            <div class="s-card-head">
-              <div><h3>What's Included</h3><p>A full breakdown of what your plan gives you.</p></div>
+              <!-- Feature table -->
+              <div class="s-card">
+                <div class="s-card-head">
+                  <div><h3>What's Included</h3><p>A full breakdown of what your plan gives you.</p></div>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="feature-table">
+                    <thead>
+                      <tr>
+                        <th>Feature</th>
+                        <th>Your limit</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="featureTableBody">
+                      <!-- JS renders rows here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-            <div style="overflow-x:auto;">
-              <table class="feature-table">
-                <thead>
-                  <tr>
-                    <th>Feature</th>
-                    <th>Your limit</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="featureTableBody">
-                  <!-- JS renders rows here -->
-                </tbody>
-              </table>
-            </div>
+            <!-- Overlay injected by JS when exhausted -->
           </div>
 
           <!-- Plan cards — upgrade options -->
@@ -1762,6 +1853,10 @@
             aiLimit === Infinity ? '' : 'Resets on the 1st of each month'),
           _usageBar('Portfolio Slots', pfNote, pfPct, pfClass, pfClass, pfSub, ''),
         ].join('');
+
+        /* ── Trial exhausted: blur tools + show banner ── */
+        var isExhausted = (plan === 'free') && (aiLimit !== Infinity) && (aiPct >= 100);
+        _applyTrialExhausted(isExhausted);
       }
 
       /* ── Tools grid ── */
@@ -1872,6 +1967,39 @@
         (note    ? '<div class="usage-note">' + note    + '</div>' : '') +
         (subNote ? '<div class="usage-note">' + subNote + '</div>' : '') +
       '</div>';
+    }
+
+    function _applyTrialExhausted(exhausted) {
+      /* Banner */
+      var banner = document.getElementById('trialExhaustedBanner');
+      if (banner) banner.classList.toggle('show', exhausted);
+
+      /* Blur wrap */
+      var wrap    = document.getElementById('toolsBlurWrap');
+      var content = document.getElementById('toolsBlurContent');
+      if (!wrap || !content) return;
+
+      /* Remove any existing overlay */
+      var existing = wrap.querySelector('.trial-blur-overlay');
+      if (existing) existing.parentNode.removeChild(existing);
+
+      if (exhausted) {
+        content.classList.add('trial-blur-content');
+        /* Build overlay */
+        var overlay = document.createElement('div');
+        overlay.className = 'trial-blur-overlay';
+        overlay.innerHTML =
+          '<div class="trial-blur-card">' +
+            '<div class="trial-blur-icon">🔒</div>' +
+            '<h4>Free Trial Limit Reached</h4>' +
+            '<p>You\'ve used all ' + (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.free ? window.IG_PLAN_CONFIG.free.ai_uses : '') + ' AI credits included in the Free plan this month. Upgrade to keep using AI-powered tools.</p>' +
+            '<a href="pricing.html">Upgrade Now →</a>' +
+            '<div class="trial-reset">Credits reset on the 1st of each month</div>' +
+          '</div>';
+        wrap.appendChild(overlay);
+      } else {
+        content.classList.remove('trial-blur-content');
+      }
     }
 
     /* Render plan panel — wait for igUser if possible, fall back to
