@@ -1659,12 +1659,14 @@
       free:         _buildPlanLimits('free'),
       professional: _buildPlanLimits('professional'),
       enterprise:   _buildPlanLimits('enterprise'),
+      admin:        _buildPlanLimits('admin'),
     };
 
     var PLAN_META = {
       free:         { label: 'Free',         tagline: 'Try ImpactGrid — no card needed.',              badge: '✦ Free'         },
       professional: { label: 'Professional', tagline: 'For solo creators and freelancers.',             badge: '⭐ Professional' },
-      enterprise:   { label: 'Enterprise',   tagline: 'For businesses, agencies & serious operators.', badge: '🏆 Enterprise'  }
+      enterprise:   { label: 'Enterprise',   tagline: 'For businesses, agencies & serious operators.', badge: '🏆 Enterprise'  },
+      admin:        { label: 'Admin',        tagline: 'Internal admin account — unlimited access.',    badge: '🛡️ Admin'       }
     };
 
     /* Tools available per plan */
@@ -1715,8 +1717,8 @@
       if (badgeEl) badgeEl.textContent = meta.badge;
       if (nameEl)  nameEl.textContent  = meta.label + ' Plan';
       if (tagEl)   tagEl.textContent   = meta.tagline;
-      /* Hide upgrade CTA for enterprise */
-      if (ctaEl && plan === 'enterprise') ctaEl.style.display = 'none';
+      /* Hide upgrade CTA for enterprise and admin */
+      if (ctaEl && (plan === 'enterprise' || plan === 'admin')) ctaEl.style.display = 'none';
 
       /* ── stat-plan in Account tab ── */
       var statPlan = document.getElementById('stat-plan');
@@ -1807,9 +1809,9 @@
         }
       });
 
-      /* Hide upgrade section if enterprise */
+      /* Hide upgrade section if enterprise or admin */
       var upSec = document.getElementById('plan-upgrade-section');
-      if (upSec && plan === 'enterprise') upSec.style.display = 'none';
+      if (upSec && (plan === 'enterprise' || plan === 'admin')) upSec.style.display = 'none';
     }
 
     function _usageBar(label, used, pct, fillClass, countClass, note, subNote) {
