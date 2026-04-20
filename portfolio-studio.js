@@ -300,7 +300,17 @@ async function checkPortfolioAccess() {
       : plan === 'professional'
         ? 'Professional plan includes 1 portfolio — upgrade to Enterprise for 3'
         : 'Portfolio limit reached for your plan';
-    showUpgradeBar(msg, true);
+
+    // Show full upgrade modal for hard blocks
+    if (typeof window.showPlanGate === 'function') {
+      window.showPlanGate({
+        icon:     '📁',
+        title:    'Portfolio limit reached',
+        subtitle: msg
+      });
+    } else {
+      showUpgradeBar(msg, true);
+    }
     return false;
   }
 
@@ -308,7 +318,17 @@ async function checkPortfolioAccess() {
   var aiLimit = _getPlanCfg(plan).ai_uses;
   var aiUses  = _getAIUses();
   if (isFinite(aiLimit) && aiUses >= aiLimit) {
-    showUpgradeBar('Monthly AI limit reached (' + aiLimit + ' uses) — upgrade for more', true);
+    var aiMsg = 'Monthly AI limit reached (' + aiLimit + ' uses) — upgrade for more';
+    // Show full upgrade modal for hard blocks
+    if (typeof window.showPlanGate === 'function') {
+      window.showPlanGate({
+        icon:     '⚡',
+        title:    'Monthly AI limit reached',
+        subtitle: aiMsg
+      });
+    } else {
+      showUpgradeBar(aiMsg, true);
+    }
     return false;
   }
 
@@ -1477,35 +1497,20 @@ async function sendInquiry(){
 }
 
 /* ══════════════════════════════════════════════════════════
-   UPGRADE BAR
+   UPGRADE BAR — delegates to plan-gate.js
+   showUpgradeBar(message, isLoggedIn)
+   isLoggedIn true  → plan limit hit → "Upgrade plan" + "See details"
+   isLoggedIn false → not authenticated → "Sign in"
+   plan-gate.js must be loaded before this file.
 ══════════════════════════════════════════════════════════ */
 function showUpgradeBar(message, isLoggedIn) {
-  let el = document.getElementById("upgradeBar");
-
-  if (!el) {
-    el = document.createElement("div");
-    el.id = "upgradeBar";
-    document.body.appendChild(el);
+  if (typeof window.showUpgradeBar_gate === 'function') {
+    window.showUpgradeBar_gate(message, isLoggedIn);
+  } else {
+    // Fallback if plan-gate.js isn't loaded yet
+    var q = window._pgQueue = window._pgQueue || [];
+    q.push([message, isLoggedIn, {}]);
   }
-
-  // isLoggedIn true  → hit plan limit → show Upgrade only
-  // isLoggedIn false/undefined → not authenticated → show Sign in only
-  var buttons = (isLoggedIn === true)
-    ? '<a href="pricing.html" class="btn btn-primary">Upgrade plan</a>'
-    : '<a href="login.html" class="btn btn-secondary">Sign in</a>';
-
-  el.innerHTML =
-    '<div class="upgrade-inner">'
-    + '<span>' + message + '</span>'
-    + '<div style="display:flex;gap:8px;">'
-    + buttons
-    + '</div></div>';
-
-  el.classList.add("show");
-
-  setTimeout(() => {
-    el.classList.remove("show");
-  }, 5000); // slightly longer so user can read it
 }
 
 (function() {
