@@ -487,6 +487,8 @@ function renderDashGrid() {
   if (!grid) return;
 
   count.textContent = psState.portfolios.length + " portfolio" + (psState.portfolios.length !== 1 ? "s" : "");
+  // Keep localStorage in sync so settings.html usage bar reads the real count without a DB call
+  try { localStorage.setItem('ig_portfolio_count', String(psState.portfolios.length)); } catch(e) {}
   grid.querySelectorAll(".pf-card").forEach(c => c.remove());
 
   if (!psState.portfolios.length) {
