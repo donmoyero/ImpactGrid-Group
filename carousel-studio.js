@@ -462,19 +462,37 @@ async function getCarouselUser() {
 }
 
 async function checkCarouselAccess() {
-  // Wait up to 2s for nav.js to finish its auth resolution before checking
+  // Wait up to 5s for nav.js _loadProfile() to finish its DB round-trip.
+  // Listen for both 'ig-user-ready' (fired by _loadProfile) and
+  // 'ig-plan-ready' (fired at the same time) as belt-and-braces.
   if (!window.igUser) {
     await new Promise(function(resolve) {
       var done = false;
       function finish() { if (!done) { done = true; resolve(); } }
       document.addEventListener('ig-user-ready', finish, { once: true });
-      setTimeout(finish, 2000);
+      document.addEventListener('ig-plan-ready', finish, { once: true });
+      setTimeout(finish, 5000); // 5s covers slow mobile DB round-trips
     });
   }
 
   IG_USER = await getCarouselUser();
 
-  // ❌ Not logged in
+  // If igUser still null after waiting, read session directly from Supabase.
+  // Covers the edge case where _loadProfile is still in-flight but the user
+  // IS authenticated (valid session token in localStorage).
+  if (!IG_USER) {
+    try {
+      var client = (typeof getSupabase === 'function') ? getSupabase() : null;
+      if (client) {
+        var sessionRes = await client.auth.getSession();
+        if (sessionRes.data && sessionRes.data.session && sessionRes.data.session.user) {
+          IG_USER = sessionRes.data.session.user;
+        }
+      }
+    } catch(e) {}
+  }
+
+  // ❌ Genuinely not logged in
   if (!IG_USER) {
     showUpgradeBar("Sign in to generate and save carousels", false);
     return false;
