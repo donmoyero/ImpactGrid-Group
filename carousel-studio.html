@@ -324,10 +324,7 @@
       <div class="esec-title">Stat / Number</div>
       <input type="text" class="finput" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
     </div>
-
-    <div class="esec" id="eQuoteSection">
-      <div class="esec-title">Quote</div>
-      <textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
+<textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
     </div>
 
     <!-- CAPTION -->
@@ -425,17 +422,11 @@
 <div class="toast-shelf" id="toastShelf"></div>
 
 <!-- ══ MAIN ENGINE (v4.5 — includes Caption Engine) ══ -->
-<!-- REQUIRED LOAD ORDER (per nav.js spec):
-     1. supabase SDK  2. plan-config  3. supabase-config
-     4. ig-supabase   5. auth         6. nav
-     7. plan-gate     8. carousel-studio -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="plan-config.js"></script>
-<script src="supabase-config.js"></script>
 <script src="ig-supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script src="auth.js"></script>
 <script src="nav.js"></script>
-<script src="plan-gate.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="carousel-studio.js"></script>
 
@@ -492,24 +483,35 @@ function showGuide(){
   setTimeout(function(){ if(tip.parentNode) tip.remove(); }, 4500);
 }
 
-// Hook guide + caption label into generate
-var _genOrig = window.generate;
-window.generate = async function(){
-  await _genOrig.apply(this, arguments);
-  setTimeout(showGuide, 1400);
-  // Mark caption as loading while enrichDeck runs
-  var capEl = document.getElementById('eCap');
-  var capLbl = document.getElementById('capAiLabel');
-  if(capEl){ capEl.classList.add('cap-ai-loading'); }
-  if(capLbl){ capLbl.textContent = '✦ Writing…'; }
-  // enrichDeck is called from generate() in carousel-studio.js automatically
-  // Wait for it to settle then refresh UI
-  setTimeout(function(){
-    if(capEl){ capEl.classList.remove('cap-ai-loading'); }
-    if(capLbl){ capLbl.textContent = 'AI-written'; }
-    if(typeof fillEdit === 'function') fillEdit();
-  }, ST && ST.slides ? ST.slides.length * 1800 + 2000 : 15000);
-};
+// Hook guide + caption label into generate.
+// Wrapped in load listener — carousel-studio.js declares generate() with a
+// named function statement (not window.generate = ...) so window.generate
+// is only available after that script has fully executed. Running the patch
+// inline (at parse time) would mean _genOrig is undefined and clicking
+// Generate would throw "TypeError: _genOrig is not a function".
+window.addEventListener('load', function(){
+  var _genOrig = window.generate;
+  if (typeof _genOrig !== 'function') {
+    console.warn('[Patch] generate() not found on window — patch skipped');
+    return;
+  }
+  window.generate = async function(){
+    await _genOrig.apply(this, arguments);
+    setTimeout(showGuide, 1400);
+    // Mark caption as loading while enrichDeck runs
+    var capEl = document.getElementById('eCap');
+    var capLbl = document.getElementById('capAiLabel');
+    if(capEl){ capEl.classList.add('cap-ai-loading'); }
+    if(capLbl){ capLbl.textContent = '✦ Writing…'; }
+    // enrichDeck is called from generate() in carousel-studio.js automatically
+    // Wait for it to settle then refresh UI
+    setTimeout(function(){
+      if(capEl){ capEl.classList.remove('cap-ai-loading'); }
+      if(capLbl){ capLbl.textContent = 'AI-written'; }
+      if(typeof fillEdit === 'function') fillEdit();
+    }, ST && ST.slides ? ST.slides.length * 1800 + 2000 : 15000);
+  };
+});
 
 // ── 5. VIDEO LAYER FIX
 window.addEventListener('load', function(){
