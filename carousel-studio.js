@@ -421,13 +421,9 @@ var IG_IS_ADMIN    = false;
 
 // AI use limit — always read live from plan-config.js so changes in one place propagate everywhere
 function _getCarouselAILimit(plan) {
-  if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) {
-    return window.IG_PLAN_CONFIG[plan].ai_uses;
-  }
-  // IG_PLAN_CONFIG not loaded yet — safe fallbacks that match plan-config.js
-  if (plan === 'enterprise' || plan === 'admin') return Infinity;
-  if (plan === 'professional') return 100;
-  return 3; // free
+  return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
+    ? window.IG_PLAN_CONFIG[plan].ai_uses
+    : (plan === 'professional' ? 100 : plan === 'enterprise' ? Infinity : 3);
 }
 
 /* Keep plan + usage in sync when nav.js resolves them from the DB */
@@ -480,7 +476,7 @@ async function checkCarouselAccess() {
 
   // ❌ Not logged in
   if (!IG_USER) {
-    showUpgradeBar("Sign in to generate and save carousels", false);
+    showUpgradeBar("Login to generate and save carousels");
     return false;
   }
 
@@ -503,16 +499,7 @@ async function checkCarouselAccess() {
   var limit = _getCarouselAILimit(IG_PLAN);
   if (IG_AI_USES >= limit) {
     var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : (IG_PLAN.charAt(0).toUpperCase() + IG_PLAN.slice(1));
-    // Hard block — show full upgrade modal
-    if (typeof window.showPlanGate === 'function') {
-      window.showPlanGate({
-        icon:     '⚡',
-        title:    'Monthly AI limit reached',
-        subtitle: 'You\'ve used all ' + limit + ' AI generations on the ' + planLabel + ' plan this month. Upgrade to keep creating.'
-      });
-    } else {
-      showUpgradeBar(planLabel + ' limit reached (' + limit + '/mo) — upgrade for more', true, { persistent: true });
-    }
+    showUpgradeBar(planLabel + ' limit reached (' + limit + '/mo) — upgrade for more');
     return false;
   }
 
@@ -1381,12 +1368,6 @@ var EDITABLE_CLASSES=['s-headline','s-body','s-cta','s-tag','s-stat-num','s-quot
 function makeEditable(){
   var canvas=document.getElementById('slideCanvas');
   if(!canvas) return;
-  // Clear any stale contenteditable from a previous render
-  canvas.querySelectorAll('[contenteditable]').forEach(function(el){
-    el.removeAttribute('contenteditable');
-    el.dataset.editing='0';
-    el.style.outline=''; el.style.outlineOffset=''; el.style.cursor='';
-  });
   var sel=EDITABLE_CLASSES.map(function(c){return '.'+c;}).join(',');
   canvas.querySelectorAll(sel).forEach(function(el){
     var cls=EDITABLE_CLASSES.find(function(c){return el.classList.contains(c);})||'el';
@@ -1715,29 +1696,15 @@ async function exportSlidesAsPNG(){
   }
   if(!ST.slides.length){ toast('Generate a carousel first'); return; }
 
-  // ── Carousel save limit check ──────────────────────────────────────────
-  // Free: 3 saves per period. Professional: 20. Enterprise: unlimited.
-  // When the limit is hit, show the full upgrade modal (not just the bar).
-  if (!IG_IS_ADMIN && IG_PLAN !== 'enterprise' && IG_PLAN !== 'admin') {
+  // ── Carousel save limit check (free plan: 3 saves, 7-day retention) ──
+  if (!IG_IS_ADMIN && IG_PLAN !== 'enterprise') {
     var saveLimit = window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[IG_PLAN]
       ? window.IG_PLAN_CONFIG[IG_PLAN].carousels : 3;
     var saveCount = 0;
     try { saveCount = parseInt(localStorage.getItem('ig_carousel_saves') || '0'); } catch(e) {}
-
     if (saveCount >= saveLimit) {
       var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : 'Free';
-      var nextPKey  = IG_PLAN === 'free' ? 'professional' : 'enterprise';
-      var nextP     = (typeof igPlanLabel === 'function') ? igPlanLabel(nextPKey) : (IG_PLAN === 'free' ? 'Professional' : 'Enterprise');
-      // Show full upgrade modal — this is a hard block, not just a nudge
-      if (typeof window.showPlanGate === 'function') {
-        window.showPlanGate({
-          icon:     '🎠',
-          title:    'Carousel save limit reached',
-          subtitle: 'You\'ve used all ' + saveLimit + ' carousel saves on the ' + planLabel + ' plan. Upgrade to ' + nextP + ' to export more.'
-        });
-      } else {
-        showUpgradeBar(planLabel + ' plan: ' + saveLimit + ' carousel saves used — upgrade to save more', true, { persistent: true });
-      }
+      showUpgradeBar(planLabel + ' plan: ' + saveLimit + ' carousel saves used — upgrade to save more');
       return;
     }
     // Increment save counter
@@ -1918,7 +1885,7 @@ async function exportSlidesAsMP4(){
       });
       var frameIdx=0;
       for(var s=0;s<frameBlobs.length;s++){
-        var blob2=frameBlobs[s]; if(!blob2){ console.warn('[exportMP4/ffmpeg] Slide '+(s+1)+' frame missing — skipped'); continue; }
+        var blob2=frameBlobs[s]; if(!blob2) continue;
         var buf=await blob2.arrayBuffer();
         var frameCount=secPerSlide*fps;
         for(var f=0;f<frameCount;f++){
@@ -1965,22 +1932,7 @@ async function exportSlidesAsMP4(){
   recorder.start();
 
   for(var si=0;si<frameBlobs.length;si++){
-    var fb=frameBlobs[si];
-    // Retry failed slide capture once before skipping
-    if(!fb){
-      try{
-        ST.cur=si; renderSlide();
-        canvas.style.transform='none'; canvas.style.transformOrigin='';
-        await new Promise(function(r){setTimeout(r,800);});
-        await waitForCanvasImages(canvas);
-        var retryW=canvas.offsetWidth||620;
-        var retryCaptured=await html2canvas(canvas,{useCORS:true,allowTaint:true,scale:Math.round((targetPx/retryW)*10)/10,backgroundColor:'#111111',imageTimeout:12000,logging:false,width:retryW,height:canvas.offsetHeight||620,windowWidth:retryW,windowHeight:canvas.offsetHeight||620,foreignObjectRendering:false});
-        fb=await new Promise(function(res){ retryCaptured.toBlob(function(b){res(b);},'image/png'); });
-        frameBlobs[si]=fb;
-        canvas.style.transform=prevTransform;
-      }catch(retryErr){ console.warn('[exportMP4] Retry failed for slide '+(si+1)); }
-    }
-    if(!fb) continue;
+    var fb=frameBlobs[si]; if(!fb) continue;
     var img2=new Image();
     var burl=URL.createObjectURL(fb);
     await new Promise(function(res){ img2.onload=res; img2.src=burl; });
@@ -2282,29 +2234,59 @@ document.addEventListener('keydown',function(e){
 })();
 
 /* ══════════════════════════════════════════════════════════
-   UPGRADE BAR — delegates to plan-gate.js
-   showUpgradeBar(message, isLoggedIn?, opts?)
-   plan-gate.js must be loaded before this file.
-   If it hasn't loaded yet (e.g. race on slow connections),
-   this thin shim queues the call until it's ready.
+   UPGRADE BAR
 ══════════════════════════════════════════════════════════ */
-function showUpgradeBar(message, isLoggedIn, opts) {
-  // Determine isLoggedIn from context if not passed (legacy call sites)
-  if (isLoggedIn === undefined) {
-    isLoggedIn = !!(window.igUser && window.igUser.id) || !!(IG_USER);
+function showUpgradeBar(message) {
+  let el = document.getElementById("upgradeBar");
+
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "upgradeBar";
+    document.body.appendChild(el);
   }
-  if (typeof window.showUpgradeBar_gate === 'function') {
-    window.showUpgradeBar_gate(message, isLoggedIn, opts);
-  } else {
-    // plan-gate.js not yet loaded — queue
-    var _q = window._pgQueue = window._pgQueue || [];
-    _q.push([message, isLoggedIn, opts]);
-  }
+
+  el.innerHTML =
+    '<div class="upgrade-inner">'
+    + '<span>' + message + '</span>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
+    + '<a href="login.html" class="btn btn-secondary">Login</a>'
+    + '</div></div>';
+
+  el.classList.add("show");
+
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 4000);
 }
 
-// Flush any queued calls once plan-gate.js loads
-document.addEventListener('plan-gate-ready', function () {
-  var q = window._pgQueue || [];
-  q.forEach(function (args) { window.showUpgradeBar_gate.apply(null, args); });
-  window._pgQueue = [];
-});
+(function() {
+  const style = document.createElement("style");
+  style.innerHTML = [
+    "#upgradeBar {",
+    "  position: fixed;",
+    "  top: 80px;",
+    "  left: 50%;",
+    "  transform: translateX(-50%) translateY(-20px);",
+    "  background: var(--card);",
+    "  border: 1px solid var(--border);",
+    "  border-radius: 999px;",
+    "  padding: 10px 16px;",
+    "  box-shadow: var(--sh2);",
+    "  opacity: 0;",
+    "  transition: all .3s ease;",
+    "  z-index: 9999;",
+    "}",
+    "#upgradeBar.show {",
+    "  opacity: 1;",
+    "  transform: translateX(-50%) translateY(0);",
+    "}",
+    ".upgrade-inner {",
+    "  display: flex;",
+    "  gap: 12px;",
+    "  align-items: center;",
+    "  font-size: 12px;",
+    "}"
+  ].join("\n");
+  document.head.appendChild(style);
+})();
