@@ -7,6 +7,13 @@
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
+// Expose on window so calendar.js can read real trend data without
+// duplicating the fetch. calendar.js checks window._allTrends first.
+Object.defineProperty(window, '_allTrends', {
+  get: function() { return _allTrends; },
+  set: function(v) { _allTrends = v; },
+  configurable: true
+});
 var _selectedStyle = 'Educational';
 var trendChartInstance = null;
 var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
