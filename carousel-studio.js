@@ -466,13 +466,17 @@ async function getCarouselUser() {
 }
 
 async function checkCarouselAccess() {
-  // Wait up to 2s for nav.js to finish its auth resolution before checking
-  if (!window.igUser) {
+  // Wait for nav.js to finish auth + profile load before checking plan/usage.
+  // We listen for ig-plan-ready (fires AFTER profiles DB query completes and
+  // plan is set on window.igUser) rather than ig-user-ready (fires earlier,
+  // before the DB round-trip). Timeout extended to 4s for slow connections.
+  if (!window.igUser || !window.igUser.plan) {
     await new Promise(function(resolve) {
       var done = false;
       function finish() { if (!done) { done = true; resolve(); } }
+      document.addEventListener('ig-plan-ready', finish, { once: true });
       document.addEventListener('ig-user-ready', finish, { once: true });
-      setTimeout(finish, 2000);
+      setTimeout(finish, 4000);
     });
   }
 
