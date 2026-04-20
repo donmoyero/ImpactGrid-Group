@@ -3,7 +3,7 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v8'; // bumped — push notification improvements
+const CACHE_NAME = 'impactgrid-v9'; // bumped — calendar posting reminders
 
 const CORE_FILES = [
   '/',
@@ -139,6 +139,25 @@ self.addEventListener('sync', function(event) {
   if (event.tag === 'sync-content') {
     event.waitUntil(Promise.resolve());
   }
+});
+
+/* ── Message: SHOW_NOTIFICATION from calendar.js ── */
+self.addEventListener('message', function(event) {
+  if (!event.data || event.data.type !== 'SHOW_NOTIFICATION') return;
+  var d = event.data;
+  self.registration.showNotification(d.title || 'ImpactGrid', {
+    body:     d.body    || "Time to post!",
+    icon:     '/logo.png',
+    badge:    '/logo.png',
+    vibrate:  [100, 50, 100],
+    tag:      d.tag     || 'ig-cal',
+    renotify: true,
+    data:     { url: d.url || '/creator-studio.html#calendar' },
+    actions:  [
+      { action: 'open',    title: '📅 Open Calendar' },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
+  });
 });
 
 /* ── Push notifications ── */
