@@ -440,43 +440,35 @@ document.addEventListener('ig-plan-ready', function(e) {
 
 async function getCarouselUser() {
   try {
-    // Prefer nav.js's already-authenticated client (avoids double-init race)
-    if (typeof getSupabase === 'function') {
-      const client = getSupabase();
-      if (client) {
-        const { data } = await client.auth.getSession();
-        return data?.session?.user || null;
-      }
-    }
-    // nav.js populates window.igUser after auth resolves — use it if available
+    // 1. window.igUser is the most reliable source — nav.js populates it
+    //    after the profiles DB query, so plan + email are already resolved.
     if (window.igUser && window.igUser.id) {
       return { id: window.igUser.id, email: window.igUser.email };
     }
-    // Last resort: raw supabase SDK using globals set by ig-supabase.js
-    const sb = window.supabase;
-    if (!sb || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
-    const sbClient = sb.createClient
-      ? sb.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
-      : sb;
-    const { data } = await sbClient.auth.getSession();
-    return data?.session?.user || null;
-  } catch {
+    // 2. Fall back to the shared auth client from ig-supabase.js.
+    //    This is the same singleton used everywhere — no new client created.
+    if (typeof getSupabase === 'function') {
+      var client = getSupabase();
+      if (client) {
+        var res = await client.auth.getSession();
+        return (res.data && res.data.session && res.data.session.user) || null;
+      }
+    }
+    // 3. No auth available
+    return null;
+  } catch(e) {
     return null;
   }
 }
 
 async function checkCarouselAccess() {
-  // Wait for nav.js to finish auth + profile load before checking plan/usage.
-  // We listen for ig-plan-ready (fires AFTER profiles DB query completes and
-  // plan is set on window.igUser) rather than ig-user-ready (fires earlier,
-  // before the DB round-trip). Timeout extended to 4s for slow connections.
-  if (!window.igUser || !window.igUser.plan) {
+  // Wait up to 2s for nav.js to finish its auth resolution before checking
+  if (!window.igUser) {
     await new Promise(function(resolve) {
       var done = false;
       function finish() { if (!done) { done = true; resolve(); } }
-      document.addEventListener('ig-plan-ready', finish, { once: true });
       document.addEventListener('ig-user-ready', finish, { once: true });
-      setTimeout(finish, 4000);
+      setTimeout(finish, 2000);
     });
   }
 
