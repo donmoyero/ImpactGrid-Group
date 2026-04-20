@@ -7,6 +7,24 @@
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
+
+/* ── AI CALL THROTTLE ────────────────────────────────────────────────
+   Prevents the auto-refresh loop from hammering /chat and /ai/*
+   Each AI function caches its result for 30 minutes.
+   forceRefresh=true bypasses the cache (manual Refresh buttons).
+──────────────────────────────────────────────────────────────────── */
+var _aiCache    = {};
+var AI_CACHE_MS = 30 * 60 * 1000;
+
+function _aiCacheGet(key) {
+  var entry = _aiCache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > AI_CACHE_MS) { delete _aiCache[key]; return null; }
+  return entry.value;
+}
+function _aiCacheSet(key, value) {
+  _aiCache[key] = { value: value, ts: Date.now() };
+}
 // Expose on window so calendar.js can read real trend data without
 // duplicating the fetch. calendar.js checks window._allTrends first.
 // Simple assignment — avoids defineProperty redefine errors on reload.
@@ -721,9 +739,7 @@ async function fetchTrends() {
     var rss = await fetch(DIJO + '/trends/google?geo=GB');
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
-      // Rank-based scoring: top trends score higher so they clear blowup/rising thresholds
-      var rankScore = Math.max(5.0, 9.5 - (i * 0.25));
-      return { topic: topic, score: rankScore, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: i < 3 ? 'peak' : i < 8 ? 'rising' : 'emerging', igPrediction: 0, confidence: 65 };
+      return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
     }); window._allTrends = _allTrends;
     if (_allTrends.length) {
       console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics');
@@ -1279,7 +1295,13 @@ async function runTrendPrediction() {
   el.innerHTML = '<span class="spinner spinner-gold"></span>'
     + '<span style="font-size:12px;color:var(--text3);margin-left:8px">Dijo is picking this week\'s best opportunity…</span>';
 
-  // ── Try Dijo AI briefing first ────────────────────────────────────────────
+  // ── Try Dijo AI briefing — cached 30 min so auto-refresh doesn't burn tokens ──
+  var _predKey    = 'weekly_prediction';
+  var _predCached = _aiCacheGet(_predKey);
+  if (_predCached) {
+    el.innerHTML = _predCached;
+    return;
+  }
   try {
     var res = await fetch(DIJO + '/ai/daily-briefing');
     var data = await res.json();
@@ -1331,6 +1353,7 @@ async function runTrendPrediction() {
           : '')
         + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · ' + escH(data.date || 'This week') + '</div>'
         + '</div>';
+    _aiCacheSet(_predKey, el.innerHTML);
 
       return;
     }
@@ -1691,7 +1714,14 @@ async function renderDijoTopPick() {
     + '</div>'
     + '</div>';
 
-  // Now fetch the AI reason asynchronously
+  // Fetch AI reason — cached per topic for 30 min to protect token budget
+  var _pickKey = 'pick_' + best.topic;
+  var _cached  = _aiCacheGet(_pickKey);
+  if (_cached) {
+    var reasonEl = document.getElementById('dijoPickReason');
+    if (reasonEl) reasonEl.textContent = _cached;
+    return;
+  }
   try {
     var prompt = 'In ONE sentence (max 25 words), explain why "' + best.topic
       + '" is the best content opportunity right now on ' + best.platLabel
@@ -1704,8 +1734,9 @@ async function renderDijoTopPick() {
     var data = await res.json();
     var reasonEl = document.getElementById('dijoPickReason');
     if (reasonEl && data.reply) {
-      var reason = data.reply.trim().split(/[.!?]/)[0];
-      reasonEl.textContent = reason + '.';
+      var reason = data.reply.trim().split(/[.!?]/)[0] + '.';
+      reasonEl.textContent = reason;
+      _aiCacheSet(_pickKey, reason);
     }
   } catch(e) {
     var reasonEl = document.getElementById('dijoPickReason');
@@ -1778,6 +1809,8 @@ async function loadPlatformStatus() {
    DAILY BRIEFING
 ───────────────────────────────────────────── */
 async function loadBriefing(forceRefresh) {
+  // Skip AI fetch on auto-refresh if we already have a cached result
+  if (!forceRefresh && _aiCacheGet('briefing_done')) return;
   var el = document.getElementById('briefingText');
   var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
@@ -1835,6 +1868,7 @@ async function loadBriefing(forceRefresh) {
       return;
     }
     // Fallback: show just the first sentence of the AI briefing (compact)
+    _aiCacheSet('briefing_done', true);
     if (data.briefing) {
       var first = data.briefing.split(/[.!?]/)[0].trim();
       el.textContent = first + '.';
@@ -2618,5 +2652,5 @@ window.addEventListener('load', async function() {
     } catch(e) {
       console.warn('[Trends] Auto-refresh failed:', e.message);
     }
-  }, 60000);
+  }, 5 * 60 * 1000); // 5 min — ingestion runs every 30 min, no need to poll faster
 });
