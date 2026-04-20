@@ -421,9 +421,13 @@ var IG_IS_ADMIN    = false;
 
 // AI use limit — always read live from plan-config.js so changes in one place propagate everywhere
 function _getCarouselAILimit(plan) {
-  return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
-    ? window.IG_PLAN_CONFIG[plan].ai_uses
-    : (plan === 'professional' ? 100 : plan === 'enterprise' ? Infinity : 3);
+  if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) {
+    return window.IG_PLAN_CONFIG[plan].ai_uses;
+  }
+  // IG_PLAN_CONFIG not loaded yet — safe fallbacks that match plan-config.js
+  if (plan === 'enterprise' || plan === 'admin') return Infinity;
+  if (plan === 'professional') return 100;
+  return 3; // free
 }
 
 /* Keep plan + usage in sync when nav.js resolves them from the DB */
@@ -1716,7 +1720,8 @@ async function exportSlidesAsPNG(){
 
     if (saveCount >= saveLimit) {
       var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : 'Free';
-      var nextP     = IG_PLAN === 'free' ? 'Professional' : 'Enterprise';
+      var nextPKey  = IG_PLAN === 'free' ? 'professional' : 'enterprise';
+      var nextP     = (typeof igPlanLabel === 'function') ? igPlanLabel(nextPKey) : (IG_PLAN === 'free' ? 'Professional' : 'Enterprise');
       // Show full upgrade modal — this is a hard block, not just a nudge
       if (typeof window.showPlanGate === 'function') {
         window.showPlanGate({
