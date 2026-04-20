@@ -1381,6 +1381,12 @@ var EDITABLE_CLASSES=['s-headline','s-body','s-cta','s-tag','s-stat-num','s-quot
 function makeEditable(){
   var canvas=document.getElementById('slideCanvas');
   if(!canvas) return;
+  // Clear any stale contenteditable from a previous render
+  canvas.querySelectorAll('[contenteditable]').forEach(function(el){
+    el.removeAttribute('contenteditable');
+    el.dataset.editing='0';
+    el.style.outline=''; el.style.outlineOffset=''; el.style.cursor='';
+  });
   var sel=EDITABLE_CLASSES.map(function(c){return '.'+c;}).join(',');
   canvas.querySelectorAll(sel).forEach(function(el){
     var cls=EDITABLE_CLASSES.find(function(c){return el.classList.contains(c);})||'el';
@@ -1912,7 +1918,7 @@ async function exportSlidesAsMP4(){
       });
       var frameIdx=0;
       for(var s=0;s<frameBlobs.length;s++){
-        var blob2=frameBlobs[s]; if(!blob2) continue;
+        var blob2=frameBlobs[s]; if(!blob2){ console.warn('[exportMP4/ffmpeg] Slide '+(s+1)+' frame missing — skipped'); continue; }
         var buf=await blob2.arrayBuffer();
         var frameCount=secPerSlide*fps;
         for(var f=0;f<frameCount;f++){
@@ -1959,7 +1965,22 @@ async function exportSlidesAsMP4(){
   recorder.start();
 
   for(var si=0;si<frameBlobs.length;si++){
-    var fb=frameBlobs[si]; if(!fb) continue;
+    var fb=frameBlobs[si];
+    // Retry failed slide capture once before skipping
+    if(!fb){
+      try{
+        ST.cur=si; renderSlide();
+        canvas.style.transform='none'; canvas.style.transformOrigin='';
+        await new Promise(function(r){setTimeout(r,800);});
+        await waitForCanvasImages(canvas);
+        var retryW=canvas.offsetWidth||620;
+        var retryCaptured=await html2canvas(canvas,{useCORS:true,allowTaint:true,scale:Math.round((targetPx/retryW)*10)/10,backgroundColor:'#111111',imageTimeout:12000,logging:false,width:retryW,height:canvas.offsetHeight||620,windowWidth:retryW,windowHeight:canvas.offsetHeight||620,foreignObjectRendering:false});
+        fb=await new Promise(function(res){ retryCaptured.toBlob(function(b){res(b);},'image/png'); });
+        frameBlobs[si]=fb;
+        canvas.style.transform=prevTransform;
+      }catch(retryErr){ console.warn('[exportMP4] Retry failed for slide '+(si+1)); }
+    }
+    if(!fb) continue;
     var img2=new Image();
     var burl=URL.createObjectURL(fb);
     await new Promise(function(res){ img2.onload=res; img2.src=burl; });
