@@ -1824,10 +1824,26 @@
       '</div>';
     }
 
-    /* Run once on DOMContentLoaded, and again when igUser is ready */
-    document.addEventListener('DOMContentLoaded', function() {
-      renderPlanPanel();
-    });
+    /* Render plan panel — wait for igUser if possible, fall back to
+       localStorage so the panel is never blank. Handles three races:
+       1. DOMContentLoaded fires before ig-user-ready  (normal)
+       2. ig-user-ready fires before DOMContentLoaded  (fast nav.js)
+       3. igUser already set by the time this script runs (cached) */
+    function _initPlanPanel() {
+      if (window.igUser) {
+        // igUser already available — render immediately with real data
+        renderPlanPanel();
+        var notice = document.getElementById('guest-notice');
+        if (notice) notice.style.display = 'none';
+      } else {
+        // igUser not ready yet — render with localStorage fallback,
+        // will re-render with real data when ig-user-ready fires
+        renderPlanPanel();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', _initPlanPanel);
+
     document.addEventListener('ig-user-ready', function() {
       renderPlanPanel();
       var notice = document.getElementById('guest-notice');
@@ -1836,6 +1852,11 @@
     document.addEventListener('ig-plan-ready', function() {
       renderPlanPanel();
     });
+
+    // Edge case: script runs after DOMContentLoaded already fired
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      _initPlanPanel();
+    }
 
     function showAlert(id, msg) {
       var el = document.getElementById(id); if (!el) return;
