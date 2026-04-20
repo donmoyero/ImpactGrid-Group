@@ -489,8 +489,8 @@ async function checkCarouselAccess() {
     try { IG_AI_USES = parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
   }
 
-  // 👑 Admin / enterprise — unlimited, no counter
-  if (IG_USER.email === IG_ADMIN_EMAIL || IG_PLAN === 'enterprise') {
+  // 👑 Admin / enterprise / admin plan — unlimited, no counter
+  if (IG_USER.email === IG_ADMIN_EMAIL || IG_PLAN === 'enterprise' || IG_PLAN === 'admin') {
     IG_IS_ADMIN = true;
     return true;
   }
@@ -1695,6 +1695,21 @@ async function exportSlidesAsPNG(){
     return;
   }
   if(!ST.slides.length){ toast('Generate a carousel first'); return; }
+
+  // ── Carousel save limit check (free plan: 3 saves, 7-day retention) ──
+  if (!IG_IS_ADMIN && IG_PLAN !== 'enterprise') {
+    var saveLimit = window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[IG_PLAN]
+      ? window.IG_PLAN_CONFIG[IG_PLAN].carousels : 3;
+    var saveCount = 0;
+    try { saveCount = parseInt(localStorage.getItem('ig_carousel_saves') || '0'); } catch(e) {}
+    if (saveCount >= saveLimit) {
+      var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : 'Free';
+      showUpgradeBar(planLabel + ' plan: ' + saveLimit + ' carousel saves used — upgrade to save more');
+      return;
+    }
+    // Increment save counter
+    try { localStorage.setItem('ig_carousel_saves', String(saveCount + 1)); } catch(e) {}
+  }
 
   if(typeof showDlProgress==='function') showDlProgress('Preparing slides…', 0);
   else toast('📦 Preparing full carousel…');
