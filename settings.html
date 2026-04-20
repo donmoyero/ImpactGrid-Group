@@ -1697,17 +1697,24 @@
     ];
 
     function _getPlanData() {
-      var plan    = (window.igUser && window.igUser.plan) || '';
+      var plan   = (window.igUser && window.igUser.plan) || '';
       if (!plan) { try { plan = localStorage.getItem('ig_plan') || 'free'; } catch(e) { plan = 'free'; } }
-      var aiUses  = (window.igUser && typeof window.igUser.aiUses === 'number') ? window.igUser.aiUses : 0;
-      try { if (!aiUses) aiUses = parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
-      return { plan: plan, aiUses: aiUses };
+      // Always read aiUses from localStorage — it's updated immediately by every studio
+      // igUser.aiUses is only set once on page load and can be stale
+      var aiUses = 0;
+      try { aiUses = parseInt(localStorage.getItem('ig_ai_uses') || '0') || 0; } catch(e) {}
+      if (!aiUses && window.igUser && typeof window.igUser.aiUses === 'number') aiUses = window.igUser.aiUses;
+      // Portfolio count — written to localStorage by portfolio-studio after every save/delete
+      var pfCount = 0;
+      try { pfCount = parseInt(localStorage.getItem('ig_portfolio_count') || '0') || 0; } catch(e) {}
+      return { plan: plan, aiUses: aiUses, pfCount: pfCount };
     }
 
     function renderPlanPanel() {
       var pd      = _getPlanData();
       var plan    = pd.plan;
       var aiUses  = pd.aiUses;
+      var pfCount = pd.pfCount;
       var limits  = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
       var meta    = PLAN_META[plan]   || PLAN_META.free;
 
@@ -1735,21 +1742,25 @@
         var aiClass  = aiLimit === Infinity ? 'ok' : aiPct >= 100 ? 'full' : aiPct >= 75 ? 'warn' : 'ok';
         var aiCountClass = aiLimit === Infinity ? 'ok' : aiPct >= 100 ? 'warn' : aiPct >= 75 ? 'warn' : 'ok';
 
-        /* Portfolio usage */
+        /* Portfolio usage — pfCount comes from localStorage (written by portfolio-studio) */
         var pfLimit  = limits.portfolios;
-        var pfLabel  = pfLimit >= 999 ? 'Unlimited'
-                     : pfLimit + ' portfolio' + (pfLimit > 1 ? 's' : '') + ' included'
-                     + (plan === 'free' ? ' · deleted after 7 days' : ' · permanently saved');
+        var pfUsed   = Math.min(pfCount, pfLimit);
+        var pfPct    = pfLimit === 0 || pfLimit >= 999 ? 0 : Math.min(100, Math.round((pfUsed / pfLimit) * 100));
+        var pfClass  = pfPct >= 100 ? 'full' : pfPct >= 75 ? 'warn' : 'ok';
+        var pfRetDays = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.free && window.IG_PLAN_CONFIG.free.data_retention_days) || 7;
+        var pfNote   = pfLimit >= 999
+          ? 'Unlimited portfolios'
+          : pfUsed + ' of ' + pfLimit + ' portfolio' + (pfLimit !== 1 ? 's' : '') + ' used';
         var pfSub    = plan === 'free'
-                     ? 'Free plan: up to 3 portfolios, each kept for 7 days'
-                     : plan === 'professional'
-                       ? '1 live portfolio saved permanently'
-                       : 'Up to 3 live portfolios saved permanently';
+          ? 'Saved items deleted after ' + pfRetDays + ' days · upgrade to keep them permanently'
+          : plan === 'professional'
+            ? (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.professional ? window.IG_PLAN_CONFIG.professional.portfolios : 1) + ' live portfolio saved permanently'
+            : 'Up to ' + (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.enterprise ? window.IG_PLAN_CONFIG.enterprise.portfolios : 3) + ' live portfolios saved permanently';
 
         grid.innerHTML = [
           _usageBar('AI Uses This Month',  aiUses + ' used',  aiPct,  aiClass,  aiCountClass, aiRemain,
             aiLimit === Infinity ? '' : 'Resets on the 1st of each month'),
-          _usageBar('Portfolio Slots', pfLabel, 0, 'ok', 'ok', pfSub, ''),
+          _usageBar('Portfolio Slots', pfNote, pfPct, pfClass, pfClass, pfSub, ''),
         ].join('');
       }
 
