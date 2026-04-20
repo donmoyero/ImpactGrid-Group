@@ -180,11 +180,13 @@ function psBannerInit() {
 
   // Upgrade link — hide for enterprise
   if (upLink) {
-    if (plan === 'enterprise') {
+    if (plan === 'enterprise' || plan === 'admin') {
       upLink.style.display = 'none';
     } else {
+      var nextPKey  = plan === 'free' ? 'professional' : 'enterprise';
+      var nextLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(nextPKey) : (plan === 'free' ? 'Professional' : 'Enterprise');
       upLink.style.display = 'inline-flex';
-      upLink.textContent   = plan === 'free' ? 'Upgrade to Pro \u2192' : 'Upgrade to Enterprise \u2192';
+      upLink.textContent   = 'Upgrade to ' + nextLabel + ' \u2192';
     }
   }
 
@@ -295,11 +297,12 @@ async function checkPortfolioAccess() {
   var portfolioLimit = _getPlanCfg(plan).portfolios || 0;
   var existing       = (psState.portfolios || []).length;
   if (existing >= portfolioLimit) {
-    var msg = plan === 'free'
-      ? 'Free plan includes up to 3 portfolios — upgrade to keep them permanently'
-      : plan === 'professional'
-        ? 'Professional plan includes 1 portfolio — upgrade to Enterprise for 3'
-        : 'Portfolio limit reached for your plan';
+    var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(plan) : plan;
+    var nextPKey  = plan === 'free' ? 'professional' : 'enterprise';
+    var nextLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(nextPKey) : (plan === 'free' ? 'Professional' : 'Enterprise');
+    var nextLimit = _getPlanCfg(nextPKey).portfolios;
+    var msg = planLabel + ' plan includes up to ' + portfolioLimit + ' portfolio' + (portfolioLimit !== 1 ? 's' : '')
+            + ' — upgrade to ' + nextLabel + ' for ' + nextLimit;
 
     // Show full upgrade modal for hard blocks
     if (typeof window.showPlanGate === 'function') {
