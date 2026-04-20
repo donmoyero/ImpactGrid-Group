@@ -683,7 +683,8 @@ async function generate(){
   if (!IG_IS_ADMIN) {
     incrementAIUse(); // shared counter — updates Supabase + localStorage
   }
-  toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any text to edit');
+  var _themeLabel = (ST.theme && DA[ST.theme]) ? DA[ST.theme].label : (ST.theme || 'Custom');
+  toast('✦ '+ST.slides.length+'-slide carousel · '+_themeLabel+' · tap any text to edit');
 
   // ── STEP 4: enrich with live captions + hashtags after render ──
   var topicVal=topic, platformVal=platform;
