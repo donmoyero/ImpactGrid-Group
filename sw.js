@@ -3,7 +3,7 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v7'; // bumped — forces discard of stale v6 cache
+const CACHE_NAME = 'impactgrid-v8'; // bumped — push notification improvements
 
 const CORE_FILES = [
   '/',
@@ -143,14 +143,21 @@ self.addEventListener('sync', function(event) {
 
 /* ── Push notifications ── */
 self.addEventListener('push', function(event) {
-  var data = event.data ? event.data.json() : {};
-  var title = data.title || 'ImpactGrid';
+  var data = {};
+  try { data = event.data ? event.data.json() : {}; } catch(e) {}
+  var title   = data.title || 'ImpactGrid';
   var options = {
-    body: data.body || 'You have a new update',
-    icon: '/logo.png',
-    badge: '/dijo-mascot.png',
-    vibrate: [100, 50, 100],
-    data: { url: data.url || '/creator-studio.html' }
+    body:     data.body || "New trends are in — open ImpactGrid to see what's hot today.",
+    icon:     '/logo.png',
+    badge:    '/logo.png',
+    vibrate:  [100, 50, 100],
+    tag:      'impactgrid-trend',
+    renotify: true,
+    data:     { url: data.url || '/creator-studio.html' },
+    actions:  [
+      { action: 'open',    title: '📈 See Trends' },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
@@ -158,7 +165,16 @@ self.addEventListener('push', function(event) {
 /* ── Notification click ── */
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+  if (event.action === 'dismiss') return;
+  var url = (event.notification.data && event.notification.data.url) || '/creator-studio.html';
   event.waitUntil(
-    clients.openWindow(event.notification.data.url || '/creator-studio.html')
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].url.includes('impactgridgroup.com') && 'focus' in list[i]) {
+          return list[i].focus();
+        }
+      }
+      return clients.openWindow(url);
+    })
   );
 });
