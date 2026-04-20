@@ -2,31 +2,38 @@
    IMPACTGRID CONTENT CALENDAR — calendar.js
    ─────────────────────────────────────────────────────────
    BEHAVIOUR:
-   • Shows TODAY only — 3 slots: Morning · Afternoon · Evening
-   • Posting times are PREDICTED from live trend data:
-       High score + TikTok  → Evening 7:00 PM
-       High score + YouTube → Afternoon 12:00 PM
-       High score + Google  → Morning 9:00 AM
-   • Auto-Fill puts the top trend per platform into the right
-     slot for TODAY ONLY — other days stay empty
-   • Posts keyed by calendar-date so old days NEVER pile up
-   • nav prev/next just shows the date label — no stale content
+   • Multi-day calendar — flip between any day like a book
+   • 3 slots per day: Morning · Afternoon · Evening
+   • Posting times PREDICTED from live trend data (today only)
+   • Auto-Fill drops top trend per platform into today's slots
+   • Posts keyed by YYYYMMDD — each day is independent
+   • Pruning keeps last 30 days, clears anything older
+   • Page-flip animation when navigating days
 ═══════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';
 
-  /* ─── STORAGE — keyed by YYYYMMDD so days never pile up ─── */
+  /* ─── STORAGE ────────────────────────────────────────────────── */
   var STORAGE_PREFIX = 'ig_cal_';
 
-  function todayStorageKey() {
-    var d = new Date();
-    return STORAGE_PREFIX + d.getFullYear()
+  function dateKey(d) {
+    /* Returns YYYYMMDD string for any Date object */
+    return STORAGE_PREFIX
+      + d.getFullYear()
       + String(d.getMonth() + 1).padStart(2, '0')
       + String(d.getDate()).padStart(2, '0');
   }
 
-  /* ─── SLOTS — 3 per day, times overridden by trend prediction ── */
+  function dateFromOffset(offset) {
+    /* Returns a new Date object offset days from today */
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + offset);
+    return d;
+  }
+
+  /* ─── SLOTS ──────────────────────────────────────────────────── */
   var SLOTS = [
     { id: 'morning',   label: 'Morning',   icon: '🌅', defaultTime: '9:00 AM'  },
     { id: 'afternoon', label: 'Afternoon', icon: '☀️',  defaultTime: '12:30 PM' },
@@ -49,7 +56,9 @@
   };
 
   /* ─── STATE ──────────────────────────────────────────────────── */
-  var _posts           = {};   // slotId → post, for today only
+  var _dayOffset       = 0;    // 0 = today, -1 = yesterday, +1 = tomorrow
+  var _posts           = {};   // slotId → post for currently viewed day
+  var _flipDir         = 0;    // -1 = going back, +1 = going forward
   var _filter          = 'all';
   var _editSlot        = null;
   var _modalPlat       = 'tt';
@@ -60,27 +69,31 @@
     evening:   '6:00 PM'
   };
 
-  /* ─── LOAD / SAVE ────────────────────────────────────────────── */
-  function loadTodayPosts() {
+  /* ─── LOAD / SAVE for current viewed day ────────────────────── */
+  function loadDayPosts() {
     try {
-      var raw = localStorage.getItem(todayStorageKey());
+      var key = dateKey(dateFromOffset(_dayOffset));
+      var raw = localStorage.getItem(key);
       _posts = raw ? JSON.parse(raw) : {};
     } catch (e) { _posts = {}; }
   }
 
-  function saveTodayPosts() {
-    try { localStorage.setItem(todayStorageKey(), JSON.stringify(_posts)); } catch (e) {}
+  function saveDayPosts() {
+    try {
+      var key = dateKey(dateFromOffset(_dayOffset));
+      localStorage.setItem(key, JSON.stringify(_posts));
+    } catch (e) {}
   }
 
-  /* Remove any storage keys older than 7 days to prevent pileup */
+  /* Keep 30 days max — prune anything older */
   function pruneOldDays() {
     try {
       var keys = Object.keys(localStorage).filter(function (k) {
         return k.startsWith(STORAGE_PREFIX);
       });
-      if (keys.length <= 7) return;
+      if (keys.length <= 30) return;
       keys.sort();
-      keys.slice(0, keys.length - 7).forEach(function (k) {
+      keys.slice(0, keys.length - 30).forEach(function (k) {
         localStorage.removeItem(k);
       });
     } catch (e) {}
@@ -101,50 +114,34 @@
     return pool.slice().sort(function (a, b) { return b.score - a.score; })[0] || null;
   }
 
-  /* ─── PREDICT BEST POST TIMES from live trend data ───────────── */
-  /*
-   * Rules derived from real platform peak engagement windows:
-   *   Morning   → Google/LinkedIn  (research & professional mindset)
-   *   Afternoon → YouTube          (lunch break viewing 12–2 PM)
-   *   Evening   → TikTok/Instagram (leisure scroll 6–9 PM)
-   *
-   * Score modifies exact time:
-   *   ≥ 8.5 (Peak)   → post AT peak window
-   *   7–8.4 (Rising) → post JUST BEFORE peak (get ahead of algo)
-   *   < 7   (Early)  → post at standard time
-   */
+  /* ─── PREDICT BEST TIMES (only meaningful for today) ────────── */
   function predictBestTimes() {
     var trends = getTrends();
     if (!trends.length) return;
 
-    var top = trends.slice().sort(function (a, b) { return b.score - a.score; });
+    var top      = trends.slice().sort(function (a, b) { return b.score - a.score; });
     var topScore = top[0] ? top[0].score : 5;
-
-    // Count how many top-5 trends are per platform
-    var counts = { tt: 0, yt: 0, gt: 0, cross: 0 };
+    var counts   = { tt: 0, yt: 0, gt: 0, cross: 0 };
     top.slice(0, 5).forEach(function (t) {
       if (counts[t.plat] !== undefined) counts[t.plat]++;
     });
 
     if (topScore >= 8.5) {
-      // Peak: post exactly at highest engagement moment
       _predictedTimes.morning   = counts.gt >= counts.yt  ? '9:00 AM'  : '10:00 AM';
       _predictedTimes.afternoon = counts.yt >= counts.tt  ? '12:00 PM' : '1:00 PM';
       _predictedTimes.evening   = counts.tt >= counts.gt  ? '7:00 PM'  : '6:30 PM';
     } else if (topScore >= 7) {
-      // Rising: post before peak to ride the wave
       _predictedTimes.morning   = '8:30 AM';
       _predictedTimes.afternoon = '12:00 PM';
       _predictedTimes.evening   = '6:00 PM';
     } else {
-      // Standard
       _predictedTimes.morning   = '9:00 AM';
       _predictedTimes.afternoon = '1:00 PM';
       _predictedTimes.evening   = '6:00 PM';
     }
   }
 
-  /* ─── SCORE LABEL HELPER ─────────────────────────────────────── */
+  /* ─── SCORE LABEL ────────────────────────────────────────────── */
   function scoreLabel(score) {
     if (score >= 8.5) return { text: '🔥 Peak now', color: 'var(--green)' };
     if (score >= 7)   return { text: '⚡ Rising',   color: 'var(--gold)' };
@@ -153,13 +150,21 @@
   }
 
   /* ─── DATE HELPERS ───────────────────────────────────────────── */
-  var DAYS  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  function todayLabel() {
-    var d = new Date();
-    return DAYS[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  function dayLabel(offset) {
+    var d = dateFromOffset(offset);
+    var prefix = '';
+    if (offset === 0)  prefix = 'Today — ';
+    if (offset === -1) prefix = 'Yesterday — ';
+    if (offset === 1)  prefix = 'Tomorrow — ';
+    return prefix + DAYS[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
   }
+
+  function isToday() { return _dayOffset === 0; }
+  function isPast()  { return _dayOffset < 0; }
+  function isFuture(){ return _dayOffset > 0; }
 
   /* ─── ESCAPE HELPERS ─────────────────────────────────────────── */
   function escH(s) {
@@ -174,10 +179,10 @@
   /* ─── RENDER DATE LABEL ──────────────────────────────────────── */
   function renderDateLabel() {
     var el = document.getElementById('calWeekLabel');
-    if (el) el.textContent = todayLabel();
+    if (el) el.textContent = dayLabel(_dayOffset);
   }
 
-  /* ─── RENDER STATS ───────────────────────────────────────────── */
+  /* ─── RENDER STATS for currently viewed day ─────────────────── */
   function renderStats() {
     var posts = Object.values(_posts);
     var yt = 0, tt = 0, ig = 0, done = 0;
@@ -195,56 +200,99 @@
     set('calStatDone',  done);
   }
 
-  /* ─── RENDER GRID — today's 3 slots only ────────────────────── */
+  /* ─── PAGE-FLIP ANIMATION ────────────────────────────────────── */
+  function animateFlip(direction, callback) {
+    var grid = document.getElementById('calWeekGrid');
+    if (!grid) { callback(); return; }
+
+    var exitClass  = direction > 0 ? 'cal-flip-exit-left'  : 'cal-flip-exit-right';
+    var enterClass = direction > 0 ? 'cal-flip-enter-right': 'cal-flip-enter-left';
+
+    grid.classList.add(exitClass);
+    setTimeout(function () {
+      grid.classList.remove(exitClass);
+      callback();
+      grid.classList.add(enterClass);
+      setTimeout(function () {
+        grid.classList.remove(enterClass);
+      }, 320);
+    }, 200);
+  }
+
+  /* ─── RENDER GRID ────────────────────────────────────────────── */
   function renderGrid() {
     var grid = document.getElementById('calWeekGrid');
     if (!grid) return;
 
     renderDateLabel();
     renderStats();
-    predictBestTimes();
 
-    var trends    = getTrends();
-    var hasTrends = trends.length > 0;
+    var isT      = isToday();
+    var isP      = isPast();
+    var isF      = isFuture();
+    var trends   = getTrends();
+    var hasTrends = isT && trends.length > 0;
 
-    // Best trend suggestion per slot based on platform peak
+    if (hasTrends) predictBestTimes();
+
+    /* Trend suggestions — only shown for today */
     var slotSuggestions = [
-      bestTrendForPlat('gt') || bestTrendForPlat('yt'),  // morning  → Google/YT
-      bestTrendForPlat('yt') || bestTrendForPlat('tt'),  // afternoon → YouTube
-      bestTrendForPlat('tt') || bestTrendForPlat('ig')   // evening  → TikTok
+      hasTrends ? (bestTrendForPlat('gt') || bestTrendForPlat('yt')) : null,
+      hasTrends ? (bestTrendForPlat('yt') || bestTrendForPlat('tt')) : null,
+      hasTrends ? (bestTrendForPlat('tt') || bestTrendForPlat('ig')) : null
     ];
-    var slotDefPlat = ['li', 'yt', 'tt']; // default platform to use per slot
+    var slotDefPlat = ['li', 'yt', 'tt'];
 
-    var html = '<div class="cal-today-wrap">';
+    var html = '<div class="cal-day-wrap">';
 
-    /* ── Today header ── */
-    html += '<div class="cal-today-hdr">';
-    html += '<span class="cal-today-title">📅 ' + escH(todayLabel()) + '</span>';
-    if (hasTrends) {
-      var top = trends.slice().sort(function(a,b){return b.score-a.score;})[0];
-      var sl  = scoreLabel(top.score);
-      html += '<span class="cal-top-trend-pill" style="color:' + sl.color + '">'
-            + sl.text + ' · '
-            + escH(top.topic.length > 32 ? top.topic.slice(0,32)+'…' : top.topic)
-            + ' <b>' + top.score.toFixed(1) + '</b></span>';
-    } else {
-      html += '<span class="cal-top-trend-pill" style="color:var(--text3)">⏳ Loading trends…</span>';
+    /* ── Day navigation strip ── */
+    html += '<div class="cal-day-nav">';
+    html += '<button class="cal-nav-arrow" onclick="window.calPrevDay()" title="Previous day">‹</button>';
+    html += '<div class="cal-day-nav-center">';
+    html += '<span class="cal-day-label">' + escH(dayLabel(_dayOffset)) + '</span>';
+    if (!isT) {
+      html += '<button class="cal-today-jump-btn" onclick="window.calGoToday()">Go to today</button>';
     }
     html += '</div>';
+    html += '<button class="cal-nav-arrow" onclick="window.calNextDay()" title="Next day">›</button>';
+    html += '</div>';
+
+    /* ── Day type banner ── */
+    if (isP) {
+      html += '<div class="cal-day-banner cal-day-past">';
+      html += '📖 Past day — you can review or edit posts, but best times won\'t update';
+      html += '</div>';
+    } else if (isF) {
+      html += '<div class="cal-day-banner cal-day-future">';
+      html += '📅 Future day — plan ahead! Best posting times will be calculated on the day';
+      html += '</div>';
+    } else if (hasTrends) {
+      /* Today + trends loaded — show top trend pill */
+      var topT = trends.slice().sort(function(a,b){return b.score-a.score;})[0];
+      var sl   = scoreLabel(topT.score);
+      html += '<div class="cal-day-banner cal-day-today">';
+      html += '<span style="color:var(--text3);font-size:11px">Today\'s top trend:</span> ';
+      html += '<span style="color:' + sl.color + ';font-weight:800">' + sl.text + '</span> ';
+      html += '<span style="color:var(--text2)">'
+            + escH(topT.topic.length > 40 ? topT.topic.slice(0,40)+'…' : topT.topic)
+            + '</span>';
+      html += '<span style="color:var(--text3);margin-left:6px;font-family:\'DM Mono\',monospace;font-size:10px">'
+            + topT.score.toFixed(1) + '/10</span>';
+      html += '</div>';
+    } else {
+      html += '<div class="cal-day-banner cal-day-today" style="color:var(--text3)">⏳ Loading trends…</div>';
+    }
 
     /* ── 3 slot cards ── */
     SLOTS.forEach(function (slot, idx) {
-      var post      = _posts[slot.id];
-      var sug       = slotSuggestions[idx];
-      var predTime  = _predictedTimes[slot.id];
-
-      // If filter is active and post doesn't match, skip rendering the post
-      // (but still show the slot shell so user can add)
+      var post     = _posts[slot.id];
+      var sug      = slotSuggestions[idx];
+      var predTime = _predictedTimes[slot.id];
       var postVisible = !post || _filter === 'all' || post.plat === _filter;
 
-      html += '<div class="cal-slot-card">';
+      html += '<div class="cal-slot-card' + (isP ? ' cal-slot-past' : '') + '">';
 
-      /* ── Slot header with predicted time ── */
+      /* ── Slot header ── */
       html += '<div class="cal-slot-hdr">';
       html += '<div style="display:flex;align-items:center;gap:8px">';
       html += '<span style="font-size:18px">' + slot.icon + '</span>';
@@ -254,29 +302,28 @@
       if (hasTrends) {
         html += '⏰ Best time: <strong style="color:var(--gold)">' + escH(predTime) + '</strong>';
         html += ' <span class="cal-time-source">· from trend data</span>';
+      } else if (isF) {
+        html += '<span style="color:var(--text3)">' + escH(slot.defaultTime) + ' (estimated)</span>';
       } else {
         html += escH(slot.defaultTime);
       }
-      html += '</div>';
-      html += '</div>';
-      html += '</div>';
+      html += '</div></div></div>';
 
-      // Platform badge for this slot
+      /* Platform badge */
       if (hasTrends && sug) {
         var pm = PLAT[sug.plat === 'gt' ? slotDefPlat[idx] : sug.plat] || PLAT.tt;
         html += '<span class="cal-slot-plat-badge" style="color:' + pm.color + ';border-color:' + pm.color + '50">'
               + pm.icon + ' ' + pm.label + '</span>';
       }
-      html += '</div>'; // .cal-slot-hdr
+      html += '</div>'; /* .cal-slot-hdr */
 
-      /* ── Post (if exists and passes filter) ── */
+      /* ── Post body (if exists & passes filter) ── */
       if (post && postVisible) {
-        var pm2  = PLAT[post.plat] || PLAT.tt;
-        var sm   = STATUS[post.status] || STATUS.draft;
-        var sl2  = post.score ? scoreLabel(post.score) : null;
+        var pm2 = PLAT[post.plat] || PLAT.tt;
+        var sm  = STATUS[post.status] || STATUS.draft;
+        var sl2 = post.score ? scoreLabel(post.score) : null;
 
         html += '<div class="cal-post-body" style="border-left:3px solid ' + pm2.color + '">';
-
         html += '<div class="cal-post-meta-row">';
         html += '<span class="cal-post-plat" style="color:' + pm2.color + ';background:' + pm2.color + '18">'
               + pm2.icon + ' ' + pm2.label + '</span>';
@@ -286,13 +333,10 @@
                 + sl2.text + ' · ' + post.score.toFixed(1) + '</span>';
         }
         html += '</div>';
-
         html += '<div class="cal-post-topic">' + escH(post.topic) + '</div>';
-
         if (post.notes) {
           html += '<div class="cal-post-notes">' + escH(post.notes.slice(0,90)) + (post.notes.length > 90 ? '…' : '') + '</div>';
         }
-
         if (post.postTime) {
           html += '<div class="cal-post-posttime">⏰ Scheduled: <strong>' + escH(post.postTime) + '</strong></div>';
         }
@@ -300,18 +344,19 @@
         html += '<div class="cal-post-btns">';
         html += '<button class="cal-btn cal-btn-edit" onclick="window.calEditPost(\'' + slot.id + '\')">✏️ Edit</button>';
         html += '<button class="cal-btn cal-btn-gen"  onclick="window.calGeneratePost(\'' + escJ(post.topic) + '\')">⚡ Generate</button>';
-        /* Notification bell — shows active state if a timer is queued */
-        var notifActive = hasActiveNotif(slot.id);
-        html += '<button class="cal-btn cal-btn-notif' + (notifActive ? ' notif-on' : '') + '" '
-              + 'onclick="window.calEnableSlotNotif(\'' + slot.id + '\')" '
-              + 'title="' + (notifActive ? 'Reminder set for ' + escH(post.postTime) : 'Set posting reminder') + '">'
-              + (notifActive ? '🔔' : '🔕') + '</button>';
+        var notifActive = isT && hasActiveNotif(slot.id);
+        if (isT) {
+          html += '<button class="cal-btn cal-btn-notif' + (notifActive ? ' notif-on' : '') + '" '
+                + 'onclick="window.calEnableSlotNotif(\'' + slot.id + '\')" '
+                + 'title="' + (notifActive ? 'Reminder set for ' + escH(post.postTime) : 'Set posting reminder') + '">'
+                + (notifActive ? '🔔' : '🔕') + '</button>';
+        }
         html += '<button class="cal-btn cal-btn-del"  onclick="window.calDeletePost(\'' + slot.id + '\')">✕</button>';
         html += '</div>';
-        html += '</div>'; // .cal-post-body
+        html += '</div>'; /* .cal-post-body */
 
       } else if (!post) {
-        /* ── Empty slot: show AI suggestion + add button ── */
+        /* ── Empty slot ── */
         if (hasTrends && sug) {
           var sugPm = PLAT[sug.plat === 'gt' ? slotDefPlat[idx] : sug.plat] || PLAT.tt;
           var sugSl = scoreLabel(sug.score);
@@ -326,23 +371,66 @@
           html += '</div>';
         }
         html += '<button class="cal-add-btn" onclick="window.openModal(\'' + slot.id + '\')">＋ Add your own</button>';
-        /* Nudge to enable notifications if not yet granted */
-        if ('Notification' in window && Notification.permission === 'default') {
-          html += '<button class="cal-notif-nudge" onclick="window.calRequestNotifFromUI()">'
-                + '🔔 Enable posting reminders</button>';
+        if (isT && 'Notification' in window && Notification.permission === 'default') {
+          html += '<button class="cal-notif-nudge" onclick="window.calRequestNotifFromUI()">🔔 Enable posting reminders</button>';
         }
       }
 
-      html += '</div>'; // .cal-slot-card
+      html += '</div>'; /* .cal-slot-card */
     });
 
-    html += '</div>'; // .cal-today-wrap
+    html += '</div>'; /* .cal-day-wrap */
     grid.innerHTML = html;
     injectStyles();
   }
 
-  /* ─── AUTO-FILL (today only, trend-predicted) ────────────────── */
+  /* ─── NAVIGATION ─────────────────────────────────────────────── */
+  window.calPrevDay = function () {
+    _dayOffset--;
+    animateFlip(-1, function () {
+      loadDayPosts();
+      renderGrid();
+    });
+  };
+
+  window.calNextDay = function () {
+    _dayOffset++;
+    animateFlip(1, function () {
+      loadDayPosts();
+      renderGrid();
+    });
+  };
+
+  window.calGoToday = function () {
+    var dir = _dayOffset > 0 ? -1 : 1;
+    _dayOffset = 0;
+    animateFlip(dir, function () {
+      loadDayPosts();
+      renderGrid();
+    });
+  };
+
+  /* Keep old week-nav aliases working if called from existing HTML buttons */
+  window.calPrevWeek = window.calPrevDay;
+  window.calNextWeek = window.calNextDay;
+
+  /* ─── FILTER ─────────────────────────────────────────────────── */
+  window.calSetFilter = function (plat, btn) {
+    _filter = plat;
+    document.querySelectorAll('.cal-plat-btn').forEach(function (b) {
+      b.classList.remove('active-all','active-filter');
+    });
+    if (btn) btn.classList.add(plat === 'all' ? 'active-all' : 'active-filter');
+    renderGrid();
+  };
+  window.setUserNiche = function () { renderGrid(); };
+
+  /* ─── AUTO-FILL (today only) ─────────────────────────────────── */
   window.calAutoFill = function () {
+    if (!isToday()) {
+      if (typeof toast === 'function') toast('⚠️ Auto-Fill only works for today');
+      return;
+    }
     var btn    = document.getElementById('calAutoBtn');
     var trends = getTrends();
     if (!trends.length) {
@@ -352,7 +440,6 @@
 
     predictBestTimes();
 
-    // Each slot gets its platform's best trend — don't overwrite existing posts
     var assignments = [
       { slotId: 'morning',   plat: 'li', trendPlat: 'gt' },
       { slotId: 'afternoon', plat: 'yt', trendPlat: 'yt' },
@@ -377,7 +464,7 @@
       filled++;
     });
 
-    saveTodayPosts();
+    saveDayPosts();
     scheduleAllNotifications();
     renderGrid();
     renderStats();
@@ -397,7 +484,7 @@
   window.calAcceptSuggestion = function (slotId) {
     var idx = SLOTS.findIndex(function (s) { return s.id === slotId; });
     if (idx === -1) return;
-    var trendPlats  = ['gt','yt','tt'];
+    var trendPlats   = ['gt','yt','tt'];
     var platDefaults = ['li','yt','tt'];
     var trend = bestTrendForPlat(trendPlats[idx]);
     if (!trend) return;
@@ -412,28 +499,12 @@
       autoFilled: true,
       createdAt:  new Date().toISOString()
     };
-    saveTodayPosts();
-    schedulePostNotification(slotId, _posts[slotId]);
+    saveDayPosts();
+    if (isToday()) schedulePostNotification(slotId, _posts[slotId]);
     renderGrid();
     renderStats();
     if (typeof toast === 'function') toast('✅ Scheduled: ' + trend.topic);
   };
-
-  /* ─── NAV (today-only — nav just refreshes label) ───────────── */
-  window.calPrevWeek = function () { renderDateLabel(); };
-  window.calNextWeek = function () { renderDateLabel(); };
-  window.calGoToday  = function () { renderGrid(); };
-
-  /* ─── FILTER ─────────────────────────────────────────────────── */
-  window.calSetFilter = function (plat, btn) {
-    _filter = plat;
-    document.querySelectorAll('.cal-plat-btn').forEach(function (b) {
-      b.classList.remove('active-all','active-filter');
-    });
-    if (btn) btn.classList.add(plat === 'all' ? 'active-all' : 'active-filter');
-    renderGrid();
-  };
-  window.setUserNiche = function () { renderGrid(); };
 
   /* ─── MODAL — OPEN ───────────────────────────────────────────── */
   window.openModal = function (slotId) {
@@ -444,9 +515,9 @@
     var platDefaults = ['li','yt','tt'];
     var trendPlats   = ['gt','yt','tt'];
     _modalPlat = platDefaults[idx];
-    var trend = bestTrendForPlat(trendPlats[idx]);
+    var trend = isToday() ? bestTrendForPlat(trendPlats[idx]) : null;
     _showModal({
-      title:  'Add Post — ' + SLOTS[idx].label,
+      title:  'Add Post — ' + SLOTS[idx].label + (isToday() ? '' : ' · ' + dayLabel(_dayOffset).split('—')[0].trim()),
       topic:  trend ? trend.topic : '',
       notes:  '',
       status: 'scheduled',
@@ -520,14 +591,13 @@
     }
     if (inp) inp.style.outline = '';
 
-    // Match trend score if topic matches a live trend
     var trends  = getTrends();
     var matched = trends.find(function (t) {
       return t.topic.toLowerCase() === topic.toLowerCase();
     });
 
     var slotId   = _editSlot || _modalSlotId || 'morning';
-    predictBestTimes();
+    if (isToday()) predictBestTimes();
     var existing = _posts[slotId] || {};
 
     _posts[slotId] = {
@@ -542,12 +612,12 @@
       updatedAt:  new Date().toISOString()
     };
 
-    saveTodayPosts();
-    schedulePostNotification(slotId, _posts[slotId]);
+    saveDayPosts();
+    if (isToday()) schedulePostNotification(slotId, _posts[slotId]);
     closeModal();
     renderGrid();
     renderStats();
-    if (typeof toast === 'function') toast('✅ Post saved!' + (Notification.permission === 'granted' ? ' 🔔 Reminder set.' : ''));
+    if (typeof toast === 'function') toast('✅ Post saved!' + (isToday() && Notification.permission === 'granted' ? ' 🔔 Reminder set.' : ''));
   };
 
   /* ─── DELETE POST ────────────────────────────────────────────── */
@@ -555,23 +625,10 @@
     if (!_posts[slotId]) return;
     delete _posts[slotId];
     cancelNotification(slotId);
-    saveTodayPosts();
+    saveDayPosts();
     renderGrid();
     renderStats();
     if (typeof toast === 'function') toast('🗑 Removed');
-  };
-
-  /* ─── REQUEST NOTIF FROM UI BUTTON ──────────────────────────── */
-  window.calRequestNotifFromUI = function () {
-    requestNotifPermission(function (granted) {
-      if (granted) {
-        scheduleAllNotifications();
-        if (typeof toast === 'function') toast('🔔 Posting reminders enabled!');
-      } else {
-        if (typeof toast === 'function') toast('🔕 Notifications blocked — check browser settings');
-      }
-      renderGrid(); /* Refresh to hide the nudge button */
-    });
   };
 
   /* ─── GENERATE FROM CALENDAR ─────────────────────────────────── */
@@ -593,6 +650,19 @@
 
   window.calGeneratePost = function (topic) {
     if (topic && typeof loadTopic === 'function') loadTopic(topic);
+  };
+
+  /* ─── REQUEST NOTIF FROM UI ──────────────────────────────────── */
+  window.calRequestNotifFromUI = function () {
+    requestNotifPermission(function (granted) {
+      if (granted) {
+        scheduleAllNotifications();
+        if (typeof toast === 'function') toast('🔔 Posting reminders enabled!');
+      } else {
+        if (typeof toast === 'function') toast('🔕 Notifications blocked — check browser settings');
+      }
+      renderGrid();
+    });
   };
 
   /* ─── DIJO SUGGEST ───────────────────────────────────────────── */
@@ -630,54 +700,225 @@
     });
   };
 
+  /* ─── NOTIFICATIONS ──────────────────────────────────────────── */
+  var _notifTimers = {};
+
+  function requestNotifPermission(callback) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') { if (callback) callback(true); return; }
+    if (Notification.permission === 'denied')  { if (callback) callback(false); return; }
+    Notification.requestPermission().then(function (perm) {
+      if (callback) callback(perm === 'granted');
+    });
+  }
+
+  function parseTimeToDate(timeStr) {
+    var m = String(timeStr).match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return null;
+    var hrs = parseInt(m[1], 10);
+    var min = parseInt(m[2], 10);
+    var mer = m[3].toUpperCase();
+    if (mer === 'PM' && hrs !== 12) hrs += 12;
+    if (mer === 'AM' && hrs === 12) hrs = 0;
+    var target = new Date();
+    target.setHours(hrs, min, 0, 0);
+    if (target <= new Date()) return null;
+    return target;
+  }
+
+  function schedulePostNotification(slotId, post) {
+    if (!post || !post.postTime) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (_notifTimers[slotId]) { clearTimeout(_notifTimers[slotId]); delete _notifTimers[slotId]; }
+    var fireAt   = parseTimeToDate(post.postTime);
+    if (!fireAt) return;
+    var delay    = fireAt.getTime() - Date.now();
+    var pm       = PLAT[post.plat] || PLAT.tt;
+    var slotMeta = SLOTS.find(function (s) { return s.id === slotId; }) || SLOTS[0];
+    _notifTimers[slotId] = setTimeout(function () {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type:  'SHOW_NOTIFICATION',
+          title: '⏰ Time to post on ' + pm.label + '!',
+          body:  pm.icon + ' ' + (post.topic || 'Your scheduled post') + '\n' + slotMeta.label + ' · ' + post.postTime,
+          url:   '/creator-studio.html#calendar',
+          tag:   'ig-cal-' + slotId
+        });
+      } else {
+        try {
+          new Notification('⏰ Time to post on ' + pm.label + '!', {
+            body:    pm.icon + ' ' + (post.topic || 'Your scheduled post') + '\n' + slotMeta.label + ' · ' + post.postTime,
+            icon:    '/logo.png',
+            badge:   '/logo.png',
+            tag:     'ig-cal-' + slotId,
+            renotify: true
+          });
+        } catch (e) {}
+      }
+      delete _notifTimers[slotId];
+    }, delay);
+  }
+
+  function scheduleAllNotifications() {
+    if (Notification.permission !== 'granted') return;
+    Object.keys(_posts).forEach(function (slotId) {
+      schedulePostNotification(slotId, _posts[slotId]);
+    });
+  }
+
+  function cancelNotification(slotId) {
+    if (_notifTimers[slotId]) { clearTimeout(_notifTimers[slotId]); delete _notifTimers[slotId]; }
+  }
+
+  function hasActiveNotif(slotId) { return !!_notifTimers[slotId]; }
+
+  window.calEnableSlotNotif = function (slotId) {
+    requestNotifPermission(function (granted) {
+      if (!granted) {
+        if (typeof toast === 'function') toast('🔕 Notifications blocked — enable them in browser settings');
+        return;
+      }
+      var post = _posts[slotId];
+      if (!post) { if (typeof toast === 'function') toast('⚠️ Add a post to this slot first'); return; }
+      schedulePostNotification(slotId, post);
+      var fireAt = parseTimeToDate(post.postTime);
+      if (fireAt) {
+        if (typeof toast === 'function') toast('🔔 Reminder set for ' + post.postTime + '!');
+      } else {
+        if (typeof toast === 'function') toast('⚠️ That posting time has already passed today');
+      }
+      renderGrid();
+    });
+  };
+
   /* ─── CSS ────────────────────────────────────────────────────── */
   function injectStyles() {
     if (document.getElementById('_calStyles')) return;
     var s = document.createElement('style');
     s.id  = '_calStyles';
     s.textContent = `
-      #calWeekGrid { display: block !important; }
+      #calWeekGrid {
+        display: block !important;
+        overflow: hidden;
+      }
 
-      .cal-today-wrap {
+      /* ── Page-flip animations ── */
+      @keyframes calFlipExitLeft {
+        from { opacity:1; transform: translateX(0) rotateY(0deg); }
+        to   { opacity:0; transform: translateX(-40px) rotateY(8deg); }
+      }
+      @keyframes calFlipExitRight {
+        from { opacity:1; transform: translateX(0) rotateY(0deg); }
+        to   { opacity:0; transform: translateX(40px) rotateY(-8deg); }
+      }
+      @keyframes calFlipEnterLeft {
+        from { opacity:0; transform: translateX(40px) rotateY(-8deg); }
+        to   { opacity:1; transform: translateX(0) rotateY(0deg); }
+      }
+      @keyframes calFlipEnterRight {
+        from { opacity:0; transform: translateX(-40px) rotateY(8deg); }
+        to   { opacity:1; transform: translateX(0) rotateY(0deg); }
+      }
+      .cal-flip-exit-left  { animation: calFlipExitLeft  .2s ease-in  forwards; }
+      .cal-flip-exit-right { animation: calFlipExitRight .2s ease-in  forwards; }
+      .cal-flip-enter-left { animation: calFlipEnterLeft .32s ease-out forwards; }
+      .cal-flip-enter-right{ animation: calFlipEnterRight .32s ease-out forwards; }
+
+      /* ── Day wrapper ── */
+      .cal-day-wrap {
         display: flex;
         flex-direction: column;
         gap: 12px;
         padding-bottom: 16px;
+        perspective: 1000px;
       }
 
-      /* Today header strip */
-      .cal-today-hdr {
+      /* ── Navigation strip ── */
+      .cal-day-nav {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
         gap: 8px;
-        padding: 11px 16px;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
+        padding: 8px 4px;
       }
-      .cal-today-title {
+      .cal-nav-arrow {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        transition: background .15s, border-color .15s, transform .1s;
+        font-weight: 300;
+        user-select: none;
+      }
+      .cal-nav-arrow:hover {
+        background: var(--bg2);
+        border-color: var(--gold-glo, rgba(201,126,8,.4));
+        transform: scale(1.08);
+      }
+      .cal-nav-arrow:active { transform: scale(0.95); }
+      .cal-day-nav-center {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-align: center;
+      }
+      .cal-day-label {
         font-family: 'Syne', sans-serif;
         font-size: 15px;
         font-weight: 800;
         color: var(--text);
+        line-height: 1.2;
       }
-      .cal-top-trend-pill {
+      .cal-today-jump-btn {
+        padding: 3px 12px;
+        border-radius: 99px;
+        border: 1px solid var(--gold-glo, rgba(201,126,8,.4));
+        background: var(--gold-dim, rgba(201,126,8,.08));
+        color: var(--gold);
         font-size: 11px;
         font-weight: 700;
+        cursor: pointer;
         font-family: 'DM Mono', monospace;
-        padding: 4px 12px;
-        border-radius: 99px;
-        background: var(--bg2);
+        transition: background .15s;
+      }
+      .cal-today-jump-btn:hover { background: rgba(201,126,8,.16); }
+
+      /* ── Day banners ── */
+      .cal-day-banner {
+        padding: 9px 14px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: 'DM Mono', monospace;
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .cal-day-today {
+        background: var(--card);
         border: 1px solid var(--border);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 280px;
+      }
+      .cal-day-past {
+        background: var(--bg2);
+        border: 1px dashed var(--border);
+        color: var(--text3);
+      }
+      .cal-day-future {
+        background: var(--gold-dim, rgba(201,126,8,.06));
+        border: 1px dashed var(--gold-glo, rgba(201,126,8,.3));
+        color: var(--gold);
       }
 
-      /* Slot card */
+      /* ── Slot cards ── */
       .cal-slot-card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -689,8 +930,7 @@
         transition: border-color .2s;
       }
       .cal-slot-card:hover { border-color: var(--gold-glo, rgba(201,126,8,.3)); }
-
-      /* Slot header */
+      .cal-slot-past { opacity: .85; }
       .cal-slot-hdr {
         display: flex;
         align-items: center;
@@ -708,525 +948,209 @@
         font-size: 11px;
         color: var(--text3);
       }
-      .cal-time-source {
-        font-size: 10px;
-        color: var(--text3);
-        opacity: .7;
-      }
+      .cal-time-source { font-size: 10px; color: var(--text3); opacity: .7; }
       .cal-slot-plat-badge {
-        font-size: 10px;
-        font-weight: 800;
+        font-size: 10px; font-weight: 800;
         font-family: 'DM Mono', monospace;
-        padding: 3px 9px;
-        border-radius: 99px;
-        border: 1px solid;
-        opacity: .8;
-        white-space: nowrap;
-        flex-shrink: 0;
+        padding: 3px 9px; border-radius: 99px; border: 1px solid;
+        opacity: .8; white-space: nowrap; flex-shrink: 0;
       }
 
-      /* Dijo suggestion card */
+      /* ── Dijo suggestion card ── */
       .cal-sug-card {
         background: var(--gold-dim, rgba(201,126,8,.06));
         border: 1px dashed var(--gold-glo, rgba(201,126,8,.3));
-        border-radius: 10px;
-        padding: 10px 12px;
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
+        border-radius: 10px; padding: 10px 12px;
+        cursor: pointer; display: flex; flex-direction: column; gap: 5px;
         transition: background .15s;
       }
-      .cal-sug-card:hover {
-        background: rgba(201,126,8,.12);
-        border-style: solid;
-      }
-      .cal-sug-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
+      .cal-sug-card:hover { background: rgba(201,126,8,.12); border-style: solid; }
+      .cal-sug-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
       .cal-sug-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: var(--gold);
-        font-family: 'DM Mono', monospace;
-        text-transform: uppercase;
-        letter-spacing: .06em;
+        font-size: 10px; font-weight: 800; color: var(--gold);
+        font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em;
       }
-      .cal-sug-topic {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text);
-        line-height: 1.3;
-      }
-      .cal-sug-meta {
-        font-size: 10px;
-        font-weight: 700;
-        font-family: 'DM Mono', monospace;
-      }
+      .cal-sug-topic { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+      .cal-sug-meta  { font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; }
 
-      /* Add button */
+      /* ── Add button ── */
       .cal-add-btn {
-        padding: 9px;
-        border-radius: 9px;
-        border: 1px dashed var(--border);
-        background: transparent;
-        color: var(--text3);
-        font-size: 12px;
-        cursor: pointer;
-        text-align: center;
-        transition: all .15s;
-        width: 100%;
-        font-family: inherit;
+        padding: 9px; border-radius: 9px; border: 1px dashed var(--border);
+        background: transparent; color: var(--text3); font-size: 12px;
+        cursor: pointer; text-align: center; transition: all .15s;
+        width: 100%; font-family: inherit;
       }
       .cal-add-btn:hover {
-        border-color: var(--gold);
-        color: var(--gold);
+        border-color: var(--gold); color: var(--gold);
         background: var(--gold-dim, rgba(201,126,8,.06));
       }
 
-      /* Post body */
+      /* ── Post body ── */
       .cal-post-body {
-        background: var(--bg2);
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        padding: 10px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+        background: var(--bg2); border-radius: 10px;
+        border: 1px solid var(--border); padding: 10px 12px;
+        display: flex; flex-direction: column; gap: 6px;
       }
-      .cal-post-meta-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
+      .cal-post-meta-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
       .cal-post-plat {
-        font-size: 10px;
-        font-weight: 800;
-        font-family: 'DM Mono', monospace;
-        padding: 2px 8px;
-        border-radius: 99px;
-        letter-spacing: .04em;
+        font-size: 10px; font-weight: 800; font-family: 'DM Mono', monospace;
+        padding: 2px 8px; border-radius: 99px; letter-spacing: .04em;
       }
-      .cal-post-status {
-        font-size: 10px;
-        font-weight: 700;
-        font-family: 'DM Mono', monospace;
-      }
-      .cal-post-score {
-        font-size: 10px;
-        font-weight: 800;
-        font-family: 'DM Mono', monospace;
-      }
-      .cal-post-topic {
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--text);
-        line-height: 1.3;
-        word-break: break-word;
-      }
-      .cal-post-notes {
-        font-size: 11px;
-        color: var(--text3);
-        font-style: italic;
-        line-height: 1.4;
-      }
-      .cal-post-posttime {
-        font-size: 11px;
-        color: var(--text3);
-        font-family: 'DM Mono', monospace;
-      }
+      .cal-post-status { font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; }
+      .cal-post-score  { font-size: 10px; font-weight: 800; font-family: 'DM Mono', monospace; }
+      .cal-post-topic  { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; word-break: break-word; }
+      .cal-post-notes  { font-size: 11px; color: var(--text3); font-style: italic; line-height: 1.4; }
+      .cal-post-posttime { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
       .cal-post-posttime strong { color: var(--gold); }
-      .cal-post-btns {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin-top: 2px;
-      }
+      .cal-post-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
       .cal-btn {
-        padding: 5px 12px;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 700;
-        border: 1px solid var(--border);
-        background: transparent;
-        cursor: pointer;
-        transition: background .12s;
-        font-family: inherit;
+        padding: 5px 12px; border-radius: 7px; font-size: 11px; font-weight: 700;
+        border: 1px solid var(--border); background: transparent;
+        cursor: pointer; transition: background .12s; font-family: inherit;
       }
-      .cal-btn-edit { color: var(--text2); }
-      .cal-btn-edit:hover { background: var(--bg2); }
-      .cal-btn-gen  { color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.3)); }
-      .cal-btn-gen:hover  { background: var(--gold-dim, rgba(201,126,8,.12)); }
-      .cal-btn-del  { color: var(--text3); margin-left: auto; }
-      .cal-btn-del:hover  { background: rgba(255,60,60,.1); color:#ff4444; border-color:rgba(255,60,60,.3); }
+      .cal-btn-edit  { color: var(--text2); }
+      .cal-btn-edit:hover  { background: var(--bg2); }
+      .cal-btn-gen   { color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.3)); }
+      .cal-btn-gen:hover   { background: var(--gold-dim, rgba(201,126,8,.12)); }
+      .cal-btn-notif { color: var(--text3); }
+      .cal-btn-notif:hover { background: rgba(255,200,0,.1); color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.3)); }
+      .cal-btn-notif.notif-on { color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.4)); background: var(--gold-dim, rgba(201,126,8,.08)); }
+      .cal-btn-del   { color: var(--text3); margin-left: auto; }
+      .cal-btn-del:hover   { background: rgba(255,60,60,.1); color:#ff4444; border-color:rgba(255,60,60,.3); }
 
-      /* Modal */
+      /* ── Notif nudge ── */
+      .cal-notif-nudge {
+        width: 100%; padding: 7px; border-radius: 9px;
+        border: 1px dashed rgba(201,126,8,.35);
+        background: transparent; color: var(--gold);
+        font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace;
+        cursor: pointer; text-align: center; transition: all .15s;
+      }
+      .cal-notif-nudge:hover { background: var(--gold-dim, rgba(201,126,8,.08)); border-style: solid; }
+
+      /* ── Modal ── */
       .cal-modal-overlay {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,.55);
-        z-index: 9000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
+        position: fixed; inset: 0; background: rgba(0,0,0,.55);
+        z-index: 9000; display: none; align-items: center;
+        justify-content: center; padding: 20px;
       }
       .cal-modal-overlay.open { display: flex; }
       .cal-modal {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        width: 100%;
-        max-width: 420px;
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 16px; width: 100%; max-width: 420px;
         box-shadow: 0 20px 60px rgba(0,0,0,.4);
       }
       .cal-modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 18px;
-        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 18px; border-bottom: 1px solid var(--border);
       }
-      .cal-modal-title {
-        font-family: 'Syne', sans-serif;
-        font-size: 15px;
-        font-weight: 800;
-      }
+      .cal-modal-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; }
       .cal-modal-close {
-        width: 28px; height: 28px;
-        border-radius: 50%;
-        border: 1px solid var(--border);
-        background: transparent;
-        cursor: pointer;
-        font-size: 13px;
-        color: var(--text3);
-        display: flex; align-items: center; justify-content: center;
-        transition: background .15s;
+        width: 28px; height: 28px; border-radius: 50%;
+        border: 1px solid var(--border); background: transparent;
+        cursor: pointer; font-size: 13px; color: var(--text3);
+        display: flex; align-items: center; justify-content: center; transition: background .15s;
       }
       .cal-modal-close:hover { background: var(--bg2); }
-      .cal-modal-body {
-        padding: 16px 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
+      .cal-modal-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
       .cal-modal-label {
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text3);
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        font-family: 'DM Mono', monospace;
-        margin-bottom: 2px;
+        font-size: 11px; font-weight: 700; color: var(--text3);
+        text-transform: uppercase; letter-spacing: .06em;
+        font-family: 'DM Mono', monospace; margin-bottom: 2px;
       }
       .cal-modal-input {
-        width: 100%; padding: 10px 12px;
-        border-radius: 9px;
-        border: 1px solid var(--border);
-        background: var(--bg2);
-        color: var(--text);
-        font-size: 13px;
-        font-family: inherit;
-        box-sizing: border-box;
-        outline: none;
-        transition: border-color .15s;
+        width: 100%; padding: 10px 12px; border-radius: 9px;
+        border: 1px solid var(--border); background: var(--bg2);
+        color: var(--text); font-size: 13px; font-family: inherit;
+        box-sizing: border-box; outline: none; transition: border-color .15s;
       }
       .cal-modal-input:focus { border-color: var(--gold); }
       .cal-dijo-suggest-btn {
-        padding: 7px 14px;
-        border-radius: 8px;
+        padding: 7px 14px; border-radius: 8px;
         border: 1px solid var(--gold-glo, rgba(201,126,8,.35));
-        background: var(--gold-dim, rgba(201,126,8,.08));
-        color: var(--gold);
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: background .15s;
-        align-self: flex-start;
-        font-family: inherit;
+        background: var(--gold-dim, rgba(201,126,8,.08)); color: var(--gold);
+        font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s;
+        align-self: flex-start; font-family: inherit;
       }
       .cal-dijo-suggest-btn:hover { background: rgba(201,126,8,.16); }
       .cal-modal-plats { display: flex; gap: 6px; flex-wrap: wrap; }
       .cal-modal-plat {
-        padding: 6px 12px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: transparent;
-        color: var(--text2);
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all .15s;
-        font-family: inherit;
+        padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+        background: transparent; color: var(--text2);
+        font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; font-family: inherit;
       }
       .cal-modal-plat.sel-tt { border-color:#ff2d55; background:rgba(255,45,85,.1);  color:#ff2d55; }
       .cal-modal-plat.sel-yt { border-color:#FFD700; background:rgba(255,215,0,.1);  color:#FFD700; }
       .cal-modal-plat.sel-ig { border-color:#a855f7; background:rgba(168,85,247,.1); color:#a855f7; }
       .cal-modal-plat.sel-li { border-color:#0a66c2; background:rgba(10,102,194,.1); color:#0a66c2; }
       .cal-modal-status {
-        width: 100%; padding: 9px 12px;
-        border-radius: 9px;
-        border: 1px solid var(--border);
-        background: var(--bg2);
-        color: var(--text);
-        font-size: 13px;
-        font-family: inherit;
-        outline: none;
-        cursor: pointer;
+        width: 100%; padding: 9px 12px; border-radius: 9px;
+        border: 1px solid var(--border); background: var(--bg2);
+        color: var(--text); font-size: 13px; font-family: inherit; outline: none; cursor: pointer;
       }
       .cal-modal-notes {
-        width: 100%; padding: 10px 12px;
-        border-radius: 9px;
-        border: 1px solid var(--border);
-        background: var(--bg2);
-        color: var(--text);
-        font-size: 13px;
-        font-family: inherit;
-        resize: vertical;
-        min-height: 70px;
-        box-sizing: border-box;
-        outline: none;
-        transition: border-color .15s;
+        width: 100%; padding: 10px 12px; border-radius: 9px;
+        border: 1px solid var(--border); background: var(--bg2);
+        color: var(--text); font-size: 13px; font-family: inherit;
+        resize: vertical; min-height: 70px; box-sizing: border-box; outline: none; transition: border-color .15s;
       }
       .cal-modal-notes:focus { border-color: var(--gold); }
       .cal-modal-footer {
-        padding: 12px 18px;
-        border-top: 1px solid var(--border);
+        padding: 12px 18px; border-top: 1px solid var(--border);
         display: flex; gap: 8px; justify-content: flex-end;
       }
       .cal-modal-save {
-        padding: 9px 20px;
-        border-radius: 9px;
+        padding: 9px 20px; border-radius: 9px;
         background: linear-gradient(135deg, var(--gold), var(--gold2, #e07b08));
-        color: #fff;
-        font-size: 13px;
-        font-weight: 700;
-        border: none;
-        cursor: pointer;
-        font-family: 'Syne', sans-serif;
-        transition: opacity .15s;
+        color: #fff; font-size: 13px; font-weight: 700;
+        border: none; cursor: pointer; font-family: 'Syne', sans-serif; transition: opacity .15s;
       }
       .cal-modal-save:hover { opacity: .9; }
       .cal-modal-cancel {
-        padding: 9px 16px;
-        border-radius: 9px;
-        border: 1px solid var(--border);
-        background: transparent;
-        color: var(--text2);
-        font-size: 13px;
-        cursor: pointer;
-        transition: background .15s;
-        font-family: inherit;
+        padding: 9px 16px; border-radius: 9px;
+        border: 1px solid var(--border); background: transparent;
+        color: var(--text2); font-size: 13px; cursor: pointer; transition: background .15s; font-family: inherit;
       }
       .cal-modal-cancel:hover { background: var(--bg2); }
 
-      .cal-btn-notif { color: var(--text3); }
-      .cal-btn-notif:hover { background: rgba(255,200,0,.1); color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.3)); }
-      .cal-btn-notif.notif-on { color: var(--gold); border-color: var(--gold-glo, rgba(201,126,8,.4)); background: var(--gold-dim, rgba(201,126,8,.08)); }
-
-      /* Notification nudge banner in empty slots */
-      .cal-notif-nudge {
-        width: 100%;
-        padding: 7px;
-        border-radius: 9px;
-        border: 1px dashed rgba(201,126,8,.35);
-        background: transparent;
-        color: var(--gold);
-        font-size: 11px;
-        font-weight: 700;
-        font-family: 'DM Mono', monospace;
-        cursor: pointer;
-        text-align: center;
-        transition: all .15s;
-      }
-      .cal-notif-nudge:hover {
-        background: var(--gold-dim, rgba(201,126,8,.08));
-        border-style: solid;
-      }
-
-      /* Filter active */
+      /* ── Filter active ── */
       .cal-plat-btn.active-all,
       .cal-plat-btn.active-filter {
         background: var(--gold-dim, rgba(201,126,8,.12));
-        border-color: var(--gold);
-        color: var(--gold);
+        border-color: var(--gold); color: var(--gold);
       }
 
-      /* Create today btn */
+      /* ── Create today btn ── */
       .cal-create-today-btn {
-        margin-left: auto;
-        padding: 7px 14px;
-        border-radius: 8px;
+        margin-left: auto; padding: 7px 14px; border-radius: 8px;
         background: linear-gradient(135deg, var(--gold), var(--gold2, #e07b08));
-        color: #fff;
-        font-size: 12px;
-        font-weight: 700;
-        border: none;
-        cursor: pointer;
-        font-family: 'Syne', sans-serif;
-        white-space: nowrap;
+        color: #fff; font-size: 12px; font-weight: 700;
+        border: none; cursor: pointer; font-family: 'Syne', sans-serif; white-space: nowrap;
       }
       .cal-create-today-btn:hover { opacity: .9; }
     `;
     document.head.appendChild(s);
   }
 
-  /* ─── NOTIFICATIONS ──────────────────────────────────────────── */
-
-  /* Registry of pending notification timers so we can cancel/reschedule */
-  var _notifTimers = {};   // slotId → timeoutId
-
-  /* Ask for permission once — silently if already granted/denied */
-  function requestNotifPermission(callback) {
-    if (!('Notification' in window)) return;
-    if (Notification.permission === 'granted') {
-      if (callback) callback(true);
-      return;
-    }
-    if (Notification.permission === 'denied') {
-      if (callback) callback(false);
-      return;
-    }
-    Notification.requestPermission().then(function (perm) {
-      if (callback) callback(perm === 'granted');
-    });
-  }
-
-  /*
-   * parseTimeToDate(timeStr)
-   * Converts a string like "7:00 PM" or "9:00 AM" into a Date for TODAY.
-   * Returns null if the time is already past.
-   */
-  function parseTimeToDate(timeStr) {
-    var m = String(timeStr).match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if (!m) return null;
-    var hrs = parseInt(m[1], 10);
-    var min = parseInt(m[2], 10);
-    var mer = m[3].toUpperCase();
-    if (mer === 'PM' && hrs !== 12) hrs += 12;
-    if (mer === 'AM' && hrs === 12) hrs = 0;
-    var target = new Date();
-    target.setHours(hrs, min, 0, 0);
-    /* Already past? Don't schedule */
-    if (target <= new Date()) return null;
-    return target;
-  }
-
-  /*
-   * schedulePostNotification(slotId, post)
-   * Sets a browser notification to fire at the post's predicted posting time.
-   * Cancels any existing timer for the same slot first.
-   */
-  function schedulePostNotification(slotId, post) {
-    if (!post || !post.postTime) return;
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-    /* Clear any old timer for this slot */
-    if (_notifTimers[slotId]) {
-      clearTimeout(_notifTimers[slotId]);
-      delete _notifTimers[slotId];
-    }
-
-    var fireAt = parseTimeToDate(post.postTime);
-    if (!fireAt) return;   /* Time already passed today */
-
-    var delay    = fireAt.getTime() - Date.now();
-    var pm       = PLAT[post.plat] || PLAT.tt;
-    var slotMeta = SLOTS.find(function (s) { return s.id === slotId; }) || SLOTS[0];
-
-    _notifTimers[slotId] = setTimeout(function () {
-      /* Prefer service worker notifications (more reliable / works when tab hidden) */
-      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type:    'SHOW_NOTIFICATION',
-          title:   '⏰ Time to post on ' + pm.label + '!',
-          body:    pm.icon + ' ' + (post.topic || 'Your scheduled post') + '\n' + slotMeta.label + ' · ' + post.postTime,
-          url:     '/creator-studio.html#calendar',
-          tag:     'ig-cal-' + slotId
-        });
-      } else {
-        /* Fallback: direct Notification API */
-        try {
-          new Notification('⏰ Time to post on ' + pm.label + '!', {
-            body:    pm.icon + ' ' + (post.topic || 'Your scheduled post') + '\n' + slotMeta.label + ' · ' + post.postTime,
-            icon:    '/logo.png',
-            badge:   '/logo.png',
-            tag:     'ig-cal-' + slotId,
-            renotify: true
-          });
-        } catch (e) { /* ignore — e.g. insecure context */ }
-      }
-      delete _notifTimers[slotId];
-    }, delay);
-  }
-
-  /* Schedule notifications for all posts that have a future postTime */
-  function scheduleAllNotifications() {
-    if (Notification.permission !== 'granted') return;
-    Object.keys(_posts).forEach(function (slotId) {
-      schedulePostNotification(slotId, _posts[slotId]);
-    });
-  }
-
-  /* Cancel all pending notification timers (e.g. when a post is deleted) */
-  function cancelNotification(slotId) {
-    if (_notifTimers[slotId]) {
-      clearTimeout(_notifTimers[slotId]);
-      delete _notifTimers[slotId];
-    }
-  }
-
-  /* Public: let user enable reminders for a specific slot from the UI */
-  window.calEnableSlotNotif = function (slotId) {
-    requestNotifPermission(function (granted) {
-      if (!granted) {
-        if (typeof toast === 'function') toast('🔕 Notifications blocked — enable them in browser settings');
-        return;
-      }
-      var post = _posts[slotId];
-      if (!post) {
-        if (typeof toast === 'function') toast('⚠️ Add a post to this slot first');
-        return;
-      }
-      schedulePostNotification(slotId, post);
-      var fireAt = parseTimeToDate(post.postTime);
-      if (fireAt) {
-        if (typeof toast === 'function') toast('🔔 Reminder set for ' + post.postTime + '!');
-      } else {
-        if (typeof toast === 'function') toast('⚠️ That posting time has already passed today');
-      }
-      renderGrid(); /* refresh button state */
-    });
-  };
-
-  /* Helper — is a notification already queued for this slot? */
-  function hasActiveNotif(slotId) {
-    return !!_notifTimers[slotId];
-  }
-
   /* ─── PUBLIC ENTRY POINT ─────────────────────────────────────── */
   window.loadCalendar = function () {
-    loadTodayPosts();
+    _dayOffset = 0;
+    loadDayPosts();
     pruneOldDays();
 
-    /* Request notification permission early (non-blocking) */
     requestNotifPermission(function (granted) {
       if (granted) scheduleAllNotifications();
     });
 
     renderGrid();
 
-    // If trends aren't ready yet, wait and re-render once they arrive
     if (!getTrends().length) {
       var attempts = 0;
       var poll = setInterval(function () {
         attempts++;
         if (getTrends().length || attempts > 30) {
           clearInterval(poll);
-          if (getTrends().length) renderGrid();
+          if (getTrends().length && isToday()) renderGrid();
         }
       }, 400);
     }
@@ -1235,6 +1159,11 @@
   /* ─── KEYBOARD ───────────────────────────────────────────────── */
   document.addEventListener('keydown', function (e) {
     var ov = document.getElementById('calModalOverlay');
+    /* Arrow keys for day navigation when modal is closed */
+    if (!ov || !ov.classList.contains('open')) {
+      if (e.key === 'ArrowLeft')  { window.calPrevDay(); return; }
+      if (e.key === 'ArrowRight') { window.calNextDay(); return; }
+    }
     if (!ov || !ov.classList.contains('open')) return;
     if (e.key === 'Escape') window.closeModal();
     if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
@@ -1243,7 +1172,7 @@
     }
   });
 
-  /* ─── AUTO-INIT if calendar tab already active ───────────────── */
+  /* ─── AUTO-INIT ──────────────────────────────────────────────── */
   function maybeInit() {
     var panel = document.getElementById('panel-calendar');
     if (panel && panel.classList.contains('active')) window.loadCalendar();
