@@ -10,6 +10,8 @@
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="carousel-studio.css"/>
 <link rel="stylesheet" href="carousel-studio-additions.css"/>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 <style>
 /* ── Resolve --ig-yellow → shared token so dark/light mode inherits correctly ── */
 :root { --ig-yellow: var(--brand-primary); }
@@ -48,19 +50,29 @@
 </style>
 </head>
 <body class="carousel-studio">
-<div class="shell">
-
-<!-- Shared Nav -->
+<!-- Shared Nav (outside .shell — shared.css makes it position:fixed) -->
 <div id="ig-nav"></div>
-<script src="nav.js"></script>
-<script>
-  renderNav('carousel-studio.html');
-</script>
+
+<div class="shell">
 
 <!-- ══ LEFT PANEL ══ -->
 <aside class="left">
   <div class="ph">
-    <div class="ph-title">✦ AI Carousel Creator</div>
+    <div class="ph-top">
+      <div class="ph-title">✦ AI Carousel Creator</div>
+      <div class="ph-tools">
+        <div class="ph-tgrp">
+          <button class="tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+          <span class="tlbl" id="zoomLbl">100%</span>
+          <button class="tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        </div>
+        <div class="ph-tgrp">
+          <button class="tb" title="Shuffle images" onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
+          <button class="tb" title="Regenerate" onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+          <button class="tb" title="Reset text positions" onclick="resetTextOffsets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+        </div>
+      </div>
+    </div>
     <div class="ph-sub">Describe your content. Dijo picks the theme, writes real captions with live trend context &amp; designs every slide.</div>
   </div>
   <div class="pb">
@@ -127,6 +139,41 @@
       <div class="asset-row" id="assetRow"></div>
     </div>
 
+    <!-- FORMAT / CANVAS SIZE -->
+    <div class="field">
+      <label class="lbl">Canvas Format</label>
+      <div class="fmt-row">
+        <button class="fmt-btn active" id="fmtSquare" onclick="setFmt('square')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          Square
+        </button>
+        <button class="fmt-btn" id="fmtPortrait" onclick="setFmt('portrait')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="14"><rect x="3" y="1" width="18" height="22" rx="2"/></svg>
+          Portrait
+        </button>
+        <button class="fmt-btn" id="fmtLandscape" onclick="setFmt('landscape')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="9"><rect x="1" y="5" width="22" height="14" rx="2"/></svg>
+          Landscape
+        </button>
+        <button class="fmt-btn" id="fmtStory" onclick="setFmt('story')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="9" height="14"><rect x="4" y="1" width="16" height="22" rx="2"/></svg>
+          Story
+        </button>
+      </div>
+    </div>
+
+    <!-- OVERRIDE BACKGROUND — moved from right panel -->
+    <div class="field">
+      <label class="lbl">Background Image</label>
+      <div class="dzone" id="dzone" onclick="document.getElementById('imgUp').click()"
+           ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
+        <div class="dzone-icon">🖼️</div>
+        <p><strong style="color:var(--gold)">Upload image</strong> or drag &amp; drop<br/>
+        <span style="font-size:10px;color:var(--text3)">Replaces AI-selected background</span></p>
+      </div>
+      <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
+    </div>
+
     <button class="gen-btn" id="genBtn" onclick="generate()" disabled>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       Generate with Dijo
@@ -137,47 +184,6 @@
 
 <!-- ══ CENTER ══ -->
 <main class="center">
-
-  <div class="toolbar">
-    <div class="tgrp">
-      <button class="tb" onclick="zoom(-10)" title="Zoom out">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      </button>
-      <span class="tlbl" id="zoomLbl">100%</span>
-      <button class="tb" onclick="zoom(10)" title="Zoom in">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      </button>
-    </div>
-    <div class="tgrp">
-      <button class="tb on" id="fmtSquare" onclick="setFmt('square')" title="Square 1:1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-      </button>
-      <button class="tb" id="fmtPortrait" onclick="setFmt('portrait')" title="Portrait 4:5">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
-      </button>
-      <button class="tb" id="fmtLandscape" onclick="setFmt('landscape')" title="Landscape 16:9">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
-      </button>
-    </div>
-    <div class="tgrp">
-      <button class="tb" title="Shuffle background images" onclick="shuffleAssets()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-      </button>
-      <button class="tb" title="Regenerate carousel" onclick="generate()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </button>
-    </div>
-    <div class="tsp"></div>
-    <div class="slide-nav">
-      <button class="snb" onclick="prevSlide()" title="Previous slide">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span class="sctr" id="slideCtr">0 / 0</span>
-      <button class="snb" onclick="nextSlide()" title="Next slide">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-    </div>
-  </div>
 
   <div class="canvas-wrap" id="canvasWrap">
 
@@ -254,6 +260,7 @@
         <div class="hidden" id="sBottomStrip" style="z-index:5"></div>
         <div class="hidden" id="sEditorialCover" style="z-index:5"></div>
         <div class="hidden" id="sEditorialCollage" style="z-index:5"></div>
+        <div class="hidden" id="sEditorialCollage3" style="z-index:5"></div>
         <div class="hidden" id="sHabitCover" style="z-index:5"></div>
         <div class="hidden" id="sHabitSlide" style="z-index:5"></div>
 
@@ -275,7 +282,15 @@
 <aside class="right">
   <div class="rh">
     <span class="rh-title">✦ Edit Slide</span>
-    <span class="rh-num" id="editNum" style="color:rgba(245,228,0,.45);font-family:'Space Mono',monospace;font-size:10px">—</span>
+    <div class="rh-actions">
+      <div class="slide-nav">
+        <button class="snb" onclick="prevSlide()" title="Previous slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="sctr" id="slideCtr">0 / 0</span>
+        <button class="snb" onclick="nextSlide()" title="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+      <button class="rh-icon-btn" onclick="openExport()" title="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+      <button class="rh-icon-btn" onclick="downloadAll()" title="Download all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg></button>
+    </div>
   </div>
   <div class="rb">
 
@@ -298,7 +313,6 @@
         <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')" title="Bold colour band over image">Band</button>
         <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')" title="Two images with text">Dual Img</button>
         <button class="layout-btn" onclick="changeLayout('STAT_HERO')" title="Big number hero slide">Stat</button>
-        <button class="layout-btn" onclick="changeLayout('QUOTE_PULL')" title="Pull quote layout">Quote</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')" title="Editorial magazine cover">Ed. Cover</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')" title="Editorial collage">Ed. Collage</button>
         <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')" title="Three-photo editorial">Ed. Col×3</button>
@@ -310,10 +324,7 @@
       <div class="esec-title">Stat / Number</div>
       <input type="text" class="finput" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
     </div>
-
-    <div class="esec" id="eQuoteSection">
-      <div class="esec-title">Quote Text</div>
-      <textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
+<textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
     </div>
 
     <!-- CAPTION -->
@@ -340,17 +351,6 @@
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copy All 5 Hashtags
       </button>
-    </div>
-
-    <div class="esec">
-      <div class="esec-title">Override Background</div>
-      <div class="dzone" id="dzone" onclick="document.getElementById('imgUp').click()"
-           ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
-        <div class="dzone-icon">🖼️</div>
-        <p><strong style="color:var(--ig-yellow)">Upload image</strong> or drag &amp; drop<br/>
-        <span style="font-size:10px;color:rgba(255,255,255,.2)">Replaces AI-selected background</span></p>
-      </div>
-      <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
     </div>
 
     <div class="esec">
@@ -422,12 +422,12 @@
 <div class="toast-shelf" id="toastShelf"></div>
 
 <!-- ══ MAIN ENGINE (v4.5 — includes Caption Engine) ══ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="nav.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="ig-supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script src="auth.js"></script>
-<script>
-  initAuth();
-</script>
+<script src="nav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="carousel-studio.js"></script>
 
 <script>
@@ -520,43 +520,63 @@ function isSafariIOS(){
 var _dlCancelled = false;
 
 function showDlProgress(label, pct){
-  var existing = document.getElementById('dlProgressToast');
-  if(existing) existing.remove();
-  var t = document.createElement('div');
-  t.id = 'dlProgressToast'; t.className = 'dl-progress-toast';
-  t.innerHTML = '<div class="dl-progress-label" id="dlProgressLabel">'+label+'</div>'
-    +'<div class="dl-progress-bar"><div class="dl-progress-fill" id="dlProgressFill" style="width:'+(pct||0)+'%"></div></div>'
-    +'<div class="dl-progress-cancel" onclick="cancelDl()">Cancel</div>';
-  document.body.appendChild(t);
+  var bar = document.getElementById('dlProgressBar');
+  if(bar){ bar.classList.add('show'); }
+  updateDlProgress(label, pct||0);
 }
 function updateDlProgress(label, pct){
-  var lbl=document.getElementById('dlProgressLabel');
-  var fill=document.getElementById('dlProgressFill');
-  if(lbl) lbl.textContent=label;
-  if(fill) fill.style.width=pct+'%';
+  var lbl = document.getElementById('dlBarLabel');
+  var fill = document.getElementById('dlBarFill');
+  var pctEl = document.getElementById('dlBarPct');
+  if(lbl) lbl.textContent = label;
+  if(fill) fill.style.width = pct + '%';
+  if(pctEl) pctEl.textContent = Math.round(pct) + '%';
 }
 function hideDlProgress(){
-  var t=document.getElementById('dlProgressToast');
-  if(t) t.remove();
+  var bar = document.getElementById('dlProgressBar');
+  if(bar){ bar.classList.remove('show'); }
 }
 window.cancelDl = function(){ _dlCancelled=true; hideDlProgress(); toast('Download cancelled'); };
 
 window.downloadAll = async function(){
   if(!window.ST || !ST.slides.length){ toast('Generate a carousel first'); return; }
-  if(typeof html2canvas === 'undefined'){ toast('💡 html2canvas not loaded — use Export → PNG'); return; }
+  if(typeof html2canvas === 'undefined'){ toast('💡 html2canvas not loaded — please refresh'); return; }
   _dlCancelled = false;
   var total = ST.slides.length, blobs = [];
   showDlProgress('Preparing slides…', 0);
   var origCur = ST.cur;
+  var canvas = document.getElementById('slideCanvas');
+  var displayW = canvas.offsetWidth || 620;
+  var targetPx = 1080;
+  var exportScale = Math.round((targetPx / displayW) * 10) / 10;
+
   for(var i=0; i<total; i++){
     if(_dlCancelled) break;
     ST.cur = i; renderSlide(); updateCounter();
-    await new Promise(function(r){ setTimeout(r, 320); });
+
+    // Wait for render + images
+    await new Promise(function(r){ setTimeout(r, 600); });
+    var imgs = canvas.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(function(img){
+      if(img.complete) return Promise.resolve();
+      return new Promise(function(res){
+        img.onload = res; img.onerror = res;
+        setTimeout(res, 2000);
+      });
+    }));
+    await new Promise(function(r){ setTimeout(r, 300); });
+
     updateDlProgress('Capturing slide '+(i+1)+' of '+total+'…', Math.round((i/total)*80));
     try{
-      var canvas = document.getElementById('slideCanvas');
-      var c = await html2canvas(canvas,{useCORS:true,allowTaint:false,scale:2,backgroundColor:null});
-      await new Promise(function(res,rej){
+      var c = await html2canvas(canvas,{
+        useCORS:true,
+        allowTaint:true,
+        scale:exportScale,
+        backgroundColor:'#111111',
+        imageTimeout:8000,
+        logging:false
+      });
+      await new Promise(function(res){
         c.toBlob(function(blob){
           if(blob) blobs.push({blob:blob,name:'ImpactGrid-slide-'+String(i+1).padStart(2,'0')+'.png'});
           res();
@@ -585,11 +605,37 @@ window.downloadAll = async function(){
     }catch(e){ console.warn('[downloadAll] save failed:',e); }
   }
   hideDlProgress();
-  toast('✦ '+blobs.length+' slides saved');
+  toast('✦ '+blobs.length+' slides saved at 1080px');
 };
 
 // ── 7. INIT
 window.addEventListener('load', function(){
+  // Render shared nav + footer
+  renderNav('carousel-studio.html');
+
+  // Inject "Carousel Studio" crumb after the logo
+  var navIn = document.querySelector('.nav-in');
+  if(navIn){
+    var sep = document.createElement('div');
+    sep.style.cssText = 'width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 8px;';
+    var crumb = document.createElement('span');
+    crumb.style.cssText = 'font-size:11px;color:var(--text3);font-family:var(--fm);letter-spacing:.3px;white-space:nowrap;';
+    crumb.textContent = 'Carousel Studio';
+    var sp = navIn.querySelector('.nav-links') || navIn.querySelector('.nav-right');
+    if(sp){ navIn.insertBefore(sep, sp); navIn.insertBefore(crumb, sp); }
+  }
+
+  // Measure actual nav height and fit shell exactly beneath it
+  requestAnimationFrame(function(){
+    var nav = document.querySelector('.nav');
+    var shell = document.querySelector('.shell');
+    if(nav && shell){
+      var h = nav.getBoundingClientRect().height;
+      shell.style.marginTop = h + 'px';
+      shell.style.height = 'calc(100vh - ' + h + 'px)';
+    }
+  });
+
   if(typeof ST !== 'undefined'){
     ST.accent = '#f5e400';
     ST.brand  = 'www.impactgridgroup.com';
@@ -598,6 +644,26 @@ window.addEventListener('load', function(){
     fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){});
   }, 600000);
 });
+</script>
+
+<!-- ══ BOTTOM DOWNLOAD PROGRESS BAR ══ -->
+<div id="dlProgressBar">
+  <div class="dl-bar-top">
+    <span class="dl-bar-label" id="dlBarLabel">Preparing…</span>
+    <div style="display:flex;align-items:center;gap:0">
+      <span class="dl-bar-pct" id="dlBarPct">0%</span>
+      <span class="dl-bar-cancel" onclick="cancelDl()">Cancel</span>
+    </div>
+  </div>
+  <div class="dl-bar-track">
+    <div class="dl-bar-fill" id="dlBarFill" style="width:0%"></div>
+  </div>
+</div>
+
+<div id="ig-footer"></div>
+<script>
+  // Render footer after DOM ready
+  if(typeof renderFooter === 'function') renderFooter();
 </script>
 </body>
 </html>
