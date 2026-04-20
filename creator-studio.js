@@ -9,11 +9,8 @@ var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
 // Expose on window so calendar.js can read real trend data without
 // duplicating the fetch. calendar.js checks window._allTrends first.
-Object.defineProperty(window, '_allTrends', {
-  get: function() { return _allTrends; },
-  set: function(v) { _allTrends = v; },
-  configurable: true
-});
+// Simple assignment — avoids defineProperty redefine errors on reload.
+window._allTrends = _allTrends;
 var _selectedStyle = 'Educational';
 var trendChartInstance = null;
 var _evalChannelData = null, _evalScoreData = null, _evalVideosData = null, _evalChatHistory = [];
@@ -674,7 +671,7 @@ async function fetchTrends() {
     // Unwrap either shape: bare array OR { trends: [...] }
     var crossList = Array.isArray(data) ? data : (data && Array.isArray(data.trends) ? data.trends : null);
     if (crossList && crossList.length) {
-      _allTrends = crossList.map(mapTrend);
+      _allTrends = crossList.map(mapTrend); window._allTrends = _allTrends;
       console.log('[fetchTrends] ✅ /trends/cross loaded', _allTrends.length, 'trends —',
         _allTrends.filter(function(t){return t.plat==='tt';}).length, 'TikTok,',
         _allTrends.filter(function(t){return t.plat==='yt';}).length, 'YouTube,',
@@ -692,7 +689,7 @@ async function fetchTrends() {
     var data2 = await res2.json();
     var liveList = Array.isArray(data2) ? data2 : (data2 && Array.isArray(data2.trends) ? data2.trends : null);
     if (liveList && liveList.length) {
-      _allTrends = liveList.map(mapTrend);
+      _allTrends = liveList.map(mapTrend); window._allTrends = _allTrends;
       console.log('[fetchTrends] ✅ /trends/live loaded', _allTrends.length, 'trends');
       renderAll();
       return;
@@ -708,7 +705,7 @@ async function fetchTrends() {
     var data3 = await res3.json();
     var cacheList = Array.isArray(data3) ? data3 : (data3 && Array.isArray(data3.trends) ? data3.trends : null);
     if (cacheList && cacheList.length) {
-      _allTrends = cacheList.map(mapTrend);
+      _allTrends = cacheList.map(mapTrend); window._allTrends = _allTrends;
       console.warn('[fetchTrends] ⚠️ /trends/cache loaded', _allTrends.length, 'trends (cross/live empty)');
       renderAll();
       return;
@@ -725,7 +722,7 @@ async function fetchTrends() {
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
-    });
+    }); window._allTrends = _allTrends;
     if (_allTrends.length) {
       console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics');
       renderAll();
