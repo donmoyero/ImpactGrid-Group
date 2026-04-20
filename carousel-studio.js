@@ -476,7 +476,7 @@ async function checkCarouselAccess() {
 
   // ❌ Not logged in
   if (!IG_USER) {
-    showUpgradeBar("Login to generate and save carousels");
+    showUpgradeBar("Sign in to generate and save carousels", false);
     return false;
   }
 
@@ -499,7 +499,16 @@ async function checkCarouselAccess() {
   var limit = _getCarouselAILimit(IG_PLAN);
   if (IG_AI_USES >= limit) {
     var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : (IG_PLAN.charAt(0).toUpperCase() + IG_PLAN.slice(1));
-    showUpgradeBar(planLabel + ' limit reached (' + limit + '/mo) — upgrade for more');
+    // Hard block — show full upgrade modal
+    if (typeof window.showPlanGate === 'function') {
+      window.showPlanGate({
+        icon:     '⚡',
+        title:    'Monthly AI limit reached',
+        subtitle: 'You\'ve used all ' + limit + ' AI generations on the ' + planLabel + ' plan this month. Upgrade to keep creating.'
+      });
+    } else {
+      showUpgradeBar(planLabel + ' limit reached (' + limit + '/mo) — upgrade for more', true, { persistent: true });
+    }
     return false;
   }
 
@@ -1696,15 +1705,28 @@ async function exportSlidesAsPNG(){
   }
   if(!ST.slides.length){ toast('Generate a carousel first'); return; }
 
-  // ── Carousel save limit check (free plan: 3 saves, 7-day retention) ──
-  if (!IG_IS_ADMIN && IG_PLAN !== 'enterprise') {
+  // ── Carousel save limit check ──────────────────────────────────────────
+  // Free: 3 saves per period. Professional: 20. Enterprise: unlimited.
+  // When the limit is hit, show the full upgrade modal (not just the bar).
+  if (!IG_IS_ADMIN && IG_PLAN !== 'enterprise' && IG_PLAN !== 'admin') {
     var saveLimit = window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[IG_PLAN]
       ? window.IG_PLAN_CONFIG[IG_PLAN].carousels : 3;
     var saveCount = 0;
     try { saveCount = parseInt(localStorage.getItem('ig_carousel_saves') || '0'); } catch(e) {}
+
     if (saveCount >= saveLimit) {
       var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : 'Free';
-      showUpgradeBar(planLabel + ' plan: ' + saveLimit + ' carousel saves used — upgrade to save more');
+      var nextP     = IG_PLAN === 'free' ? 'Professional' : 'Enterprise';
+      // Show full upgrade modal — this is a hard block, not just a nudge
+      if (typeof window.showPlanGate === 'function') {
+        window.showPlanGate({
+          icon:     '🎠',
+          title:    'Carousel save limit reached',
+          subtitle: 'You\'ve used all ' + saveLimit + ' carousel saves on the ' + planLabel + ' plan. Upgrade to ' + nextP + ' to export more.'
+        });
+      } else {
+        showUpgradeBar(planLabel + ' plan: ' + saveLimit + ' carousel saves used — upgrade to save more', true, { persistent: true });
+      }
       return;
     }
     // Increment save counter
@@ -2234,59 +2256,29 @@ document.addEventListener('keydown',function(e){
 })();
 
 /* ══════════════════════════════════════════════════════════
-   UPGRADE BAR
+   UPGRADE BAR — delegates to plan-gate.js
+   showUpgradeBar(message, isLoggedIn?, opts?)
+   plan-gate.js must be loaded before this file.
+   If it hasn't loaded yet (e.g. race on slow connections),
+   this thin shim queues the call until it's ready.
 ══════════════════════════════════════════════════════════ */
-function showUpgradeBar(message) {
-  let el = document.getElementById("upgradeBar");
-
-  if (!el) {
-    el = document.createElement("div");
-    el.id = "upgradeBar";
-    document.body.appendChild(el);
+function showUpgradeBar(message, isLoggedIn, opts) {
+  // Determine isLoggedIn from context if not passed (legacy call sites)
+  if (isLoggedIn === undefined) {
+    isLoggedIn = !!(window.igUser && window.igUser.id) || !!(IG_USER);
   }
-
-  el.innerHTML =
-    '<div class="upgrade-inner">'
-    + '<span>' + message + '</span>'
-    + '<div style="display:flex;gap:8px;">'
-    + '<a href="pricing.html" class="btn btn-primary">Upgrade</a>'
-    + '<a href="login.html" class="btn btn-secondary">Login</a>'
-    + '</div></div>';
-
-  el.classList.add("show");
-
-  setTimeout(() => {
-    el.classList.remove("show");
-  }, 4000);
+  if (typeof window.showUpgradeBar_gate === 'function') {
+    window.showUpgradeBar_gate(message, isLoggedIn, opts);
+  } else {
+    // plan-gate.js not yet loaded — queue
+    var _q = window._pgQueue = window._pgQueue || [];
+    _q.push([message, isLoggedIn, opts]);
+  }
 }
 
-(function() {
-  const style = document.createElement("style");
-  style.innerHTML = [
-    "#upgradeBar {",
-    "  position: fixed;",
-    "  top: 80px;",
-    "  left: 50%;",
-    "  transform: translateX(-50%) translateY(-20px);",
-    "  background: var(--card);",
-    "  border: 1px solid var(--border);",
-    "  border-radius: 999px;",
-    "  padding: 10px 16px;",
-    "  box-shadow: var(--sh2);",
-    "  opacity: 0;",
-    "  transition: all .3s ease;",
-    "  z-index: 9999;",
-    "}",
-    "#upgradeBar.show {",
-    "  opacity: 1;",
-    "  transform: translateX(-50%) translateY(0);",
-    "}",
-    ".upgrade-inner {",
-    "  display: flex;",
-    "  gap: 12px;",
-    "  align-items: center;",
-    "  font-size: 12px;",
-    "}"
-  ].join("\n");
-  document.head.appendChild(style);
-})();
+// Flush any queued calls once plan-gate.js loads
+document.addEventListener('plan-gate-ready', function () {
+  var q = window._pgQueue || [];
+  q.forEach(function (args) { window.showUpgradeBar_gate.apply(null, args); });
+  window._pgQueue = [];
+});
