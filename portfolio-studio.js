@@ -1513,33 +1513,4 @@ function showUpgradeBar(message, isLoggedIn) {
   }
 }
 
-(function() {
-  const style = document.createElement("style");
-  style.innerHTML = [
-    "#upgradeBar {",
-    "  position: fixed;",
-    "  top: 80px;",
-    "  left: 50%;",
-    "  transform: translateX(-50%) translateY(-20px);",
-    "  background: var(--card);",
-    "  border: 1px solid var(--border);",
-    "  border-radius: 999px;",
-    "  padding: 10px 16px;",
-    "  box-shadow: var(--sh2);",
-    "  opacity: 0;",
-    "  transition: all .3s ease;",
-    "  z-index: 9999;",
-    "}",
-    "#upgradeBar.show {",
-    "  opacity: 1;",
-    "  transform: translateX(-50%) translateY(0);",
-    "}",
-    ".upgrade-inner {",
-    "  display: flex;",
-    "  gap: 12px;",
-    "  align-items: center;",
-    "  font-size: 12px;",
-    "}"
-  ].join("\n");
-  document.head.appendChild(style);
-})();
+// Upgrade bar styles are handled by plan-gate.js (#igUpgradeBar)
