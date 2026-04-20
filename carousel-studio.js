@@ -280,7 +280,7 @@ function pickThirdAsset(theme, excludeIds, slideIndex){
 }
 
 function getOverlay(tone,brightness,layout){
-  if(['EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','STAT_HERO'].indexOf(layout)!==-1) return 'none';
+  if(['EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','STAT_HERO','QUOTE_PULL'].indexOf(layout)!==-1) return 'none';
   if(brightness==='low') return 'linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.5) 50%,rgba(0,0,0,.15) 100%)';
   if(tone==='neutral'&&brightness==='high') return 'linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.25) 55%,transparent 100%)';
   if(tone==='warm') return 'linear-gradient(to top,rgba(12,7,3,.9) 0%,rgba(12,7,3,.4) 55%,rgba(12,7,3,.08) 100%)';
@@ -308,7 +308,7 @@ function getPanelText(theme){
    ───────────────────────────────────────────────────────── */
 var LAYOUT_SEQUENCE = [
   'FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE',
-  'TOP_STRIP','STAT_HERO',
+  'TOP_STRIP','STAT_HERO','QUOTE_PULL',
   'EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3',
   'HABIT_COVER'
 ];
@@ -322,7 +322,7 @@ function assignLayout(slideType,idx,total){
     insight:['OVERLAP_BAND','FULL_BLEED','TOP_STRIP','BOTTOM_STRIP'],
     lesson:['BOTTOM_STRIP','FULL_BLEED','EDITORIAL_COLLAGE_3','TOP_STRIP'],
     proof:['DUAL_IMAGE','OVERLAP_BAND','BOTTOM_STRIP'],
-    quote:['FULL_BLEED'],
+    quote:['QUOTE_PULL','FULL_BLEED'],
     story:['FULL_BLEED','TOP_STRIP','OVERLAP_BAND'],
     problem:['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP'],
     list:['BOTTOM_STRIP','EDITORIAL_COLLAGE_3','OVERLAP_BAND'],
@@ -335,7 +335,7 @@ function assignLayout(slideType,idx,total){
 function normalizeLayoutSafe(layout, slideType, idx, total){
   var fallback=assignLayout(slideType||'value',idx||0,total||1);
   var blocked=['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
-  var allowed=['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE','TOP_STRIP','STAT_HERO','EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
+  var allowed=['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE','TOP_STRIP','STAT_HERO','QUOTE_PULL','EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
   if(!layout||blocked.indexOf(layout)!==-1||allowed.indexOf(layout)===-1) return fallback;
   return layout;
 }
@@ -407,34 +407,15 @@ function normalizeSlidesDeck(slides){
 var ST={slides:[],cur:0,count:7,theme:null,zoom:100,format:'square',accent:'#2563eb',brand:'',userImages:{},assetOffset:0,exportType:'png',fontPair:'syne',trendHashtags:[]};
 var currentTrend = null;
 
-/* ── MONETISATION ───────────────────────────────────────────────────
-   Plans: 'free' (3 AI uses/mo) | 'professional' (100/mo) | 'enterprise' (unlimited)
-   The AI use counter is SHARED across all tools — stored in Supabase
-   profiles.ai_uses_month and cached in localStorage as 'ig_ai_uses'.
-   nav.js fetches + resets the counter each session and fires 'ig-plan-ready'.
-─────────────────────────────────────────────────────────────────── */
+/* ── MONETISATION ───────────────────────────── */
 var IG_USER        = null;
-var IG_PLAN        = (function(){ try { return localStorage.getItem('ig_plan') || 'free'; } catch(e){ return 'free'; } })();
-var IG_AI_USES     = (function(){ try { return parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e){ return 0; } })();
+var IG_PLAN        = "free"; // free | pro | enterprise
+var IG_USES        = parseInt(localStorage.getItem("ig_carousel_uses") || "0");
+var IG_LIMIT       = 3;
 var IG_ADMIN_EMAIL = "admin@impactgridgroup.com";
 var IG_IS_ADMIN    = false;
 
-// AI use limit — always read live from plan-config.js so changes in one place propagate everywhere
-function _getCarouselAILimit(plan) {
-  return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
-    ? window.IG_PLAN_CONFIG[plan].ai_uses
-    : (plan === 'professional' ? 100 : plan === 'enterprise' ? Infinity : 3);
-}
-
-/* Keep plan + usage in sync when nav.js resolves them from the DB */
-document.addEventListener('ig-plan-ready', function(e) {
-  if (!e.detail) return;
-  if (e.detail.plan)   IG_PLAN    = e.detail.plan;
-  if (typeof e.detail.aiUses === 'number') IG_AI_USES = e.detail.aiUses;
-  if (IG_PLAN === 'enterprise') IG_IS_ADMIN = true;
-});
-
-async function getCarouselUser() {
+async function getUser() {
   try {
     // Prefer nav.js's already-authenticated client (avoids double-init race)
     if (typeof getSupabase === 'function') {
@@ -448,11 +429,14 @@ async function getCarouselUser() {
     if (window.igUser && window.igUser.id) {
       return { id: window.igUser.id, email: window.igUser.email };
     }
-    // Last resort: raw supabase SDK using globals set by ig-supabase.js
+    // Last resort: raw supabase SDK
     const sb = window.supabase;
-    if (!sb || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
+    if (!sb) return null;
     const sbClient = sb.createClient
-      ? sb.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+      ? sb.createClient(
+          'https://wedjsnizcvtgptobwugc.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc'
+        )
       : sb;
     const { data } = await sbClient.auth.getSession();
     return data?.session?.user || null;
@@ -472,7 +456,7 @@ async function checkCarouselAccess() {
     });
   }
 
-  IG_USER = await getCarouselUser();
+  IG_USER = await getUser();
 
   // ❌ Not logged in
   if (!IG_USER) {
@@ -480,48 +464,23 @@ async function checkCarouselAccess() {
     return false;
   }
 
-  // Sync plan + usage from window.igUser (set by nav.js from DB — most authoritative)
-  if (window.igUser) {
-    if (window.igUser.plan)                     IG_PLAN    = window.igUser.plan;
-    if (typeof window.igUser.aiUses === 'number') IG_AI_USES = window.igUser.aiUses;
-  } else {
-    try { IG_PLAN    = localStorage.getItem('ig_plan')    || IG_PLAN;    } catch(e) {}
-    try { IG_AI_USES = parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
-  }
-
-  // 👑 Admin / enterprise — unlimited, no counter
-  if (IG_USER.email === IG_ADMIN_EMAIL || IG_PLAN === 'enterprise') {
+  // 👑 Admin override
+  if (IG_USER.email === IG_ADMIN_EMAIL) {
     IG_IS_ADMIN = true;
-    return true;
+    IG_PLAN = "enterprise";
+    console.log("👑 Admin mode active");
   }
 
-  // Check shared monthly limit for this plan
-  var limit = _getCarouselAILimit(IG_PLAN);
-  if (IG_AI_USES >= limit) {
-    var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(IG_PLAN) : (IG_PLAN.charAt(0).toUpperCase() + IG_PLAN.slice(1));
-    showUpgradeBar(planLabel + ' limit reached (' + limit + '/mo) — upgrade for more');
+  // 👑 Admin bypass
+  if (IG_IS_ADMIN) return true;
+
+  // ❌ Free limit reached
+  if (IG_PLAN === "free" && IG_USES >= IG_LIMIT) {
+    showUpgradeBar("Free limit reached — upgrade for unlimited carousels");
     return false;
   }
 
   return true;
-}
-
-/* Increment the shared AI use counter in Supabase + localStorage */
-async function incrementAIUse() {
-  IG_AI_USES++;
-  try { localStorage.setItem('ig_ai_uses', String(IG_AI_USES)); } catch(e) {}
-  if (window.igUser && window.igUser.id) {
-    try {
-      var client = (typeof getSupabase === 'function') ? getSupabase() : null;
-      if (client) {
-        await client.from('profiles')
-          .update({ ai_uses_month: IG_AI_USES })
-          .eq('user_id', window.igUser.id);
-      }
-    } catch(e) {}
-  }
-  // Keep igUser in sync
-  if (window.igUser) window.igUser.aiUses = IG_AI_USES;
 }
 
 var FONT_PAIRS={
@@ -672,7 +631,8 @@ async function generate(){
   btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate';
   btn.disabled=false;
   if (!IG_IS_ADMIN) {
-    incrementAIUse(); // shared counter — updates Supabase + localStorage
+    IG_USES++;
+    localStorage.setItem("ig_carousel_uses", IG_USES);
   }
   toast('✦ '+ST.slides.length+'-slide carousel · '+DA[ST.theme].label+' · tap any text to edit');
 
@@ -888,6 +848,9 @@ function fallbackSlides(topic, platform, tone, count){
     {type:'stat',layout:'STAT_HERO',stat:'3×',
      headline:'People Who Do This Consistently Outperform Everyone Else',
      body:'Three times the result, in the same time window, with less stress. The difference is one repeatable behaviour.'},
+    {type:'quote',layout:'QUOTE_PULL',
+     quote:'You don\'t rise to the level of your goals. You fall to the level of your systems.',
+     headline:'',body:''},
     {type:'lesson',layout:'EDITORIAL_COLLAGE',
      headline:'What I Wish I Had Known Three Years Ago',
      body:'Nobody tells you this at the start. You have to earn it through trial and error, or find someone who\'s already been through it.'},
@@ -940,15 +903,15 @@ function fallbackSlides(topic, platform, tone, count){
    ───────────────────────────────────────────────────────── */
 function clearLayouts(){
   ['sContent','sSplit','sCorner','sDual','sBand','sEditorial','sQuote','sStat','sGrid','sTopStrip','sBottomStrip',
-   'sEditorialCover','sEditorialCollage','sEditorialCollage3','sHabitCover','sHabitSlide'].forEach(function(id){
+   'sEditorialCover','sEditorialCollage','sHabitCover','sHabitSlide'].forEach(function(id){
     var el=document.getElementById(id);
-    if(el){el.innerHTML='';el.classList.add('hidden');}
+    if(el){el.innerHTML='';el.className=el.className.replace(/\bhidden\b/g,'').trim()+' hidden';}
   });
 }
 
 function showLayout(id){
   var el=document.getElementById(id);
-  if(el) el.classList.remove('hidden');
+  if(el) el.className=el.className.replace(/\bhidden\b/g,'').trim();
 }
 
 function ensureContainer(id){
@@ -980,12 +943,10 @@ function renderSlide(){
     })();
 
   var thirdUrl=(function(){
-    if(slide.thirdImage&&slide.thirdImage.url) return slide.thirdImage.url;
     var excludeIds=[];
-    if(slide.primaryImage&&slide.primaryImage.id) excludeIds.push(slide.primaryImage.id);
-    if(slide.secondImage&&slide.secondImage.id) excludeIds.push(slide.secondImage.id);
+    if(slide.primaryImage) excludeIds.push(slide.primaryImage.id);
     var a=pickThirdAsset(theme,excludeIds,ST.cur);
-    return (a&&a.url)?a.url:(secondUrl||primaryUrl||null);
+    return a?a.url:null;
   })();
 
   var assetMeta=slide.primaryImage||{tone:'neutral',brightness:'medium'};
@@ -1127,7 +1088,27 @@ function renderSlide(){
       break;
     }
 
-
+    case 'QUOTE_PULL':{
+      sBgImg.style.opacity='0';
+      var qPalette=(['minimal','cozy-home','health'].indexOf(theme)!==-1);
+      sBg.style.background=qPalette?'#f7f4ef':T.palette[0];
+      showLayout('sQuote');
+      var sQuote=document.getElementById('sQuote');
+      sQuote.className='s-quote-wrap';
+      sQuote.style.cssText='position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 40px;text-align:center;gap:0;background:'+(qPalette?'#f7f4ef':T.palette[0]);
+      var qColor=qPalette?'#1a1814':'#f0ede8';
+      var qText=slide.quote||slide.headline||'';
+      var qFontSize=Math.min(24,Math.max(16,headlineSize(qText)));
+      var qh='';
+      qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-bottom:28px;"></div>';
+      qh+='<div style="font-family:Georgia,serif;font-size:72px;line-height:0.5;color:'+accent2+';opacity:0.55;margin-bottom:20px;align-self:flex-start;">\u201C</div>';
+      qh+='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+qFontSize+'px;font-weight:700;line-height:1.4;color:'+qColor+';letter-spacing:-0.3px;max-width:88%;margin:0 auto;">'+esc(qText)+'</div>';
+      qh+='<div style="width:40px;height:2px;background:'+accent2+';border-radius:1px;margin-top:28px;"></div>';
+      if(slide.tag) qh+='<div style="margin-top:16px;font-size:10px;font-family:'+getFont('mono')+';letter-spacing:2.5px;text-transform:uppercase;color:'+accent2+';opacity:0.8;">'+esc(slide.tag)+'</div>';
+      if(slide.body&&!slide.quote) qh+='<div class="s-body" style="margin-top:14px;font-size:12px;line-height:1.65;color:'+qColor+';opacity:0.6;max-width:80%;">'+esc(slide.body)+'</div>';
+      sQuote.innerHTML=qh;
+      break;
+    }
 
     case 'HABIT_COVER':{
       var hcEl=ensureContainer('sHabitCover');
@@ -1148,7 +1129,7 @@ function renderSlide(){
       var mid=Math.ceil(words.length/2);
       var line1=words.slice(0,mid).join(' ');
       var line2=words.slice(mid).join(' ');
-      var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max((slide.headline||'Habits That Changed My Life').length,6))));
+      var titleFontSize=Math.min(72,Math.max(42,Math.round(560/Math.max(slide.headline.length,6))));
       hcTitle.innerHTML='<div class="s-headline" style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;margin-bottom:2px;">'+esc(line1)+'</div>'
         +'<div style="font-family:'+getFont('head')+';font-size:'+titleFontSize+'px;font-weight:800;color:'+accent2+';line-height:.92;letter-spacing:-.5px;">'+esc(line2||line1)+'</div>';
       hcEl.appendChild(hcTitle);
@@ -1190,7 +1171,7 @@ function renderSlide(){
       var scriptWordCount=Math.min(2,Math.ceil(words2.length/3));
       var normalWords=words2.slice(0,-scriptWordCount);
       var scriptWords=words2.slice(-scriptWordCount);
-      var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max((slide.headline||'').length||6,6))));
+      var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max(slide.headline.length,6))));
       var ecTitle=document.createElement('div');
       ecTitle.style.cssText='position:absolute;bottom:50px;left:18px;right:18px;z-index:2;';
       ecTitle.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
@@ -1266,8 +1247,8 @@ function renderSlide(){
     case 'EDITORIAL_COLLAGE_3':{
       sBgImg.style.opacity='0';
       sBg.style.background='#f0ebe1';
-      var ec3El=ensureContainer('sEditorialCollage3');
-      showLayout('sEditorialCollage3');
+      var ec3El=ensureContainer('sEditorialCollage');
+      showLayout('sEditorialCollage');
       ec3El.innerHTML='';
       ec3El.style.cssText='position:absolute;inset:0;z-index:4;background:#f0ebe1;';
       var ec3Badge=document.createElement('div');
@@ -1333,7 +1314,6 @@ function renderSlide(){
   });
 
   updateThumbActive();
-  applyTextOffsets();
   makeEditable();
 }
 
@@ -1360,92 +1340,52 @@ function buildSplitTextHTML(slide,accent2,pText,pBg){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ─────────────────────────────────────────────────────────
-   INLINE EDITING + DRAG TO REPOSITION
-   ─────────────────────────────────────────────────────────── */
-
-var EDITABLE_CLASSES=['s-headline','s-body','s-cta','s-tag','s-stat-num','s-quote-text','s-quote-attr','s-grid-header','s-grid-ptxt'];
-
+   INLINE EDITING
+   ───────────────────────────────────────────────────────── */
 function makeEditable(){
-  var canvas=document.getElementById('slideCanvas');
+  var canvas = document.getElementById('slideCanvas');
   if(!canvas) return;
-  var sel=EDITABLE_CLASSES.map(function(c){return '.'+c;}).join(',');
-  canvas.querySelectorAll(sel).forEach(function(el){
-    var cls=EDITABLE_CLASSES.find(function(c){return el.classList.contains(c);})||'el';
-    if(!el.dataset.dragKey){
-      var peers=Array.from(canvas.querySelectorAll('.'+cls));
-      el.dataset.dragKey=cls+'_'+peers.indexOf(el);
-    }
-    if(el.dataset.interactBound==='1') return;
-    el.dataset.interactBound='1';
-    attachDragAndEdit(el);
+  // All text elements across every layout — headline, body, cta, tag, stat, quote, brand
+  var editableSelectors = [
+    '.s-headline','.s-body','.s-cta','.s-tag',
+    '.s-stat-num','.s-quote-text','.s-quote-attr',
+    '.s-grid-header','.s-grid-ptxt',
+    '.s-split-text .s-headline','.s-split-text .s-body',
+    '.s-dual-text .s-headline','.s-dual-text .s-body',
+    '.s-editorial .s-headline','.s-editorial .s-body',
+    '.s-stat-wrap .s-headline','.s-stat-wrap .s-body'
+  ];
+  var targets = canvas.querySelectorAll(editableSelectors.join(','));
+  targets.forEach(function(el){
+    if(el.dataset.editable === '1') return;
+    el.dataset.editable = '1';
+    el.style.cursor = 'text';
+    el.title = 'Click to edit';
+    el.addEventListener('click', function(e){
+      e.stopPropagation();
+      startInlineEdit(el);
+    });
   });
-}
-
-function attachDragAndEdit(el){
-  var canvas=document.getElementById('slideCanvas');
-  var downX,downY,startLeft,startTop,didMove,isAbsolute;
-  el.addEventListener('pointerdown',function(e){
-    if(el.dataset.editing==='1') return;
-    e.stopPropagation();
-    didMove=false; downX=e.clientX; downY=e.clientY;
-    var cRect=canvas.getBoundingClientRect(),eRect=el.getBoundingClientRect();
-    isAbsolute=window.getComputedStyle(el).position==='absolute';
-    startLeft=eRect.left-cRect.left; startTop=eRect.top-cRect.top;
-    el.setPointerCapture(e.pointerId);
-    el.style.userSelect='none';
-    function onMove(e2){
-      var dx=e2.clientX-downX,dy=e2.clientY-downY;
-      if(!didMove&&Math.abs(dx)<4&&Math.abs(dy)<4) return;
-      if(!didMove){
-        didMove=true;
-        if(!isAbsolute){
-          var cR=canvas.getBoundingClientRect(),eR=el.getBoundingClientRect();
-          startLeft=eR.left-cR.left; startTop=eR.top-cR.top;
-          el.style.position='absolute'; el.style.width=eR.width+'px'; el.style.margin='0';
-          isAbsolute=true;
-        }
-        el.style.left=startLeft+'px'; el.style.top=startTop+'px';
-        el.style.zIndex='999'; el.style.cursor='grabbing';
-        el.style.outline='2px solid rgba(255,255,255,0.6)'; el.style.outlineOffset='4px'; el.style.borderRadius='3px';
+  if(!canvas.dataset.editDelegated){
+    canvas.dataset.editDelegated = '1';
+    canvas.addEventListener('click', function(e){
+      var t = e.target;
+      while(t && t !== canvas){
+        var isEditable = t.classList.contains('s-headline') ||
+                         t.classList.contains('s-body') ||
+                         t.classList.contains('s-cta') ||
+                         t.classList.contains('s-tag') ||
+                         t.classList.contains('s-stat-num') ||
+                         t.classList.contains('s-quote-text') ||
+                         t.classList.contains('s-quote-attr') ||
+                         t.classList.contains('s-grid-header') ||
+                         t.classList.contains('s-grid-ptxt') ||
+                         t.dataset.editKey;
+        if(isEditable){ startInlineEdit(t); return; }
+        t = t.parentElement;
       }
-      var cW=canvas.offsetWidth,cH=canvas.offsetHeight;
-      el.style.left=Math.max(0,Math.min(cW-el.offsetWidth,startLeft+dx))+'px';
-      el.style.top=Math.max(0,Math.min(cH-el.offsetHeight,startTop+dy))+'px';
-    }
-    function onUp(){
-      el.removeEventListener('pointermove',onMove); el.removeEventListener('pointerup',onUp);
-      el.style.userSelect='';
-      if(didMove){
-        el.style.zIndex=''; el.style.outline=''; el.style.outlineOffset=''; el.style.cursor='';
-        if(!ST.slides[ST.cur].textOffsets) ST.slides[ST.cur].textOffsets={};
-        ST.slides[ST.cur].textOffsets[el.dataset.dragKey]={x:parseFloat(el.style.left)||0,y:parseFloat(el.style.top)||0,absolute:true};
-      } else { startInlineEdit(el); }
-    }
-    el.addEventListener('pointermove',onMove); el.addEventListener('pointerup',onUp);
-  });
-  el.addEventListener('mouseenter',function(){ if(el.dataset.editing!=='1') el.style.cursor='grab'; });
-  el.addEventListener('mouseleave',function(){ if(el.dataset.editing!=='1') el.style.cursor=''; });
-}
-
-function applyTextOffsets(){
-  var canvas=document.getElementById('slideCanvas');
-  if(!canvas) return;
-  var offsets=(ST.slides[ST.cur]&&ST.slides[ST.cur].textOffsets)||{};
-  Object.keys(offsets).forEach(function(key){
-    var saved=offsets[key]; if(!saved||!saved.absolute) return;
-    var cls=key.split('_')[0],idx=parseInt(key.split('_')[1])||0;
-    var el=Array.from(canvas.querySelectorAll('.'+cls))[idx];
-    if(!el) return;
-    if(window.getComputedStyle(el).position!=='absolute'){ el.style.width=el.offsetWidth+'px'; el.style.margin='0'; el.style.position='absolute'; }
-    el.style.left=saved.x+'px'; el.style.top=saved.y+'px'; el.style.zIndex='50';
-  });
-}
-
-function resetTextOffsets(){
-  if(!ST.slides[ST.cur]) return;
-  ST.slides[ST.cur].textOffsets={};
-  renderSlide();
-  toast('\u21a9 Text positions reset');
+    });
+  }
 }
 
 function startInlineEdit(el){
@@ -1558,7 +1498,7 @@ function setFmt(f){
   c.className='slide-canvas';
   if(f==='portrait') c.classList.add('portrait');
   else if(f==='landscape') c.classList.add('landscape');
-  else if(f==='story'){ c.style.width='372px'; c.style.height='664px'; }
+  else if(f==='story'){ c.style.width='312px'; c.style.height='556px'; }
   if(f!=='story'){ c.style.width=''; c.style.height=''; }
 }
 function shuffleAssets(){ST.assetOffset=(ST.assetOffset+1)%10;buildStrip();renderSlide();toast('🔀 New assets selected');}
@@ -1575,27 +1515,24 @@ function fillEdit(){
   if(eBody) eBody.value=s.body||s.subline||'';
   var capEl=document.getElementById('eCap');
   if(capEl) capEl.value=buildCaption(s);
-  var editNum=document.getElementById('editNum');
-  if(editNum) editNum.textContent='Slide '+(ST.cur+1);
+  document.getElementById('editNum').textContent='Slide '+(ST.cur+1);
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=(s.layout||'').replace(/_/g,' ');
   var statSec=document.getElementById('eStatSection');
   var quoteSec=document.getElementById('eQuoteSection');
   if(statSec) statSec.style.display=(s.layout==='STAT_HERO')?'flex':'none';
-  if(quoteSec) quoteSec.style.display='none';
+  if(quoteSec) quoteSec.style.display=(s.layout==='QUOTE_PULL')?'flex':'none';
   var statInput=document.getElementById('eStat');
   if(statInput) statInput.value=s.stat||'';
   var quoteInput=document.getElementById('eQuote');
   if(quoteInput) quoteInput.value=s.quote||'';
-  if(typeof populateHashtagPanel==='function') populateHashtagPanel(s);
+  populateHashtagPanel(s);
 }
 
 function liveEdit(){
   if(!ST.slides.length) return;
-  var eHead=document.getElementById('eHead');
-  var eBody=document.getElementById('eBody');
-  if(eHead) ST.slides[ST.cur].headline=eHead.value;
-  if(eBody) ST.slides[ST.cur].body=eBody.value;
+  ST.slides[ST.cur].headline=document.getElementById('eHead').value;
+  ST.slides[ST.cur].body=document.getElementById('eBody').value;
   renderSlide();
 }
 
@@ -1685,260 +1622,55 @@ function doExport(){
   } else if(ST.exportType==='png'){
     exportSlidesAsPNG();
   } else if(ST.exportType==='video'){
-    exportSlidesAsMP4();
+    toast('📹 Full MP4 export coming soon — screenshot each slide for now.');
   }
 }
 
 async function exportSlidesAsPNG(){
   if(typeof html2canvas==='undefined'){
-    toast('💡 html2canvas not loaded — please refresh the page');
+    toast('💡 html2canvas not loaded');
     return;
   }
-  if(!ST.slides.length){ toast('Generate a carousel first'); return; }
 
-  if(typeof showDlProgress==='function') showDlProgress('Preparing slides…', 0);
-  else toast('📦 Preparing full carousel…');
+  if(!ST.slides.length){
+    toast('Generate a carousel first');
+    return;
+  }
+
+  toast('📦 Preparing full carousel...');
 
   var originalIndex=ST.cur;
-  var canvas=document.getElementById('slideCanvas');
-  var targetPx=1080;
 
   for(var i=0;i<ST.slides.length;i++){
     ST.cur=i;
     renderSlide();
 
-    // Strip zoom transform so html2canvas sees true pixel dimensions
-    var prevTransform=canvas.style.transform;
-    canvas.style.transform='none';
-    canvas.style.transformOrigin='';
+    await new Promise(function(r){setTimeout(r,300);}); // allow render
 
-    await new Promise(function(r){setTimeout(r,700);});
-    // Wait for all background images (CSS bg-images via data-bg or inline style)
-    await waitForCanvasImages(canvas);
-    await new Promise(function(r){setTimeout(r,200);});
+    var canvas=document.getElementById('slideCanvas');
 
-    var displayW=canvas.offsetWidth||620;
-    var exportScale=Math.round((targetPx/displayW)*10)/10;
+    var c=await html2canvas(canvas,{
+      useCORS:true,
+      allowTaint:false,
+      scale:2,
+      backgroundColor:null
+    });
 
-    var pct=Math.round(((i+0.5)/ST.slides.length)*90);
-    if(typeof updateDlProgress==='function') updateDlProgress('Capturing slide '+(i+1)+' of '+ST.slides.length+'…', pct);
+    await new Promise(function(resolve){
+      c.toBlob(function(blob){
+        triggerBlobDownload(blob,'ImpactGrid-slide-'+(i+1)+'.png');
+        resolve();
+      },'image/png');
+    });
 
-    try{
-      var c=await html2canvas(canvas,{
-        useCORS:true,
-        allowTaint:true,
-        scale:exportScale,
-        backgroundColor:'#111111',
-        imageTimeout:10000,
-        logging:false,
-        width:displayW,
-        height:canvas.offsetHeight||620,
-        windowWidth:displayW,
-        windowHeight:canvas.offsetHeight||620,
-        foreignObjectRendering:false
-      });
-
-      await new Promise(function(resolve){
-        c.toBlob(function(blob){
-          if(blob) triggerBlobDownload(blob,'ImpactGrid-slide-'+String(i+1).padStart(2,'0')+'.png');
-          resolve();
-        },'image/png');
-      });
-    }catch(e){
-      console.warn('[exportSlidesAsPNG] slide '+(i+1)+' failed:',e);
-      toast('⚠️ Slide '+(i+1)+' capture failed — skipped');
-    }
-
-    // Restore zoom
-    canvas.style.transform=prevTransform;
-    await new Promise(function(r){setTimeout(r,300);});
+    await new Promise(function(r){setTimeout(r,200);}); // spacing between downloads
   }
 
   ST.cur=originalIndex;
   renderSlide();
-  if(typeof updateDlProgress==='function') updateDlProgress('Done!', 100);
-  await new Promise(function(r){setTimeout(r,600);});
-  if(typeof hideDlProgress==='function') hideDlProgress();
-  toast('\u2713 '+ST.slides.length+' slides saved at 1080px');
+
+  toast('✓ Full carousel downloaded');
 }
-
-// Wait for <img> tags AND CSS background-image URLs inside the canvas
-async function waitForCanvasImages(canvas){
-  // 1. <img> elements
-  var imgEls=Array.from(canvas.querySelectorAll('img'));
-  await Promise.all(imgEls.map(function(img){
-    if(img.complete&&img.naturalWidth>0) return Promise.resolve();
-    return new Promise(function(res){ img.onload=res; img.onerror=res; setTimeout(res,3000); });
-  }));
-
-  // 2. CSS background-image elements — preload each URL as an Image()
-  var bgEls=Array.from(canvas.querySelectorAll('[style*="background-image"]'));
-  var urlsToLoad=[];
-  bgEls.forEach(function(el){
-    var m=el.style.backgroundImage.match(/url\(["']?([^"')]+)["']?\)/);
-    if(m&&m[1]&&!m[1].startsWith('data:')) urlsToLoad.push(m[1]);
-  });
-  await Promise.all(urlsToLoad.map(function(url){
-    return new Promise(function(res){
-      var tmp=new Image(); tmp.crossOrigin='anonymous';
-      tmp.onload=res; tmp.onerror=res;
-      setTimeout(res,3000);
-      tmp.src=url;
-    });
-  }));
-}
-
-async function exportSlidesAsMP4(){
-  if(typeof html2canvas==='undefined'){
-    toast('\U0001f4a1 html2canvas not loaded — please refresh the page');
-    return;
-  }
-  if(!ST.slides.length){ toast('Generate a carousel first'); return; }
-
-  var canvas=document.getElementById('slideCanvas');
-  var total=ST.slides.length;
-  var secPerSlide=3;
-  var fps=30;
-  var originalIndex=ST.cur;
-  var targetPx=1080;
-
-  if(typeof showDlProgress==='function') showDlProgress('Capturing slides\u2026', 2);
-  else toast('\U0001f3ac Building video\u2026');
-
-  // ── STEP 1: Capture each slide as a clean Image at 1080px ──
-  var frameBlobs=[];
-  for(var i=0;i<total;i++){
-    if(typeof _dlCancelled!=='undefined'&&_dlCancelled){ if(typeof hideDlProgress==='function') hideDlProgress(); return; }
-
-    ST.cur=i; renderSlide();
-
-    // Remove zoom so capture is exact
-    var prevTransform=canvas.style.transform;
-    canvas.style.transform='none';
-    canvas.style.transformOrigin='';
-
-    await new Promise(function(r){setTimeout(r,700);});
-    await waitForCanvasImages(canvas);
-    await new Promise(function(r){setTimeout(r,200);});
-
-    var displayW=canvas.offsetWidth||620;
-    var displayH=canvas.offsetHeight||620;
-    var captureScale=Math.round((targetPx/displayW)*10)/10;
-
-    var pct=Math.round(((i+1)/total)*50);
-    if(typeof updateDlProgress==='function') updateDlProgress('Capturing slide '+(i+1)+' of '+total+'\u2026', pct);
-
-    try{
-      var captured=await html2canvas(canvas,{
-        useCORS:true,
-        allowTaint:true,
-        scale:captureScale,
-        backgroundColor:'#111111',
-        imageTimeout:10000,
-        logging:false,
-        width:displayW,
-        height:displayH,
-        windowWidth:displayW,
-        windowHeight:displayH,
-        foreignObjectRendering:false
-      });
-      var blob=await new Promise(function(res){
-        captured.toBlob(function(b){ res(b); },'image/png');
-      });
-      frameBlobs.push(blob);
-    }catch(e){
-      console.warn('[exportMP4] slide '+(i+1)+' capture failed:',e);
-      frameBlobs.push(null);
-    }
-
-    // Restore zoom
-    canvas.style.transform=prevTransform;
-  }
-
-  ST.cur=originalIndex; renderSlide();
-
-  // ── STEP 2: Try FFmpeg.wasm ──
-  var ffmpegAvailable=typeof FFmpegWASM!=='undefined'||(typeof window.FFmpeg!=='undefined');
-  if(ffmpegAvailable){
-    try{
-      if(typeof updateDlProgress==='function') updateDlProgress('Loading MP4 encoder\u2026', 52);
-      var FFmpegLib=window.FFmpeg||FFmpegWASM;
-      var ffmpeg=new FFmpegLib.FFmpeg();
-      await ffmpeg.load({
-        coreURL:'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-        wasmURL:'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
-      });
-      var frameIdx=0;
-      for(var s=0;s<frameBlobs.length;s++){
-        var blob2=frameBlobs[s]; if(!blob2) continue;
-        var buf=await blob2.arrayBuffer();
-        var frameCount=secPerSlide*fps;
-        for(var f=0;f<frameCount;f++){
-          var fname='frame'+String(frameIdx).padStart(5,'0')+'.png';
-          await ffmpeg.writeFile(fname,new Uint8Array(buf));
-          frameIdx++;
-        }
-        if(typeof updateDlProgress==='function') updateDlProgress('Encoding slide '+(s+1)+'\u2026', 52+Math.round(((s+1)/frameBlobs.length)*30));
-      }
-      if(typeof updateDlProgress==='function') updateDlProgress('Muxing MP4\u2026', 84);
-      await ffmpeg.exec(['-framerate',String(fps),'-i','frame%05d.png','-c:v','libx264','-pix_fmt','yuv420p','-preset','fast','-crf','22','-movflags','+faststart','output.mp4']);
-      if(typeof updateDlProgress==='function') updateDlProgress('Finalising\u2026', 95);
-      var mp4Data=await ffmpeg.readFile('output.mp4');
-      var mp4Blob=new Blob([mp4Data.buffer],{type:'video/mp4'});
-      triggerBlobDownload(mp4Blob,'ImpactGrid-carousel.mp4');
-      if(typeof hideDlProgress==='function') hideDlProgress();
-      toast('\u2713 MP4 downloaded ('+total+' slides \u00b7 '+secPerSlide+'s each)');
-      return;
-    }catch(ffErr){
-      console.warn('[exportMP4] FFmpeg failed, falling back to WebM:',ffErr);
-    }
-  }
-
-  // ── STEP 3: Fallback — MediaRecorder WebM ──
-  if(typeof updateDlProgress==='function') updateDlProgress('Building video\u2026', 55);
-  var mimeType='';
-  var candidates=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
-  for(var m=0;m<candidates.length;m++){
-    if(MediaRecorder.isTypeSupported(candidates[m])){ mimeType=candidates[m]; break; }
-  }
-  if(!mimeType){
-    if(typeof hideDlProgress==='function') hideDlProgress();
-    toast('\u26a0\ufe0f Your browser can\'t encode video \u2014 try Chrome or Firefox');
-    return;
-  }
-
-  var offCanvas=document.createElement('canvas');
-  offCanvas.width=targetPx; offCanvas.height=targetPx;
-  var ctx=offCanvas.getContext('2d');
-  var chunks=[];
-  var stream=offCanvas.captureStream(fps);
-  var recorder=new MediaRecorder(stream,{mimeType:mimeType,videoBitsPerSecond:8000000});
-  recorder.ondataavailable=function(e){ if(e.data&&e.data.size>0) chunks.push(e.data); };
-  recorder.start();
-
-  for(var si=0;si<frameBlobs.length;si++){
-    var fb=frameBlobs[si]; if(!fb) continue;
-    var img2=new Image();
-    var burl=URL.createObjectURL(fb);
-    await new Promise(function(res){ img2.onload=res; img2.src=burl; });
-    var holdFrames=secPerSlide*fps;
-    for(var hf=0;hf<holdFrames;hf++){
-      ctx.drawImage(img2,0,0,targetPx,targetPx);
-      await new Promise(function(r){setTimeout(r,1000/fps);});
-    }
-    URL.revokeObjectURL(burl);
-    if(typeof updateDlProgress==='function') updateDlProgress('Encoding slide '+(si+1)+' of '+frameBlobs.length+'\u2026', 55+Math.round(((si+1)/frameBlobs.length)*35));
-  }
-
-  recorder.stop();
-  await new Promise(function(r){ recorder.onstop=r; });
-  if(typeof updateDlProgress==='function') updateDlProgress('Saving video\u2026', 98);
-  var webmBlob=new Blob(chunks,{type:mimeType});
-  triggerBlobDownload(webmBlob,'ImpactGrid-carousel.webm');
-  if(typeof hideDlProgress==='function') hideDlProgress();
-  toast('\u2713 Video saved as .webm \u2014 Chrome plays it natively');
-}
-
 
 function triggerBlobDownload(blob,filename){
   try{
@@ -2154,7 +1886,7 @@ document.addEventListener('keydown',function(e){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({message:prompt,mode:'creator'})
       });
-      if(!res.ok) throw new Error('captions_unavailable_' + res.status);
+      if(!res.ok) throw new Error('Caption API '+res.status);
       var data = await res.json();
       return (data.reply||'').trim();
     }catch(e){
