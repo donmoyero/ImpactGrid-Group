@@ -54,6 +54,19 @@ window.IG_PLAN_CONFIG = {
     data_retention_days: null,    // forever
     support:             'Priority (24hr)',
     stripe_link:         'https://buy.stripe.com/28E28k4bS8Xmera2ru8N207'
+  },
+
+  admin: {
+    label:               'Admin',
+    ai_uses:             Infinity,
+    portfolios:          Infinity,
+    carousels:           Infinity,
+    adviser:             Infinity,
+    evaluator:           Infinity,
+    content_plan:        Infinity,
+    data_retention_days: null,
+    support:             'Internal',
+    stripe_link:         null
   }
 
 };
