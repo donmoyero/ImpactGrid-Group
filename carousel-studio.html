@@ -6,372 +6,975 @@
 <title>Carousel Studio · ImpactGrid</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="carousel-studio.css"/>
-<link rel="stylesheet" href="carousel-studio-additions.css"/>
+<!-- shared.css is the SINGLE SOURCE — all fonts, tokens, nav, buttons, chips -->
+<link rel="stylesheet" href="shared.css"/>
+
+<style>
+/* ═══════════════════════════════════════════════════════
+   CAROUSEL STUDIO — page-specific styles only
+   All design tokens come from shared.css.
+   Do NOT redefine colours / fonts / nav / buttons here.
+═══════════════════════════════════════════════════════ */
+
+/* ── App shell ────────────────────────────────────────── */
+.cs-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding-top: var(--nav-h);
+  overflow: hidden;
+}
+
+/* ── Studio sub-nav bar ───────────────────────────────── */
+.cs-topbar {
+  flex-shrink: 0;
+  height: 46px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.cs-topbar::-webkit-scrollbar { display: none; }
+
+.cs-crumb {
+  font-size: 11px;
+  font-family: var(--fm);
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.cs-sep { width: 1px; height: 16px; background: var(--border2); flex-shrink: 0; }
+.cs-sp { flex: 1; }
+
+/* Topbar buttons — same family as .btn-ghost-sm */
+.cs-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 8px;
+  font-size: 11.5px; font-weight: 600;
+  color: var(--text2); border: 1px solid var(--border2);
+  background: var(--card); white-space: nowrap;
+  transition: all 0.2s; cursor: pointer; flex-shrink: 0;
+  font-family: var(--fb);
+}
+.cs-btn:hover { color: var(--text); border-color: var(--gold); }
+.cs-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+/* User/plan status pill in topbar */
+.cs-plan-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 4px;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 99px; flex-shrink: 0; cursor: default;
+}
+.cs-plan-av {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900; color: #fff; flex-shrink: 0;
+  overflow: hidden;
+}
+[data-theme="dark"] .cs-plan-av { color: #07090f; }
+.cs-plan-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.cs-plan-name { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+.cs-plan-badge { font-size: 9px; font-family: var(--fm); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+.cs-plan-uses { font-size: 10px; font-family: var(--fm); color: var(--text3); white-space: nowrap; }
+.cs-plan-uses.warn { color: var(--gold); }
+.cs-plan-uses.danger { color: var(--red); }
+
+/* ── Three-column workspace ──────────────────────────── */
+.cs-workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  grid-template-rows: 1fr;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ──────────────────────────────────────── */
+.cs-left {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cs-left-head {
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cs-left-title {
+  font-family: var(--fd);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.cs-left-sub {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 4px;
+  line-height: 1.55;
+}
+.cs-left-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cs-left-body::-webkit-scrollbar { width: 4px; }
+.cs-left-body::-webkit-scrollbar-track { background: transparent; }
+.cs-left-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* ── Form elements — map from old .ftextarea/.fselect to shared.css ── */
+.cs-label {
+  display: block;
+  font-size: 11px;
+  font-family: var(--fm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+/* reuse shared.css form classes via aliased selectors */
+.cs-textarea { width: 100%; padding: 10px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--fb); font-size: 13.5px; line-height: 1.55; transition: all 0.2s; outline: none; resize: none; min-height: 80px; }
+.cs-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.cs-textarea::placeholder { color: var(--text3); }
+.cs-select { width: 100%; padding: 9px 32px 9px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--fb); font-size: 13px; transition: all 0.2s; outline: none; appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239099b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+.cs-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.cs-input { width: 100%; padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--fb); font-size: 13px; transition: all 0.2s; outline: none; }
+.cs-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.cs-input::placeholder { color: var(--text3); }
+
+/* Slide counter row */
+.cs-cnt-row { display: flex; align-items: center; gap: 0; }
+.cs-cnt-btn { width: 34px; height: 34px; background: var(--card); border: 1px solid var(--border2); color: var(--text2); font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; border-radius: var(--r) 0 0 var(--r); }
+.cs-cnt-btn:last-child { border-radius: 0 var(--r) var(--r) 0; }
+.cs-cnt-btn:hover { border-color: var(--gold); color: var(--gold); }
+.cs-cnt-inner { flex: 1; background: var(--bg3); border: 1px solid var(--border2); border-left: none; border-right: none; text-align: center; padding: 6px 0; }
+.cs-cnt-val { font-family: var(--fd); font-size: 20px; font-weight: 900; color: var(--text); line-height: 1; }
+.cs-cnt-sub { font-size: 9px; font-family: var(--fm); color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
+
+/* Intel card */
+.cs-intel {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  transition: border-color 0.3s;
+}
+.cs-intel.active { border-color: var(--gold); background: var(--gold-dim); }
+.cs-intel-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.cs-intel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); transition: background 0.3s; flex-shrink: 0; }
+.cs-intel.active .cs-intel-dot { background: var(--gold); box-shadow: 0 0 6px var(--gold-glo); }
+.cs-intel-lbl { font-size: 9px; font-family: var(--fm); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); flex: 1; }
+.cs-intel-val { font-size: 11px; font-weight: 600; color: var(--text2); font-family: var(--fb); }
+.cs-intel.active .cs-intel-val { color: var(--gold); }
+.cs-intel-bar { display: flex; gap: 3px; }
+.cs-intel-seg { flex: 1; height: 3px; border-radius: 99px; background: var(--border2); transition: background 0.4s; }
+.cs-intel-seg.on { background: var(--gold); }
+
+/* Asset preview thumbnails */
+.cs-asset-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.cs-asset-th { width: 46px; height: 46px; border-radius: 8px; overflow: hidden; background: var(--bg3); flex-shrink: 0; opacity: 0; transition: opacity 0.35s; }
+.cs-asset-th.loaded { opacity: 1; }
+.cs-asset-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Generate button — maps to shared .btn .btn-primary but with custom icon */
+.cs-gen-btn {
+  width: 100%;
+  padding: 13px 18px;
+  border-radius: var(--r);
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #fff;
+  font-family: var(--fd);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  box-shadow: 0 4px 16px var(--gold-glo);
+}
+[data-theme="dark"] .cs-gen-btn { color: #07090f; }
+.cs-gen-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--sh-gold); }
+.cs-gen-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+.cs-gen-btn .spin {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cs-spin 0.7s linear infinite;
+}
+[data-theme="dark"] .cs-gen-btn .spin { border-color: rgba(0,0,0,0.2); border-top-color: #07090f; }
+@keyframes cs-spin { to { transform: rotate(360deg); } }
+
+/* ── CENTER ──────────────────────────────────────────── */
+.cs-center {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  min-width: 0;
+}
+
+/* Toolbar */
+.cs-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 12px;
+  height: 42px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.cs-tgrp { display: flex; align-items: center; gap: 1px; padding: 0 4px; border-right: 1px solid var(--border); }
+.cs-tgrp:last-of-type { border-right: none; }
+.cs-tb {
+  width: 30px; height: 30px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); transition: all 0.15s; background: none; border: none; cursor: pointer;
+}
+.cs-tb svg { width: 14px; height: 14px; }
+.cs-tb:hover { background: var(--bg2); color: var(--text); }
+.cs-tb.on { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-glo); }
+.cs-tlbl { font-size: 11px; font-family: var(--fm); color: var(--text3); padding: 0 6px; white-space: nowrap; }
+.cs-tsp { flex: 1; }
+.cs-slide-nav { display: flex; align-items: center; gap: 2px; }
+.cs-snb { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--text2); cursor: pointer; transition: all 0.15s; background: none; border: none; }
+.cs-snb svg { width: 14px; height: 14px; }
+.cs-snb:hover { background: var(--bg2); color: var(--text); }
+.cs-sctr { font-size: 11px; font-family: var(--fm); color: var(--text3); padding: 0 6px; white-space: nowrap; }
+
+/* Canvas area */
+.cs-canvas-wrap {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 12px;
+  gap: 0;
+}
+.cs-canvas-wrap::-webkit-scrollbar { width: 6px; }
+.cs-canvas-wrap::-webkit-scrollbar-track { background: transparent; }
+.cs-canvas-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Slide stage */
+.slide-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slide-canvas {
+  position: relative;
+  width: 480px;
+  height: 480px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 64px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.06);
+  background: #0d1017;
+  flex-shrink: 0;
+  transition: width 0.3s, height 0.3s;
+}
+
+/* Empty state */
+.cs-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px; text-align: center; gap: 12px;
+}
+.cs-empty-icon { font-size: 36px; }
+.cs-empty-title { font-family: var(--fd); font-size: 22px; font-weight: 900; color: var(--text); }
+.cs-empty-sub { font-size: 13px; color: var(--text3); max-width: 300px; line-height: 1.6; }
+.cs-quick-prompts { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 340px; margin-top: 4px; }
+.cs-qp {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--r);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s; text-align: left;
+}
+.cs-qp:hover { background: var(--gold-dim); border-color: var(--gold-glo); }
+.cs-qp-icon { font-size: 18px; flex-shrink: 0; }
+.cs-qp-text strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
+.cs-qp-text span { font-size: 11px; color: var(--text3); }
+
+/* Thumbnail strip */
+.cs-strip {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  min-height: 72px;
+  align-items: center;
+}
+.cs-strip::-webkit-scrollbar { height: 4px; }
+.cs-strip::-webkit-scrollbar-track { background: transparent; }
+.cs-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Loading overlay */
+.loading-ov {
+  position: absolute; inset: 0; z-index: 50;
+  background: rgba(7,9,15,0.82);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center; justify-content: center;
+  border-radius: inherit;
+}
+.loading-ov.show { display: flex; }
+.loading-inner { text-align: center; }
+.loading-ring {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(201,126,8,0.2);
+  border-top-color: var(--gold);
+  animation: cs-spin 0.75s linear infinite;
+  margin: 0 auto 14px;
+}
+.loading-title { font-family: var(--fd); font-size: 15px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+.loading-hint { font-size: 11.5px; color: var(--text3); font-family: var(--fm); }
+
+/* ── RIGHT PANEL ─────────────────────────────────────── */
+.cs-right {
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cs-right-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cs-rh-title { font-family: var(--fd); font-size: 13px; font-weight: 900; color: var(--text); }
+.cs-rh-num { font-family: var(--fm); font-size: 11px; color: var(--text3); }
+.cs-right-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.cs-right-body::-webkit-scrollbar { width: 4px; }
+.cs-right-body::-webkit-scrollbar-track { background: transparent; }
+.cs-right-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Edit sections */
+.cs-esec {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cs-esec:last-child { border-bottom: none; }
+.cs-esec-title {
+  font-size: 9px; font-family: var(--fm); font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 8px;
+}
+
+/* Layout switcher */
+.cs-layout-badge {
+  display: inline-block;
+  padding: 3px 8px; border-radius: 6px;
+  background: var(--purple-dim); border: 1px solid rgba(124,58,237,0.2);
+  font-size: 10px; font-family: var(--fm); color: var(--purple);
+  margin-bottom: 8px;
+}
+.cs-layout-switcher { display: flex; flex-wrap: wrap; gap: 4px; }
+.cs-layout-btn {
+  padding: 4px 9px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; font-family: var(--fb);
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text2); cursor: pointer; transition: all 0.15s;
+}
+.cs-layout-btn:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-dim); }
+.cs-layout-btn.on { background: var(--purple-dim); border-color: rgba(124,58,237,0.4); color: var(--purple); }
+
+/* Caption copy button */
+.cs-copy-btn {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 6px; padding: 5px 10px; border-radius: 7px;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  border: 1px solid var(--border2); background: var(--card);
+  cursor: pointer; transition: all 0.2s;
+}
+.cs-copy-btn:hover { color: var(--text); border-color: var(--gold); }
+
+/* Hashtag chips */
+.cs-hashtag-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.cs-ht-chip {
+  padding: 3px 8px; border-radius: 99px;
+  font-size: 10px; font-family: var(--fm);
+  background: var(--blue-dim); border: 1px solid rgba(45,110,219,0.2);
+  color: var(--blue); cursor: pointer; transition: all 0.15s;
+}
+.cs-ht-chip:hover { background: var(--blue); color: #fff; }
+
+/* Drop zone */
+.cs-dzone {
+  border: 1.5px dashed var(--border2); border-radius: var(--r);
+  padding: 14px 12px; text-align: center; cursor: pointer;
+  transition: all 0.2s; color: var(--text3);
+}
+.cs-dzone:hover, .cs-dzone.over { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.cs-dzone-icon { font-size: 20px; margin-bottom: 4px; }
+.cs-dzone p { font-size: 11px; line-height: 1.5; }
+
+/* Accent colour dots */
+.cs-cdots { display: flex; flex-wrap: wrap; gap: 6px; }
+.cs-cdot {
+  width: 22px; height: 22px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: all 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+.cs-cdot.on, .cs-cdot:hover { border-color: rgba(255,255,255,0.7); transform: scale(1.18); }
+
+/* ── MODAL ───────────────────────────────────────────── */
+.cs-modal-bg {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.cs-modal-bg.show { display: flex; }
+.cs-modal {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  width: 100%; max-width: 440px;
+  box-shadow: var(--sh2);
+  overflow: hidden;
+  animation: fadeUp 0.25s ease both;
+}
+.cs-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+}
+.cs-modal-title { font-family: var(--fd); font-size: 16px; font-weight: 900; color: var(--text); }
+.cs-modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+.cs-modal-foot {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border);
+}
+
+/* Export option rows */
+.cs-exp-opt {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--r);
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.15s;
+}
+.cs-exp-opt:hover { border-color: var(--gold); background: var(--gold-dim); }
+.cs-exp-opt.sel { border-color: var(--gold); background: var(--gold-dim); }
+.cs-exp-icon { font-size: 20px; flex-shrink: 0; }
+.cs-exp-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.cs-exp-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.cs-exp-radio { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border2); margin-left: auto; flex-shrink: 0; transition: all 0.15s; }
+.cs-exp-opt.sel .cs-exp-radio { border-color: var(--gold); background: var(--gold); }
+
+/* Slide canvas inner layers — THESE IDs are used by carousel-studio.js, keep as-is */
+.s-bg { position: absolute; inset: 0; }
+.s-bg-img { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.s-overlay { position: absolute; inset: 0; }
+.s-texture { position: absolute; inset: 0; pointer-events: none; }
+.s-content { position: absolute; inset: 0; }
+.s-split-wrap { position: absolute; inset: 0; display: flex; }
+.s-split-img { width: 50%; height: 100%; background-size: cover; background-position: center; }
+.s-split-text { width: 50%; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 24px; }
+.s-corner-float { position: absolute; inset: 0; }
+.s-corner-img { position: absolute; }
+.s-corner-text { position: absolute; }
+.s-dual-wrap { position: absolute; inset: 0; }
+.s-dual-main { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.s-dual-overlay { position: absolute; inset: 0; }
+.s-dual-thumb { position: absolute; }
+.s-dual-text { position: absolute; }
+.s-band-wrap { position: absolute; inset: 0; }
+.s-editorial { position: absolute; inset: 0; }
+.s-editorial-bg-num { position: absolute; }
+.s-quote-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 32px; }
+.s-stat-wrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.s-stat-strip { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; }
+.s-grid-wrap { position: absolute; inset: 0; }
+.s-slide-num { position: absolute; bottom: 14px; right: 16px; font-size: 10px; font-family: var(--fm); color: rgba(255,255,255,0.45); z-index: 10; }
+.s-brand { position: absolute; bottom: 14px; left: 16px; font-size: 10px; font-family: var(--fm); color: rgba(255,255,255,0.45); z-index: 10; }
+.hidden { display: none !important; }
+
+/* Thumbnail strip items */
+.thumb {
+  flex-shrink: 0;
+  width: 48px; height: 48px; border-radius: 8px;
+  border: 2px solid transparent; cursor: pointer;
+  overflow: hidden; background: var(--bg3);
+  transition: all 0.15s; position: relative;
+}
+.thumb:hover { border-color: var(--gold-glo); }
+.thumb.active { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold-glo); }
+.thumb canvas { width: 100% !important; height: 100% !important; display: block; }
+
+/* Toast shelf */
+.toast-shelf { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+.toast {
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text); font-size: 12.5px; font-weight: 600;
+  padding: 9px 16px; border-radius: 99px;
+  box-shadow: var(--sh2); pointer-events: none;
+  animation: fadeUp 0.25s ease both;
+  white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── MOBILE BOTTOM SHEET NAV ─────────────────────────── */
+@media (max-width: 860px) {
+  .cs-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    position: relative;
+  }
+  /* Side panels become bottom sheets */
+  .cs-left, .cs-right {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 800;
+    height: 70vh;
+    border-radius: 20px 20px 0 0;
+    border: 1px solid var(--border2);
+    box-shadow: 0 -16px 48px rgba(0,0,0,0.3);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .cs-left.open, .cs-right.open {
+    transform: translateY(0);
+  }
+  .cs-center {
+    grid-column: 1;
+    grid-row: 1;
+    overflow: hidden;
+  }
+  /* Show panel toggle buttons in topbar on mobile */
+  .cs-mob-left-btn, .cs-mob-right-btn { display: inline-flex !important; }
+  /* Overlay behind bottom sheets */
+  .cs-panel-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 790;
+  }
+  .cs-panel-overlay.open { display: block; }
+  /* Add drag handle */
+  .cs-left::before, .cs-right::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: var(--border2); border-radius: 99px;
+    margin: 10px auto 2px;
+    flex-shrink: 0;
+  }
+  /* Slide canvas scales down */
+  .slide-canvas { width: 320px !important; height: 320px !important; }
+  .cs-topbar { height: 44px; }
+}
+
+@media (max-width: 520px) {
+  .slide-canvas { width: 270px !important; height: 270px !important; }
+  .cs-plan-name { display: none; }
+  .cs-plan-badge { display: none; }
+}
+
+/* Hide mobile-only toggle buttons on desktop */
+.cs-mob-left-btn, .cs-mob-right-btn { display: none; }
+</style>
 </head>
 <body>
-<div class="shell">
 
-<!-- ══════════════ NAV ══════════════ -->
-<nav>
-  <div class="logo">Impact<em>Grid</em></div>
-  <div class="sep"></div>
-  <span class="crumb">carousel-studio</span>
-  <div class="nav-sp"></div>
-  <button class="nb" onclick="openExport()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
-  </button>
-  <button class="nb" onclick="copyAll()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All
-  </button>
-  <button class="nb" onclick="toggleTheme()" style="font-size:15px;padding:6px 9px">🌙</button>
-  <a class="nb" href="creator-studio.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Studio
-  </a>
-</nav>
+<!-- ══════════════ SHARED NAV (nav.js injects here) ══════════════ -->
+<div id="ig-nav"></div>
 
-<!-- ══════════════ LEFT PANEL ══════════════ -->
-<aside class="left">
-  <div class="ph">
-    <div class="ph-title">✦ AI Carousel Creator</div>
-    <div class="ph-sub">Describe your content. Dijo picks the theme, scores images with AI vision &amp; designs every slide.</div>
-  </div>
-  <div class="pb">
+<!-- ══════════════ MOBILE PANEL OVERLAY ══════════════ -->
+<div class="cs-panel-overlay" id="csPanelOverlay" onclick="closeAllPanels()"></div>
 
-    <div class="field">
-      <label class="lbl">What's your carousel about?</label>
-      <textarea class="ftextarea" id="topicInput" placeholder="e.g. 5 habits that helped me hit £10K/month as a creator…" oninput="onTopicInput()"></textarea>
-    </div>
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div class="cs-shell">
 
-    <div class="field">
-      <label class="lbl">Platform</label>
-      <select class="fselect" id="platSelect">
-        <option value="Instagram">Instagram</option>
-        <option value="LinkedIn">LinkedIn</option>
-        <option value="TikTok">TikTok</option>
-        <option value="Twitter/X">Twitter / X</option>
-        <option value="Pinterest">Pinterest</option>
-      </select>
-    </div>
+  <!-- ── Studio Sub-nav / Topbar ────────────────────────── -->
+  <div class="cs-topbar">
 
-    <div class="field">
-      <label class="lbl">Tone</label>
-      <select class="fselect" id="toneSelect">
-        <option value="Bold & Direct">Bold &amp; Direct</option>
-        <option value="Conversational">Conversational</option>
-        <option value="Professional">Professional</option>
-        <option value="Inspirational">Inspirational</option>
-        <option value="Educational">Educational</option>
-        <option value="Playful">Playful</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label class="lbl">Slides</label>
-      <div class="cnt-row">
-        <button class="cnt-btn" onclick="chgCount(-1)">−</button>
-        <div class="cnt-inner">
-          <div class="cnt-val" id="cntVal">7</div>
-          <div class="cnt-sub">slides</div>
-        </div>
-        <button class="cnt-btn" onclick="chgCount(1)">+</button>
-      </div>
-    </div>
-
-    <div class="intel-card" id="intelCard">
-      <div class="intel-top">
-        <div class="intel-dot" id="intelDot"></div>
-        <span class="intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span>
-        <span class="intel-val" id="intelVal">Waiting for topic…</span>
-      </div>
-      <div class="intel-bar">
-        <div class="intel-seg" id="iseg0"></div>
-        <div class="intel-seg" id="iseg1"></div>
-        <div class="intel-seg" id="iseg2"></div>
-        <div class="intel-seg" id="iseg3"></div>
-        <div class="intel-seg" id="iseg4"></div>
-      </div>
-    </div>
-
-    <div class="field" id="assetPreviewField" style="display:none">
-      <label class="lbl">Auto-selected assets</label>
-      <div class="asset-row" id="assetRow"></div>
-    </div>
-
-    <button class="gen-btn" id="genBtn" onclick="generate()" disabled>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Generate with Dijo
+    <!-- Mobile: open left (generate) panel -->
+    <button class="cs-btn cs-mob-left-btn" onclick="toggleLeftPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Generate
     </button>
 
+    <span class="cs-crumb">carousel-studio</span>
+    <div class="cs-sep"></div>
+
+    <!-- User / plan pill — filled by updatePlanPill() on ig-user-ready -->
+    <div class="cs-plan-pill" id="csPlanPill" style="display:none">
+      <div class="cs-plan-av" id="csPlanAv">?</div>
+      <span class="cs-plan-name" id="csPlanName">Creator</span>
+      <span class="cs-plan-badge" id="csPlanBadge">FREE</span>
+      <span class="cs-plan-uses" id="csPlanUses"></span>
+    </div>
+
+    <div class="cs-sp"></div>
+
+    <button class="cs-btn" onclick="openExport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+    <button class="cs-btn" onclick="copyAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy All
+    </button>
+    <button class="cs-btn" onclick="toggleTheme()" id="csThemeBtn" style="padding:5px 9px;font-size:14px;border:none;background:none;">🌙</button>
+
+    <!-- Mobile: open right (edit) panel -->
+    <button class="cs-btn cs-mob-right-btn" onclick="toggleRightPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Edit Slide
+    </button>
   </div>
-</aside>
 
-<!-- ══════════════ CENTER ══════════════ -->
-<main class="center">
+  <!-- ── Three-column workspace ──────────────────────────── -->
+  <div class="cs-workspace">
 
-  <div class="toolbar">
-    <div class="tgrp">
-      <button class="tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-      <span class="tlbl" id="zoomLbl">100%</span>
-      <button class="tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-    </div>
-    <div class="tgrp">
-      <button class="tb on" id="fmtSquare" onclick="setFmt('square')" title="Square 1:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
-      <button class="tb" id="fmtPortrait" onclick="setFmt('portrait')" title="Portrait 4:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
-      <button class="tb" id="fmtLandscape" onclick="setFmt('landscape')" title="Landscape 16:9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></button>
-    </div>
-    <div class="tgrp">
-      <button class="tb" title="Shuffle assets" onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
-      <button class="tb" title="Regenerate" onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
-    </div>
-    <div class="tsp"></div>
-    <div class="slide-nav">
-      <button class="snb" onclick="prevSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <span class="sctr" id="slideCtr">0 / 0</span>
-      <button class="snb" onclick="nextSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
-    </div>
-  </div>
-
-  <div class="canvas-wrap" id="canvasWrap">
-
-    <!-- Empty state -->
-    <div class="empty" id="emptyState">
-      <div class="empty-icon">✦</div>
-      <div class="empty-title">Carousel Studio</div>
-      <div class="empty-sub">Tell Dijo what you want. AI vision scores every image. 10 unique layouts per carousel.</div>
-      <div class="quick-prompts">
-        <div class="qp" onclick="prefill('5 habits that helped me hit £10K per month as a creator')">
-          <span class="qp-icon">💰</span>
-          <div class="qp-text"><strong>Creator income tips</strong><span>5 habits that helped me hit £10K/month</span></div>
-        </div>
-        <div class="qp" onclick="prefill('The morning routine that tripled my productivity')">
-          <span class="qp-icon">⚡</span>
-          <div class="qp-text"><strong>Productivity</strong><span>The morning routine that changed everything</span></div>
-        </div>
-        <div class="qp" onclick="prefill('Why most people never grow on Instagram and how to fix it')">
-          <span class="qp-icon">📈</span>
-          <div class="qp-text"><strong>Growth strategy</strong><span>Why most people never grow on Instagram</span></div>
-        </div>
-        <div class="qp" onclick="prefill('How I transformed my home into a cozy sanctuary on a budget')">
-          <span class="qp-icon">🏡</span>
-          <div class="qp-text"><strong>Home &amp; lifestyle</strong><span>Cozy sanctuary transformation on a budget</span></div>
-        </div>
+    <!-- ═══ LEFT PANEL — Generate ═══ -->
+    <aside class="cs-left" id="csLeft">
+      <div class="cs-left-head">
+        <div class="cs-left-title">✦ AI Carousel Creator</div>
+        <div class="cs-left-sub">Describe your content. Dijo picks the theme, scores images with AI vision &amp; designs every slide.</div>
       </div>
-    </div>
+      <div class="cs-left-body">
 
-    <!-- Slide canvas -->
-    <div class="slide-wrap" id="slideWrap">
-      <div class="slide-canvas" id="slideCanvas">
+        <div>
+          <label class="cs-label">What's your carousel about?</label>
+          <textarea class="cs-textarea" id="topicInput" placeholder="e.g. 5 habits that helped me hit £10K/month as a creator…" oninput="onTopicInput()" style="min-height:88px"></textarea>
+        </div>
 
-        <!-- Loading overlay -->
-        <div class="loading-ov" id="loadingOv">
-          <div class="loading-inner">
-            <div class="loading-ring"></div>
-            <div class="loading-title">Dijo is thinking…</div>
-            <div class="loading-hint" id="loadingHint">Detecting theme from your topic</div>
+        <div>
+          <label class="cs-label">Platform</label>
+          <select class="cs-select" id="platSelect">
+            <option value="Instagram">Instagram</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Twitter/X">Twitter / X</option>
+            <option value="Pinterest">Pinterest</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="cs-label">Tone</label>
+          <select class="cs-select" id="toneSelect">
+            <option value="Bold &amp; Direct">Bold &amp; Direct</option>
+            <option value="Conversational">Conversational</option>
+            <option value="Professional">Professional</option>
+            <option value="Inspirational">Inspirational</option>
+            <option value="Educational">Educational</option>
+            <option value="Playful">Playful</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="cs-label">Slides</label>
+          <div class="cs-cnt-row">
+            <button class="cs-cnt-btn" onclick="chgCount(-1)">−</button>
+            <div class="cs-cnt-inner">
+              <div class="cs-cnt-val" id="cntVal">7</div>
+              <div class="cs-cnt-sub">slides</div>
+            </div>
+            <button class="cs-cnt-btn" onclick="chgCount(1)">+</button>
           </div>
         </div>
 
-        <!-- Background layer -->
-        <div class="s-bg" id="sBg">
-          <div class="s-bg-img" id="sBgImg"></div>
-          <div class="s-bg-video" id="sBgVideo" style="display:none"></div>
+        <div class="cs-intel" id="intelCard">
+          <div class="cs-intel-top">
+            <div class="cs-intel-dot" id="intelDot"></div>
+            <span class="cs-intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span>
+            <span class="cs-intel-val" id="intelVal">Waiting for topic…</span>
+          </div>
+          <div class="cs-intel-bar">
+            <div class="cs-intel-seg" id="iseg0"></div>
+            <div class="cs-intel-seg" id="iseg1"></div>
+            <div class="cs-intel-seg" id="iseg2"></div>
+            <div class="cs-intel-seg" id="iseg3"></div>
+            <div class="cs-intel-seg" id="iseg4"></div>
+          </div>
         </div>
 
-        <!-- Overlay & texture -->
-        <div class="s-overlay" id="sOverlay"></div>
-        <div class="s-texture" id="sTexture"></div>
-
-        <!-- LAYOUT: FULL_BLEED (default content container) -->
-        <div class="s-content layout-bottom hidden" id="sContent"></div>
-
-        <!-- LAYOUT: SPLIT_LEFT / SPLIT_RIGHT -->
-        <div class="s-split-wrap hidden" id="sSplit">
-          <div class="s-split-img" id="sSplitImg"></div>
-          <div class="s-split-text" id="sSplitText"></div>
+        <div id="assetPreviewField" style="display:none">
+          <label class="cs-label">Auto-selected assets</label>
+          <div class="cs-asset-row" id="assetRow"></div>
         </div>
 
-        <!-- LAYOUT: CORNER_FLOAT -->
-        <div class="s-corner-float hidden" id="sCorner">
-          <div class="s-corner-img" id="sCornerImg"></div>
-          <div class="s-corner-text" id="sCornerText"></div>
+        <button class="cs-gen-btn" id="genBtn" onclick="generate()" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate with Dijo
+        </button>
+
+      </div>
+    </aside>
+
+    <!-- ═══ CENTER — Canvas ═══ -->
+    <main class="cs-center">
+
+      <!-- Toolbar -->
+      <div class="cs-toolbar">
+        <div class="cs-tgrp">
+          <button class="cs-tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+          <span class="cs-tlbl" id="zoomLbl">100%</span>
+          <button class="cs-tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        </div>
+        <div class="cs-tgrp">
+          <button class="cs-tb on" id="fmtSquare" onclick="setFmt('square')" title="Square 1:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
+          <button class="cs-tb" id="fmtPortrait" onclick="setFmt('portrait')" title="Portrait 4:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
+          <button class="cs-tb" id="fmtLandscape" onclick="setFmt('landscape')" title="Landscape 16:9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></button>
+        </div>
+        <div class="cs-tgrp">
+          <button class="cs-tb" title="Shuffle assets" onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
+          <button class="cs-tb" title="Regenerate" onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+        </div>
+        <div class="cs-tsp"></div>
+        <div class="cs-slide-nav">
+          <button class="cs-snb" onclick="prevSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="cs-sctr" id="slideCtr">0 / 0</span>
+          <button class="cs-snb" onclick="nextSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+
+      <!-- Canvas scroll area -->
+      <div class="cs-canvas-wrap" id="canvasWrap">
+
+        <!-- Empty state -->
+        <div class="cs-empty" id="emptyState">
+          <div class="cs-empty-icon">✦</div>
+          <div class="cs-empty-title">Carousel Studio</div>
+          <div class="cs-empty-sub">Tell Dijo what you want. AI vision scores every image. 10 unique layouts per carousel.</div>
+          <div class="cs-quick-prompts">
+            <div class="cs-qp" onclick="prefill('5 habits that helped me hit £10K per month as a creator')">
+              <span class="cs-qp-icon">💰</span>
+              <div class="cs-qp-text"><strong>Creator income tips</strong><span>5 habits that helped me hit £10K/month</span></div>
+            </div>
+            <div class="cs-qp" onclick="prefill('The morning routine that tripled my productivity')">
+              <span class="cs-qp-icon">⚡</span>
+              <div class="cs-qp-text"><strong>Productivity</strong><span>The morning routine that changed everything</span></div>
+            </div>
+            <div class="cs-qp" onclick="prefill('Why most people never grow on Instagram and how to fix it')">
+              <span class="cs-qp-icon">📈</span>
+              <div class="cs-qp-text"><strong>Growth strategy</strong><span>Why most people never grow on Instagram</span></div>
+            </div>
+            <div class="cs-qp" onclick="prefill('How I transformed my home into a cozy sanctuary on a budget')">
+              <span class="cs-qp-icon">🏡</span>
+              <div class="cs-qp-text"><strong>Home &amp; lifestyle</strong><span>Cozy sanctuary transformation on a budget</span></div>
+            </div>
+          </div>
         </div>
 
-        <!-- LAYOUT: DUAL_IMAGE -->
-        <div class="s-dual-wrap hidden" id="sDual">
-          <div class="s-dual-main" id="sDualMain"></div>
-          <div class="s-dual-overlay"></div>
-          <div class="s-dual-thumb" id="sDualThumb"></div>
-          <div class="s-dual-text" id="sDualText"></div>
+        <!-- Slide canvas — carousel-studio.js writes into these IDs -->
+        <div class="slide-wrap" id="slideWrap" style="display:none">
+          <div class="slide-canvas" id="slideCanvas">
+            <div class="loading-ov" id="loadingOv">
+              <div class="loading-inner">
+                <div class="loading-ring"></div>
+                <div class="loading-title">Dijo is thinking…</div>
+                <div class="loading-hint" id="loadingHint">Detecting theme from your topic</div>
+              </div>
+            </div>
+            <div class="s-bg" id="sBg">
+              <div class="s-bg-img" id="sBgImg"></div>
+              <div class="s-bg-video" id="sBgVideo" style="display:none"></div>
+            </div>
+            <div class="s-overlay" id="sOverlay"></div>
+            <div class="s-texture" id="sTexture"></div>
+            <div class="s-content layout-bottom hidden" id="sContent"></div>
+            <div class="s-split-wrap hidden" id="sSplit">
+              <div class="s-split-img" id="sSplitImg"></div>
+              <div class="s-split-text" id="sSplitText"></div>
+            </div>
+            <div class="s-corner-float hidden" id="sCorner">
+              <div class="s-corner-img" id="sCornerImg"></div>
+              <div class="s-corner-text" id="sCornerText"></div>
+            </div>
+            <div class="s-dual-wrap hidden" id="sDual">
+              <div class="s-dual-main" id="sDualMain"></div>
+              <div class="s-dual-overlay"></div>
+              <div class="s-dual-thumb" id="sDualThumb"></div>
+              <div class="s-dual-text" id="sDualText"></div>
+            </div>
+            <div class="s-band-wrap hidden" id="sBand">
+              <div id="sBandInner"></div>
+            </div>
+            <div class="s-editorial hidden" id="sEditorial">
+              <div class="s-editorial-bg-num" id="sEditorialBgNum"></div>
+            </div>
+            <div class="s-quote-wrap hidden" id="sQuote"></div>
+            <div class="s-stat-wrap hidden" id="sStat">
+              <div class="s-stat-strip" id="sStatStrip" style="display:none"></div>
+            </div>
+            <div class="s-grid-wrap hidden" id="sGrid"></div>
+            <div class="hidden" id="sTopStrip"></div>
+            <div class="hidden" id="sBottomStrip"></div>
+            <div class="s-slide-num" id="sNum">1 / 7</div>
+            <div class="s-brand" id="sBrand"></div>
+          </div>
         </div>
 
-        <!-- LAYOUT: OVERLAP_BAND -->
-        <div class="s-band-wrap hidden" id="sBand">
-          <div id="sBandInner"></div>
+      </div><!-- /canvas-wrap -->
+
+      <!-- Thumbnail strip -->
+      <div class="cs-strip" id="strip"></div>
+
+    </main>
+
+    <!-- ═══ RIGHT PANEL — Edit ═══ -->
+    <aside class="cs-right" id="csRight">
+      <div class="cs-right-head">
+        <span class="cs-rh-title">Edit Slide</span>
+        <span class="cs-rh-num" id="editNum">—</span>
+      </div>
+      <div class="cs-right-body">
+
+        <div class="cs-esec">
+          <div class="cs-esec-title">Layout</div>
+          <div class="cs-layout-badge" id="layoutBadge">—</div>
+          <div class="cs-layout-switcher">
+            <button class="cs-layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
+            <button class="cs-layout-btn" onclick="changeLayout('SPLIT_LEFT')">Split L</button>
+            <button class="cs-layout-btn" onclick="changeLayout('SPLIT_RIGHT')">Split R</button>
+            <button class="cs-layout-btn" onclick="changeLayout('CORNER_FLOAT')">Corner</button>
+            <button class="cs-layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
+            <button class="cs-layout-btn" onclick="changeLayout('TOP_STRIP')">Top Strip</button>
+            <button class="cs-layout-btn" onclick="changeLayout('OVERLAP_BAND')">Band</button>
+            <button class="cs-layout-btn" onclick="changeLayout('DUAL_IMAGE')">Dual Img</button>
+            <button class="cs-layout-btn" onclick="changeLayout('STAT_HERO')">Stat</button>
+            <button class="cs-layout-btn" onclick="changeLayout('QUOTE_PULL')">Quote</button>
+            <button class="cs-layout-btn" onclick="changeLayout('GRID_POINTS')">Grid</button>
+            <button class="cs-layout-btn" onclick="changeLayout('MAGAZINE_SPLIT')">Magazine</button>
+          </div>
         </div>
 
-        <!-- LAYOUT: EDITORIAL_NUM -->
-        <div class="s-editorial hidden" id="sEditorial">
-          <div class="s-editorial-bg-num" id="sEditorialBgNum"></div>
+        <div class="cs-esec">
+          <div class="cs-esec-title">Headline</div>
+          <textarea class="cs-textarea" id="eHead" style="min-height:60px" oninput="liveEdit()"></textarea>
         </div>
 
-        <!-- LAYOUT: QUOTE_PULL -->
-        <div class="s-quote-wrap hidden" id="sQuote"></div>
-
-        <!-- LAYOUT: STAT_HERO -->
-        <div class="s-stat-wrap hidden" id="sStat">
-          <div class="s-stat-strip" id="sStatStrip" style="display:none"></div>
+        <div class="cs-esec">
+          <div class="cs-esec-title">Body Copy</div>
+          <textarea class="cs-textarea" id="eBody" style="min-height:76px" oninput="liveEdit()"></textarea>
         </div>
 
-        <!-- LAYOUT: GRID_POINTS -->
-        <div class="s-grid-wrap hidden" id="sGrid"></div>
+        <div class="cs-esec" id="eStatSection">
+          <div class="cs-esec-title">Stat / Number</div>
+          <input type="text" class="cs-input" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
+        </div>
 
-        <!-- LAYOUT: TOP_STRIP / BOTTOM_STRIP (PATCH 4) -->
-        <div class="hidden" id="sTopStrip"></div>
-        <div class="hidden" id="sBottomStrip"></div>
+        <div class="cs-esec" id="eQuoteSection">
+          <div class="cs-esec-title">Quote Text</div>
+          <textarea class="cs-textarea" id="eQuote" style="min-height:68px" oninput="liveEditQuote()"></textarea>
+        </div>
 
-        <!-- Always-on UI chrome -->
-        <div class="s-slide-num" id="sNum">1 / 7</div>
-        <div class="s-brand" id="sBrand"></div>
+        <div class="cs-esec">
+          <div class="cs-esec-title">Caption</div>
+          <textarea class="cs-textarea" id="eCap" style="min-height:68px" oninput="updateCap()"></textarea>
+          <button class="cs-copy-btn" onclick="copyCaption()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Caption
+          </button>
+        </div>
 
-      </div><!-- /slide-canvas -->
-    </div><!-- /slide-wrap -->
+        <div class="cs-esec" id="hashtagSection" style="display:none">
+          <div class="cs-esec-title">Trending Hashtags</div>
+          <div class="cs-hashtag-chips" id="hashtagChips"></div>
+        </div>
 
-  </div><!-- /canvas-wrap -->
+        <div class="cs-esec">
+          <div class="cs-esec-title">Override Background</div>
+          <div class="cs-dzone" id="dzone" onclick="document.getElementById('imgUp').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
+            <div class="cs-dzone-icon">🖼️</div>
+            <p><strong>Upload image</strong> or drag &amp; drop<br/><span style="font-size:10px;color:var(--text3)">Overrides AI auto-selected asset</span></p>
+          </div>
+          <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
+        </div>
 
-  <!-- Thumbnail strip -->
-  <div class="strip" id="strip"></div>
+        <div class="cs-esec">
+          <div class="cs-esec-title">Accent Colour</div>
+          <div class="cs-cdots" id="cdots">
+            <div class="cs-cdot on" style="background:#2563eb" onclick="setAccent('#2563eb',this)"></div>
+            <div class="cs-cdot" style="background:#c9a84c" onclick="setAccent('#c9a84c',this)"></div>
+            <div class="cs-cdot" style="background:#ef4444" onclick="setAccent('#ef4444',this)"></div>
+            <div class="cs-cdot" style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
+            <div class="cs-cdot" style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
+            <div class="cs-cdot" style="background:#0891b2" onclick="setAccent('#0891b2',this)"></div>
+            <div class="cs-cdot" style="background:#ea580c" onclick="setAccent('#ea580c',this)"></div>
+            <div class="cs-cdot" style="background:#e91e8c" onclick="setAccent('#e91e8c',this)"></div>
+            <div class="cs-cdot" style="background:#fff;border-color:var(--border)" onclick="setAccent('#ffffff',this)"></div>
+          </div>
+        </div>
 
-</main>
+        <div class="cs-esec">
+          <div class="cs-esec-title">Brand Name</div>
+          <input type="text" class="cs-input" id="brandInput" placeholder="Your Brand" oninput="updateBrand()"/>
+        </div>
 
-<!-- ══════════════ RIGHT EDIT PANEL (PATCH 1) ══════════════ -->
-<aside class="right">
-  <div class="rh">
-    <span class="rh-title">Edit Slide</span>
-    <span class="rh-num" id="editNum">—</span>
-  </div>
-  <div class="rb">
+      </div>
+    </aside>
 
-    <div class="esec">
-      <div class="esec-title">Layout</div>
-      <div class="layout-badge" id="layoutBadge">—</div>
-      <div class="layout-switcher">
-        <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
-        <button class="layout-btn" onclick="changeLayout('SPLIT_LEFT')">Split L</button>
-        <button class="layout-btn" onclick="changeLayout('SPLIT_RIGHT')">Split R</button>
-        <button class="layout-btn" onclick="changeLayout('CORNER_FLOAT')">Corner</button>
-        <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
-        <button class="layout-btn" onclick="changeLayout('TOP_STRIP')">Top Strip</button>
-        <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')">Band</button>
-        <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')">Dual Img</button>
-        <button class="layout-btn" onclick="changeLayout('STAT_HERO')">Stat</button>
-        <button class="layout-btn" onclick="changeLayout('QUOTE_PULL')">Quote</button>
-        <button class="layout-btn" onclick="changeLayout('GRID_POINTS')">Grid</button>
-        <button class="layout-btn" onclick="changeLayout('MAGAZINE_SPLIT')">Magazine</button>
+  </div><!-- /cs-workspace -->
+
+</div><!-- /cs-shell -->
+
+<!-- ══════════════ EXPORT MODAL ══════════════ -->
+<div class="cs-modal-bg" id="exportModal">
+  <div class="cs-modal">
+    <div class="cs-modal-head">
+      <span class="cs-modal-title">Export Carousel</span>
+      <button class="cs-btn" onclick="closeExport()" style="padding:4px 8px;font-size:12px;">✕ Close</button>
+    </div>
+    <div class="cs-modal-body">
+      <div class="cs-exp-opt sel" id="eoPng" onclick="selExport('png')">
+        <span class="cs-exp-icon">🖼️</span>
+        <div><div class="cs-exp-title">PNG Images</div><div class="cs-exp-sub">Capture current slide as PNG (needs HTTPS)</div></div>
+        <div class="cs-exp-radio"></div>
+      </div>
+      <div class="cs-exp-opt" id="eoCopy" onclick="selExport('copy')">
+        <span class="cs-exp-icon">📋</span>
+        <div><div class="cs-exp-title">Copy All Copy &amp; Captions</div><div class="cs-exp-sub">All headlines, bodies + trending hashtags as text</div></div>
+        <div class="cs-exp-radio"></div>
+      </div>
+      <div class="cs-exp-opt" id="eoJson" onclick="selExport('json')">
+        <span class="cs-exp-icon">{ }</span>
+        <div><div class="cs-exp-title">JSON Data</div><div class="cs-exp-sub">Full structured slide data — import into other tools</div></div>
+        <div class="cs-exp-radio"></div>
+      </div>
+      <div class="cs-exp-opt" id="eoVideo" onclick="selExport('video')">
+        <span class="cs-exp-icon">🎬</span>
+        <div><div class="cs-exp-title">Animated Video</div><div class="cs-exp-sub">MP4 video carousel export (coming soon)</div></div>
+        <div class="cs-exp-radio"></div>
       </div>
     </div>
-
-    <div class="esec">
-      <div class="esec-title">Headline</div>
-      <textarea class="ftextarea" id="eHead" style="min-height:64px" oninput="liveEdit()"></textarea>
-    </div>
-
-    <div class="esec">
-      <div class="esec-title">Body Copy</div>
-      <textarea class="ftextarea" id="eBody" style="min-height:80px" oninput="liveEdit()"></textarea>
-    </div>
-
-    <!-- Stat field — shows only when layout = STAT_HERO -->
-    <div class="esec" id="eStatSection">
-      <div class="esec-title">Stat / Number</div>
-      <input type="text" class="finput" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
-    </div>
-
-    <!-- Quote field — shows only when layout = QUOTE_PULL -->
-    <div class="esec" id="eQuoteSection">
-      <div class="esec-title">Quote Text</div>
-      <textarea class="ftextarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
-    </div>
-
-    <div class="esec">
-      <div class="esec-title">Caption</div>
-      <textarea class="ftextarea" id="eCap" style="min-height:72px" oninput="updateCap()"></textarea>
-      <button class="copy-btn" onclick="copyCaption()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy Caption
-      </button>
-    </div>
-
-    <div class="esec" id="hashtagSection" style="display:none">
-      <div class="esec-title">Trending Hashtags</div>
-      <div class="hashtag-chips" id="hashtagChips"></div>
-    </div>
-
-    <div class="esec">
-      <div class="esec-title">Override Background</div>
-      <div class="dzone" id="dzone" onclick="document.getElementById('imgUp').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
-        <div class="dzone-icon">🖼️</div>
-        <p><strong>Upload image</strong> or drag &amp; drop<br/><span style="font-size:10px;color:var(--text3)">Overrides AI auto-selected asset</span></p>
-      </div>
-      <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
-    </div>
-
-    <div class="esec">
-      <div class="esec-title">Accent Colour</div>
-      <div class="cdots" id="cdots">
-        <div class="cdot on" style="background:#2563eb" onclick="setAccent('#2563eb',this)"></div>
-        <div class="cdot" style="background:#c9a84c" onclick="setAccent('#c9a84c',this)"></div>
-        <div class="cdot" style="background:#ef4444" onclick="setAccent('#ef4444',this)"></div>
-        <div class="cdot" style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
-        <div class="cdot" style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
-        <div class="cdot" style="background:#0891b2" onclick="setAccent('#0891b2',this)"></div>
-        <div class="cdot" style="background:#ea580c" onclick="setAccent('#ea580c',this)"></div>
-        <div class="cdot" style="background:#e91e8c" onclick="setAccent('#e91e8c',this)"></div>
-        <div class="cdot" style="background:#fff;border-color:var(--border)" onclick="setAccent('#ffffff',this)"></div>
-      </div>
-    </div>
-
-    <div class="esec">
-      <div class="esec-title">Brand Name</div>
-      <input type="text" class="finput" id="brandInput" placeholder="Your Brand" oninput="updateBrand()"/>
-    </div>
-
-  </div>
-</aside>
-
-</div><!-- /shell -->
-
-<!-- ══════════════ EXPORT MODAL (PATCH 2) ══════════════ -->
-<div class="modal-bg" id="exportModal">
-  <div class="modal">
-    <div class="mh">
-      <span class="mh-title">Export Carousel</span>
-      <button onclick="closeExport()" style="width:26px;height:26px;border-radius:7px;background:var(--surface2);color:var(--text2)">✕</button>
-    </div>
-    <div class="mc">
-      <div class="exp-opt sel" id="eoPng" onclick="selExport('png')">
-        <span class="exp-icon">🖼️</span>
-        <div><div class="exp-title">PNG Images</div><div class="exp-sub">Capture current slide as PNG (needs HTTPS)</div></div>
-        <div class="exp-radio"></div>
-      </div>
-      <div class="exp-opt" id="eoCopy" onclick="selExport('copy')">
-        <span class="exp-icon">📋</span>
-        <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + trending hashtags as text</div></div>
-        <div class="exp-radio"></div>
-      </div>
-      <div class="exp-opt" id="eoJson" onclick="selExport('json')">
-        <span class="exp-icon">{ }</span>
-        <div><div class="exp-title">JSON Data</div><div class="exp-sub">Full structured slide data — import into other tools</div></div>
-        <div class="exp-radio"></div>
-      </div>
-      <div class="exp-opt" id="eoVideo" onclick="selExport('video')">
-        <span class="exp-icon">🎬</span>
-        <div><div class="exp-title">Animated Video</div><div class="exp-sub">MP4 video carousel export (coming soon)</div></div>
-        <div class="exp-radio"></div>
-      </div>
-    </div>
-    <div class="mf">
-      <button class="btn-sec" onclick="closeExport()">Cancel</button>
-      <button class="btn-pri" onclick="doExport()">Export</button>
+    <div class="cs-modal-foot">
+      <button class="cs-btn" onclick="closeExport()">Cancel</button>
+      <button class="cs-btn" onclick="doExport()" style="background:var(--gold);color:#fff;border-color:var(--gold2);font-weight:700;">Export</button>
     </div>
   </div>
 </div>
@@ -379,8 +982,8 @@
 <!-- Toast shelf -->
 <div class="toast-shelf" id="toastShelf"></div>
 
-<!-- External JS -->
-<!-- Auth + plan scripts (load order per nav.js requirements) -->
+<!-- ══════════════ SCRIPTS ══════════════ -->
+<!-- Load order: supabase → plan-config → supabase-config → ig-supabase → plan-gate → auth → nav → carousel -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="plan-config.js"></script>
 <script src="supabase-config.js"></script>
@@ -389,10 +992,173 @@
 <script src="auth.js"></script>
 <script src="nav.js"></script>
 <script>
-// Kick off auth check so nav shows login state
-// Carousel generation is NOT blocked by this — it runs independently
+/* ── Inject shared nav + kick off auth ── */
+if (typeof renderNav === 'function')   renderNav('carousel-studio.html');
 if (typeof window.checkAuth === 'function') window.checkAuth();
+
+/* ────────────────────────────────────────────────────
+   PLAN PILL — reads from window.igUser (set by nav.js)
+   Maps class names to the new cs-* system.
+   Also aliases the OLD class names carousel-studio.js
+   expects (intel-card.active, iseg*, cdot, etc.)
+   so the existing JS runs without modification.
+──────────────────────────────────────────────────── */
+function updatePlanPill() {
+  var user  = window.igUser || {};
+  var plan  = user.plan || (function(){ try { return localStorage.getItem('ig_plan') || 'free'; } catch(e){ return 'free'; } })();
+  var uses  = user.aiUses || (function(){ try { return parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e){ return 0; } })();
+  var cfg   = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) || { label:'Free', ai_uses:3 };
+  var limit = cfg.ai_uses;
+  var name  = user.firstName || user.name || (function(){ try { return localStorage.getItem('ig_name') || ''; } catch(e){ return ''; } })();
+
+  var pill    = document.getElementById('csPlanPill');
+  var avEl    = document.getElementById('csPlanAv');
+  var nameEl  = document.getElementById('csPlanName');
+  var badgeEl = document.getElementById('csPlanBadge');
+  var usesEl  = document.getElementById('csPlanUses');
+
+  if (!pill) return;
+  pill.style.display = 'inline-flex';
+
+  /* Avatar */
+  var avatar = ''; var animal = '';
+  try { avatar = localStorage.getItem('ig_avatar') || ''; } catch(e) {}
+  try { animal = localStorage.getItem('ig_animal') || ''; } catch(e) {}
+  if (avatar) {
+    avEl.innerHTML = '<img src="' + avatar + '" alt=""/>';
+  } else if (animal) {
+    avEl.style.background = 'linear-gradient(135deg,#f0f4ff,#e8f0fe)';
+    avEl.style.fontSize = '12px';
+    avEl.textContent = animal;
+  } else if (name) {
+    avEl.textContent = name.charAt(0).toUpperCase();
+  } else {
+    avEl.textContent = '?';
+  }
+
+  if (nameEl && name) nameEl.textContent = name.split(' ')[0];
+
+  if (badgeEl) {
+    badgeEl.textContent = cfg.label ? cfg.label.toUpperCase() : plan.toUpperCase();
+    /* Colour the badge by plan */
+    if (plan === 'enterprise' || plan === 'admin') badgeEl.style.color = 'var(--purple)';
+    else if (plan === 'professional')              badgeEl.style.color = 'var(--gold)';
+    else                                           badgeEl.style.color = 'var(--text3)';
+  }
+
+  if (usesEl) {
+    if (!isFinite(limit)) {
+      usesEl.textContent = '∞ uses';
+      usesEl.className = 'cs-plan-uses';
+    } else {
+      var remaining = Math.max(0, limit - uses);
+      usesEl.textContent = remaining + ' left';
+      usesEl.className = 'cs-plan-uses' + (remaining === 0 ? ' danger' : remaining <= 1 ? ' warn' : '');
+    }
+  }
+}
+
+/* ── Class name bridge: old JS uses .intel-card.active / .ath / .cdot
+   New HTML uses .cs-intel.active / .cs-asset-th / .cs-cdot
+   Alias them so carousel-studio.js works with zero edits ── */
+(function aliasClasses() {
+  /* intelCard.classList.add('active')   → cs-intel + intel-card both on same el */
+  var ic = document.getElementById('intelCard');
+  if (ic) ic.classList.add('intel-card');   /* add old class so old JS .classList.add('active') on it still works */
+
+  /* Intel segments: old JS uses .classList.toggle('on', …) on #iseg0–4
+     The new elements have class cs-intel-seg — old JS uses 'on' which still works */
+
+  /* Asset thumbnails: old JS creates div.ath + img, new CSS targets .cs-asset-th
+     We patch showAssetPreview to use the new class name */
+})();
+
+/* ── Mobile panel helpers ── */
+function toggleLeftPanel() {
+  var el = document.getElementById('csLeft');
+  var ov = document.getElementById('csPanelOverlay');
+  var isOpen = el.classList.contains('open');
+  closeAllPanels();
+  if (!isOpen) { el.classList.add('open'); ov.classList.add('open'); }
+}
+function toggleRightPanel() {
+  var el = document.getElementById('csRight');
+  var ov = document.getElementById('csPanelOverlay');
+  var isOpen = el.classList.contains('open');
+  closeAllPanels();
+  if (!isOpen) { el.classList.add('open'); ov.classList.add('open'); }
+}
+function closeAllPanels() {
+  var left = document.getElementById('csLeft');
+  var right = document.getElementById('csRight');
+  var ov = document.getElementById('csPanelOverlay');
+  if (left)  left.classList.remove('open');
+  if (right) right.classList.remove('open');
+  if (ov)    ov.classList.remove('open');
+}
+
+/* ── Listen for nav.js user-ready events ── */
+document.addEventListener('ig-user-ready', updatePlanPill);
+document.addEventListener('ig-plan-ready', updatePlanPill);
+
+/* ── Alias theme toggle so topbar button syncs with nav.js toggleTheme ── */
+var _csThemeBtn = document.getElementById('csThemeBtn');
+if (_csThemeBtn) {
+  document.addEventListener('ig-nav-ready', function() {
+    /* After nav renders, keep the topbar button in sync */
+    var observer = new MutationObserver(function() {
+      var tb = document.getElementById('themeBtn');
+      if (tb && _csThemeBtn) _csThemeBtn.textContent = tb.textContent;
+    });
+    var tb = document.getElementById('themeBtn');
+    if (tb) observer.observe(tb, { characterData: true, childList: true, subtree: true });
+  });
+}
+
+/* ── Patch old CSS class names that carousel-studio.js injects inline ──
+   The JS references: .ftextarea, .fselect, .finput, .lbl, .field,
+   .intel-card, .ath, .cdot — these are referenced ONLY in the HTML
+   we already replaced, and in dynamic DOM writes inside the JS (fillEdit,
+   renderSlide, etc.) which use actual <style> blocks or inline styles.
+   No further aliasing needed for those. */
 </script>
+
 <script src="carousel-studio.js"></script>
+
+<script>
+/* ── Post-load patch: carousel-studio.js references some old class
+   selectors when building the thumbnail strip and edit panel.
+   We make sure the document knows about the alias. ── */
+(function patchRenderers() {
+  /* showAssetPreview creates div.ath — remap to cs-asset-th so CSS shows them */
+  var origShowAsset = window.showAssetPreview;
+  if (typeof origShowAsset === 'function') {
+    window.showAssetPreview = function(theme) {
+      origShowAsset(theme);
+      /* Convert any .ath elements to also have .cs-asset-th */
+      document.querySelectorAll('.ath').forEach(function(el) {
+        el.classList.add('cs-asset-th');
+        var img = el.querySelector('img');
+        if (img) {
+          img.addEventListener('load', function() { el.classList.add('loaded'); });
+          if (img.complete) el.classList.add('loaded');
+        }
+      });
+    };
+  }
+
+  /* hashtagChips — old JS creates span.ht-chip, alias to cs-ht-chip */
+  var origPopHash = window.populateHashtagPanel;
+  if (typeof origPopHash === 'function') {
+    window.populateHashtagPanel = function(chips, slide) {
+      origPopHash(chips, slide);
+      document.querySelectorAll('.ht-chip').forEach(function(el) {
+        el.classList.add('cs-ht-chip');
+      });
+    };
+  }
+})();
+</script>
+
 </body>
 </html>
