@@ -356,6 +356,14 @@ function showScreen(id) {
   document.querySelectorAll(".ps-screen").forEach(s => s.classList.remove("active"));
   const el = document.getElementById(id);
   if (el) el.classList.add("active");
+
+  // Always clear the generation overlay when switching screens.
+  // If we're NOT going to screenBuilder (or going to builder for edit, not generate),
+  // the overlay must be hidden so it doesn't block the builder UI.
+  if (id !== 'screenBuilder' || !psState.generating) {
+    const overlay = document.getElementById('genOverlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
 }
 
 /* ── Mobile builder panel toggle ─────────────────────────────
@@ -603,6 +611,13 @@ function openPortfolio(id, action) {
     // Still show the builder in read-only preview so they can see it,
     // but disable the Save/Publish buttons.
     psState.activePortfolio = JSON.parse(JSON.stringify(pf));
+    psState.generating = false;
+    const _ovR = document.getElementById('genOverlay');
+    if (_ovR) _ovR.classList.add('hidden');
+    ['gs1','gs2','gs3','gs4','gs5'].forEach(function(id) {
+      var s = document.getElementById(id);
+      if (s) { s.classList.remove('active','done'); }
+    });
     populateBuilder(pf);
     showScreen('screenBuilder');
     // Disable save/publish controls
@@ -632,6 +647,15 @@ function openPortfolio(id, action) {
   if (notice) notice.remove();
 
   psState.activePortfolio = JSON.parse(JSON.stringify(pf));
+  // Always clear any leftover generation overlay when opening an existing portfolio
+  psState.generating = false;
+  const _ov = document.getElementById('genOverlay');
+  if (_ov) _ov.classList.add('hidden');
+  // Reset generation step indicators so they don't show stale state
+  ['gs1','gs2','gs3','gs4','gs5'].forEach(function(id) {
+    var s = document.getElementById(id);
+    if (s) { s.classList.remove('active','done'); }
+  });
   populateBuilder(pf);
   showScreen('screenBuilder');
 
@@ -849,9 +873,16 @@ async function startGeneration() {
 
   advanceStep(); // Step 1: Analysing niche
 
+  // Show wake-up message if Render free tier is cold-starting (takes up to 60s)
+  const wakeTimer = setTimeout(() => {
+    const sub = document.getElementById('genSubtext');
+    if (sub) sub.textContent = 'Server is waking up — this can take up to 60 seconds on first load…';
+  }, 10000);
+
   try {
     /* ── Single server call — Render handles all AI ── */
     const result = await callDijoServer("/portfolio/generate", pf);
+    clearTimeout(wakeTimer);
 
     advanceStep(); // Step 2: copy done
     advanceStep(); // Step 3: visuals done
@@ -888,6 +919,7 @@ async function startGeneration() {
     showToast("✦ Portfolio built by Dijo!");
 
   } catch (err) {
+    clearTimeout(wakeTimer);
     console.error("[Portfolio] Generation error:", err.message);
 
     /* Server warm-up fallback — same pattern as carousel-studio.js */
