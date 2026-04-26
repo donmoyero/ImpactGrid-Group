@@ -69,19 +69,27 @@ function _getPlanCfg(plan) {
 }
 
 function _getPlan() {
+  // If the logged-in user is the admin email, always return 'admin'
+  // regardless of what is stored in the DB or localStorage
+  var email = (window.igUser && window.igUser.email) || '';
+  if (email === PS_ADMIN_EMAIL) return 'admin';
   if (window.igUser && window.igUser.plan) return window.igUser.plan;
   try { return localStorage.getItem('ig_plan') || 'free'; } catch(e) { return 'free'; }
 }
 function _getAIUses() {
+  if (_isAdmin()) return 0; // admin: unlimited, usage is irrelevant
   if (window.igUser && typeof window.igUser.aiUses === 'number') return window.igUser.aiUses;
   try { return parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) { return 0; }
 }
 function _isAdmin() {
-  var user = window.igUser || getCurrentUser();
-  if (!user) return false;
-  if (user.email === PS_ADMIN_EMAIL) return true;
-  var plan = _getPlan();
-  if (plan === 'admin' || plan === 'enterprise') return true;
+  // Check email first — email is the ground truth, plan field in DB may be wrong
+  var email = (window.igUser && window.igUser.email) || '';
+  if (email === PS_ADMIN_EMAIL) return true;
+  // Also accept plan field set to 'admin' or 'enterprise'
+  try {
+    var plan = (window.igUser && window.igUser.plan) || localStorage.getItem('ig_plan') || '';
+    if (plan === 'admin' || plan === 'enterprise') return true;
+  } catch(e) {}
   return false;
 }
 
@@ -525,7 +533,8 @@ function renderDashGrid() {
   if (empty) empty.style.display = "none";
 
   const plan = _getPlan();
-  const isFree = (plan === 'free');
+  // Admin is never treated as free — check email and plan both
+  const isFree = (plan === 'free') && !_isAdmin();
 
   psState.portfolios.forEach(pf => {
     const card  = document.createElement("div");
