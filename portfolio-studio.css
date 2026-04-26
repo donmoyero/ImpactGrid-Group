@@ -123,8 +123,8 @@ input, textarea, select { font-family: inherit; color: var(--text); outline: non
 .pf-card-body{padding:14px}
 .pf-card-name{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:3px}
 .pf-card-niche{font-size:11px;color:var(--text3)}
-.pf-card-foot{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border)}
-.pf-card-action{font-size:11px;font-weight:600;color:var(--text2);padding:5px 10px;border-radius:6px;border:1px solid var(--border);transition:.15s;background:var(--surface2)}
+.pf-card-foot{display:flex;align-items:center;gap:6px;padding:10px 14px;border-top:1px solid var(--border);flex-wrap:wrap}
+.pf-card-action{font-size:11px;font-weight:600;color:var(--text2);padding:6px 11px;border-radius:6px;border:1px solid var(--border);transition:.15s;background:var(--surface2);white-space:nowrap;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
 .pf-card-action:hover{border-color:var(--accent);color:var(--accent)}
 .pf-card-action.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pf-card-action.primary:hover{background:var(--accent2)}
@@ -285,7 +285,13 @@ input, textarea, select { font-family: inherit; color: var(--text); outline: non
   display:flex;flex-direction:column;overflow:hidden;
 }
 .bl-header{padding:14px 16px 0;flex-shrink:0}
-.bl-title{font-family:var(--fh);font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text2)}
+.bl-title{font-family:var(--fh);font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bl-mob-preview-btn{
+  display:none;font-size:10px;font-weight:700;color:var(--accent);
+  padding:3px 8px;border:1px solid rgba(201,126,8,.35);border-radius:5px;
+  background:rgba(201,126,8,.06);transition:.15s;
+}
+@media(max-width:900px){.bl-mob-preview-btn{display:inline-flex;align-items:center}}
 .bl-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 10px}
 .bl-tab{
   padding:10px 12px;font-size:11px;font-weight:700;font-family:var(--fh);
@@ -467,6 +473,24 @@ input, textarea, select { font-family: inherit; color: var(--text); outline: non
 @keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes fadeOut{to{opacity:0;transform:translateY(-5px)}}
 
+/* ── Portfolio card footer — always wraps cleanly ── */
+.pf-card-foot{display:flex;align-items:center;gap:6px;padding:10px 14px;border-top:1px solid var(--border);flex-wrap:wrap}
+.pf-card-action{font-size:11px;font-weight:600;color:var(--text2);padding:6px 11px;border-radius:6px;border:1px solid var(--border);transition:.15s;background:var(--surface2);white-space:nowrap;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
+
+/* ── Mobile builder panel toggle bar ── */
+.builder-mobile-bar{
+  display:none;flex-shrink:0;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0;
+}
+.bm-tabs{display:flex;width:100%}
+.bm-tab{
+  flex:1;padding:11px 8px;font-size:11px;font-weight:700;font-family:var(--fh);
+  color:var(--text3);border-bottom:2px solid transparent;transition:.15s;text-align:center;
+  background:none;
+}
+.bm-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(201,126,8,.04)}
+
 /* ── RESPONSIVE ── */
 @media(max-width:900px){
   .dash-hero{grid-template-columns:1fr}
@@ -474,11 +498,67 @@ input, textarea, select { font-family: inherit; color: var(--text); outline: non
   .dash-section{padding:24px 20px}
   .dash-hero-text{padding:32px 20px}
   .dash-headline{font-size:32px}
-  .builder-shell{grid-template-columns:1fr}
-  .builder-left{display:none}
   .ob-platforms-grid{grid-template-columns:1fr}
   .ob-grid{grid-template-columns:1fr}
   .ob-theme-grid{grid-template-columns:repeat(2,1fr)}
+
+  /* Builder mobile layout: stack edit panel above/below preview via toggle */
+  .builder-shell{
+    grid-template-columns:1fr;
+    grid-template-rows:auto 1fr;
+    height:calc(100vh - var(--nav-h));
+    overflow:hidden;
+  }
+  .builder-mobile-bar{display:block}
+
+  /* Edit panel: collapsible, fills when active */
+  .builder-left{
+    display:flex;
+    position:absolute;
+    inset:0;
+    z-index:10;
+    background:var(--surface);
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .builder-left.mob-open{transform:translateX(0)}
+
+  /* Center preview takes full height in its row */
+  .builder-center{
+    height:100%;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Shrink iframe to fit mobile viewport */
+  .preview-frame iframe{height:calc(100vh - var(--nav-h) - 100px)}
+  .preview-frame.mobile iframe{height:calc(100vh - var(--nav-h) - 100px)}
+
+  /* Collapse preview toolbar URL pill on mobile to save space */
+  .preview-url-pill{display:none}
+
+  /* Preview wrap scrolls properly */
+  .preview-wrap{padding:12px}
+
+  /* Mobile preview frame sizing */
+  .preview-frame.desktop{max-width:100%}
+  .preview-frame.mobile{width:min(340px, 90vw)}
+}
+
+/* Very small screens */
+@media(max-width:480px){
+  .dash-headline{font-size:28px}
+  .dash-hero-text{padding:24px 16px;gap:14px}
+  .dash-section{padding:20px 16px}
+  .onboard-wrap{padding:0 16px 64px}
+  .pub-card{padding:28px 20px}
+  .pub-share-btns{gap:6px}
+  .pub-share-btn{padding:7px 10px;font-size:11px}
+  .pub-actions{flex-direction:column}
+  .pf-card-action{font-size:10px;padding:5px 9px}
 }
 
 
@@ -492,7 +572,7 @@ input, textarea, select { font-family: inherit; color: var(--text); outline: non
 .contact-box {
   background: var(--card); border: 1px solid var(--border2);
   padding: 28px; border-radius: var(--r2);
-  width: 340px; display: flex; flex-direction: column; gap: 12px;
+  width: min(340px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 12px;
   box-shadow: var(--sh2);
 }
 .contact-box h3 { margin: 0; font-size: 18px; color: var(--text); }
