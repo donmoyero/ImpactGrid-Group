@@ -63,6 +63,7 @@ const PS_ADMIN_EMAIL = "admin@impactgridgroup.com";
 
 /* Read limits from plan-config.js — fall back to safe defaults if not loaded yet */
 function _getPlanCfg(plan) {
+  if (plan === 'admin') return { portfolios: Infinity, ai_uses: Infinity };
   return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
     || { portfolios: 0, ai_uses: 3 };
 }
@@ -79,12 +80,14 @@ function _isAdmin() {
   var user = window.igUser || getCurrentUser();
   if (!user) return false;
   if (user.email === PS_ADMIN_EMAIL) return true;
-  if (_getPlan() === 'enterprise') return true;
+  var plan = _getPlan();
+  if (plan === 'admin' || plan === 'enterprise') return true;
   return false;
 }
 
-/* Increment shared AI counter: localStorage + window.igUser + Supabase profiles */
+/* Admin never counts AI uses — skip increment */
 async function incrementAIUse() {
+  if (_isAdmin()) return; // admin: unlimited, don't track
   var next = _getAIUses() + 1;
   try { localStorage.setItem('ig_ai_uses', String(next)); } catch(e) {}
   if (window.igUser) window.igUser.aiUses = next;
