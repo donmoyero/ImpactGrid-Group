@@ -13,7 +13,11 @@
   'use strict';
 
   /* ── Helpers ──────────────────────────────────────────── */
+  var _ADMIN_EMAIL = 'admin@impactgridgroup.com';
   function getPlan() {
+    // Email is ground truth — admin email always returns 'admin' plan
+    var email = (window.igUser && window.igUser.email) || '';
+    if (email === _ADMIN_EMAIL) return 'admin';
     if (window.igUser && window.igUser.plan) return window.igUser.plan;
     try { return localStorage.getItem('ig_plan') || 'free'; } catch(e) { return 'free'; }
   }
