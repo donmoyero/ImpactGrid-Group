@@ -1797,7 +1797,10 @@
     ];
 
     function _getPlanData() {
-      var plan   = (window.igUser && window.igUser.plan) || '';
+      // Email is ground truth — admin email always forces 'admin' plan
+      var _ADMIN_EMAIL = 'admin@impactgridgroup.com';
+      var _igEmail = (window.igUser && window.igUser.email) || '';
+      var plan = (_igEmail === _ADMIN_EMAIL) ? 'admin' : ((window.igUser && window.igUser.plan) || '');
       if (!plan) { try { plan = localStorage.getItem('ig_plan') || 'free'; } catch(e) { plan = 'free'; } }
       // Always read aiUses from localStorage — it's updated immediately by every studio
       // igUser.aiUses is only set once on page load and can be stale
