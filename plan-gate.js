@@ -333,7 +333,7 @@
     var subtitleEl= document.getElementById('pgSubtitle');
 
     if (iconEl)     iconEl.textContent    = opts.icon || '🚀';
-    if (titleEl)    titleEl.textContent   = opts.title || 'You've reached your plan limit';
+    if (titleEl)    titleEl.textContent   = opts.title || 'You\u2019ve reached your plan limit';
     if (subtitleEl) subtitleEl.textContent= opts.subtitle || 'Upgrade to keep creating without limits.';
 
     /* Usage stats */
