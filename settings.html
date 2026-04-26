@@ -1752,7 +1752,15 @@
       free:         _buildPlanLimits('free'),
       professional: _buildPlanLimits('professional'),
       enterprise:   _buildPlanLimits('enterprise'),
-      admin:        _buildPlanLimits('admin'),
+      admin: {
+        ai:          Infinity,
+        portfolios:  Infinity,
+        carousels:   Infinity,
+        adviser:     Infinity,
+        evaluator:   Infinity,
+        contentPlan: Infinity,
+        _retention:  'Forever',
+      },
     };
 
     var PLAN_META = {
@@ -1764,15 +1772,15 @@
 
     /* Tools available per plan */
     var ALL_TOOLS = [
-      { icon:'🎠', name:'Carousel Studio',   href:'carousel-studio.html',  plans:['free','professional','enterprise'], limit:{ free:'3 AI uses/mo', professional:'100 AI uses/mo', enterprise:'Unlimited' } },
-      { icon:'💼', name:'Portfolio Studio',  href:'portfolio-studio.html', plans:['free','professional','enterprise'], limit:{ free:'3 portfolios (7-day)', professional:'1 portfolio', enterprise:'3 portfolios' } },
-      { icon:'📊', name:'Creator Studio',    href:'creator-studio.html',   plans:['free','professional','enterprise'], limit:{ free:'Read-only', professional:'Full access', enterprise:'Full access' } },
-      { icon:'🤖', name:'Dijo Adviser',      href:'creator-studio.html',   plans:['professional','enterprise'],         limit:{ free:'Upgrade to Pro', professional:'50 msgs/mo', enterprise:'Unlimited' } },
-      { icon:'🔍', name:'Dijo Evaluator',    href:'creator-studio.html',   plans:['free','professional','enterprise'], limit:{ free:'3/mo', professional:'10/mo', enterprise:'Unlimited' } },
-      { icon:'📅', name:'Content Plan',      href:'creator-studio.html',   plans:['free','professional','enterprise'], limit:{ free:'3/mo', professional:'4 weeks saved', enterprise:'Unlimited' } },
-      { icon:'📈', name:'Trend Feed',        href:'creator-studio.html',   plans:['free','professional','enterprise'], limit:{ free:'Read-only', professional:'Full + personalised', enterprise:'Full + personalised' } },
-      { icon:'🎬', name:'YouTube Connect',   href:'settings.html#integrations', plans:['professional','enterprise'],   limit:{ free:'Upgrade to Pro', professional:'Connected', enterprise:'Connected' } },
-      { icon:'🎵', name:'TikTok Connect',    href:'settings.html#integrations', plans:['professional','enterprise'],   limit:{ free:'Upgrade to Pro', professional:'Connected', enterprise:'Connected' } },
+      { icon:'🎠', name:'Carousel Studio',   href:'carousel-studio.html',       plans:['free','professional','enterprise','admin'], limit:{ free:'3 AI uses/mo', professional:'100 AI uses/mo', enterprise:'Unlimited', admin:'Unlimited' } },
+      { icon:'💼', name:'Portfolio Studio',  href:'portfolio-studio.html',      plans:['free','professional','enterprise','admin'], limit:{ free:'3 portfolios (7-day)', professional:'1 portfolio', enterprise:'3 portfolios', admin:'Unlimited' } },
+      { icon:'📊', name:'Creator Studio',    href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'Read-only', professional:'Full access', enterprise:'Full access', admin:'Full access' } },
+      { icon:'🤖', name:'Dijo Adviser',      href:'creator-studio.html',        plans:['professional','enterprise','admin'],        limit:{ free:'Upgrade to Pro', professional:'50 msgs/mo', enterprise:'Unlimited', admin:'Unlimited' } },
+      { icon:'🔍', name:'Dijo Evaluator',    href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'3/mo', professional:'10/mo', enterprise:'Unlimited', admin:'Unlimited' } },
+      { icon:'📅', name:'Content Plan',      href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'3/mo', professional:'4 weeks saved', enterprise:'Unlimited', admin:'Unlimited' } },
+      { icon:'📈', name:'Trend Feed',        href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'Read-only', professional:'Full + personalised', enterprise:'Full + personalised', admin:'Full + personalised' } },
+      { icon:'🎬', name:'YouTube Connect',   href:'settings.html#integrations', plans:['professional','enterprise','admin'],        limit:{ free:'Upgrade to Pro', professional:'Connected', enterprise:'Connected', admin:'Connected' } },
+      { icon:'🎵', name:'TikTok Connect',    href:'settings.html#integrations', plans:['professional','enterprise','admin'],        limit:{ free:'Upgrade to Pro', professional:'Connected', enterprise:'Connected', admin:'Connected' } },
     ];
 
     /* Feature table rows */
@@ -1827,35 +1835,38 @@
       /* ── Usage bars ── */
       var grid = document.getElementById('usageGrid');
       if (grid) {
-        var aiLimit = limits.ai;
+        var isAdmin = (plan === 'admin');
+        var aiLimit = isAdmin ? Infinity : limits.ai;
         var aiPct   = aiLimit === Infinity ? 0 : Math.min(100, Math.round((aiUses / aiLimit) * 100));
         var aiRemain = aiLimit === Infinity ? 'Unlimited' : Math.max(0, aiLimit - aiUses) + ' of ' + aiLimit + ' remaining';
         var aiClass  = aiLimit === Infinity ? 'ok' : aiPct >= 100 ? 'full' : aiPct >= 75 ? 'warn' : 'ok';
         var aiCountClass = aiLimit === Infinity ? 'ok' : aiPct >= 100 ? 'warn' : aiPct >= 75 ? 'warn' : 'ok';
 
-        /* Portfolio usage — pfCount comes from localStorage (written by portfolio-studio) */
-        var pfLimit  = limits.portfolios;
-        var pfUsed   = Math.min(pfCount, pfLimit);
-        var pfPct    = pfLimit === 0 || pfLimit >= 999 ? 0 : Math.min(100, Math.round((pfUsed / pfLimit) * 100));
+        /* Portfolio usage */
+        var pfLimit  = isAdmin ? Infinity : limits.portfolios;
+        var pfUsed   = Math.min(pfCount, pfLimit === Infinity ? pfCount : pfLimit);
+        var pfPct    = pfLimit === 0 || pfLimit === Infinity ? 0 : Math.min(100, Math.round((pfUsed / pfLimit) * 100));
         var pfClass  = pfPct >= 100 ? 'full' : pfPct >= 75 ? 'warn' : 'ok';
         var pfRetDays = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.free && window.IG_PLAN_CONFIG.free.data_retention_days) || 7;
-        var pfNote   = pfLimit >= 999
+        var pfNote   = isAdmin || pfLimit === Infinity
           ? 'Unlimited portfolios'
           : pfUsed + ' of ' + pfLimit + ' portfolio' + (pfLimit !== 1 ? 's' : '') + ' used';
-        var pfSub    = plan === 'free'
-          ? 'Saved items deleted after ' + pfRetDays + ' days · upgrade to keep them permanently'
-          : plan === 'professional'
-            ? (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.professional ? window.IG_PLAN_CONFIG.professional.portfolios : 1) + ' live portfolio saved permanently'
-            : 'Up to ' + (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.enterprise ? window.IG_PLAN_CONFIG.enterprise.portfolios : 3) + ' live portfolios saved permanently';
+        var pfSub    = isAdmin
+          ? 'Admin — permanent, no limits'
+          : plan === 'free'
+            ? 'Saved items deleted after ' + pfRetDays + ' days · upgrade to keep them permanently'
+            : plan === 'professional'
+              ? (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.professional ? window.IG_PLAN_CONFIG.professional.portfolios : 1) + ' live portfolio saved permanently'
+              : 'Up to ' + (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.enterprise ? window.IG_PLAN_CONFIG.enterprise.portfolios : 3) + ' live portfolios saved permanently';
 
         grid.innerHTML = [
-          _usageBar('AI Uses This Month',  aiUses + ' used',  aiPct,  aiClass,  aiCountClass, aiRemain,
+          _usageBar('AI Uses This Month',  isAdmin ? 'Unlimited' : aiUses + ' used',  aiPct,  aiClass,  aiCountClass, aiRemain,
             aiLimit === Infinity ? '' : 'Resets on the 1st of each month'),
           _usageBar('Portfolio Slots', pfNote, pfPct, pfClass, pfClass, pfSub, ''),
         ].join('');
 
-        /* ── Trial exhausted: blur tools + show banner ── */
-        var isExhausted = (plan === 'free') && (aiLimit !== Infinity) && (aiPct >= 100);
+        /* ── Trial exhausted: blur tools + show banner — never for admin ── */
+        var isExhausted = !isAdmin && (plan === 'free') && (aiLimit !== Infinity) && (aiPct >= 100);
         _applyTrialExhausted(isExhausted);
       }
 
