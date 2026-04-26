@@ -347,6 +347,30 @@ function showScreen(id) {
   if (el) el.classList.add("active");
 }
 
+/* ── Mobile builder panel toggle ─────────────────────────────
+   On screens ≤900px the edit panel slides in/out over the preview.
+   mobilePanelShow('edit')    → show editor overlay
+   mobilePanelShow('preview') → hide editor, show live preview
+───────────────────────────────────────────────────────────── */
+function mobilePanelShow(panel) {
+  const left      = document.querySelector('.builder-left');
+  const tabEdit   = document.getElementById('bmTabEdit');
+  const tabPreview= document.getElementById('bmTabPreview');
+  if (!left) return;
+
+  if (panel === 'edit') {
+    left.classList.add('mob-open');
+    if (tabEdit)    tabEdit.classList.add('active');
+    if (tabPreview) tabPreview.classList.remove('active');
+  } else {
+    left.classList.remove('mob-open');
+    if (tabPreview) tabPreview.classList.add('active');
+    if (tabEdit)    tabEdit.classList.remove('active');
+    // Refresh preview when switching to it
+    updatePreviewLive();
+  }
+}
+
 function confirmBackToDash() {
   if (confirm("Go back? Unsaved changes will be lost.")) showScreen("screenDash");
 }
@@ -556,6 +580,7 @@ function openPortfolio(id, action) {
       notice.textContent = '✦ Portfolio is live — unpublish to edit';
       footer.appendChild(notice);
     }
+    mobilePanelShow('preview');
     return;
   }
 
@@ -570,6 +595,14 @@ function openPortfolio(id, action) {
   psState.activePortfolio = JSON.parse(JSON.stringify(pf));
   populateBuilder(pf);
   showScreen('screenBuilder');
+
+  // On mobile: 'preview' action shows the preview panel; 'edit' shows the editor
+  if (action === 'preview') {
+    mobilePanelShow('preview');
+  } else {
+    mobilePanelShow('edit');
+  }
+
   if (action === 'publish') publishPortfolio();
 }
 
