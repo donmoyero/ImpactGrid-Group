@@ -524,28 +524,40 @@ function renderDashGrid() {
   }
   if (empty) empty.style.display = "none";
 
+  const plan = _getPlan();
+  const isFree = (plan === 'free');
+
   psState.portfolios.forEach(pf => {
     const card  = document.createElement("div");
     card.className = "pf-card";
     // data-created used by psMarkExpiredPortfolios() to detect and delete rows older than 7 days for free users
     if (pf.created_at) card.setAttribute("data-created", pf.created_at);
     const thumb = pf.hero_media && pf.hero_media[0] ? pf.hero_media[0].url : "";
+
+    // For free users, Edit and Preview show upgrade wall instead of opening
+    const editAction    = isFree ? `showFreeEditWall()` : `openPortfolio('${pf.id}','edit')`;
+    const previewAction = isFree ? `showFreePreviewWall()` : `openPortfolio('${pf.id}','preview')`;
+    const publishBtn    = pf.published
+      ? `<button class="pf-card-action primary" onclick="copyLink('${pf.slug}')">Copy Link</button>`
+      : isFree
+        ? `<button class="pf-card-action primary locked" onclick="showFreePublishWall()">🔒 Publish</button>`
+        : `<button class="pf-card-action primary" onclick="openPortfolio('${pf.id}','publish')">Publish</button>`;
+
     card.innerHTML = `
-      <div class="pf-card-thumb">
-        ${thumb ? `<img src="${thumb}" alt="${esc(pf.name)}"/>` : `<div class="pf-card-thumb-placeholder">✦</div>`}
+      <div class="pf-card-thumb${isFree ? ' pf-card-thumb--locked' : ''}">
+        ${thumb ? `<img src="${thumb}" alt="${esc(pf.name)}"${isFree ? ' style="filter:blur(3px) brightness(0.6)"' : ''}/>` : `<div class="pf-card-thumb-placeholder">✦</div>`}
         <div class="pf-card-pub-badge ${pf.published ? "live" : "draft"}">${pf.published ? "● LIVE" : "DRAFT"}</div>
+        ${isFree ? '<div class="pf-card-lock-overlay"><span class="pf-lock-badge">🔒 Upgrade to Edit</span></div>' : ''}
       </div>
       <div class="pf-card-body">
         <div class="pf-card-name">${esc(pf.name)}</div>
         <div class="pf-card-niche">${esc(pf.niche)}</div>
+        ${isFree ? '<div class="pf-card-free-note">Free plan · upgrade to edit &amp; publish</div>' : ''}
       </div>
       <div class="pf-card-foot">
-        <button class="pf-card-action" onclick="openPortfolio('${pf.id}','edit')">Edit</button>
-        <button class="pf-card-action" onclick="openPortfolio('${pf.id}','preview')">Preview</button>
-        ${pf.published
-          ? `<button class="pf-card-action primary" onclick="copyLink('${pf.slug}')">Copy Link</button>`
-          : `<button class="pf-card-action primary" onclick="openPortfolio('${pf.id}','publish')">Publish</button>`
-        }
+        <button class="pf-card-action${isFree ? ' locked' : ''}" onclick="${editAction}">${isFree ? '🔒 Edit' : 'Edit'}</button>
+        <button class="pf-card-action${isFree ? ' locked' : ''}" onclick="${previewAction}">${isFree ? '🔒 Preview' : 'Preview'}</button>
+        ${publishBtn}
         <button class="pf-card-action danger" onclick="deletePortfolio('${pf.id}')">Delete</button>
       </div>`;
     grid.appendChild(card);
@@ -554,6 +566,44 @@ function renderDashGrid() {
   // Mark expired portfolios for free-plan users (7-day limit)
   psMarkExpiredPortfolios();
 }
+
+/* ── Free-plan upgrade walls for Edit / Preview / Publish ─────────────── */
+function showFreeEditWall() {
+  if (typeof window.showPlanGate === 'function') {
+    window.showPlanGate({
+      icon: '✏️',
+      title: 'Upgrade to edit portfolios',
+      subtitle: 'Free plan lets you create portfolios but editing and publishing require a paid plan. Upgrade to unlock full access.'
+    });
+  } else if (typeof window.showUpgradeBar_gate === 'function') {
+    window.showUpgradeBar_gate('Upgrade to edit your portfolio — free plan is view-only.', true, { persistent: false });
+  }
+}
+
+function showFreePreviewWall() {
+  if (typeof window.showPlanGate === 'function') {
+    window.showPlanGate({
+      icon: '👁️',
+      title: 'Upgrade to preview portfolios',
+      subtitle: 'Free plan lets you create portfolios but live preview and publishing require a paid plan. Upgrade to see your portfolio in action.'
+    });
+  } else if (typeof window.showUpgradeBar_gate === 'function') {
+    window.showUpgradeBar_gate('Upgrade to preview your portfolio — free plan is view-only.', true, { persistent: false });
+  }
+}
+
+function showFreePublishWall() {
+  if (typeof window.showPlanGate === 'function') {
+    window.showPlanGate({
+      icon: '🚀',
+      title: 'Upgrade to publish portfolios',
+      subtitle: 'Publishing your portfolio makes it live and shareable. Upgrade to a paid plan to go live.'
+    });
+  } else if (typeof window.showUpgradeBar_gate === 'function') {
+    window.showUpgradeBar_gate('Upgrade to publish your portfolio and share it with the world.', true, { persistent: false });
+  }
+}
+
 
 function openPortfolio(id, action) {
   const pf = psState.portfolios.find(p => p.id === id);
