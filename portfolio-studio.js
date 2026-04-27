@@ -1513,6 +1513,24 @@ function buildPortfolioHTML(pf) {
       ${pf.monthly_views   ? `<div class="stat"><div class="sv">${esc(pf.monthly_views)}</div><div class="sl">MONTHLY VIEWS</div></div>` : ""}
     </div>` : "";
 
+  // Build gallery spreads — 1 full image per page
+  const gImgs = heroImgs.length > 0 ? heroImgs : [];
+  const gTotal = gImgs.length;
+  const gSpreadTotal = Math.max(1, gTotal);
+
+  const galleryPagesHTML = gImgs.map((url, pi) => {
+    const front = `<div class="ab-face ab-face-f"><img src="${esc(url)}" alt="Photo ${pi+1}" loading="lazy" class="ab-full-img"/><div class="ab-pnum">${pi+1} / ${gTotal}</div><div class="ab-spine-f"></div></div>`;
+    const nextUrl = gImgs[pi+1];
+    const back = nextUrl
+      ? `<div class="ab-face ab-face-b"><img src="${esc(nextUrl)}" alt="Photo ${pi+2}" loading="lazy" class="ab-full-img"/><div class="ab-pnum">${pi+2} / ${gTotal}</div><div class="ab-spine-b"></div></div>`
+      : `<div class="ab-face ab-face-b"><div class="ab-end"><div class="ab-end-icon">✦</div><div class="ab-end-text">End of Gallery</div></div></div>`;
+    return `<div class="ab-page" id="abPage${pi}" style="z-index:${gSpreadTotal*2-pi}">${front}${back}</div>`;
+  }).join('');
+
+  const galleryDotsHTML = gImgs.map((_,i) =>
+    `<button class="ab-dot${i===0?' active':''}" onclick="abGoto(${i})" aria-label="Photo ${i+1}"></button>`
+  ).join('');
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1523,52 +1541,88 @@ function buildPortfolioHTML(pf) {
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:${t.bg};--sf:${t.surface};--tx:${t.text};--sub:${t.sub};--bd:${t.border};--ac:${accent};--fh:'Syne',sans-serif}
-html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);line-height:1.6}
+:root{--bg:${t.bg};--sf:${t.surface};--tx:${t.text};--sub:${t.sub};--bd:${t.border};--ac:${accent};--fh:'Syne',sans-serif;--nav:64px}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;overflow:hidden}
 a{color:inherit;text-decoration:none}
-/* NAV */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.4);backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
-.nav-brand{font-family:var(--fh);font-size:15px;font-weight:800}
-.nav-links{display:flex;gap:22px;font-size:13px;color:var(--sub)}
-.nav-links a:hover{color:var(--tx)}
-.nav-cta{padding:8px 18px;background:var(--ac);color:#fff;border-radius:8px;font-size:12px;font-weight:700;font-family:var(--fh);transition:.15s}
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav);z-index:200;padding:0 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.45);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
+.nav-brand{font-family:var(--fh);font-size:15px;font-weight:800;cursor:pointer}
+.nav-links{display:flex;gap:4px;align-items:center}
+.nav-link{padding:7px 14px;font-size:13px;color:var(--sub);border-radius:8px;transition:.15s;border:1px solid transparent;cursor:pointer}
+.nav-link:hover{color:var(--tx);background:rgba(255,255,255,.06)}
+.nav-link.active{color:var(--ac);border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.06)}
+.nav-cta{padding:8px 18px;background:var(--ac);color:#fff;border-radius:8px;font-size:12px;font-weight:700;font-family:var(--fh);transition:.15s;cursor:pointer}
 .nav-cta:hover{opacity:.85}
-/* HERO */
-.hero{min-height:100vh;position:relative;display:flex;align-items:center;overflow:hidden}
+.nav-ham{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+.nav-ham span{display:block;height:2px;width:22px;background:var(--tx);border-radius:2px;transition:.25s}
+/* ── PAGES ── */
+.pg{position:fixed;inset:0;top:var(--nav);overflow-y:auto;overflow-x:hidden;display:none;opacity:0;transition:opacity .3s ease}
+.pg.active{display:block;opacity:1}
+/* ── HOME PAGE ── */
+.hero{min-height:calc(100vh - var(--nav));position:relative;display:flex;align-items:center;overflow:hidden}
 #heroBg{position:absolute;inset:0;background-image:url(${heroImg0});background-size:cover;background-position:center;transition:opacity .6s ease}
 .hero-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.5) 0%,rgba(0,0,0,.65) 60%,var(--bg) 100%)}
-.hero-c{position:relative;z-index:2;padding:120px 60px 80px;max-width:800px}
+.hero-c{position:relative;z-index:2;padding:80px 60px 60px;max-width:800px}
 .eyebrow{font-size:11px;font-family:monospace;letter-spacing:3px;color:var(--ac);text-transform:uppercase;margin-bottom:14px}
 .tagline{font-size:13px;color:var(--sub);margin-bottom:6px;font-family:monospace;letter-spacing:1px}
 .headline{font-family:var(--fh);font-size:clamp(38px,5.5vw,76px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:18px}
 .hero-bio{font-size:16px;color:var(--sub);max-width:540px;line-height:1.75;margin-bottom:30px}
 .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:10px;font-family:var(--fh);font-size:13px;font-weight:700;transition:.2s}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:10px;font-family:var(--fh);font-size:13px;font-weight:700;transition:.2s;cursor:pointer;border:none}
 .btn-p{background:var(--ac);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .btn-p:hover{opacity:.85;transform:translateY(-1px)}
-.btn-s{border:1.5px solid rgba(255,255,255,.2);color:var(--tx)}
-.btn-s:hover{border-color:var(--ac);color:var(--ac)}
-/* SECTIONS */
-.sec{padding:72px 60px;max-width:1100px;margin:0 auto}
+.btn-s{border:1.5px solid rgba(255,255,255,.2) !important;color:var(--tx);background:transparent}
+.btn-s:hover{border-color:var(--ac) !important;color:var(--ac)}
+/* About body */
+.about-body{max-width:1100px;margin:0 auto;padding:48px 60px 80px}
 .sec-lbl{font-size:10px;font-weight:700;font-family:monospace;letter-spacing:3px;color:var(--ac);text-transform:uppercase;margin-bottom:10px}
-.sec-ttl{font-family:var(--fh);font-size:clamp(26px,3.5vw,44px);font-weight:800;letter-spacing:-1px;margin-bottom:36px;line-height:1.1}
-/* STATS */
-.stats-row{display:flex;gap:2px;margin:36px 0;flex-wrap:wrap}
+.sec-ttl{font-family:var(--fh);font-size:clamp(26px,3.5vw,44px);font-weight:800;letter-spacing:-1px;margin-bottom:28px;line-height:1.1}
+.stats-row{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:48px}
 .stat{flex:1;min-width:110px;padding:18px 22px;background:var(--sf);border:1px solid var(--bd);text-align:center}
-.stat:first-child{border-radius:10px 0 0 10px}
-.stat:last-child{border-radius:0 10px 10px 0}
+.stat:first-child{border-radius:10px 0 0 10px}.stat:last-child{border-radius:0 10px 10px 0}
 .sv{font-family:var(--fh);font-size:30px;font-weight:800;color:var(--ac);line-height:1}
 .sl{font-size:9px;letter-spacing:2px;color:var(--sub);margin-top:5px;font-family:monospace}
-/* CARDS */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
-.card{background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:22px;transition:.2s}
+/* ── GALLERY PAGE ── */
+.gal-pg{padding:40px 60px 60px;max-width:1300px;margin:0 auto}
+.gal-pg .sec-lbl{margin-bottom:6px}
+.gal-pg .sec-ttl{margin-bottom:28px}
+.ab-stage{display:flex;flex-direction:column;align-items:center;gap:20px}
+.ab-book-wrap{display:flex;align-items:stretch;filter:drop-shadow(0 24px 60px rgba(0,0,0,.6));width:100%;max-width:min(1100px,calc(100vw - 40px))}
+.ab-cover{width:20px;background:linear-gradient(to bottom,#2a1f14,#3d2c1a,#2a1f14);flex-shrink:0}
+.ab-cover-l{border-radius:6px 2px 2px 6px;box-shadow:-4px 0 14px rgba(0,0,0,.45),inset -4px 0 8px rgba(0,0,0,.35)}
+.ab-cover-r{border-radius:2px 6px 6px 2px;box-shadow:4px 0 14px rgba(0,0,0,.45),inset 4px 0 8px rgba(0,0,0,.35)}
+.ab-book{position:relative;flex:1;aspect-ratio:16/10;perspective:2400px;transform-style:preserve-3d}
+.ab-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.645,.045,.355,1);will-change:transform}
+.ab-page.ab-flipped{transform:rotateY(-180deg)}
+.ab-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#000;overflow:hidden}
+.ab-face-f{border-radius:2px 12px 12px 2px}
+.ab-face-b{transform:rotateY(180deg);border-radius:12px 2px 2px 12px}
+.ab-full-img{width:100%;height:100%;object-fit:cover;display:block}
+.ab-spine-f{position:absolute;top:0;right:0;bottom:0;width:36px;background:linear-gradient(to left,rgba(0,0,0,.35),transparent);pointer-events:none;z-index:1}
+.ab-spine-b{position:absolute;top:0;left:0;bottom:0;width:36px;background:linear-gradient(to right,rgba(0,0,0,.35),transparent);pointer-events:none;z-index:1}
+.ab-pnum{position:absolute;bottom:14px;right:18px;font-size:11px;font-family:monospace;color:rgba(255,255,255,.9);background:rgba(0,0,0,.55);padding:5px 12px;border-radius:20px;backdrop-filter:blur(6px);letter-spacing:.04em;z-index:2}
+.ab-face-b .ab-pnum{right:auto;left:18px}
+.ab-end{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--sf)}
+.ab-end-icon{font-size:36px;color:var(--ac);opacity:.5}
+.ab-end-text{font-family:var(--fh);font-size:14px;color:var(--sub);letter-spacing:.05em}
+.ab-controls{display:flex;align-items:center;gap:16px}
+.ab-btn{display:flex;align-items:center;gap:6px;padding:10px 22px;border-radius:10px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+.ab-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}
+.ab-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+.ab-dots{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:400px}
+.ab-dot{width:8px;height:8px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0;flex-shrink:0}
+.ab-dot.active{background:var(--ac);transform:scale(1.45)}
+/* ── SERVICES PAGE ── */
+.inner-pg{max-width:1100px;margin:0 auto;padding:48px 60px 80px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.card{background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:24px;transition:.2s}
 .card:hover{border-color:var(--ac);transform:translateY(-2px)}
-.service-icon{font-size:26px;margin-bottom:10px}
-.service-img{height:140px;border-radius:10px;background-size:cover;background-position:center;margin-bottom:14px}
-.service-title{font-family:var(--fh);font-size:15px;font-weight:700;margin-bottom:6px}
-.service-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:10px}
-.service-price{font-family:monospace;font-size:17px;font-weight:700;color:var(--ac)}
+.service-icon{font-size:28px;margin-bottom:12px}
+.service-img{height:150px;border-radius:10px;background-size:cover;background-position:center;margin-bottom:16px}
+.service-title{font-family:var(--fh);font-size:16px;font-weight:700;margin-bottom:8px}
+.service-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:12px}
+.service-price{font-family:monospace;font-size:18px;font-weight:700;color:var(--ac)}
 .project-title{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:6px}
 .project-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:10px}
 .project-link{font-size:12px;font-weight:700;color:var(--ac);font-family:monospace}
@@ -1587,60 +1641,29 @@ a{color:inherit;text-decoration:none}
 .cat-card-price{font-family:monospace;font-size:22px;font-weight:800;color:var(--ac)}
 .cat-book-btn{display:inline-flex;align-items:center;gap:6px;background:var(--ac);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;transition:.2s;white-space:nowrap}
 .cat-book-btn:hover{opacity:.85;transform:translateY(-1px)}
-/* PHOTO ALBUM GALLERY */
-#gallery{scroll-margin-top:80px}
-.ab-stage{display:flex;flex-direction:column;align-items:center;padding:0 0 20px;gap:24px}
-.ab-book-wrap{position:relative;display:flex;align-items:stretch;filter:drop-shadow(0 20px 50px rgba(0,0,0,.5));max-width:min(800px,92vw);width:100%}
-.ab-cover{width:16px;background:linear-gradient(to bottom,#2a1f14,#3d2c1a,#2a1f14);flex-shrink:0}
-.ab-cover-l{border-radius:5px 2px 2px 5px;box-shadow:-3px 0 10px rgba(0,0,0,.4),inset -3px 0 6px rgba(0,0,0,.3)}
-.ab-cover-r{border-radius:2px 5px 5px 2px;box-shadow:3px 0 10px rgba(0,0,0,.4),inset 3px 0 6px rgba(0,0,0,.3)}
-.ab-book{position:relative;flex:1;aspect-ratio:2/1;perspective:2000px;transform-style:preserve-3d;min-height:0}
-.ab-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .75s cubic-bezier(.645,.045,.355,1);will-change:transform}
-.ab-page.ab-flipped{transform:rotateY(-180deg)}
-.ab-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--sf)}
-.ab-face-f{border-radius:2px 10px 10px 2px;overflow:hidden}
-.ab-face-b{transform:rotateY(180deg);border-radius:10px 2px 2px 10px;overflow:hidden}
-.ab-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;width:100%;height:100%;padding:12px;box-sizing:border-box}
-.ab-cell{overflow:hidden;border-radius:5px;background:var(--bg);position:relative}
-.ab-cell img{width:100%;height:100%;object-fit:cover;display:block;transition:.4s ease}
-.ab-cell img:hover{transform:scale(1.06)}
-.ab-cell-empty{background:rgba(255,255,255,.04)}
-.ab-spine-f{position:absolute;top:0;right:0;bottom:0;width:28px;background:linear-gradient(to left,rgba(0,0,0,.2),transparent);pointer-events:none;z-index:1}
-.ab-spine-b{position:absolute;top:0;left:0;bottom:0;width:28px;background:linear-gradient(to right,rgba(0,0,0,.2),transparent);pointer-events:none;z-index:1}
-.ab-pnum{position:absolute;bottom:6px;right:10px;font-size:10px;font-family:monospace;color:rgba(255,255,255,.45);letter-spacing:.05em;z-index:2}
-.ab-face-b .ab-pnum{right:auto;left:10px}
-.ab-end{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--sf)}
-.ab-end-icon{font-size:28px;color:var(--ac);opacity:.5}
-.ab-end-text{font-family:var(--fh);font-size:12px;color:var(--sub);letter-spacing:.05em}
-.ab-controls{display:flex;align-items:center;gap:16px}
-.ab-btn{display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);font-family:var(--fh);font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
-.ab-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}
-.ab-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
-.ab-dots{display:flex;gap:6px;align-items:center}
-.ab-dot{width:7px;height:7px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0}
-.ab-dot.active{background:var(--ac);transform:scale(1.4)}
-@media(max-width:768px){
-  .ab-book-wrap{max-width:96vw}
-  .ab-grid{gap:4px;padding:8px}
-  .ab-btn{padding:7px 12px;font-size:11px}
-}
+/* ── CONTACT PAGE ── */
+.contact-pg{max-width:680px;margin:0 auto;padding:48px 40px 80px}
+.contact-form{display:flex;flex-direction:column;gap:16px;margin-top:32px}
+.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cf-input,.cf-textarea{width:100%;padding:14px 16px;background:var(--sf);border:1.5px solid var(--bd);border-radius:10px;color:var(--tx);font-family:'DM Sans',sans-serif;font-size:14px;transition:.2s;outline:none;resize:none}
+.cf-input:focus,.cf-textarea:focus{border-color:var(--ac)}
+.cf-textarea{min-height:140px}
+.cf-submit{padding:14px 28px;background:var(--ac);color:#fff;border:none;border-radius:10px;font-family:var(--fh);font-size:14px;font-weight:700;cursor:pointer;transition:.2s;align-self:flex-start}
+.cf-submit:hover{opacity:.85;transform:translateY(-1px)}
+.cf-success{display:none;padding:20px;background:rgba(74,222,128,.1);border:1.5px solid rgba(74,222,128,.3);border-radius:12px;color:#4ade80;font-size:14px;text-align:center}
 /* SOCIAL */
-.social-links{display:flex;flex-direction:column;gap:9px;max-width:460px}
+.social-links{display:flex;flex-direction:column;gap:9px;max-width:520px;margin-top:28px}
 .social-link{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;transition:.2s}
 .social-link:hover{border-color:var(--lc,var(--ac));transform:translateX(4px)}
 .si{width:34px;height:34px;border-radius:8px;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .sa{color:var(--sub);margin-left:auto;transition:.2s}
 .social-link:hover .sa{color:var(--lc,var(--ac));transform:translateX(3px)}
-/* CONTACT */
-.contact-wrap{background:linear-gradient(135deg,rgba(255,255,255,.025),transparent);border:1.5px solid var(--bd);border-radius:20px;padding:56px;text-align:center;margin:0 60px 72px}
-.contact-ttl{font-family:var(--fh);font-size:clamp(26px,4vw,46px);font-weight:800;letter-spacing:-1px;margin-bottom:10px}
-.contact-sub{font-size:14px;color:var(--sub);margin-bottom:28px;max-width:460px;margin-left:auto;margin-right:auto}
 /* FOOTER */
-footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.site-footer{border-top:1px solid var(--bd);padding:24px 60px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;flex-shrink:0}
 .fl{display:flex;gap:18px;font-size:12px;color:var(--sub)}
-.fl a:hover{color:var(--ac)}
+.fl a{cursor:pointer}.fl a:hover{color:var(--ac)}
 /* MODALS */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
 .mo.show{display:flex}
 .mb{background:var(--sf);border:1px solid var(--bd);border-radius:16px;max-width:660px;width:100%;max-height:80vh;overflow-y:auto;padding:32px}
 .mb h2{font-family:var(--fh);font-size:20px;font-weight:800;margin-bottom:16px}
@@ -1650,144 +1673,173 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .55s ease both}
 .d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.32s}
-@media(max-width:768px){
-  .hero-c,.sec,.contact-wrap{padding:80px 20px 56px}
-  .contact-wrap{margin:0 20px 56px}
+@keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pg.active{animation:pgIn .3s ease both}
+/* MOBILE NAV DRAWER */
+.mnav{position:fixed;inset:0;z-index:300;pointer-events:none}
+.mnav-bd{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:.25s;backdrop-filter:blur(4px)}
+.mnav-dr{position:absolute;top:0;right:0;bottom:0;width:240px;background:var(--sf);border-left:1px solid var(--bd);padding:20px 16px;display:flex;flex-direction:column;gap:4px;transform:translateX(100%);transition:.25s cubic-bezier(.4,0,.2,1)}
+.mnav-x{align-self:flex-end;font-size:18px;color:var(--sub);cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid var(--bd);margin-bottom:10px}
+.mnav-lk{padding:12px 14px;font-size:14px;font-weight:600;font-family:var(--fh);color:var(--sub);border-radius:9px;cursor:pointer;transition:.15s}
+.mnav-lk:hover,.mnav-lk.active{color:var(--ac);background:rgba(255,255,255,.05)}
+.mnav-cta{margin-top:12px;padding:13px;background:var(--ac);color:#fff;border-radius:9px;font-family:var(--fh);font-weight:700;text-align:center;font-size:13px;cursor:pointer}
+.mnav.open .mnav-bd{opacity:1;pointer-events:all}
+.mnav.open .mnav-dr{transform:translateX(0);pointer-events:all}
+@media(max-width:900px){
   .nav-links{display:none}
-  footer{padding:20px}
+  .nav-ham{display:flex}
+  .hero-c{padding:60px 20px 40px}
+  .about-body{padding:32px 20px 60px}
+  .inner-pg{padding:32px 20px 60px}
+  .gal-pg{padding:24px 16px 60px}
+  .contact-pg{padding:32px 20px 60px}
+  .site-footer{padding:20px}
+  .cf-row{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
+<!-- NAV -->
 <nav class="nav">
-  <div class="nav-brand">${esc(pf.name)}</div>
+  <div class="nav-brand" onclick="showPg('pg-home')">${esc(pf.name)}</div>
   <div class="nav-links">
-    <a href="#about">About</a>
-    <a href="#services">Services</a>
-    ${pf.projects?.length ? `<a href="#work">Work</a>` : ""}
-    <a href="#gallery">Gallery</a>
-    <a href="#connect">Connect</a>
+    <span class="nav-link active" onclick="showPg('pg-home')">About</span>
+    <span class="nav-link" onclick="showPg('pg-gallery')">Gallery</span>
+    ${pf.services?.length || catalogueHTML ? `<span class="nav-link" onclick="showPg('pg-services')">Services</span>` : ""}
+    <span class="nav-link" onclick="showPg('pg-connect')">Connect</span>
+    <span class="nav-link" onclick="showPg('pg-contact')">Contact</span>
   </div>
-  <a class="nav-cta" href="#contact">${esc(pf.ai_cta || "Work With Me")}</a>
+  <span class="nav-cta" onclick="showPg('pg-contact')">${esc(pf.ai_cta || "Work With Me")}</span>
+  <div class="nav-ham" onclick="openMnav()"><span></span><span></span><span></span></div>
 </nav>
 
-<section class="hero" id="home">
-  <div id="heroBg"></div>
-  <div class="hero-ov"></div>
-  <div class="hero-c">
-    <div class="eyebrow fu">${esc(pf.niche)}</div>
-    <div class="tagline fu d1">${esc(pf.ai_tagline || "")}</div>
-    <h1 class="headline fu d2">${esc(pf.ai_headline || pf.name)}</h1>
-    <p class="hero-bio fu d3">${esc(pf.ai_bio || pf.bio || "")}</p>
-    <div class="hero-btns fu d4">
-      <a class="btn btn-p" href="#contact">${esc(pf.ai_cta || "Work With Me")} →</a>
-      <a class="btn btn-s" href="#services">See My Services</a>
-    </div>
+<!-- MOBILE NAV -->
+<div class="mnav" id="mnavOverlay">
+  <div class="mnav-bd" onclick="closeMnav()"></div>
+  <div class="mnav-dr">
+    <div class="mnav-x" onclick="closeMnav()">✕</div>
+    <div class="mnav-lk active" onclick="showPg('pg-home');closeMnav()">About</div>
+    <div class="mnav-lk" onclick="showPg('pg-gallery');closeMnav()">Gallery</div>
+    ${pf.services?.length || catalogueHTML ? `<div class="mnav-lk" onclick="showPg('pg-services');closeMnav()">Services</div>` : ""}
+    <div class="mnav-lk" onclick="showPg('pg-connect');closeMnav()">Connect</div>
+    <div class="mnav-lk" onclick="showPg('pg-contact');closeMnav()">Contact</div>
+    <div class="mnav-cta" onclick="showPg('pg-contact');closeMnav()">${esc(pf.ai_cta || "Work With Me")}</div>
   </div>
-</section>
-
-<section class="sec" id="about">
-  ${statsHTML}
-  <div class="sec-lbl">About</div>
-  <div class="sec-ttl">${esc(pf.name)}</div>
-  <p style="font-size:15px;color:var(--sub);max-width:660px;line-height:1.85">${esc(pf.ai_bio || pf.bio || "")}</p>
-</section>
-
-${pf.services?.length ? `
-<section class="sec" id="services">
-  <div class="sec-lbl">What I Offer</div>
-  <div class="sec-ttl">Services &amp; Rates</div>
-  <div class="grid">${servicesHTML}</div>
-</section>` : ""}
-
-${catalogueHTML ? `
-<section class="sec" id="catalogue">
-  <div class="sec-lbl">Ready to Book</div>
-  <div class="sec-ttl">Book &amp; Pay</div>
-  <p style="opacity:.7;font-size:14px;margin-bottom:24px">Select a package below and pay securely via Stripe.</p>
-  <div class="catalogue-grid">${catalogueHTML}</div>
-</section>` : ""}
-
-${pf.projects?.length ? `
-<section class="sec" id="work">
-  <div class="sec-lbl">Portfolio</div>
-  <div class="sec-ttl">Selected Work</div>
-  <div class="grid">${projectsHTML}</div>
-</section>` : ""}
-
-${pf.testimonials?.length ? `
-<section class="sec" id="testimonials">
-  <div class="sec-lbl">Social Proof</div>
-  <div class="sec-ttl">What Brands Say</div>
-  <div class="grid">${testimonialsHTML}</div>
-</section>` : ""}
-
-${(() => {
-  const gImgs = heroImgs.length > 0 ? heroImgs : [];
-  if (!gImgs.length) return '';
-  // Group into spreads of 4
-  const spreads = [];
-  for (let i = 0; i < gImgs.length; i += 4) spreads.push(gImgs.slice(i, i + 4));
-  const total = spreads.length;
-  const pages = spreads.map((sp, pi) => {
-    const cells = (imgs) => [0,1,2,3].map(ci => imgs[ci]
-      ? `<div class="ab-cell"><img src="${esc(imgs[ci])}" alt="Photo ${ci+1}" loading="lazy"/></div>`
-      : `<div class="ab-cell ab-cell-empty"></div>`).join('');
-    const front = `<div class="ab-face ab-face-f"><div class="ab-grid">${cells(sp)}</div><div class="ab-spine-f"></div><div class="ab-pnum">${pi+1} / ${total}</div></div>`;
-    const nextSp = spreads[pi+1];
-    const back = nextSp
-      ? `<div class="ab-face ab-face-b"><div class="ab-grid">${cells(nextSp)}</div><div class="ab-spine-b"></div><div class="ab-pnum">${pi+2} / ${total}</div></div>`
-      : `<div class="ab-face ab-face-b"><div class="ab-end"><div class="ab-end-icon">✦</div><div class="ab-end-text">End of Gallery</div></div></div>`;
-    return `<div class="ab-page" id="abPage${pi}" style="z-index:${total*2-pi}">${front}${back}</div>`;
-  }).join('');
-  const dots = spreads.map((_,i) => `<button class="ab-dot${i===0?' active':''}" onclick="abGoto(${i})" aria-label="Page ${i+1}"></button>`).join('');
-  return `
-<section class="sec" id="gallery">
-  <div class="sec-lbl">Gallery</div>
-  <div class="sec-ttl">My Work</div>
-  <div class="ab-stage">
-    <div class="ab-book-wrap">
-      <div class="ab-cover ab-cover-l"></div>
-      <div class="ab-book" id="abBook">${pages}</div>
-      <div class="ab-cover ab-cover-r"></div>
-    </div>
-    <div class="ab-controls">
-      <button class="ab-btn" id="abBtnPrev" onclick="abStep(-1)" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Prev
-      </button>
-      <div class="ab-dots">${dots}</div>
-      <button class="ab-btn" id="abBtnNext" onclick="abStep(1)">
-        Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-    </div>
-  </div>
-</section>`;
-})()}
-
-<section class="sec" id="connect">
-  <div class="sec-lbl">Find Me</div>
-  <div class="sec-ttl">Follow My Journey</div>
-  <div class="social-links">${socialHTML}</div>
-</section>
-
-<div class="contact-wrap" id="contact">
-  <div class="sec-lbl">Let's Collaborate</div>
-  <div class="contact-ttl">Ready to work together?</div>
-  <p class="contact-sub">I partner with brands that align with my audience's values. Let's create something remarkable.</p>
-  <a class="btn btn-p" href="#" onclick="openContactForm()" style="margin:0 auto">Get In Touch →</a>
 </div>
 
-<footer>
-  <div style="font-family:var(--fh);font-size:14px;font-weight:700">${esc(pf.name)}</div>
-  <div class="fl">
-    <a style="cursor:pointer" onclick="document.getElementById('tm').classList.add('show')">Terms &amp; Conditions</a>
-    <a style="cursor:pointer" onclick="document.getElementById('pm').classList.add('show')">Privacy Policy</a>
-    ${pf.email ? `<a href="mailto:${esc(pf.email)}">Contact</a>` : ""}
+<!-- PAGE: ABOUT/HOME -->
+<div class="pg active" id="pg-home">
+  <div class="hero">
+    <div id="heroBg"></div>
+    <div class="hero-ov"></div>
+    <div class="hero-c">
+      <div class="eyebrow fu">${esc(pf.niche)}</div>
+      <div class="tagline fu d1">${esc(pf.ai_tagline || "")}</div>
+      <h1 class="headline fu d2">${esc(pf.ai_headline || pf.name)}</h1>
+      <p class="hero-bio fu d3">${esc(pf.ai_bio || pf.bio || "")}</p>
+      <div class="hero-btns fu d4">
+        <span class="btn btn-p" onclick="showPg('pg-contact')">${esc(pf.ai_cta || "Work With Me")} →</span>
+        ${pf.services?.length ? `<span class="btn btn-s" onclick="showPg('pg-services')">See My Services</span>` : ""}
+      </div>
+    </div>
   </div>
-  <div style="font-size:11px;color:var(--sub)">Made with <a href="https://impactgridgroup.com" target="_blank" style="color:var(--ac)">ImpactGrid ✦</a></div>
-</footer>
+  <div class="about-body">
+    ${statsHTML}
+    <div class="sec-lbl">About</div>
+    <div class="sec-ttl">${esc(pf.name)}</div>
+    <p style="font-size:15px;color:var(--sub);max-width:660px;line-height:1.85">${esc(pf.ai_bio || pf.bio || "")}</p>
+  </div>
+  <footer class="site-footer">
+    <div style="font-family:var(--fh);font-size:14px;font-weight:700">${esc(pf.name)}</div>
+    <div class="fl">
+      ${pf.ai_terms ? `<a onclick="document.getElementById('tm').classList.add('show')">Terms &amp; Conditions</a>` : ""}
+      ${pf.ai_privacy ? `<a onclick="document.getElementById('pm').classList.add('show')">Privacy Policy</a>` : ""}
+      ${pf.email ? `<a href="mailto:${esc(pf.email)}">Contact</a>` : ""}
+    </div>
+    <div style="font-size:11px;color:var(--sub)">Made with <a href="https://impactgridgroup.com" target="_blank" style="color:var(--ac)">ImpactGrid ✦</a></div>
+  </footer>
+</div>
 
+<!-- PAGE: GALLERY -->
+<div class="pg" id="pg-gallery">
+  <div class="gal-pg">
+    <div class="sec-lbl">Gallery</div>
+    <div class="sec-ttl">My Work</div>
+    ${gImgs.length > 0 ? `
+    <div class="ab-stage">
+      <div class="ab-book-wrap">
+        <div class="ab-cover ab-cover-l"></div>
+        <div class="ab-book" id="abBook">${galleryPagesHTML}</div>
+        <div class="ab-cover ab-cover-r"></div>
+      </div>
+      <div class="ab-controls">
+        <button class="ab-btn" id="abBtnPrev" onclick="abStep(-1)" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Prev
+        </button>
+        <div class="ab-dots">${galleryDotsHTML}</div>
+        <button class="ab-btn" id="abBtnNext" onclick="abStep(1)">
+          Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>` : `<p style="color:var(--sub);font-size:14px">No gallery images yet.</p>`}
+  </div>
+</div>
+
+<!-- PAGE: SERVICES -->
+${pf.services?.length || catalogueHTML ? `
+<div class="pg" id="pg-services">
+  <div class="inner-pg">
+    ${pf.services?.length ? `
+    <div class="sec-lbl">What I Offer</div>
+    <div class="sec-ttl">Services &amp; Rates</div>
+    <div class="grid">${servicesHTML}</div>` : ""}
+    ${catalogueHTML ? `
+    <div class="sec-lbl" style="margin-top:${pf.services?.length ? "56px" : "0"}">Ready to Book</div>
+    <div class="sec-ttl">Book &amp; Pay</div>
+    <p style="opacity:.7;font-size:14px;margin-bottom:24px">Select a package below and pay securely via Stripe.</p>
+    <div class="catalogue-grid">${catalogueHTML}</div>` : ""}
+    ${pf.projects?.length ? `
+    <div class="sec-lbl" style="margin-top:56px">Portfolio</div>
+    <div class="sec-ttl">Selected Work</div>
+    <div class="grid">${projectsHTML}</div>` : ""}
+    ${pf.testimonials?.length ? `
+    <div class="sec-lbl" style="margin-top:56px">Social Proof</div>
+    <div class="sec-ttl">What Brands Say</div>
+    <div class="grid">${testimonialsHTML}</div>` : ""}
+  </div>
+</div>` : ""}
+
+<!-- PAGE: CONNECT -->
+<div class="pg" id="pg-connect">
+  <div class="inner-pg">
+    <div class="sec-lbl">Find Me</div>
+    <div class="sec-ttl">Follow My Journey</div>
+    <div class="social-links">${socialHTML}</div>
+  </div>
+</div>
+
+<!-- PAGE: CONTACT -->
+<div class="pg" id="pg-contact">
+  <div class="contact-pg">
+    <div class="sec-lbl">Let's Collaborate</div>
+    <div class="sec-ttl">Get In Touch</div>
+    <p style="font-size:15px;color:var(--sub);max-width:520px;line-height:1.75">I partner with brands that align with my audience's values. Fill in the form and I'll get back to you shortly.</p>
+    <div class="contact-form" id="contactForm">
+      <div class="cf-row">
+        <input class="cf-input" id="cfName" placeholder="Your name" />
+        <input class="cf-input" id="cfEmail" type="email" placeholder="Your email" />
+      </div>
+      <input class="cf-input" id="cfBrand" placeholder="Brand / Company (optional)" />
+      <textarea class="cf-textarea" id="cfMsg" placeholder="Tell me about your project, campaign or collab idea…"></textarea>
+      <button class="cf-submit" onclick="submitContactForm()">Send Message →</button>
+      <div class="cf-success" id="cfSuccess">✓ Message sent! I'll be in touch soon.</div>
+    </div>
+    ${socialHTML ? `<div style="margin-top:48px"><div class="sec-lbl">Also find me on</div><div class="social-links">${socialHTML}</div></div>` : ""}
+  </div>
+</div>
+
+<!-- LEGAL MODALS -->
 <div class="mo" id="tm" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="mb"><button class="mc" onclick="document.getElementById('tm').classList.remove('show')">✕</button><h2>Terms &amp; Conditions</h2><p>${esc(pf.ai_terms || "No terms have been set.")}</p></div>
 </div>
@@ -1796,20 +1848,95 @@ ${(() => {
 </div>
 
 <script>
+// Hero slideshow
 document.getElementById("heroBg").style.backgroundImage = "url(${heroImg0})";
 ${slideshowScript}
-// Photo album gallery
+
+// ── Page routing ──
+var _curPg = 'pg-home';
+function showPg(id) {
+  var old = document.getElementById(_curPg);
+  var nxt = document.getElementById(id);
+  if (!nxt || id === _curPg) return;
+  if (old) old.classList.remove('active');
+  nxt.classList.add('active');
+  nxt.scrollTop = 0;
+  _curPg = id;
+  document.querySelectorAll('.nav-link,.mnav-lk').forEach(function(el) {
+    var fn = el.getAttribute('onclick') || '';
+    el.classList.toggle('active', fn.indexOf(id) > -1);
+  });
+}
+// Mobile nav
+function openMnav() { document.getElementById('mnavOverlay').classList.add('open'); }
+function closeMnav() { document.getElementById('mnavOverlay').classList.remove('open'); }
+
+// ── Photo album gallery ──
 (function(){
-  var _abIdx=0,_abTotal=${Math.max(1,Math.ceil(((pf.hero_media||[]).map(m=>m.url).filter(Boolean).length||0)/4))},_abBusy=false;
-  function abUI(){document.querySelectorAll(".ab-dot").forEach(function(d,j){d.classList.toggle("active",j===_abIdx)});var p=document.getElementById("abBtnPrev"),n=document.getElementById("abBtnNext");if(p)p.disabled=_abIdx===0;if(n)n.disabled=_abIdx>=_abTotal-1;}
-  window.abGoto=function(t){if(_abBusy||t===_abIdx)return;_abBusy=true;var dir=t>_abIdx?1:-1;function flip(){if(t===_abIdx){setTimeout(function(){_abBusy=false;},50);return;}if(dir>0){var pg=document.getElementById("abPage"+_abIdx);if(pg){pg.classList.add("ab-flipped");pg.style.zIndex=_abTotal-_abIdx;}_abIdx++;}else{_abIdx--;var pg=document.getElementById("abPage"+_abIdx);if(pg){pg.classList.remove("ab-flipped");pg.style.zIndex=_abTotal*2-_abIdx;}}abUI();if(t!==_abIdx)setTimeout(flip,160);else setTimeout(function(){_abBusy=false;},750);}flip();};
-  window.abStep=function(d){window.abGoto(Math.max(0,Math.min(_abIdx+d,_abTotal-1)));};
+  var _abIdx = 0;
+  var _abTotal = ${gTotal};
+  var _abBusy = false;
+  function abUI() {
+    document.querySelectorAll('.ab-dot').forEach(function(d,j){ d.classList.toggle('active', j === _abIdx); });
+    var p = document.getElementById('abBtnPrev'), n = document.getElementById('abBtnNext');
+    if (p) p.disabled = _abIdx === 0;
+    if (n) n.disabled = _abIdx >= _abTotal - 1;
+  }
+  window.abGoto = function(target) {
+    if (_abBusy || target === _abIdx) return;
+    _abBusy = true;
+    var dir = target > _abIdx ? 1 : -1;
+    function flip() {
+      if (target === _abIdx) { setTimeout(function(){ _abBusy = false; }, 50); return; }
+      if (dir > 0) {
+        var pg = document.getElementById('abPage' + _abIdx);
+        if (pg) { pg.classList.add('ab-flipped'); pg.style.zIndex = _abTotal - _abIdx; }
+        _abIdx++;
+      } else {
+        _abIdx--;
+        var pg = document.getElementById('abPage' + _abIdx);
+        if (pg) { pg.classList.remove('ab-flipped'); pg.style.zIndex = _abTotal * 2 - _abIdx; }
+      }
+      abUI();
+      if (target !== _abIdx) setTimeout(flip, 170);
+      else setTimeout(function(){ _abBusy = false; }, 800);
+    }
+    flip();
+  };
+  window.abStep = function(d) { window.abGoto(Math.max(0, Math.min(_abIdx + d, _abTotal - 1))); };
   abUI();
-  var bk=document.getElementById("abBook");
-  if(bk){var tx=0;bk.addEventListener("touchstart",function(e){tx=e.touches[0].clientX;},{passive:true});bk.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)window.abStep(dx<0?1:-1);});}
+  var bk = document.getElementById('abBook');
+  if (bk) {
+    var tx = 0;
+    bk.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+    bk.addEventListener('touchend', function(e){ var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) window.abStep(dx < 0 ? 1 : -1); });
+  }
+  document.addEventListener('keydown', function(e){ if (_curPg === 'pg-gallery'){ if (e.key === 'ArrowLeft') window.abStep(-1); if (e.key === 'ArrowRight') window.abStep(1); }});
 })();
-const _obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add("fu"); }),{threshold:0.1});
-document.querySelectorAll(".sec,.card,.social-link").forEach(el => _obs.observe(el));
+
+// ── Contact form ──
+function submitContactForm() {
+  var name  = document.getElementById('cfName').value.trim();
+  var email = document.getElementById('cfEmail').value.trim();
+  var msg   = document.getElementById('cfMsg').value.trim();
+  if (!name || !email || !msg) { alert('Please fill in your name, email and message.'); return; }
+  var btn = document.querySelector('.cf-submit');
+  if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+  fetch('https://impactgrid-dijo.onrender.com/contact/send', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, email: email, message: msg, creatorEmail: '${esc(pf.email || "")}' })
+  }).then(function(r){ return r.json(); }).then(function(d){
+    var s = document.getElementById('cfSuccess');
+    if (s) s.style.display = 'block';
+    if (btn) btn.style.display = 'none';
+  }).catch(function(){
+    if (btn) { btn.textContent = 'Send Message →'; btn.disabled = false; }
+    alert('Could not send — please try emailing directly.');
+  });
+}
+
+const _obs = new IntersectionObserver(function(e){ e.forEach(function(x){ if(x.isIntersecting) x.target.classList.add('fu'); }); },{threshold:0.1});
+document.querySelectorAll('.card,.social-link,.stat').forEach(function(el){ _obs.observe(el); });
 <\/script>
 </body>
 </html>`;
