@@ -593,30 +593,62 @@ function renderDashGrid() {
 
 const DIJO_SERVER_URL = "https://impactgrid-dijo.onrender.com";
 
-/* Render one editable catalogue item row */
+/* Render one editable catalogue item row — with image upload */
 function addCatalogueItem(item) {
   const list = document.getElementById("catItemsList");
   if (!list) return;
 
+  const uid  = "cimg_" + Math.random().toString(36).slice(2);
+  const imgSrc = item?.image || "";
+
   const row = document.createElement("div");
   row.className = "cat-item-row";
   row.innerHTML = `
+    <div class="cat-item-img-wrap" onclick="document.getElementById('${uid}').click()" title="Upload image">
+      ${imgSrc
+        ? `<img src="${imgSrc}" class="cat-item-img" alt=""/>`
+        : `<div class="cat-item-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Image</span></div>`
+      }
+      <input type="file" id="${uid}" accept="image/*" style="display:none" onchange="catItemImageUpload(this)"/>
+    </div>
     <div class="cat-item-fields">
       <input class="ob-input cat-input" placeholder="Service name (e.g. Sponsored Post)" value="${esc(item?.title || '')}" data-field="title"/>
       <input class="ob-input cat-input" placeholder="Short description" value="${esc(item?.description || '')}" data-field="description"/>
       <div class="cat-price-row">
         <span class="cat-currency">£</span>
-        <input class="ob-input cat-input cat-price" placeholder="Price (e.g. 500)" type="number" min="1" value="${item?.price || ''}" data-field="price"/>
+        <input class="ob-input cat-input cat-price" placeholder="Price" type="number" min="1" value="${item?.price || ''}" data-field="price"/>
       </div>
       ${item?.payment_link
-        ? `<div class="cat-link-status done">✓ Payment link ready</div>
-           <a href="${item.payment_link}" target="_blank" class="cat-link-preview">View link →</a>`
+        ? `<div class="cat-link-generated">
+             <div class="cat-link-status done">✓ Payment link ready</div>
+             <a href="${item.payment_link}" target="_blank" class="cat-link-preview">View link →</a>
+           </div>`
         : `<button class="cat-gen-btn" onclick="generatePaymentLink(this)">⚡ Generate Payment Link</button>`
       }
     </div>
-    <button class="ob-row-del" onclick="this.closest('.cat-item-row').remove()">✕</button>
+    <button class="ob-row-del cat-del-btn" onclick="this.closest('.cat-item-row').remove();updatePreviewLive()">✕</button>
   `;
   list.appendChild(row);
+}
+
+/* Handle image upload for catalogue item */
+function catItemImageUpload(input) {
+  const row = input.closest(".cat-item-row");
+  if (!row || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wrap = row.querySelector(".cat-item-img-wrap");
+    if (!wrap) return;
+    // Replace placeholder with image
+    wrap.querySelector(".cat-item-img-placeholder")?.remove();
+    let img = wrap.querySelector(".cat-item-img");
+    if (!img) { img = document.createElement("img"); img.className = "cat-item-img"; wrap.insertBefore(img, wrap.querySelector("input")); }
+    img.src = e.target.result;
+    // Store on row for collection
+    row.dataset.image = e.target.result;
+    updatePreviewLive();
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 
 /* Collect all catalogue items from the UI */
@@ -628,7 +660,8 @@ function collectCatalogueItems() {
     const price       = row.querySelector('[data-field="price"]')?.value?.trim() || "";
     const linkEl      = row.querySelector(".cat-link-preview");
     const payment_link = linkEl ? linkEl.href : (row.dataset.paymentLink || "");
-    if (title) items.push({ title, description, price, payment_link });
+    const image       = row.dataset.image || row.querySelector(".cat-item-img")?.src || "";
+    if (title) items.push({ title, description, price, payment_link, image });
   });
   return items;
 }
@@ -1122,11 +1155,30 @@ async function callDijoServer(endpoint, body) {
 async function regenSection(section) {
   const pf = psState.activePortfolio;
   if (!pf) return;
+
+  // Map front-end section names to server section names
+  const serverSection = (section === 'terms' || section === 'privacy') ? 'legal' : section;
+  const btnMap = { terms: 'eLegalTerms', privacy: 'eLegalPrivacy', headline: 'ePortHeadline', tagline: 'ePortTagline', bio: 'ePortBio' };
+
+  // Show loading state on the relevant button
+  const btnEl = document.querySelector(`[onclick="regenSection('${section}')"]`);
+  const origText = btnEl ? btnEl.textContent : '';
+  if (btnEl) { btnEl.textContent = '✦ Generating…'; btnEl.disabled = true; }
+
   showToast("✦ Dijo is rewriting…");
   try {
-    const result = await callDijoServer("/portfolio/regen", { section, portfolio: pf });
+    const result = await callDijoServer("/portfolio/regen", { section: serverSection, portfolio: pf });
 
-    if (section === "copy") {
+    if (section === "headline") {
+      pf.ai_headline = result.ai_headline; setValue("ePortHeadline", result.ai_headline);
+    }
+    if (section === "tagline") {
+      pf.ai_tagline = result.ai_tagline; setValue("ePortTagline", result.ai_tagline);
+    }
+    if (section === "bio") {
+      pf.ai_bio = result.ai_bio; setValue("ePortBio", result.ai_bio);
+    }
+    if (serverSection === "copy") {
       pf.ai_headline = result.ai_headline; setValue("ePortHeadline", result.ai_headline);
       pf.ai_tagline  = result.ai_tagline;  setValue("ePortTagline",  result.ai_tagline);
       pf.ai_bio      = result.ai_bio;      setValue("ePortBio",      result.ai_bio);
@@ -1135,9 +1187,25 @@ async function regenSection(section) {
       pf.hero_media = result.hero_media;
       renderHeroMediaStrip(result.hero_media);
     }
-    if (section === "legal") {
-      pf.ai_terms   = result.ai_terms;   setValue("eLegalTerms",   result.ai_terms);
-      pf.ai_privacy = result.ai_privacy; setValue("eLegalPrivacy", result.ai_privacy);
+    if (section === "terms" || serverSection === "legal") {
+      if (result.ai_terms) {
+        pf.ai_terms = result.ai_terms;
+        setValue("eLegalTerms", result.ai_terms);
+      }
+      if (section !== "terms" || result.ai_privacy) {
+        pf.ai_privacy = result.ai_privacy;
+        setValue("eLegalPrivacy", result.ai_privacy);
+      }
+    }
+    if (section === "privacy") {
+      if (result.ai_privacy) {
+        pf.ai_privacy = result.ai_privacy;
+        setValue("eLegalPrivacy", result.ai_privacy);
+      } else if (result.ai_terms) {
+        // Server returns both under legal — take the privacy part
+        pf.ai_privacy = result.ai_terms;
+        setValue("eLegalPrivacy", result.ai_terms);
+      }
     }
     if (section === "services") {
       pf.services = result.services;
@@ -1149,6 +1217,8 @@ async function regenSection(section) {
   } catch (e) {
     showToast("Could not reach Dijo server");
     console.error("[Portfolio] Regen error:", e.message);
+  } finally {
+    if (btnEl) { btnEl.textContent = origText; btnEl.disabled = false; }
   }
 }
 
@@ -1207,9 +1277,17 @@ function updatePreviewLive() {
   // Collect services from live rows
   const services = [];
   document.querySelectorAll("#eServicesEdit .ob-service-row").forEach(row => {
-    const inputs = row.querySelectorAll("input");
-    if (inputs[0]?.value?.trim()) {
-      services.push({ title: inputs[0].value, description: inputs[1]?.value || "", price: inputs[2]?.value || "", icon: inputs[3]?.value || "✦" });
+    const inputs = row.querySelectorAll("input[type=text],input:not([type])");
+    const allInputs = row.querySelectorAll(".svc-row-fields input, input.ob-input.sm");
+    const fields = Array.from(allInputs).filter(i => i.type !== "file");
+    if (fields[0]?.value?.trim()) {
+      services.push({
+        title:       fields[0].value,
+        description: fields[1]?.value || "",
+        price:       fields[2]?.value || "",
+        icon:        fields[3]?.value || "✦",
+        image:       row.dataset.image || row.querySelector(".svc-row-img-el")?.src || ""
+      });
     }
   });
   if (services.length) pf.services = services;
@@ -1246,38 +1324,74 @@ function rebuildServiceRows(services) {
   if (!container) return;
   container.innerHTML = "";
   services.forEach(s => {
+    const uid = "simg_" + Math.random().toString(36).slice(2);
     const row = document.createElement("div");
-    row.className = "ob-service-row";
+    row.className = "ob-service-row svc-row-img";
     row.innerHTML = `
-      <div class="ob-row-header">
-        <span class="ob-row-title">${esc(s.title)}</span>
-        <button class="ob-row-del" onclick="this.closest('.ob-service-row').remove();updatePreviewLive()">✕</button>
+      <div class="svc-img-wrap" onclick="document.getElementById('${uid}').click()" title="Upload image">
+        ${s.image
+          ? `<img src="${s.image}" class="svc-row-img-el" alt=""/>`
+          : `<div class="svc-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`
+        }
+        <input type="file" id="${uid}" accept="image/*" style="display:none" onchange="svcImageUpload(this)"/>
       </div>
-      <input class="ob-input sm" value="${esc(s.title)}"       placeholder="Title"       oninput="updatePreviewLive()"/>
-      <input class="ob-input sm" value="${esc(s.description)}" placeholder="Description" style="margin-top:6px" oninput="updatePreviewLive()"/>
-      <div class="ob-two-inline" style="margin-top:6px">
-        <input class="ob-input sm" value="${esc(s.price)}" placeholder="Price" oninput="updatePreviewLive()"/>
-        <input class="ob-input sm" value="${esc(s.icon||'✦')}" placeholder="Icon"  oninput="updatePreviewLive()"/>
+      <div class="svc-row-fields">
+        <div class="ob-row-header">
+          <span class="ob-row-title">${esc(s.title)}</span>
+          <button class="ob-row-del" onclick="this.closest('.ob-service-row').remove();updatePreviewLive()">✕</button>
+        </div>
+        <input class="ob-input sm" value="${esc(s.title)}"       placeholder="Title"       oninput="updatePreviewLive()"/>
+        <input class="ob-input sm" value="${esc(s.description)}" placeholder="Description" style="margin-top:6px" oninput="updatePreviewLive()"/>
+        <div class="ob-two-inline" style="margin-top:6px">
+          <input class="ob-input sm" value="${esc(s.price)}" placeholder="Price" oninput="updatePreviewLive()"/>
+          <input class="ob-input sm" value="${esc(s.icon||'✦')}" placeholder="Icon"  oninput="updatePreviewLive()"/>
+        </div>
       </div>`;
+    if (s.image) row.dataset.image = s.image;
     container.appendChild(row);
   });
+}
+
+/* Handle image upload for a service row */
+function svcImageUpload(input) {
+  const row = input.closest(".ob-service-row");
+  if (!row || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wrap = row.querySelector(".svc-img-wrap");
+    if (!wrap) return;
+    wrap.querySelector(".svc-img-placeholder")?.remove();
+    let img = wrap.querySelector(".svc-row-img-el");
+    if (!img) { img = document.createElement("img"); img.className = "svc-row-img-el"; wrap.insertBefore(img, wrap.querySelector("input")); }
+    img.src = e.target.result;
+    row.dataset.image = e.target.result;
+    updatePreviewLive();
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 
 function addEditServiceRow() {
   const container = document.getElementById("eServicesEdit");
   if (!container) return;
+  const uid = "simg_" + Math.random().toString(36).slice(2);
   const row = document.createElement("div");
-  row.className = "ob-service-row";
+  row.className = "ob-service-row svc-row-img";
   row.innerHTML = `
-    <div class="ob-row-header">
-      <span class="ob-row-title">New Service</span>
-      <button class="ob-row-del" onclick="this.closest('.ob-service-row').remove();updatePreviewLive()">✕</button>
+    <div class="svc-img-wrap" onclick="document.getElementById('${uid}').click()" title="Upload image">
+      <div class="svc-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+      <input type="file" id="${uid}" accept="image/*" style="display:none" onchange="svcImageUpload(this)"/>
     </div>
-    <input class="ob-input sm" placeholder="Title"       oninput="updatePreviewLive()"/>
-    <input class="ob-input sm" placeholder="Description" style="margin-top:6px" oninput="updatePreviewLive()"/>
-    <div class="ob-two-inline" style="margin-top:6px">
-      <input class="ob-input sm" placeholder="Price" oninput="updatePreviewLive()"/>
-      <input class="ob-input sm" placeholder="Icon"  oninput="updatePreviewLive()"/>
+    <div class="svc-row-fields">
+      <div class="ob-row-header">
+        <span class="ob-row-title">New Service</span>
+        <button class="ob-row-del" onclick="this.closest('.ob-service-row').remove();updatePreviewLive()">✕</button>
+      </div>
+      <input class="ob-input sm" placeholder="Title"       oninput="updatePreviewLive()"/>
+      <input class="ob-input sm" placeholder="Description" style="margin-top:6px" oninput="updatePreviewLive()"/>
+      <div class="ob-two-inline" style="margin-top:6px">
+        <input class="ob-input sm" placeholder="Price" oninput="updatePreviewLive()"/>
+        <input class="ob-input sm" placeholder="Icon"  oninput="updatePreviewLive()"/>
+      </div>
     </div>`;
   container.appendChild(row);
 }
@@ -1333,17 +1447,22 @@ function buildPortfolioHTML(pf) {
   /* ── Catalogue section (bookable items with payment links) ── */
   const catalogueHTML = (pf.catalogue || []).filter(c => c.title && c.payment_link).map(c => `
     <div class="cat-card">
-      <div class="cat-card-info">
-        <div class="cat-card-title">${esc(c.title)}</div>
-        ${c.description ? `<div class="cat-card-desc">${esc(c.description)}</div>` : ""}
-        ${c.price ? `<div class="cat-card-price">£${esc(String(c.price))}</div>` : ""}
+      ${c.image ? `<div class="cat-card-img" style="background-image:url(${esc(c.image)})"></div>` : ""}
+      <div class="cat-card-body">
+        <div class="cat-card-info">
+          <div class="cat-card-title">${esc(c.title)}</div>
+          ${c.description ? `<div class="cat-card-desc">${esc(c.description)}</div>` : ""}
+        </div>
+        <div class="cat-card-foot">
+          ${c.price ? `<div class="cat-card-price">£${esc(String(c.price))}</div>` : ""}
+          <a href="${esc(c.payment_link)}" target="_blank" class="cat-book-btn">Book &amp; Pay →</a>
+        </div>
       </div>
-      <a href="${esc(c.payment_link)}" target="_blank" class="cat-book-btn">Book &amp; Pay →</a>
     </div>`).join("");
 
   const servicesHTML = (pf.services || []).map(s => `
     <div class="card service-card">
-      <div class="service-icon">${esc(s.icon || "✦")}</div>
+      ${s.image ? `<div class="service-img" style="background-image:url(${esc(s.image)})"></div>` : `<div class="service-icon">${esc(s.icon || "✦")}</div>`}
       <div class="service-title">${esc(s.title)}</div>
       <div class="service-desc">${esc(s.description)}</div>
       ${s.price ? `<div class="service-price">${esc(s.price)}</div>` : ""}
@@ -1428,6 +1547,7 @@ a{color:inherit;text-decoration:none}
 .card{background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:22px;transition:.2s}
 .card:hover{border-color:var(--ac);transform:translateY(-2px)}
 .service-icon{font-size:26px;margin-bottom:10px}
+.service-img{height:140px;border-radius:10px;background-size:cover;background-position:center;margin-bottom:14px}
 .service-title{font-family:var(--fh);font-size:15px;font-weight:700;margin-bottom:6px}
 .service-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:10px}
 .service-price{font-family:monospace;font-size:17px;font-weight:700;color:var(--ac)}
@@ -1436,6 +1556,19 @@ a{color:inherit;text-decoration:none}
 .project-link{font-size:12px;font-weight:700;color:var(--ac);font-family:monospace}
 .testimonial-quote{font-size:14px;line-height:1.75;color:var(--tx);margin-bottom:14px;font-style:italic}
 .testimonial-author{font-size:11px;color:var(--ac);font-family:monospace;font-weight:700;letter-spacing:.5px}
+/* CATALOGUE */
+.catalogue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.cat-card{background:var(--sf);border:1.5px solid var(--bd);border-radius:16px;overflow:hidden;transition:.2s}
+.cat-card:hover{border-color:var(--ac);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.cat-card-img{height:180px;background-size:cover;background-position:center}
+.cat-card-body{padding:20px}
+.cat-card-info{margin-bottom:16px}
+.cat-card-title{font-family:var(--fh);font-size:16px;font-weight:700;margin-bottom:6px}
+.cat-card-desc{font-size:13px;color:var(--sub);line-height:1.6}
+.cat-card-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cat-card-price{font-family:monospace;font-size:22px;font-weight:800;color:var(--ac)}
+.cat-book-btn{display:inline-flex;align-items:center;gap:6px;background:var(--ac);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;transition:.2s;white-space:nowrap}
+.cat-book-btn:hover{opacity:.85;transform:translateY(-1px)}
 /* SOCIAL */
 .social-links{display:flex;flex-direction:column;gap:9px;max-width:460px}
 .social-link{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;transition:.2s}
