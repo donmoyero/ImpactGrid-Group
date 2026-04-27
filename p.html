@@ -208,14 +208,35 @@ function renderPortfolio(pf) {
       (pf.monthly_views   ? '<div class="stat"><div class="sv">' + esc(pf.monthly_views)   + '</div><div class="sl">MONTHLY VIEWS</div></div>' : '') +
     '</div>' : '';
 
-  var slideshowScript = heroImgs.length > 1 ?
-    'var _slides=' + JSON.stringify(heroImgs) + ';' +
-    'var _si=0;var _heroBg=document.getElementById("heroBg");' +
-    'setInterval(function(){' +
-      '_si=(_si+1)%_slides.length;' +
-      '_heroBg.style.opacity="0";' +
-      'setTimeout(function(){_heroBg.style.backgroundImage="url("+_slides[_si]+")";_heroBg.style.opacity="1";},600);' +
-    '},5000);' : '';
+  // Build notebook-style swipeable gallery HTML
+  var galleryHTML = '';
+  if (heroImgs.length > 1) {
+    var dots = heroImgs.map(function(_,i){ return '<button class="ng-dot' + (i===0?' active':'') + '" onclick="ngGoto('+i+')"></button>'; }).join('');
+    var slides = heroImgs.map(function(url,i){ return '<div class="ng-slide"><img src="'+url+'" alt="Gallery image '+(i+1)+'" loading="lazy"/></div>'; }).join('');
+    galleryHTML = '<div class="notebook-gallery" id="notebookGallery">' +
+      '<div class="ng-track" id="ngTrack">' + slides + '</div>' +
+      '<button class="ng-arrow ng-prev" onclick="ngStep(-1)">&#8249;</button>' +
+      '<button class="ng-arrow ng-next" onclick="ngStep(1)">&#8250;</button>' +
+      '<div class="ng-dots">' + dots + '</div>' +
+      '<div class="ng-counter" id="ngCounter">1 / ' + heroImgs.length + '</div>' +
+    '</div>';
+  }
+
+  var galleryScript = heroImgs.length > 1 ? (
+    'var _ngIdx=0,_ngTotal=' + heroImgs.length + ';' +
+    'var _ngTrack=document.getElementById("ngTrack");' +
+    'var _ngDots=document.querySelectorAll(".ng-dot");' +
+    'function ngGoto(i){_ngIdx=Math.max(0,Math.min(i,_ngTotal-1));_ngTrack.style.transform="translateX(-"+(_ngIdx*100)+"%)";_ngDots.forEach(function(d,j){d.classList.toggle("active",j===_ngIdx)});document.getElementById("ngCounter").textContent=(_ngIdx+1)+" / "+_ngTotal;}' +
+    'function ngStep(d){ngGoto(_ngIdx+d);}' +
+    // Touch/swipe support
+    'var _ngTx=0;' +
+    '_ngTrack.addEventListener("touchstart",function(e){_ngTx=e.touches[0].clientX;},{passive:true});' +
+    '_ngTrack.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-_ngTx;if(Math.abs(dx)>40)ngStep(dx<0?1:-1);});' +
+    // Keyboard support
+    'document.addEventListener("keydown",function(e){if(e.key==="ArrowLeft")ngStep(-1);if(e.key==="ArrowRight")ngStep(1);});'
+  ) : '';
+
+  var slideshowScript = galleryScript;
 
   // ── Inject full page ──
   document.open();
@@ -296,7 +317,7 @@ function renderPortfolio(pf) {
     '@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}' +
     '.fu{animation:fadeUp .55s ease both}' +
     '.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.32s}' +
-    '@media(max-width:768px){.hero-c,.sec,.contact-wrap{padding:80px 20px 56px}.contact-wrap{margin:0 20px 56px}.nav-links{display:none}footer{padding:20px}}' +
+    '.notebook-gallery{position:relative;width:100%;overflow:hidden;border-radius:16px;background:var(--sf);border:1.5px solid var(--bd);margin-top:24px;user-select:none}' + '.ng-track{display:flex;transition:transform .35s cubic-bezier(.4,0,.2,1)}' + '.ng-slide{flex:0 0 100%;min-width:100%;aspect-ratio:16/9;overflow:hidden}' + '.ng-slide img{width:100%;height:100%;object-fit:cover;display:block}' + '.ng-arrow{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:.15s;line-height:1}' + '.ng-arrow:hover{background:rgba(0,0,0,.8)}' + '.ng-prev{left:10px}.ng-next{right:10px}' + '.ng-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:2}' + '.ng-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.35);border:none;cursor:pointer;transition:.2s;padding:0}' + '.ng-dot.active{background:#fff;width:18px;border-radius:3px}' + '.ng-counter{position:absolute;top:10px;right:12px;font-size:10px;font-family:monospace;color:rgba(255,255,255,.7);background:rgba(0,0,0,.4);padding:3px 8px;border-radius:20px;z-index:2}' + '@media(max-width:768px){.hero-c,.sec,.contact-wrap{padding:80px 20px 56px}.contact-wrap{margin:0 20px 56px}.nav-links{display:none}footer{padding:20px}.ng-arrow{width:30px;height:30px;font-size:18px}}' +
     '</style></head><body>' +
 
     '<nav class="nav">' +
@@ -322,6 +343,7 @@ function renderPortfolio(pf) {
           '<a class="btn btn-p" href="#contact">' + esc(pf.ai_cta || 'Work With Me') + ' →</a>' +
           '<a class="btn btn-s" href="#services">See My Services</a>' +
         '</div>' +
+        galleryHTML +
       '</div>' +
     '</section>' +
 
@@ -390,7 +412,7 @@ function renderPortfolio(pf) {
 
     '<script>' +
     'document.getElementById("heroBg").style.backgroundImage="url(' + heroImg0 + ')";' +
-    slideshowScript +
+    galleryScript +
     'var _obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add("fu")});},{threshold:0.1});' +
     'document.querySelectorAll(".sec,.card,.social-link").forEach(function(el){_obs.observe(el)});' +
     '<\/script>' +
