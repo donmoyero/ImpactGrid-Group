@@ -510,54 +510,69 @@ input, textarea, select { font-family: inherit; color: var(--text); outline: non
   .ob-grid{grid-template-columns:1fr}
   .ob-theme-grid{grid-template-columns:repeat(2,1fr)}
 
-  /* Builder mobile: full-screen toggle */
+  /* MOBILE BUILDER: preview top, editor bottom sheet */
   .builder-shell{
     display:flex;
     flex-direction:column;
     height:calc(100vh - var(--nav-h));
     overflow:hidden;
+    position:relative;
   }
-  .builder-mobile-bar{display:block}
-
-  /* Icon rail hidden on mobile */
   .bl-rail{display:none}
 
-  /* Edit panel: slide in from left */
-  .builder-left{
-    position:absolute;inset:0;z-index:10;
-    background:var(--surface);
-    transform:translateX(-100%);
-    transition:transform .25s ease;
-    flex-direction:column;overflow:hidden;
-    display:flex;
-  }
-  .builder-left.mob-open{transform:translateX(0)}
-
-  /* Show mobile top bar, hide desktop footer save/publish */
-  .mob-panel-topbar{display:flex}
-  .bl-footer{display:none}
-
-  /* Remove the desktop back-btn row — topbar handles navigation */
-  .bl-header-row{display:none}
-
-  /* Mobile panel header */
-  .bl-panel-header{
-    padding:8px 12px 6px;
-  }
-
-  /* Center preview takes full height */
+  /* Preview always visible in top 45% */
   .builder-center{
-    flex:1;overflow:hidden;display:flex;flex-direction:column;
+    flex:0 0 45%;
+    min-height:0;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    border-bottom:2px solid var(--border);
   }
-
-  /* Shrink iframe to fit mobile viewport */
-  .preview-frame iframe{height:calc(100vh - var(--nav-h) - 100px);min-height:400px}
-  .preview-frame.mobile iframe{height:calc(100vh - var(--nav-h) - 100px);min-height:400px}
-
+  .preview-toolbar{padding:6px 10px}
+  .preview-device-btns{display:none}
   .preview-url-pill{display:none}
-  .preview-wrap{padding:10px}
-  .preview-frame.desktop{max-width:100%}
-  .preview-frame.mobile{width:min(340px, 90vw)}
+  .preview-wrap{padding:0;flex:1;overflow:hidden}
+  .preview-frame{border-radius:0;box-shadow:none;width:100% !important;max-width:100% !important;height:100%}
+  .preview-frame iframe{width:100%;height:100%;min-height:0;border:none;display:block}
+
+  /* Editor: bottom sheet, takes rest of screen */
+  .builder-left{
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:var(--surface);
+    position:relative;
+  }
+  .builder-left::before{
+    content:;display:block;width:36px;height:4px;
+    background:var(--border);border-radius:2px;
+    margin:8px auto 2px;flex-shrink:0;
+  }
+  .builder-left.mob-expanded{
+    position:absolute;bottom:0;left:0;right:0;
+    height:88%;z-index:20;
+    border-radius:16px 16px 0 0;
+    box-shadow:0 -8px 40px rgba(0,0,0,.4);
+    background:var(--surface);
+  }
+  .bl-mob-tabs{display:flex}
+  .bl-mob-preview-btn{display:inline-flex;align-items:center}
+  .bl-panel-title{font-size:13px}
+  .bl-panel-header{padding:4px 12px 6px}
+  .bl-panel-header .ps-back-btn{margin-bottom:0}
+  .mob-panel-topbar{display:flex}
+  .bl-footer{display:flex;padding:10px 12px}
+  .bl-header-row{display:none}
+  .builder-mobile-bar{display:none}
+  .mob-expand-btn{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:10px;font-weight:700;color:var(--text3);
+    padding:4px 8px;border:1px solid var(--border);
+    border-radius:6px;background:var(--surface2);
+  }
 }
 
 @media(max-width:480px){
