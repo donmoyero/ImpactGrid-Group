@@ -1587,6 +1587,43 @@ a{color:inherit;text-decoration:none}
 .cat-card-price{font-family:monospace;font-size:22px;font-weight:800;color:var(--ac)}
 .cat-book-btn{display:inline-flex;align-items:center;gap:6px;background:var(--ac);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;transition:.2s;white-space:nowrap}
 .cat-book-btn:hover{opacity:.85;transform:translateY(-1px)}
+/* PHOTO ALBUM GALLERY */
+#gallery{scroll-margin-top:80px}
+.ab-stage{display:flex;flex-direction:column;align-items:center;padding:0 0 20px;gap:24px}
+.ab-book-wrap{position:relative;display:flex;align-items:stretch;filter:drop-shadow(0 20px 50px rgba(0,0,0,.5));max-width:min(800px,92vw);width:100%}
+.ab-cover{width:16px;background:linear-gradient(to bottom,#2a1f14,#3d2c1a,#2a1f14);flex-shrink:0}
+.ab-cover-l{border-radius:5px 2px 2px 5px;box-shadow:-3px 0 10px rgba(0,0,0,.4),inset -3px 0 6px rgba(0,0,0,.3)}
+.ab-cover-r{border-radius:2px 5px 5px 2px;box-shadow:3px 0 10px rgba(0,0,0,.4),inset 3px 0 6px rgba(0,0,0,.3)}
+.ab-book{position:relative;flex:1;aspect-ratio:2/1;perspective:2000px;transform-style:preserve-3d;min-height:0}
+.ab-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .75s cubic-bezier(.645,.045,.355,1);will-change:transform}
+.ab-page.ab-flipped{transform:rotateY(-180deg)}
+.ab-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--sf)}
+.ab-face-f{border-radius:2px 10px 10px 2px;overflow:hidden}
+.ab-face-b{transform:rotateY(180deg);border-radius:10px 2px 2px 10px;overflow:hidden}
+.ab-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;width:100%;height:100%;padding:12px;box-sizing:border-box}
+.ab-cell{overflow:hidden;border-radius:5px;background:var(--bg);position:relative}
+.ab-cell img{width:100%;height:100%;object-fit:cover;display:block;transition:.4s ease}
+.ab-cell img:hover{transform:scale(1.06)}
+.ab-cell-empty{background:rgba(255,255,255,.04)}
+.ab-spine-f{position:absolute;top:0;right:0;bottom:0;width:28px;background:linear-gradient(to left,rgba(0,0,0,.2),transparent);pointer-events:none;z-index:1}
+.ab-spine-b{position:absolute;top:0;left:0;bottom:0;width:28px;background:linear-gradient(to right,rgba(0,0,0,.2),transparent);pointer-events:none;z-index:1}
+.ab-pnum{position:absolute;bottom:6px;right:10px;font-size:10px;font-family:monospace;color:rgba(255,255,255,.45);letter-spacing:.05em;z-index:2}
+.ab-face-b .ab-pnum{right:auto;left:10px}
+.ab-end{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--sf)}
+.ab-end-icon{font-size:28px;color:var(--ac);opacity:.5}
+.ab-end-text{font-family:var(--fh);font-size:12px;color:var(--sub);letter-spacing:.05em}
+.ab-controls{display:flex;align-items:center;gap:16px}
+.ab-btn{display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);font-family:var(--fh);font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.ab-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}
+.ab-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+.ab-dots{display:flex;gap:6px;align-items:center}
+.ab-dot{width:7px;height:7px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0}
+.ab-dot.active{background:var(--ac);transform:scale(1.4)}
+@media(max-width:768px){
+  .ab-book-wrap{max-width:96vw}
+  .ab-grid{gap:4px;padding:8px}
+  .ab-btn{padding:7px 12px;font-size:11px}
+}
 /* SOCIAL */
 .social-links{display:flex;flex-direction:column;gap:9px;max-width:460px}
 .social-link{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;transition:.2s}
@@ -1629,6 +1666,7 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
     <a href="#about">About</a>
     <a href="#services">Services</a>
     ${pf.projects?.length ? `<a href="#work">Work</a>` : ""}
+    <a href="#gallery">Gallery</a>
     <a href="#connect">Connect</a>
   </div>
   <a class="nav-cta" href="#contact">${esc(pf.ai_cta || "Work With Me")}</a>
@@ -1685,6 +1723,48 @@ ${pf.testimonials?.length ? `
   <div class="grid">${testimonialsHTML}</div>
 </section>` : ""}
 
+${(() => {
+  const gImgs = heroImgs.length > 0 ? heroImgs : [];
+  if (!gImgs.length) return '';
+  // Group into spreads of 4
+  const spreads = [];
+  for (let i = 0; i < gImgs.length; i += 4) spreads.push(gImgs.slice(i, i + 4));
+  const total = spreads.length;
+  const pages = spreads.map((sp, pi) => {
+    const cells = (imgs) => [0,1,2,3].map(ci => imgs[ci]
+      ? `<div class="ab-cell"><img src="${esc(imgs[ci])}" alt="Photo ${ci+1}" loading="lazy"/></div>`
+      : `<div class="ab-cell ab-cell-empty"></div>`).join('');
+    const front = `<div class="ab-face ab-face-f"><div class="ab-grid">${cells(sp)}</div><div class="ab-spine-f"></div><div class="ab-pnum">${pi+1} / ${total}</div></div>`;
+    const nextSp = spreads[pi+1];
+    const back = nextSp
+      ? `<div class="ab-face ab-face-b"><div class="ab-grid">${cells(nextSp)}</div><div class="ab-spine-b"></div><div class="ab-pnum">${pi+2} / ${total}</div></div>`
+      : `<div class="ab-face ab-face-b"><div class="ab-end"><div class="ab-end-icon">✦</div><div class="ab-end-text">End of Gallery</div></div></div>`;
+    return `<div class="ab-page" id="abPage${pi}" style="z-index:${total*2-pi}">${front}${back}</div>`;
+  }).join('');
+  const dots = spreads.map((_,i) => `<button class="ab-dot${i===0?' active':''}" onclick="abGoto(${i})" aria-label="Page ${i+1}"></button>`).join('');
+  return `
+<section class="sec" id="gallery">
+  <div class="sec-lbl">Gallery</div>
+  <div class="sec-ttl">My Work</div>
+  <div class="ab-stage">
+    <div class="ab-book-wrap">
+      <div class="ab-cover ab-cover-l"></div>
+      <div class="ab-book" id="abBook">${pages}</div>
+      <div class="ab-cover ab-cover-r"></div>
+    </div>
+    <div class="ab-controls">
+      <button class="ab-btn" id="abBtnPrev" onclick="abStep(-1)" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Prev
+      </button>
+      <div class="ab-dots">${dots}</div>
+      <button class="ab-btn" id="abBtnNext" onclick="abStep(1)">
+        Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+</section>`;
+})()}
+
 <section class="sec" id="connect">
   <div class="sec-lbl">Find Me</div>
   <div class="sec-ttl">Follow My Journey</div>
@@ -1718,6 +1798,16 @@ ${pf.testimonials?.length ? `
 <script>
 document.getElementById("heroBg").style.backgroundImage = "url(${heroImg0})";
 ${slideshowScript}
+// Photo album gallery
+(function(){
+  var _abIdx=0,_abTotal=${Math.max(1,Math.ceil(((pf.hero_media||[]).map(m=>m.url).filter(Boolean).length||0)/4))},_abBusy=false;
+  function abUI(){document.querySelectorAll(".ab-dot").forEach(function(d,j){d.classList.toggle("active",j===_abIdx)});var p=document.getElementById("abBtnPrev"),n=document.getElementById("abBtnNext");if(p)p.disabled=_abIdx===0;if(n)n.disabled=_abIdx>=_abTotal-1;}
+  window.abGoto=function(t){if(_abBusy||t===_abIdx)return;_abBusy=true;var dir=t>_abIdx?1:-1;function flip(){if(t===_abIdx){setTimeout(function(){_abBusy=false;},50);return;}if(dir>0){var pg=document.getElementById("abPage"+_abIdx);if(pg){pg.classList.add("ab-flipped");pg.style.zIndex=_abTotal-_abIdx;}_abIdx++;}else{_abIdx--;var pg=document.getElementById("abPage"+_abIdx);if(pg){pg.classList.remove("ab-flipped");pg.style.zIndex=_abTotal*2-_abIdx;}}abUI();if(t!==_abIdx)setTimeout(flip,160);else setTimeout(function(){_abBusy=false;},750);}flip();};
+  window.abStep=function(d){window.abGoto(Math.max(0,Math.min(_abIdx+d,_abTotal-1)));};
+  abUI();
+  var bk=document.getElementById("abBook");
+  if(bk){var tx=0;bk.addEventListener("touchstart",function(e){tx=e.touches[0].clientX;},{passive:true});bk.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)window.abStep(dx<0?1:-1);});}
+})();
 const _obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add("fu"); }),{threshold:0.1});
 document.querySelectorAll(".sec,.card,.social-link").forEach(el => _obs.observe(el));
 <\/script>
