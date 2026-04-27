@@ -583,6 +583,182 @@ function renderDashGrid() {
   psMarkExpiredPortfolios();
 }
 
+
+/* ══════════════════════════════════════════════════════════
+   CATALOGUE — Stripe Payment Links
+   Creators add bookable items with prices.
+   Each item gets a real Stripe Payment Link generated
+   via the Render server. ImpactGrid takes 5% per booking.
+══════════════════════════════════════════════════════════ */
+
+const DIJO_SERVER_URL = "https://impactgrid-dijo.onrender.com";
+
+/* Render one editable catalogue item row */
+function addCatalogueItem(item) {
+  const list = document.getElementById("catItemsList");
+  if (!list) return;
+
+  const row = document.createElement("div");
+  row.className = "cat-item-row";
+  row.innerHTML = `
+    <div class="cat-item-fields">
+      <input class="ob-input cat-input" placeholder="Service name (e.g. Sponsored Post)" value="${esc(item?.title || '')}" data-field="title"/>
+      <input class="ob-input cat-input" placeholder="Short description" value="${esc(item?.description || '')}" data-field="description"/>
+      <div class="cat-price-row">
+        <span class="cat-currency">£</span>
+        <input class="ob-input cat-input cat-price" placeholder="Price (e.g. 500)" type="number" min="1" value="${item?.price || ''}" data-field="price"/>
+      </div>
+      ${item?.payment_link
+        ? `<div class="cat-link-status done">✓ Payment link ready</div>
+           <a href="${item.payment_link}" target="_blank" class="cat-link-preview">View link →</a>`
+        : `<button class="cat-gen-btn" onclick="generatePaymentLink(this)">⚡ Generate Payment Link</button>`
+      }
+    </div>
+    <button class="ob-row-del" onclick="this.closest('.cat-item-row').remove()">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+/* Collect all catalogue items from the UI */
+function collectCatalogueItems() {
+  const items = [];
+  document.querySelectorAll(".cat-item-row").forEach(row => {
+    const title       = row.querySelector('[data-field="title"]')?.value?.trim() || "";
+    const description = row.querySelector('[data-field="description"]')?.value?.trim() || "";
+    const price       = row.querySelector('[data-field="price"]')?.value?.trim() || "";
+    const linkEl      = row.querySelector(".cat-link-preview");
+    const payment_link = linkEl ? linkEl.href : (row.dataset.paymentLink || "");
+    if (title) items.push({ title, description, price, payment_link });
+  });
+  return items;
+}
+
+/* Generate a Stripe Payment Link for one catalogue item */
+async function generatePaymentLink(btn) {
+  const row         = btn.closest(".cat-item-row");
+  const title       = row.querySelector('[data-field="title"]')?.value?.trim();
+  const description = row.querySelector('[data-field="description"]')?.value?.trim();
+  const priceInput  = row.querySelector('[data-field="price"]')?.value?.trim();
+
+  if (!title)       { showToast("Add a service name first"); return; }
+  if (!priceInput)  { showToast("Add a price first"); return; }
+
+  const priceInPence = Math.round(parseFloat(priceInput) * 100);
+  if (isNaN(priceInPence) || priceInPence < 100) {
+    showToast("Price must be at least £1.00");
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = "Generating…";
+
+  try {
+    const pf = psState.activePortfolio || {};
+    const connected_account_id = pf.stripe_account_id || null;
+
+    const res  = await fetch(DIJO_SERVER_URL + "/stripe/create-payment-link", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        description,
+        price:    priceInPence,
+        currency: "gbp",
+        creator_name: pf.name || "",
+        connected_account_id,
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || "Unknown error");
+
+    // Update the row UI
+    btn.replaceWith(Object.assign(document.createElement("div"), {
+      className: "cat-link-generated",
+      innerHTML: `<div class="cat-link-status done">✓ Payment link ready</div>
+                  <a href="${data.payment_link}" target="_blank" class="cat-link-preview">View link →</a>
+                  <div class="cat-link-breakdown">You get: £${((priceInPence - data.fee)/100).toFixed(2)} · ImpactGrid: £${(data.fee/100).toFixed(2)}</div>`
+    }));
+
+    // Store link on row for collection
+    row.dataset.paymentLink = data.payment_link;
+
+    showToast("✓ Payment link created!");
+
+    // Auto-save the catalogue to the portfolio
+    if (psState.activePortfolio) {
+      psState.activePortfolio.catalogue = collectCatalogueItems();
+    }
+
+  } catch (err) {
+    btn.disabled    = false;
+    btn.textContent = "⚡ Generate Payment Link";
+    showToast("Could not create link — check server");
+    console.error("[Catalogue] Payment link error:", err.message);
+  }
+}
+
+/* Rebuild catalogue rows from saved portfolio data */
+function rebuildCatalogueRows(items) {
+  const list = document.getElementById("catItemsList");
+  if (!list) return;
+  list.innerHTML = "";
+  (items || []).forEach(item => addCatalogueItem(item));
+}
+
+/* Stripe Connect — send creator to onboarding */
+async function stripeOnboard() {
+  const pf    = psState.activePortfolio;
+  const email = (window.igUser && window.igUser.email) || "";
+
+  if (!email) { showToast("Sign in first to connect your bank"); return; }
+
+  const btn = document.getElementById("catConnectBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Opening Stripe…"; }
+
+  try {
+    const res  = await fetch(DIJO_SERVER_URL + "/stripe/onboard", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        return_url:  window.location.href + "?stripe_connected=1",
+        refresh_url: window.location.href,
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    // Store account ID so payment links use destination charges
+    if (pf) {
+      pf.stripe_account_id = data.account_id;
+    }
+
+    // Redirect to Stripe's hosted onboarding page
+    window.location.href = data.onboard_url;
+
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = "Connect Bank Account →"; }
+    showToast("Could not open Stripe — try again");
+    console.error("[Stripe Onboard] Error:", err.message);
+  }
+}
+
+/* Check URL param on return from Stripe onboarding */
+function checkStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("stripe_connected") === "1") {
+    const badge = document.getElementById("catConnectBadge");
+    const btn   = document.getElementById("catConnectBtn");
+    if (badge) { badge.textContent = "✓ Bank connected"; badge.className = "cat-connect-badge connected"; }
+    if (btn)   { btn.textContent = "✓ Connected — change account"; }
+    showToast("✓ Bank account connected! Payment links will pay you directly.");
+    // Clean URL
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+}
+
 /* ── Free-plan upgrade walls for Edit / Preview ───────────────────────── */
 /* Note: Free users CAN publish (3 slots, deleted after 7 days).           */
 /* Only editing and previewing the builder UI requires a paid plan.        */
@@ -1002,6 +1178,8 @@ function populateBuilder(pf) {
   if (pill) pill.textContent = `impactgridgroup.com/p.html?slug=${pf.slug}`;
   renderHeroMediaStrip(pf.hero_media || []);
   rebuildServiceRows(pf.services || []);
+  rebuildCatalogueRows(pf.catalogue || []);
+  checkStripeReturn();
   // Set active theme button
   document.querySelectorAll("#tabDesign .ob-theme-opt").forEach(o => {
     o.classList.toggle("active", o.dataset.theme === (pf.theme || "dark"));
@@ -1035,6 +1213,8 @@ function updatePreviewLive() {
     }
   });
   if (services.length) pf.services = services;
+  const catalogue = collectCatalogueItems();
+  if (catalogue.length) pf.catalogue = catalogue;
   renderPreview(pf);
 }
 
@@ -1150,6 +1330,17 @@ function buildPortfolioHTML(pf) {
     }, 5000);` : "";
 
   /* ── HTML sections ── */
+  /* ── Catalogue section (bookable items with payment links) ── */
+  const catalogueHTML = (pf.catalogue || []).filter(c => c.title && c.payment_link).map(c => `
+    <div class="cat-card">
+      <div class="cat-card-info">
+        <div class="cat-card-title">${esc(c.title)}</div>
+        ${c.description ? `<div class="cat-card-desc">${esc(c.description)}</div>` : ""}
+        ${c.price ? `<div class="cat-card-price">£${esc(String(c.price))}</div>` : ""}
+      </div>
+      <a href="${esc(c.payment_link)}" target="_blank" class="cat-book-btn">Book &amp; Pay →</a>
+    </div>`).join("");
+
   const servicesHTML = (pf.services || []).map(s => `
     <div class="card service-card">
       <div class="service-icon">${esc(s.icon || "✦")}</div>
@@ -1319,6 +1510,14 @@ ${pf.services?.length ? `
   <div class="sec-lbl">What I Offer</div>
   <div class="sec-ttl">Services &amp; Rates</div>
   <div class="grid">${servicesHTML}</div>
+</section>` : ""}
+
+${catalogueHTML ? `
+<section class="sec" id="catalogue">
+  <div class="sec-lbl">Ready to Book</div>
+  <div class="sec-ttl">Book &amp; Pay</div>
+  <p style="opacity:.7;font-size:14px;margin-bottom:24px">Select a package below and pay securely via Stripe.</p>
+  <div class="catalogue-grid">${catalogueHTML}</div>
 </section>` : ""}
 
 ${pf.projects?.length ? `
