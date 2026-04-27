@@ -366,28 +366,26 @@ function showScreen(id) {
   }
 }
 
-/* ── Mobile builder panel toggle ─────────────────────────────
-   On screens ≤900px the edit panel slides in/out over the preview.
-   mobilePanelShow('edit')    → show editor overlay
-   mobilePanelShow('preview') → hide editor, show live preview
+/* ── Mobile builder panel ─────────────────────────────────────
+   New layout: preview always visible (top 45%), editor is a
+   bottom sheet. Expand button slides it up to 88% to give more
+   editing room. No more toggling away the preview entirely.
 ───────────────────────────────────────────────────────────── */
 function mobilePanelShow(panel) {
-  const left      = document.querySelector('.builder-left');
-  const tabEdit   = document.getElementById('bmTabEdit');
-  const tabPreview= document.getElementById('bmTabPreview');
-  if (!left) return;
+  // Legacy calls — now a no-op since both panels are always visible.
+  // Keep the function to avoid JS errors from any remaining calls.
+  if (panel === 'preview') updatePreviewLive();
+}
 
-  if (panel === 'edit') {
-    left.classList.add('mob-open');
-    if (tabEdit)    tabEdit.classList.add('active');
-    if (tabPreview) tabPreview.classList.remove('active');
-  } else {
-    left.classList.remove('mob-open');
-    if (tabPreview) tabPreview.classList.add('active');
-    if (tabEdit)    tabEdit.classList.remove('active');
-    // Refresh preview when switching to it
-    updatePreviewLive();
-  }
+var _mobExpanded = false;
+function mobToggleExpand() {
+  _mobExpanded = !_mobExpanded;
+  const left = document.querySelector('.builder-left');
+  const btn  = document.getElementById('mobExpandBtn');
+  if (!left) return;
+  left.classList.toggle('mob-expanded', _mobExpanded);
+  if (btn) btn.textContent = _mobExpanded ? '⬇ Collapse' : '⬆ Expand';
+  if (!_mobExpanded) updatePreviewLive();
 }
 
 function confirmBackToDash() {
