@@ -1039,6 +1039,7 @@ function collectOnboardData() {
     testimonials,
     hero_media:      [],
     published:       false,
+    logo_url:        (window._beLogoDataUrl || window._obLogoDataUrl || (psState.activePortfolio && psState.activePortfolio.logo_url) || ''),
     // Reuse existing slug if portfolio already exists — never regenerate
     // a new random slug or the upsert will create a duplicate row instead
     // of updating the existing one.
