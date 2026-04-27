@@ -1398,11 +1398,31 @@ function addEditServiceRow() {
 
 /* ── Builder tabs ── */
 function setEditTab(btn, tabId) {
-  document.querySelectorAll(".bl-tab").forEach(t => t.classList.remove("active"));
+  // Sync both rail tabs and mobile tabs
+  document.querySelectorAll(".bl-rail-tab, .bl-mob-tab").forEach(t => t.classList.remove("active"));
   document.querySelectorAll(".bl-tab-content").forEach(t => t.classList.remove("active"));
   btn.classList.add("active");
+  // Also sync the counterpart tab in the other nav
+  const label = btn.querySelector("span")?.textContent || "";
+  document.querySelectorAll(".bl-rail-tab, .bl-mob-tab").forEach(t => {
+    if ((t.querySelector("span")?.textContent || t.getAttribute("title") || "") === label && t !== btn) {
+      t.classList.add("active");
+    }
+  });
   const tab = document.getElementById(tabId);
   if (tab) tab.classList.add("active");
+  // Update panel title
+  const titleEl = document.getElementById("blPanelTitle");
+  if (titleEl) {
+    const previewBtn = titleEl.querySelector(".bl-mob-preview-btn");
+    titleEl.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = label + " "; });
+    if (!titleEl.childNodes[0] || titleEl.childNodes[0].nodeType !== 3) {
+      titleEl.insertBefore(document.createTextNode(label + " "), titleEl.firstChild);
+    } else {
+      titleEl.childNodes[0].textContent = label + " ";
+    }
+    if (previewBtn) titleEl.appendChild(previewBtn);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
