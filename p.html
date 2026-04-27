@@ -136,38 +136,67 @@ function renderPortfolio(pf) {
       (pf.monthly_views   ? '<div class="stat"><div class="sv">' + esc(pf.monthly_views)   + '</div><div class="sl2">MONTHLY VIEWS</div></div>' : '') +
     '</div>' : '';
 
-  // ── Gallery: shown on its own page/section, works with 1+ images ──
-  var galleryPageHTML = '';
-  if (heroImgs.length > 0) {
-    var gSlides = heroImgs.map(function(url, i) {
-      return '<div class="ng-slide" data-index="' + i + '">' +
-        '<img src="' + esc(url) + '" alt="Gallery image ' + (i+1) + '" loading="lazy"/>' +
-        '<div class="ng-slide-num">' + (i+1) + ' / ' + heroImgs.length + '</div>' +
-      '</div>';
-    }).join('');
+  // ── Gallery: flip-page book gallery, always shown in nav ──
+  var galleryImgs = heroImgs.length > 0 ? heroImgs : [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80',
+    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&q=80',
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
+    'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&q=80',
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80'
+  ];
 
-    var gThumbs = heroImgs.map(function(url, i) {
-      return '<button class="ng-thumb' + (i===0?' active':'') + '" onclick="ngGoto(' + i + ')" aria-label="View image ' + (i+1) + '">' +
-        '<img src="' + esc(url) + '" alt="Thumbnail ' + (i+1) + '" loading="lazy"/>' +
-      '</button>';
-    }).join('');
-
-    galleryPageHTML =
-      '<section class="page" id="page-gallery">' +
-        '<div class="pg-header">' +
-          '<div class="sec-lbl">Gallery</div>' +
-          '<div class="sec-ttl">My Work</div>' +
-        '</div>' +
-        '<div class="notebook-gallery" id="notebookGallery">' +
-          '<div class="ng-track" id="ngTrack">' + gSlides + '</div>' +
-          (heroImgs.length > 1 ?
-            '<button class="ng-arrow ng-prev" onclick="ngStep(-1)" aria-label="Previous">&#8249;</button>' +
-            '<button class="ng-arrow ng-next" onclick="ngStep(1)" aria-label="Next">&#8250;</button>' : '') +
-        '</div>' +
-        (heroImgs.length > 1 ?
-          '<div class="ng-thumbs" id="ngThumbs">' + gThumbs + '</div>' : '') +
-      '</section>';
+  // Build flip pages — pairs of images per "page spread"
+  var flipPages = [];
+  for (var fi = 0; fi < galleryImgs.length; fi++) {
+    flipPages.push(galleryImgs[fi]);
   }
+  var totalFlipPages = flipPages.length;
+
+  var flipPagesHTML = flipPages.map(function(url, i) {
+    return '<div class="fp-page" id="fpPage' + i + '" style="z-index:' + (totalFlipPages - i) + '">' +
+      '<div class="fp-front">' +
+        '<img src="' + esc(url) + '" alt="Gallery image ' + (i+1) + '" loading="lazy"/>' +
+        '<div class="fp-page-num">' + (i+1) + ' / ' + totalFlipPages + '</div>' +
+        '<div class="fp-crease"></div>' +
+      '</div>' +
+      '<div class="fp-back">' +
+        (i+1 < flipPages.length ?
+          '<img src="' + esc(flipPages[i+1] || url) + '" alt="Gallery image ' + (i+2) + '" loading="lazy"/>' +
+          '<div class="fp-page-num">' + (i+2) + ' / ' + totalFlipPages + '</div>' +
+          '<div class="fp-crease back-crease"></div>'
+        : '<div class="fp-back-blank"><div class="fp-back-icon">✦</div><div class="fp-back-text">End of Gallery</div></div>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  var flipThumbsHTML = flipPages.map(function(url, i) {
+    return '<button class="fp-dot' + (i===0?' active':'') + '" onclick="fpGoto(' + i + ')" aria-label="Page ' + (i+1) + '"></button>';
+  }).join('');
+
+  var galleryPageHTML =
+    '<section class="page" id="page-gallery">' +
+      '<div class="pg-header">' +
+        '<div class="sec-lbl">Gallery</div>' +
+        '<div class="sec-ttl">My Work</div>' +
+      '</div>' +
+      '<div class="fp-stage">' +
+        '<div class="fp-book" id="fpBook">' +
+          flipPagesHTML +
+        '</div>' +
+        '<div class="fp-controls">' +
+          '<button class="fp-btn fp-btn-prev" onclick="fpStep(-1)" aria-label="Previous page">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>' +
+            'Prev' +
+          '</button>' +
+          '<div class="fp-dots" id="fpDots">' + flipThumbsHTML + '</div>' +
+          '<button class="fp-btn fp-btn-next" onclick="fpStep(1)" aria-label="Next page">' +
+            'Next' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="9 18 15 12 9 6"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
 
   // ── Services page ──
   var servicesPageHTML = (pf.services && pf.services.length) ?
@@ -236,7 +265,7 @@ function renderPortfolio(pf) {
     '</section>';
 
   // ── Nav items ──
-  var hasGallery  = heroImgs.length > 0;
+  var hasGallery  = true; // Gallery always shown
   var hasServices = pf.services && pf.services.length;
 
   var navLinks =
@@ -344,20 +373,30 @@ function renderPortfolio(pf) {
     '.testimonial-quote{font-size:14px;line-height:1.75;color:var(--tx);margin-bottom:14px;font-style:italic}' +
     '.testimonial-author{font-size:11px;color:var(--ac);font-family:monospace;font-weight:700;letter-spacing:.5px}' +
 
-    /* GALLERY */
-    '.notebook-gallery{position:relative;width:100%;overflow:hidden;background:var(--sf);user-select:none;margin-top:24px}' +
-    '.ng-track{display:flex;transition:transform .4s cubic-bezier(.4,0,.2,1)}' +
-    '.ng-slide{flex:0 0 100%;min-width:100%;aspect-ratio:16/9;overflow:hidden;position:relative}' +
-    '.ng-slide img{width:100%;height:100%;object-fit:cover;display:block}' +
-    '.ng-slide-num{position:absolute;bottom:14px;right:16px;font-size:11px;font-family:monospace;color:rgba(255,255,255,.85);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px)}' +
-    '.ng-arrow{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:.15s;backdrop-filter:blur(4px);line-height:1}' +
-    '.ng-arrow:hover{background:rgba(0,0,0,.85);border-color:rgba(255,255,255,.4)}' +
-    '.ng-prev{left:14px}.ng-next{right:14px}' +
-    '.ng-thumbs{display:flex;gap:8px;padding:12px 0 0;overflow-x:auto;scrollbar-width:none}' +
-    '.ng-thumbs::-webkit-scrollbar{display:none}' +
-    '.ng-thumb{width:80px;height:54px;border-radius:8px;overflow:hidden;border:2.5px solid transparent;cursor:pointer;flex-shrink:0;transition:.2s;padding:0;background:none}' +
-    '.ng-thumb.active{border-color:var(--ac)}' +
-    '.ng-thumb img{width:100%;height:100%;object-fit:cover;display:block}' +
+    /* FLIP PAGE GALLERY */
+    '.fp-stage{display:flex;flex-direction:column;align-items:center;padding:32px 20px 64px;gap:32px}' +
+    '.fp-book{position:relative;width:min(700px,90vw);aspect-ratio:4/3;perspective:1400px;cursor:pointer}' +
+    '.fp-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.645,.045,.355,1),z-index 0s .35s;border-radius:4px 14px 14px 4px;box-shadow:6px 0 40px rgba(0,0,0,.45),-2px 0 8px rgba(0,0,0,.2)}' +
+    '.fp-page.flipped{transform:rotateY(-180deg)}' +
+    '.fp-page.flipping{transition:transform .7s cubic-bezier(.645,.045,.355,1)}' +
+    '.fp-front,.fp-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:4px 14px 14px 4px}' +
+    '.fp-back{transform:rotateY(180deg);border-radius:14px 4px 4px 14px}' +
+    '.fp-front img,.fp-back img{width:100%;height:100%;object-fit:cover;display:block}' +
+    '.fp-crease{position:absolute;left:0;top:0;bottom:0;width:28px;background:linear-gradient(to right,rgba(0,0,0,.35),rgba(0,0,0,.05) 60%,transparent);pointer-events:none}' +
+    '.fp-crease.back-crease{left:auto;right:0;background:linear-gradient(to left,rgba(0,0,0,.35),rgba(0,0,0,.05) 60%,transparent)}' +
+    '.fp-page-num{position:absolute;bottom:14px;right:18px;font-size:11px;font-family:monospace;color:rgba(255,255,255,.9);background:rgba(0,0,0,.55);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px);letter-spacing:.5px}' +
+    '.fp-back .fp-page-num{right:auto;left:18px}' +
+    '.fp-back-blank{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--sf)}' +
+    '.fp-back-icon{font-size:36px;color:var(--ac);opacity:.6}' +
+    '.fp-back-text{font-family:var(--fh);font-size:14px;color:var(--sub);letter-spacing:1px}' +
+    '.fp-controls{display:flex;align-items:center;gap:20px;margin-top:4px}' +
+    '.fp-btn{display:flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:.2s}' +
+    '.fp-btn:hover{border-color:var(--ac);color:var(--ac);transform:scale(1.04)}' +
+    '.fp-btn:disabled{opacity:.3;pointer-events:none}' +
+    '.fp-dots{display:flex;gap:7px;align-items:center}' +
+    '.fp-dot{width:8px;height:8px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0}' +
+    '.fp-dot.active{background:var(--ac);transform:scale(1.35)}' +
+    '.fp-dot:hover{background:var(--ac);opacity:.7}' +
 
     /* SERVICES PAGE */
     '#page-services .pg-header,.#page-connect .pg-header{margin-bottom:0}' +
@@ -411,9 +450,8 @@ function renderPortfolio(pf) {
       '.social-links{margin:24px 20px 0}' +
       '.contact-wrap{margin:32px 20px 56px;padding:36px 24px}' +
       'footer{padding:20px}' +
-      '.ng-arrow{width:38px;height:38px;font-size:22px}' +
-      '.ng-prev{left:10px}.ng-next{right:10px}' +
-      '.ng-thumb{width:64px;height:44px}' +
+      '.fp-book{width:92vw}' +
+      '.fp-btn{padding:8px 14px;font-size:12px}' +
       '.grid{grid-template-columns:1fr}' +
     '}' +
     '@media(max-width:480px){' +
@@ -494,20 +532,46 @@ function renderPortfolio(pf) {
     'function openMnav(){document.getElementById("mnavOverlay").classList.add("open")}' +
     'function closeMnav(){document.getElementById("mnavOverlay").classList.remove("open")}' +
 
-    /* Gallery */
-    (heroImgs.length > 0 ? (
-      'var _ngIdx=0,_ngTotal=' + heroImgs.length + ';' +
-      'var _ngTrack=document.getElementById("ngTrack");' +
-      'function ngGoto(i){' +
-        '_ngIdx=Math.max(0,Math.min(i,_ngTotal-1));' +
-        '_ngTrack.style.transform="translateX(-"+(_ngIdx*100)+"%)";' +
-        'document.querySelectorAll(".ng-thumb").forEach(function(d,j){d.classList.toggle("active",j===_ngIdx)});' +
+    /* Gallery flip-page */
+    'var _fpIdx=0,_fpTotal=' + totalFlipPages + ',_fpFlipping=false;' +
+    'function fpGoto(i){' +
+      'if(_fpFlipping||i===_fpIdx)return;' +
+      '_fpFlipping=true;' +
+      'var dir=i>_fpIdx?1:-1;' +
+      'var steps=Math.abs(i-_fpIdx);' +
+      'var delay=0;' +
+      'function flipOne(){' +
+        'if(steps--<=0){_fpFlipping=false;return;}' +
+        'var cur=_fpIdx;' +
+        'var pg=document.getElementById("fpPage"+cur);' +
+        'if(dir>0){' +
+          'if(pg){pg.classList.add("flipped");pg.style.zIndex=(_fpTotal-cur);}' +
+          '_fpIdx++;' +
+        '}else{' +
+          '_fpIdx--;' +
+          'var pg2=document.getElementById("fpPage"+_fpIdx);' +
+          'if(pg2){pg2.classList.remove("flipped");pg2.style.zIndex=(_fpTotal-_fpIdx);}' +
+        '}' +
+        'document.querySelectorAll(".fp-dot").forEach(function(d,j){d.classList.toggle("active",j===_fpIdx)});' +
+        'document.getElementById("fpBtnPrev")&&(document.getElementById("fpBtnPrev").disabled=_fpIdx===0);' +
+        'document.getElementById("fpBtnNext")&&(document.getElementById("fpBtnNext").disabled=_fpIdx>=_fpTotal-1);' +
+        'if(steps>0)setTimeout(flipOne,120);else setTimeout(function(){_fpFlipping=false;},700);' +
       '}' +
-      'function ngStep(d){ngGoto(_ngIdx+d);}' +
-      '_ngTrack && _ngTrack.addEventListener("touchstart",function(e){window._ngTx=e.touches[0].clientX;},{passive:true});' +
-      '_ngTrack && _ngTrack.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-window._ngTx;if(Math.abs(dx)>40)ngStep(dx<0?1:-1);});' +
-      'document.addEventListener("keydown",function(e){if(_activePage==="page-gallery"){if(e.key==="ArrowLeft")ngStep(-1);if(e.key==="ArrowRight")ngStep(1);}});'
-    ) : '') +
+      'flipOne();' +
+    '}' +
+    'function fpStep(d){fpGoto(Math.max(0,Math.min(_fpIdx+d,_fpTotal-1)));}' +
+    'document.addEventListener("keydown",function(e){if(_activePage==="page-gallery"){if(e.key==="ArrowLeft")fpStep(-1);if(e.key==="ArrowRight")fpStep(1);}});' +
+    '/* Add btn IDs for disable state */' +
+    'document.querySelectorAll(".fp-btn-prev").forEach(function(b){b.id="fpBtnPrev";b.disabled=true});' +
+    'document.querySelectorAll(".fp-btn-next").forEach(function(b){b.id="fpBtnNext"});' +
+    /* Touch swipe for flip gallery */
+    'var _fpTx=0;' +
+    'var fpBook=document.getElementById("fpBook");' +
+    'if(fpBook){' +
+      'fpBook.addEventListener("touchstart",function(e){_fpTx=e.touches[0].clientX;},{passive:true});' +
+      'fpBook.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-_fpTx;if(Math.abs(dx)>50)fpStep(dx<0?1:-1);});' +
+      'fpBook.addEventListener("click",function(e){var r=fpBook.getBoundingClientRect();if(e.clientX-r.left>r.width/2)fpStep(1);else fpStep(-1);});' +
+    '}' +
 
     /* Intersection observer for animations */
     'var _obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add("fu")});},{threshold:0.1});' +
