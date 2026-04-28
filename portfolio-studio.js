@@ -1673,7 +1673,7 @@ function buildPortfolioHTML(pf) {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>${esc(pf.seo?.title || `${pf.name} — ${pf.niche} | ImpactGrid`)}</title>
 <meta name="description" content="${esc(pf.seo?.description || pf.ai_meta || pf.niche + ' creator portfolio')}"/>
-${pf.seo?.keywords?.length ? `<meta name="keywords" content="${esc(pf.seo.keywords.join(', '))}"/>` : ''}
+${(() => { const kw = Array.isArray(pf.seo?.keywords) ? pf.seo.keywords : (typeof pf.seo?.keywords === 'string' ? pf.seo.keywords.split(',').map(k=>k.trim()).filter(Boolean) : []); return kw.length ? `<meta name="keywords" content="${esc(kw.join(', '))}"/>` : ''; })()}
 <meta name="robots" content="index,follow"/>
 <meta name="author" content="${esc(pf.name)}"/>
 <meta property="og:type" content="profile"/>
@@ -1697,7 +1697,7 @@ ${heroImg0 ? `<meta name="twitter:image" content="${esc(heroImg0)}"/>` : ''}
   "worksFor": { "@type": "Organization", "name": "ImpactGrid" },
   ...(pf.location ? { "address": { "@type": "PostalAddress", "addressLocality": pf.location } } : {}),
   ...(pf.email ? { "email": pf.email } : {}),
-  ...(pf.seo?.keywords?.length ? { "knowsAbout": pf.seo.keywords } : {}),
+  ...((() => { const kw = Array.isArray(pf.seo?.keywords) ? pf.seo.keywords : (typeof pf.seo?.keywords === 'string' ? pf.seo.keywords.split(',').map(k=>k.trim()).filter(Boolean) : []); return kw.length ? { "knowsAbout": kw } : {}; })()),
 })}</script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
 <style>
