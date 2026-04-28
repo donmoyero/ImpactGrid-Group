@@ -251,12 +251,15 @@ function renderPortfolio(pf) {
       '</div>' +
 
       /* ABOUT */
-      '<div class="about-body">' +
+      '<div class="about-body"' + (aboutBg ? ' style="position:relative;overflow:hidden"' : '') + '>' +
+        (aboutBg ? '<div style="position:absolute;inset:0;background-image:url(' + esc(aboutBg) + ');background-size:cover;background-position:center;opacity:0.07;z-index:0;pointer-events:none"></div>' : '') +
+        '<div style="position:relative;z-index:1">' +
         statsHTML +
         '<div class="about-bio-wrap">' +
           '<div class="sec-lbl">About</div>' +
           '<div class="sec-ttl">' + esc(pf.name) + '</div>' +
           '<p class="about-bio-text">' + esc(pf.ai_bio || pf.bio || '') + '</p>' +
+        '</div>' +
         '</div>' +
       '</div>' +
 
@@ -333,16 +336,45 @@ function renderPortfolio(pf) {
     (hasServices ? '<a href="#" class="mnav-link" onclick="showPage(\'page-services\');closeMnav();return false;">Services</a>' : '');
 
   // ── Full page inject ──
+  var seo = pf.seo || {};
+  var sa  = pf.section_assets || {};
+  var aboutBg    = sa.about    ? sa.about.url    : '';
+  var servicesBg = sa.services ? sa.services.url : '';
+  var contactBg  = sa.contact  ? sa.contact.url  : '';
+
+  var schemaObj = {
+    '@context': 'https://schema.org',
+    '@type': seo.schema_type || 'Person',
+    'name': pf.name,
+    'description': pf.ai_bio || pf.bio || '',
+    'url': 'https://impactgrid.app/p/' + (pf.slug || ''),
+    'image': heroImg0 || '',
+    'jobTitle': pf.niche,
+  };
+  if (pf.location) schemaObj.address = { '@type': 'PostalAddress', 'addressLocality': pf.location };
+  if (pf.email)    schemaObj.email   = pf.email;
+  if (seo.keywords && seo.keywords.length) schemaObj.knowsAbout = seo.keywords;
+
   document.open();
   document.write('<!DOCTYPE html><html lang="en"><head>' +
     '<meta charset="UTF-8"/>' +
     '<meta name="viewport" content="width=device-width,initial-scale=1"/>' +
-    '<title>' + esc(pf.name) + ' — ' + esc(pf.niche) + ' | ImpactGrid</title>' +
-    '<meta name="description" content="' + esc(pf.ai_meta || pf.niche + ' creator portfolio') + '"/>' +
-    '<meta property="og:title" content="' + esc(pf.name) + ' — ' + esc(pf.niche) + '"/>' +
-    '<meta property="og:description" content="' + esc(pf.ai_bio || pf.bio || '') + '"/>' +
-    (heroImg0 ? '<meta property="og:image" content="' + esc(heroImg0) + '"/>' : '') +
+    '<title>' + esc(seo.title || (pf.name + ' — ' + pf.niche + ' | ImpactGrid')) + '</title>' +
+    '<meta name="description" content="' + esc(seo.description || pf.ai_meta || pf.niche + ' creator portfolio') + '"/>' +
+    (seo.keywords && seo.keywords.length ? '<meta name="keywords" content="' + esc(seo.keywords.join(', ')) + '"/>' : '') +
     '<meta name="robots" content="index,follow"/>' +
+    '<meta name="author" content="' + esc(pf.name) + '"/>' +
+    '<meta property="og:type" content="profile"/>' +
+    '<meta property="og:site_name" content="ImpactGrid"/>' +
+    '<meta property="og:title" content="' + esc(seo.og_title || (pf.name + ' — ' + pf.niche)) + '"/>' +
+    '<meta property="og:description" content="' + esc(seo.og_description || pf.ai_bio || pf.bio || '') + '"/>' +
+    '<meta property="og:url" content="https://impactgrid.app/p/' + esc(pf.slug || '') + '"/>' +
+    (heroImg0 ? '<meta property="og:image" content="' + esc(heroImg0) + '"/>' : '') +
+    '<meta name="twitter:card" content="' + esc(seo.twitter_card || 'summary_large_image') + '"/>' +
+    '<meta name="twitter:title" content="' + esc(seo.og_title || (pf.name + ' — ' + pf.niche)) + '"/>' +
+    '<meta name="twitter:description" content="' + esc(seo.og_description || pf.ai_bio || '') + '"/>' +
+    (heroImg0 ? '<meta name="twitter:image" content="' + esc(heroImg0) + '"/>' : '') +
+    '<script type="application/ld+json">' + JSON.stringify(schemaObj) + '<\/script>' +
     '<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>' +
     '<style>' +
     '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}' +
