@@ -1154,15 +1154,18 @@ async function startGeneration() {
     advanceStep(); // Step 3: visuals done
 
     /* Merge AI results into portfolio object */
-    pf.ai_headline = result.ai_headline || pf.name;
-    pf.ai_tagline  = result.ai_tagline  || pf.niche;
-    pf.ai_bio      = result.ai_bio      || pf.bio;
-    pf.ai_meta     = result.ai_meta     || "";
-    pf.ai_cta      = result.ai_cta      || "Work With Me";
-    pf.ai_terms    = result.ai_terms    || "";
-    pf.ai_privacy  = result.ai_privacy  || "";
-    pf.hero_media  = result.hero_media  || [];
-    pf.services    = result.services    || pf.services; // enhanced by AI
+    pf.ai_headline    = result.ai_headline    || pf.name;
+    pf.ai_tagline     = result.ai_tagline     || pf.niche;
+    pf.ai_bio         = result.ai_bio         || pf.bio;
+    pf.ai_meta        = result.ai_meta        || "";
+    pf.ai_cta         = result.ai_cta         || "Work With Me";
+    pf.ai_terms       = result.ai_terms       || "";
+    pf.ai_privacy     = result.ai_privacy     || "";
+    pf.hero_media     = result.hero_media     || [];
+    pf.section_assets = result.section_assets || {};
+    pf.seo            = result.seo            || null;
+    pf.trending_tags  = result.trending_tags  || [];
+    pf.services       = result.services       || pf.services; // enhanced by AI
 
     advanceStep(); // Step 4: legal done
 
@@ -1199,10 +1202,32 @@ async function startGeneration() {
 
 /* ── Core server caller — mirrors carousel-studio.js callAI ── */
 async function callDijoServer(endpoint, body) {
+  // Strip base64 data URLs and heavy fields before sending to avoid 413
+  let payload = body;
+  if (endpoint === "/portfolio/generate" && body) {
+    const isDataUrl = s => typeof s === "string" && s.startsWith("data:");
+    payload = JSON.parse(JSON.stringify(body)); // deep clone
+    // Strip base64 hero_media
+    if (Array.isArray(payload.hero_media)) {
+      payload.hero_media = payload.hero_media
+        .map(m => ({ ...m, url: isDataUrl(m.url) ? "" : (m.url || "") }))
+        .filter(m => m.url);
+    }
+    // Strip base64 logo
+    if (isDataUrl(payload.logo_url)) payload.logo_url = "";
+    // Strip base64 service/catalogue images
+    if (Array.isArray(payload.services)) {
+      payload.services = payload.services.map(s => ({ ...s, image: isDataUrl(s.image) ? "" : (s.image || "") }));
+    }
+    // Strip section_assets and seo from outgoing (server regenerates these)
+    delete payload.section_assets;
+    delete payload.seo;
+    delete payload.trending_tags;
+  }
   const res = await fetch(DIJO_SERVER + endpoint, {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify(body),
+    body:    JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Server responded " + res.status);
   return await res.json();
@@ -1501,6 +1526,13 @@ function buildPortfolioHTML(pf) {
   const logoUrl  = pf.logo_url || '';
   const initials = (pf.name || 'CR').split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
 
+  /* ── Section assets from dijo-assets (AI-picked per section) ── */
+  const sa = pf.section_assets || {};
+  const aboutBg    = sa.about?.url    || '';
+  const servicesBg = sa.services?.url || '';
+  const contactBg  = sa.contact?.url  || '';
+  const galleryBg  = sa.gallery?.url  || '';
+
   /* ── Social links ── */
   const socialLinks = [
     pf.youtube_url   ? { icon:'▶', label:'YouTube',   url:pf.youtube_url,   color:'#ff0000', subs: pf.youtube_subs } : null,
@@ -1639,12 +1671,34 @@ function buildPortfolioHTML(pf) {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>${esc(pf.name)} — ${esc(pf.niche)} | ImpactGrid</title>
-<meta name="description" content="${esc(pf.ai_meta || pf.niche + ' creator portfolio')}"/>
-<meta property="og:title" content="${esc(pf.name)} — ${esc(pf.niche)}"/>
-<meta property="og:description" content="${esc(pf.ai_bio || pf.bio || '')}"/>
-${heroImg0 ? `<meta property="og:image" content="${esc(heroImg0)}"/>` : ''}
+<title>${esc(pf.seo?.title || `${pf.name} — ${pf.niche} | ImpactGrid`)}</title>
+<meta name="description" content="${esc(pf.seo?.description || pf.ai_meta || pf.niche + ' creator portfolio')}"/>
+${pf.seo?.keywords?.length ? `<meta name="keywords" content="${esc(pf.seo.keywords.join(', '))}"/>` : ''}
 <meta name="robots" content="index,follow"/>
+<meta name="author" content="${esc(pf.name)}"/>
+<meta property="og:type" content="profile"/>
+<meta property="og:site_name" content="ImpactGrid"/>
+<meta property="og:title" content="${esc(pf.seo?.og_title || `${pf.name} — ${pf.niche}`)}"/>
+<meta property="og:description" content="${esc(pf.seo?.og_description || pf.ai_bio || pf.bio || '')}"/>
+<meta property="og:url" content="https://impactgrid.app/p/${esc(pf.slug || '')}"/>
+${heroImg0 ? `<meta property="og:image" content="${esc(heroImg0)}"/>` : ''}
+<meta name="twitter:card" content="${esc(pf.seo?.twitter_card || 'summary_large_image')}"/>
+<meta name="twitter:title" content="${esc(pf.seo?.og_title || `${pf.name} — ${pf.niche}`)}"/>
+<meta name="twitter:description" content="${esc(pf.seo?.og_description || pf.ai_bio || '')}"/>
+${heroImg0 ? `<meta name="twitter:image" content="${esc(heroImg0)}"/>` : ''}
+<script type="application/ld+json">${JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": pf.seo?.schema_type || "Person",
+  "name": pf.name,
+  "description": pf.ai_bio || pf.bio || "",
+  "url": `https://impactgrid.app/p/${pf.slug || ""}`,
+  "image": heroImg0 || "",
+  "jobTitle": pf.niche,
+  "worksFor": { "@type": "Organization", "name": "ImpactGrid" },
+  ...(pf.location ? { "address": { "@type": "PostalAddress", "addressLocality": pf.location } } : {}),
+  ...(pf.email ? { "email": pf.email } : {}),
+  ...(pf.seo?.keywords?.length ? { "knowsAbout": pf.seo.keywords } : {}),
+})}</script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1874,12 +1928,15 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
   </div>
 
   <!-- ABOUT -->
-  <div class="about-body">
+  <div class="about-body" ${aboutBg ? `style="position:relative;overflow:hidden"` : ''}>
+    ${aboutBg ? `<div style="position:absolute;inset:0;background-image:url(${esc(aboutBg)});background-size:cover;background-position:center;opacity:0.07;z-index:0;pointer-events:none"></div>` : ''}
+    <div style="position:relative;z-index:1">
     ${statsHTML}
     <div class="about-bio-wrap">
       <div class="sec-lbl">About</div>
       <div class="sec-ttl">${esc(pf.name)}</div>
       <p class="about-bio-text">${esc(pf.ai_bio || pf.bio || '')}</p>
+    </div>
     </div>
   </div>
 
