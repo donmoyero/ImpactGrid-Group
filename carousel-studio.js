@@ -401,7 +401,7 @@ function showAssetPreview(theme){
   var T=DA[theme],row=document.getElementById('assetRow');
   row.innerHTML='';
   T.assets.slice(0,6).forEach(function(a){
-    var d=document.createElement('div'); d.className='cs-asset-th';
+    var d=document.createElement('div'); d.className='ath';
     var img=document.createElement('img');
     img.src=a.url.replace('w=1080&h=1080','w=120&h=120');
     img.onload=function(){d.classList.add('loaded');};
@@ -465,59 +465,48 @@ async function generate(){
    Uses plan-gate.js if loaded, otherwise shows upgrade bar.
 ───────────────────────────────────────────────────────── */
 function _softPlanCheck() {
-  // ── CAROUSEL-SPECIFIC counter — separate from portfolio studio ──
-  // Uses ig_carousel_uses (not ig_ai_uses) to avoid cross-tool contamination.
+  // Read plan from window.igUser (nav.js) or localStorage
   var plan = 'free';
-  var carouselUses = 0;
+  var aiUses = 0;
   try { plan = (window.igUser && window.igUser.plan) ? window.igUser.plan : (localStorage.getItem('ig_plan') || 'free'); } catch(e) {}
-  try { carouselUses = parseInt(localStorage.getItem('ig_carousel_uses') || '0'); } catch(e) {}
+  try { aiUses = (window.igUser && typeof window.igUser.aiUses === 'number') ? window.igUser.aiUses : parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
 
-  // Increment carousel-specific counter
-  carouselUses++;
-  try { localStorage.setItem('ig_carousel_uses', String(carouselUses)); } catch(e) {}
+  // Increment local use counter
+  aiUses++;
+  try { localStorage.setItem('ig_ai_uses', String(aiUses)); } catch(e) {}
+  if (window.igUser) window.igUser.aiUses = aiUses;
 
-  // Also increment the shared monthly counter Supabase tracks
-  var sharedUses = 0;
-  try { sharedUses = parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
-  sharedUses++;
-  try { localStorage.setItem('ig_ai_uses', String(sharedUses)); } catch(e) {}
-  if (window.igUser) window.igUser.aiUses = sharedUses;
-
-  // Sync to Supabase if logged in
+  // Also update Supabase if user is logged in
   if (window.igUser && window.igUser.id && typeof getSupabase === 'function') {
     try {
       var sb = getSupabase();
-      if (sb) sb.from('profiles').update({ ai_uses_month: sharedUses }).eq('user_id', window.igUser.id).then(function(){});
+      if (sb) sb.from('profiles').update({ ai_uses_month: aiUses }).eq('user_id', window.igUser.id).then(function(){});
     } catch(e) {}
   }
 
-  // Read carousel-specific limit from plan-config
+  // Get limit from plan-config.js or fallback
   var limit = 3;
   if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) {
-    // Use carousels limit if defined, fallback to ai_uses
-    limit = (window.IG_PLAN_CONFIG[plan].carousels !== undefined)
-      ? window.IG_PLAN_CONFIG[plan].carousels
-      : window.IG_PLAN_CONFIG[plan].ai_uses;
-  } else if (plan === 'professional') { limit = 20; }
+    limit = window.IG_PLAN_CONFIG[plan].ai_uses;
+  } else if (plan === 'professional') { limit = 100; }
   else if (plan === 'enterprise' || plan === 'admin') { limit = Infinity; }
 
   if (!isFinite(limit)) return; // enterprise/admin — no gate
 
-  var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(plan) : (plan.charAt(0).toUpperCase() + plan.slice(1));
-  var remaining = Math.max(0, limit - carouselUses);
-
-  if (carouselUses >= limit) {
+  // Show upgrade prompt when approaching or at limit
+  if (aiUses >= limit) {
+    var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(plan) : (plan.charAt(0).toUpperCase() + plan.slice(1));
     if (typeof window.showPlanGate === 'function') {
       window.showPlanGate({
-        icon: '🎠',
-        title: 'Monthly carousel limit reached',
-        subtitle: "You've used all " + limit + " carousel generations on the " + planLabel + " plan. Upgrade to keep creating."
+        icon: '⚡',
+        title: 'Monthly AI limit reached',
+        subtitle: "You've used all " + limit + " AI generations on the " + planLabel + " plan. Upgrade to keep creating."
       });
     } else {
-      _showUpgradeBar(planLabel + ' plan: ' + limit + ' carousels/mo used — upgrade for more', true);
+      _showUpgradeBar(planLabel + ' plan: ' + limit + ' AI uses/mo reached — upgrade for more', true);
     }
-  } else if (remaining <= 2) {
-    _showUpgradeBar(remaining + ' carousel generation' + (remaining === 1 ? '' : 's') + ' left this month — upgrade for unlimited access', true);
+  } else if (aiUses >= limit - 1) {
+    _showUpgradeBar('1 AI generation left this month — upgrade for unlimited access', true);
   }
 }
 
@@ -554,28 +543,17 @@ async function callAI(topic,platform,tone,count){
     Playful:          'Light, witty, fun. Wordplay welcome. Keep it high-energy.'
   }[tone] || '';
 
-  // Build slide sequence for any count (3-12) — always starts hook, ends CTA
-  var ALL_SLIDE_TYPES = [
-    'hook: scroll-stopping pattern-interrupt. First-person, specific, creates urgency.',
-    'problem: name a specific pain point the reader actually feels. No preaching.',
-    'insight: a counterintuitive truth that reframes how the reader sees the topic.',
-    'stat: a real number or timeframe with its real-world implication.',
-    'lesson: the thing you wish you knew earlier. Personal, earned, direct.',
-    'value: one concrete, actionable step. Name the exact thing to do.',
-    'proof: what real results look like — the honest version, not a highlight reel.',
-    'quote: a single line powerful enough to screenshot and save.',
-    'insight: a second perspective or nuance that deepens the arc.',
-    'value: a second actionable step — builds on the previous one.',
-    'cta: invite a direct action — comment, save, share, follow. Ask a real question.'
-  ];
-  // Always: hook first, CTA last, fill middle from the pool
-  var slideTypeList = ['hook: scroll-stopping pattern-interrupt. First-person, specific, creates urgency.'];
-  var middlePool = ALL_SLIDE_TYPES.slice(1, ALL_SLIDE_TYPES.length - 1);
-  for (var _si = 0; _si < count - 2; _si++) {
-    slideTypeList.push(middlePool[_si % middlePool.length]);
-  }
-  slideTypeList.push('cta: invite a direct action — comment, save, share, follow. Ask a real question.');
-  var slideTypes = slideTypeList.map(function(t, i) { return 'Slide ' + (i+1) + ' — ' + t; }).join('\n');
+  var slideTypes = [
+    'hook: pattern-interrupt opener, make the reader stop scrolling',
+    'problem: name the specific pain point without being preachy',
+    'insight: the counterintuitive truth that reframes everything',
+    'stat: a real number or percentage with implication',
+    'quote: a powerful one-liner worth saving',
+    'lesson: the thing you wish you knew earlier',
+    'proof: what results actually look like',
+    'value: one actionable, specific step',
+    'cta: ask a direct question, invite a comment or save'
+  ].slice(0, count).join('\n');
 
   var brief = 'You are Dijo, a world-class social media content strategist.\n\n'
     + 'TASK: Write a ' + count + '-slide carousel on: "' + topic + '"\n'
@@ -717,49 +695,37 @@ window.copyHashtags = function(){
 function fallbackSlides(topic, platform, tone, count){
   var topicClean = topic || 'this topic';
   var topicTitle = topicClean.charAt(0).toUpperCase() + topicClean.slice(1);
-  var topicShort = topicClean.split(' ').slice(0, 4).join(' ');
-
-  // Platform-specific hooks — Dijo writes for the channel, not a generic feed
-  var hookMap = {
-    LinkedIn:   'I tracked my results on ' + topicShort + ' for 90 days. Here is what the data actually showed.',
-    TikTok:     'Nobody teaches you this part of ' + topicShort + '. Took me 2 years to figure it out.',
-    'Twitter/X':'Hot take: ' + topicShort + ' is not what most people think it is.',
-    Pinterest:  'The ' + topicShort + ' approach that changed everything — save this for later',
-    Instagram:  'I was doing ' + topicShort + ' completely wrong. One shift changed everything. Swipe →'
-  };
-  var hookHead = hookMap[platform] || hookMap.Instagram;
-
   var arc = [
     {type:'hook',layout:'FULL_BLEED',
-     headline: hookHead,
-     body:'I have been deep in this long enough to know which advice actually holds up. This is the honest version — not the one built for likes.'},
+     headline:'Everything You\'ve Been Told About ' + topicTitle + ' Is Backwards',
+     body:'I spent three years getting this wrong before I found the thing that actually works. Swipe through — this one\'s going to sting a little.'},
     {type:'problem',layout:'OVERLAP_BAND',
-     headline:'The part nobody tells you going in',
-     body:'Progress on ' + topicShort + ' doesn't stall on the hard days. It stalls on the medium days — when everything feels fine but nothing is actually moving.'},
+     headline:'Here\'s Why Most People Fail at ' + topicTitle,
+     body:'It\'s not effort. It\'s not talent. It\'s not even strategy. The real reason is something far more uncomfortable — and nobody talks about it.'},
     {type:'insight',layout:'BOTTOM_STRIP',
-     headline:'One question that reframes everything',
-     body:'"Am I getting better at the right thing?" Not busier. Not more consistent. Better at the specific lever that moves results. Most people never ask it.'},
-    {type:'stat',layout:'STAT_HERO',stat:'6wks',
-     headline:'This is how long it takes to see real change',
-     body:'Not 30 days. Six weeks. The people who stop at day 25 never see what they were building toward. Timing is the most underrated part.'},
+     headline:'The Shift That Changes Everything',
+     body:'Once you stop focusing on the output and start obsessing over the inputs, the whole game changes. The result isn\'t the goal — the system is.'},
+    {type:'stat',layout:'STAT_HERO',stat:'3×',
+     headline:'People Who Do This Consistently Outperform Everyone Else',
+     body:'Three times the result, in the same time window, with less stress. The difference is one repeatable behaviour.'},
     {type:'quote',layout:'QUOTE_PULL',
-     quote:'Progress is invisible until it is undeniable.',
+     quote:'You don\'t rise to the level of your goals. You fall to the level of your systems.',
      headline:'',body:''},
     {type:'lesson',layout:'EDITORIAL_COLLAGE',
-     headline:'The thing I stopped doing that everyone told me to do',
-     body:'I removed what I assumed was non-negotiable. Turned out it was the thing slowing everything else down. Sometimes subtraction is the actual strategy.'},
+     headline:'What I Wish I Had Known Three Years Ago',
+     body:'Nobody tells you this at the start. You have to earn it through trial and error, or find someone who\'s already been through it.'},
     {type:'proof',layout:'DUAL_IMAGE',
-     headline:'What six months of this genuinely looks like',
-     body:'Not a highlight reel. The slow, undramatic build — weeks where nothing feels like it's working, and then it all compounds at once. That part is real.'},
+     headline:'This Is What the Results Actually Looked Like',
+     body:'Not overnight. Not magic. A slow build that suddenly becomes undeniable. The compound effect is real — but only if you start the right system.'},
     {type:'value',layout:'TOP_STRIP',
-     headline:'The three-part framework I come back to',
-     body:'One: protect the input, not just the output. Two: measure what you control. Three: remove one friction point every week until the whole thing becomes automatic.'},
+     headline:'The Three-Part Framework That Runs Everything',
+     body:'Step one: identify the one lever that moves everything else. Step two: protect that lever at all costs. Step three: ignore everything that isn\'t that lever.'},
     {type:'insight',layout:'OVERLAP_BAND',
-     headline:'Most people are optimising the wrong thing',
-     body:'They get faster at the execution when the real problem is the direction. Efficiency without clarity just gets you to the wrong place quicker.'},
+     headline:'The Counterintuitive Truth Nobody Wants to Hear',
+     body:'Doing less, more consistently, beats doing everything sporadically. Your brain resists this because it feels like giving up. It isn\'t.'},
     {type:'cta',layout:'FULL_BLEED',
-     headline:'Save this. Return to it when you're stuck.',
-     body:'Apply one idea from this and you'll be in a different position six months from now. Which slide hit hardest? Drop the number below 👇',
+     headline:'Save This. Come Back to It When You\'re Stuck.',
+     body:'The people who actually apply this will be in a completely different position six months from now. Which slide hit closest to home? Drop the number in the comments.',
      cta:'Follow for more →'}
   ];
   var selected = [arc[0]];
@@ -1466,39 +1432,22 @@ function doExport(){
   }
 }
 
-async function exportSlidesAsPNG(){
+function exportSlidesAsPNG(){
   if(typeof html2canvas==='undefined'){
-    toast('💡 Refresh the page — html2canvas needs to load first.');
+    toast('💡 html2canvas not loaded — use JSON export or screenshot each slide.');
     return;
   }
-  if(!ST.slides.length){ toast('Generate a carousel first'); return; }
-
-  // Use downloadAll() — the correct full-deck export at 1080px
-  // This avoids duplicating the loop + progress bar logic
-  if(typeof window.downloadAll === 'function'){
-    window.downloadAll();
-    return;
-  }
-
-  // Fallback: single slide capture at true 1080px
-  var canvas = document.getElementById('slideCanvas');
-  var displayW = canvas.offsetWidth || 480;
-  var exportScale = Math.round((1080 / displayW) * 10) / 10;
-  toast('📸 Exporting all ' + ST.slides.length + ' slides at 1080px…');
-  try {
-    var c = await html2canvas(canvas, {
-      useCORS: true, allowTaint: true,
-      scale: exportScale, backgroundColor: '#111111',
-      imageTimeout: 8000, logging: false
-    });
+  var canvas=document.getElementById('slideCanvas');
+  toast('📸 Capturing slide '+(ST.cur+1)+'…');
+  html2canvas(canvas,{useCORS:true,allowTaint:false,scale:2,backgroundColor:null}).then(function(c){
     c.toBlob(function(blob){
-      triggerBlobDownload(blob, 'ImpactGrid-slide-'+(ST.cur+1)+'.png');
-      toast('✓ Slide '+(ST.cur+1)+' saved at 1080px');
-    }, 'image/png');
-  } catch(err) {
-    console.warn('html2canvas error:', err);
-    toast('⚠️ Capture failed — try the Download button instead');
-  }
+      triggerBlobDownload(blob,'ImpactGrid-slide-'+(ST.cur+1)+'.png');
+      toast('✓ Slide '+(ST.cur+1)+' saved as PNG');
+    },'image/png');
+  }).catch(function(err){
+    console.warn('html2canvas error:',err);
+    toast('💡 Screenshot this slide — PNG capture needs HTTPS & CORS images');
+  });
 }
 
 function triggerBlobDownload(blob,filename){
