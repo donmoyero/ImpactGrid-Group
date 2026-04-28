@@ -1219,8 +1219,8 @@ async function callDijoServer(endpoint, body) {
     if (Array.isArray(payload.services)) {
       payload.services = payload.services.map(s => ({ ...s, image: isDataUrl(s.image) ? "" : (s.image || "") }));
     }
-    // Strip section_assets and seo from outgoing (server regenerates these)
-    delete payload.section_assets;
+
+
     delete payload.seo;
     delete payload.trending_tags;
   }
@@ -1647,12 +1647,15 @@ function buildPortfolioHTML(pf) {
       _heroEl.addEventListener('mouseleave',function(){_stimer=setInterval(_slideNext,4500);});
     }` : '';
 
-  /* ── Slideshow HTML ── */
+  /* ── Slideshow HTML ── falls back to dijo hero if no hero_media */
+  const dijoHeroUrl = sa.hero?.url || '';
   const slideshowHTML = heroImgs.length > 1
     ? heroImgs.map((url, idx) => `<div class="hero-slide${idx===0?' active':''}" style="background-image:url(${esc(url)})"></div>`).join('')
     : heroImgs.length === 1
       ? `<div class="hero-slide active" style="background-image:url(${esc(heroImgs[0])})"></div>`
-      : '';
+      : dijoHeroUrl
+        ? `<div class="hero-slide active" style="background-image:url(${esc(dijoHeroUrl)})"></div>`
+        : '';
 
   /* ── Nav ── */
   const hasServices = !!(pf.services && pf.services.length) || !!catalogueHTML;
@@ -2015,7 +2018,7 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
 </section>
 
 <!-- PAGE: GALLERY -->
-<section class="page" id="page-gallery">
+<section class="page" id="page-gallery" ${galleryBg ? `style="background-image:url(${esc(galleryBg)});background-size:cover;background-position:center;"` : ""}>
   <div class="pg-header">
     <div class="sec-lbl">Gallery</div>
     <div class="sec-ttl">My Work</div>
@@ -2036,7 +2039,7 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
 
 <!-- PAGE: SERVICES -->
 ${hasServices ? `
-<section class="page" id="page-services">
+<section class="page" id="page-services" ${servicesBg ? `style="background-image:url(${esc(servicesBg)});background-size:cover;background-position:center;"` : ""}>
   <div class="pg-header">
     ${(pf.services && pf.services.length) ? `<div class="sec-lbl">What I Offer</div><div class="sec-ttl">Services &amp; Rates</div>` : ''}
   </div>
