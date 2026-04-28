@@ -1436,194 +1436,232 @@ function renderPreview(pf) {
 }
 
 function buildPortfolioHTML(pf) {
-  const t       = THEMES[pf.theme || "dark"];
+  const t       = THEMES[pf.theme || 'dark'];
   const accent  = pf.accent_color || t.accent;
   const heroImgs = (pf.hero_media || []).map(m => m.url).filter(Boolean);
-  const heroImg0 = heroImgs[0] || `https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1600`;
-  const initials = (pf.name || "CR").split(" ").map(w => w[0] || "").join("").toUpperCase().slice(0,2);
+  const heroImg0 = heroImgs[0] || '';
+  const logoUrl  = pf.logo_url || '';
+  const initials = (pf.name || 'CR').split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
 
   /* ── Social links ── */
   const socialLinks = [
-    pf.youtube_url   ? { icon:"▶", label:"YouTube",    url:pf.youtube_url,   color:"#ff0000" } : null,
-    pf.tiktok_url    ? { icon:"♪", label:"TikTok",     url:pf.tiktok_url,    color:"#69c9d0" } : null,
-    pf.instagram_url ? { icon:"◉", label:"Instagram",  url:pf.instagram_url, color:"#e1306c" } : null,
-    pf.linkedin_url  ? { icon:"in",label:"LinkedIn",   url:pf.linkedin_url,  color:"#0077b5" } : null,
-    pf.twitter_url   ? { icon:"𝕏", label:"Twitter/X",  url:pf.twitter_url,   color:"#1d9bf0" } : null,
+    pf.youtube_url   ? { icon:'▶', label:'YouTube',   url:pf.youtube_url,   color:'#ff0000', subs: pf.youtube_subs } : null,
+    pf.tiktok_url    ? { icon:'♪', label:'TikTok',    url:pf.tiktok_url,    color:'#69c9d0', subs: pf.tiktok_followers } : null,
+    pf.instagram_url ? { icon:'◉', label:'Instagram', url:pf.instagram_url, color:'#e1306c' } : null,
+    pf.linkedin_url  ? { icon:'in',label:'LinkedIn',  url:pf.linkedin_url,  color:'#0077b5' } : null,
+    pf.twitter_url   ? { icon:'𝕏', label:'Twitter/X', url:pf.twitter_url,   color:'#1d9bf0' } : null,
   ].filter(Boolean);
 
-  /* ── Slideshow script ── */
-  const slideshowScript = heroImgs.length > 1 ? `
-    const _slides = ${JSON.stringify(heroImgs)};
-    let _si = 0;
-    const _heroBg = document.getElementById("heroBg");
-    setInterval(() => {
-      _si = (_si + 1) % _slides.length;
-      _heroBg.style.opacity = "0";
-      setTimeout(() => { _heroBg.style.backgroundImage = "url(" + _slides[_si] + ")"; _heroBg.style.opacity = "1"; }, 600);
-    }, 5000);` : "";
-
   /* ── HTML sections ── */
-  /* ── Catalogue section (bookable items with payment links) ── */
   const catalogueHTML = (pf.catalogue || []).filter(c => c.title && c.payment_link).map(c => `
     <div class="cat-card">
-      ${c.image ? `<div class="cat-card-img" style="background-image:url(${esc(c.image)})"></div>` : ""}
+      ${c.image ? `<div class="cat-card-img" style="background-image:url(${esc(c.image)})"></div>` : ''}
       <div class="cat-card-body">
         <div class="cat-card-info">
           <div class="cat-card-title">${esc(c.title)}</div>
-          ${c.description ? `<div class="cat-card-desc">${esc(c.description)}</div>` : ""}
+          ${c.description ? `<div class="cat-card-desc">${esc(c.description)}</div>` : ''}
         </div>
         <div class="cat-card-foot">
-          ${c.price ? `<div class="cat-card-price">£${esc(String(c.price))}</div>` : ""}
+          ${c.price ? `<div class="cat-card-price">£${esc(String(c.price))}</div>` : ''}
           <a href="${esc(c.payment_link)}" target="_blank" class="cat-book-btn">Book &amp; Pay →</a>
         </div>
       </div>
-    </div>`).join("");
+    </div>`).join('');
 
   const servicesHTML = (pf.services || []).map(s => `
     <div class="card service-card">
-      ${s.image ? `<div class="service-img" style="background-image:url(${esc(s.image)})"></div>` : `<div class="service-icon">${esc(s.icon || "✦")}</div>`}
+      ${s.image ? `<div class="service-img" style="background-image:url(${esc(s.image)})"></div>` : `<div class="service-icon">${esc(s.icon || '✦')}</div>`}
       <div class="service-title">${esc(s.title)}</div>
       <div class="service-desc">${esc(s.description)}</div>
-      ${s.price ? `<div class="service-price">${esc(s.price)}</div>` : ""}
-    </div>`).join("");
+      ${s.price ? `<div class="service-price">${esc(s.price)}</div>` : ''}
+    </div>`).join('');
 
   const projectsHTML = (pf.projects || []).map(p => `
     <div class="card">
       <div class="project-title">${esc(p.title)}</div>
       <div class="project-desc">${esc(p.description)}</div>
-      ${p.url ? `<a href="${esc(p.url)}" target="_blank" class="project-link">View project →</a>` : ""}
-    </div>`).join("");
+      ${p.url ? `<a href="${esc(p.url)}" target="_blank" class="project-link">View project →</a>` : ''}
+    </div>`).join('');
 
   const testimonialsHTML = (pf.testimonials || []).map(t2 => `
     <div class="card">
       <div class="testimonial-quote">"${esc(t2.quote)}"</div>
       <div class="testimonial-author">— ${esc(t2.author)}</div>
-    </div>`).join("");
+    </div>`).join('');
 
   const socialHTML = socialLinks.map(s => `
     <a href="${esc(s.url)}" target="_blank" class="social-link" style="--lc:${s.color}">
       <span class="si">${s.icon}</span>
-      <span>${esc(s.label)}</span>
+      <div class="sl-info">
+        <span class="sl-label">${esc(s.label)}</span>
+        ${s.subs ? `<span class="sl-sub">${esc(s.subs)} followers</span>` : ''}
+      </div>
       <span class="sa">→</span>
-    </a>`).join("");
+    </a>`).join('');
 
   const statsHTML = (pf.total_followers || pf.engagement_rate || pf.monthly_views) ? `
     <div class="stats-row">
-      ${pf.total_followers ? `<div class="stat"><div class="sv">${esc(pf.total_followers)}</div><div class="sl">FOLLOWERS</div></div>` : ""}
-      ${pf.engagement_rate ? `<div class="stat"><div class="sv">${esc(pf.engagement_rate)}</div><div class="sl">ENGAGEMENT</div></div>` : ""}
-      ${pf.monthly_views   ? `<div class="stat"><div class="sv">${esc(pf.monthly_views)}</div><div class="sl">MONTHLY VIEWS</div></div>` : ""}
-    </div>` : "";
+      ${pf.total_followers ? `<div class="stat"><div class="sv">${esc(pf.total_followers)}</div><div class="sl2">FOLLOWERS</div></div>` : ''}
+      ${pf.engagement_rate ? `<div class="stat"><div class="sv">${esc(pf.engagement_rate)}</div><div class="sl2">ENGAGEMENT</div></div>` : ''}
+      ${pf.monthly_views   ? `<div class="stat"><div class="sv">${esc(pf.monthly_views)}</div><div class="sl2">MONTHLY VIEWS</div></div>` : ''}
+    </div>` : '';
 
-  // Build gallery spreads — 1 full image per page
-  const gImgs = heroImgs.length > 0 ? heroImgs : [];
-  const gTotal = gImgs.length;
-  const gSpreadTotal = Math.max(1, gTotal);
+  /* ── Gallery flip pages ── */
+  const galleryImgs = heroImgs.length > 0 ? heroImgs : [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80',
+    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&q=80',
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
+    'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&q=80',
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80'
+  ];
+  const totalFlipPages = galleryImgs.length;
 
-  const galleryPagesHTML = gImgs.map((url, pi) => {
-    const front = `<div class="ab-face ab-face-f"><img src="${esc(url)}" alt="Photo ${pi+1}" loading="lazy" class="ab-full-img"/><div class="ab-pnum">${pi+1} / ${gTotal}</div><div class="ab-spine-f"></div></div>`;
-    const nextUrl = gImgs[pi+1];
-    const back = nextUrl
-      ? `<div class="ab-face ab-face-b"><img src="${esc(nextUrl)}" alt="Photo ${pi+2}" loading="lazy" class="ab-full-img"/><div class="ab-pnum">${pi+2} / ${gTotal}</div><div class="ab-spine-b"></div></div>`
-      : `<div class="ab-face ab-face-b"><div class="ab-end"><div class="ab-end-icon">✦</div><div class="ab-end-text">End of Gallery</div></div></div>`;
-    return `<div class="ab-page" id="abPage${pi}" style="z-index:${gSpreadTotal*2-pi}">${front}${back}</div>`;
-  }).join('');
+  const flipPagesHTML = galleryImgs.map((url, i) => `
+    <div class="fp-page" id="fpPage${i}" style="z-index:${totalFlipPages - i}">
+      <div class="fp-front">
+        <img src="${esc(url)}" alt="Gallery image ${i+1}" loading="lazy"/>
+        <div class="fp-page-num">${i+1} / ${totalFlipPages}</div>
+        <div class="fp-crease"></div>
+      </div>
+      <div class="fp-back">
+        ${i+1 < galleryImgs.length
+          ? `<img src="${esc(galleryImgs[i+1])}" alt="Gallery image ${i+2}" loading="lazy"/>
+             <div class="fp-page-num">${i+2} / ${totalFlipPages}</div>
+             <div class="fp-crease back-crease"></div>`
+          : `<div class="fp-back-blank"><div class="fp-back-icon">✦</div><div class="fp-back-text">End of Gallery</div></div>`}
+      </div>
+    </div>`).join('');
 
-  const galleryDotsHTML = gImgs.map((_,i) =>
-    `<button class="ab-dot${i===0?' active':''}" onclick="abGoto(${i})" aria-label="Photo ${i+1}"></button>`
+  const flipThumbsHTML = galleryImgs.map((_, i) =>
+    `<button class="fp-dot${i===0?' active':''}" onclick="fpGoto(${i})" aria-label="Page ${i+1}"></button>`
   ).join('');
+
+  /* ── Hero slideshow script ── */
+  const slideshowScript = heroImgs.length > 1 ? `
+    var _slides=document.querySelectorAll('.hero-slide');
+    var _hdots=document.querySelectorAll('.hero-dot');
+    var _si=0,_stimer=null;
+    function slideTo(n){
+      if(_slides[_si])_slides[_si].classList.remove('active');
+      if(_hdots[_si])_hdots[_si].classList.remove('active');
+      _si=n;
+      if(_slides[_si])_slides[_si].classList.add('active');
+      if(_hdots[_si])_hdots[_si].classList.add('active');
+    }
+    function _slideNext(){slideTo((_si+1)%${heroImgs.length});}
+    _stimer=setInterval(_slideNext,4500);
+    var _heroEl=document.getElementById('hero-home');
+    if(_heroEl){
+      _heroEl.addEventListener('mouseenter',function(){clearInterval(_stimer);});
+      _heroEl.addEventListener('mouseleave',function(){_stimer=setInterval(_slideNext,4500);});
+    }` : '';
+
+  /* ── Slideshow HTML ── */
+  const slideshowHTML = heroImgs.length > 1
+    ? heroImgs.map((url, idx) => `<div class="hero-slide${idx===0?' active':''}" style="background-image:url(${esc(url)})"></div>`).join('')
+    : heroImgs.length === 1
+      ? `<div class="hero-slide active" style="background-image:url(${esc(heroImgs[0])})"></div>`
+      : '';
+
+  /* ── Nav ── */
+  const hasServices = !!(pf.services && pf.services.length) || !!catalogueHTML;
+  const navLinks = `
+    <span class="nav-link active" onclick="showPage('page-home')">Home</span>
+    <span class="nav-link" onclick="showPage('page-gallery')">Gallery</span>
+    ${hasServices ? `<span class="nav-link" onclick="showPage('page-services')">Services</span>` : ''}`;
+
+  const mobileNavLinks = `
+    <div class="mnav-lk active" onclick="showPage('page-home');closeMnav()">Home</div>
+    <div class="mnav-lk" onclick="showPage('page-gallery');closeMnav()">Gallery</div>
+    ${hasServices ? `<div class="mnav-lk" onclick="showPage('page-services');closeMnav()">Services</div>` : ''}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>${esc(pf.name)} — ${esc(pf.niche)}</title>
+<title>${esc(pf.name)} — ${esc(pf.niche)} | ImpactGrid</title>
 <meta name="description" content="${esc(pf.ai_meta || pf.niche + ' creator portfolio')}"/>
+<meta property="og:title" content="${esc(pf.name)} — ${esc(pf.niche)}"/>
+<meta property="og:description" content="${esc(pf.ai_bio || pf.bio || '')}"/>
+${heroImg0 ? `<meta property="og:image" content="${esc(heroImg0)}"/>` : ''}
+<meta name="robots" content="index,follow"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:${t.bg};--sf:${t.surface};--tx:${t.text};--sub:${t.sub};--bd:${t.border};--ac:${accent};--fh:'Syne',sans-serif;--nav:64px}
+:root{--bg:${t.bg};--sf:${t.surface};--tx:${t.text};--sub:${t.sub};--bd:${t.border};--ac:${accent};--fh:'Syne',sans-serif;--nav-h:60px}
 html,body{height:100%}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;overflow:hidden}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-/* ── NAV ── */
-.nav{position:fixed;top:0;left:0;right:0;height:var(--nav);z-index:200;padding:0 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.45);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
-.nav-brand{font-family:var(--fh);font-size:15px;font-weight:800;cursor:pointer}
-.nav-links{display:flex;gap:4px;align-items:center}
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:100;padding:0 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.45);backdrop-filter:blur(18px);border-bottom:1px solid var(--bd)}
+.nav-brand{font-family:var(--fh);font-size:15px;font-weight:800;flex-shrink:0;cursor:pointer}
+.nav-logo{height:32px;width:auto;object-fit:contain;display:block}
+.nav-links{display:flex;gap:6px;align-items:center}
 .nav-link{padding:7px 14px;font-size:13px;color:var(--sub);border-radius:8px;transition:.15s;border:1px solid transparent;cursor:pointer}
 .nav-link:hover{color:var(--tx);background:rgba(255,255,255,.06)}
 .nav-link.active{color:var(--ac);border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.06)}
-.nav-cta{padding:8px 18px;background:var(--ac);color:#fff;border-radius:8px;font-size:12px;font-weight:700;font-family:var(--fh);transition:.15s;cursor:pointer}
+.nav-cta{padding:8px 18px;background:var(--ac);color:#fff;border-radius:8px;font-size:12px;font-weight:700;font-family:var(--fh);transition:.15s;flex-shrink:0;cursor:pointer}
 .nav-cta:hover{opacity:.85}
-.nav-ham{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
-.nav-ham span{display:block;height:2px;width:22px;background:var(--tx);border-radius:2px;transition:.25s}
-/* ── PAGES ── */
-.pg{position:fixed;inset:0;top:var(--nav);overflow-y:auto;overflow-x:hidden;display:none;opacity:0;transition:opacity .3s ease}
-.pg.active{display:block;opacity:1}
-/* ── HOME PAGE ── */
-.hero{min-height:calc(100vh - var(--nav));position:relative;display:flex;align-items:center;overflow:hidden}
-#heroBg{position:absolute;inset:0;background-image:url(${heroImg0});background-size:cover;background-position:center;transition:opacity .6s ease}
-.hero-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.5) 0%,rgba(0,0,0,.65) 60%,var(--bg) 100%)}
+.nav-hamburger{display:none;flex-direction:column;gap:4px;width:22px;cursor:pointer;padding:4px;flex-shrink:0}
+.nav-hamburger span{display:block;height:2px;background:var(--tx);border-radius:2px;transition:.25s}
+/* MOBILE NAV DRAWER */
+.mnav{position:fixed;inset:0;z-index:200;pointer-events:none}
+.mnav-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:.25s;backdrop-filter:blur(4px)}
+.mnav-drawer{position:absolute;top:0;right:0;bottom:0;width:260px;background:var(--sf);border-left:1px solid var(--bd);padding:24px 20px;display:flex;flex-direction:column;gap:4px;transform:translateX(100%);transition:.25s cubic-bezier(.4,0,.2,1)}
+.mnav-close{align-self:flex-end;font-size:20px;color:var(--sub);cursor:pointer;margin-bottom:12px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--bd)}
+.mnav-lk{padding:13px 16px;font-size:15px;font-weight:600;font-family:var(--fh);color:var(--sub);border-radius:10px;border:1px solid transparent;transition:.15s;cursor:pointer}
+.mnav-lk:hover{color:var(--tx);background:rgba(255,255,255,.05)}
+.mnav-lk.active{color:var(--ac);background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.mnav-cta{margin-top:12px;padding:13px;background:var(--ac);color:#fff;border-radius:10px;font-family:var(--fh);font-weight:700;text-align:center;font-size:14px;cursor:pointer}
+.mnav.open .mnav-backdrop{opacity:1;pointer-events:all}
+.mnav.open .mnav-drawer{transform:translateX(0);pointer-events:all}
+/* PAGES */
+.page{display:none;min-height:calc(100vh - var(--nav-h));padding-top:var(--nav-h)}
+.page.active{display:block}
+.pg-header{padding:48px 60px 0;max-width:1100px;margin:0 auto}
+/* HERO SLIDESHOW */
+.hero{min-height:90vh;position:relative;display:flex;align-items:center;overflow:hidden}
+#heroBg{position:absolute;inset:0;background-color:var(--sf)}
+.hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease}
+.hero-slide.active{opacity:1}
+.hero-dots{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:8px;align-items:center}
+.hero-dot{width:7px;height:7px;border-radius:50%;border:none;background:rgba(255,255,255,.35);cursor:pointer;transition:.2s;padding:0}
+.hero-dot.active{background:#fff;transform:scale(1.35)}
+.hero-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.45) 0%,rgba(0,0,0,.6) 55%,var(--bg) 100%);z-index:1}
 .hero-c{position:relative;z-index:2;padding:80px 60px 60px;max-width:800px}
 .eyebrow{font-size:11px;font-family:monospace;letter-spacing:3px;color:var(--ac);text-transform:uppercase;margin-bottom:14px}
 .tagline{font-size:13px;color:var(--sub);margin-bottom:6px;font-family:monospace;letter-spacing:1px}
-.headline{font-family:var(--fh);font-size:clamp(38px,5.5vw,76px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:18px}
-.hero-bio{font-size:16px;color:var(--sub);max-width:540px;line-height:1.75;margin-bottom:30px}
+.headline{font-family:var(--fh);font-size:clamp(36px,5.5vw,72px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:24px}
 .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:10px;font-family:var(--fh);font-size:13px;font-weight:700;transition:.2s;cursor:pointer;border:none}
 .btn-p{background:var(--ac);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .btn-p:hover{opacity:.85;transform:translateY(-1px)}
-.btn-s{border:1.5px solid rgba(255,255,255,.2) !important;color:var(--tx);background:transparent}
-.btn-s:hover{border-color:var(--ac) !important;color:var(--ac)}
-/* About body */
-.about-body{max-width:1100px;margin:0 auto;padding:48px 60px 80px}
-.sec-lbl{font-size:10px;font-weight:700;font-family:monospace;letter-spacing:3px;color:var(--ac);text-transform:uppercase;margin-bottom:10px}
-.sec-ttl{font-family:var(--fh);font-size:clamp(26px,3.5vw,44px);font-weight:800;letter-spacing:-1px;margin-bottom:28px;line-height:1.1}
-.stats-row{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:48px}
+.btn-s{border:1.5px solid rgba(255,255,255,.2)!important;color:var(--tx);background:transparent}
+.btn-s:hover{border-color:var(--ac)!important;color:var(--ac)}
+/* ABOUT BODY */
+.about-body{max-width:1100px;margin:0 auto;padding:48px 60px 56px}
+.about-bio-wrap{margin-top:48px}
+.about-bio-text{font-size:16px;color:var(--sub);max-width:660px;line-height:1.85;margin-top:16px}
+/* STATS */
+.stats-row{display:flex;gap:2px;flex-wrap:wrap}
 .stat{flex:1;min-width:110px;padding:18px 22px;background:var(--sf);border:1px solid var(--bd);text-align:center}
 .stat:first-child{border-radius:10px 0 0 10px}.stat:last-child{border-radius:0 10px 10px 0}
 .sv{font-family:var(--fh);font-size:30px;font-weight:800;color:var(--ac);line-height:1}
-.sl{font-size:9px;letter-spacing:2px;color:var(--sub);margin-top:5px;font-family:monospace}
-/* ── GALLERY PAGE ── */
-.gal-pg{padding:40px 60px 60px;max-width:1300px;margin:0 auto}
-.gal-pg .sec-lbl{margin-bottom:6px}
-.gal-pg .sec-ttl{margin-bottom:28px}
-.ab-stage{display:flex;flex-direction:column;align-items:center;gap:20px}
-.ab-book-wrap{display:flex;align-items:stretch;filter:drop-shadow(0 24px 60px rgba(0,0,0,.6));width:100%;max-width:min(1100px,calc(100vw - 40px))}
-.ab-cover{width:20px;background:linear-gradient(to bottom,#2a1f14,#3d2c1a,#2a1f14);flex-shrink:0}
-.ab-cover-l{border-radius:6px 2px 2px 6px;box-shadow:-4px 0 14px rgba(0,0,0,.45),inset -4px 0 8px rgba(0,0,0,.35)}
-.ab-cover-r{border-radius:2px 6px 6px 2px;box-shadow:4px 0 14px rgba(0,0,0,.45),inset 4px 0 8px rgba(0,0,0,.35)}
-.ab-book{position:relative;flex:1;aspect-ratio:16/10;perspective:2400px;transform-style:preserve-3d}
-.ab-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.645,.045,.355,1);will-change:transform}
-.ab-page.ab-flipped{transform:rotateY(-180deg)}
-.ab-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#000;overflow:hidden}
-.ab-face-f{border-radius:2px 12px 12px 2px}
-.ab-face-b{transform:rotateY(180deg);border-radius:12px 2px 2px 12px}
-.ab-full-img{width:100%;height:100%;object-fit:cover;display:block}
-.ab-spine-f{position:absolute;top:0;right:0;bottom:0;width:36px;background:linear-gradient(to left,rgba(0,0,0,.35),transparent);pointer-events:none;z-index:1}
-.ab-spine-b{position:absolute;top:0;left:0;bottom:0;width:36px;background:linear-gradient(to right,rgba(0,0,0,.35),transparent);pointer-events:none;z-index:1}
-.ab-pnum{position:absolute;bottom:14px;right:18px;font-size:11px;font-family:monospace;color:rgba(255,255,255,.9);background:rgba(0,0,0,.55);padding:5px 12px;border-radius:20px;backdrop-filter:blur(6px);letter-spacing:.04em;z-index:2}
-.ab-face-b .ab-pnum{right:auto;left:18px}
-.ab-end{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--sf)}
-.ab-end-icon{font-size:36px;color:var(--ac);opacity:.5}
-.ab-end-text{font-family:var(--fh);font-size:14px;color:var(--sub);letter-spacing:.05em}
-.ab-controls{display:flex;align-items:center;gap:16px}
-.ab-btn{display:flex;align-items:center;gap:6px;padding:10px 22px;border-radius:10px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
-.ab-btn:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}
-.ab-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
-.ab-dots{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:400px}
-.ab-dot{width:8px;height:8px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0;flex-shrink:0}
-.ab-dot.active{background:var(--ac);transform:scale(1.45)}
-/* ── SERVICES PAGE ── */
-.inner-pg{max-width:1100px;margin:0 auto;padding:48px 60px 80px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-.card{background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:24px;transition:.2s}
+.sl2{font-size:9px;letter-spacing:2px;color:var(--sub);margin-top:5px;font-family:monospace}
+/* SECTIONS */
+.sec-lbl{font-size:10px;font-weight:700;font-family:monospace;letter-spacing:3px;color:var(--ac);text-transform:uppercase;margin-bottom:10px}
+.sec-ttl{font-family:var(--fh);font-size:clamp(26px,3.5vw,44px);font-weight:800;letter-spacing:-1px;margin-bottom:36px;line-height:1.1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.card{background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:22px;transition:.2s}
 .card:hover{border-color:var(--ac);transform:translateY(-2px)}
-.service-icon{font-size:28px;margin-bottom:12px}
+.service-icon{font-size:26px;margin-bottom:10px}
 .service-img{height:150px;border-radius:10px;background-size:cover;background-position:center;margin-bottom:16px}
-.service-title{font-family:var(--fh);font-size:16px;font-weight:700;margin-bottom:8px}
-.service-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:12px}
-.service-price{font-family:monospace;font-size:18px;font-weight:700;color:var(--ac)}
+.service-title{font-family:var(--fh);font-size:15px;font-weight:700;margin-bottom:6px}
+.service-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:10px}
+.service-price{font-family:monospace;font-size:17px;font-weight:700;color:var(--ac)}
 .project-title{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:6px}
 .project-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:10px}
 .project-link{font-size:12px;font-weight:700;color:var(--ac);font-family:monospace}
@@ -1642,29 +1680,52 @@ a{color:inherit;text-decoration:none}
 .cat-card-price{font-family:monospace;font-size:22px;font-weight:800;color:var(--ac)}
 .cat-book-btn{display:inline-flex;align-items:center;gap:6px;background:var(--ac);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;transition:.2s;white-space:nowrap}
 .cat-book-btn:hover{opacity:.85;transform:translateY(-1px)}
-/* ── CONTACT PAGE ── */
-.contact-pg{max-width:680px;margin:0 auto;padding:48px 40px 80px}
-.contact-form{display:flex;flex-direction:column;gap:16px;margin-top:32px}
-.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.cf-input,.cf-textarea{width:100%;padding:14px 16px;background:var(--sf);border:1.5px solid var(--bd);border-radius:10px;color:var(--tx);font-family:'DM Sans',sans-serif;font-size:14px;transition:.2s;outline:none;resize:none}
-.cf-input:focus,.cf-textarea:focus{border-color:var(--ac)}
-.cf-textarea{min-height:140px}
-.cf-submit{padding:14px 28px;background:var(--ac);color:#fff;border:none;border-radius:10px;font-family:var(--fh);font-size:14px;font-weight:700;cursor:pointer;transition:.2s;align-self:flex-start}
-.cf-submit:hover{opacity:.85;transform:translateY(-1px)}
-.cf-success{display:none;padding:20px;background:rgba(74,222,128,.1);border:1.5px solid rgba(74,222,128,.3);border-radius:12px;color:#4ade80;font-size:14px;text-align:center}
-/* SOCIAL */
-.social-links{display:flex;flex-direction:column;gap:9px;max-width:520px;margin-top:28px}
-.social-link{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;transition:.2s}
+/* FLIP PAGE GALLERY */
+.fp-stage{display:flex;flex-direction:column;align-items:center;padding:32px 20px 64px;gap:32px}
+.fp-book{position:relative;width:min(700px,90vw);aspect-ratio:4/3;perspective:1400px;cursor:pointer}
+.fp-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.645,.045,.355,1),z-index 0s .35s;border-radius:4px 14px 14px 4px;box-shadow:6px 0 40px rgba(0,0,0,.45),-2px 0 8px rgba(0,0,0,.2)}
+.fp-page.flipped{transform:rotateY(-180deg)}
+.fp-front,.fp-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:4px 14px 14px 4px}
+.fp-back{transform:rotateY(180deg);border-radius:14px 4px 4px 14px}
+.fp-front img,.fp-back img{width:100%;height:100%;object-fit:cover;display:block}
+.fp-crease{position:absolute;left:0;top:0;bottom:0;width:28px;background:linear-gradient(to right,rgba(0,0,0,.35),rgba(0,0,0,.05) 60%,transparent);pointer-events:none}
+.fp-crease.back-crease{left:auto;right:0;background:linear-gradient(to left,rgba(0,0,0,.35),rgba(0,0,0,.05) 60%,transparent)}
+.fp-page-num{position:absolute;bottom:14px;right:18px;font-size:11px;font-family:monospace;color:rgba(255,255,255,.9);background:rgba(0,0,0,.55);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px);letter-spacing:.5px}
+.fp-back .fp-page-num{right:auto;left:18px}
+.fp-back-blank{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--sf)}
+.fp-back-icon{font-size:36px;color:var(--ac);opacity:.6}
+.fp-back-text{font-family:var(--fh);font-size:14px;color:var(--sub);letter-spacing:1px}
+.fp-controls{display:flex;align-items:center;gap:20px;margin-top:4px}
+.fp-btn{display:flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+.fp-btn:hover{border-color:var(--ac);color:var(--ac);transform:scale(1.04)}
+.fp-btn:disabled{opacity:.3;pointer-events:none}
+.fp-dots{display:flex;gap:7px;align-items:center}
+.fp-dot{width:8px;height:8px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0}
+.fp-dot.active{background:var(--ac);transform:scale(1.35)}
+.fp-dot:hover{background:var(--ac);opacity:.7}
+/* HOME SOCIAL LINKS */
+.home-socials-wrap{max-width:1100px;margin:0 auto;padding:0 60px 48px}
+.social-links{display:flex;flex-direction:column;gap:9px;max-width:560px}
+.social-link{display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;transition:.2s}
 .social-link:hover{border-color:var(--lc,var(--ac));transform:translateX(4px)}
-.si{width:34px;height:34px;border-radius:8px;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.sa{color:var(--sub);margin-left:auto;transition:.2s}
+.si{width:36px;height:36px;border-radius:9px;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sl-info{display:flex;flex-direction:column;gap:2px;flex:1}
+.sl-label{font-size:14px;font-weight:600;font-family:var(--fh)}
+.sl-sub{font-size:11px;color:var(--sub);font-family:monospace}
+.sa{color:var(--sub);transition:.2s;font-size:18px}
 .social-link:hover .sa{color:var(--lc,var(--ac));transform:translateX(3px)}
+/* CONTACT SECTION (on homepage) */
+.contact-wrap{background:linear-gradient(135deg,rgba(255,255,255,.025),transparent);border:1.5px solid var(--bd);border-radius:20px;padding:56px;text-align:center;margin:0 auto 72px;max-width:1100px;margin-left:auto;margin-right:auto}
+.contact-ttl{font-family:var(--fh);font-size:clamp(26px,4vw,46px);font-weight:800;letter-spacing:-1px;margin-bottom:10px}
+.contact-sub{font-size:14px;color:var(--sub);margin-bottom:28px;max-width:460px;margin-left:auto;margin-right:auto}
+/* SERVICES PAGE */
+.page-inner{max-width:1100px;margin:0 auto;padding:32px 60px 80px}
 /* FOOTER */
-.site-footer{border-top:1px solid var(--bd);padding:24px 60px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;flex-shrink:0}
+footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
 .fl{display:flex;gap:18px;font-size:12px;color:var(--sub)}
 .fl a{cursor:pointer}.fl a:hover{color:var(--ac)}
 /* MODALS */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
 .mo.show{display:flex}
 .mb{background:var(--sf);border:1px solid var(--bd);border-radius:16px;max-width:660px;width:100%;max-height:80vh;overflow-y:auto;padding:32px}
 .mb h2{font-family:var(--fh);font-size:20px;font-weight:800;margin-bottom:16px}
@@ -1673,29 +1734,28 @@ a{color:inherit;text-decoration:none}
 /* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .55s ease both}
-.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.32s}
-@keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.pg.active{animation:pgIn .3s ease both}
-/* MOBILE NAV DRAWER */
-.mnav{position:fixed;inset:0;z-index:300;pointer-events:none}
-.mnav-bd{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:.25s;backdrop-filter:blur(4px)}
-.mnav-dr{position:absolute;top:0;right:0;bottom:0;width:240px;background:var(--sf);border-left:1px solid var(--bd);padding:20px 16px;display:flex;flex-direction:column;gap:4px;transform:translateX(100%);transition:.25s cubic-bezier(.4,0,.2,1)}
-.mnav-x{align-self:flex-end;font-size:18px;color:var(--sub);cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid var(--bd);margin-bottom:10px}
-.mnav-lk{padding:12px 14px;font-size:14px;font-weight:600;font-family:var(--fh);color:var(--sub);border-radius:9px;cursor:pointer;transition:.15s}
-.mnav-lk:hover,.mnav-lk.active{color:var(--ac);background:rgba(255,255,255,.05)}
-.mnav-cta{margin-top:12px;padding:13px;background:var(--ac);color:#fff;border-radius:9px;font-family:var(--fh);font-weight:700;text-align:center;font-size:13px;cursor:pointer}
-.mnav.open .mnav-bd{opacity:1;pointer-events:all}
-.mnav.open .mnav-dr{transform:translateX(0);pointer-events:all}
+.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}
+@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.page.active{animation:pageIn .3s ease both}
+/* RESPONSIVE */
 @media(max-width:900px){
   .nav-links{display:none}
-  .nav-ham{display:flex}
+  .nav-hamburger{display:flex}
   .hero-c{padding:60px 20px 40px}
-  .about-body{padding:32px 20px 60px}
-  .inner-pg{padding:32px 20px 60px}
-  .gal-pg{padding:24px 16px 60px}
-  .contact-pg{padding:32px 20px 60px}
-  .site-footer{padding:20px}
-  .cf-row{grid-template-columns:1fr}
+  .about-body{padding:32px 20px 40px}
+  .home-socials-wrap{padding:0 20px 36px}
+  .contact-wrap{margin:0 20px 56px;padding:36px 24px}
+  .pg-header{padding:32px 20px 0}
+  .page-inner{padding:24px 20px 60px}
+  footer{padding:20px}
+  .fp-book{width:92vw}
+  .fp-btn{padding:8px 14px;font-size:12px}
+  .grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .headline{font-size:32px;letter-spacing:-1px}
+  .hero-btns{flex-direction:column;gap:8px}
+  .btn{justify-content:center}
 }
 </style>
 </head>
@@ -1703,245 +1763,217 @@ a{color:inherit;text-decoration:none}
 
 <!-- NAV -->
 <nav class="nav">
-  <div class="nav-brand" onclick="showPg('pg-home')">${esc(pf.name)}</div>
-  <div class="nav-links">
-    <span class="nav-link active" onclick="showPg('pg-home')">About</span>
-    <span class="nav-link" onclick="showPg('pg-gallery')">Gallery</span>
-    ${pf.services?.length || catalogueHTML ? `<span class="nav-link" onclick="showPg('pg-services')">Services</span>` : ""}
-    <span class="nav-link" onclick="showPg('pg-connect')">Connect</span>
-    <span class="nav-link" onclick="showPg('pg-contact')">Contact</span>
+  <div class="nav-brand" onclick="showPage('page-home')">
+    ${logoUrl ? `<img src="${esc(logoUrl)}" alt="${esc(pf.name)}" class="nav-logo"/>` : esc(pf.name)}
   </div>
-  <span class="nav-cta" onclick="showPg('pg-contact')">${esc(pf.ai_cta || "Work With Me")}</span>
-  <div class="nav-ham" onclick="openMnav()"><span></span><span></span><span></span></div>
+  <div class="nav-links">${navLinks}</div>
+  ${pf.email ? `<a class="nav-cta" href="mailto:${esc(pf.email)}">${esc(pf.ai_cta || 'Work With Me')}</a>` : ''}
+  <div class="nav-hamburger" onclick="openMnav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </div>
 </nav>
 
 <!-- MOBILE NAV -->
 <div class="mnav" id="mnavOverlay">
-  <div class="mnav-bd" onclick="closeMnav()"></div>
-  <div class="mnav-dr">
-    <div class="mnav-x" onclick="closeMnav()">✕</div>
-    <div class="mnav-lk active" onclick="showPg('pg-home');closeMnav()">About</div>
-    <div class="mnav-lk" onclick="showPg('pg-gallery');closeMnav()">Gallery</div>
-    ${pf.services?.length || catalogueHTML ? `<div class="mnav-lk" onclick="showPg('pg-services');closeMnav()">Services</div>` : ""}
-    <div class="mnav-lk" onclick="showPg('pg-connect');closeMnav()">Connect</div>
-    <div class="mnav-lk" onclick="showPg('pg-contact');closeMnav()">Contact</div>
-    <div class="mnav-cta" onclick="showPg('pg-contact');closeMnav()">${esc(pf.ai_cta || "Work With Me")}</div>
+  <div class="mnav-backdrop" onclick="closeMnav()"></div>
+  <div class="mnav-drawer">
+    <div class="mnav-close" onclick="closeMnav()">✕</div>
+    ${mobileNavLinks}
+    ${pf.email ? `<div class="mnav-cta" onclick="closeMnav();document.getElementById('home-contact').scrollIntoView({behavior:'smooth'})">${esc(pf.ai_cta || 'Work With Me')}</div>` : ''}
   </div>
 </div>
 
-<!-- PAGE: ABOUT/HOME -->
-<div class="pg active" id="pg-home">
-  <div class="hero">
-    <div id="heroBg"></div>
+<!-- PAGE: HOME -->
+<section class="page active" id="page-home">
+
+  <!-- HERO SLIDESHOW -->
+  <div class="hero" id="hero-home">
+    <div id="heroBg">${slideshowHTML}</div>
     <div class="hero-ov"></div>
+    ${heroImgs.length > 1 ? `
+    <div class="hero-dots">
+      ${heroImgs.map((_,i) => `<button class="hero-dot${i===0?' active':''}" onclick="slideTo(${i})" aria-label="Slide ${i+1}"></button>`).join('')}
+    </div>` : ''}
     <div class="hero-c">
       <div class="eyebrow fu">${esc(pf.niche)}</div>
-      <div class="tagline fu d1">${esc(pf.ai_tagline || "")}</div>
+      <div class="tagline fu d1">${esc(pf.ai_tagline || '')}</div>
       <h1 class="headline fu d2">${esc(pf.ai_headline || pf.name)}</h1>
-      <p class="hero-bio fu d3">${esc(pf.ai_bio || pf.bio || "")}</p>
-      <div class="hero-btns fu d4">
-        <span class="btn btn-p" onclick="showPg('pg-contact')">${esc(pf.ai_cta || "Work With Me")} →</span>
-        ${pf.services?.length ? `<span class="btn btn-s" onclick="showPg('pg-services')">See My Services</span>` : ""}
+      <div class="hero-btns fu d3">
+        <a class="btn btn-p" href="#home-contact" onclick="document.getElementById('home-contact').scrollIntoView({behavior:'smooth'});return false;">${esc(pf.ai_cta || 'Work With Me')} →</a>
+        ${hasServices ? `<a class="btn btn-s" href="#" onclick="showPage('page-services');return false;">See My Services</a>` : ''}
       </div>
     </div>
   </div>
+
+  <!-- ABOUT -->
   <div class="about-body">
     ${statsHTML}
-    <div class="sec-lbl">About</div>
-    <div class="sec-ttl">${esc(pf.name)}</div>
-    <p style="font-size:15px;color:var(--sub);max-width:660px;line-height:1.85">${esc(pf.ai_bio || pf.bio || "")}</p>
+    <div class="about-bio-wrap">
+      <div class="sec-lbl">About</div>
+      <div class="sec-ttl">${esc(pf.name)}</div>
+      <p class="about-bio-text">${esc(pf.ai_bio || pf.bio || '')}</p>
+    </div>
   </div>
-  <footer class="site-footer">
-    <div style="font-family:var(--fh);font-size:14px;font-weight:700">${esc(pf.name)}</div>
+
+  <!-- SOCIAL LINKS -->
+  ${socialLinks.length ? `
+  <div class="home-socials-wrap">
+    <div class="sec-lbl" style="margin-bottom:14px">Find Me</div>
+    <div class="social-links">${socialHTML}</div>
+  </div>` : ''}
+
+  <!-- CONTACT CTA -->
+  <div class="contact-wrap" id="home-contact">
+    <div class="sec-lbl">Let's Collaborate</div>
+    <div class="contact-ttl">Ready to work together?</div>
+    <p class="contact-sub">I partner with brands that align with my audience's values. Let's create something remarkable.</p>
+    ${pf.email ? `<a class="btn btn-p" href="mailto:${esc(pf.email)}" style="margin:0 auto;display:inline-flex">Get In Touch →</a>` : ''}
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="font-family:var(--fh);font-size:14px;font-weight:700">
+      ${logoUrl ? `<img src="${esc(logoUrl)}" alt="${esc(pf.name)}" style="height:28px;object-fit:contain"/>` : esc(pf.name)}
+    </div>
     <div class="fl">
-      ${pf.ai_terms ? `<a onclick="document.getElementById('tm').classList.add('show')">Terms &amp; Conditions</a>` : ""}
-      ${pf.ai_privacy ? `<a onclick="document.getElementById('pm').classList.add('show')">Privacy Policy</a>` : ""}
-      ${pf.email ? `<a href="mailto:${esc(pf.email)}">Contact</a>` : ""}
+      ${pf.ai_terms   ? `<a onclick="document.getElementById('tm').classList.add('show')">Terms &amp; Conditions</a>` : ''}
+      ${pf.ai_privacy ? `<a onclick="document.getElementById('pm').classList.add('show')">Privacy Policy</a>` : ''}
+      ${pf.email      ? `<a href="mailto:${esc(pf.email)}">Contact</a>` : ''}
     </div>
     <div style="font-size:11px;color:var(--sub)">Made with <a href="https://impactgridgroup.com" target="_blank" style="color:var(--ac)">ImpactGrid ✦</a></div>
   </footer>
-</div>
+
+</section>
 
 <!-- PAGE: GALLERY -->
-<div class="pg" id="pg-gallery">
-  <div class="gal-pg">
+<section class="page" id="page-gallery">
+  <div class="pg-header">
     <div class="sec-lbl">Gallery</div>
     <div class="sec-ttl">My Work</div>
-    ${gImgs.length > 0 ? `
-    <div class="ab-stage">
-      <div class="ab-book-wrap">
-        <div class="ab-cover ab-cover-l"></div>
-        <div class="ab-book" id="abBook">${galleryPagesHTML}</div>
-        <div class="ab-cover ab-cover-r"></div>
-      </div>
-      <div class="ab-controls">
-        <button class="ab-btn" id="abBtnPrev" onclick="abStep(-1)" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Prev
-        </button>
-        <div class="ab-dots">${galleryDotsHTML}</div>
-        <button class="ab-btn" id="abBtnNext" onclick="abStep(1)">
-          Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-    </div>` : `<p style="color:var(--sub);font-size:14px">No gallery images yet.</p>`}
   </div>
-</div>
+  <div class="fp-stage">
+    <div class="fp-book" id="fpBook">${flipPagesHTML}</div>
+    <div class="fp-controls">
+      <button class="fp-btn fp-btn-prev" onclick="fpStep(-1)" aria-label="Previous page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>Prev
+      </button>
+      <div class="fp-dots" id="fpDots">${flipThumbsHTML}</div>
+      <button class="fp-btn fp-btn-next" onclick="fpStep(1)" aria-label="Next page">
+        Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
 
 <!-- PAGE: SERVICES -->
-${pf.services?.length || catalogueHTML ? `
-<div class="pg" id="pg-services">
-  <div class="inner-pg">
-    ${pf.services?.length ? `
-    <div class="sec-lbl">What I Offer</div>
-    <div class="sec-ttl">Services &amp; Rates</div>
-    <div class="grid">${servicesHTML}</div>` : ""}
+${hasServices ? `
+<section class="page" id="page-services">
+  <div class="pg-header">
+    ${(pf.services && pf.services.length) ? `<div class="sec-lbl">What I Offer</div><div class="sec-ttl">Services &amp; Rates</div>` : ''}
+  </div>
+  <div class="page-inner">
+    ${(pf.services && pf.services.length) ? `<div class="grid">${servicesHTML}</div>` : ''}
     ${catalogueHTML ? `
-    <div class="sec-lbl" style="margin-top:${pf.services?.length ? "56px" : "0"}">Ready to Book</div>
+    <div class="sec-lbl" style="margin-top:${(pf.services && pf.services.length) ? '56px' : '0'}">Ready to Book</div>
     <div class="sec-ttl">Book &amp; Pay</div>
     <p style="opacity:.7;font-size:14px;margin-bottom:24px">Select a package below and pay securely via Stripe.</p>
-    <div class="catalogue-grid">${catalogueHTML}</div>` : ""}
-    ${pf.projects?.length ? `
+    <div class="catalogue-grid">${catalogueHTML}</div>` : ''}
+    ${(pf.projects && pf.projects.length) ? `
     <div class="sec-lbl" style="margin-top:56px">Portfolio</div>
     <div class="sec-ttl">Selected Work</div>
-    <div class="grid">${projectsHTML}</div>` : ""}
-    ${pf.testimonials?.length ? `
+    <div class="grid">${projectsHTML}</div>` : ''}
+    ${(pf.testimonials && pf.testimonials.length) ? `
     <div class="sec-lbl" style="margin-top:56px">Social Proof</div>
     <div class="sec-ttl">What Brands Say</div>
-    <div class="grid">${testimonialsHTML}</div>` : ""}
+    <div class="grid">${testimonialsHTML}</div>` : ''}
   </div>
-</div>` : ""}
-
-<!-- PAGE: CONNECT -->
-<div class="pg" id="pg-connect">
-  <div class="inner-pg">
-    <div class="sec-lbl">Find Me</div>
-    <div class="sec-ttl">Follow My Journey</div>
-    <div class="social-links">${socialHTML}</div>
-  </div>
-</div>
-
-<!-- PAGE: CONTACT -->
-<div class="pg" id="pg-contact">
-  <div class="contact-pg">
-    <div class="sec-lbl">Let's Collaborate</div>
-    <div class="sec-ttl">Get In Touch</div>
-    <p style="font-size:15px;color:var(--sub);max-width:520px;line-height:1.75">I partner with brands that align with my audience's values. Fill in the form and I'll get back to you shortly.</p>
-    <div class="contact-form" id="contactForm">
-      <div class="cf-row">
-        <input class="cf-input" id="cfName" placeholder="Your name" />
-        <input class="cf-input" id="cfEmail" type="email" placeholder="Your email" />
-      </div>
-      <input class="cf-input" id="cfBrand" placeholder="Brand / Company (optional)" />
-      <textarea class="cf-textarea" id="cfMsg" placeholder="Tell me about your project, campaign or collab idea…"></textarea>
-      <button class="cf-submit" onclick="submitContactForm()">Send Message →</button>
-      <div class="cf-success" id="cfSuccess">✓ Message sent! I'll be in touch soon.</div>
-    </div>
-    ${socialHTML ? `<div style="margin-top:48px"><div class="sec-lbl">Also find me on</div><div class="social-links">${socialHTML}</div></div>` : ""}
-  </div>
-</div>
+</section>` : ''}
 
 <!-- LEGAL MODALS -->
 <div class="mo" id="tm" onclick="if(event.target===this)this.classList.remove('show')">
-  <div class="mb"><button class="mc" onclick="document.getElementById('tm').classList.remove('show')">✕</button><h2>Terms &amp; Conditions</h2><p>${esc(pf.ai_terms || "No terms have been set.")}</p></div>
+  <div class="mb"><button class="mc" onclick="document.getElementById('tm').classList.remove('show')">✕</button><h2>Terms &amp; Conditions</h2><p>${esc(pf.ai_terms || 'No terms have been set.')}</p></div>
 </div>
 <div class="mo" id="pm" onclick="if(event.target===this)this.classList.remove('show')">
-  <div class="mb"><button class="mc" onclick="document.getElementById('pm').classList.remove('show')">✕</button><h2>Privacy Policy</h2><p>${esc(pf.ai_privacy || "No privacy policy has been set.")}</p></div>
+  <div class="mb"><button class="mc" onclick="document.getElementById('pm').classList.remove('show')">✕</button><h2>Privacy Policy</h2><p>${esc(pf.ai_privacy || 'No privacy policy has been set.')}</p></div>
 </div>
 
 <script>
 // Hero slideshow
-document.getElementById("heroBg").style.backgroundImage = "url(${heroImg0})";
 ${slideshowScript}
 
-// ── Page routing ──
-var _curPg = 'pg-home';
-function showPg(id) {
-  var old = document.getElementById(_curPg);
-  var nxt = document.getElementById(id);
-  if (!nxt || id === _curPg) return;
+// Page routing
+var _activePage = 'page-home';
+function showPage(id) {
+  var old  = document.getElementById(_activePage);
+  var next = document.getElementById(id);
+  if (!next) return;
   if (old) old.classList.remove('active');
-  nxt.classList.add('active');
-  nxt.scrollTop = 0;
-  _curPg = id;
+  next.classList.add('active');
+  _activePage = id;
   document.querySelectorAll('.nav-link,.mnav-lk').forEach(function(el) {
     var fn = el.getAttribute('onclick') || '';
     el.classList.toggle('active', fn.indexOf(id) > -1);
   });
+  window.scrollTo(0, 0);
 }
+
 // Mobile nav
-function openMnav() { document.getElementById('mnavOverlay').classList.add('open'); }
+function openMnav()  { document.getElementById('mnavOverlay').classList.add('open'); }
 function closeMnav() { document.getElementById('mnavOverlay').classList.remove('open'); }
 
-// ── Photo album gallery ──
-(function(){
-  var _abIdx = 0;
-  var _abTotal = ${gTotal};
-  var _abBusy = false;
-  function abUI() {
-    document.querySelectorAll('.ab-dot').forEach(function(d,j){ d.classList.toggle('active', j === _abIdx); });
-    var p = document.getElementById('abBtnPrev'), n = document.getElementById('abBtnNext');
-    if (p) p.disabled = _abIdx === 0;
-    if (n) n.disabled = _abIdx >= _abTotal - 1;
-  }
-  window.abGoto = function(target) {
-    if (_abBusy || target === _abIdx) return;
-    _abBusy = true;
-    var dir = target > _abIdx ? 1 : -1;
-    function flip() {
-      if (target === _abIdx) { setTimeout(function(){ _abBusy = false; }, 50); return; }
-      if (dir > 0) {
-        var pg = document.getElementById('abPage' + _abIdx);
-        if (pg) { pg.classList.add('ab-flipped'); pg.style.zIndex = _abTotal - _abIdx; }
-        _abIdx++;
-      } else {
-        _abIdx--;
-        var pg = document.getElementById('abPage' + _abIdx);
-        if (pg) { pg.classList.remove('ab-flipped'); pg.style.zIndex = _abTotal * 2 - _abIdx; }
-      }
-      abUI();
-      if (target !== _abIdx) setTimeout(flip, 170);
-      else setTimeout(function(){ _abBusy = false; }, 800);
+// Gallery flip-page
+var _fpIdx = 0, _fpTotal = ${totalFlipPages}, _fpFlipping = false;
+function fpGoto(i) {
+  if (_fpFlipping || i === _fpIdx) return;
+  _fpFlipping = true;
+  var dir = i > _fpIdx ? 1 : -1;
+  var steps = Math.abs(i - _fpIdx);
+  function flipOne() {
+    if (steps-- <= 0) { _fpFlipping = false; return; }
+    var cur = _fpIdx;
+    var pg  = document.getElementById('fpPage' + cur);
+    if (dir > 0) {
+      if (pg) { pg.classList.add('flipped'); pg.style.zIndex = (_fpTotal - cur); }
+      _fpIdx++;
+    } else {
+      _fpIdx--;
+      var pg2 = document.getElementById('fpPage' + _fpIdx);
+      if (pg2) { pg2.classList.remove('flipped'); pg2.style.zIndex = (_fpTotal - _fpIdx); }
     }
-    flip();
-  };
-  window.abStep = function(d) { window.abGoto(Math.max(0, Math.min(_abIdx + d, _abTotal - 1))); };
-  abUI();
-  var bk = document.getElementById('abBook');
-  if (bk) {
-    var tx = 0;
-    bk.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
-    bk.addEventListener('touchend', function(e){ var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) window.abStep(dx < 0 ? 1 : -1); });
+    document.querySelectorAll('.fp-dot').forEach(function(d, j) { d.classList.toggle('active', j === _fpIdx); });
+    var pb = document.getElementById('fpBtnPrev'), nb = document.getElementById('fpBtnNext');
+    if (pb) pb.disabled = _fpIdx === 0;
+    if (nb) nb.disabled = _fpIdx >= _fpTotal - 1;
+    if (steps > 0) setTimeout(flipOne, 120); else setTimeout(function() { _fpFlipping = false; }, 700);
   }
-  document.addEventListener('keydown', function(e){ if (_curPg === 'pg-gallery'){ if (e.key === 'ArrowLeft') window.abStep(-1); if (e.key === 'ArrowRight') window.abStep(1); }});
-})();
-
-// ── Contact form ──
-function submitContactForm() {
-  var name  = document.getElementById('cfName').value.trim();
-  var email = document.getElementById('cfEmail').value.trim();
-  var msg   = document.getElementById('cfMsg').value.trim();
-  if (!name || !email || !msg) { alert('Please fill in your name, email and message.'); return; }
-  var btn = document.querySelector('.cf-submit');
-  if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
-  fetch('https://impactgrid-dijo.onrender.com/contact/send', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: name, email: email, message: msg, creatorEmail: '${esc(pf.email || "")}' })
-  }).then(function(r){ return r.json(); }).then(function(d){
-    var s = document.getElementById('cfSuccess');
-    if (s) s.style.display = 'block';
-    if (btn) btn.style.display = 'none';
-  }).catch(function(){
-    if (btn) { btn.textContent = 'Send Message →'; btn.disabled = false; }
-    alert('Could not send — please try emailing directly.');
-  });
+  flipOne();
+}
+function fpStep(d) { fpGoto(Math.max(0, Math.min(_fpIdx + d, _fpTotal - 1))); }
+document.addEventListener('keydown', function(e) {
+  if (_activePage === 'page-gallery') {
+    if (e.key === 'ArrowLeft')  fpStep(-1);
+    if (e.key === 'ArrowRight') fpStep(1);
+  }
+});
+document.querySelectorAll('.fp-btn-prev').forEach(function(b) { b.id = 'fpBtnPrev'; b.disabled = true; });
+document.querySelectorAll('.fp-btn-next').forEach(function(b) { b.id = 'fpBtnNext'; });
+var _fpTx = 0, fpBook = document.getElementById('fpBook');
+if (fpBook) {
+  fpBook.addEventListener('touchstart', function(e) { _fpTx = e.touches[0].clientX; }, { passive: true });
+  fpBook.addEventListener('touchend',   function(e) { var dx = e.changedTouches[0].clientX - _fpTx; if (Math.abs(dx) > 50) fpStep(dx < 0 ? 1 : -1); });
+  fpBook.addEventListener('click',      function(e) { var r = fpBook.getBoundingClientRect(); if (e.clientX - r.left > r.width / 2) fpStep(1); else fpStep(-1); });
 }
 
-const _obs = new IntersectionObserver(function(e){ e.forEach(function(x){ if(x.isIntersecting) x.target.classList.add('fu'); }); },{threshold:0.1});
-document.querySelectorAll('.card,.social-link,.stat').forEach(function(el){ _obs.observe(el); });
+// Intersection observer for animations
+var _obs = new IntersectionObserver(function(e) {
+  e.forEach(function(x) { if (x.isIntersecting) x.target.classList.add('fu'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.card,.social-link,.stat').forEach(function(el) { _obs.observe(el); });
 <\/script>
 </body>
 </html>`;
 }
+
 
 /* ══════════════════════════════════════════════════════════
    SAVE & PUBLISH
