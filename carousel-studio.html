@@ -4,6 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>Carousel Studio · ImpactGrid</title>
+<meta name="description" content="Create high-performing social media carousels with AI. Dijo writes punchy, platform-native copy with live trend data, captions, and hashtags — exported at 1080px."/>
+<meta property="og:title" content="Carousel Studio · ImpactGrid"/>
+<meta property="og:description" content="AI carousel creator — real copy, live hashtags, 1080px PNG export."/>
+<meta property="og:type" content="website"/>
+<meta name="theme-color" content="#0d1017"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <!-- shared.css is the SINGLE SOURCE — all tokens, nav, buttons, typography -->
@@ -156,11 +161,13 @@
 /* Slide count row */
 .cs-cnt-row { display: flex; align-items: center; }
 .cs-cnt-btn {
-  width: 34px; height: 34px;
+  width: 44px; height: 44px;
   background: var(--card); border: 1px solid var(--border2);
-  color: var(--text2); font-size: 18px;
+  color: var(--text2); font-size: 20px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all .2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .cs-cnt-btn:first-child { border-radius: var(--r) 0 0 var(--r); }
 .cs-cnt-btn:last-child  { border-radius: 0 var(--r) var(--r) 0; }
@@ -612,32 +619,45 @@
   }
   .cs-left, .cs-right {
     position: fixed; bottom: 0; left: 0; right: 0;
-    z-index: 800; height: 72vh;
+    z-index: 800; height: 78vh;
+    max-height: 88vh;
     border-radius: 20px 20px 0 0;
     border: 1px solid var(--border2);
-    box-shadow: 0 -16px 48px rgba(0,0,0,.3);
+    box-shadow: 0 -16px 48px rgba(0,0,0,.4);
     transform: translateY(100%);
-    transition: transform .35s cubic-bezier(.4,0,.2,1);
+    transition: transform .32s cubic-bezier(.4,0,.2,1);
+    /* Safe area for iOS notch */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .cs-left::before, .cs-right::before {
     content: ''; display: block;
-    width: 36px; height: 4px; background: var(--border2);
-    border-radius: 99px; margin: 10px auto 2px; flex-shrink: 0;
+    width: 40px; height: 4px; background: var(--border2);
+    border-radius: 99px; margin: 12px auto 4px; flex-shrink: 0;
   }
   .cs-left.open, .cs-right.open { transform: translateY(0); }
   .cs-center { grid-column: 1; grid-row: 1; overflow: hidden; }
   .cs-mob-left-btn, .cs-mob-right-btn { display: inline-flex !important; }
   .cs-panel-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.45); z-index: 790;
+    background: rgba(0,0,0,.55); z-index: 790;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
   }
   .cs-panel-overlay.open { display: block; }
   .slide-canvas { width: 320px !important; height: 320px !important; }
+  /* Mobile topbar — make buttons tappable */
+  .cs-btn { padding: 6px 10px; font-size: 11px; min-height: 36px; }
+  /* Strip thumbnails — larger on mobile */
+  .sthumb { width: 54px; height: 54px; }
+  /* Export modal — full width on mobile */
+  .modal { max-width: 100%; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 0; right: 0; margin: 0; }
+  .modal-bg { align-items: flex-end; padding: 0; }
 }
 
 @media (max-width: 520px) {
-  .slide-canvas { width: 270px !important; height: 270px !important; }
+  .slide-canvas { width: 280px !important; height: 280px !important; }
   .cs-plan-name, .cs-plan-badge { display: none; }
+  .cs-topbar { padding: 0 8px; gap: 5px; }
 }
 </style>
 </head>
@@ -1048,8 +1068,8 @@
 
         <!-- Brand name -->
         <div class="cs-esec">
-          <div class="cs-esec-title">Brand Name</div>
-          <input type="text" class="cs-input" id="brandInput" placeholder="Your Brand" oninput="updateBrand()"/>
+          <div class="cs-esec-title">Brand Name <span style="font-weight:400;font-size:9px;color:var(--text3);text-transform:none;letter-spacing:0">— auto-filled from your profile</span></div>
+          <input type="text" class="cs-input" id="brandInput" placeholder="Your name or handle" oninput="updateBrand()"/>
         </div>
 
       </div>
@@ -1163,13 +1183,24 @@ window.addEventListener('load', function() {
     }
   });
 
-  // Default accent + brand in ST
+  // Default accent; brand will be set from user profile in patchBrand()
   if (typeof ST !== 'undefined') {
     ST.accent = '#f5e400';
-    ST.brand  = 'www.impactgridgroup.com';
-    if (document.getElementById('brandInput'))
-      document.getElementById('brandInput').value = 'www.impactgridgroup.com';
   }
+
+  // Restore last-used platform and tone from session
+  try {
+    var lastPlatform = localStorage.getItem('ig_cs_platform');
+    var lastTone     = localStorage.getItem('ig_cs_tone');
+    if (lastPlatform) {
+      var platEl = document.getElementById('platSelect');
+      if (platEl) platEl.value = lastPlatform;
+    }
+    if (lastTone) {
+      var toneEl = document.getElementById('toneSelect');
+      if (toneEl) toneEl.value = lastTone;
+    }
+  } catch(e) {}
 
   // Server keep-alive ping every 10 min
   setInterval(function() {
@@ -1181,9 +1212,11 @@ window.addEventListener('load', function() {
 function updatePlanPill() {
   var user  = window.igUser || {};
   var plan  = user.plan  || (function(){ try { return localStorage.getItem('ig_plan') || 'free'; } catch(e){ return 'free'; } })();
-  var uses  = typeof user.aiUses === 'number' ? user.aiUses : (function(){ try { return parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e){ return 0; } })();
-  var cfg   = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) || { label: 'Free', ai_uses: 3 };
-  var limit = cfg.ai_uses;
+  // Use carousel-specific counter — separate from portfolio uses
+  var uses  = (function(){ try { return parseInt(localStorage.getItem('ig_carousel_uses') || '0'); } catch(e){ return 0; } })();
+  var cfg   = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) || { label: 'Free', carousels: 3, ai_uses: 3 };
+  // Use carousels limit if defined
+  var limit = (cfg.carousels !== undefined) ? cfg.carousels : cfg.ai_uses;
   var name  = user.firstName || user.name || (function(){ try { return localStorage.getItem('ig_name') || ''; } catch(e){ return ''; } })();
 
   var pill    = document.getElementById('csPlanPill');
@@ -1234,18 +1267,43 @@ function updatePlanPill() {
 document.addEventListener('ig-user-ready', updatePlanPill);
 document.addEventListener('ig-plan-ready', updatePlanPill);
 
-// ── 3. BRAND LOCK ────────────────────────────────────────
-// Brand is always www.impactgridgroup.com — never editable
+// ── 3. BRAND — reads from user profile, editable ─────────
 (function patchBrand() {
-  var BRAND = 'www.impactgridgroup.com';
-  window.addEventListener('load', function() {
-    if (typeof ST !== 'undefined') ST.brand = BRAND;
+  function applyBrand(name) {
+    var brand = name || 'ImpactGrid';
+    if (typeof ST !== 'undefined') ST.brand = brand;
     var bi = document.getElementById('brandInput');
-    if (bi) { bi.value = BRAND; bi.disabled = true; bi.style.opacity = '.5'; }
+    if (bi) { bi.value = brand; }
+  }
+
+  // Try to set brand from cached user info immediately
+  window.addEventListener('load', function() {
+    var cachedName = '';
+    try { cachedName = localStorage.getItem('ig_name') || ''; } catch(e) {}
+    if (!cachedName && window.igUser) {
+      cachedName = window.igUser.firstName || window.igUser.name || '';
+    }
+    applyBrand(cachedName);
   });
-  // Override updateBrand so JS calls are no-ops
-  window.updateBrand = function() {};
-  window.getIGBrand  = function() { return BRAND; };
+
+  // Update when user data is ready (from nav.js auth flow)
+  document.addEventListener('ig-user-ready', function() {
+    var user = window.igUser || {};
+    var name = user.firstName || user.name || '';
+    if (name) applyBrand(name);
+  });
+
+  // Allow manual editing — restore updateBrand from carousel-studio.js
+  window.updateBrand = function() {
+    var bi = document.getElementById('brandInput');
+    if (bi && typeof ST !== 'undefined') {
+      ST.brand = bi.value;
+      if (ST.slides.length && typeof renderSlide === 'function') renderSlide();
+    }
+  };
+  window.getIGBrand = function() {
+    return (typeof ST !== 'undefined' && ST.brand) ? ST.brand : 'ImpactGrid';
+  };
 })();
 
 // ── 4. APPLY LAYOUT TO ALL SLIDES ───────────────────────
@@ -1284,7 +1342,7 @@ function showGuide() {
   setTimeout(function() { if (tip.parentNode) tip.remove(); }, 4500);
 }
 
-// Wrap generate() to show guide tooltip + mark caption as loading
+// Wrap generate() to show guide tooltip + save settings + mark caption as loading
 window.addEventListener('load', function() {
   var _genOrig = window.generate;
   if (typeof _genOrig !== 'function') {
@@ -1292,6 +1350,14 @@ window.addEventListener('load', function() {
     return;
   }
   window.generate = async function() {
+    // Persist platform + tone so next session restores them
+    try {
+      var platEl = document.getElementById('platSelect');
+      var toneEl = document.getElementById('toneSelect');
+      if (platEl) localStorage.setItem('ig_cs_platform', platEl.value);
+      if (toneEl) localStorage.setItem('ig_cs_tone', toneEl.value);
+    } catch(e) {}
+
     await _genOrig.apply(this, arguments);
     setTimeout(showGuide, 1400);
     var capEl  = document.getElementById('eCap');
@@ -1339,6 +1405,27 @@ function closeAllPanels() {
   if (right) right.classList.remove('open');
   if (ov)    ov.classList.remove('open');
 }
+
+// ── Swipe-down to close mobile panels ───────────────────
+(function addSwipeClose() {
+  var _touchStartY = 0;
+  function initSwipe(panelId) {
+    var el = document.getElementById(panelId);
+    if (!el) return;
+    el.addEventListener('touchstart', function(e) {
+      _touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', function(e) {
+      var dy = e.changedTouches[0].clientY - _touchStartY;
+      // Swipe down more than 60px = close
+      if (dy > 60) closeAllPanels();
+    }, { passive: true });
+  }
+  window.addEventListener('load', function() {
+    initSwipe('csLeft');
+    initSwipe('csRight');
+  });
+})();
 
 // ── 8. DOWNLOAD ALL with progress bar ───────────────────
 function isSafariIOS() {
