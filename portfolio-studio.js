@@ -1596,15 +1596,20 @@ function buildPortfolioHTML(pf) {
       ${pf.monthly_views   ? `<div class="stat"><div class="sv">${esc(pf.monthly_views)}</div><div class="sl2">MONTHLY VIEWS</div></div>` : ''}
     </div>` : '';
 
-  /* ── Gallery flip pages ── */
-  const galleryImgs = heroImgs.length > 0 ? heroImgs : [
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80',
-    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&q=80',
-    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
-    'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&q=80',
-    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80'
-  ];
+  /* ── Gallery flip pages — use hero_media, then dijo section assets, then generic fallback ── */
+  const _dijoGalleryUrl = sa.gallery?.url || sa.hero?.url || '';
+  const galleryImgs = heroImgs.length > 0 ? heroImgs
+    : _dijoGalleryUrl ? [_dijoGalleryUrl,
+        sa.about?.url, sa.services?.url, sa.contact?.url
+      ].filter(Boolean)
+    : [
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80',
+        'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&q=80',
+        'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80',
+        'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&q=80',
+        'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80'
+      ];
   const totalFlipPages = galleryImgs.length;
 
   const flipPagesHTML = galleryImgs.map((url, i) => `
