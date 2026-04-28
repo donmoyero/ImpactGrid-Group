@@ -273,7 +273,47 @@ function renderPortfolio(pf) {
         '<div class="contact-ttl">Ready to work together?</div>' +
         '<p class="contact-sub">I partner with brands that align with my audience\'s values. Let\'s create something remarkable.</p>' +
         (pf.email ?
-          '<a class="btn btn-p" href="mailto:' + esc(pf.email) + '" style="margin:0 auto;display:inline-flex">Get In Touch →</a>' : '') +
+          '<div class="cf-form">' +
+            '<div class="cf-row">' +
+              '<input id="cf-name" type="text" placeholder="Your name" />' +
+              '<input id="cf-email" type="email" placeholder="Your email" />' +
+            '</div>' +
+            '<textarea id="cf-msg" placeholder="Tell me about your project…"></textarea>' +
+            '<button class="cf-btn" id="cf-btn" onclick="(async function(){' +
+              'var btn=document.getElementById(\'cf-btn\');' +
+              'var status=document.getElementById(\'cf-status\');' +
+              'var name=document.getElementById(\'cf-name\').value.trim();' +
+              'var email=document.getElementById(\'cf-email\').value.trim();' +
+              'var message=document.getElementById(\'cf-msg\').value.trim();' +
+              'if(!name||!email||!message){status.style.color=\'#f87171\';status.textContent=\'Please fill in all fields.\';return;}' +
+              'btn.disabled=true;btn.textContent=\'Sending…\';' +
+              'try{' +
+                'var r=await fetch(\'https://impactgrid-dijo.onrender.com/contact/send\',{' +
+                  'method:\'POST\',' +
+                  'headers:{\'Content-Type\':\'application/json\'},' +
+                  'body:JSON.stringify({name:name,email:email,message:message,creatorEmail:\'' + esc(pf.email) + '\'})' +
+                '});' +
+                'var d=await r.json();' +
+                'if(d.success){' +
+                  'status.style.color=\'#4ade80\';' +
+                  'status.textContent=\'Message sent! ✓\';' +
+                  'document.getElementById(\'cf-name\').value=\'\';' +
+                  'document.getElementById(\'cf-email\').value=\'\';' +
+                  'document.getElementById(\'cf-msg\').value=\'\';' +
+                  'btn.textContent=\'Send Message\';btn.disabled=false;' +
+                '}else{' +
+                  'status.style.color=\'#f87171\';' +
+                  'status.textContent=\'Something went wrong. Try again.\';' +
+                  'btn.textContent=\'Send Message\';btn.disabled=false;' +
+                '}' +
+              '}catch(e){' +
+                'status.style.color=\'#f87171\';' +
+                'status.textContent=\'Server error. Please try again.\';' +
+                'btn.textContent=\'Send Message\';btn.disabled=false;' +
+              '}' +
+            '})()">Send Message</button>' +
+            '<div class="cf-msg" id="cf-status"></div>' +
+          '</div>' : '') +
       '</div>' +
 
     '</section>';
@@ -432,6 +472,15 @@ function renderPortfolio(pf) {
     '.contact-wrap{background:linear-gradient(135deg,rgba(255,255,255,.025),transparent);border:1.5px solid var(--bd);border-radius:20px;padding:56px;text-align:center;margin:0 60px 72px;max-width:1100px;margin-left:auto;margin-right:auto}' +
     '.contact-ttl{font-family:var(--fh);font-size:clamp(26px,4vw,46px);font-weight:800;letter-spacing:-1px;margin-bottom:10px}' +
     '.contact-sub{font-size:14px;color:var(--sub);margin-bottom:28px;max-width:460px;margin-left:auto;margin-right:auto}' +
+    '.cf-form{display:flex;flex-direction:column;gap:14px;max-width:480px;margin:0 auto;text-align:left}' +
+    '.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}' +
+    '.cf-form input,.cf-form textarea{width:100%;padding:13px 16px;background:rgba(255,255,255,.06);border:1.5px solid var(--bd);border-radius:10px;color:var(--txt);font-size:14px;font-family:inherit;outline:none;transition:border .2s;box-sizing:border-box}' +
+    '.cf-form input:focus,.cf-form textarea:focus{border-color:var(--ac)}' +
+    '.cf-form textarea{resize:vertical;min-height:110px}' +
+    '.cf-btn{background:var(--ac);color:#fff;border:none;border-radius:10px;padding:14px 28px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s;width:100%}' +
+    '.cf-btn:hover{opacity:.85}' +
+    '.cf-btn:disabled{opacity:.5;cursor:not-allowed}' +
+    '.cf-msg{font-size:13px;text-align:center;margin-top:4px;min-height:18px}' +
 
     /* SERVICES PAGE */
     '.page-inner{max-width:1100px;margin:0 auto;padding:32px 60px 80px}' +
@@ -465,6 +514,7 @@ function renderPortfolio(pf) {
       '.about-body{padding:32px 20px 40px}' +
       '.home-socials-wrap{padding:0 20px 36px}' +
       '.contact-wrap{margin:0 20px 56px;padding:36px 24px}' +
+      '.cf-row{grid-template-columns:1fr}' +
       '.pg-header{padding:32px 20px 0}' +
       '.page-inner{padding:24px 20px 60px}' +
       'footer{padding:20px}' +
