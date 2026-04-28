@@ -443,9 +443,6 @@ async function loadPortfolios() {
 async function savePortfolioToDB(pf){
 
   // Require authenticated user — no anonymous saving
-  // Check window.igUser first (set by nav.js) then fall back to localStorage.
-  // This prevents admins and fast-loading users from hitting the sign-in wall
-  // before ig_user_id has been written to localStorage.
   const userId = (window.igUser && window.igUser.id)
     || localStorage.getItem('ig_user_id');
 
@@ -454,32 +451,71 @@ async function savePortfolioToDB(pf){
     return false;
   }
 
-  try{
+  // ── Strip base64 data: URLs before sending — they blow the 413 limit ──
+  // Only real https:// URLs survive. Base64 blobs are local-only previews;
+  // they should be uploaded to storage separately before saving.
+  function isDataUrl(s) { return typeof s === 'string' && s.startsWith('data:'); }
 
+  const pfClean = JSON.parse(JSON.stringify(pf)); // deep clone, don't mutate
+
+  // Strip base64 from hero_media
+  if (Array.isArray(pfClean.hero_media)) {
+    pfClean.hero_media = pfClean.hero_media
+      .map(m => ({ ...m, url: isDataUrl(m.url) ? '' : (m.url || '') }))
+      .filter(m => m.url); // drop items with no real URL
+  }
+
+  // Strip base64 logo
+  if (isDataUrl(pfClean.logo_url)) pfClean.logo_url = '';
+
+  // Strip base64 catalogue images (keep payment links + metadata)
+  if (Array.isArray(pfClean.catalogue)) {
+    pfClean.catalogue = pfClean.catalogue.map(c => ({
+      ...c,
+      image: isDataUrl(c.image) ? '' : (c.image || '')
+    }));
+  }
+
+  // Strip base64 service images
+  if (Array.isArray(pfClean.services)) {
+    pfClean.services = pfClean.services.map(s => ({
+      ...s,
+      image: isDataUrl(s.image) ? '' : (s.image || '')
+    }));
+  }
+
+  try{
     const res = await fetch("https://impactgrid-dijo.onrender.com/portfolio/save", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        session: userId,
-        portfolio: pf
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session: userId, portfolio: pfClean })
     });
 
-    const data = await res.json();
+    // Guard against non-JSON responses (e.g. 413 HTML error page)
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(_) {
+      console.error('[Save] Non-JSON response:', res.status, text.slice(0, 200));
+      if (res.status === 413) {
+        showToast('Portfolio too large to save — remove local image uploads and try again');
+      } else {
+        showToast('Save failed (' + res.status + ')');
+      }
+      return false;
+    }
 
     if(data.success){
       showToast("Portfolio saved 🚀");
       return true;
     }else{
-      showToast("Save failed");
+      showToast("Save failed: " + (data.error || 'unknown error'));
       return false;
     }
 
   }catch(err){
-    console.error(err);
-    showToast("Server error");
+    console.error('[Save] Error:', err);
+    showToast("Could not reach server — check your connection");
     return false;
   }
 }
@@ -637,13 +673,22 @@ function catItemImageUpload(input) {
   reader.onload = e => {
     const wrap = row.querySelector(".cat-item-img-wrap");
     if (!wrap) return;
-    // Replace placeholder with image
+    // Replace placeholder with image (preview only — base64 won't be saved)
     wrap.querySelector(".cat-item-img-placeholder")?.remove();
     let img = wrap.querySelector(".cat-item-img");
     if (!img) { img = document.createElement("img"); img.className = "cat-item-img"; wrap.insertBefore(img, wrap.querySelector("input")); }
     img.src = e.target.result;
-    // Store on row for collection
+    // Store on row for local preview — stripped before server save to avoid 413
     row.dataset.image = e.target.result;
+    // Show a note that image is local-only until an image URL is used
+    let note = row.querySelector('.cat-img-note');
+    if (!note) {
+      note = document.createElement('div');
+      note.className = 'cat-img-note';
+      note.style.cssText = 'font-size:10px;color:rgba(255,180,0,.8);margin-top:4px;font-family:monospace';
+      note.textContent = '⚠ Preview only — paste an image URL to save permanently';
+      row.querySelector('.cat-item-fields')?.prepend(note);
+    }
     updatePreviewLive();
   };
   reader.readAsDataURL(input.files[0]);
@@ -739,7 +784,11 @@ function rebuildCatalogueRows(items) {
 }
 
 /* Stripe Connect — send creator to onboarding */
+var _stripeOnboardInFlight = false;
 async function stripeOnboard() {
+  // Prevent multiple simultaneous calls (causes the 500 spam in console)
+  if (_stripeOnboardInFlight) return;
+
   const pf    = psState.activePortfolio;
   const email = (window.igUser && window.igUser.email) || "";
 
@@ -748,30 +797,39 @@ async function stripeOnboard() {
   const btn = document.getElementById("catConnectBtn");
   if (btn) { btn.disabled = true; btn.textContent = "Opening Stripe…"; }
 
+  _stripeOnboardInFlight = true;
+
   try {
     const res  = await fetch(DIJO_SERVER_URL + "/stripe/onboard", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email,
-        return_url:  window.location.href + "?stripe_connected=1",
-        refresh_url: window.location.href,
+        return_url:  window.location.href.split("?")[0] + "?stripe_connected=1",
+        refresh_url: window.location.href.split("?")[0],
       })
     });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
+
+    // Handle non-JSON / 500 responses gracefully
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(_) {
+      throw new Error("Server error (" + res.status + ") — Stripe connect is being set up, try again shortly");
+    }
+
+    if (!data.success) throw new Error(data.error || "Stripe returned an error");
 
     // Store account ID so payment links use destination charges
-    if (pf) {
-      pf.stripe_account_id = data.account_id;
-    }
+    if (pf) pf.stripe_account_id = data.account_id;
 
     // Redirect to Stripe's hosted onboarding page
     window.location.href = data.onboard_url;
 
   } catch (err) {
+    _stripeOnboardInFlight = false;
     if (btn) { btn.disabled = false; btn.textContent = "Connect Bank Account →"; }
-    showToast("Could not open Stripe — try again");
+    showToast(err.message || "Could not open Stripe — try again later");
     console.error("[Stripe Onboard] Error:", err.message);
   }
 }
@@ -2063,9 +2121,12 @@ function handleHeroUpload(event) {
     reader.onload = e => {
       if (!psState.activePortfolio) return;
       psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
+      // Store for local preview — base64 is stripped before saving to avoid 413
       psState.activePortfolio.hero_media.unshift({ type: file.type.startsWith("video") ? "video" : "image", url: e.target.result, credit:"Uploaded" });
       renderHeroMediaStrip(psState.activePortfolio.hero_media);
       updatePreviewLive();
+      // Inform user the image is preview-only
+      showToast("Image added (preview only — paste a hosted URL to save permanently)");
     };
     reader.readAsDataURL(file);
   });
