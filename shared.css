@@ -124,7 +124,17 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--bg);
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(201,126,8,0.13) 0%,
+      rgba(201,126,8,0.06) 28%,
+      transparent          50%,
+      rgba(0,0,0,0.06)     72%,
+      rgba(0,0,0,0.16)     100%
+    ),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--fb);
   font-size: 16px;
@@ -233,13 +243,18 @@ body::after {
 .btn-ghost-sm:hover { color: var(--text); }
 
 .btn-gold-sm {
-  padding: 7px 15px; border-radius: 8px;
+  padding: 7px 16px; border-radius: 8px;
   font-size: 12px; font-weight: 700;
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
-  color: #fff; white-space: nowrap; transition: all 0.2s;
+  background: linear-gradient(135deg, #e8930a 0%, var(--gold) 45%, var(--gold2) 100%);
+  color: #fff; white-space: nowrap; transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 8px rgba(201,126,8,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+  position: relative; overflow: hidden;
 }
 [data-theme="dark"] .btn-gold-sm { color: #07090f; }
-.btn-gold-sm:hover { transform: translateY(-1px); box-shadow: var(--sh-gold); }
+.btn-gold-sm:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 18px rgba(201,126,8,0.42), inset 0 1px 0 rgba(255,255,255,0.2);
+}
 
 /* User auth button + dropdown */
 .user-btn {
@@ -479,10 +494,16 @@ body::after {
 ════════════════════════════════════════════════════ */
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 22px; border-radius: var(--r);
-  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
-  font-family: var(--fb); transition: all 0.22s; cursor: pointer;
-  white-space: nowrap;
+  padding: 14px 26px; border-radius: var(--r);
+  font-size: 15px; font-weight: 700; letter-spacing: 0.01em;
+  font-family: var(--fb); transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  cursor: pointer; white-space: nowrap; position: relative; overflow: hidden;
+}
+
+/* Shimmer sweep animation */
+@keyframes btn-shimmer {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(250%) skewX(-15deg); }
 }
 
 /* Primary / Gold — the ONE gold button. Use .btn-primary everywhere.
@@ -490,38 +511,79 @@ body::after {
    backwards compat — refactor pages to .btn-primary over time. */
 .btn-primary, .btn-gold,
 .btn-hero-gold, .btn-cta-gold {
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  background: linear-gradient(135deg, #e8930a 0%, var(--gold) 40%, var(--gold2) 100%);
   color: #fff; border: none;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.18), 0 4px 16px rgba(201,126,8,0.28), inset 0 1px 0 rgba(255,255,255,0.22);
 }
 [data-theme="dark"] .btn-primary,
 [data-theme="dark"] .btn-gold,
 [data-theme="dark"] .btn-hero-gold,
-[data-theme="dark"] .btn-cta-gold { color: #07090f; }
+[data-theme="dark"] .btn-cta-gold {
+  color: #07090f;
+  background: linear-gradient(135deg, #f0b429 0%, #ffd166 50%, #f0b429 100%);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 4px 20px rgba(240,180,41,0.32), inset 0 1px 0 rgba(255,255,255,0.28);
+}
+.btn-primary::after, .btn-gold::after,
+.btn-hero-gold::after, .btn-cta-gold::after {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+  transform: translateX(-100%) skewX(-15deg);
+}
+.btn-primary:hover::after, .btn-gold:hover::after,
+.btn-hero-gold:hover::after, .btn-cta-gold:hover::after {
+  animation: btn-shimmer 0.55s ease forwards;
+}
 .btn-primary:hover, .btn-gold:hover,
 .btn-hero-gold:hover, .btn-cta-gold:hover {
-  transform: translateY(-3px) scale(1.01); box-shadow: var(--sh-gold);
+  transform: translateY(-3px) scale(1.015);
+  box-shadow: 0 8px 28px rgba(201,126,8,0.45), 0 2px 0 rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.btn-primary:active, .btn-gold:active,
+.btn-hero-gold:active, .btn-cta-gold:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: 0 1px 6px rgba(201,126,8,0.3), inset 0 2px 4px rgba(0,0,0,0.1);
 }
 
 /* Secondary / Outline */
 .btn-secondary, .btn-outline {
-  background: transparent; border: 1px solid var(--border);
+  background: transparent;
+  border: 1.5px solid var(--border2);
   color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.btn-secondary:hover, .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-secondary:hover, .btn-outline:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-dim);
+  box-shadow: 0 4px 14px rgba(201,126,8,0.14);
+  transform: translateY(-2px);
+}
+.btn-secondary:active, .btn-outline:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
 
 /* Ghost */
 .btn-ghost {
   background: none; border: none;
-  color: var(--text2); opacity: 0.7;
+  color: var(--text2); opacity: 0.75;
+  letter-spacing: 0;
 }
 .btn-ghost:hover { opacity: 1; color: var(--text); }
 
 /* Danger */
 .btn-danger {
-  background: var(--red-dim); border: 1px solid rgba(217,79,59,0.2);
+  background: var(--red-dim); border: 1px solid rgba(217,79,59,0.25);
   color: var(--red);
+  box-shadow: 0 1px 4px rgba(217,79,59,0.1);
 }
-.btn-danger:hover { background: rgba(217,79,59,0.14); }
+.btn-danger:hover {
+  background: rgba(217,79,59,0.14);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(217,79,59,0.2);
+}
 
 /* ════════════════════════════════════════════════════
    CARDS (design-system locked)
