@@ -1,0 +1,352 @@
+/* ═══════════════════════════════════════════════════════════
+   IMPACTGRID — Carousel Studio MOBILE  v1.0
+   Load order: shared.css → carousel-studio.css → this file
+
+   This file: mobile bottom sheet UI with persistent tab dock.
+   Covers breakpoints ≤860px only. Desktop untouched.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── MOBILE BOTTOM DOCK — persistent tab bar ─────────────── */
+.cs-mob-dock {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 860px) {
+
+  /* ── 1. HIDE the old topbar mob buttons (replaced by dock) ─ */
+  .cs-mob-left-btn,
+  .cs-mob-right-btn {
+    display: none !important;
+  }
+
+  /* ── 2. SHELL — leave room at bottom for dock ──────────── */
+  .cs-shell {
+    padding-bottom: 68px; /* dock height + safe area */
+  }
+
+  /* ── 3. WORKSPACE — single column, full height ─────────── */
+  .cs-workspace {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr !important;
+    position: relative;
+    height: 100%;
+  }
+
+  /* ── 4. CENTER — full width, visible carousel ─────────── */
+  .cs-center {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Make canvas area expand to fill available space */
+  .cs-canvas-wrap {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px 12px 8px;
+    gap: 0;
+  }
+
+  /* Carousel slide — responsive size */
+  .slide-canvas {
+    width: min(calc(100vw - 40px), 360px) !important;
+    height: min(calc(100vw - 40px), 360px) !important;
+    border-radius: 14px !important;
+  }
+
+  .slide-canvas.portrait {
+    width: min(calc(100vw - 40px), 300px) !important;
+    height: min(calc((100vw - 40px) * 1.25), 375px) !important;
+  }
+
+  .slide-canvas.landscape {
+    width: min(calc(100vw - 40px), 360px) !important;
+    height: min(calc((100vw - 40px) * 0.5625), 202px) !important;
+  }
+
+  .slide-canvas.story {
+    width: min(calc(100vw - 40px), 216px) !important;
+    height: min(calc((100vw - 40px) * 1.77), 360px) !important;
+  }
+
+  /* Thumbnail strip — compact on mobile */
+  .cs-strip {
+    min-height: 60px;
+    padding: 8px 12px;
+    gap: 5px;
+  }
+  .sthumb { width: 44px; height: 44px; }
+
+  /* Toolbar — hide zoom on very small screens to save space */
+  .cs-toolbar {
+    height: 38px;
+    padding: 0 8px;
+    gap: 1px;
+  }
+  .cs-tlbl { font-size: 10px; padding: 0 4px; }
+  .cs-sctr { font-size: 10px; }
+
+  /* ── 5. HIDE OLD PANELS — replaced by bottom sheets ───── */
+  .cs-left,
+  .cs-right {
+    /* Keep old slide-up mechanics but driven by dock now */
+    position: fixed;
+    bottom: 68px; /* above the dock */
+    left: 0;
+    right: 0;
+    z-index: 800;
+    /* Taller sheets since they sit above dock not bottom */
+    height: 72vh;
+    max-height: 80vh;
+    border-radius: 20px 20px 0 0;
+    border: 1px solid var(--border2);
+    box-shadow: 0 -20px 60px rgba(0,0,0,.55), 0 -1px 0 rgba(255,255,255,.04);
+    transform: translateY(100%);
+    transition: transform .35s cubic-bezier(.34,1.06,.64,1);
+    padding-bottom: 0; /* dock is above */
+    display: flex !important; /* always in DOM, just translated */
+    flex-direction: column;
+    background: var(--bg2);
+  }
+
+  /* Drag handle pill */
+  .cs-left::before,
+  .cs-right::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border2);
+    border-radius: 99px;
+    margin: 10px auto 6px;
+    flex-shrink: 0;
+  }
+
+  .cs-left.open,
+  .cs-right.open {
+    transform: translateY(0);
+  }
+
+  /* ── 6. PANEL OVERLAY (behind sheet, above carousel) ───── */
+  .cs-panel-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    bottom: 68px; /* don't cover the dock */
+    background: rgba(0,0,0,.5);
+    z-index: 790;
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+  }
+  .cs-panel-overlay.open {
+    display: block;
+  }
+
+  /* ── 7. BOTTOM DOCK ─────────────────────────────────────── */
+  .cs-mob-dock {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    background: var(--card);
+    border-top: 1px solid var(--border2);
+    box-shadow: 0 -4px 24px rgba(0,0,0,.3);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: auto;
+    min-height: 56px;
+    align-items: stretch;
+  }
+
+  /* Dock tab buttons */
+  .cs-dock-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 4px 10px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text3);
+    font-family: var(--fm);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    transition: color .18s, background .18s;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .cs-dock-tab svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .cs-dock-tab:active svg {
+    transform: scale(.88);
+  }
+
+  .cs-dock-tab.active {
+    color: var(--gold);
+  }
+
+  /* Active indicator bar at top of tab */
+  .cs-dock-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2.5px;
+    background: var(--gold);
+    border-radius: 0 0 99px 99px;
+  }
+
+  /* Divider between dock sections */
+  .cs-dock-divider {
+    width: 1px;
+    background: var(--border);
+    margin: 10px 0;
+    flex-shrink: 0;
+  }
+
+  /* Action tab (download/export) — slightly different treatment */
+  .cs-dock-action {
+    flex: 0 0 56px;
+  }
+
+  /* Central generate tab — larger, gold tinted */
+  .cs-dock-tab.cs-dock-generate {
+    flex: 0 0 72px;
+    background: linear-gradient(160deg, var(--gold-dim), transparent);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  .cs-dock-tab.cs-dock-generate.active {
+    background: linear-gradient(160deg, rgba(245,228,0,.14), rgba(245,228,0,.06));
+  }
+
+  /* ── 8. TOPBAR — slim it down on mobile ─────────────────── */
+  .cs-topbar {
+    padding: 0 8px;
+    gap: 5px;
+    height: 40px;
+  }
+
+  /* Hide download/export from topbar on mobile (they're in dock) */
+  @media (max-width: 860px) {
+    .cs-topbar .cs-btn:not(.cs-crumb-area) {
+      display: none;
+    }
+    /* Only keep the crumb + plan pill visible in topbar */
+    .cs-crumb, .cs-sep, .cs-sp, .cs-plan-pill {
+      display: flex !important;
+    }
+  }
+
+  /* ── 9. LEFT PANEL inner tweaks for bottom sheet ───────── */
+  .cs-left-body {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .cs-left-head {
+    padding: 0 14px 12px;
+    margin-top: 4px;
+  }
+
+  .cs-left-title {
+    font-size: 14px;
+  }
+
+  /* Generate button — extra chunky on mobile */
+  .cs-gen-btn {
+    padding: 14px 18px;
+    font-size: 15px;
+  }
+
+  /* ── 10. RIGHT PANEL inner tweaks ───────────────────────── */
+  .cs-right-head {
+    padding: 10px 14px;
+  }
+
+  .cs-right-body {
+    padding: 12px;
+  }
+
+  /* ── 11. MODAL — full bottom sheet on mobile ────────────── */
+  .modal {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+  }
+  .modal-bg {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  /* ── 12. TOPBAR — hide all action buttons, replaced by dock */
+  .cs-topbar .cs-btn {
+    display: none !important;
+  }
+  /* But keep plan pill and crumb visible */
+  .cs-plan-pill {
+    display: inline-flex !important;
+  }
+
+  /* ── 13. SLIDE NAV on toolbar — compact ─────────────────── */
+  .cs-snb {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ── Extra small phones ────────────────────────────────── */
+@media (max-width: 390px) {
+  .cs-plan-name,
+  .cs-plan-badge {
+    display: none;
+  }
+
+  .cs-dock-tab {
+    font-size: 8.5px;
+    padding: 7px 2px 9px;
+  }
+
+  .cs-dock-tab svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* ── Landscape phone — tighten heights ─────────────────── */
+@media (max-width: 860px) and (orientation: landscape) {
+  .cs-left,
+  .cs-right {
+    height: 85vh;
+  }
+
+  .slide-canvas {
+    width: min(50vw, 280px) !important;
+    height: min(50vw, 280px) !important;
+  }
+}
