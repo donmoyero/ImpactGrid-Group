@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html data-theme="dark" lang="en">
+
+<html data-theme="light" lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
@@ -7,1244 +8,672 @@
 <meta content="ImpactGrid gives creators real trend signals, AI content tools, and everything you need to grow. One app, built for creators." name="description"/>
 <link href="favicon.ico" rel="icon"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&amp;family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
 <link href="shared.css" rel="stylesheet"/>
 <style>
+/* Design tokens loaded from shared.css */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
-body{background:#07090f;color:#e8eaf2;font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .3s,color .3s;}
 a{color:inherit;text-decoration:none;}
-button{cursor:pointer;font-family:inherit;border:none;background:none;}
-h1,h2,h3,h4{font-family:'Syne',sans-serif;font-weight:900;line-height:1.06;letter-spacing:-.03em;}
+button{cursor:pointer;font-family:var(--fb);border:none;background:none;}
+h1,h2,h3,h4{font-family:var(--fd);font-weight:900;line-height:1.08;letter-spacing:-.025em;}
 img{display:block;max-width:100%;}
 
-/* ── TOKENS ── */
-:root{
-  --gold:#f0b429;--gold2:#ffd166;--gold-dim:rgba(240,180,41,.1);--gold-glo:rgba(240,180,41,.25);
-  --bg:#07090f;--bg2:#0d1017;--bg3:#131720;
-  --card:#161c28;--card2:#1c2336;
-  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.10);
-  --text:#e8eaf2;--text2:#9099b8;--text3:#5a6380;
-  --green:#0fa876;--green-dim:rgba(15,168,118,.1);
-  --blue:#2d6edb;--blue-dim:rgba(45,110,219,.1);
-  --purple:#7c3aed;--purple-dim:rgba(124,58,237,.1);
-  --r:10px;--r2:16px;
-  --max-w:1200px;
+/* ── GRAIN OVERLAY ── */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.12;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");}
+
+
+/* ═══════════════════════
+   MOBILE SIDEBAR
+═══════════════════════ */
+.mob-overlay{display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);}
+.mob-overlay.open{display:block;}
+.mob-sidebar{position:fixed;top:0;left:0;bottom:0;z-index:1060;width:min(280px,82vw);background:var(--bg2);transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;}
+.mob-sidebar.open{transform:translateX(0);}
+.mob-head{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.mob-logo{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:900;font-size:14px;}
+.mob-close{width:30px;height:30px;border-radius:8px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text2);}
+.mob-nav{padding:10px;flex:1;}
+.mob-nav a{display:block;padding:11px 12px;border-radius:var(--r);font-size:14px;font-weight:500;color:var(--text2);margin-bottom:2px;border:1px solid transparent;}
+.mob-nav a:hover{background:var(--card);color:var(--text);border-color:var(--border);}
+.mob-auth{padding:10px 12px 16px;display:flex;flex-direction:column;gap:7px;}
+.mob-user-section{display:none;flex-direction:column;gap:7px;}
+.mob-user-section.show{display:flex;}
+.mob-guest-section{display:flex;flex-direction:column;gap:7px;}
+.mob-guest-section.hide{display:none;}
+.mob-alink{display:block;padding:11px 14px;border-radius:var(--r);font-size:14px;font-weight:600;text-align:center;border:1px solid var(--border2);color:var(--text2);}
+.mob-acta{display:block;padding:11px 14px;border-radius:var(--r);font-size:14px;font-weight:700;text-align:center;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .mob-acta{color:#07090f;}
+.mob-adash{display:block;padding:11px 14px;border-radius:var(--r);font-size:14px;font-weight:700;text-align:center;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);}
+.mob-signout{width:100%;padding:11px 14px;border-radius:var(--r);font-size:14px;text-align:center;border:1px solid var(--border2);color:var(--text2);}
+.mob-theme-row{padding:10px 12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.mob-theme-row span{font-size:13px;color:var(--text2);}
+.mob-tbtn{padding:6px 14px;border-radius:8px;background:var(--card);border:1px solid var(--border2);font-size:12px;color:var(--text2);}
+
+/* ═══════════════════════
+   HERO — VIDEO BACKGROUND
+═══════════════════════ */
+.hero{margin-top:var(--nav-h);position:relative;overflow:hidden;}
+
+.hero-slideshow{
+  position:relative;width:100%;
+  min-height:560px;height:90vh;max-height:900px;
+  display:flex;align-items:center;justify-content:center;
+  background:#07090f;
 }
 
-/* ── GRAIN ── */
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.08;
-background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
-
-.wrap{max-width:var(--max-w);margin:0 auto;padding:0 28px;}
-
-/* ═══════════════════════════════════════════
-   HERO — Full viewport, cinematic
-═══════════════════════════════════════════ */
-.hero{
-  position:relative;
-  min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;
-  overflow:hidden;
-  padding:120px 24px 80px;
+/* Background video */
+.hero-bg-video{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center;z-index:0;
 }
 
-/* Ambient glow orbs */
-.hero-orb{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;}
-.hero-orb-1{width:600px;height:600px;top:-100px;left:-150px;background:radial-gradient(circle,rgba(240,180,41,.18) 0%,transparent 70%);}
-.hero-orb-2{width:500px;height:500px;bottom:-100px;right:-100px;background:radial-gradient(circle,rgba(124,58,237,.14) 0%,transparent 70%);}
-.hero-orb-3{width:400px;height:400px;top:40%;left:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(45,110,219,.08) 0%,transparent 70%);}
-
-/* Grid lines */
-.hero-grid{
-  position:absolute;inset:0;
-  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
-  background-size:64px 64px;
-  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);
+/* Dark gradient overlay */
+.hero-overlay{
+  position:absolute;inset:0;z-index:1;
+  background:linear-gradient(135deg,rgba(7,9,15,.82) 0%,rgba(7,9,15,.55) 50%,rgba(7,9,15,.70) 100%);
 }
 
-.hero-content{position:relative;z-index:2;max-width:820px;}
+/* Content */
+.hero-content{
+  position:relative;z-index:2;
+  width:100%;display:flex;align-items:center;justify-content:center;
+  padding:0 24px;
+}
+.hero-inner{text-align:center;max-width:720px;}
 
+/* Eyebrow */
 .hero-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:28px;
-  background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.2);
-  padding:6px 16px;border-radius:99px;
+  display:inline-block;
+  font-family:var(--fm);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold);background:rgba(240,180,41,.10);border:1px solid rgba(240,180,41,.22);
+  padding:6px 18px;border-radius:99px;margin-bottom:28px;
 }
-.hero-eyebrow span{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
 
-.hero-h1{
-  font-size:clamp(40px,7vw,88px);
-  margin-bottom:24px;
-  background:linear-gradient(180deg,#fff 40%,rgba(255,255,255,.55) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  line-height:1.02;
+/* Headline */
+.hero-title{
+  font-family:var(--fd);font-size:clamp(38px,6.5vw,84px);
+  font-weight:900;line-height:1.04;letter-spacing:-.03em;
+  color:#fff;margin-bottom:20px;
 }
-.hero-h1 em{
-  font-style:normal;
+.hero-title span{
   background:linear-gradient(135deg,var(--gold),var(--gold2));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
 
+/* Subtitle */
 .hero-sub{
-  font-size:clamp(16px,2vw,20px);color:var(--text2);
-  margin-bottom:44px;max-width:560px;margin-left:auto;margin-right:auto;
-  line-height:1.7;font-weight:400;
+  font-size:clamp(16px,2vw,19px);color:rgba(255,255,255,.68);
+  margin-bottom:36px;max-width:520px;margin-left:auto;margin-right:auto;line-height:1.65;
 }
 
-.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:56px;}
+/* CTA row */
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
 
 .btn-primary{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:16px 32px;border-radius:var(--r);
-  font-size:16px;font-weight:700;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#07090f;transition:all .2s;
-  box-shadow:0 4px 24px rgba(240,180,41,.3);
+  display:inline-flex;align-items:center;gap:7px;
+  padding:14px 30px;border-radius:var(--r);font-size:16px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;
+  transition:all .2s;box-shadow:0 4px 20px rgba(240,180,41,.28);
 }
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(240,180,41,.45);}
-.btn-primary svg{width:16px;height:16px;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(240,180,41,.45);}
 
 .btn-secondary{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:16px 26px;border-radius:var(--r);
-  font-size:16px;font-weight:600;
-  border:1px solid var(--border2);color:var(--text);
-  transition:all .2s;backdrop-filter:blur(8px);
-  background:rgba(255,255,255,.03);
+  display:inline-flex;align-items:center;gap:7px;
+  padding:14px 24px;border-radius:var(--r);font-size:16px;font-weight:600;
+  border:1px solid rgba(255,255,255,.18);color:#fff;
+  background:rgba(255,255,255,.05);backdrop-filter:blur(8px);transition:all .2s;
 }
-.btn-secondary:hover{border-color:var(--gold);color:var(--gold);}
+.btn-secondary:hover{border-color:var(--gold);color:var(--gold);background:rgba(240,180,41,.06);}
 
-/* Social proof row */
-.hero-social-proof{
-  display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
-  font-size:13px;color:var(--text3);
+@media(max-width:600px){
+  .hero-slideshow{min-height:480px;height:85vh;}
+  .hero-ctas{flex-direction:column;align-items:center;}
+  .btn-primary,.btn-secondary{width:100%;max-width:280px;justify-content:center;}
 }
-.hero-avatars{display:flex;}
-.hero-av{
-  width:28px;height:28px;border-radius:50%;
-  border:2px solid var(--bg);margin-right:-8px;
-  background:linear-gradient(135deg,var(--gold),#c47c0a);
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:#07090f;
-}
-.hero-av:nth-child(2){background:linear-gradient(135deg,var(--purple),#5b21b6);}
-.hero-av:nth-child(3){background:linear-gradient(135deg,var(--green),#059669);}
-.hero-av:nth-child(4){background:linear-gradient(135deg,var(--blue),#1d4ed8);}
-.hero-av:nth-child(5){background:linear-gradient(135deg,#ec4899,#be185d);}
-.hero-sep{width:4px;height:4px;border-radius:50%;background:var(--border2);}
-.hero-stars{color:var(--gold);letter-spacing:-2px;font-size:12px;}
+.btn-hero-gold{display:inline-flex;align-items:center;gap:7px;padding:14px 28px;border-radius:var(--r);font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .btn-hero-gold{color:#07090f;}
+.btn-hero-gold:hover{box-shadow:0 7px 24px var(--gold-glo);transform:translateY(-2px);}
+.btn-hero-outline{display:inline-flex;align-items:center;gap:7px;padding:14px 22px;border-radius:var(--r);font-size:16px;font-weight:600;border:1px solid var(--border2);color:var(--text);}
+.btn-hero-outline:hover{border-color:var(--gold);color:var(--gold);}
+.hero-dots-row{display:flex;justify-content:center;align-items:center;gap:8px;padding:14px 0 0;}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);cursor:pointer;transition:all .3s;}
+.hero-dot.on{width:22px;border-radius:3px;background:var(--gold);}
+.hero-progress{height:2px;background:var(--border);position:relative;overflow:hidden;}
+.hero-progress-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));animation:hprog 6s linear infinite;}
+@keyframes hprog{from{width:0%;}to{width:100%;}}
 
-/* Scroll indicator */
-.scroll-cue{
-  position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  color:var(--text3);font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.1em;
-}
-.scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--border2),transparent);animation:scrollLine 2s ease-in-out infinite;}
-@keyframes scrollLine{0%{opacity:0;transform:scaleY(0);transform-origin:top;}50%{opacity:1;}100%{opacity:0;transform:scaleY(1);transform-origin:bottom;}}
+/* ═══════════════════════
+   MAIN CONTENT
+═══════════════════════ */
+.wrap{max-width:var(--max-w);margin:0 auto;padding:0 28px;}
+.section{padding:80px 0;}
 
-/* ═══════════════════════════════════════════
-   PRODUCT DEMO VIDEO — The "How It Works" showcase
-═══════════════════════════════════════════ */
-.demo-video-section{
-  padding:100px 0;
-  background:var(--bg2);
-  border-top:1px solid var(--border);
-  position:relative;overflow:hidden;
-}
-.demo-video-section::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--gold-glo),transparent);
-}
+/* ═══════════════════════
+   FEATURES STRIP
+═══════════════════════ */
+.features-strip{background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:36px 0;}
+.features-row{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;}
+.feat-item{display:flex;align-items:center;gap:12px;padding:14px 36px;border-right:1px solid var(--border);flex-shrink:0;}
+.feat-item:last-child{border-right:none;}
+.feat-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.feat-label{font-size:14px;font-weight:600;color:var(--text);}
+.feat-desc{font-size:12px;color:var(--text3);}
 
-.demo-video-head{text-align:center;margin-bottom:56px;}
-.section-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:16px;
-}
-.section-eyebrow::before,.section-eyebrow::after{content:'';width:20px;height:1px;background:var(--gold);opacity:.5;}
-.sec-h{font-size:clamp(28px,3.5vw,48px);color:#fff;margin-bottom:14px;}
-.sec-p{font-size:17px;color:var(--text2);max-width:520px;margin:0 auto;line-height:1.7;}
+/* ═══════════════════════
+   DEMO SECTION
+═══════════════════════ */
+.demo-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:88px 0;}
+.demo-head{text-align:center;margin-bottom:52px;}
+.label-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.label-tag::before{content:'';width:18px;height:1px;background:var(--gold);}
+.sec-h{font-size:clamp(26px,3.5vw,48px);}
+.sec-p{font-size:17px;color:var(--text2);margin-top:12px;line-height:1.72;}
+.demo-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:36px;}
+.demo-tab{padding:9px 20px;border-radius:20px;font-size:13px;font-weight:600;border:1px solid var(--border2);color:var(--text2);transition:all .2s;cursor:pointer;background:var(--card);}
+.demo-tab.active,.demo-tab:hover{background:var(--gold);color:#fff;border-color:var(--gold);}
+[data-theme="dark"] .demo-tab.active,[data-theme="dark"] .demo-tab:hover{color:#07090f;}
+.demo-panel{display:none;animation:fadeUp .25s ease both;}
+.demo-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+.demo-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden;}
+.demo-card-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--card2);}
+.demo-card-title{font-size:14px;font-weight:700;font-family:var(--fm);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.6s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.demo-card-body{padding:24px;}
 
-/* The big demo window */
-.demo-window{
-  max-width:960px;margin:0 auto;
-  background:var(--card);border:1px solid var(--border2);
-  border-radius:20px;overflow:hidden;
-  box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);
-}
-.demo-window-bar{
-  background:var(--bg2);border-bottom:1px solid var(--border);
-  padding:14px 20px;display:flex;align-items:center;gap:10px;
-}
-.demo-traffic-lights{display:flex;gap:6px;}
-.dtl{width:12px;height:12px;border-radius:50%;}
-.dtl-r{background:#ff5f57;}.dtl-y{background:#febc2e;}.dtl-g{background:#28c840;}
-.demo-url-bar{
-  flex:1;background:var(--bg3);border:1px solid var(--border);
-  border-radius:6px;padding:6px 12px;
-  font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);
-  max-width:320px;margin:0 auto;text-align:center;
-}
-
-/* Tab switcher */
-.demo-tab-row{
-  display:flex;border-bottom:1px solid var(--border);
-  background:var(--bg2);overflow-x:auto;
-}
-.demo-tab-row::-webkit-scrollbar{height:0;}
-.demo-tab-pill{
-  padding:12px 20px;font-size:13px;font-weight:600;color:var(--text3);
-  border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;
-  transition:all .2s;display:flex;align-items:center;gap:7px;
-}
-.demo-tab-pill:hover{color:var(--text);}
-.demo-tab-pill.active{color:var(--gold);border-bottom-color:var(--gold);}
-
-/* Demo content panes */
-.demo-pane{display:none;padding:32px;}
-.demo-pane.active{display:block;animation:fadeInUp .3s ease;}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
-
-/* Trend feed pane */
-.trend-list{display:flex;flex-direction:column;gap:0;}
-.trend-row{
-  display:flex;align-items:center;gap:16px;
-  padding:16px 0;border-bottom:1px solid var(--border);
-}
+.trend-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);}
 .trend-row:last-child{border-bottom:none;}
-.trend-rank{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);width:26px;flex-shrink:0;text-align:right;}
-.trend-bar-wrap{width:80px;height:4px;background:var(--bg3);border-radius:99px;overflow:hidden;flex-shrink:0;}
-.trend-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--gold2));}
-.trend-name{flex:1;font-size:15px;font-weight:600;color:var(--text);}
-.trend-meta{font-size:12px;color:var(--text3);margin-top:2px;}
-.trend-badge{
-  padding:4px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;
-  flex-shrink:0;
-}
-.badge-high{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);}
-.badge-mid{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,180,41,.2);}
-.trend-plat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0;}
+.trend-rank{font-family:var(--fm);font-size:11px;color:var(--text3);width:24px;flex-shrink:0;}
+.trend-info{flex:1;min-width:0;}
+.trend-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.trend-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.trend-score{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.score-badge{font-family:var(--fm);font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;}
+.score-high{background:var(--green-dim);color:var(--green);border:1px solid rgba(15,168,118,.2);}
+.score-mid{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);}
+.plat-tag{font-size:10px;color:var(--text3);font-family:var(--fm);}
 
-/* AI chat pane */
-.chat-window{display:flex;flex-direction:column;gap:14px;max-height:360px;overflow-y:auto;padding-bottom:4px;}
-.chat-window::-webkit-scrollbar{width:4px;}
-.chat-window::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-.chat-row{display:flex;gap:10px;align-items:flex-start;}
-.chat-row.user{flex-direction:row-reverse;}
-.chat-avatar{
-  width:32px;height:32px;border-radius:9px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;
-}
-.chat-avatar.dijo{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;}
-.chat-avatar.you{background:var(--card2);color:var(--text2);border:1px solid var(--border2);}
-.chat-bubble{
-  padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.6;max-width:72%;
-}
+.chat-msgs{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow-y:auto;}
+.chat-msg{display:flex;gap:10px;align-items:flex-start;}
+.chat-msg.user{flex-direction:row-reverse;}
+.chat-av{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.chat-av.dijo{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .chat-av.dijo{color:#07090f;}
+.chat-av.you{background:var(--bg2);color:var(--text2);}
+.chat-bubble{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;max-width:75%;}
 .chat-bubble.dijo{background:var(--card2);border:1px solid var(--border);}
-.chat-bubble.you{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;font-weight:500;}
-.chat-input-bar{
-  display:flex;gap:8px;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);
-}
-.chat-input{
-  flex:1;padding:11px 14px;border-radius:9px;
-  border:1px solid var(--border2);background:var(--bg3);
-  color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;
-}
-.chat-input:focus{outline:none;border-color:var(--gold);}
-.chat-send-btn{
-  padding:11px 20px;border-radius:9px;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#07090f;font-size:13px;font-weight:700;cursor:pointer;
-  transition:all .2s;
-}
-.chat-send-btn:hover{transform:translateY(-1px);}
+.chat-bubble.you{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .chat-bubble.you{color:#07090f;}
+.chat-input-row{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.chat-input{flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--fb);}
+.chat-send{padding:10px 18px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:13px;font-weight:700;}
+[data-theme="dark"] .chat-send{color:#07090f;}
 
-/* Carousel preview pane */
-.carousel-preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.carousel-card{
-  aspect-ratio:1;border-radius:12px;overflow:hidden;
-  position:relative;cursor:pointer;transition:transform .2s;
-}
-.carousel-card:hover{transform:scale(1.03);}
-.carousel-card-bg{position:absolute;inset:0;background-size:cover;background-position:center;}
-.carousel-card-overlay{position:absolute;inset:0;}
-.carousel-card-text{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  justify-content:flex-end;padding:14px;
-  font-size:12px;font-weight:700;color:#fff;line-height:1.4;
-}
-.carousel-card-num{
-  position:absolute;top:10px;right:10px;
-  font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.5);
-}
-.cc1{background:linear-gradient(135deg,#0f1929,#1a2744);}
-.cc2{background:linear-gradient(135deg,#1a0f29,#2d1a44);}
-.cc3{background:linear-gradient(135deg,#0f2917,#1a4425);}
-.cc4{background:linear-gradient(135deg,#291a0f,#442d1a);}
-.carousel-gen-row{margin-top:16px;display:flex;gap:10px;align-items:center;}
-.carousel-gen-input{
-  flex:1;padding:10px 14px;border-radius:9px;
-  border:1px solid var(--border2);background:var(--bg3);
-  color:var(--text);font-size:13px;
-}
-.carousel-gen-btn{
-  padding:10px 20px;border-radius:9px;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#07090f;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;
-}
+.carousel-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.carousel-slide{aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;font-size:13px;font-weight:700;line-height:1.4;position:relative;overflow:hidden;}
+.carousel-slide-1{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#f0b429;}
+.carousel-slide-2{background:linear-gradient(135deg,#0f3460,#533483);color:#e2e8f0;}
+.carousel-slide-3{background:linear-gradient(135deg,#533483,#7c3aed);color:#fff;}
+.carousel-num{position:absolute;top:8px;right:10px;font-family:var(--fm);font-size:9px;opacity:.5;}
+.carousel-gen-btn{width:100%;margin-top:14px;padding:12px;border-radius:var(--r);background:var(--purple-dim);border:1px solid rgba(124,58,237,.2);color:var(--purple);font-size:13px;font-weight:700;}
 
-/* Content plan pane */
-.week-grid{display:flex;flex-direction:column;gap:8px;}
-.week-day{
-  display:flex;align-items:center;gap:16px;
-  padding:14px 18px;border-radius:var(--r);
-  border:1px solid var(--border);background:var(--card2);
-  transition:border-color .2s;
-}
-.week-day:hover{border-color:var(--border2);}
-.day-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);width:32px;flex-shrink:0;text-transform:uppercase;}
-.day-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.day-topic{flex:1;font-size:14px;font-weight:600;color:var(--text);}
-.day-time{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0;}
-.day-plat{
-  font-size:10px;padding:3px 9px;border-radius:5px;
-  font-family:'DM Mono',monospace;font-weight:700;flex-shrink:0;
-}
-.plat-yt{background:rgba(255,60,60,.1);color:#ff4444;}
-.plat-ig{background:var(--purple-dim);color:var(--purple);}
-.plat-tt{background:rgba(255,255,255,.06);color:var(--text2);}
-.week-day.empty{opacity:.45;border-style:dashed;}
+.plan-week{display:flex;flex-direction:column;gap:7px;}
+.plan-day{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--card);}
+.plan-day-label{font-family:var(--fm);font-size:10px;color:var(--text3);width:28px;flex-shrink:0;text-transform:uppercase;}
+.plan-topic{flex:1;font-size:14px;font-weight:600;}
+.plan-plat{font-size:10px;padding:3px 8px;border-radius:4px;font-family:var(--fm);flex-shrink:0;}
+.plan-plat.yt{background:rgba(255,0,0,.08);color:#ff4444;}
+.plan-plat.tt{background:rgba(0,0,0,.05);color:var(--text2);}
+[data-theme="dark"] .plan-plat.tt{background:rgba(255,255,255,.08);color:var(--text2);}
+.plan-plat.ig{background:rgba(124,58,237,.08);color:var(--purple);}
+.plan-empty{border-style:dashed;opacity:.5;}
+.plan-empty .plan-topic{color:var(--text3);font-weight:400;}
 
+/* ═══════════════════════
+   HOW IT WORKS
+═══════════════════════ */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px;}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:32px 28px;position:relative;}
+.step-num{font-family:var(--fm);font-size:11px;color:var(--text3);letter-spacing:.1em;margin-bottom:16px;}
+.step-icon{font-size:28px;margin-bottom:16px;}
+.step-card h3{font-size:18px;font-weight:800;margin-bottom:10px;letter-spacing:-.02em;}
+.step-card p{font-size:14px;color:var(--text2);line-height:1.7;}
 
-/* ═══════════════════════════════════════════
-   FEATURES SECTION — big bento grid
-═══════════════════════════════════════════ */
-.features-section{padding:100px 0;background:var(--bg);}
+/* ═══════════════════════
+   CTA
+═══════════════════════ */
+.cta-section{padding:72px 0 88px;}
+.cta-band{background:linear-gradient(135deg,var(--gold-dim),rgba(201,126,8,.01));border:1px solid var(--gold-glo);border-radius:var(--r2);padding:72px 48px;text-align:center;position:relative;overflow:hidden;}
+[data-theme="dark"] .cta-band{background:linear-gradient(135deg,rgba(240,180,41,.08),rgba(240,180,41,.01));}
+.cta-band h2{font-size:clamp(24px,3.5vw,48px);margin-bottom:14px;}
+.cta-band p{font-size:17px;color:var(--text2);max-width:440px;margin:0 auto 32px;line-height:1.72;}
+.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-cta-gold{display:inline-flex;align-items:center;gap:7px;padding:14px 30px;border-radius:var(--r);font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
+[data-theme="dark"] .btn-cta-gold{color:#07090f;}
+.btn-cta-gold:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
+.btn-cta-outline{display:inline-flex;align-items:center;gap:7px;padding:14px 24px;border-radius:var(--r);font-size:16px;font-weight:600;border:1px solid var(--border2);color:var(--text);}
+.btn-cta-outline:hover{border-color:var(--gold);color:var(--gold);}
 
-.bento-grid{
-  display:grid;
-  grid-template-columns:repeat(12,1fr);
-  grid-template-rows:auto;
-  gap:16px;
-  margin-top:56px;
-}
-
-.bento-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r2);padding:32px;overflow:hidden;
-  position:relative;transition:border-color .3s, transform .3s;
-}
-.bento-card:hover{border-color:var(--border2);transform:translateY(-2px);}
-
-.bento-card.span-4{grid-column:span 4;}
-.bento-card.span-5{grid-column:span 5;}
-.bento-card.span-7{grid-column:span 7;}
-.bento-card.span-6{grid-column:span 6;}
-.bento-card.span-8{grid-column:span 8;}
-.bento-card.span-3{grid-column:span 3;}
-
-.bento-icon{
-  width:44px;height:44px;border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;margin-bottom:20px;flex-shrink:0;
-}
-.bento-tag{
-  display:inline-flex;align-items:center;gap:5px;
-  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;
-  text-transform:uppercase;padding:3px 10px;border-radius:99px;
-  margin-bottom:14px;font-weight:700;
-}
-.bento-h{font-size:20px;font-weight:900;color:#fff;margin-bottom:10px;line-height:1.2;letter-spacing:-.02em;}
-.bento-p{font-size:14px;color:var(--text2);line-height:1.65;}
-
-/* Big feature card — has a visual */
-.bento-card.hero-card{
-  background:linear-gradient(135deg,var(--card) 0%,rgba(240,180,41,.04) 100%);
-}
-.bento-card.hero-card .bento-visual{
-  margin:20px -32px -32px;
-  height:200px;overflow:hidden;
-  background:var(--bg2);border-top:1px solid var(--border);
-  display:flex;align-items:flex-start;justify-content:center;padding-top:20px;
-}
-
-/* Mini trend bars for the trend card visual */
-.mini-trend-viz{width:100%;padding:0 24px;display:flex;flex-direction:column;gap:8px;}
-.mtr{display:flex;align-items:center;gap:10px;}
-.mtr-label{font-size:11px;color:var(--text3);width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.mtr-bar-bg{flex:1;height:6px;background:var(--bg3);border-radius:99px;overflow:hidden;}
-.mtr-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width 1s ease;}
-.mtr-score{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);width:26px;text-align:right;flex-shrink:0;}
-
-/* ═══════════════════════════════════════════
-   LOGOS / SOCIAL PROOF TICKER
-═══════════════════════════════════════════ */
-.proof-section{
-  padding:56px 0;
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-  background:var(--bg2);overflow:hidden;
-}
-.proof-label{
-  text-align:center;font-family:'DM Mono',monospace;font-size:10px;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--text3);
-  margin-bottom:32px;
-}
-.ticker-track{display:flex;gap:0;animation:ticker 28s linear infinite;}
-.ticker-track:hover{animation-play-state:paused;}
-.ticker-set{display:flex;gap:0;flex-shrink:0;}
-.ticker-item{
-  display:flex;align-items:center;gap:10px;
-  padding:0 40px;border-right:1px solid var(--border);
-  white-space:nowrap;color:var(--text3);font-size:14px;font-weight:600;
-}
-.ticker-item:last-child{border-right:none;}
-.ticker-item span{font-size:20px;}
-@keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-
-/* ═══════════════════════════════════════════
-   HOW IT WORKS — numbered steps
-═══════════════════════════════════════════ */
-.how-section{
-  padding:100px 0;
-  background:var(--bg);
-}
-.steps-layout{
-  display:grid;grid-template-columns:1fr 1fr;gap:80px;
-  align-items:center;margin-top:64px;
-}
-.steps-left{display:flex;flex-direction:column;gap:0;}
-.step-item{
-  display:flex;gap:24px;padding:28px 0;
-  border-bottom:1px solid var(--border);
-  cursor:pointer;transition:all .2s;
-}
-.step-item:first-child{padding-top:0;}
-.step-item:last-child{border-bottom:none;}
-.step-item.active .step-num-badge{background:var(--gold);color:#07090f;}
-.step-item.active .step-h{color:#fff;}
-.step-num-badge{
-  width:36px;height:36px;border-radius:10px;
-  background:var(--card2);border:1px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'DM Mono',monospace;font-size:12px;font-weight:700;
-  color:var(--text3);flex-shrink:0;transition:all .2s;
-}
-.step-body{}
-.step-h{font-size:18px;font-weight:800;color:var(--text2);margin-bottom:6px;transition:color .2s;}
-.step-p{font-size:14px;color:var(--text3);line-height:1.65;}
-
-/* Right side — the animated mockup panel */
-.steps-right{
-  position:sticky;top:80px;
-}
-.steps-mockup{
-  background:var(--card);border:1px solid var(--border2);
-  border-radius:20px;overflow:hidden;
-  box-shadow:0 24px 80px rgba(0,0,0,.5);
-}
-.steps-mockup-header{
-  background:var(--bg2);border-bottom:1px solid var(--border);
-  padding:12px 18px;display:flex;align-items:center;gap:8px;
-}
-.steps-mockup-body{padding:24px;min-height:320px;display:flex;flex-direction:column;gap:12px;}
-
-/* Step 1 mockup — trend cards */
-.s1-item{
-  display:flex;align-items:center;gap:12px;
-  padding:12px 14px;border-radius:10px;background:var(--bg2);
-  border:1px solid var(--border);
-}
-.s1-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);width:20px;text-align:right;}
-.s1-bar{flex:1;height:4px;background:var(--bg3);border-radius:99px;overflow:hidden;}
-.s1-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;}
-.s1-label{flex:1;font-size:13px;font-weight:600;}
-.s1-score{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;}
-
-/* ═══════════════════════════════════════════
-   STATS BAR
-═══════════════════════════════════════════ */
-.stats-section{
-  padding:80px 0;background:var(--bg2);
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);}
-.stat-item{
-  background:var(--bg2);padding:40px 32px;text-align:center;
-}
-.stat-num{
-  font-size:clamp(36px,4vw,54px);font-weight:900;font-family:'Syne',sans-serif;
-  background:linear-gradient(135deg,#fff,rgba(255,255,255,.6));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  letter-spacing:-.03em;margin-bottom:6px;
-}
-.stat-num em{
-  font-style:normal;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.stat-label{font-size:14px;color:var(--text3);}
-
-/* ═══════════════════════════════════════════
-   CTA SECTION — big dramatic close
-═══════════════════════════════════════════ */
-.cta-section{
-  padding:120px 0;
-  position:relative;overflow:hidden;
-  background:var(--bg);
-}
-.cta-orb{position:absolute;border-radius:50%;filter:blur(120px);pointer-events:none;}
-.cta-orb-1{width:700px;height:700px;top:50%;left:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(240,180,41,.12) 0%,transparent 70%);}
-.cta-inner{
-  position:relative;z-index:2;text-align:center;max-width:720px;margin:0 auto;
-}
-.cta-h{font-size:clamp(32px,5vw,64px);color:#fff;margin-bottom:18px;}
-.cta-h em{font-style:normal;color:var(--gold);}
-.cta-p{font-size:18px;color:var(--text2);margin-bottom:44px;line-height:1.7;max-width:500px;margin-left:auto;margin-right:auto;}
-.cta-acts{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
-.cta-note{margin-top:18px;font-size:13px;color:var(--text3);display:flex;align-items:center;justify-content:center;gap:6px;}
-.cta-note svg{width:13px;height:13px;color:var(--green);}
-
-/* ═══════════════════════════════════════════
+/* ═══════════════════════
    FOOTER
-═══════════════════════════════════════════ */
-.footer{
-  background:var(--bg2);
-  border-top:1px solid var(--border);
-  padding:64px 0 0;
-}
-.footer-grid{
-  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;
-  gap:48px;padding-bottom:56px;
-}
-.f-brand p{font-size:14px;color:var(--text3);margin-top:10px;max-width:220px;line-height:1.7;}
-.f-brand-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:16px;}
-.fc h4{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:16px;letter-spacing:.02em;}
-.fc a{display:block;font-size:14px;color:var(--text3);margin-bottom:10px;transition:color .15s;}
+═══════════════════════ */
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:48px 0 28px;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:36px;}
+.f-brand p{color:var(--text2);font-size:14px;line-height:1.7;margin-top:10px;max-width:240px;}
+.fc h4{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+.fc a{display:block;font-size:14px;color:var(--text2);margin-bottom:8px;transition:color .2s;}
 .fc a:hover{color:var(--gold);}
-.footer-bot{
-  border-top:1px solid var(--border);
-  padding:20px 0;display:flex;align-items:center;justify-content:space-between;
-  font-size:13px;color:var(--text3);flex-wrap:wrap;gap:10px;
-}
-.footer-legal{display:flex;gap:20px;}
-.footer-legal a{color:var(--text3);transition:color .15s;}
-.footer-legal a:hover{color:var(--text);}
-.footer-tbtn{
-  padding:6px 14px;border-radius:8px;background:var(--card);
-  border:1px solid var(--border2);font-size:12px;color:var(--text2);cursor:pointer;
-  transition:all .2s;
-}
-.footer-tbtn:hover{border-color:var(--border2);color:var(--text);}
+.footer-bot{display:flex;justify-content:space-between;align-items:center;padding-top:24px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);flex-wrap:wrap;gap:10px;}
+.footer-legal{display:flex;gap:16px;}
+.footer-legal a{font-size:12px;color:var(--text3);}
+.footer-legal a:hover{color:var(--gold);}
+.footer-tbtn{background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--text2);}
 
-/* ═══════════════════════════════════════════
-   ANIMATIONS (scroll reveal)
-═══════════════════════════════════════════ */
-.anim{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease;}
+/* ═══════════════════════
+   ANIMATIONS
+═══════════════════════ */
+.anim{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
 .anim.visible{opacity:1;transform:none;}
-.anim-delay-1{transition-delay:.1s;}
-.anim-delay-2{transition-delay:.2s;}
-.anim-delay-3{transition-delay:.3s;}
-.anim-delay-4{transition-delay:.4s;}
 
-/* ═══════════════════════════════════════════
-   MOBILE SIDEBAR
-═══════════════════════════════════════════ */
-.mob-overlay{display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);}
-.mob-overlay.open{display:block;}
-.mob-sidebar{position:fixed;top:0;left:0;bottom:0;z-index:1060;width:min(300px,85vw);background:var(--bg2);transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;border-right:1px solid var(--border2);}
-.mob-sidebar.open{transform:translateX(0);}
-.mob-head{padding:18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.mob-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:900;font-size:15px;}
-.mob-close{width:32px;height:32px;border-radius:9px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);}
-.mob-nav{padding:12px;flex:1;}
-.mob-nav a{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r);font-size:14px;font-weight:500;color:var(--text2);margin-bottom:3px;transition:all .15s;}
-.mob-nav a:hover{background:var(--card);color:var(--text);}
-.mob-auth{padding:12px 14px 20px;display:flex;flex-direction:column;gap:8px;}
-.mob-user-section{display:none;flex-direction:column;gap:8px;}
-.mob-user-section.show{display:flex;}
-.mob-guest-section{display:flex;flex-direction:column;gap:8px;}
-.mob-guest-section.hide{display:none;}
-.mob-acta{display:block;padding:13px 16px;border-radius:var(--r);font-size:14px;font-weight:700;text-align:center;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;}
-.mob-adash{display:block;padding:13px 16px;border-radius:var(--r);font-size:14px;font-weight:700;text-align:center;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);}
-.mob-signout{width:100%;padding:13px;border-radius:var(--r);font-size:14px;text-align:center;border:1px solid var(--border2);color:var(--text2);}
-.mob-theme-row{padding:12px 14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.mob-theme-row span{font-size:13px;color:var(--text2);}
-.mob-tbtn{padding:7px 16px;border-radius:8px;background:var(--card);border:1px solid var(--border2);font-size:12px;color:var(--text2);}
-
-/* ═══════════════════════════════════════════
+/* ═══════════════════════
    RESPONSIVE
-═══════════════════════════════════════════ */
-@media(max-width:900px){
-  .bento-grid{grid-template-columns:1fr 1fr;}
-  .bento-card.span-4,.bento-card.span-5,.bento-card.span-7,
-  .bento-card.span-6,.bento-card.span-8,.bento-card.span-3{grid-column:span 2;}
-  .bento-card.span-3{grid-column:span 1;}
-  .steps-layout{grid-template-columns:1fr;}
-  .steps-right{display:none;}
-  .stats-grid{grid-template-columns:1fr 1fr;}
-  .footer-grid{grid-template-columns:1fr 1fr;}
-  .carousel-preview-grid{grid-template-columns:repeat(2,1fr);}
+═══════════════════════ */
+@media(max-width:860px){
+  .hamburger{display:flex;}
+  .btn-ghost{display:none;}
+  .wrap{padding:0 16px;}
+  .features-row{gap:0;}
+  .feat-item{padding:10px 16px;border-right:none;border-bottom:1px solid var(--border);width:50%;}
+  .feat-item:nth-child(odd){border-right:1px solid var(--border);}
+  .feat-item:last-child,.feat-item:nth-last-child(2):nth-child(odd){border-bottom:none;}
+  .steps-grid{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:24px;}
+  .hero-slide-caption{padding:20px 20px;}
+  .hero-cap-body{display:none;}
 }
 @media(max-width:640px){
-  .bento-grid{grid-template-columns:1fr;}
-  .bento-card.span-4,.bento-card.span-5,.bento-card.span-7,
-  .bento-card.span-6,.bento-card.span-8,.bento-card.span-3{grid-column:span 1;}
-  .stats-grid{grid-template-columns:1fr 1fr;}
+  .hero-cap-title{font-size:clamp(17px,5vw,26px);}
+  .hero-cap-cta{font-size:12px;padding:8px 16px;}
+  .carousel-preview{grid-template-columns:repeat(3,1fr);}
+  .cta-band{padding:40px 20px;}
   .footer-grid{grid-template-columns:1fr 1fr;}
-  .demo-pane{padding:20px;}
-  .demo-tab-pill{padding:10px 14px;font-size:12px;}
-  .wrap{padding:0 18px;}
+  .demo-section{padding:60px 0;}
+  .section{padding:60px 0;}
 }
 @media(max-width:420px){
-  .stats-grid{grid-template-columns:1fr 1fr;}
+  .feat-item{width:100%;border-right:none;}
+  .feat-item:nth-child(odd){border-right:none;}
   .footer-grid{grid-template-columns:1fr;}
-  .hero-social-proof{flex-direction:column;gap:8px;}
 }
 </style>
 </head>
 <body>
-
-<!-- ═══════════ SHARED NAV ═══════════ -->
 <div id="ig-nav"></div>
 
-<!-- ═══════════ MOBILE SIDEBAR ═══════════ -->
+<!-- ═══════════════ MOBILE SIDEBAR ═══════════════ -->
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 <div class="mob-sidebar" id="mobSidebar">
-  <div class="mob-head">
-    <div class="mob-logo">
-      <img onerror="this.style.display='none'" src="logo.png" style="width:26px;height:26px;object-fit:contain;border-radius:6px;"/>
+<div class="mob-head">
+<div class="mob-logo">
+<img onerror="this.style.display='none'" src="logo.png" style="width:24px;height:24px;object-fit:contain;border-radius:5px;"/>
       ImpactGrid
     </div>
-    <button class="mob-close" onclick="closeSidebar()">✕</button>
-  </div>
-  <div class="mob-nav">
-    <a href="index.html" onclick="closeSidebar()">🏠 Home</a>
-    <a href="about.html" onclick="closeSidebar()">ℹ️ About</a>
-    <a href="consulting.html" onclick="closeSidebar()">💼 Consulting</a>
-    <a href="contact.html" onclick="closeSidebar()">✉️ Contact Us</a>
-    <a href="pricing.html" onclick="closeSidebar()">💳 Pricing</a>
-  </div>
-  <div class="mob-auth">
-    <div class="mob-guest-section" id="mobGuest">
-      <a class="mob-acta" href="creator-studio.html" onclick="closeSidebar()">Start for Free →</a>
-    </div>
-    <div class="mob-user-section" id="mobUser">
-      <a class="mob-adash" href="creator-studio.html" onclick="closeSidebar()">✨ Open Creator Studio →</a>
-      <button class="mob-signout" onclick="igOut()">Sign Out</button>
-    </div>
-  </div>
-  <div class="mob-theme-row">
-    <span>Theme</span>
-    <button class="mob-tbtn" id="mobTBtn" onclick="toggleTheme()">☀️ Light</button>
-  </div>
+<button class="mob-close" onclick="closeSidebar()">✕</button>
 </div>
+<div class="mob-nav">
+<a href="index.html" onclick="closeSidebar()">🏠 Home</a>
+<a href="about.html" onclick="closeSidebar()">ℹ️ About</a>
+<a href="consulting.html" onclick="closeSidebar()">💼 Consulting</a>
+<a href="contact.html" onclick="closeSidebar()">✉️ Contact Us</a>
+<a href="pricing.html" onclick="closeSidebar()">💳 Pricing</a>
+</div>
+<div class="mob-auth">
+<div class="mob-guest-section" id="mobGuest">
+<a class="mob-acta" href="creator-studio.html" onclick="closeSidebar()">Try Creator Studio Free →</a>
+</div>
+<div class="mob-user-section" id="mobUser">
+<a class="mob-adash" href="creator-studio.html" onclick="closeSidebar()">✨ Open Creator Studio →</a>
+<button class="mob-signout" onclick="igOut()">Sign Out</button>
+</div>
+</div>
+<div class="mob-theme-row">
+<span>Theme</span>
+<button class="mob-tbtn" id="mobTBtn" onclick="toggleTheme()">🌙 Dark</button>
+</div>
+</div>
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="hero">
+<div class="hero-slideshow">
 
-<!-- ═══════════════════════════════════════════
-     HERO
-═══════════════════════════════════════════ -->
-<section class="hero">
-  <div class="hero-orb hero-orb-1"></div>
-  <div class="hero-orb hero-orb-2"></div>
-  <div class="hero-orb hero-orb-3"></div>
-  <div class="hero-grid"></div>
+  <!-- Background Video -->
+  <video class="hero-bg-video" autoplay muted loop playsinline>
+    <source src="videos/impactgrid-demo.mp4" type="video/mp4">
+  </video>
 
+  <!-- Overlay -->
+  <div class="hero-overlay"></div>
+
+  <!-- Content -->
   <div class="hero-content">
-    <div class="hero-eyebrow">
-      <span></span>
-      Creator Intelligence Platform
-    </div>
+    <div class="hero-inner">
 
-    <h1 class="hero-h1">
-      Create content that<br><em>actually hits</em>
-    </h1>
-
-    <p class="hero-sub">
-      Real-time trend signals, AI tools, and professional carousels — all built for creators who want to grow faster and post smarter.
-    </p>
-
-    <div class="hero-ctas">
-      <a href="creator-studio.html" class="btn-primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Start Designing Free
-      </a>
-      <a href="#demo" class="btn-secondary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-        See How It Works
-      </a>
-    </div>
-
-    <div class="hero-social-proof">
-      <div class="hero-avatars">
-        <div class="hero-av">J</div>
-        <div class="hero-av">S</div>
-        <div class="hero-av">M</div>
-        <div class="hero-av">A</div>
-        <div class="hero-av">R</div>
-      </div>
-      <div class="hero-stars">★★★★★</div>
-      <div class="hero-sep"></div>
-      <span>Loved by 2,000+ creators</span>
-      <div class="hero-sep"></div>
-      <span>No credit card needed</span>
-    </div>
-  </div>
-
-  <div class="scroll-cue">
-    <div class="scroll-line"></div>
-    <span>Scroll</span>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     DEMO / PRODUCT WALKTHROUGH
-═══════════════════════════════════════════ -->
-<section class="demo-video-section" id="demo">
-  <div class="wrap">
-    <div class="demo-video-head anim">
-      <div class="section-eyebrow">See It In Action</div>
-      <h2 class="sec-h">Every tool a creator needs — in one place</h2>
-      <p class="sec-p">Trends, AI writing, carousel design, content planning. Watch how ImpactGrid handles your whole content workflow.</p>
-    </div>
-
-    <div class="demo-window anim anim-delay-1">
-      <!-- Browser chrome -->
-      <div class="demo-window-bar">
-        <div class="demo-traffic-lights">
-          <div class="dtl dtl-r"></div>
-          <div class="dtl dtl-y"></div>
-          <div class="dtl dtl-g"></div>
-        </div>
-        <div class="demo-url-bar">app.impactgrid.com · Creator Studio</div>
+      <div class="hero-eyebrow">
+        ImpactGrid Creator Intelligence
       </div>
 
-      <!-- Tabs -->
-      <div class="demo-tab-row">
-        <button class="demo-tab-pill active" onclick="switchDemoTab('trends',this)">📡 Live Trends</button>
-        <button class="demo-tab-pill" onclick="switchDemoTab('dijo',this)">🤖 Dijo AI</button>
-        <button class="demo-tab-pill" onclick="switchDemoTab('carousels',this)">🎨 Carousel Studio</button>
-        <button class="demo-tab-pill" onclick="switchDemoTab('plan',this)">📅 Content Plan</button>
-      </div>
+      <h1 class="hero-title">
+        Create content that <span>actually performs</span>
+      </h1>
 
-      <!-- TRENDS PANE -->
-      <div class="demo-pane active" id="dpane-trends">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-          <div>
-            <div style="font-size:16px;font-weight:800;color:#fff;">Today's Trending Topics</div>
-            <div style="font-size:13px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace;">UK · Updated just now · Powered by Dijo</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--green-dim);border:1px solid rgba(15,168,118,.2);border-radius:99px;">
-            <div class="dtl dtl-g" style="animation:blink 1.6s infinite;"></div>
-            <span style="font-size:11px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace;">LIVE</span>
-          </div>
-        </div>
-        <div class="trend-list">
-          <div class="trend-row">
-            <span class="trend-rank">#1</span>
-            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:96%"></div></div>
-            <div style="flex:1;">
-              <div class="trend-name">Viking history &amp; myths</div>
-              <div class="trend-meta">5 videos · 126K views this week</div>
-            </div>
-            <span class="trend-badge badge-high">5.8</span>
-            <span class="trend-plat">YouTube</span>
-          </div>
-          <div class="trend-row">
-            <span class="trend-rank">#2</span>
-            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:88%"></div></div>
-            <div style="flex:1;">
-              <div class="trend-name">UK Street Style 2026</div>
-              <div class="trend-meta">Google Trends · rising fast</div>
-            </div>
-            <span class="trend-badge badge-high">5.5</span>
-            <span class="trend-plat">TikTok</span>
-          </div>
-          <div class="trend-row">
-            <span class="trend-rank">#3</span>
-            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:80%"></div></div>
-            <div style="flex:1;">
-              <div class="trend-name">AI productivity tools</div>
-              <div class="trend-meta">3 videos · 5.5K views</div>
-            </div>
-            <span class="trend-badge badge-mid">4.9</span>
-            <span class="trend-plat">TikTok</span>
-          </div>
-          <div class="trend-row">
-            <span class="trend-rank">#4</span>
-            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:72%"></div></div>
-            <div style="flex:1;">
-              <div class="trend-name">Budget cooking UK</div>
-              <div class="trend-meta">Google Trends · emerging</div>
-            </div>
-            <span class="trend-badge badge-mid">4.6</span>
-            <span class="trend-plat">YouTube</span>
-          </div>
-          <div class="trend-row">
-            <span class="trend-rank">#5</span>
-            <div class="trend-bar-wrap"><div class="trend-bar-fill" style="width:66%"></div></div>
-            <div style="flex:1;">
-              <div class="trend-name">Mindset &amp; morning routines</div>
-              <div class="trend-meta">Trending shorts · viral</div>
-            </div>
-            <span class="trend-badge badge-mid">4.4</span>
-            <span class="trend-plat">Instagram</span>
-          </div>
-        </div>
-      </div>
+      <p class="hero-sub">
+        Real trends, AI tools, and content planning — all in one system.
+      </p>
 
-      <!-- DIJO AI PANE -->
-      <div class="demo-pane" id="dpane-dijo">
-        <div class="chat-window" id="demoChat">
-          <div class="chat-row">
-            <div class="chat-avatar dijo">D</div>
-            <div class="chat-bubble dijo">Good morning! Today's top trend is <strong>Viking history</strong> — scoring 5.8/10. I'd recommend a short hook-style video for YouTube. Want me to write it?</div>
-          </div>
-          <div class="chat-row user">
-            <div class="chat-avatar you">Y</div>
-            <div class="chat-bubble you">Yes, write me a hook for a Viking video</div>
-          </div>
-          <div class="chat-row">
-            <div class="chat-avatar dijo">D</div>
-            <div class="chat-bubble dijo">"The Viking warriors history books are too scared to talk about… 🔱" — Post Thursday 7–9pm for best reach. Add #Vikings #UKHistory #Shorts. Want the full caption too?</div>
-          </div>
-        </div>
-        <div class="chat-input-bar">
-          <input class="chat-input" id="demoChatInput" placeholder="Ask Dijo anything…" onkeydown="if(event.key==='Enter')sendDemoChat()"/>
-          <button class="chat-send-btn" onclick="sendDemoChat()">Send →</button>
-        </div>
-      </div>
-
-      <!-- CAROUSELS PANE -->
-      <div class="demo-pane" id="dpane-carousels">
-        <div style="margin-bottom:20px;">
-          <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:6px;">Carousel Studio</div>
-          <div style="font-size:13px;color:var(--text3);">Topic: <strong style="color:var(--text);">5 Viking myths that changed history</strong></div>
-        </div>
-        <div class="carousel-preview-grid">
-          <div class="carousel-card cc1">
-            <div class="carousel-card-num">1/5</div>
-            <div class="carousel-card-text">5 Viking Myths That Changed History 🔱</div>
-          </div>
-          <div class="carousel-card cc2">
-            <div class="carousel-card-num">2/5</div>
-            <div class="carousel-card-text">Myth #1: They wore horned helmets</div>
-          </div>
-          <div class="carousel-card cc3">
-            <div class="carousel-card-num">3/5</div>
-            <div class="carousel-card-text">Truth: Never in battle. A 19th century invention.</div>
-          </div>
-          <div class="carousel-card cc4">
-            <div class="carousel-card-num">4/5</div>
-            <div class="carousel-card-text">Myth #2: They were barbaric raiders only</div>
-          </div>
-        </div>
-        <div class="carousel-gen-row">
-          <input class="carousel-gen-input" value="5 Viking myths that changed history" readonly/>
-          <a href="carousel-studio.html" class="carousel-gen-btn">✨ Open in Studio →</a>
-        </div>
-      </div>
-
-      <!-- PLAN PANE -->
-      <div class="demo-pane" id="dpane-plan">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-          <div style="font-size:16px;font-weight:800;color:#fff;">This Week's Content Plan</div>
-          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);">AI Generated</span>
-        </div>
-        <div class="week-grid">
-          <div class="week-day">
-            <span class="day-label">Mon</span>
-            <div class="day-dot" style="background:var(--gold);"></div>
-            <span class="day-topic">Viking myths hook video</span>
-            <span class="day-time">7–9pm</span>
-            <span class="day-plat plat-yt">YouTube</span>
-          </div>
-          <div class="week-day">
-            <span class="day-label">Tue</span>
-            <div class="day-dot" style="background:var(--purple);"></div>
-            <span class="day-topic">UK Street Style carousel</span>
-            <span class="day-time">12–2pm</span>
-            <span class="day-plat plat-ig">Instagram</span>
-          </div>
-          <div class="week-day">
-            <span class="day-label">Wed</span>
-            <div class="day-dot" style="background:#ff4d4d;"></div>
-            <span class="day-topic">AI productivity tools short</span>
-            <span class="day-time">6–8pm</span>
-            <span class="day-plat plat-tt">TikTok</span>
-          </div>
-          <div class="week-day">
-            <span class="day-label">Thu</span>
-            <div class="day-dot" style="background:var(--gold);"></div>
-            <span class="day-topic">Behind the scenes vlog</span>
-            <span class="day-time">7–9pm</span>
-            <span class="day-plat plat-yt">YouTube</span>
-          </div>
-          <div class="week-day empty">
-            <span class="day-label">Fri</span>
-            <div class="day-dot" style="background:var(--border2);"></div>
-            <span class="day-topic">Let Dijo suggest a topic…</span>
-            <span class="day-time"></span>
-            <span class="day-plat plat-tt" style="opacity:.4;">TikTok</span>
-          </div>
-        </div>
-      </div>
-    </div><!-- /demo-window -->
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     SOCIAL PROOF TICKER
-═══════════════════════════════════════════ -->
-<div class="proof-section">
-  <div class="proof-label">Trusted by creators on every platform</div>
-  <div style="overflow:hidden;">
-    <div class="ticker-track">
-      <div class="ticker-set">
-        <div class="ticker-item"><span>📺</span> YouTube Creators</div>
-        <div class="ticker-item"><span>📸</span> Instagram Influencers</div>
-        <div class="ticker-item"><span>🎵</span> TikTok Creators</div>
-        <div class="ticker-item"><span>💼</span> LinkedIn Thought Leaders</div>
-        <div class="ticker-item"><span>🐦</span> Twitter/X Voices</div>
-        <div class="ticker-item"><span>📌</span> Pinterest Creators</div>
-        <div class="ticker-item"><span>🎙️</span> Podcasters</div>
-        <div class="ticker-item"><span>✍️</span> Newsletter Writers</div>
-      </div>
-      <div class="ticker-set" aria-hidden="true">
-        <div class="ticker-item"><span>📺</span> YouTube Creators</div>
-        <div class="ticker-item"><span>📸</span> Instagram Influencers</div>
-        <div class="ticker-item"><span>🎵</span> TikTok Creators</div>
-        <div class="ticker-item"><span>💼</span> LinkedIn Thought Leaders</div>
-        <div class="ticker-item"><span>🐦</span> Twitter/X Voices</div>
-        <div class="ticker-item"><span>📌</span> Pinterest Creators</div>
-        <div class="ticker-item"><span>🎙️</span> Podcasters</div>
-        <div class="ticker-item"><span>✍️</span> Newsletter Writers</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════
-     FEATURES BENTO GRID
-═══════════════════════════════════════════ -->
-<section class="features-section">
-  <div class="wrap">
-    <div class="anim" style="text-align:center;">
-      <div class="section-eyebrow">What's Inside</div>
-      <h2 class="sec-h">Everything you need.<br>Nothing you don't.</h2>
-      <p class="sec-p" style="margin-top:14px;">One platform replacing five different tools. Built specifically for how creators actually work.</p>
-    </div>
-
-    <div class="bento-grid">
-
-      <!-- Big card — Live Trends -->
-      <div class="bento-card span-7 hero-card anim anim-delay-1">
-        <div class="bento-icon" style="background:rgba(240,180,41,.12);">📡</div>
-        <div class="bento-tag" style="background:rgba(240,180,41,.1);color:var(--gold);border:1px solid rgba(240,180,41,.2);">
-          <div style="width:5px;height:5px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;"></div>
-          Live Now
-        </div>
-        <div class="bento-h">Real-time Trend Feed</div>
-        <div class="bento-p">Dijo scans Google Trends, YouTube and TikTok every hour — scoring every topic so you post what's actually rising, not what peaked last week.</div>
-        <div class="bento-visual">
-          <div class="mini-trend-viz">
-            <div class="mtr"><span class="mtr-label">Viking history</span><div class="mtr-bar-bg"><div class="mtr-bar-fill" style="width:96%"></div></div><span class="mtr-score">5.8</span></div>
-            <div class="mtr"><span class="mtr-label">UK Street Style</span><div class="mtr-bar-bg"><div class="mtr-bar-fill" style="width:88%"></div></div><span class="mtr-score">5.5</span></div>
-            <div class="mtr"><span class="mtr-label">AI productivity</span><div class="mtr-bar-bg"><div class="mtr-bar-fill" style="width:80%"></div></div><span class="mtr-score">4.9</span></div>
-            <div class="mtr"><span class="mtr-label">Budget cooking</span><div class="mtr-bar-bg"><div class="mtr-bar-fill" style="width:72%"></div></div><span class="mtr-score">4.6</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Carousel card -->
-      <div class="bento-card span-5 anim anim-delay-2">
-        <div class="bento-icon" style="background:rgba(124,58,237,.12);">🎨</div>
-        <div class="bento-tag" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.2);">New</div>
-        <div class="bento-h">Carousel Studio</div>
-        <div class="bento-p">Design-quality carousels in seconds. AI writes the copy, picks images, and generates every slide — export at 1080px, ready to post.</div>
-        <a href="carousel-studio.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:20px;font-size:13px;font-weight:700;color:var(--purple);">
-          Open Studio →
+      <div class="hero-ctas">
+        <a href="creator-studio.html" class="btn-primary">
+          Start Creating →
+        </a>
+        <a href="pricing.html" class="btn-secondary">
+          See Pricing
         </a>
       </div>
 
-      <!-- Dijo AI card -->
-      <div class="bento-card span-4 anim anim-delay-1">
-        <div class="bento-icon" style="background:rgba(240,180,41,.12);">🤖</div>
-        <div class="bento-h">Dijo AI</div>
-        <div class="bento-p">Your always-on creative brain. Ask Dijo anything — hooks, captions, hashtags, posting times — and get platform-native answers backed by live data.</div>
-      </div>
-
-      <!-- Content Plan card -->
-      <div class="bento-card span-4 anim anim-delay-2">
-        <div class="bento-icon" style="background:rgba(15,168,118,.12);">📅</div>
-        <div class="bento-h">Weekly Content Plan</div>
-        <div class="bento-p">Dijo auto-fills your week based on trending topics and your niche. Every day gets the right platform, right time, and right topic.</div>
-      </div>
-
-      <!-- Opportunities card -->
-      <div class="bento-card span-4 anim anim-delay-3">
-        <div class="bento-icon" style="background:rgba(45,110,219,.12);">💼</div>
-        <div class="bento-h">Brand Opportunities</div>
-        <div class="bento-p">Real brand deals, gigs, and monetisation opportunities matched to your niche. No cold outreach required.</div>
-      </div>
-
-      <!-- Analytics mini card -->
-      <div class="bento-card span-3 anim anim-delay-1" style="background:linear-gradient(135deg,rgba(240,180,41,.06),transparent);">
-        <div style="font-size:36px;font-weight:900;font-family:'Syne',sans-serif;color:var(--gold);line-height:1;margin-bottom:8px;">1080<span style="font-size:18px;opacity:.6;">px</span></div>
-        <div class="bento-h" style="font-size:16px;">Export quality</div>
-        <div class="bento-p" style="font-size:13px;">Every carousel exported at professional resolution, ready for any platform.</div>
-      </div>
-
-      <!-- Platform card -->
-      <div class="bento-card span-5 anim anim-delay-2">
-        <div class="bento-icon" style="background:rgba(45,110,219,.12);">🌐</div>
-        <div class="bento-h">Every Platform, One Tool</div>
-        <div class="bento-p">Instagram, TikTok, YouTube, LinkedIn, Twitter/X, Pinterest — Dijo knows the rules, formats, and best times for each. You just pick a topic.</div>
-      </div>
-
-      <!-- Speed card -->
-      <div class="bento-card span-4 anim anim-delay-3" style="background:linear-gradient(135deg,rgba(15,168,118,.06),transparent);">
-        <div style="font-size:36px;font-weight:900;font-family:'Syne',sans-serif;color:var(--green);line-height:1;margin-bottom:8px;">&lt;30<span style="font-size:18px;opacity:.6;">sec</span></div>
-        <div class="bento-h" style="font-size:16px;">From topic to carousel</div>
-        <div class="bento-p" style="font-size:13px;">Type your idea, hit generate. Dijo handles the rest in under 30 seconds.</div>
-      </div>
-
     </div>
   </div>
-</section>
 
-<!-- ═══════════════════════════════════════════
-     STATS
-═══════════════════════════════════════════ -->
-<div class="stats-section">
-  <div class="wrap">
-    <div class="stats-grid">
-      <div class="stat-item anim">
-        <div class="stat-num"><em>2K</em>+</div>
-        <div class="stat-label">Active creators</div>
-      </div>
-      <div class="stat-item anim anim-delay-1">
-        <div class="stat-num">50<em>K</em>+</div>
-        <div class="stat-label">Carousels generated</div>
-      </div>
-      <div class="stat-item anim anim-delay-2">
-        <div class="stat-num"><em>5</em></div>
-        <div class="stat-label">Platforms tracked live</div>
-      </div>
-      <div class="stat-item anim anim-delay-3">
-        <div class="stat-num">1<em>hr</em></div>
-        <div class="stat-label">Trend update frequency</div>
-      </div>
-    </div>
-  </div>
 </div>
-
-<!-- ═══════════════════════════════════════════
-     HOW IT WORKS
-═══════════════════════════════════════════ -->
-<section class="how-section">
-  <div class="wrap">
-    <div class="anim" style="text-align:center;">
-      <div class="section-eyebrow">How It Works</div>
-      <h2 class="sec-h">From trend to published —<br>in minutes</h2>
-      <p class="sec-p" style="margin-top:14px;">No guessing. No wasted hours. A clear path from idea to content.</p>
-    </div>
-
-    <div class="steps-layout">
-      <!-- Steps -->
-      <div class="steps-left anim">
-        <div class="step-item active" onclick="setStep(this,0)">
-          <div class="step-num-badge">01</div>
-          <div class="step-body">
-            <div class="step-h">Spot what's trending</div>
-            <div class="step-p">Dijo scans Google Trends, YouTube and TikTok in real time — scoring every topic with a 1–10 score so you know what's actually worth posting right now.</div>
-          </div>
-        </div>
-        <div class="step-item" onclick="setStep(this,1)">
-          <div class="step-num-badge">02</div>
-          <div class="step-body">
-            <div class="step-h">Generate your content</div>
-            <div class="step-p">One click gets you a hook, caption, hashtags, and a full carousel deck — tailored to the trend and your platform of choice.</div>
-          </div>
-        </div>
-        <div class="step-item" onclick="setStep(this,2)">
-          <div class="step-num-badge">03</div>
-          <div class="step-body">
-            <div class="step-h">Post and grow</div>
-            <div class="step-p">Your weekly plan is auto-filled and ready to go. Track what works, pick up brand deals, and let Dijo keep you permanently ahead of the curve.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Live mockup -->
-      <div class="steps-right">
-        <div class="steps-mockup">
-          <div class="steps-mockup-header">
-            <div class="demo-traffic-lights">
-              <div class="dtl dtl-r"></div><div class="dtl dtl-y"></div><div class="dtl dtl-g"></div>
+</div>
+<!-- ═══════════════ FEATURES STRIP ═══════════════ -->
+<div class="features-strip anim">
+<div class="wrap">
+<div class="features-row">
+<div class="feat-item">
+<div class="feat-icon" style="background:var(--gold-dim);">📡</div>
+<div><div class="feat-label">Live Trend Feed</div><div class="feat-desc">Real-time signals</div></div>
+</div>
+<div class="feat-item">
+<div class="feat-icon" style="background:var(--purple-dim);">🎨</div>
+<div><div class="feat-label">Carousel Creator</div><div class="feat-desc">Generate slide decks</div></div>
+</div>
+<div class="feat-item">
+<div class="feat-icon" style="background:var(--green-dim);">📅</div>
+<div><div class="feat-label">Content Plan</div><div class="feat-desc">Weekly AI planner</div></div>
+</div>
+<div class="feat-item">
+<div class="feat-icon" style="background:var(--blue-dim);">💼</div>
+<div><div class="feat-label">Opportunities</div><div class="feat-desc">Brand deals &amp; gigs</div></div>
+</div>
+<div class="feat-item">
+<div class="feat-icon" style="background:rgba(201,126,8,.12);">🤖</div>
+<div><div class="feat-label">Dijo AI</div><div class="feat-desc">Your creator brain</div></div>
+</div>
+</div>
+</div>
+</div>
+<!-- ═══════════════ DEMO ═══════════════ -->
+<div class="demo-section">
+<div class="wrap">
+<div class="demo-head anim">
+<div class="label-tag">See It In Action</div>
+<h2 class="sec-h">Everything you need to grow</h2>
+<p class="sec-p" style="max-width:520px;margin:12px auto 0;">One app. Trends, AI, carousels, planning, and opportunities — all built for creators.</p>
+</div>
+<div class="demo-tabs anim">
+<button class="demo-tab active" onclick="switchTab('trends',event)">📡 Trend Feed</button>
+<button class="demo-tab" onclick="switchTab('dijo',event)">🤖 Dijo AI</button>
+<button class="demo-tab" onclick="switchTab('carousels',event)">🎨 Carousels</button>
+<button class="demo-tab" onclick="switchTab('plan',event)">📅 Content Plan</button>
+</div>
+<!-- TRENDS PANEL -->
+<div class="demo-panel active" id="panel-trends">
+<div class="demo-card">
+<div class="demo-card-header">
+<span class="live-dot"></span>
+<span class="demo-card-title">Today's Trend Feed — UK</span>
+<span style="margin-left:auto;font-family:var(--fm);font-size:10px;color:var(--text3);">Powered by Dijo</span>
+</div>
+<div class="demo-card-body">
+<div class="trend-row">
+<span class="trend-rank">#1</span>
+<div class="trend-info"><div class="trend-name">Viking history &amp; myths</div><div class="trend-meta">5 videos · 126K views</div></div>
+<div class="trend-score"><span class="score-badge score-high">5.8</span><span class="plat-tag">YouTube</span></div>
+</div>
+<div class="trend-row">
+<span class="trend-rank">#2</span>
+<div class="trend-info"><div class="trend-name">UK Street Style</div><div class="trend-meta">Google Trends · rising fast</div></div>
+<div class="trend-score"><span class="score-badge score-high">5.5</span><span class="plat-tag">TikTok</span></div>
+</div>
+<div class="trend-row">
+<span class="trend-rank">#3</span>
+<div class="trend-info"><div class="trend-name">AI productivity tools</div><div class="trend-meta">3 videos · 5.5K views</div></div>
+<div class="trend-score"><span class="score-badge score-mid">4.9</span><span class="plat-tag">TikTok</span></div>
+</div>
+<div class="trend-row">
+<span class="trend-rank">#4</span>
+<div class="trend-info"><div class="trend-name">Budget cooking UK</div><div class="trend-meta">Google Trends · emerging</div></div>
+<div class="trend-score"><span class="score-badge score-mid">4.6</span><span class="plat-tag">YouTube</span></div>
+</div>
+<div class="trend-row">
+<span class="trend-rank">#5</span>
+<div class="trend-info"><div class="trend-name">Wellingborough 2026</div><div class="trend-meta">Trending shorts · viral</div></div>
+<div class="trend-score"><span class="score-badge score-mid">4.4</span><span class="plat-tag">YouTube</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- DIJO PANEL -->
+<div class="demo-panel" id="panel-dijo">
+<div class="demo-card">
+<div class="demo-card-header">
+<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;flex-shrink:0;">D</div>
+<span class="demo-card-title">Dijo AI — Your Creator Brain</span>
+<span class="live-dot" style="margin-left:auto;"></span>
+</div>
+<div class="demo-card-body">
+<div class="chat-msgs" id="chatMsgs">
+<div class="chat-msg">
+<div class="chat-av dijo">D</div>
+<div class="chat-bubble dijo">Good morning! Today's top trend is <strong>Viking history</strong> — scoring 5.8/10. I'd recommend a short hook-style video for YouTube. Want me to write it for you?</div>
+</div>
+<div class="chat-msg user">
+<div class="chat-av you">Y</div>
+<div class="chat-bubble you">Yes, write me a hook for a Viking video</div>
+</div>
+<div class="chat-msg">
+<div class="chat-av dijo">D</div>
+<div class="chat-bubble dijo">"The Viking warriors that history books are too scared to talk about… 🔱" — Post this Thursday 7–9pm for best reach. Add #Vikings #UKHistory #Shorts.</div>
+</div>
+</div>
+<div class="chat-input-row">
+<input class="chat-input" id="chatInput" onkeydown="if(event.key==='Enter')sendChat()" placeholder="Ask Dijo anything…"/>
+<button class="chat-send" onclick="sendChat()">Send</button>
+</div>
+</div>
+</div>
+</div>
+<!-- CAROUSELS PANEL -->
+<div class="demo-panel" id="panel-carousels">
+<div class="demo-card">
+<div class="demo-card-header">
+<span style="font-size:16px;">🎨</span>
+<span class="demo-card-title">Carousel Generator</span>
+</div>
+<div class="demo-card-body">
+<p style="font-size:14px;color:var(--text2);margin-bottom:18px;">Topic: <strong style="color:var(--text);">5 Viking myths that changed history</strong></p>
+<div class="carousel-preview">
+<div class="carousel-slide carousel-slide-1">
+<span class="carousel-num">1/5</span>
+              5 Viking Myths That Changed History 🔱
             </div>
-            <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-left:10px;" id="mockup-label">Dijo Intelligence · Trend Feed</span>
-          </div>
-          <div class="steps-mockup-body" id="mockup-body">
-            <div class="s1-item">
-              <span class="s1-num">#1</span>
-              <div class="s1-bar"><div class="s1-fill" style="width:96%"></div></div>
-              <span class="s1-label">Viking history &amp; myths</span>
-              <span class="s1-score">5.8</span>
+<div class="carousel-slide carousel-slide-2">
+<span class="carousel-num">2/5</span>
+              Myth #1: They wore horned helmets
             </div>
-            <div class="s1-item">
-              <span class="s1-num">#2</span>
-              <div class="s1-bar"><div class="s1-fill" style="width:88%"></div></div>
-              <span class="s1-label">UK Street Style 2026</span>
-              <span class="s1-score">5.5</span>
+<div class="carousel-slide carousel-slide-3">
+<span class="carousel-num">3/5</span>
+              Truth: Never in battle. That's a 19th century invention.
             </div>
-            <div class="s1-item">
-              <span class="s1-num">#3</span>
-              <div class="s1-bar"><div class="s1-fill" style="width:80%"></div></div>
-              <span class="s1-label">AI productivity tools</span>
-              <span class="s1-score">4.9</span>
-            </div>
-            <div class="s1-item">
-              <span class="s1-num">#4</span>
-              <div class="s1-bar"><div class="s1-fill" style="width:72%"></div></div>
-              <span class="s1-label">Budget cooking UK</span>
-              <span class="s1-score">4.6</span>
-            </div>
-            <div class="s1-item">
-              <span class="s1-num">#5</span>
-              <div class="s1-bar"><div class="s1-fill" style="width:66%"></div></div>
-              <span class="s1-label">Morning routines</span>
-              <span class="s1-score">4.4</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+</div>
+<button class="carousel-gen-btn">✨ Generate Full Carousel →</button>
+</div>
+</div>
+</div>
+<!-- CONTENT PLAN PANEL -->
+<div class="demo-panel" id="panel-plan">
+<div class="demo-card">
+<div class="demo-card-header">
+<span style="font-size:16px;">📅</span>
+<span class="demo-card-title">This Week's Content Plan</span>
+<span style="margin-left:auto;font-family:var(--fm);font-size:10px;color:var(--text3);">AI Generated</span>
+</div>
+<div class="demo-card-body">
+<div class="plan-week">
+<div class="plan-day">
+<span class="plan-day-label">Mon</span>
+<span class="plan-topic">Viking myths hook video</span>
+<span class="plan-plat yt">YouTube</span>
+</div>
+<div class="plan-day">
+<span class="plan-day-label">Tue</span>
+<span class="plan-topic">UK Street Style carousel</span>
+<span class="plan-plat ig">Instagram</span>
+</div>
+<div class="plan-day">
+<span class="plan-day-label">Wed</span>
+<span class="plan-topic">AI productivity tools short</span>
+<span class="plan-plat tt">TikTok</span>
+</div>
+<div class="plan-day">
+<span class="plan-day-label">Thu</span>
+<span class="plan-topic">Behind the scenes / vlog</span>
+<span class="plan-plat yt">YouTube</span>
+</div>
+<div class="plan-day plan-empty">
+<span class="plan-day-label">Fri</span>
+<span class="plan-topic">Add a topic or let Dijo suggest…</span>
+<span class="plan-plat tt" style="opacity:.4;">TikTok</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ═══════════════ HOW IT WORKS ═══════════════ -->
+<section class="section">
+<div class="wrap">
+<div class="anim" style="text-align:center;">
+<div class="label-tag">How It Works</div>
+<h2 class="sec-h">From trend to published — fast</h2>
+<p class="sec-p" style="max-width:480px;margin:12px auto 0;">No guessing. No wasted hours. Just a clear path from idea to content.</p>
+</div>
+<div class="steps-grid anim">
+<div class="step-card">
+<div class="step-num">STEP 01</div>
+<div class="step-icon">📡</div>
+<h3>Spot what's trending</h3>
+<p>Dijo scans Google Trends, YouTube and TikTok in real time, scoring every topic so you know exactly what's worth posting.</p>
+</div>
+<div class="step-card">
+<div class="step-num">STEP 02</div>
+<div class="step-icon">✍️</div>
+<h3>Generate your content</h3>
+<p>One click gets you a hook, caption, hashtags, and a full carousel deck — tailored to the trend and your platform.</p>
+</div>
+<div class="step-card">
+<div class="step-num">STEP 03</div>
+<div class="step-icon">🚀</div>
+<h3>Post and grow</h3>
+<p>Your weekly plan is auto-filled and ready to go. Track what works, get opportunities, and let Dijo keep you ahead.</p>
+</div>
+</div>
+</div>
 </section>
-
-<!-- ═══════════════════════════════════════════
-     CTA
-═══════════════════════════════════════════ -->
-<section class="cta-section">
-  <div class="cta-orb cta-orb-1"></div>
-  <div class="wrap">
-    <div class="cta-inner anim">
-      <div class="section-eyebrow" style="justify-content:center;">Get Started Today</div>
-      <h2 class="cta-h">Ready to create content<br>that <em>actually grows</em>?</h2>
-      <p class="cta-p">Join 2,000+ creators using ImpactGrid to turn trending topics into high-performing content — in minutes, not hours.</p>
-      <div class="cta-acts">
-        <a class="btn-primary" href="creator-studio.html">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          Start Designing Free
-        </a>
-        <a class="btn-secondary" href="pricing.html">View Pricing</a>
-      </div>
-      <div class="cta-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        No credit card needed
-        <span style="opacity:.3;">·</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        Free forever plan
-        <span style="opacity:.3;">·</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        Live in 30 seconds
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════ -->
+<!-- ═══════════════ CTA ═══════════════ -->
+<div class="cta-section">
+<div class="wrap">
+<div class="cta-band anim">
+<div class="label-tag" style="justify-content:center;">Try Creator Studio for free</div>
+<h2>Turn ideas into high-performing content in seconds.</h2>
+<p>Use it instantly. Your work won't be saved unless you create an account.</p>
+<div class="cta-acts">
+<a class="btn-cta-gold" href="creator-studio.html">Try Creator Studio Free →</a>
+<a class="btn-cta-outline" href="pricing.html">See Pricing</a>
+</div>
+</div>
+</div>
+</div>
+<!-- ═══════════════ FOOTER ═══════════════ -->
 <footer class="footer">
-  <div class="wrap">
-    <div class="footer-grid">
-      <div class="f-brand">
-        <div class="f-brand-logo">
-          <img onerror="this.style.display='none'" src="logo.png" style="width:28px;height:28px;object-fit:contain;border-radius:6px;"/>
+<div class="wrap">
+<div class="footer-grid">
+<div class="f-brand">
+<div style="display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:900;font-size:15px;">
+<img onerror="this.style.display='none'" src="logo.png" style="width:26px;height:26px;object-fit:contain;border-radius:5px;"/>
           ImpactGrid
         </div>
-        <p>Creator intelligence for the next generation of content makers.</p>
-      </div>
-      <div class="fc">
-        <h4>Product</h4>
-        <a href="creator-studio.html">Creator Studio</a>
-        <a href="carousel-studio.html">Carousel Studio</a>
-        <a href="portfolio-studio.html">Portfolio Studio</a>
-        <a href="consulting.html">Consulting</a>
-        <a href="pricing.html">Pricing</a>
-      </div>
-      <div class="fc">
-        <h4>Company</h4>
-        <a href="about.html">About</a>
-        <a href="contact.html">Contact Us</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-      </div>
-      <div class="fc">
-        <h4>Support</h4>
-        <a href="contact.html">Help Centre</a>
-        <a href="mailto:support@impactgridgroup.com">Email Support</a>
-        <a href="pricing.html">Plans &amp; Pricing</a>
-      </div>
-    </div>
-    <div class="footer-bot">
-      <span>© 2026 ImpactGrid Group Ltd.</span>
-      <div class="footer-legal">
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-      </div>
-      <button class="footer-tbtn" id="footerTBtn" onclick="toggleTheme()">☀️ Light Mode</button>
-    </div>
-  </div>
+<p>Creator intelligence for the next generation of content makers.</p>
+</div>
+<div class="fc">
+<h4>Product</h4>
+<a href="creator-studio.html">Creator Studio</a>
+<a href="carousel-studio.html">Carousel Studio</a>
+<a href="portfolio-studio.html">Portfolio Studio</a>
+<a href="consulting.html">Consulting</a>
+<a href="pricing.html">Pricing</a>
+</div>
+<div class="fc">
+<h4>Company</h4>
+<a href="about.html">About</a>
+<a href="contact.html">Contact Us</a>
+<a href="privacy.html">Privacy</a>
+<a href="terms.html">Terms</a>
+</div>
+<div class="fc">
+<h4>Support</h4>
+<a href="contact.html">Help Centre</a>
+<a href="mailto:support@impactgridgroup.com">Email Support</a>
+<a href="pricing.html">Plans &amp; Pricing</a>
+</div>
+</div>
+<div class="footer-bot">
+<span>© 2026 ImpactGrid Group Ltd.</span>
+<div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+<button class="footer-tbtn" id="footerTBtn" onclick="toggleTheme()">🌙 Dark Mode</button>
+</div>
+</div>
 </footer>
-
-<!-- ═══════════════════════════════════════════
-     SCRIPTS
-═══════════════════════════════════════════ -->
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
 <script>
-
 /* ── THEME ── */
-var isDark = true;
+var isDark = false;
 function applyTheme(dark){
   isDark = dark;
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  if(!dark){
-    document.body.style.background='#f8f9fb';
-    document.body.style.color='#0d1017';
-  } else {
-    document.body.style.background='#07090f';
-    document.body.style.color='#e8eaf2';
-  }
-  var ico = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
-  var fb=document.getElementById('footerTBtn'); if(fb) fb.textContent=ico;
+  var ico = dark ? '☀️' : '🌙';
+  var tb=document.getElementById('themeBtn'); if(tb) tb.textContent=ico;
+  var fb=document.getElementById('footerTBtn'); if(fb) fb.textContent=dark?'☀️ Light Mode':'🌙 Dark Mode';
   var mb=document.getElementById('mobTBtn'); if(mb) mb.textContent=dark?'☀️ Light':'🌙 Dark';
   try{ localStorage.setItem('ig_theme', dark?'dark':'light'); }catch(e){}
 }
 function toggleTheme(){ applyTheme(!isDark); }
-(function(){
-  try{
-    var saved = localStorage.getItem('ig_theme');
-    // Default to dark on this page
-    applyTheme(saved ? saved === 'dark' : true);
-  }catch(e){ applyTheme(true); }
-})();
+(function(){ try{ if(localStorage.getItem('ig_theme')==='dark') applyTheme(true); }catch(e){} })();
 
 /* ── SIDEBAR ── */
 function openSidebar(){ document.getElementById('mobSidebar').classList.add('open'); document.getElementById('mobOverlay').classList.add('open'); document.body.style.overflow='hidden'; }
 function closeSidebar(){ document.getElementById('mobSidebar').classList.remove('open'); document.getElementById('mobOverlay').classList.remove('open'); document.body.style.overflow=''; }
+var hamburger = document.getElementById('hamburger');
+if (hamburger) hamburger.addEventListener('click', openSidebar);
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSidebar(); });
 
 /* ── AUTH ── */
 function setUser(user){
+  if(!user) return;
   var mg=document.getElementById('mobGuest'); if(mg) mg.classList.add('hide');
   var mu=document.getElementById('mobUser'); if(mu) mu.classList.add('show');
 }
@@ -1259,7 +688,7 @@ window.igOut = async function(){
 function attachAuth(c){
   c.auth.onAuthStateChange(function(ev,session){
     if(session&&session.user) setUser(session.user);
-    else if(ev==='SIGNED_OUT') clearUser();
+    else if(ev==='SIGNED_OUT'||ev==='USER_DELETED') clearUser();
   });
   c.auth.getSession().then(function(r){ if(r&&r.data&&r.data.session&&r.data.session.user) setUser(r.data.session.user); }).catch(function(){});
 }
@@ -1276,60 +705,37 @@ function checkAuth(){
 }
 
 /* ── DEMO TABS ── */
-function switchDemoTab(name, btn){
-  document.querySelectorAll('.demo-tab-pill').forEach(function(t){ t.classList.remove('active'); });
-  document.querySelectorAll('.demo-pane').forEach(function(p){ p.classList.remove('active'); });
-  btn.classList.add('active');
-  var pane=document.getElementById('dpane-'+name);
-  if(pane) pane.classList.add('active');
+function switchTab(name, e){
+  document.querySelectorAll('.demo-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.demo-panel').forEach(function(p){ p.classList.remove('active'); });
+  if(e && e.target) e.target.classList.add('active');
+  var panel=document.getElementById('panel-'+name);
+  if(panel) panel.classList.add('active');
 }
 
 /* ── DEMO CHAT ── */
-function sendDemoChat(){
-  var input=document.getElementById('demoChatInput');
-  var val=input.value.trim(); if(!val) return;
-  var chat=document.getElementById('demoChat');
-  chat.innerHTML+='<div class="chat-row user"><div class="chat-avatar you">Y</div><div class="chat-bubble you">'+esc(val)+'</div></div>';
-  input.value=''; chat.scrollTop=chat.scrollHeight;
+function sendChat(){
+  var input=document.getElementById('chatInput');
+  var val=input.value.trim();
+  if(!val) return;
+  var msgs=document.getElementById('chatMsgs');
+  msgs.innerHTML+='<div class="chat-msg user"><div class="chat-av you">Y</div><div class="chat-bubble you">'+escHtml(val)+'</div></div>';
+  input.value='';
+  msgs.scrollTop=msgs.scrollHeight;
   setTimeout(function(){
-    chat.innerHTML+='<div class="chat-row"><div class="chat-avatar dijo">D</div><div class="chat-bubble dijo">Great idea! Based on live trends, that\'s a strong angle right now. I\'d post Thursday 7–9pm for best reach — want me to write the full caption and hashtags?</div></div>';
-    chat.scrollTop=chat.scrollHeight;
-  },800);
+    msgs.innerHTML+='<div class="chat-msg"><div class="chat-av dijo">D</div><div class="chat-bubble dijo">That\'s a great idea! Based on current trends, I\'d suggest posting that on Thursday between 7–9pm for maximum reach. Want me to write the caption and hashtags too?</div></div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  },900);
 }
 
-/* ── STEP SWITCHER ── */
-var mockupStates = [
-  {
-    label:'Dijo Intelligence · Trend Feed',
-    html:`<div class="s1-item"><span class="s1-num">#1</span><div class="s1-bar"><div class="s1-fill" style="width:96%"></div></div><span class="s1-label">Viking history &amp; myths</span><span class="s1-score">5.8</span></div><div class="s1-item"><span class="s1-num">#2</span><div class="s1-bar"><div class="s1-fill" style="width:88%"></div></div><span class="s1-label">UK Street Style</span><span class="s1-score">5.5</span></div><div class="s1-item"><span class="s1-num">#3</span><div class="s1-bar"><div class="s1-fill" style="width:80%"></div></div><span class="s1-label">AI productivity tools</span><span class="s1-score">4.9</span></div><div class="s1-item"><span class="s1-num">#4</span><div class="s1-bar"><div class="s1-fill" style="width:72%"></div></div><span class="s1-label">Budget cooking UK</span><span class="s1-score">4.6</span></div>`
-  },
-  {
-    label:'Dijo AI · Content Generator',
-    html:`<div style="display:flex;gap:10px;align-items:flex-start;"><div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#f0b429,#ffd166);display:flex;align-items:center;justify-content:center;font-weight:900;color:#07090f;font-size:13px;flex-shrink:0;">D</div><div style="padding:12px 16px;border-radius:12px;background:var(--card2);border:1px solid var(--border);font-size:14px;color:var(--text);line-height:1.6;">"The Viking warriors history books are too scared to talk about… 🔱"<br><br><span style="color:var(--text3);font-size:12px;">📅 Post Thursday 7–9pm · #Vikings #UKHistory #Shorts</span></div></div><div style="margin-top:14px;padding:14px;border-radius:10px;background:var(--gold-dim);border:1px solid var(--gold-glo);font-size:13px;color:var(--gold);">✦ Hook score: <strong>9.2/10</strong> · Estimated reach: <strong>12K–45K views</strong></div>`
-  },
-  {
-    label:'Carousel Studio · Slide Preview',
-    html:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div style="aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,#0f1929,#1a2744);display:flex;align-items:flex-end;padding:12px;font-size:12px;font-weight:700;color:#f0b429;position:relative;"><span style="position:absolute;top:8px;right:10px;font-family:'DM Mono',monospace;font-size:9px;opacity:.5;">1/5</span>5 Viking Myths 🔱</div><div style="aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,#1a0f29,#2d1a44);display:flex;align-items:flex-end;padding:12px;font-size:12px;font-weight:700;color:#fff;position:relative;"><span style="position:absolute;top:8px;right:10px;font-family:'DM Mono',monospace;font-size:9px;opacity:.5;">2/5</span>Myth #1: Horned helmets</div></div><div style="margin-top:12px;padding:12px;border-radius:10px;background:var(--purple-dim);border:1px solid rgba(124,58,237,.2);display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:700;color:var(--purple);">5 slides ready — 1080px</span><span style="font-size:12px;color:var(--text3);">⬇ Export PNG</span></div>`
-  }
-];
-function setStep(el, idx){
-  document.querySelectorAll('.step-item').forEach(function(s){ s.classList.remove('active'); });
-  el.classList.add('active');
-  var label = document.getElementById('mockup-label');
-  var body = document.getElementById('mockup-body');
-  if(label) label.textContent = mockupStates[idx].label;
-  if(body){ body.style.opacity='0'; setTimeout(function(){ body.innerHTML=mockupStates[idx].html; body.style.opacity='1'; },150); }
-}
-document.getElementById('mockup-body').style.transition='opacity .15s ease';
 
 /* ── SCROLL ANIMATIONS ── */
-var io=new IntersectionObserver(function(entries){
-  entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
-},{threshold:0.06});
+var io=new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); }); },{threshold:0.06});
 document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
 
 /* ── HELPERS ── */
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s){ return esc(s); }
 
 /* ── INIT ── */
 window.addEventListener('load', function(){
@@ -1337,6 +743,7 @@ window.addEventListener('load', function(){
   setInterval(function(){ fetch('https://impactgrid-dijo.onrender.com/ping').catch(function(){}); },600000);
 });
 
+/* ── SERVICE WORKER ── */
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').catch(function(){});
 }
@@ -1345,10 +752,11 @@ if('serviceWorker' in navigator){
 <script src="nav.js"></script>
 <script>
 renderNav('index.html');
-document.addEventListener('DOMContentLoaded', function(){
-  if(typeof checkAuth === 'function') checkAuth();
-  var hamburger = document.getElementById('hamburger');
-  if(hamburger) hamburger.addEventListener('click', openSidebar);
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof checkAuth === 'function') {
+    checkAuth();
+  }
 });
 </script>
 </body>
