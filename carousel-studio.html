@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <!-- shared.css is the SINGLE SOURCE — all tokens, nav, buttons, typography -->
 <link rel="stylesheet" href="shared.css"/>
+<link rel="stylesheet" href="carousel-studio-mobile.css"/>
 
 <style>
 /* ═══════════════════════════════════════════════════════
@@ -1536,7 +1537,54 @@ window.downloadAll = async function() {
   toast('✦ ' + blobs.length + ' slides saved at 1080px');
 };
 
-// ── 9. setFmt PATCH — sync cs-fmt-btn active state ──────
+// ── 10. MOBILE DOCK TAB LOGIC ────────────────────────────
+// Manages which tab is "active" and opens/closes the sheets
+window.csDockOpen = function(panel) {
+  var leftEl  = document.getElementById('csLeft');
+  var rightEl = document.getElementById('csRight');
+  var ov      = document.getElementById('csPanelOverlay');
+  var genTab  = document.getElementById('dockGenerate');
+  var editTab = document.getElementById('dockEdit');
+
+  if (panel === 'left') {
+    var isOpen = leftEl && leftEl.classList.contains('open');
+    closeAllPanels();
+    if (!isOpen) {
+      leftEl.classList.add('open');
+      ov.classList.add('open');
+      if (genTab)  genTab.classList.add('active');
+      if (editTab) editTab.classList.remove('active');
+    } else {
+      // Tapping again closes it
+      if (genTab)  genTab.classList.add('active');
+      if (editTab) editTab.classList.remove('active');
+    }
+  } else {
+    var isOpen = rightEl && rightEl.classList.contains('open');
+    closeAllPanels();
+    if (!isOpen) {
+      rightEl.classList.add('open');
+      ov.classList.add('open');
+      if (editTab) editTab.classList.add('active');
+      if (genTab)  genTab.classList.remove('active');
+    } else {
+      // Tapping again closes it — reset to generate active
+      if (genTab)  genTab.classList.add('active');
+      if (editTab) editTab.classList.remove('active');
+    }
+  }
+};
+
+// Reset dock highlight when overlay tapped / panels close
+var _origCloseAll = window.closeAllPanels;
+window.closeAllPanels = function() {
+  if (typeof _origCloseAll === 'function') _origCloseAll();
+  var genTab  = document.getElementById('dockGenerate');
+  var editTab = document.getElementById('dockEdit');
+  if (genTab)  genTab.classList.add('active');
+  if (editTab) editTab.classList.remove('active');
+};
+
 // carousel-studio.js setFmt() adds .on to #fmtX toolbar buttons.
 // Also sync the left-panel format buttons which use .active.
 window.addEventListener('load', function() {
@@ -1551,6 +1599,40 @@ window.addEventListener('load', function() {
   };
 });
 </script>
+
+<!-- ══════════ MOBILE BOTTOM DOCK ══════════ -->
+<!-- Visible only on mobile (≤860px). Tabs: Generate | Edit | Download | Export -->
+<nav class="cs-mob-dock" id="csMobDock" aria-label="Studio controls">
+
+  <!-- Generate tab -->
+  <button class="cs-dock-tab cs-dock-generate active" id="dockGenerate" onclick="csDockOpen('left')" aria-label="Generate carousel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Generate
+  </button>
+
+  <div class="cs-dock-divider"></div>
+
+  <!-- Edit slide tab -->
+  <button class="cs-dock-tab" id="dockEdit" onclick="csDockOpen('right')" aria-label="Edit slide">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    Edit
+  </button>
+
+  <div class="cs-dock-divider"></div>
+
+  <!-- Download tab -->
+  <button class="cs-dock-tab cs-dock-action" onclick="downloadAll()" aria-label="Download all slides">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+    Save
+  </button>
+
+  <!-- Export tab -->
+  <button class="cs-dock-tab cs-dock-action" onclick="openExport()" aria-label="Export options">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export
+  </button>
+
+</nav>
 
 <div id="ig-footer"></div>
 <script>
