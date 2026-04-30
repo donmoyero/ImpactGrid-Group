@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html data-theme="light" lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -8,109 +7,327 @@
 <meta content="ImpactGrid gives creators real trend signals, AI content tools, and everything you need to grow. One app, built for creators." name="description"/>
 <link href="favicon.ico" rel="icon"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&amp;family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link href="shared.css" rel="stylesheet"/>
 <style>
-/* ── Page-specific styles only. Tokens, reset, nav, footer, anim
-   all come from shared.css + nav.js. Do NOT duplicate them here. ── */
+/* ── Page-specific styles only. Tokens, reset, nav, footer come from shared.css ── */
 
-/* ═══════════════════════
-   HERO — VIDEO BACKGROUND
-═══════════════════════ */
-.hero{margin-top:var(--nav-h);position:relative;overflow:hidden;}
-
-.hero-slideshow{
-  position:relative;width:100%;
-  min-height:560px;height:90vh;max-height:900px;
-  background:#07090f;
+/* ═══════════════════════════════════════
+   HERO — SPLIT LAYOUT WITH LAPTOP FRAME
+═══════════════════════════════════════ */
+.hero {
+  margin-top: var(--nav-h);
+  background: linear-gradient(135deg, #07090f 0%, #0d1220 40%, #111827 100%);
+  position: relative;
+  overflow: hidden;
+  min-height: 680px;
 }
 
-.hero-bg-video{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  z-index:0;
+/* Animated mesh background */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 700px 500px at 70% 50%, rgba(240,180,41,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 400px at 10% 80%, rgba(124,58,237,.06) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 300px at 85% 10%, rgba(15,168,118,.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.hero-overlay{
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.4),
-    rgba(0,0,0,0.7)
-  );
-  z-index:1;
+/* Subtle grid texture */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.hero-content{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:2;
-  text-align:center;
-  padding:20px;
+.hero-split {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 72px 40px 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
 }
 
-.hero-inner{
-  max-width:720px;
+/* LEFT — text */
+.hero-left {
+  color: #fff;
 }
 
-.hero-eyebrow{
-  font-size:12px;
-  letter-spacing:0.12em;
-  text-transform:uppercase;
-  opacity:0.7;
-  margin-bottom:16px;
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--fm);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(240,180,41,.1);
+  border: 1px solid rgba(240,180,41,.25);
+  padding: 5px 14px;
+  border-radius: 99px;
+  margin-bottom: 22px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+  animation: blink 1.6s infinite;
 }
 
-.hero-title{
-  font-size:clamp(32px,5vw,64px);
-  font-weight:900;
-  line-height:1.1;
-  margin-bottom:16px;
+.hero-title {
+  font-family: var(--fd);
+  font-size: clamp(36px, 4.5vw, 62px);
+  font-weight: 900;
+  line-height: 1.06;
+  letter-spacing: -.03em;
+  color: #fff;
+  margin-bottom: 20px;
+}
+.hero-title .gold { color: var(--gold); }
+.hero-title .underline-gold {
+  position: relative;
+  display: inline-block;
+}
+.hero-title .underline-gold::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -4px;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  border-radius: 99px;
 }
 
-.hero-title span{
-  color:var(--gold);
+.hero-sub {
+  font-size: 17px;
+  color: rgba(255,255,255,.62);
+  line-height: 1.72;
+  margin-bottom: 32px;
+  max-width: 420px;
 }
 
-.hero-sub{
-  font-size:18px;
-  color:var(--text2);
-  margin-bottom:28px;
+.hero-ctas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
 }
 
-.hero-ctas{
-  display:flex;
-  gap:12px;
-  justify-content:center;
-  flex-wrap:wrap;
+.btn-hero-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  font-family: var(--fd);
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #07090f;
+  letter-spacing: -.01em;
+  transition: all .2s;
+  box-shadow: 0 4px 24px rgba(240,180,41,.35);
+}
+.btn-hero-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(240,180,41,.45);
 }
 
-.btn-primary{
-  padding:14px 28px;
-  border-radius:10px;
-  font-weight:700;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#fff;
+.btn-hero-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.85);
+  transition: all .2s;
+  backdrop-filter: blur(8px);
+}
+.btn-hero-ghost:hover {
+  border-color: rgba(255,255,255,.38);
+  color: #fff;
+  background: rgba(255,255,255,.06);
 }
 
-.btn-secondary{
-  padding:14px 22px;
-  border-radius:10px;
-  border:1px solid var(--border2);
+/* Social proof row */
+.hero-proof {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.hero-avatars {
+  display: flex;
+}
+.hero-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #07090f;
+  background-size: cover;
+  background-position: center;
+  margin-left: -8px;
+  overflow: hidden;
+}
+.hero-avatar:first-child { margin-left: 0; }
+.hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.hero-proof-text {
+  font-size: 13px;
+  color: rgba(255,255,255,.55);
+  line-height: 1.45;
+}
+.hero-proof-text strong {
+  color: rgba(255,255,255,.9);
+  font-weight: 700;
 }
 
-/* ═══════════════════════
-   MAIN CONTENT
-═══════════════════════ */
-.wrap{max-width:var(--max-w);margin:0 auto;padding:0 28px;}
-.section{padding:80px 0;}
+/* RIGHT — laptop mockup */
+.hero-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Floating glow behind laptop */
+.hero-right::before {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 60%;
+  background: radial-gradient(ellipse, rgba(240,180,41,.18) 0%, transparent 70%);
+  bottom: -10%;
+  left: 10%;
+  pointer-events: none;
+  filter: blur(24px);
+}
+
+.laptop-wrap {
+  width: 100%;
+  max-width: 540px;
+  position: relative;
+  filter: drop-shadow(0 32px 64px rgba(0,0,0,.55));
+  animation: floatLaptop 5s ease-in-out infinite;
+}
+@keyframes floatLaptop {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-10px); }
+}
+
+/* MacBook SVG frame */
+.laptop-frame {
+  position: relative;
+  width: 100%;
+}
+
+.laptop-screen-area {
+  position: relative;
+  margin: 0 5.5% 0 5.5%;
+  border-radius: 10px 10px 0 0;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 16/10;
+}
+
+/* Notch */
+.laptop-screen-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 20px;
+  background: #0d0d0d;
+  border-radius: 0 0 10px 10px;
+  z-index: 10;
+}
+
+.laptop-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Laptop body SVG */
+.laptop-body-svg {
+  width: 100%;
+  display: block;
+}
+
+/* Floating badges on laptop */
+.laptop-badge {
+  position: absolute;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  font-size: 12px;
+  font-weight: 700;
+  color: #111;
+  white-space: nowrap;
+  animation: badgePop .4s cubic-bezier(.34,1.56,.64,1) both;
+  z-index: 20;
+}
+.laptop-badge-icon { font-size: 16px; }
+
+.badge-trend {
+  top: 12%;
+  right: -8%;
+  animation-delay: .8s;
+}
+.badge-carousel {
+  bottom: 22%;
+  left: -10%;
+  animation-delay: 1.2s;
+}
+.badge-live {
+  top: 50%;
+  right: -6%;
+  transform: translateY(-50%);
+  animation-delay: 1.6s;
+  background: linear-gradient(135deg, #0f2027, #1a3a1a);
+  color: #4ade80;
+  border: 1px solid rgba(74,222,128,.2);
+}
+.badge-live .laptop-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
+  animation: blink 1.4s infinite;
+  flex-shrink: 0;
+}
+@keyframes badgePop {
+  from { opacity:0; transform: scale(.6) translateY(8px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
 
 /* ═══════════════════════
    FEATURES STRIP
@@ -124,14 +341,579 @@
 .feat-desc{font-size:12px;color:var(--text3);}
 
 /* ═══════════════════════
-   DEMO SECTION
+   PEOPLE MARQUEE
 ═══════════════════════ */
+.marquee-section {
+  padding: 56px 0;
+  overflow: hidden;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.marquee-label {
+  text-align: center;
+  font-family: var(--fm);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 28px;
+}
+
+.marquee-track-wrap {
+  position: relative;
+  overflow: hidden;
+}
+/* fade edges */
+.marquee-track-wrap::before,
+.marquee-track-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 120px;
+  z-index: 2;
+  pointer-events: none;
+}
+.marquee-track-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg), transparent);
+}
+.marquee-track-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg), transparent);
+}
+
+.marquee-track {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  animation: marqueeScroll 30s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-card {
+  flex-shrink: 0;
+  width: 200px;
+  height: 240px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform .3s;
+}
+.marquee-card:hover { transform: translateY(-4px) scale(1.02); }
+.marquee-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.marquee-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.6) 0%, transparent 55%);
+}
+.marquee-card-label {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--fm);
+  letter-spacing: .04em;
+}
+
+/* ═══════════════════════
+   CAROUSEL STYLES SECTION
+═══════════════════════ */
+.carousel-section {
+  padding: 96px 0 80px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.section-head {
+  text-align: center;
+  margin-bottom: 52px;
+}
+.label-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--fm);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 14px;
+}
+.label-tag::before {
+  content: '';
+  width: 18px; height: 1px;
+  background: var(--gold);
+}
+.sec-h {
+  font-size: clamp(26px, 3.5vw, 48px);
+  font-weight: 900;
+  letter-spacing: -.025em;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.sec-p {
+  font-size: 17px;
+  color: var(--text2);
+  line-height: 1.72;
+}
+
+/* 3-col grid of style cards */
+.cs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.cs-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .22s, transform .22s, box-shadow .22s;
+  text-decoration: none;
+  display: block;
+}
+.cs-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.18), 0 0 0 1px rgba(240,180,41,.15);
+}
+
+.cs-preview {
+  height: 220px;
+  position: relative;
+  overflow: hidden;
+}
+.cs-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .4s;
+}
+.cs-card:hover .cs-preview img {
+  transform: scale(1.04);
+}
+.cs-preview-overlay {
+  position: absolute;
+  inset: 0;
+}
+.cs-preview-num {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 9px;
+  font-family: var(--fm);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.7);
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(6px);
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,.1);
+}
+.cs-preview-text {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 32px 16px 14px;
+  background: linear-gradient(to top, rgba(0,0,0,.8), transparent);
+}
+.cs-preview-headline {
+  font-family: var(--fd);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.3;
+  margin-bottom: 3px;
+}
+.cs-preview-sub {
+  font-size: 10px;
+  opacity: .65;
+}
+.cs-preview-dots {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  display: flex;
+  gap: 3px;
+}
+.cs-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.35);
+}
+.cs-dot.on {
+  background: #fff;
+  width: 14px;
+  border-radius: 99px;
+}
+
+/* Try badge */
+.cs-try-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #07090f;
+  font-size: 9.5px;
+  font-family: var(--fm);
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 99px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all .2s;
+}
+.cs-card:hover .cs-try-badge {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cs-info {
+  padding: 16px 18px 18px;
+}
+.cs-name {
+  font-family: var(--fd);
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+.cs-desc {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+.cs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.cs-tag {
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 9.5px;
+  font-family: var(--fm);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  background: var(--bg3, rgba(0,0,0,.04));
+  border: 1px solid var(--border);
+  color: var(--text3);
+}
+[data-theme="dark"] .cs-tag { background: rgba(255,255,255,.05); }
+
+.cs-accents {
+  display: flex;
+  gap: 5px;
+}
+.cs-accent {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(128,128,128,.15);
+}
+
+.cs-cta-row {
+  text-align: center;
+  margin-top: 36px;
+}
+.cs-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  border: 1px solid var(--gold-glo, rgba(240,180,41,.25));
+  padding: 10px 22px;
+  border-radius: 99px;
+  transition: all .2s;
+}
+.cs-all-link:hover {
+  background: var(--gold-dim, rgba(240,180,41,.08));
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════
+   AI TOOLS BENTO GRID
+═══════════════════════ */
+.tools-section {
+  padding: 96px 0;
+  background: var(--bg);
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.bento-card {
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  padding: 36px 36px 0;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  transition: transform .25s, box-shadow .25s;
+  cursor: pointer;
+  text-decoration: none;
+}
+.bento-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.15);
+}
+
+/* Card A — Dijo AI (large, purple-teal) */
+.bento-a {
+  background: linear-gradient(135deg, #1a0a3c 0%, #0d1f3c 60%, #071a2c 100%);
+  color: #fff;
+}
+
+/* Card B — Carousel Creator (gold/warm) */
+.bento-b {
+  background: linear-gradient(135deg, #1f1200 0%, #2d1a00 50%, #1a1000 100%);
+  color: #fff;
+}
+
+/* Card C — Trend Feed */
+.bento-c {
+  background: linear-gradient(135deg, #001a0d 0%, #002211 100%);
+  color: #fff;
+}
+
+/* Card D — Portfolio + Plan (split row) */
+.bento-d {
+  background: linear-gradient(135deg, #0a0a1a 0%, #12121f 100%);
+  color: #fff;
+}
+
+.bento-label {
+  font-family: var(--fm);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  opacity: .55;
+}
+.bento-title {
+  font-family: var(--fd);
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 900;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+.bento-desc {
+  font-size: 13.5px;
+  opacity: .62;
+  line-height: 1.65;
+  max-width: 360px;
+  margin-bottom: 20px;
+}
+.bento-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--fm);
+  border: 1px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.06);
+  width: fit-content;
+  transition: all .18s;
+  margin-bottom: 24px;
+}
+.bento-btn:hover {
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.35);
+  color: #fff;
+}
+.bento-btn-gold {
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #07090f;
+  border: none;
+  font-weight: 800;
+}
+.bento-btn-gold:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(240,180,41,.4);
+  color: #07090f;
+}
+
+/* Visual elements inside bento cards */
+.bento-visual {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  margin: 0 -36px;
+  min-height: 120px;
+}
+
+/* Dijo chat mockup */
+.dijo-chat-mock {
+  position: absolute;
+  bottom: 0; left: 24px; right: 24px;
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px 14px 0 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dijo-msg {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.dijo-av {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900; color: #07090f;
+  flex-shrink: 0;
+}
+.dijo-bubble {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  max-width: 82%;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.07);
+  color: rgba(255,255,255,.85);
+}
+.dijo-bubble strong { color: var(--gold); }
+
+/* Carousel mockup slides */
+.carousel-mock {
+  position: absolute;
+  bottom: 0;
+  left: 20px; right: 20px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 6px;
+  align-items: flex-end;
+}
+.cm-slide {
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px 10px 12px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.3;
+  overflow: hidden;
+  position: relative;
+}
+.cm-slide-1 {
+  height: 130px;
+  background: linear-gradient(135deg, #c9a227, #8b6914);
+  color: #fff;
+}
+.cm-slide-2 {
+  height: 90px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #f0b429;
+}
+.cm-slide-3 {
+  height: 70px;
+  background: linear-gradient(135deg, #0f3460, #533483);
+  color: #e2e8f0;
+}
+.cm-num {
+  position: absolute;
+  top: 7px; right: 8px;
+  font-size: 7.5px;
+  opacity: .5;
+  font-family: var(--fm);
+}
+
+/* Trend bars mockup */
+.trend-bars-mock {
+  position: absolute;
+  bottom: 0;
+  left: 24px; right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.tb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px 8px 0 0;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  border-bottom: none;
+}
+.tb-rank {
+  font-size: 9px;
+  font-family: var(--fm);
+  opacity: .4;
+  width: 16px;
+}
+.tb-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  flex: 1;
+  color: rgba(255,255,255,.9);
+}
+.tb-score {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--fm);
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(15,168,118,.15);
+  color: #4ade80;
+}
+
+/* ═══════════════════════
+   DEMO SECTION (unchanged)
+═══════════════════════ */
+.wrap{max-width:var(--max-w);margin:0 auto;padding:0 28px;}
+.section{padding:80px 0;}
+
 .demo-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:88px 0;}
 .demo-head{text-align:center;margin-bottom:52px;}
-.label-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
-.label-tag::before{content:'';width:18px;height:1px;background:var(--gold);}
-.sec-h{font-size:clamp(26px,3.5vw,48px);}
-.sec-p{font-size:17px;color:var(--text2);margin-top:12px;line-height:1.72;}
 .demo-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:36px;}
 .demo-tab{padding:9px 20px;border-radius:20px;font-size:13px;font-weight:600;border:1px solid var(--border2);color:var(--text2);transition:all .2s;cursor:pointer;background:var(--card);}
 .demo-tab.active,.demo-tab:hover{background:var(--gold);color:#fff;border-color:var(--gold);}
@@ -208,34 +990,58 @@
    CTA
 ═══════════════════════ */
 .cta-section{padding:72px 0 88px;}
-.cta-band{background:linear-gradient(135deg,var(--gold-dim),rgba(201,126,8,.01));border:1px solid var(--gold-glo);border-radius:var(--r2);padding:72px 48px;text-align:center;position:relative;overflow:hidden;}
-[data-theme="dark"] .cta-band{background:linear-gradient(135deg,rgba(240,180,41,.08),rgba(240,180,41,.01));}
-.cta-band h2{font-size:clamp(24px,3.5vw,48px);margin-bottom:14px;}
-.cta-band p{font-size:17px;color:var(--text2);max-width:440px;margin:0 auto 32px;line-height:1.72;}
-.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
-.btn-cta-gold{display:inline-flex;align-items:center;gap:7px;padding:14px 30px;border-radius:var(--r);font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;}
-[data-theme="dark"] .btn-cta-gold{color:#07090f;}
-.btn-cta-gold:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--gold-glo);}
-.btn-cta-outline{display:inline-flex;align-items:center;gap:7px;padding:14px 24px;border-radius:var(--r);font-size:16px;font-weight:600;border:1px solid var(--border2);color:var(--text);}
-.btn-cta-outline:hover{border-color:var(--gold);color:var(--gold);}
-
+.cta-band{
+  background:linear-gradient(135deg,#07090f,#0d1220);
+  border:1px solid rgba(240,180,41,.15);
+  border-radius:var(--r2);
+  padding:80px 48px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  color:#fff;
+}
+.cta-band::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 600px 400px at 50% 0%, rgba(240,180,41,.08) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 300px at 80% 100%, rgba(124,58,237,.06) 0%, transparent 60%);
+  pointer-events:none;
+}
+.cta-band h2{font-size:clamp(24px,3.5vw,48px);margin-bottom:14px;position:relative;z-index:1;}
+.cta-band p{font-size:17px;color:rgba(255,255,255,.55);max-width:440px;margin:0 auto 36px;line-height:1.72;position:relative;z-index:1;}
+.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
+.btn-cta-gold{display:inline-flex;align-items:center;gap:7px;padding:15px 32px;border-radius:var(--r);font-size:16px;font-weight:800;font-family:var(--fd);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;transition:all .2s;}
+.btn-cta-gold:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(240,180,41,.4);}
+.btn-cta-outline{display:inline-flex;align-items:center;gap:7px;padding:15px 24px;border-radius:var(--r);font-size:16px;font-weight:600;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.75);transition:all .2s;}
+.btn-cta-outline:hover{border-color:rgba(255,255,255,.4);color:#fff;}
 
 /* ═══════════════════════
-   RESPONSIVE (page-specific only)
+   RESPONSIVE
 ═══════════════════════ */
+@media(max-width:960px){
+  .hero-split{grid-template-columns:1fr;padding:52px 28px 48px;gap:32px;text-align:center;}
+  .hero-left{display:flex;flex-direction:column;align-items:center;}
+  .hero-sub{max-width:100%;}
+  .hero-right{display:none;}
+  .cs-grid{grid-template-columns:1fr;max-width:440px;margin-left:auto;margin-right:auto;}
+  .bento-grid{grid-template-columns:1fr;}
+  .steps-grid{grid-template-columns:1fr;}
+}
 @media(max-width:860px){
   .wrap{padding:0 16px;}
   .features-row{gap:0;}
   .feat-item{padding:10px 16px;border-right:none;border-bottom:1px solid var(--border);width:50%;}
   .feat-item:nth-child(odd){border-right:1px solid var(--border);}
   .feat-item:last-child,.feat-item:nth-last-child(2):nth-child(odd){border-bottom:none;}
-  .steps-grid{grid-template-columns:1fr;}
 }
 @media(max-width:640px){
   .carousel-preview{grid-template-columns:repeat(3,1fr);}
-  .cta-band{padding:40px 20px;}
+  .cta-band{padding:48px 20px;}
   .demo-section{padding:60px 0;}
   .section{padding:60px 0;}
+  .marquee-card{width:160px;height:190px;}
 }
 @media(max-width:420px){
   .feat-item{width:100%;border-right:none;}
@@ -277,45 +1083,117 @@
 <button class="mob-tbtn" id="mobTBtn" onclick="toggleTheme()">🌙 Dark</button>
 </div>
 </div>
-<!-- ═══════════════ HERO ═══════════════ -->
+
+<!-- ═══════════════ HERO — SPLIT LAYOUT ═══════════════ -->
 <div class="hero">
-<div class="hero-slideshow">
+  <div class="hero-split">
 
-  <!-- Background Video -->
-  <video class="hero-bg-video" autoplay muted loop playsinline>
-    <source src="videos/impactgrid-demo.mp4" type="video/mp4">
-  </video>
-
-  <!-- Overlay -->
-  <div class="hero-overlay"></div>
-
-  <!-- Content -->
-  <div class="hero-content">
-    <div class="hero-inner">
-
-      <div class="hero-eyebrow">
-        ImpactGrid Creator Intelligence
-      </div>
+    <!-- LEFT: TEXT -->
+    <div class="hero-left anim">
+      <div class="hero-eyebrow">ImpactGrid Creator Intelligence</div>
 
       <h1 class="hero-title">
-        Create content that <span>actually performs</span>
+        Start creating<br/>
+        with <span class="underline-gold">ImpactGrid</span>
       </h1>
 
       <p class="hero-sub">
-        Real trends, AI tools, and content planning — all in one system.
+        AI tools that write your content, find your trends,
+        and build your carousels — so you can focus on growing.
       </p>
 
       <div class="hero-ctas">
-        <a href="creator-studio.html" class="btn-primary">
-          Start Creating →
+        <a href="creator-studio.html" class="btn-hero-primary">
+          Start Creating Free
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        <a href="carousel-picker.html" class="btn-hero-ghost">
+          Try Carousel Creator
         </a>
       </div>
 
+      <!-- Social proof -->
+      <div class="hero-proof">
+        <div class="hero-avatars">
+          <!-- These use Unsplash face images — diverse creators -->
+          <div class="hero-avatar" style="background:linear-gradient(135deg,#c9a227,#8b6914);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;">A</div>
+          <div class="hero-avatar" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;">M</div>
+          <div class="hero-avatar" style="background:linear-gradient(135deg,#0f9b6e,#065f46);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;">J</div>
+          <div class="hero-avatar" style="background:linear-gradient(135deg,#e11d48,#9f1239);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;">S</div>
+        </div>
+        <div class="hero-proof-text">
+          <strong>2,400+ creators</strong> already growing with ImpactGrid
+        </div>
+      </div>
     </div>
-  </div>
 
+    <!-- RIGHT: LAPTOP MOCKUP -->
+    <div class="hero-right">
+
+      <!-- Floating badges -->
+      <div class="laptop-badge badge-trend">
+        <span class="laptop-badge-icon">📡</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#111;">#1 Trending Now</div>
+          <div style="font-size:9px;color:#666;font-weight:500;">Viking history · 126K views</div>
+        </div>
+      </div>
+
+      <div class="laptop-badge badge-live">
+        <div class="laptop-badge-dot"></div>
+        <div style="font-size:10px;font-weight:700;">Dijo is live</div>
+      </div>
+
+      <div class="laptop-badge badge-carousel">
+        <span class="laptop-badge-icon">🎨</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#111;">Carousel generated</div>
+          <div style="font-size:9px;color:#666;font-weight:500;">7 slides · Luxury style</div>
+        </div>
+      </div>
+
+      <div class="laptop-wrap">
+        <!-- Screen area with video -->
+        <div class="laptop-screen-area">
+          <video class="laptop-video" autoplay muted loop playsinline>
+            <source src="videos/impactgrid-demo.mp4" type="video/mp4">
+          </video>
+        </div>
+
+        <!-- MacBook body SVG -->
+        <svg class="laptop-body-svg" viewBox="0 0 560 80" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2a2a2a"/>
+              <stop offset="100%" stop-color="#1a1a1a"/>
+            </linearGradient>
+            <linearGradient id="baseGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3a3a3a"/>
+              <stop offset="100%" stop-color="#222"/>
+            </linearGradient>
+          </defs>
+          <!-- Bottom base -->
+          <rect x="0" y="12" width="560" height="40" rx="4" fill="url(#baseGrad)"/>
+          <!-- Base shine -->
+          <rect x="0" y="12" width="560" height="4" rx="2" fill="rgba(255,255,255,.06)"/>
+          <!-- Hinge bar -->
+          <rect x="0" y="10" width="560" height="5" rx="0" fill="#1a1a1a"/>
+          <!-- Bottom chin rim -->
+          <rect x="16" y="52" width="528" height="2" rx="1" fill="rgba(255,255,255,.04)"/>
+          <!-- Rubber feet -->
+          <rect x="30" y="50" width="40" height="8" rx="4" fill="#111"/>
+          <rect x="490" y="50" width="40" height="8" rx="4" fill="#111"/>
+          <rect x="200" y="50" width="40" height="8" rx="4" fill="#111"/>
+          <rect x="320" y="50" width="40" height="8" rx="4" fill="#111"/>
+          <!-- Apple logo area (subtle) -->
+          <circle cx="280" cy="32" r="6" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
 </div>
-</div>
+
 <!-- ═══════════════ FEATURES STRIP ═══════════════ -->
 <div class="features-strip anim">
 <div class="wrap">
@@ -343,6 +1221,378 @@
 </div>
 </div>
 </div>
+
+<!-- ═══════════════ PEOPLE MARQUEE ═══════════════ -->
+<div class="marquee-section anim">
+  <div class="marquee-label">Creators worldwide are building with ImpactGrid</div>
+
+  <div class="marquee-track-wrap">
+    <div class="marquee-track" id="marqueeTrack">
+
+      <!-- Card 1 — Black woman creator, warm/vibrant -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">✨ Content Creator</div>
+      </div>
+
+      <!-- Card 2 — Diverse team, laughing -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🚀 Growing Together</div>
+      </div>
+
+      <!-- Card 3 — Man on laptop, creative -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">📈 Building an Audience</div>
+      </div>
+
+      <!-- Card 4 — South Asian woman, phone -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🎯 Brand Partnerships</div>
+      </div>
+
+      <!-- Card 5 — Latina woman, colourful -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">💫 Going Viral</div>
+      </div>
+
+      <!-- Card 6 — Black man, professional creative -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🎬 Video Creator</div>
+      </div>
+
+      <!-- Card 7 — Asian woman smiling -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">📸 Visual Storyteller</div>
+      </div>
+
+      <!-- Card 8 — Mixed group, happy energy -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🤝 Community Builder</div>
+      </div>
+
+      <!-- Duplicate set for seamless loop -->
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">✨ Content Creator</div>
+      </div>
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🚀 Growing Together</div>
+      </div>
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">📈 Building an Audience</div>
+      </div>
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🎯 Brand Partnerships</div>
+      </div>
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">💫 Going Viral</div>
+      </div>
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🎬 Video Creator</div>
+      </div>
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">📸 Visual Storyteller</div>
+      </div>
+      <div class="marquee-card">
+        <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
+        <div class="marquee-card-overlay"></div>
+        <div class="marquee-card-label">🤝 Community Builder</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ CAROUSEL STYLES SECTION ═══════════════ -->
+<div class="carousel-section">
+  <div class="wrap">
+
+    <div class="section-head anim">
+      <div class="label-tag">AI Carousel Creator</div>
+      <h2 class="sec-h">Your audience can't scroll past this.</h2>
+      <p class="sec-p" style="max-width:520px;margin:0 auto;">
+        Pick a style. Type your topic. Dijo writes every slide, picks images,
+        captions and hashtags — in seconds.
+      </p>
+    </div>
+
+    <div class="cs-grid anim">
+
+      <!-- LUXURY -->
+      <a href="carousel-picker.html?style=luxury" class="cs-card">
+        <div class="cs-preview">
+          <img
+            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&h=440&fit=crop"
+            alt="Luxury carousel style"
+            loading="lazy"
+          />
+          <div class="cs-preview-overlay" style="background:linear-gradient(135deg,rgba(26,18,9,.55) 0%,rgba(0,0,0,.2) 100%)"></div>
+          <div class="cs-preview-num">01 / 7</div>
+          <div class="cs-preview-text" style="color:#f0e6d3;">
+            <div class="cs-preview-headline" style="color:#f0e6d3;">5 habits that built a £10K/month income</div>
+            <div class="cs-preview-sub">Most creators ignore this one thing</div>
+          </div>
+          <div class="cs-preview-dots">
+            <div class="cs-dot on"></div>
+            <div class="cs-dot"></div>
+            <div class="cs-dot"></div>
+            <div class="cs-dot"></div>
+          </div>
+          <div class="cs-try-badge">Try this style →</div>
+        </div>
+        <div class="cs-info">
+          <div class="cs-name">Luxury</div>
+          <div class="cs-desc">Rich warm tones, deep shadows. Perfect for finance, business and aspirational content.</div>
+          <div class="cs-tags">
+            <span class="cs-tag">Finance</span>
+            <span class="cs-tag">Business</span>
+            <span class="cs-tag">Lifestyle</span>
+          </div>
+          <div class="cs-accents">
+            <div class="cs-accent" style="background:#c9a227;"></div>
+            <div class="cs-accent" style="background:#1a1209;"></div>
+            <div class="cs-accent" style="background:#f0e6d3;"></div>
+            <div class="cs-accent" style="background:#8b6914;"></div>
+          </div>
+        </div>
+      </a>
+
+      <!-- MINIMAL -->
+      <a href="carousel-picker.html?style=minimal" class="cs-card">
+        <div class="cs-preview">
+          <img
+            src="https://images.unsplash.com/photo-1494526585095-c41746248156?w=700&h=440&fit=crop"
+            alt="Minimal carousel style"
+            loading="lazy"
+          />
+          <div class="cs-preview-overlay" style="background:linear-gradient(135deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.15) 100%)"></div>
+          <div class="cs-preview-num">01 / 7</div>
+          <div class="cs-preview-text">
+            <div class="cs-preview-headline" style="color:#fafafa;">The morning routine that tripled my focus</div>
+            <div class="cs-preview-sub" style="color:rgba(255,255,255,.65);">3 simple shifts. Zero willpower needed.</div>
+          </div>
+          <div class="cs-preview-dots">
+            <div class="cs-dot on"></div>
+            <div class="cs-dot"></div>
+            <div class="cs-dot"></div>
+            <div class="cs-dot"></div>
+          </div>
+          <div class="cs-try-badge">Try this style →</div>
+        </div>
+        <div class="cs-info">
+          <div class="cs-name">Minimal</div>
+          <div class="cs-desc">Clean and high-contrast. Light backgrounds with bold type. Works for every niche.</div>
+          <div class="cs-tags">
+            <span class="cs-tag">Productivity</span>
+            <span class="cs-tag">Wellness</span>
+            <span class="cs-tag">Education</span>
+          </div>
+          <div class="cs-accents">
+            <div class="cs-accent" style="background:#404040;"></div>
+            <div class="cs-accent" style="background:#fafafa;border:1.5px solid rgba(0,0,0,.15);"></div>
+            <div class="cs-accent" style="background:#a3a3a3;"></div>
+            <div class="cs-accent" style="background:#171717;"></div>
+          </div>
+        </div>
+      </a>
+
+      <!-- LIFESTYLE -->
+      <a href="carousel-picker.html?style=lifestyle" class="cs-card">
+        <div class="cs-preview">
+          <img
+            src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=700&h=440&fit=crop"
+            alt="Lifestyle carousel style"
+            loading="lazy"
+          />
+          <div class="cs-preview-overlay" style="background:linear-gradient(160deg,rgba(30,58,95,.5) 0%,rgba(0,0,0,.25) 100%)"></div>
+          <div class="cs-preview-num">01 / 7</div>
+          <div class="cs-preview-text">
+            <div class="cs-preview-headline" style="color:#f5f0eb;">Why most people never grow on Instagram</div>
+            <div class="cs-preview-sub" style="color:rgba(245,240,235,.65);">And exactly how to fix it in 30 days</div>
+          </div>
+          <div class="cs-preview-dots">
+            <div class="cs-dot on"></div>
+            <div class="cs-dot"></div>
+            <div class="cs-dot"></div>
+            <div class="cs-dot"></div>
+          </div>
+          <div class="cs-try-badge">Try this style →</div>
+        </div>
+        <div class="cs-info">
+          <div class="cs-name">Lifestyle</div>
+          <div class="cs-desc">Vibrant and warm. Big visuals, punchy copy. Built for travel, fitness, food and creator content.</div>
+          <div class="cs-tags">
+            <span class="cs-tag">Travel</span>
+            <span class="cs-tag">Fitness</span>
+            <span class="cs-tag">Creator</span>
+          </div>
+          <div class="cs-accents">
+            <div class="cs-accent" style="background:#e8a45a;"></div>
+            <div class="cs-accent" style="background:#1e3a5f;"></div>
+            <div class="cs-accent" style="background:#2d6a4f;"></div>
+            <div class="cs-accent" style="background:#f5f0eb;border:1.5px solid rgba(0,0,0,.1);"></div>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <div class="cs-cta-row anim">
+      <a href="carousel-picker.html" class="cs-all-link">
+        See all 8 styles
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ AI TOOLS BENTO ═══════════════ -->
+<div class="tools-section">
+  <div class="wrap">
+
+    <div class="section-head anim">
+      <div class="label-tag">All the tools</div>
+      <h2 class="sec-h">Everything you need. All in one place.</h2>
+      <p class="sec-p" style="max-width:480px;margin:0 auto;">
+        From trend signals to finished content — ImpactGrid is your complete creator system.
+      </p>
+    </div>
+
+    <div class="bento-grid anim">
+
+      <!-- A: Dijo AI — large left -->
+      <a href="creator-studio.html" class="bento-card bento-a" style="text-decoration:none;">
+        <div class="bento-label">🤖 Dijo AI</div>
+        <div class="bento-title">Your creator<br/>brain. Always on.</div>
+        <div class="bento-desc">Ask Dijo anything — hooks, captions, hashtags, strategy. It knows what's trending and writes content that actually gets views.</div>
+        <a href="creator-studio.html" class="bento-btn bento-btn-gold" style="text-decoration:none;" onclick="event.stopPropagation()">
+          Chat with Dijo →
+        </a>
+        <div class="bento-visual">
+          <div class="dijo-chat-mock">
+            <div class="dijo-msg">
+              <div class="dijo-av">D</div>
+              <div class="dijo-bubble">Today's #1 trend: <strong>Viking history</strong> — scoring 5.8/10. Want a hook for YouTube?</div>
+            </div>
+            <div class="dijo-msg" style="flex-direction:row-reverse;">
+              <div class="dijo-av" style="background:rgba(255,255,255,.12);">Y</div>
+              <div class="dijo-bubble" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;border:none;">Yes, write me a hook</div>
+            </div>
+            <div class="dijo-msg">
+              <div class="dijo-av">D</div>
+              <div class="dijo-bubble">"The Viking warrior history books are afraid to show you… 🔱" — Post Thursday 7–9pm.</div>
+            </div>
+          </div>
+        </div>
+      </a>
+
+      <!-- B: Carousel Creator -->
+      <a href="carousel-picker.html" class="bento-card bento-b" style="text-decoration:none;">
+        <div class="bento-label">🎨 Carousel Creator</div>
+        <div class="bento-title">AI-written carousels<br/>in seconds.</div>
+        <div class="bento-desc">Pick a style. Type your topic. Dijo writes 7 full slides with images, copy and captions — ready to post.</div>
+        <a href="carousel-picker.html" class="bento-btn" style="text-decoration:none;" onclick="event.stopPropagation()">
+          Create a Carousel →
+        </a>
+        <div class="bento-visual">
+          <div class="carousel-mock">
+            <div class="cm-slide cm-slide-1">
+              <div class="cm-num">1/7</div>
+              5 Money Habits That Changed Everything
+            </div>
+            <div class="cm-slide cm-slide-2">
+              <div class="cm-num">2/7</div>
+              Habit #1: Pay yourself first
+            </div>
+            <div class="cm-slide cm-slide-3">
+              <div class="cm-num">3/7</div>
+              Even £5/day compounds.
+            </div>
+          </div>
+        </div>
+      </a>
+
+      <!-- C: Trend Feed -->
+      <a href="creator-studio.html" class="bento-card bento-c" style="text-decoration:none;">
+        <div class="bento-label">📡 Live Trend Feed</div>
+        <div class="bento-title">Know what to post<br/>before everyone else.</div>
+        <div class="bento-desc">Real-time signals from YouTube, TikTok and Google Trends — scored and ready to act on.</div>
+        <a href="creator-studio.html" class="bento-btn" style="text-decoration:none;" onclick="event.stopPropagation()">
+          See Today's Trends →
+        </a>
+        <div class="bento-visual">
+          <div class="trend-bars-mock">
+            <div class="tb-row">
+              <div class="tb-rank">#1</div>
+              <div class="tb-name">Viking history &amp; myths</div>
+              <div class="tb-score">5.8</div>
+            </div>
+            <div class="tb-row">
+              <div class="tb-rank">#2</div>
+              <div class="tb-name">UK Street Style 2026</div>
+              <div class="tb-score">5.5</div>
+            </div>
+            <div class="tb-row">
+              <div class="tb-rank">#3</div>
+              <div class="tb-name">AI productivity tools</div>
+              <div class="tb-score">4.9</div>
+            </div>
+          </div>
+        </div>
+      </a>
+
+      <!-- D: Portfolio + Content Plan split -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+        <a href="portfolio-studio.html" class="bento-card bento-d" style="min-height:220px;text-decoration:none;padding:28px 24px 0;">
+          <div class="bento-label">🗂️ Portfolio Studio</div>
+          <div class="bento-title" style="font-size:18px;">Build your creator portfolio.</div>
+          <div class="bento-desc" style="font-size:12px;">A beautiful, shareable portfolio page — AI generated and ready in minutes.</div>
+          <span class="bento-btn" style="font-size:10px;padding:6px 14px;">Build Portfolio →</span>
+        </a>
+
+        <a href="creator-studio.html" class="bento-card" style="min-height:220px;background:linear-gradient(135deg,#140a2e,#1e0a3c);text-decoration:none;padding:28px 24px 0;">
+          <div class="bento-label" style="color:rgba(180,160,255,.6);">📅 Content Plan</div>
+          <div class="bento-title" style="font-size:18px;color:#fff;">Weekly plan,<br/>auto-filled.</div>
+          <div class="bento-desc" style="font-size:12px;color:rgba(255,255,255,.5);">Tell Dijo your niche. Get a full week of content mapped out — platform by platform.</div>
+          <span class="bento-btn" style="font-size:10px;padding:6px 14px;">Plan This Week →</span>
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ DEMO ═══════════════ -->
 <div class="demo-section">
 <div class="wrap">
@@ -436,18 +1686,18 @@
 <div class="carousel-preview">
 <div class="carousel-slide carousel-slide-1">
 <span class="carousel-num">1/5</span>
-              5 Viking Myths That Changed History 🔱
-            </div>
+5 Viking Myths That Changed History 🔱
+</div>
 <div class="carousel-slide carousel-slide-2">
 <span class="carousel-num">2/5</span>
-              Myth #1: They wore horned helmets
-            </div>
+Myth #1: They wore horned helmets
+</div>
 <div class="carousel-slide carousel-slide-3">
 <span class="carousel-num">3/5</span>
-              Truth: Never in battle. That's a 19th century invention.
-            </div>
+Truth: Never in battle. That's a 19th century invention.
 </div>
-<button class="carousel-gen-btn">✨ Generate Full Carousel →</button>
+</div>
+<button class="carousel-gen-btn" onclick="window.location.href='carousel-picker.html'">✨ Generate Full Carousel →</button>
 </div>
 </div>
 </div>
@@ -492,6 +1742,7 @@
 </div>
 </div>
 </div>
+
 <!-- ═══════════════ HOW IT WORKS ═══════════════ -->
 <section class="section">
 <div class="wrap">
@@ -522,19 +1773,22 @@
 </div>
 </div>
 </section>
+
 <!-- ═══════════════ CTA ═══════════════ -->
 <div class="cta-section">
 <div class="wrap">
 <div class="cta-band anim">
-<div class="label-tag" style="justify-content:center;">Try Creator Studio for free</div>
-<h2>Turn ideas into high-performing content in seconds.</h2>
+<div class="label-tag" style="justify-content:center;color:rgba(240,180,41,.8);">Try Creator Studio for free</div>
+<h2 style="color:#fff;">Turn ideas into high-performing<br/>content in seconds.</h2>
 <p>Use it instantly. Your work won't be saved unless you create an account.</p>
 <div class="cta-acts">
-<a class="btn-cta-gold" href="creator-studio.html">Try Creator Studio Free →</a>
+<a class="btn-cta-gold" href="creator-studio.html">Start Creating Free →</a>
+<a class="btn-cta-outline" href="carousel-picker.html">Try Carousel Creator</a>
 </div>
 </div>
 </div>
 </div>
+
 <!-- ═══════════════ FOOTER ═══════════════ -->
 <footer class="footer">
 <div class="wrap">
@@ -542,8 +1796,8 @@
 <div class="f-brand">
 <div style="display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:900;font-size:15px;">
 <img onerror="this.style.display='none'" src="logo.png" style="width:26px;height:26px;object-fit:contain;border-radius:5px;"/>
-          ImpactGrid
-        </div>
+ImpactGrid
+</div>
 <p>Creator intelligence for the next generation of content makers.</p>
 </div>
 <div class="fc">
@@ -575,6 +1829,7 @@
 </div>
 </div>
 </footer>
+
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
@@ -657,7 +1912,6 @@ function sendChat(){
   },900);
 }
 
-
 /* ── SCROLL ANIMATIONS ── */
 var io=new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); }); },{threshold:0.06});
 document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
@@ -665,6 +1919,17 @@ document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
 /* ── HELPERS ── */
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escHtml(s){ return esc(s); }
+
+/* ── CAROUSEL PICKER URL PARAMS ── */
+// If a style card is clicked on homepage it lands on picker with style pre-selected
+(function(){
+  var links = document.querySelectorAll('.cs-card[href*="carousel-picker"]');
+  links.forEach(function(link){
+    link.addEventListener('click', function(e){
+      // let the href handle it naturally
+    });
+  });
+})();
 
 /* ── INIT ── */
 window.addEventListener('load', function(){
@@ -681,11 +1946,8 @@ if('serviceWorker' in navigator){
 <script src="nav.js"></script>
 <script>
 renderNav('index.html');
-
 document.addEventListener('DOMContentLoaded', function () {
-  if (typeof checkAuth === 'function') {
-    checkAuth();
-  }
+  if (typeof checkAuth === 'function') { checkAuth(); }
 });
 </script>
 </body>
