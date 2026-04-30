@@ -633,9 +633,12 @@ document.querySelectorAll('.faq-q').forEach(btn => {
   });
 });
 
-// Form submit
-document.getElementById('submitBtn').addEventListener('click', () => {
+// Form submit — mirrors consulting.html booking pattern
+var EVENTS_API = 'https://impactgrid-dijo.onrender.com';
+
+document.getElementById('submitBtn').addEventListener('click', async () => {
   const firstName = document.getElementById('firstName').value.trim();
+  const lastName  = document.getElementById('lastName').value.trim();
   const email     = document.getElementById('email').value.trim();
   const subject   = document.getElementById('subject').value;
   const message   = document.getElementById('message').value.trim();
@@ -644,26 +647,32 @@ document.getElementById('submitBtn').addEventListener('click', () => {
     alert('Please fill in all required fields.');
     return;
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alert('Please enter a valid email address.');
+    return;
+  }
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = 'Sending…';
 
-  fetch("https://your-render-url/contact", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ firstName, email, subject, message })
-  })
-  .then(res => res.json())
-  .then(() => {
+  try {
+    const res = await fetch(EVENTS_API + '/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, lastName, email, subject, message })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+
     document.getElementById('successMsg').style.display = 'block';
     btn.textContent = '✅ Sent!';
-  })
-  .catch(() => {
-    alert("Failed to send. Try again.");
+
+  } catch (err) {
+    alert('Something went wrong: ' + err.message + '. Please try again or email us directly.');
     btn.disabled = false;
     btn.textContent = 'Send Message →';
-  });
+  }
 });
 
 // Scroll animations
