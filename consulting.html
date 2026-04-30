@@ -948,6 +948,8 @@
 
 
 <script>
+  var EVENTS_API = 'https://impactgrid-events-api.onrender.com';
+
   /* ── Set min date to today ── */
   document.addEventListener('DOMContentLoaded', function() {
     var dateInput = document.getElementById('preferredDate');
@@ -965,7 +967,6 @@
   function closeBookingModal() {
     document.getElementById('bookingModal').classList.remove('open');
     document.body.style.overflow = '';
-    // Reset form after short delay
     setTimeout(function() {
       document.getElementById('formState').style.display = '';
       document.getElementById('successState').classList.remove('show');
@@ -980,27 +981,25 @@
 
   /* ── Submit ── */
   async function submitBooking() {
-    var firstName    = document.getElementById('firstName').value.trim();
-    var lastName     = document.getElementById('lastName').value.trim();
-    var email        = document.getElementById('email').value.trim();
-    var phone        = document.getElementById('phone').value.trim();
-    var instagram    = document.getElementById('instagram').value.trim();
+    var firstName     = document.getElementById('firstName').value.trim();
+    var lastName      = document.getElementById('lastName').value.trim();
+    var email         = document.getElementById('email').value.trim();
+    var phone         = document.getElementById('phone').value.trim();
+    var instagram     = document.getElementById('instagram').value.trim();
     var preferredDate = document.getElementById('preferredDate').value;
     var preferredTime = document.getElementById('preferredTime').value;
-    var service      = document.getElementById('service').value;
-    var message      = document.getElementById('message').value.trim();
+    var service       = document.getElementById('service').value;
+    var message       = document.getElementById('message').value.trim();
 
     var errEl = document.getElementById('formError');
     errEl.classList.remove('show');
 
-    /* Validation */
     if (!firstName || !lastName || !email || !preferredDate || !preferredTime) {
       errEl.textContent = 'Please fill in all required fields (marked with *).';
       errEl.classList.add('show');
       return;
     }
-    var emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailReg.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errEl.textContent = 'Please enter a valid email address.';
       errEl.classList.add('show');
       return;
@@ -1010,56 +1009,27 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
 
-    /* Format date nicely */
-    var dateParts = preferredDate.split('-');
-    var niceDate = new Date(preferredDate + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-
-    /* Email HTML */
-    var emailHtml = '\
-<div style="font-family:DM Sans,sans-serif;max-width:580px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">\
-  <div style="background:linear-gradient(135deg,#1a1814,#2a2318);padding:32px 36px;">\
-    <div style="font-family:Syne,sans-serif;font-size:20px;font-weight:900;color:#fff;">ImpactGrid Consulting</div>\
-    <div style="color:rgba(255,255,255,.55);font-size:13px;margin-top:4px;">New Booking Request</div>\
-  </div>\
-  <div style="padding:32px 36px;">\
-    <h2 style="font-size:18px;font-weight:800;color:#111;margin:0 0 20px;font-family:Syne,sans-serif;">📅 New Call Booking</h2>\
-    <table style="width:100%;border-collapse:collapse;font-size:14px;">\
-      <tr><td style="padding:9px 0;color:#888;width:160px;vertical-align:top;border-bottom:1px solid #f0f0f0;">Name</td><td style="padding:9px 0;color:#111;font-weight:600;border-bottom:1px solid #f0f0f0;">' + firstName + ' ' + lastName + '</td></tr>\
-      <tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Email</td><td style="padding:9px 0;border-bottom:1px solid #f0f0f0;"><a href="mailto:' + email + '" style="color:#c97e08;">' + email + '</a></td></tr>\
-      ' + (phone ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Phone / WhatsApp</td><td style="padding:9px 0;color:#111;border-bottom:1px solid #f0f0f0;">' + phone + '</td></tr>' : '') + '\
-      ' + (instagram ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Instagram</td><td style="padding:9px 0;color:#111;border-bottom:1px solid #f0f0f0;">' + instagram + '</td></tr>' : '') + '\
-      <tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Preferred Date</td><td style="padding:9px 0;color:#111;font-weight:600;border-bottom:1px solid #f0f0f0;">' + niceDate + '</td></tr>\
-      <tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Preferred Time</td><td style="padding:9px 0;color:#111;font-weight:600;border-bottom:1px solid #f0f0f0;">' + preferredTime + '</td></tr>\
-      ' + (service ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Service</td><td style="padding:9px 0;color:#111;border-bottom:1px solid #f0f0f0;">' + service + '</td></tr>' : '') + '\
-      ' + (message ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;">Message</td><td style="padding:9px 0;color:#111;line-height:1.65;">' + message.replace(/\n/g,'<br>') + '</td></tr>' : '') + '\
-    </table>\
-  </div>\
-  <div style="background:#fafafa;padding:20px 36px;font-size:12px;color:#aaa;border-top:1px solid #e5e7eb;">Sent via ImpactGrid Consulting form · impactgridgroup.com</div>\
-</div>';
+    var niceDate = new Date(preferredDate + 'T12:00:00').toLocaleDateString('en-GB', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
 
     try {
-      var res = await fetch('https://api.resend.com/emails', {
+      var res = await fetch(EVENTS_API + '/api/book-consulting', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer YOUR_RESEND_API_KEY'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: 'ImpactGrid Consulting <support@impactgrid.com>',
-          to: ['Ogunmoyerodara@gmail.com'],
-          reply_to: email,
-          subject: '📅 New Booking: ' + firstName + ' ' + lastName + ' — ' + niceDate,
-          html: emailHtml
+          firstName, lastName, email, phone,
+          instagram, preferredDate, preferredTime,
+          service, message, niceDate
         })
       });
 
-      if (res.ok) {
-        document.getElementById('formState').style.display = 'none';
-        document.getElementById('successState').classList.add('show');
-      } else {
-        var data = await res.json();
-        throw new Error(data.message || 'Send failed');
-      }
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+
+      document.getElementById('formState').style.display = 'none';
+      document.getElementById('successState').classList.add('show');
+
     } catch (err) {
       errEl.textContent = 'Something went wrong: ' + err.message + '. Please try again or email us directly.';
       errEl.classList.add('show');
