@@ -206,75 +206,53 @@
 .hero-right {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   position: relative;
+  min-height: 520px;
 }
 
-/* Floating glow behind laptop */
+/* Soft gold glow behind her */
 .hero-right::before {
   content: '';
   position: absolute;
-  width: 80%;
-  height: 60%;
-  background: radial-gradient(ellipse, rgba(240,180,41,.18) 0%, transparent 70%);
-  bottom: -10%;
-  left: 10%;
+  width: 75%;
+  height: 55%;
+  background: radial-gradient(ellipse, rgba(240,180,41,.14) 0%, transparent 70%);
+  bottom: 0;
+  left: 12%;
   pointer-events: none;
-  filter: blur(24px);
+  filter: blur(32px);
+  z-index: 0;
 }
 
-.laptop-wrap {
-  width: 100%;
-  max-width: 540px;
-  position: relative;
-  filter: drop-shadow(0 32px 64px rgba(0,0,0,.55));
-  animation: floatLaptop 5s ease-in-out infinite;
-}
-@keyframes floatLaptop {
-  0%,100% { transform: translateY(0px); }
-  50%      { transform: translateY(-10px); }
-}
-
-/* MacBook SVG frame */
-.laptop-frame {
+/* The woman image container */
+.hero-woman-wrap {
   position: relative;
   width: 100%;
-}
-
-.laptop-screen-area {
-  position: relative;
-  margin: 0 5.5% 0 5.5%;
-  border-radius: 10px 10px 0 0;
+  max-width: 520px;
+  border-radius: 24px;
   overflow: hidden;
-  background: #000;
-  aspect-ratio: 16/10;
 }
 
-/* Notch */
-.laptop-screen-area::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 20px;
-  background: #0d0d0d;
-  border-radius: 0 0 10px 10px;
-  z-index: 10;
-}
-
-.laptop-video {
+.hero-woman-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
   display: block;
+  min-height: 480px;
 }
 
-/* Laptop body SVG */
-.laptop-body-svg {
-  width: 100%;
-  display: block;
+/* Gradient blend — fades her into the hero dark background on all edges */
+.hero-woman-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right,  rgba(7,9,15,.55) 0%, transparent 30%, transparent 70%, rgba(7,9,15,.45) 100%),
+    linear-gradient(to bottom, rgba(7,9,15,.4) 0%, transparent 25%, transparent 75%, rgba(7,9,15,.7) 100%);
+  pointer-events: none;
+  border-radius: 24px;
 }
 
 /* Floating badges on laptop */
@@ -297,18 +275,18 @@
 .laptop-badge-icon { font-size: 16px; }
 
 .badge-trend {
-  top: 12%;
-  right: -8%;
+  top: 10%;
+  right: -4%;
   animation-delay: .8s;
 }
 .badge-carousel {
-  bottom: 22%;
-  left: -10%;
+  bottom: 18%;
+  left: -4%;
   animation-delay: 1.2s;
 }
 .badge-live {
-  top: 50%;
-  right: -6%;
+  top: 45%;
+  right: -4%;
   transform: translateY(-50%);
   animation-delay: 1.6s;
   background: linear-gradient(135deg, #0f2027, #1a3a1a);
@@ -1091,10 +1069,15 @@
    RESPONSIVE
 ═══════════════════════ */
 @media(max-width:960px){
-  .hero-split{grid-template-columns:1fr;padding:52px 28px 48px;gap:32px;text-align:center;}
-  .hero-left{display:flex;flex-direction:column;align-items:center;}
+  .hero-split{grid-template-columns:1fr;padding:52px 28px 0;gap:0;text-align:center;}
+  .hero-left{display:flex;flex-direction:column;align-items:center;padding-bottom:40px;}
   .hero-sub{max-width:100%;}
-  .hero-right{display:none;}
+  .hero-right{min-height:340px;border-radius:0;}
+  .hero-woman-wrap{max-width:100%;border-radius:0;}
+  .hero-woman-wrap img{min-height:340px;object-position:center 20%;}
+  .badge-trend{top:8%;right:4%;}
+  .badge-live{top:42%;right:4%;}
+  .badge-carousel{bottom:14%;left:4%;}
   .cs-grid{grid-template-columns:1fr;max-width:440px;margin-left:auto;margin-right:auto;}
   .bento-grid{grid-template-columns:1fr;}
   .bento-col-left, .bento-col-right{width:100%;}
@@ -1204,7 +1187,7 @@
       </div>
     </div>
 
-    <!-- RIGHT: LAPTOP MOCKUP -->
+    <!-- RIGHT: WOMAN IMAGE -->
     <div class="hero-right">
 
       <!-- Floating badges -->
@@ -1229,166 +1212,19 @@
         </div>
       </div>
 
-      <div class="laptop-wrap">
-        <!-- Screen area with video -->
-        <div class="laptop-screen-area">
-          <video class="laptop-video" autoplay muted loop playsinline preload="auto">
-            <source src="impactgrid-demo.mp4" type="video/mp4">
-          </video>
-        </div>
-
-        <!-- MacBook body SVG -->
-        <svg class="laptop-body-svg" viewBox="0 0 560 80" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#2a2a2a"/>
-              <stop offset="100%" stop-color="#1a1a1a"/>
-            </linearGradient>
-            <linearGradient id="baseGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#3a3a3a"/>
-              <stop offset="100%" stop-color="#222"/>
-            </linearGradient>
-          </defs>
-          <!-- Bottom base -->
-          <rect x="0" y="12" width="560" height="40" rx="4" fill="url(#baseGrad)"/>
-          <!-- Base shine -->
-          <rect x="0" y="12" width="560" height="4" rx="2" fill="rgba(255,255,255,.06)"/>
-          <!-- Hinge bar -->
-          <rect x="0" y="10" width="560" height="5" rx="0" fill="#1a1a1a"/>
-          <!-- Bottom chin rim -->
-          <rect x="16" y="52" width="528" height="2" rx="1" fill="rgba(255,255,255,.04)"/>
-          <!-- Rubber feet -->
-          <rect x="30" y="50" width="40" height="8" rx="4" fill="#111"/>
-          <rect x="490" y="50" width="40" height="8" rx="4" fill="#111"/>
-          <rect x="200" y="50" width="40" height="8" rx="4" fill="#111"/>
-          <rect x="320" y="50" width="40" height="8" rx="4" fill="#111"/>
-          <!-- Apple logo area (subtle) -->
-          <circle cx="280" cy="32" r="6" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
-        </svg>
+      <!-- Beautiful creator woman, blends into dark hero bg -->
+      <div class="hero-woman-wrap">
+        <img
+          src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1000&fit=crop&crop=top"
+          alt="Creator"
+        />
       </div>
+
     </div>
 
   </div>
 </div>
 
-
-
-<!-- ═══════════════ PEOPLE MARQUEE ═══════════════ -->
-<div class="marquee-section anim">
-  <div class="marquee-label">Creators worldwide are building with ImpactGrid</div>
-
-  <div class="marquee-track-wrap">
-    <div class="marquee-track" id="marqueeTrack">
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(255,0,0,.75);">▶ YouTube</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Amara K.</div><div class="marquee-card-stat">↑ 42K views this week</div></div>
-      </div>
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(0,0,0,.7);">♪ TikTok</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">The Grid Team</div><div class="marquee-card-stat">📡 Trending: #VikingHistory</div></div>
-      </div>
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:linear-gradient(135deg,rgba(131,58,180,.85),rgba(253,29,29,.7));">◎ Instagram</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Marcus J.</div><div class="marquee-card-stat">🎨 7-slide carousel · live</div></div>
-      </div>
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(255,0,0,.75);">▶ YouTube</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Sofia R.</div><div class="marquee-card-stat">↑ 126K views this week</div></div>
-      </div>
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(0,0,0,.7);">♪ TikTok</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Lena V.</div><div class="marquee-card-stat">🚀 Content plan · Week 3</div></div>
-      </div>
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:linear-gradient(135deg,rgba(131,58,180,.85),rgba(253,29,29,.7));">◎ Instagram</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">James P.</div><div class="marquee-card-stat">✍️ Caption written by Dijo</div></div>
-      </div>
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(255,0,0,.75);">▶ YouTube</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Priya M.</div><div class="marquee-card-stat">📡 Spot signal · acted fast</div></div>
-      </div>
-
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(0,0,0,.7);">♪ TikTok</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Dev Studio</div><div class="marquee-card-stat">🗂️ Portfolio · shared 3× today</div></div>
-      </div>
-
-      <!-- Duplicate set for seamless loop -->
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(255,0,0,.75);">▶ YouTube</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Amara K.</div><div class="marquee-card-stat">↑ 42K views this week</div></div>
-      </div>
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(0,0,0,.7);">♪ TikTok</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">The Grid Team</div><div class="marquee-card-stat">📡 Trending: #VikingHistory</div></div>
-      </div>
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:linear-gradient(135deg,rgba(131,58,180,.85),rgba(253,29,29,.7));">◎ Instagram</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Marcus J.</div><div class="marquee-card-stat">🎨 7-slide carousel · live</div></div>
-      </div>
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(255,0,0,.75);">▶ YouTube</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Sofia R.</div><div class="marquee-card-stat">↑ 126K views this week</div></div>
-      </div>
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(0,0,0,.7);">♪ TikTok</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Lena V.</div><div class="marquee-card-stat">🚀 Content plan · Week 3</div></div>
-      </div>
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:linear-gradient(135deg,rgba(131,58,180,.85),rgba(253,29,29,.7));">◎ Instagram</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">James P.</div><div class="marquee-card-stat">✍️ Caption written by Dijo</div></div>
-      </div>
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=480&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(255,0,0,.75);">▶ YouTube</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Priya M.</div><div class="marquee-card-stat">📡 Spot signal · acted fast</div></div>
-      </div>
-      <div class="marquee-card">
-        <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=480&fit=crop&crop=faces" alt="Creators" loading="lazy"/>
-        <div class="marquee-card-overlay"></div>
-        <div class="marquee-card-plat" style="background:rgba(0,0,0,.7);">♪ TikTok</div>
-        <div class="marquee-card-label"><div class="marquee-card-name">Dev Studio</div><div class="marquee-card-stat">🗂️ Portfolio · shared 3× today</div></div>
-      </div>
-
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════ CAROUSEL STYLES SECTION ═══════════════ -->
 <div class="carousel-section">
