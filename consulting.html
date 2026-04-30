@@ -12,43 +12,102 @@
 <style>
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 18px;
   margin-top: 32px;
 }
+
+/* Photo-top service card — matches about page value-card */
 .service-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 26px;
-  transition: border-color .2s, box-shadow .2s;
+  overflow: hidden;
+  position: relative;
+  transition: transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s, border-color .22s;
 }
 .service-card:hover {
-  border-color: var(--gold-glo);
-  box-shadow: 0 6px 24px rgba(201,126,8,.07);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.1);
+  border-color: var(--border2);
 }
-.service-icon { font-size: 28px; margin-bottom: 12px; }
+[data-theme="dark"] .service-card:hover { box-shadow: 0 16px 48px rgba(0,0,0,.35); }
+
+.service-card-img {
+  position: relative;
+  height: 160px;
+  overflow: hidden;
+}
+.service-card-img img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform .5s cubic-bezier(.22,1,.36,1);
+}
+.service-card:hover .service-card-img img { transform: scale(1.05); }
+.service-card-img-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.service-card-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--sbar, linear-gradient(90deg, var(--gold), var(--gold2)));
+  z-index: 2;
+}
+.service-card-body { padding: 22px 22px 26px; }
+.service-icon { font-size: 24px; margin-bottom: 10px; display: block; }
 .service-title {
   font-family: 'Syne', sans-serif;
-  font-size: 17px; font-weight: 800;
-  color: var(--text); margin-bottom: 7px;
+  font-size: 16px; font-weight: 800;
+  color: var(--text); margin-bottom: 8px; letter-spacing: -.02em;
 }
-.service-desc {
-  font-size: 14px; color: var(--text2); line-height: 1.65;
-}
+.service-desc { font-size: 13.5px; color: var(--text2); line-height: 1.65; }
 
+/* Photo process steps */
 .process-steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-top: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
 }
 .process-step {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 22px;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s;
 }
+.process-step:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(0,0,0,.1); }
+[data-theme="dark"] .process-step:hover { box-shadow: 0 12px 36px rgba(0,0,0,.35); }
+
+.process-step-img {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+}
+.process-step-img img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform .5s cubic-bezier(.22,1,.36,1);
+}
+.process-step:hover .process-step-img img { transform: scale(1.05); }
+.process-step-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(7,9,15,.55) 0%, transparent 55%);
+  pointer-events: none;
+}
+.process-step-num-badge {
+  position: absolute;
+  bottom: 12px; left: 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--gold);
+  background: rgba(7,9,15,.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(240,180,41,.25);
+  border-radius: 6px;
+  padding: 3px 9px;
+}
+.process-step-body { padding: 18px 20px 22px; }
 .step-num {
   font-family: 'DM Mono', monospace;
   font-size: 10px; letter-spacing: .12em;
@@ -61,6 +120,212 @@
   color: var(--text); margin-bottom: 6px;
 }
 .step-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+/* ═══════════════ CONSULTING HERO ═══════════════ */
+.cons-hero {
+  margin-top: var(--nav-h, 64px);
+  background: linear-gradient(135deg, #07090f 0%, #0d1220 40%, #111827 100%);
+  position: relative;
+  overflow: hidden;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+}
+.cons-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 700px 500px at 65% 50%, rgba(240,180,41,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 400px at 5% 80%, rgba(124,58,237,.06) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 300px at 90% 10%, rgba(15,168,118,.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.cons-hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+.cons-hero-split {
+  position: relative; z-index: 1;
+  max-width: 1200px; margin: 0 auto;
+  padding: 72px 40px 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+.cons-hero-left { color: #fff; }
+.cons-hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(240,180,41,.1);
+  border: 1px solid rgba(240,180,41,.25);
+  padding: 5px 14px; border-radius: 99px;
+  margin-bottom: 22px;
+}
+.cons-hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(32px, 4vw, 54px);
+  font-weight: 900; line-height: 1.07;
+  letter-spacing: -.03em; color: #fff; margin-bottom: 20px;
+}
+.cons-underline-gold {
+  position: relative; display: inline-block;
+}
+.cons-underline-gold::after {
+  content: '';
+  position: absolute; left: 0; bottom: -4px;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  border-radius: 99px;
+}
+.cons-hero-sub {
+  font-size: 17px; color: rgba(255,255,255,.62);
+  line-height: 1.72; margin-bottom: 32px; max-width: 440px;
+}
+.cons-hero-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.cons-hero-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; font-weight: 600;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.75);
+  backdrop-filter: blur(6px);
+}
+.cons-hero-right {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 200px 200px;
+  gap: 10px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.55);
+}
+.cons-hero-right::before {
+  content: '';
+  position: absolute;
+  width: 80%; height: 60%;
+  background: radial-gradient(ellipse, rgba(240,180,41,.16) 0%, transparent 70%);
+  bottom: -10%; left: 10%;
+  pointer-events: none; filter: blur(32px); z-index: -1;
+}
+.cons-mosaic-img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform .5s cubic-bezier(.22,1,.36,1);
+}
+.cons-mosaic-img:hover { transform: scale(1.05); }
+.cons-mosaic-tall { grid-row: 1 / 3; }
+.cons-mosaic-veil {
+  position: absolute; inset: 0;
+  background: linear-gradient(to left, transparent 60%, rgba(7,9,15,.55) 100%);
+  pointer-events: none; z-index: 1;
+}
+.cons-hero-badge {
+  position: absolute; bottom: 20px; right: 20px; z-index: 10;
+  background: #fff; border-radius: 12px; padding: 8px 14px;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  font-size: 12px; font-weight: 700; color: #111;
+  white-space: nowrap;
+  animation: badgePop .4s cubic-bezier(.34,1.56,.64,1) .8s both;
+}
+.cons-badge-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #4ade80; box-shadow: 0 0 6px #4ade80;
+  animation: blinkDot 1.4s infinite; flex-shrink: 0;
+}
+@keyframes badgePop {
+  from { opacity:0; transform: scale(.6) translateY(8px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+@keyframes blinkDot {
+  0%,100% { opacity:1; } 50% { opacity:.3; }
+}
+
+/* ═══════════════ VISION SPLIT ═══════════════ */
+.cons-vision-section { padding: 88px 0; background: var(--bg); }
+.cons-vision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px; align-items: center;
+  max-width: var(--max-w, 1200px);
+  margin: 0 auto; padding: 0 28px;
+}
+.cons-vision-photo-wrap {
+  position: relative; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,.15);
+}
+[data-theme="dark"] .cons-vision-photo-wrap { box-shadow: 0 24px 64px rgba(0,0,0,.4); }
+.cons-vision-photo-wrap img {
+  width: 100%; height: 420px; object-fit: cover; display: block;
+}
+.cons-vision-photo-wrap::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  z-index: 2;
+}
+.cons-vision-photo-wrap::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(7,9,15,.55) 0%, transparent 50%);
+  pointer-events: none;
+}
+.cons-vision-badge {
+  position: absolute; bottom: 20px; left: 20px; right: 20px; z-index: 3;
+  background: rgba(7,9,15,.72); backdrop-filter: blur(12px);
+  border: 1px solid rgba(240,180,41,.2); border-radius: 12px;
+  padding: 14px 18px; color: #fff; font-size: 13px;
+  line-height: 1.55; font-style: italic;
+}
+.cons-vision-badge strong {
+  display: block; font-style: normal; font-size: 11px;
+  font-family: 'DM Mono', monospace; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--gold); margin-top: 8px;
+}
+.cons-mission-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px; margin-top: 24px;
+  position: relative; overflow: hidden;
+}
+.cons-mission-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: linear-gradient(90deg, var(--gold), var(--gold2));
+}
+.cons-mission-card h3 { font-size: 17px; font-weight: 800; margin-bottom: 10px; letter-spacing: -.02em; color: var(--text); }
+.cons-mission-card p { font-size: 14px; color: var(--text2); line-height: 1.75; }
+
+/* Anim utility */
+.anim { opacity:0; transform:translateY(22px); transition: opacity .55s ease, transform .55s ease; }
+.anim.visible { opacity:1; transform:translateY(0); }
+.anim-d1 { transition-delay:.1s; }
+.anim-d2 { transition-delay:.2s; }
+.anim-d3 { transition-delay:.3s; }
+
+/* ═══════════════ RESPONSIVE ═══════════════ */
+@media(max-width:1000px) {
+  .cons-hero-split { grid-template-columns: 1fr; padding: 52px 28px 0; gap: 40px; text-align:center; }
+  .cons-hero-left { display:flex; flex-direction:column; align-items:center; }
+  .cons-hero-sub { max-width:100%; }
+  .cons-hero-right { grid-template-rows: 160px 160px; }
+  .cons-vision-grid { grid-template-columns: 1fr; gap: 40px; }
+  .cons-vision-photo-wrap img { height: 320px; }
+}
+@media(max-width:700px) {
+  .cons-hero-right { display:none; }
+  .services-grid { grid-template-columns: 1fr; }
+}
 
 .cta-block {
   background: linear-gradient(135deg, #1a1814, #2a2318);
@@ -85,6 +350,190 @@
 @media (max-width: 600px) {
   .cta-block { padding: 36px 22px; }
 }
+
+/* ═══════════════ BOOKING MODAL ═══════════════ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,9,15,.72);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 22px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(0,0,0,.35);
+  animation: modalIn .32s cubic-bezier(.34,1.56,.64,1) both;
+  position: relative;
+}
+@keyframes modalIn {
+  from { opacity:0; transform:translateY(24px) scale(.96); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+.modal-header {
+  padding: 28px 28px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-header-text {}
+.modal-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gold, #c97e08);
+  margin-bottom: 6px;
+}
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -.025em;
+  color: var(--text, #111);
+  line-height: 1.15;
+}
+.modal-close {
+  background: var(--bg2, #f5f5f5);
+  border: none;
+  border-radius: 50%;
+  width: 34px; height: 34px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--text2, #666);
+  transition: background .2s;
+}
+.modal-close:hover { background: var(--border, #e5e7eb); }
+
+.modal-body {
+  padding: 22px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media(max-width:480px){ .form-row { grid-template-columns: 1fr; } }
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2, #666);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.form-input, .form-select, .form-textarea {
+  background: var(--bg, #fafafa);
+  border: 1.5px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text, #111);
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--gold, #c97e08);
+  box-shadow: 0 0 0 3px rgba(201,126,8,.1);
+}
+.form-textarea { resize: vertical; min-height: 88px; }
+.form-select { appearance: none; cursor: pointer; }
+
+.form-divider {
+  height: 1px;
+  background: var(--border, #e5e7eb);
+  margin: 4px 0;
+}
+
+.btn-book {
+  background: linear-gradient(135deg, var(--gold, #c97e08), #e09a1a);
+  color: #07090f;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 22px;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  letter-spacing: -.01em;
+  width: 100%;
+}
+.btn-book:hover { opacity: .9; transform: translateY(-1px); }
+.btn-book:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.modal-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text2, #888);
+  margin-top: -8px;
+}
+
+/* Success state */
+.modal-success {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 52px 28px;
+  gap: 12px;
+}
+.modal-success.show { display: flex; }
+.success-icon {
+  font-size: 48px;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn {
+  from { transform: scale(0); opacity:0; }
+  to   { transform: scale(1); opacity:1; }
+}
+.success-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text, #111);
+  letter-spacing: -.02em;
+}
+.success-sub { font-size: 14px; color: var(--text2, #666); line-height: 1.65; max-width: 320px; }
+
+/* Error message */
+.form-error {
+  display: none;
+  background: rgba(220,38,38,.08);
+  border: 1px solid rgba(220,38,38,.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #dc2626;
+}
+.form-error.show { display: block; }
 </style>
 </head>
 <body>
@@ -92,12 +541,57 @@
 <div id="ig-nav"></div>
 
 <!-- HERO -->
-<div class="page-hero">
-  <div class="page-hero-grid"></div>
-  <div class="page-hero-inner">
-    <div class="chip chip-gold" style="margin-bottom:20px">💼 Consulting</div>
-    <h1 class="page-hero-title">Strategy that turns<br><em>creators into brands</em></h1>
-    <p class="page-hero-sub">Expert-led consulting for creators and businesses who want to grow smarter — with real data, AI-backed strategy, and hands-on guidance.</p>
+<div class="cons-hero">
+  <div class="cons-hero-split">
+
+    <!-- LEFT: TEXT -->
+    <div class="cons-hero-left anim">
+      <div class="cons-hero-eyebrow">💼 Consulting</div>
+      <h1 class="cons-hero-title">
+        Strategy that turns<br/>
+        <span class="cons-underline-gold">creators into brands</span>
+      </h1>
+      <p class="cons-hero-sub">
+        Expert-led consulting for creators and businesses who want to grow smarter — with real data, AI-backed strategy, and hands-on guidance.
+      </p>
+      <div class="cons-hero-chips">
+        <span class="cons-hero-chip">Content Strategy</span>
+        <span class="cons-hero-chip">Brand Growth</span>
+        <span class="cons-hero-chip">AI Workflow</span>
+        <span class="cons-hero-chip">1-to-1 Advisory</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: PHOTO MOSAIC -->
+    <div class="cons-hero-right anim">
+      <img
+        class="cons-mosaic-img cons-mosaic-tall"
+        src="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=600&h=800&fit=crop&crop=top"
+        alt="Strategy session"
+        loading="lazy"
+      />
+      <img
+        class="cons-mosaic-img"
+        src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&h=300&fit=crop"
+        alt="Creator meeting"
+        loading="lazy"
+      />
+      <img
+        class="cons-mosaic-img"
+        src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop"
+        alt="Analytics dashboard"
+        loading="lazy"
+      />
+      <div class="cons-mosaic-veil"></div>
+      <div class="cons-hero-badge">
+        <div class="cons-badge-dot"></div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#111;">30-Min Free Call</div>
+          <div style="font-size:9px;color:#666;font-weight:500;">No pitch. No pressure.</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -108,66 +602,172 @@
   <p class="text" style="color:var(--text2);max-width:500px;margin-top:8px">Whether you're a solo creator or a growing brand, we have a tier that fits where you are right now.</p>
 
   <div class="services-grid">
-    <div class="service-card">
-      <div class="service-icon">📊</div>
-      <div class="service-title">Content Strategy</div>
-      <div class="service-desc">We analyse your niche, audit your content, and build a 90-day roadmap aligned with trending topics and your audience's psychology.</div>
+
+    <div class="service-card anim">
+      <div class="service-card-img">
+        <img src="https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=700&h=300&fit=crop" alt="Content Strategy" loading="lazy"/>
+        <div class="service-card-img-overlay" style="background:linear-gradient(135deg,rgba(201,162,39,.4) 0%,rgba(0,0,0,.3) 100%);"></div>
+        <div class="service-card-bar" style="--sbar:linear-gradient(90deg,var(--gold),var(--gold2));"></div>
+      </div>
+      <div class="service-card-body">
+        <div class="service-icon">📊</div>
+        <div class="service-title">Content Strategy</div>
+        <div class="service-desc">We analyse your niche, audit your content, and build a 90-day roadmap aligned with trending topics and your audience's psychology.</div>
+      </div>
     </div>
-    <div class="service-card">
-      <div class="service-icon">🚀</div>
-      <div class="service-title">Channel Growth Sprint</div>
-      <div class="service-desc">A focused 30-day engagement to identify your biggest growth levers and help you execute fast. Ideal for creators stuck under 10K.</div>
+
+    <div class="service-card anim anim-d1">
+      <div class="service-card-img">
+        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=700&h=300&fit=crop&crop=top" alt="Channel Growth Sprint" loading="lazy"/>
+        <div class="service-card-img-overlay" style="background:linear-gradient(135deg,rgba(45,110,219,.38) 0%,rgba(0,0,0,.3) 100%);"></div>
+        <div class="service-card-bar" style="--sbar:linear-gradient(90deg,#2d6adb,#7c3aed);"></div>
+      </div>
+      <div class="service-card-body">
+        <div class="service-icon">🚀</div>
+        <div class="service-title">Channel Growth Sprint</div>
+        <div class="service-desc">A focused 30-day engagement to identify your biggest growth levers and help you execute fast. Ideal for creators stuck under 10K.</div>
+      </div>
     </div>
-    <div class="service-card">
-      <div class="service-icon">🤖</div>
-      <div class="service-title">AI Workflow Setup</div>
-      <div class="service-desc">We plug ImpactGrid's AI tools directly into your content process — from ideation to posting — so you create more in less time.</div>
+
+    <div class="service-card anim anim-d2">
+      <div class="service-card-img">
+        <img src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=700&h=300&fit=crop" alt="AI Workflow Setup" loading="lazy"/>
+        <div class="service-card-img-overlay" style="background:linear-gradient(135deg,rgba(15,168,118,.38) 0%,rgba(0,0,0,.3) 100%);"></div>
+        <div class="service-card-bar" style="--sbar:linear-gradient(90deg,#0f9b6e,#4ade80);"></div>
+      </div>
+      <div class="service-card-body">
+        <div class="service-icon">🤖</div>
+        <div class="service-title">AI Workflow Setup</div>
+        <div class="service-desc">We plug ImpactGrid's AI tools directly into your content process — from ideation to posting — so you create more in less time.</div>
+      </div>
     </div>
-    <div class="service-card">
-      <div class="service-icon">💡</div>
-      <div class="service-title">Brand Partnerships</div>
-      <div class="service-desc">Positioning, media kit creation, and outreach strategy to help you land brand deals that fit your audience and pay what you're worth.</div>
+
+    <div class="service-card anim">
+      <div class="service-card-img">
+        <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=700&h=300&fit=crop" alt="Brand Partnerships" loading="lazy"/>
+        <div class="service-card-img-overlay" style="background:linear-gradient(135deg,rgba(201,162,39,.38) 0%,rgba(0,0,0,.3) 100%);"></div>
+        <div class="service-card-bar" style="--sbar:linear-gradient(90deg,var(--gold),var(--gold2));"></div>
+      </div>
+      <div class="service-card-body">
+        <div class="service-icon">💡</div>
+        <div class="service-title">Brand Partnerships</div>
+        <div class="service-desc">Positioning, media kit creation, and outreach strategy to help you land brand deals that fit your audience and pay what you're worth.</div>
+      </div>
     </div>
-    <div class="service-card">
-      <div class="service-icon">📈</div>
-      <div class="service-title">Analytics & Reporting</div>
-      <div class="service-desc">Monthly deep-dive reports on your YouTube, TikTok, and Instagram performance — with clear actions, not just charts.</div>
+
+    <div class="service-card anim anim-d1">
+      <div class="service-card-img">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=700&h=300&fit=crop" alt="Analytics & Reporting" loading="lazy"/>
+        <div class="service-card-img-overlay" style="background:linear-gradient(135deg,rgba(139,69,20,.38) 0%,rgba(0,0,0,.3) 100%);"></div>
+        <div class="service-card-bar" style="--sbar:linear-gradient(90deg,#c9a227,#8b6914);"></div>
+      </div>
+      <div class="service-card-body">
+        <div class="service-icon">📈</div>
+        <div class="service-title">Analytics & Reporting</div>
+        <div class="service-desc">Monthly deep-dive reports on your YouTube, TikTok, and Instagram performance — with clear actions, not just charts.</div>
+      </div>
     </div>
-    <div class="service-card">
-      <div class="service-icon">🎯</div>
-      <div class="service-title">1-to-1 Advisory</div>
-      <div class="service-desc">Direct access to an ImpactGrid strategist. Monthly calls and bespoke advice for creators who want a thought partner in their corner.</div>
+
+    <div class="service-card anim anim-d2">
+      <div class="service-card-img">
+        <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=700&h=300&fit=crop&crop=top" alt="1-to-1 Advisory" loading="lazy"/>
+        <div class="service-card-img-overlay" style="background:linear-gradient(135deg,rgba(79,70,229,.38) 0%,rgba(0,0,0,.3) 100%);"></div>
+        <div class="service-card-bar" style="--sbar:linear-gradient(90deg,#4f46e5,#7c3aed);"></div>
+      </div>
+      <div class="service-card-body">
+        <div class="service-icon">🎯</div>
+        <div class="service-title">1-to-1 Advisory</div>
+        <div class="service-desc">Direct access to an ImpactGrid strategist. Monthly calls and bespoke advice for creators who want a thought partner in their corner.</div>
+      </div>
     </div>
+
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="section" style="background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-  <p style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">How it works</p>
-  <h2 class="h2">Simple. Fast. No fluff.</h2>
-  <p class="text" style="color:var(--text2);max-width:460px;margin-top:8px">Most clients have a clear direction within the first week.</p>
+<!-- VISION SPLIT -->
+<div class="cons-vision-section">
+  <div class="cons-vision-grid anim">
+    <div class="cons-vision-photo-wrap">
+      <img
+        src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&h=840&fit=crop"
+        alt="Creator strategy session"
+        loading="lazy"
+      />
+      <div class="cons-vision-badge">
+        "Most clients have a clear direction within the first week."
+        <strong>— ImpactGrid Consulting</strong>
+      </div>
+    </div>
+    <div class="cons-vision-text">
+      <div class="label-tag">Our Approach</div>
+      <h2 style="font-size:clamp(26px,3vw,38px);font-weight:900;letter-spacing:-.025em;margin-bottom:18px;line-height:1.15;color:var(--text);">We don't give generic advice. We build a strategy around <em style="font-style:normal;color:var(--gold);">your</em> data.</h2>
+      <p style="font-size:15.5px;color:var(--text2);line-height:1.8;">ImpactGrid Consulting starts where most agencies stop — inside your actual numbers. We look at your content, your audience behaviour, and the trends in your niche to find exactly what's holding you back.</p>
+      <div class="cons-mission-card">
+        <h3>Why it works</h3>
+        <p>We use ImpactGrid's real-time trend engine and AI tools internally to build your strategy. You get the same intelligence that powers our platform — applied directly to your content.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <div class="process-steps">
-    <div class="process-step">
-      <div class="step-num">Step 01</div>
-      <div class="step-title">Book a Free Call</div>
-      <div class="step-desc">30 minutes. We learn about your goals, your current setup, and where you're stuck.</div>
+<!-- HOW IT WORKS -->
+<section class="section" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div style="text-align:center;" class="anim">
+    <p style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">How it works</p>
+    <h2 class="h2">Simple. Fast. No fluff.</h2>
+    <p class="text" style="color:var(--text2);max-width:460px;margin-top:8px;margin-left:auto;margin-right:auto;">Most clients have a clear direction within the first week.</p>
+  </div>
+
+  <div class="process-steps" style="margin-top:40px;">
+
+    <div class="process-step anim">
+      <div class="process-step-img">
+        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=280&fit=crop" alt="Book a call" loading="lazy"/>
+        <div class="process-step-img-overlay"></div>
+        <div class="process-step-num-badge">01</div>
+      </div>
+      <div class="process-step-body">
+        <div class="step-title">Book a Free Call</div>
+        <div class="step-desc">30 minutes. We learn about your goals, your current setup, and where you're stuck.</div>
+      </div>
     </div>
-    <div class="process-step">
-      <div class="step-num">Step 02</div>
-      <div class="step-title">Audit & Diagnose</div>
-      <div class="step-desc">We run a full audit of your content and analytics using ImpactGrid's real data tools.</div>
+
+    <div class="process-step anim anim-d1">
+      <div class="process-step-img">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=280&fit=crop" alt="Audit and diagnose" loading="lazy"/>
+        <div class="process-step-img-overlay"></div>
+        <div class="process-step-num-badge">02</div>
+      </div>
+      <div class="process-step-body">
+        <div class="step-title">Audit & Diagnose</div>
+        <div class="step-desc">We run a full audit of your content and analytics using ImpactGrid's real data tools.</div>
+      </div>
     </div>
-    <div class="process-step">
-      <div class="step-num">Step 03</div>
-      <div class="step-title">Build Your Roadmap</div>
-      <div class="step-desc">A clear, prioritised plan tailored to your platform, niche, and growth stage. No generic advice.</div>
+
+    <div class="process-step anim anim-d2">
+      <div class="process-step-img">
+        <img src="https://images.unsplash.com/photo-1542626991-cbc4e32524cc?w=600&h=280&fit=crop" alt="Build your roadmap" loading="lazy"/>
+        <div class="process-step-img-overlay"></div>
+        <div class="process-step-num-badge">03</div>
+      </div>
+      <div class="process-step-body">
+        <div class="step-title">Build Your Roadmap</div>
+        <div class="step-desc">A clear, prioritised plan tailored to your platform, niche, and growth stage. No generic advice.</div>
+      </div>
     </div>
-    <div class="process-step">
-      <div class="step-num">Step 04</div>
-      <div class="step-title">Execute Together</div>
-      <div class="step-desc">We stay in your corner as you implement — adjusting strategy as your data comes in.</div>
+
+    <div class="process-step anim anim-d3">
+      <div class="process-step-img">
+        <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&h=280&fit=crop&crop=top" alt="Execute together" loading="lazy"/>
+        <div class="process-step-img-overlay"></div>
+        <div class="process-step-num-badge">04</div>
+      </div>
+      <div class="process-step-body">
+        <div class="step-title">Execute Together</div>
+        <div class="step-desc">We stay in your corner as you implement — adjusting strategy as your data comes in.</div>
+      </div>
     </div>
+
   </div>
 </section>
 
@@ -176,9 +776,112 @@
   <div class="cta-block">
     <h2>Ready to grow <em>with intention</em>?</h2>
     <p>Book a free 30-minute strategy call. No pitch, no pressure — just clarity on your next move.</p>
-    <a href="contact.html" class="btn btn-primary" style="font-size:15px;padding:13px 28px">Book Your Free Call →</a>
+    <button onclick="openBookingModal()" class="btn btn-primary" style="font-size:15px;padding:13px 28px;border:none;cursor:pointer">Book Your Free Call →</button>
   </div>
 </section>
+
+<!-- ═══════════════ BOOKING MODAL ═══════════════ -->
+<div class="modal-overlay" id="bookingModal" onclick="handleOverlayClick(event)">
+  <div class="modal-box" id="modalBox">
+
+    <!-- FORM STATE -->
+    <div id="formState">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <div class="modal-eyebrow">📅 Book a Free Call</div>
+          <div class="modal-title">Let's talk about your growth</div>
+        </div>
+        <button class="modal-close" onclick="closeBookingModal()" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-error" id="formError"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="firstName">First Name *</label>
+            <input class="form-input" id="firstName" type="text" placeholder="e.g. Dara" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lastName">Last Name *</label>
+            <input class="form-input" id="lastName" type="text" placeholder="e.g. Ogunmoyero" required/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address *</label>
+          <input class="form-input" id="email" type="email" placeholder="you@example.com" required/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone / WhatsApp</label>
+            <input class="form-input" id="phone" type="tel" placeholder="+44 7700 000000"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="instagram">Instagram Handle</label>
+            <input class="form-input" id="instagram" type="text" placeholder="@yourhandle"/>
+          </div>
+        </div>
+
+        <div class="form-divider"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="preferredDate">Preferred Date *</label>
+            <input class="form-input" id="preferredDate" type="date" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="preferredTime">Preferred Time *</label>
+            <select class="form-select form-input" id="preferredTime" required>
+              <option value="">Select a time</option>
+              <option>9:00 AM – 10:00 AM (GMT)</option>
+              <option>10:00 AM – 11:00 AM (GMT)</option>
+              <option>11:00 AM – 12:00 PM (GMT)</option>
+              <option>12:00 PM – 1:00 PM (GMT)</option>
+              <option>1:00 PM – 2:00 PM (GMT)</option>
+              <option>2:00 PM – 3:00 PM (GMT)</option>
+              <option>3:00 PM – 4:00 PM (GMT)</option>
+              <option>4:00 PM – 5:00 PM (GMT)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="service">Service You're Interested In</label>
+          <select class="form-select form-input" id="service">
+            <option value="">Not sure yet</option>
+            <option>Content Strategy</option>
+            <option>Channel Growth Sprint</option>
+            <option>AI Workflow Setup</option>
+            <option>Brand Partnerships</option>
+            <option>Analytics & Reporting</option>
+            <option>1-to-1 Advisory</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="message">Tell us about your goals</label>
+          <textarea class="form-textarea" id="message" placeholder="What are you working on? Where are you stuck? What does success look like for you?"></textarea>
+        </div>
+
+        <button class="btn-book" id="submitBtn" onclick="submitBooking()">
+          Confirm Booking →
+        </button>
+        <p class="modal-note">Free 30-min call · No pitch · No pressure</p>
+      </div>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="modal-success" id="successState">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">You're booked in!</div>
+      <p class="success-sub">We've received your request and will confirm your slot within 24 hours. Check your inbox for a confirmation email.</p>
+      <button onclick="closeBookingModal()" class="btn btn-primary" style="margin-top:8px;font-size:14px;padding:11px 24px;border:none;cursor:pointer">Close</button>
+    </div>
+
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer class="footer">
@@ -227,6 +930,12 @@
   document.addEventListener('DOMContentLoaded', function() {
     if (typeof renderNav === 'function') renderNav('consulting.html');
     if (typeof initAuth === 'function') initAuth();
+
+    /* Scroll animations */
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
+    }, {threshold: 0.06});
+    document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
   });
 
   function toggleTheme() {
@@ -237,5 +946,127 @@
   }
 </script>
 
+
+<script>
+  /* ── Set min date to today ── */
+  document.addEventListener('DOMContentLoaded', function() {
+    var dateInput = document.getElementById('preferredDate');
+    if (dateInput) {
+      var today = new Date().toISOString().split('T')[0];
+      dateInput.setAttribute('min', today);
+    }
+  });
+
+  /* ── Modal controls ── */
+  function openBookingModal() {
+    document.getElementById('bookingModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeBookingModal() {
+    document.getElementById('bookingModal').classList.remove('open');
+    document.body.style.overflow = '';
+    // Reset form after short delay
+    setTimeout(function() {
+      document.getElementById('formState').style.display = '';
+      document.getElementById('successState').classList.remove('show');
+      document.getElementById('formError').classList.remove('show');
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').textContent = 'Confirm Booking →';
+    }, 300);
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('bookingModal')) closeBookingModal();
+  }
+
+  /* ── Submit ── */
+  async function submitBooking() {
+    var firstName    = document.getElementById('firstName').value.trim();
+    var lastName     = document.getElementById('lastName').value.trim();
+    var email        = document.getElementById('email').value.trim();
+    var phone        = document.getElementById('phone').value.trim();
+    var instagram    = document.getElementById('instagram').value.trim();
+    var preferredDate = document.getElementById('preferredDate').value;
+    var preferredTime = document.getElementById('preferredTime').value;
+    var service      = document.getElementById('service').value;
+    var message      = document.getElementById('message').value.trim();
+
+    var errEl = document.getElementById('formError');
+    errEl.classList.remove('show');
+
+    /* Validation */
+    if (!firstName || !lastName || !email || !preferredDate || !preferredTime) {
+      errEl.textContent = 'Please fill in all required fields (marked with *).';
+      errEl.classList.add('show');
+      return;
+    }
+    var emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailReg.test(email)) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    /* Format date nicely */
+    var dateParts = preferredDate.split('-');
+    var niceDate = new Date(preferredDate + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    /* Email HTML */
+    var emailHtml = '\
+<div style="font-family:DM Sans,sans-serif;max-width:580px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">\
+  <div style="background:linear-gradient(135deg,#1a1814,#2a2318);padding:32px 36px;">\
+    <div style="font-family:Syne,sans-serif;font-size:20px;font-weight:900;color:#fff;">ImpactGrid Consulting</div>\
+    <div style="color:rgba(255,255,255,.55);font-size:13px;margin-top:4px;">New Booking Request</div>\
+  </div>\
+  <div style="padding:32px 36px;">\
+    <h2 style="font-size:18px;font-weight:800;color:#111;margin:0 0 20px;font-family:Syne,sans-serif;">📅 New Call Booking</h2>\
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">\
+      <tr><td style="padding:9px 0;color:#888;width:160px;vertical-align:top;border-bottom:1px solid #f0f0f0;">Name</td><td style="padding:9px 0;color:#111;font-weight:600;border-bottom:1px solid #f0f0f0;">' + firstName + ' ' + lastName + '</td></tr>\
+      <tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Email</td><td style="padding:9px 0;border-bottom:1px solid #f0f0f0;"><a href="mailto:' + email + '" style="color:#c97e08;">' + email + '</a></td></tr>\
+      ' + (phone ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Phone / WhatsApp</td><td style="padding:9px 0;color:#111;border-bottom:1px solid #f0f0f0;">' + phone + '</td></tr>' : '') + '\
+      ' + (instagram ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Instagram</td><td style="padding:9px 0;color:#111;border-bottom:1px solid #f0f0f0;">' + instagram + '</td></tr>' : '') + '\
+      <tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Preferred Date</td><td style="padding:9px 0;color:#111;font-weight:600;border-bottom:1px solid #f0f0f0;">' + niceDate + '</td></tr>\
+      <tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Preferred Time</td><td style="padding:9px 0;color:#111;font-weight:600;border-bottom:1px solid #f0f0f0;">' + preferredTime + '</td></tr>\
+      ' + (service ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;border-bottom:1px solid #f0f0f0;">Service</td><td style="padding:9px 0;color:#111;border-bottom:1px solid #f0f0f0;">' + service + '</td></tr>' : '') + '\
+      ' + (message ? '<tr><td style="padding:9px 0;color:#888;vertical-align:top;">Message</td><td style="padding:9px 0;color:#111;line-height:1.65;">' + message.replace(/\n/g,'<br>') + '</td></tr>' : '') + '\
+    </table>\
+  </div>\
+  <div style="background:#fafafa;padding:20px 36px;font-size:12px;color:#aaa;border-top:1px solid #e5e7eb;">Sent via ImpactGrid Consulting form · impactgridgroup.com</div>\
+</div>';
+
+    try {
+      var res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer YOUR_RESEND_API_KEY'
+        },
+        body: JSON.stringify({
+          from: 'ImpactGrid Consulting <support@impactgrid.com>',
+          to: ['Ogunmoyerodara@gmail.com'],
+          reply_to: email,
+          subject: '📅 New Booking: ' + firstName + ' ' + lastName + ' — ' + niceDate,
+          html: emailHtml
+        })
+      });
+
+      if (res.ok) {
+        document.getElementById('formState').style.display = 'none';
+        document.getElementById('successState').classList.add('show');
+      } else {
+        var data = await res.json();
+        throw new Error(data.message || 'Send failed');
+      }
+    } catch (err) {
+      errEl.textContent = 'Something went wrong: ' + err.message + '. Please try again or email us directly.';
+      errEl.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Confirm Booking →';
+    }
+  }
+</script>
 </body>
 </html>
