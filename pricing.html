@@ -8,23 +8,155 @@
 <link rel="icon" href="favicon.ico"/>
 <link rel="stylesheet" href="shared.css"/>
 <style>
-.page-hero{
-  padding:calc(var(--nav-h) + 80px) 28px 72px;
-  text-align:center;position:relative;overflow:hidden;
-}
-.page-hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 40%,var(--gold-dim),transparent);pointer-events:none;}
-.page-hero-grid{
-  position:absolute;inset:0;pointer-events:none;
-  background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);
-  background-size:56px 56px;
-  mask-image:radial-gradient(ellipse 75% 65% at 50% 50%,black 20%,transparent 100%);
-}
-[data-theme="dark"] .page-hero-grid{background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);}
-.page-hero h1{font-size:clamp(36px,5.5vw,68px);font-weight:900;letter-spacing:-.03em;margin-bottom:18px;position:relative;line-height:1.05;}
-.page-hero h1 em{color:var(--gold);font-style:normal;}
-.page-hero p{font-size:17px;color:var(--text2);max-width:520px;margin:0 auto;line-height:1.75;position:relative;}
 
-/* PLANS GRID */
+/* ═══════════════════════════════════════
+   HERO — FULL-WIDTH IMAGE (matches contact.html pattern)
+═══════════════════════════════════════ */
+.page-hero {
+  margin-top: var(--nav-h);
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.hero-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  z-index: 0;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(7,9,15,.88) 0%,
+    rgba(13,18,32,.78) 45%,
+    rgba(17,24,39,.65) 100%
+  );
+  z-index: 1;
+}
+.hero-grid-tex {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 2;
+}
+.hero-glow {
+  position: absolute;
+  width: 700px; height: 400px;
+  background: radial-gradient(ellipse, rgba(240,180,41,.13) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+}
+.hero-content {
+  position: relative;
+  z-index: 3;
+  padding: 80px 28px;
+  color: #fff;
+  max-width: 680px;
+}
+.hero-content .label-tag {
+  color: var(--gold);
+  background: rgba(240,180,41,.12);
+  border-color: rgba(240,180,41,.28);
+  margin-bottom: 18px;
+  display: inline-flex;
+  justify-content: center;
+}
+.hero-content h1 {
+  font-size: clamp(36px, 5.5vw, 68px);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  margin-bottom: 18px;
+  line-height: 1.05;
+  color: #fff;
+}
+.hero-content h1 em { color: var(--gold); font-style: normal; }
+.hero-content p {
+  font-size: 17px;
+  color: rgba(255,255,255,.62);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.75;
+}
+
+/* ═══════════════════════════════════════
+   SOCIAL PROOF STRIP — photos of creators
+   Sits just above the CTA, gives human
+   credibility to the pricing decision
+═══════════════════════════════════════ */
+.proof-strip {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 28px 64px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.proof-card {
+  position: relative;
+  border-radius: var(--r2);
+  overflow: hidden;
+  height: 200px;
+}
+.proof-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+  transition: transform .5s ease;
+}
+.proof-card:hover img { transform: scale(1.04); }
+.proof-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(7,9,15,.82) 0%, rgba(7,9,15,.1) 55%);
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+}
+.proof-card-text strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 2px;
+  letter-spacing: -.01em;
+}
+.proof-card-text span {
+  font-size: 11px;
+  color: rgba(255,255,255,.55);
+}
+.proof-card-badge {
+  position: absolute;
+  top: 12px; left: 12px;
+  background: rgba(240,180,41,.15);
+  border: 1px solid rgba(240,180,41,.35);
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+/* ═══════════════════════════════════════
+   PLANS GRID (unchanged from original)
+═══════════════════════════════════════ */
 .plans-grid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
   max-width:var(--max-w);margin:0 auto;padding:0 28px;
@@ -44,7 +176,6 @@
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:var(--pc,var(--border2));transition:opacity .3s;opacity:0;
 }
-/* Hover glow — subtle luxury effect */
 .card::after{
   content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(circle at top,var(--gold-dim),transparent 60%);
@@ -85,7 +216,9 @@
 .feat-cross{color:var(--text2);opacity:.4;font-size:14px;flex-shrink:0;margin-top:1px;}
 .feat-muted{color:var(--text2);}
 
-/* COMPARISON TABLE */
+/* ═══════════════════════════════════════
+   COMPARISON TABLE (unchanged)
+═══════════════════════════════════════ */
 .table-wrap{overflow-x:auto;margin-top:44px;}
 table{width:100%;border-collapse:collapse;font-size:14px;}
 thead th{
@@ -104,7 +237,9 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
 .t-check{color:var(--green);font-size:16px;}
 .t-cross{color:var(--text2);opacity:.35;font-size:16px;}
 
-/* FAQ */
+/* ═══════════════════════════════════════
+   FAQ (unchanged)
+═══════════════════════════════════════ */
 .faq-wrap{max-width:720px;margin:0 auto;}
 .faq-item{border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
 .faq-q{
@@ -123,23 +258,102 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
 }
 .faq-item.open .faq-a{display:block;}
 
-/* CTA BANNER — layout only; colours from shared.css */
-.cta-band{
-  margin:0 28px 80px;
-  background:linear-gradient(135deg,var(--gold-dim),rgba(201,126,8,.01));
-  border:1px solid var(--gold-glo);border-radius:var(--r2);
-  padding:72px 52px;text-align:center;position:relative;overflow:hidden;
+/* ═══════════════════════════════════════
+   CTA BANNER — split layout with photo
+   (same pattern as index.html)
+═══════════════════════════════════════ */
+.cta-section { padding: 56px 0 80px; }
+.cta-band {
+  max-width: var(--max-w);
+  margin: 0 28px;
+  position: relative;
+  border-radius: var(--r2);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 280px;
 }
-[data-theme="dark"] .cta-band{background:linear-gradient(135deg,rgba(240,180,41,.08),rgba(240,180,41,.01));}
-.cta-band::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 80% at 50% 50%,var(--gold-dim),transparent);}
-.cta-band h2{font-size:clamp(24px,4vw,44px);margin-bottom:12px;position:relative;}
-.cta-band p{font-size:16px;color:var(--text2);margin-bottom:32px;position:relative;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.7;}
-.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
+.cta-text-side {
+  background: linear-gradient(135deg, #07090f 0%, #0d1220 100%);
+  padding: 52px 44px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.cta-text-side::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 80% at 0% 50%, rgba(240,180,41,.08), transparent);
+  pointer-events: none;
+}
+.cta-text-side .label-tag {
+  color: rgba(240,180,41,.85);
+  background: rgba(240,180,41,.1);
+  border-color: rgba(240,180,41,.2);
+  margin-bottom: 14px;
+  display: inline-flex;
+}
+.cta-text-side h2 {
+  font-size: clamp(22px, 3vw, 36px);
+  color: #fff;
+  margin-bottom: 10px;
+  line-height: 1.15;
+  position: relative;
+}
+.cta-text-side p {
+  font-size: 15px;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 24px;
+  line-height: 1.7;
+  max-width: 320px;
+  position: relative;
+}
+.cta-acts { display: flex; gap: 12px; flex-wrap: wrap; position: relative; }
+.cta-image-side {
+  position: relative;
+  overflow: hidden;
+}
+.cta-img-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  height: 100%;
+  gap: 3px;
+}
+.cta-img-grid img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .5s ease;
+}
+.cta-img-grid img:first-child { grid-row: 1 / 3; }
+.cta-img-grid img:hover { transform: scale(1.05); }
+.cta-img-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(7,9,15,.55) 0%, transparent 35%);
+  pointer-events: none;
+}
 
-@media(max-width:900px){.plans-grid{grid-template-columns:1fr;max-width:480px;}}
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media(max-width:900px){
+  .plans-grid{grid-template-columns:1fr;max-width:480px;}
+  .proof-strip{grid-template-columns:1fr 1fr;}
+  .proof-strip .proof-card:last-child{display:none;}
+  .cta-band{grid-template-columns:1fr;}
+  .cta-image-side{height:200px;}
+}
 @media(max-width:640px){
-  .cta-band{padding:48px 20px;margin:0 12px 60px;}
   .plans-grid{padding:0 16px;}
+  .proof-strip{grid-template-columns:1fr;padding:0 16px 48px;}
+  .proof-strip .proof-card:nth-child(2){display:none;}
+  .cta-text-side{padding:36px 24px;}
+  .cta-band{margin:0 12px;}
 }
 </style>
 </head>
@@ -149,13 +363,23 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
 
 <div class="page-wrap">
 
-  <!-- HERO -->
+  <!-- ═══════════════ HERO with background image ═══════════════ -->
   <div class="page-hero">
-    <div class="page-hero-glow"></div>
-    <div class="page-hero-grid"></div>
-    <div class="label-tag" style="justify-content:center;">Pricing</div>
-    <h1 class="h1">Start Free.<br><em>Upgrade When Ready.</em></h1>
-    <p class="text">All plans include access to ImpactGrid Creator Studio. No hidden fees, no surprise charges.</p>
+    <img
+      class="hero-bg-img"
+      src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=1600&h=600&fit=crop&crop=center"
+      alt="Creator growing their audience"
+      loading="eager"
+    />
+    <div class="hero-overlay"></div>
+    <div class="hero-grid-tex"></div>
+    <div class="hero-glow"></div>
+
+    <div class="hero-content">
+      <div class="label-tag">Pricing</div>
+      <h1>Start Free.<br><em>Upgrade When Ready.</em></h1>
+      <p>All plans include access to ImpactGrid Creator Studio. No hidden fees, no surprise charges.</p>
+    </div>
   </div>
 
   <div class="divider"></div>
@@ -340,21 +564,75 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
 
   <div class="divider"></div>
 
-  <!-- CTA -->
-  <section class="section">
-    <div class="cta-band">
-      <div class="label-tag" style="justify-content:center;">Get Started</div>
-      <h2 class="h2">Ready to start growing?</h2>
-      <p class="text">Join ImpactGrid free today. No card, no commitment — just real creator intelligence.</p>
-      <div style="display:flex;justify-content:center;margin-bottom:14px;">
-        <span class="chip chip-green">✓ No card required</span>
+  <!-- SOCIAL PROOF PHOTOS — creators who've grown with ImpactGrid -->
+  <section class="section" style="padding-bottom:0;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div class="label-tag">Trusted by creators</div>
+      <h2 class="h2" style="margin-bottom:8px;">Join 2,400+ creators already growing</h2>
+      <p style="color:var(--text2);font-size:15px;max-width:440px;margin:0 auto;line-height:1.7;">From solo YouTubers to full agencies — ImpactGrid powers creators at every level.</p>
+    </div>
+    <div class="proof-strip">
+      <div class="proof-card">
+        <img src="https://images.unsplash.com/photo-1589156280159-27698a70f29e?w=600&h=400&fit=crop&crop=top" alt="Creator" loading="lazy"/>
+        <div class="proof-card-overlay">
+          <div class="proof-card-text">
+            <strong>Content creators</strong>
+            <span>TikTok · YouTube · Instagram</span>
+          </div>
+        </div>
+        <div class="proof-card-badge">Free → Pro</div>
       </div>
-      <div class="cta-acts">
-        <a href="creator-studio.html" class="btn btn-primary">Start free →</a>
-        <a href="contact.html" class="btn btn-secondary">Talk to us</a>
+      <div class="proof-card">
+        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop&crop=top" alt="Team" loading="lazy"/>
+        <div class="proof-card-overlay">
+          <div class="proof-card-text">
+            <strong>Agencies &amp; teams</strong>
+            <span>Multi-brand · Enterprise plan</span>
+          </div>
+        </div>
+        <div class="proof-card-badge">Enterprise</div>
+      </div>
+      <div class="proof-card">
+        <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&h=400&fit=crop&crop=top" alt="Business owner" loading="lazy"/>
+        <div class="proof-card-overlay">
+          <div class="proof-card-text">
+            <strong>Business owners</strong>
+            <span>Brand growth · Consulting</span>
+          </div>
+        </div>
+        <div class="proof-card-badge">Pro → Enterprise</div>
       </div>
     </div>
   </section>
+
+  <!-- CTA — split layout with photo mosaic -->
+  <div class="cta-section">
+    <div class="cta-band anim">
+
+      <div class="cta-text-side">
+        <div class="label-tag">Get Started</div>
+        <h2>Ready to start growing?</h2>
+        <p>Join ImpactGrid free today. No card, no commitment — just real creator intelligence.</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;position:relative;">
+          <span class="chip chip-green" style="font-size:12px;">✓ No card required</span>
+        </div>
+        <div class="cta-acts">
+          <a href="creator-studio.html" class="btn btn-primary">Start free →</a>
+          <a href="contact.html" class="btn btn-secondary">Talk to us</a>
+        </div>
+      </div>
+
+      <div class="cta-image-side">
+        <div class="cta-img-grid">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&h=800&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+          <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=faces" alt="Creator" loading="lazy"/>
+        </div>
+        <div class="cta-img-veil"></div>
+      </div>
+
+    </div>
+  </div>
 
 </div>
 
@@ -371,7 +649,6 @@ document.addEventListener('DOMContentLoaded', function() {
   renderNav('pricing.html');
   renderFooter();
 
-  /* ── Fill all plan values from IG_PLAN_CONFIG (single source of truth) ── */
   var cfg = window.IG_PLAN_CONFIG || {};
   var f   = cfg.free         || {};
   var p   = cfg.professional || {};
@@ -382,17 +659,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var ret = f.data_retention_days || 7;
 
-  // Feature bullets — Free
   set('pr-free-ai',         (f.ai_uses || 3) + ' AI uses per month');
   set('pr-free-carousels',  'up to ' + (f.carousels || 3) + ' saves');
   set('pr-free-retention',  ret);
   set('pr-free-portfolios', 'Up to ' + (f.portfolios || 3) + ' portfolios');
   set('pr-free-evaluator',  (f.evaluator || 3) + '/month');
   set('pr-free-content',    (f.content_plan || 3) + '/month');
-  // Apply retention to second instance too
   document.querySelectorAll('.pr-free-ret2').forEach(function(el) { el.textContent = ret; });
 
-  // Feature bullets — Professional
   set('pr-pro-ai',        (p.ai_uses || 100) + ' AI uses per month');
   set('pr-pro-carousels', 'up to ' + (p.carousels || 20) + ' carousels');
   set('pr-pro-portfolios', (p.portfolios || 1) + ' live portfolio');
@@ -401,13 +675,11 @@ document.addEventListener('DOMContentLoaded', function() {
   set('pr-pro-content',   inf(p.content_plan) >= 99 ? 'unlimited' : inf(p.content_plan) + '/month');
   set('pr-pro-support',   (p.support || 'Email') + ' support');
 
-  // Feature bullets — Enterprise
   set('pr-ent-ai',        inf(e.ai_uses) === 'Unlimited' ? 'Unlimited AI uses' : e.ai_uses + ' AI uses');
   set('pr-ent-portfolios', 'Up to ' + (e.portfolios || 3) + ' live portfolios');
   set('pr-ent-adviser',   inf(e.adviser, 'unlimited') + ' messages');
   set('pr-ent-support',   (e.support || 'Priority (24hr)') + ' — reply within 24hrs');
 
-  // Comparison table
   set('tbl-free-ai',         f.ai_uses || 3);
   set('tbl-pro-ai',          p.ai_uses || 100);
   set('tbl-ent-ai',          'Unlimited');
@@ -430,7 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
   set('tbl-pro-support',     p.support || 'Email');
   set('tbl-ent-support',     e.support || 'Priority (24hr)');
 });
-});
 
 // FAQ accordion
 document.querySelectorAll('.faq-q').forEach(btn => {
@@ -441,38 +712,24 @@ document.querySelectorAll('.faq-q').forEach(btn => {
     if (!isOpen) item.classList.add('open');
   });
 });
+
+// Scroll animations
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
+}, {threshold:0.06});
+document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
 </script>
-<!-- AUTH NUDGE — prompts visitors to create an account before/after paying -->
+
+<!-- AUTH NUDGE -->
 <div id="authNudge" class="auth-nudge">
   <div class="auth-nudge-inner">
     <span>Create a free account to unlock your plan</span>
-    <a href="join.html" >
-      Sign up free →
-    </a>
+    <a href="join.html">Sign up free →</a>
   </div>
 </div>
-
 <style>
-.auth-nudge {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--card);
-  border: 1px solid var(--border2);
-  border-radius: 999px;
-  padding: 10px 18px;
-  box-shadow: var(--sh2);
-  z-index: 2000;
-  white-space: nowrap;
-}
-.auth-nudge-inner {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  font-size: 12px;
-  color: var(--text2);
-}
+.auth-nudge{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border2);border-radius:999px;padding:10px 18px;box-shadow:var(--sh2);z-index:2000;white-space:nowrap;}
+.auth-nudge-inner{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--text2);}
 </style>
 
 </body>
