@@ -53,12 +53,12 @@
 .hero-split {
   position: relative;
   z-index: 1;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 72px 40px 80px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
+  grid-template-columns: 1fr 1.1fr 0.9fr;
+  gap: 36px;
   align-items: center;
 }
 
@@ -1072,6 +1072,7 @@
   .hero-split{grid-template-columns:1fr;padding:52px 28px 0;gap:0;text-align:center;}
   .hero-left{display:flex;flex-direction:column;align-items:center;padding-bottom:40px;}
   .hero-sub{max-width:100%;}
+  .hero-video-col{display:none;}
   .hero-right{min-height:340px;border-radius:0;}
   .hero-woman-wrap{max-width:100%;border-radius:0;}
   .hero-woman-wrap img{min-height:340px;object-position:center 20%;}
@@ -1112,41 +1113,68 @@
 }
 
 /* ═══════════════════════════════════════
-   FLOATING DEMO VIDEO BOX
+   HERO VIDEO COLUMN (middle column)
 ═══════════════════════════════════════ */
-.hero-demo-video {
-  position: absolute;
-  bottom: 28px;
-  left: -20px;
-  width: 220px;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08);
-  z-index: 25;
-  background: #07090f;
-  animation: badgePop .5s cubic-bezier(.34,1.56,.64,1) 1s both;
+.hero-video-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  z-index: 2;
 }
-.hero-demo-video video {
+.hero-video-wrap {
   width: 100%;
-  display: block;
-  border-radius: 0 0 16px 16px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #07090f;
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(240,180,41,.08);
+  position: relative;
 }
-.hero-demo-video-label {
-  background: linear-gradient(90deg, rgba(240,180,41,.18), rgba(240,180,41,.06));
-  border-bottom: 1px solid rgba(240,180,41,.2);
-  padding: 6px 12px;
+.hero-video-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(to bottom, rgba(7,9,15,.0) 70%, rgba(7,9,15,.55) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-video-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.04);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.hero-video-dots {
+  display: flex;
+  gap: 5px;
+}
+.hero-video-dots span {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+}
+.hero-video-dots span:nth-child(1) { background: #ff5f57; }
+.hero-video-dots span:nth-child(2) { background: #febc2e; }
+.hero-video-dots span:nth-child(3) { background: #28c840; }
+.hero-video-title {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--gold);
   font-family: var(--fm);
+  flex: 1;
+  text-align: center;
 }
-@media(max-width:900px){
-  .hero-demo-video { width: 160px; left: 0; bottom: 16px; }
-}
-@media(max-width:640px){
-  .hero-demo-video { display: none; }
+.hero-video-wrap video {
+  width: 100%;
+  display: block;
+  max-height: 420px;
+  object-fit: cover;
 }
 </style>
 </head>
@@ -1193,6 +1221,11 @@
     <div class="hero-left anim">
       <div class="hero-eyebrow">ImpactGrid Creator Intelligence</div>
 
+      <h1 class="hero-title">
+        Start creating<br/>
+        with <span class="underline-gold">ImpactGrid</span>
+      </h1>
+
       <p class="hero-sub">
         AI tools that write your content, find your trends,
         and build your carousels — so you can focus on growing.
@@ -1217,6 +1250,26 @@
         <div class="hero-proof-text">
           <strong>2,400+ creators</strong> already growing with ImpactGrid
         </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE: DEMO VIDEO -->
+    <div class="hero-video-col anim">
+      <div class="hero-video-wrap">
+        <div class="hero-video-topbar">
+          <div class="hero-video-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="hero-video-title">▶ Live Demo</div>
+        </div>
+        <video
+          src="impactgrid-demo.mp4"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="auto"
+        ></video>
       </div>
     </div>
 
@@ -1251,19 +1304,6 @@
           src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1000&fit=crop&crop=top"
           alt="Creator"
         />
-      </div>
-
-      <!-- Small demo video box floating over the woman image -->
-      <div class="hero-demo-video">
-        <div class="hero-demo-video-label">▶ Live Demo</div>
-        <video
-          src="impactgrid-demo.mp4"
-          autoplay
-          loop
-          muted
-          playsinline
-          preload="auto"
-        ></video>
       </div>
 
     </div>
