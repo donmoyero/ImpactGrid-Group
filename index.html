@@ -82,18 +82,17 @@
 }
 .hero-image::before {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 110% 100% at 75% 35%, #8b1a1a 0%, #5a0a0a 45%, #0b0d14 85%);
-  z-index: 1;
+  background: radial-gradient(ellipse 120% 100% at 70% 40%, #6b1a1a 0%, #3a0a0a 55%, #0b0d14 100%);
+  z-index: 0;
   mix-blend-mode: multiply;
 }
 .hero-image::after {
   content: ''; position: absolute; inset: 0;
   background:
-    linear-gradient(to right, rgba(11,13,20,.9) 0%, rgba(11,13,20,.35) 38%, transparent 62%),
-    linear-gradient(to top, rgba(11,13,20,.7) 0%, transparent 20%),
-    linear-gradient(to bottom, rgba(11,13,20,.5) 0%, transparent 15%);
+    linear-gradient(to right, rgba(11,13,20,.85) 0%, rgba(11,13,20,.2) 35%, transparent 65%),
+    linear-gradient(to top, rgba(11,13,20,.6) 0%, transparent 25%);
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* Responsive hero */
@@ -348,7 +347,7 @@
 <!-- ═══════════════ HERO ═══════════════ -->
 <div class="hero">
   <div class="hero-inner">
-    <div class="hero-text">
+    <div class="hero-text anim">
       <div class="hero-eyebrow">Try Creator Studio for Free</div>
       <h1 class="hero-title">Turn ideas into<br/>high-performing<br/>content in seconds.</h1>
       <p class="hero-sub">Use it instantly. Your work won't be saved unless you create an account.</p>
@@ -357,7 +356,7 @@
       </a>
     </div>
     <div class="hero-image">
-      <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&h=1100&fit=crop&crop=faces,top" alt="Creator" style="filter: contrast(1.05) brightness(0.92);"/>
+      <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&h=1100&fit=crop&crop=faces,top" alt="Creator"/>
     </div>
   </div>
 </div>
@@ -530,13 +529,13 @@
       <h2 class="sec-h">See ImpactGrid in action.</h2>
       <p class="sec-p" style="max-width:520px;margin:12px auto 0;">From trend spotting to finished content — watch Dijo handle everything in real time.</p>
     </div>
-    <div class="demo-video-wrap anim">
+    <div class="demo-video-wrap">
       <div class="demo-topbar">
         <div class="demo-topbar-dots"><span></span><span></span><span></span></div>
         <div class="demo-topbar-title">▶ ImpactGrid — Live Demo</div>
         <div class="demo-live-dot">Live</div>
       </div>
-      <video src="impactgrid-demo.mp4" autoplay loop muted playsinline preload="auto"></video>
+      <video id="demoVideo" src="https://res.cloudinary.com/dsaym55pt/video/upload/v1777601562/impactgrid-demo.mp4_eyjt6g.mp4" autoplay loop muted playsinline preload="auto"></video>
     </div>
   </div>
 </div>
@@ -658,5 +657,17 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="impactgrid-chat-bubble.js"></script>
+<script>
+(function(){
+  var v = document.getElementById('demoVideo');
+  if(!v) return;
+  v.muted = true;
+  function tryPlay(){ v.play().catch(function(){}); }
+  v.addEventListener('loadeddata', tryPlay);
+  v.addEventListener('ended', function(){ v.currentTime = 0; tryPlay(); });
+  v.addEventListener('pause', function(){ if(!v.ended) tryPlay(); });
+  window.addEventListener('load', tryPlay);
+})();
+</script>
 </body>
 </html>
