@@ -627,10 +627,46 @@ function toggleTheme(){ applyTheme(!isDark); }
 function submitNewsletter(){
   var input = document.getElementById('newsletterEmail');
   var msg   = document.getElementById('newsletterMsg');
-  if(!input.value.trim() || !input.value.includes('@')){ input.focus(); return; }
-  msg.classList.add('show');
-  input.value = '';
-  input.disabled = true;
+  var btn   = document.querySelector('.newsletter-btn');
+  var email = input.value.trim();
+
+  if(!email || !email.includes('@')){ input.focus(); return; }
+
+  // Loading state
+  btn.disabled = true;
+  btn.textContent = 'Subscribing…';
+  msg.classList.remove('show');
+  msg.style.color = '';
+
+  fetch('https://exeiojgldxqaakkybdij.supabase.co/functions/v1/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email })
+  })
+  .then(function(res){ return res.json(); })
+  .then(function(data){
+    if(data.success){
+      msg.textContent = '✓ You\'re in! Check your inbox for a welcome from Dijo.';
+      msg.style.color = '';
+      msg.classList.add('show');
+      input.value = '';
+      input.disabled = true;
+      btn.textContent = 'Subscribed ✓';
+    } else {
+      msg.textContent = data.error || 'Something went wrong. Please try again.';
+      msg.style.color = '#f87171';
+      msg.classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = 'Subscribe <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
+    }
+  })
+  .catch(function(){
+    msg.textContent = 'Network error. Please try again.';
+    msg.style.color = '#f87171';
+    msg.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = 'Subscribe <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
+  });
 }
 document.getElementById('newsletterEmail').addEventListener('keydown', function(e){
   if(e.key === 'Enter') submitNewsletter();
