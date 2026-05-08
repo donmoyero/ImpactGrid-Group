@@ -218,50 +218,94 @@
     return String(s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   }
 
-  /* ─── 3-D PAGE-FLIP ANIMATION ───────────────────────────────────
+  /* ─── STACKED BOOK-FLIP ANIMATION ──────────────────────────────
      Layout inside #calWeekGrid:
-       .cal-book-scene  (perspective container)
-         .cal-book-wrap (transform-style: preserve-3d; transitions rotateY)
-           .cal-book-front  (face A — current page)
-           .cal-book-back   (face B — next page, pre-rendered, rotateY 180deg)
-     On flip forward: wrap goes 0 → -180deg
-     On flip backward: wrap goes 0 → +180deg
-     After animation: swap faces, reset transform instantly, re-render.
+       .cal-book-stage
+         .cal-book          (7 stacked .cal-fp-page elements)
+           .cal-fp-page#calFpPage0..6  (z-index: 7,6,5…1)
+             .cal-fp-front  (current day content — visible)
+             .cal-fp-back   (next day content — hidden until flip)
+     Forward flip: calFpPage[i].classList.add('flipped')   → rotateY(-180deg)
+     Back flip:    calFpPage[i].classList.remove('flipped') → rotates back
+     Flipped pages stack up on the left — you can always flip back.
   ─────────────────────────────────────────────────────────────── */
   var _flipping = false;
 
-  /* Build the two-face book structure once, then reuse it */
+  /* Build or rebuild the full 7-page stacked book */
   function ensureBookDOM() {
     var grid = document.getElementById('calWeekGrid');
     if (!grid) return null;
-    var scene = grid.querySelector('.cal-book-scene');
-    if (scene) return scene;
-    scene = document.createElement('div');
-    scene.className = 'cal-book-scene';
-    var wrap = document.createElement('div');
-    wrap.className = 'cal-book-wrap';
-    wrap.id = 'calBookWrap';
-    var front = document.createElement('div');
-    front.className = 'cal-book-front cal-book-face';
-    front.id = 'calBookFront';
-    var back = document.createElement('div');
-    back.className = 'cal-book-back cal-book-face';
-    back.id = 'calBookBack';
-    wrap.appendChild(front);
-    wrap.appendChild(back);
-    scene.appendChild(wrap);
-    grid.appendChild(scene);
+    var existing = grid.querySelector('.cal-book-stage');
+    if (existing) return existing;
 
-    /* Tap-zone on the page corners */
-    wrap.addEventListener('click', function (e) {
-      if (_flipping) return;
-      var r = wrap.getBoundingClientRect();
-      var x = e.clientX - r.left;
-      /* Right 30% → next page, left 30% → prev */
-      if (x > r.width * 0.70 && _pageIndex < 6) { window.calNextDay(); }
-      else if (x < r.width * 0.30 && _pageIndex > 0) { window.calPrevDay(); }
-    });
-    return scene;
+    var stage = document.createElement('div');
+    stage.className = 'cal-book-stage';
+
+    var book = document.createElement('div');
+    book.className = 'cal-book';
+    book.id = 'calBook';
+
+    /* 7 pages — page 0 is on top (highest z-index) */
+    for (var i = 0; i < 7; i++) {
+      var page = document.createElement('div');
+      page.className = 'cal-fp-page';
+      page.id = 'calFpPage' + i;
+      page.style.zIndex = String(7 - i);
+
+      var front = document.createElement('div');
+      front.className = 'cal-fp-front';
+      front.id = 'calFpFront' + i;
+
+      var back = document.createElement('div');
+      back.className = 'cal-fp-back';
+      back.id = 'calFpBack' + i;
+
+      page.appendChild(front);
+      page.appendChild(back);
+      book.appendChild(page);
+
+      /* Tap zones: right 40% of any page = next, left 40% = prev */
+      (function(idx) {
+        page.addEventListener('click', function (e) {
+          if (_flipping) return;
+          /* Only respond to the topmost visible page */
+          var r = page.getBoundingClientRect();
+          var x = e.clientX - r.left;
+          if (x > r.width * 0.60 && _pageIndex < 6) { window.calNextDay(); }
+          else if (x < r.width * 0.40 && _pageIndex > 0) { window.calPrevDay(); }
+        });
+      }(i));
+    }
+
+    stage.appendChild(book);
+    grid.appendChild(stage);
+    return stage;
+  }
+
+  /* Populate all 7 page fronts + backs with rendered content */
+  function populateAllPages() {
+    for (var i = 0; i < 7; i++) {
+      var front = document.getElementById('calFpFront' + i);
+      var back  = document.getElementById('calFpBack'  + i);
+      if (front) front.innerHTML = buildPageHTML(i);
+      /* Back face shows the NEXT page (what you'll see after flipping) */
+      if (back)  back.innerHTML  = (i + 1 < 7) ? buildPageHTML(i + 1) : '<div class="cal-fp-end"><span>📅</span><div>End of week</div></div>';
+    }
+  }
+
+  /* Sync flipped state to match _pageIndex without animation */
+  function syncFlippedState() {
+    for (var i = 0; i < 7; i++) {
+      var page = document.getElementById('calFpPage' + i);
+      if (!page) continue;
+      if (i < _pageIndex) {
+        page.classList.add('flipped');
+        page.style.zIndex = String(7 - i);
+      } else {
+        page.classList.remove('flipped');
+        page.style.zIndex = String(7 - i);
+      }
+    }
   }
 
   /* Render page content into a DOM node (not innerHTML on grid) */
@@ -407,32 +451,24 @@
   function animateFlip(dir, cb) {
     if (_flipping) return;
     ensureBookDOM();
-    var wrap  = document.getElementById('calBookWrap');
-    var front = document.getElementById('calBookFront');
-    var back  = document.getElementById('calBookBack');
-    if (!wrap) { cb(); return; }
-
-    /* Pre-render the incoming page onto the back face */
-    var nextIdx = _pageIndex + dir;
-    back.innerHTML = buildPageHTML(nextIdx);
-
     _flipping = true;
-    wrap.style.transition = 'none';
-    wrap.style.transform  = 'rotateY(0deg)';
-    void wrap.offsetWidth; /* force reflow */
 
-    wrap.style.transition = 'transform 0.55s cubic-bezier(0.645,0.045,0.355,1.000)';
-    wrap.style.transform  = dir > 0 ? 'rotateY(-180deg)' : 'rotateY(180deg)';
+    if (dir > 0) {
+      /* Flip forward: flip page at current index */
+      var pg = document.getElementById('calFpPage' + _pageIndex);
+      if (pg) pg.classList.add('flipped');
+    } else {
+      /* Flip back: un-flip the previous page */
+      var pgBack = document.getElementById('calFpPage' + (_pageIndex - 1));
+      if (pgBack) pgBack.classList.remove('flipped');
+    }
 
     setTimeout(function () {
-      cb(); /* update _pageIndex */
-      /* Swap: render new current page onto front, reset wrap instantly */
-      front.innerHTML = buildPageHTML(_pageIndex);
-      wrap.style.transition = 'none';
-      wrap.style.transform  = 'rotateY(0deg)';
-      back.innerHTML = '';
+      cb(); /* caller updates _pageIndex */
+      populateAllPages();
+      renderSpineEl();
       _flipping = false;
-    }, 560);
+    }, 720);
   }
 
   /* ─── DATE HELPERS ───────────────────────────────────────────── */
@@ -461,13 +497,13 @@
     return h + '</div>';
   }
 
-  /* ─── RENDER GRID (one page/day) ─────────────────────────────── */
+  /* ─── RENDER GRID (stacked book) ────────────────────────────── */
   function renderGrid() {
     var grid = document.getElementById('calWeekGrid');
     if (!grid) return;
     ensureBookDOM();
-    var front = document.getElementById('calBookFront');
-    if (front) front.innerHTML = buildPageHTML(_pageIndex);
+    populateAllPages();
+    syncFlippedState();
     renderSpineEl();
   }
 
@@ -653,23 +689,31 @@
 
   /* ─── NAVIGATION ─────────────────────────────────────────────── */
   window.calPrevDay = function () {
-    if (_pageIndex <= 0) return;
-    animateFlip(-1, function () { _pageIndex--; renderGrid(); });
+    if (_pageIndex <= 0 || _flipping) return;
+    animateFlip(-1, function () { _pageIndex--; });
   };
   window.calNextDay = function () {
-    if (_pageIndex >= 6) return;
-    animateFlip(1, function () { _pageIndex++; renderGrid(); });
+    if (_pageIndex >= 6 || _flipping) return;
+    animateFlip(1, function () { _pageIndex++; });
   };
   window.calGoToday = function () {
     var ti = todayIndex();
     if (_pageIndex === ti) return;
-    var dir = ti > _pageIndex ? 1 : -1;
-    animateFlip(dir, function () { _pageIndex = ti; renderGrid(); });
+    window.calGoToPage(ti);
   };
+  /* Jump multiple pages — flip one at a time with 120ms between each */
   window.calGoToPage = function (idx) {
-    if (idx === _pageIndex) return;
+    if (idx === _pageIndex || _flipping) return;
     var dir = idx > _pageIndex ? 1 : -1;
-    animateFlip(dir, function () { _pageIndex = idx; renderGrid(); });
+    function flipOne() {
+      if (_pageIndex === idx) { renderSpineEl(); return; }
+      animateFlip(dir, function () {
+        _pageIndex += dir;
+        if (_pageIndex !== idx) setTimeout(flipOne, 130);
+        else renderSpineEl();
+      });
+    }
+    flipOne();
   };
   window.calPrevWeek = window.calPrevDay;
   window.calNextWeek = window.calNextDay;
@@ -990,35 +1034,86 @@
     s.textContent = `
       #calWeekGrid { display: block !important; overflow: visible; }
 
-      /* ── 3-D book flip ── */
-      .cal-book-scene {
+      /* ── Stacked book flip (p.html gallery mechanic) ── */
+      .cal-book-stage {
+        padding: 4px 0 8px;
+      }
+      .cal-book {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 3 / 4;
         perspective: 1400px;
-        perspective-origin: center center;
-      }
-      .cal-book-wrap {
-        position: relative;
-        transform-style: preserve-3d;
-        transform-origin: center center;
         cursor: pointer;
+        /* Allow page content to overflow for tall pages */
+        min-height: 480px;
       }
-      .cal-book-face {
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
-      }
-      .cal-book-front {
-        position: relative;
-      }
-      .cal-book-back {
+      /* Each page stacked absolutely, flips from left spine */
+      .cal-fp-page {
         position: absolute;
         inset: 0;
-        transform: rotateY(180deg);
-        overflow-y: auto;
+        transform-origin: left center;
+        transform-style: preserve-3d;
+        transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
+        border-radius: 4px 12px 12px 4px;
+        box-shadow: 6px 0 32px rgba(0,0,0,.35), -2px 0 6px rgba(0,0,0,.15);
       }
+      .cal-fp-page.flipped {
+        transform: rotateY(-180deg);
+      }
+      /* Front and back faces */
+      .cal-fp-front, .cal-fp-back {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        overflow-y: auto;
+        border-radius: 4px 12px 12px 4px;
+        background: var(--card);
+        border: 1px solid var(--border);
+      }
+      .cal-fp-back {
+        transform: rotateY(180deg);
+        border-radius: 12px 4px 4px 12px;
+      }
+      /* Spine shadow crease on each page */
+      .cal-fp-front::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 22px;
+        background: linear-gradient(to right, rgba(0,0,0,.25), rgba(0,0,0,.05) 60%, transparent);
+        pointer-events: none;
+        z-index: 2;
+        border-radius: 4px 0 0 4px;
+      }
+      .cal-fp-back::before {
+        content: '';
+        position: absolute;
+        right: 0; top: 0; bottom: 0;
+        width: 22px;
+        background: linear-gradient(to left, rgba(0,0,0,.25), rgba(0,0,0,.05) 60%, transparent);
+        pointer-events: none;
+        z-index: 2;
+        border-radius: 0 4px 4px 0;
+      }
+      /* End-of-week placeholder */
+      .cal-fp-end {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: var(--text3);
+        font-family: 'Syne', sans-serif;
+        font-size: 14px;
+      }
+      .cal-fp-end span { font-size: 36px; }
 
       /* ── Page tab (red top strip like a calendar pad) ── */
       .cal-page-tab {
         background: #c0392b;
-        border-radius: 12px 12px 0 0;
+        border-radius: 3px 12px 0 0;
         padding: 9px 16px 8px;
         display: flex;
         align-items: center;
@@ -1036,9 +1131,7 @@
       /* ── Big date number with page-curl ── */
       .cal-page-bigdate {
         background: var(--card);
-        border: 1px solid var(--border);
-        border-top: none;
-        border-radius: 0 0 0 0;
+        border-bottom: 1px solid var(--border);
         padding: 14px 20px 10px;
         display: flex;
         align-items: baseline;
@@ -1070,15 +1163,6 @@
         background: linear-gradient(135deg, transparent 50%, var(--bg2) 50%, var(--border) 70%, var(--card) 100%);
         border-radius: 48px 0 0 0;
         opacity: .7;
-      }
-
-      /* ── Page wrapper (everything below the tab lives here) ── */
-      .cal-book-front, .cal-book-back {
-        background: var(--bg2);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 3px 3px 16px rgba(0,0,0,.10), -1px 0 0 rgba(0,0,0,.04);
       }
 
       .cal-spine { display:flex; gap:5px; justify-content:center; padding:10px 0 14px; }
