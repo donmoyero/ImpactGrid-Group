@@ -1004,9 +1004,8 @@ function renderSlide(){
       hcSwirl.innerHTML='<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M55 20 C55 20 70 30 62 48 C54 66 30 62 22 46 C14 30 28 14 44 18" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M44 18 L38 10 M44 18 L52 14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       hcEl.appendChild(hcSwirl);
       var hcBot=document.createElement('div');
-      hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;';
-      hcBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.IMPACTGRIDGROUP.COM')+'</span>'
-        +'<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.08em;">SLIDE '+String(ST.cur+1).padStart(2,'0')+'</span>';
+      hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;align-items:center;padding:0 14px;height:26px;border-top:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+      hcBot.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.78);">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.IMPACTGRIDGROUP.COM')+'</span>';
       hcEl.appendChild(hcBot);
       break;
     }
@@ -1043,14 +1042,11 @@ function renderSlide(){
         ecBody.textContent=slide.body;
         ecEl.appendChild(ecBody);
       }
-      var ecHandle=document.createElement('div');
-      ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
-      ecHandle.style.cssText='position:absolute;bottom:16px;left:18px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:rgba(255,255,255,.65);letter-spacing:.2px;';
-      ecEl.appendChild(ecHandle);
-      var ecStars=document.createElement('div');
-      ecStars.innerHTML='✽ ✽ ✽';
-      ecStars.style.cssText='position:absolute;bottom:14px;right:16px;z-index:2;font-size:13px;color:rgba(255,255,255,.55);letter-spacing:5px;';
-      ecEl.appendChild(ecStars);
+      var ecFoot=document.createElement('div');
+      ecFoot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:26px;border-top:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+      var urlTxt=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+      ecFoot.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.78);">'+urlTxt+'</span>'+'<span style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:4px;">✽ ✽ ✽</span>';
+      ecEl.appendChild(ecFoot);
       break;
     }
 
@@ -1093,14 +1089,11 @@ function renderSlide(){
       if(slide.body) ecolH+='<div class="s-body" style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ecolText.innerHTML=ecolH;
       ecolEl.appendChild(ecolText);
-      var ecolFoot=document.createElement('div');
-      ecolFoot.style.cssText='position:absolute;bottom:12px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
-      ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
-      ecolEl.appendChild(ecolFoot);
-      var ecolStars=document.createElement('div');
-      ecolStars.innerHTML='✽ ✽ ✽';
-      ecolStars.style.cssText='position:absolute;bottom:12px;right:14px;z-index:6;font-size:14px;color:#b0a090;letter-spacing:4px;';
-      ecolEl.appendChild(ecolStars);
+      var ecolFootBar=document.createElement('div');
+      ecolFootBar.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:26px;border-top:1px solid rgba(140,120,100,.35);background:rgba(240,235,225,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+      var ecolUrl=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+      ecolFootBar.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a09888;">'+ecolUrl+'</span>'+'<span style="font-size:11px;color:#b0a090;letter-spacing:4px;">✽ ✽ ✽</span>';
+      ecolEl.appendChild(ecolFootBar);
       break;
     }
 
@@ -1146,14 +1139,11 @@ function renderSlide(){
       var ec3b2=document.createElement('div');
       ec3b2.style.cssText='position:absolute;right:12px;width:24%;bottom:28px;height:46%;background-size:cover;background-position:center top;background-color:#8a7258;border-radius:3px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:3;'+(imgUrls[2]?'background-image:url('+imgUrls[2]+')':'');
       ec3El.appendChild(ec3b2);
-      var ec3Foot=document.createElement('div');
-      ec3Foot.style.cssText='position:absolute;bottom:12px;left:12px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
-      ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
-      ec3El.appendChild(ec3Foot);
-      var ec3Stars=document.createElement('div');
-      ec3Stars.innerHTML='✽ ✽ ✽';
-      ec3Stars.style.cssText='position:absolute;bottom:12px;right:12px;z-index:6;font-size:14px;color:#b0a090;letter-spacing:4px;';
-      ec3El.appendChild(ec3Stars);
+      var ec3FootBar=document.createElement('div');
+      ec3FootBar.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:26px;border-top:1px solid rgba(140,120,100,.35);background:rgba(240,235,225,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+      var ec3Url=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+      ec3FootBar.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a09888;">'+ec3Url+'</span>'+'<span style="font-size:11px;color:#b0a090;letter-spacing:4px;">✽ ✽ ✽</span>';
+      ec3El.appendChild(ec3FootBar);
       break;
     }
 
@@ -1162,8 +1152,13 @@ function renderSlide(){
   document.getElementById('sNum').textContent=(ST.cur+1)+' / '+ST.slides.length;
   var brandEl=document.getElementById('sBrand');
   var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
-  brandEl.textContent=editorialLayouts.indexOf(layout)===-1?(ST.brand||''):'';
-  brandEl.style.color=tc.head;
+  if(editorialLayouts.indexOf(layout)===-1){
+    var urlText=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+    brandEl.textContent=urlText;
+    brandEl.style.color='';  /* use CSS class color */
+  } else {
+    brandEl.textContent='';
+  }
 
   var badge2=document.getElementById('layoutBadge');
   if(badge2) badge2.textContent=layout.replace(/_/g,' ');
