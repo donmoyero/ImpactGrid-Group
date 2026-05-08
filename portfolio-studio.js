@@ -1550,7 +1550,15 @@ function renderPreview(pf) {
 function buildPortfolioHTML(pf) {
   const t       = THEMES[pf.theme || 'dark'];
   const accent  = pf.accent_color || t.accent;
-  const heroImgs = (pf.hero_media || []).map(m => m.url).filter(Boolean);
+  // Strip base64 data URIs — embedding many large base64 strings into the HTML
+  // template causes a RangeError: Invalid string length when many images are
+  // uploaded at once. We replace any data: URL with an empty string so the
+  // slide renders as a blank placeholder until a permanent URL is available.
+  const heroImgs = (pf.hero_media || [])
+    .map(m => m.url)
+    .filter(Boolean)
+    .map(url => (url.startsWith('data:') ? '' : url))
+    .filter(Boolean);
   const heroImg0 = heroImgs[0] || '';
   const logoUrl  = pf.logo_url || '';
   const initials = (pf.name || 'CR').split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
@@ -2306,13 +2314,24 @@ async function uploadImageToStorage(file, slot) {
   try {
     const blob = await compressImage(file);
 
+    // Use the authenticated user's JWT so Supabase RLS allows the upload.
+    // Fall back to the anon key only if no session is available.
+    let authToken = SUPABASE_KEY;
+    try {
+      const client = (typeof getSupabase === 'function') ? getSupabase() : null;
+      if (client) {
+        const { data } = await client.auth.getSession();
+        if (data?.session?.access_token) authToken = data.session.access_token;
+      }
+    } catch (_) { /* keep anon key */ }
+
     const res = await fetch(
       `${SUPABASE_URL}/storage/v1/object/portfolio-images/${path}`,
       {
         method: 'POST',
         headers: {
           'apikey':        SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Authorization': 'Bearer ' + authToken,
           'Content-Type':  'image/jpeg',
           'x-upsert':      'true'
         },
@@ -2359,35 +2378,48 @@ function _showUploadSpinner(wrap) {
 async function handleHeroUpload(event) {
   const files = Array.from(event.target.files || []);
   if (!files.length) return;
+  if (!psState.activePortfolio) return;
 
-  // Give immediate base64 preview for each file, then replace with real URL
+  psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
+
+  // Phase 1 — collect base64 previews for the thumbnail strip only.
+  // We do NOT call updatePreviewLive() with base64 data because embedding
+  // many large base64 strings into buildPortfolioHTML causes a
+  // RangeError: Invalid string length crash. Preview refreshes once in Phase 2.
+  const entries = [];
   for (const file of files) {
-    if (!psState.activePortfolio) return;
-    psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
-
-    // 1. Instant base64 preview so the user sees something immediately
     const previewUrl = await new Promise(res => {
       const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(file);
     });
     const entry = { type: file.type.startsWith('video') ? 'video' : 'image', url: previewUrl, credit: 'Uploaded', _uploading: true };
     psState.activePortfolio.hero_media.unshift(entry);
-    renderHeroMediaStrip(psState.activePortfolio.hero_media);
-    updatePreviewLive();
+    entries.unshift(entry);
+  }
+  renderHeroMediaStrip(psState.activePortfolio.hero_media);
+  // No updatePreviewLive() here — base64 URLs are too large to embed safely.
 
-    // 2. Compress + upload in background
-    showToast('Uploading image…');
+  // Phase 2 — upload all files in parallel, then refresh the preview once.
+  showToast(`Uploading ${files.length} image${files.length > 1 ? 's' : ''}…`);
+  let successCount = 0;
+  await Promise.all(files.map(async (file, i) => {
+    const entry = entries[i];
     const permanentUrl = await uploadImageToStorage(file, 'hero');
     if (permanentUrl) {
       entry.url = permanentUrl;
-      delete entry._uploading;
-      renderHeroMediaStrip(psState.activePortfolio.hero_media);
-      updatePreviewLive();
-      showToast('Image uploaded ✓');
-    } else {
-      // Upload failed — keep base64 preview but warn
-      delete entry._uploading;
-      showToast('⚠ Could not upload to server — image is preview only. Paste a hosted URL to save permanently.');
+      successCount++;
     }
+    delete entry._uploading;
+  }));
+
+  renderHeroMediaStrip(psState.activePortfolio.hero_media);
+  updatePreviewLive(); // single rebuild after all uploads resolve
+
+  if (successCount === files.length) {
+    showToast(`${successCount} image${successCount > 1 ? 's' : ''} uploaded ✓`);
+  } else if (successCount > 0) {
+    showToast(`${successCount}/${files.length} images uploaded. Others are preview-only — paste a hosted URL to save permanently.`);
+  } else {
+    showToast('⚠ Could not upload to server — images are preview only. Paste a hosted URL to save permanently.');
   }
 }
 
