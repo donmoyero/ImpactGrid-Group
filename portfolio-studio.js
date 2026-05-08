@@ -441,7 +441,7 @@ async function loadPortfolios() {
 }
 
 /* ── Upload a single base64 data URL to Supabase Storage ─────────────────
-   Bucket: "portfolio-assets" (must exist and have public read policy).
+   Bucket: "portfolio-images" (must exist and have public read policy).
    Returns the public https:// URL, or null on failure.
 ──────────────────────────────────────────────────────────────────────── */
 async function uploadAssetToSupabase(dataUrl, filename) {
@@ -461,7 +461,7 @@ async function uploadAssetToSupabase(dataUrl, filename) {
     const path   = `portfolios/${userId}/${fname}`;
 
     const uploadRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/portfolio-assets/${path}`,
+      `${SUPABASE_URL}/storage/v1/object/portfolio-images/${path}`,
       {
         method:  'POST',
         headers: {
@@ -481,7 +481,7 @@ async function uploadAssetToSupabase(dataUrl, filename) {
     }
 
     // Return the public URL
-    return `${SUPABASE_URL}/storage/v1/object/public/portfolio-assets/${path}`;
+    return `${SUPABASE_URL}/storage/v1/object/public/portfolio-images/${path}`;
   } catch (e) {
     console.warn('[Storage] Upload exception:', e.message);
     return null;
