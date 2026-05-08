@@ -992,7 +992,8 @@ function openPortfolio(id, action) {
   // Issue #6 — Published portfolios are locked from editing.
   // A published portfolio is live and public; silent edits would change
   // the live page without the user re-publishing. Force them to unpublish first.
-  if (action === 'edit' && pf.published) {
+  // Admin is exempt — they can always edit regardless of publish state.
+  if (action === 'edit' && pf.published && !_isAdmin()) {
     showToast('This portfolio is live — unpublish it first to make changes.');
     // Still show the builder in read-only preview so they can see it,
     // but disable the Save/Publish buttons.
@@ -1518,7 +1519,31 @@ function updatePreviewLive() {
   if (services.length) pf.services = services;
   const catalogue = collectCatalogueItems();
   if (catalogue.length) pf.catalogue = catalogue;
-  renderPreview(pf);
+
+  // ── Strip base64 data URLs before rendering the preview iframe.
+  // Large base64 strings embedded in the generated HTML cause
+  // "RangeError: Invalid string length" in buildPortfolioHTML.
+  // The hero strip UI already shows the uploaded image; the preview
+  // just needs a blank placeholder so the layout stays intact.
+  const pfPreview = JSON.parse(JSON.stringify(pf));
+  const _isData = s => typeof s === 'string' && s.startsWith('data:');
+  if (Array.isArray(pfPreview.hero_media)) {
+    pfPreview.hero_media = pfPreview.hero_media.map(m =>
+      _isData(m.url) ? { ...m, url: '' } : m
+    ).filter(m => m.url); // hide blank slots from slideshow
+  }
+  if (_isData(pfPreview.logo_url))  pfPreview.logo_url = '';
+  if (Array.isArray(pfPreview.catalogue)) {
+    pfPreview.catalogue = pfPreview.catalogue.map(c =>
+      _isData(c.image) ? { ...c, image: '' } : c
+    );
+  }
+  if (Array.isArray(pfPreview.services)) {
+    pfPreview.services = pfPreview.services.map(s =>
+      _isData(s.image) ? { ...s, image: '' } : s
+    );
+  }
+  renderPreview(pfPreview);
 }
 
 /* ── Hero media strip ── */
