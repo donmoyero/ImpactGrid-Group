@@ -1079,21 +1079,21 @@
       .cal-fp-front, .cal-fp-back {
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
-        overflow: hidden;
         border-radius: 4px 12px 12px 4px;
         background: var(--card);
         border: 1px solid var(--border);
       }
       .cal-fp-front {
-        position: relative; /* drives the page height */
+        position: relative; /* drives the page height — grows with content */
         width: 100%;
+        overflow: visible;
       }
       .cal-fp-back {
         position: absolute;
         inset: 0;
         transform: rotateY(180deg);
         border-radius: 12px 4px 4px 12px;
-        overflow-y: auto;
+        overflow: visible;
       }
       /* Spine shadow crease on each page */
       .cal-fp-front::before {
@@ -1101,7 +1101,7 @@
         position: absolute;
         left: 0; top: 0; bottom: 0;
         width: 22px;
-        background: linear-gradient(to right, rgba(0,0,0,.25), rgba(0,0,0,.05) 60%, transparent);
+        background: linear-gradient(to right, rgba(0,0,0,.2), rgba(0,0,0,.04) 60%, transparent);
         pointer-events: none;
         z-index: 2;
         border-radius: 4px 0 0 4px;
@@ -1111,7 +1111,7 @@
         position: absolute;
         right: 0; top: 0; bottom: 0;
         width: 22px;
-        background: linear-gradient(to left, rgba(0,0,0,.25), rgba(0,0,0,.05) 60%, transparent);
+        background: linear-gradient(to left, rgba(0,0,0,.2), rgba(0,0,0,.04) 60%, transparent);
         pointer-events: none;
         z-index: 2;
         border-radius: 0 4px 4px 0;
@@ -1295,7 +1295,6 @@
         .cal-page-inner { padding:10px 10px 12px; gap:10px; }
         .cal-slot-card { padding:11px 12px; }
         .cal-book-stage { padding:0; }
-        #calWeekGrid { overflow: hidden; }
       }
     `;
     document.head.appendChild(s);
