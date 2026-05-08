@@ -666,32 +666,47 @@ function addCatalogueItem(item) {
 }
 
 /* Handle image upload for catalogue item */
-function catItemImageUpload(input) {
+async function catItemImageUpload(input) {
   const row = input.closest(".cat-item-row");
   if (!row || !input.files[0]) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wrap = row.querySelector(".cat-item-img-wrap");
-    if (!wrap) return;
-    // Replace placeholder with image (preview only — base64 won't be saved)
-    wrap.querySelector(".cat-item-img-placeholder")?.remove();
-    let img = wrap.querySelector(".cat-item-img");
-    if (!img) { img = document.createElement("img"); img.className = "cat-item-img"; wrap.insertBefore(img, wrap.querySelector("input")); }
-    img.src = e.target.result;
-    // Store on row for local preview — stripped before server save to avoid 413
-    row.dataset.image = e.target.result;
-    // Show a note that image is local-only until an image URL is used
+  const file = input.files[0];
+
+  const wrap = row.querySelector(".cat-item-img-wrap");
+  if (!wrap) return;
+
+  // Instant base64 preview
+  const previewUrl = await new Promise(res => {
+    const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(file);
+  });
+  wrap.querySelector(".cat-item-img-placeholder")?.remove();
+  let img = wrap.querySelector(".cat-item-img");
+  if (!img) { img = document.createElement("img"); img.className = "cat-item-img"; wrap.insertBefore(img, wrap.querySelector("input")); }
+  img.src = previewUrl;
+  row.dataset.image = previewUrl;
+
+  // Show spinner + upload
+  const spinner = _showUploadSpinner(wrap);
+  const permanentUrl = await uploadImageToStorage(file, 'catalogue');
+  spinner.remove();
+
+  if (permanentUrl) {
+    img.src = permanentUrl;
+    row.dataset.image = permanentUrl;
+    // Remove any previous warning note
+    row.querySelector('.cat-img-note')?.remove();
+    showToast('Image uploaded ✓');
+  } else {
+    // Keep base64 preview, show warning
     let note = row.querySelector('.cat-img-note');
     if (!note) {
       note = document.createElement('div');
       note.className = 'cat-img-note';
       note.style.cssText = 'font-size:10px;color:rgba(255,180,0,.8);margin-top:4px;font-family:monospace';
-      note.textContent = '⚠ Preview only — paste an image URL to save permanently';
       row.querySelector('.cat-item-fields')?.prepend(note);
     }
-    updatePreviewLive();
-  };
-  reader.readAsDataURL(input.files[0]);
+    note.textContent = '⚠ Preview only — paste an image URL to save permanently';
+  }
+  updatePreviewLive();
 }
 
 /* Collect all catalogue items from the UI */
@@ -1435,21 +1450,35 @@ function rebuildServiceRows(services) {
 }
 
 /* Handle image upload for a service row */
-function svcImageUpload(input) {
+async function svcImageUpload(input) {
   const row = input.closest(".ob-service-row");
   if (!row || !input.files[0]) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wrap = row.querySelector(".svc-img-wrap");
-    if (!wrap) return;
-    wrap.querySelector(".svc-img-placeholder")?.remove();
-    let img = wrap.querySelector(".svc-row-img-el");
-    if (!img) { img = document.createElement("img"); img.className = "svc-row-img-el"; wrap.insertBefore(img, wrap.querySelector("input")); }
-    img.src = e.target.result;
-    row.dataset.image = e.target.result;
+  const file = input.files[0];
+
+  // Instant preview
+  const previewUrl = await new Promise(res => {
+    const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(file);
+  });
+  const wrap = row.querySelector(".svc-img-wrap");
+  if (!wrap) return;
+  wrap.querySelector(".svc-img-placeholder")?.remove();
+  let img = wrap.querySelector(".svc-row-img-el");
+  if (!img) { img = document.createElement("img"); img.className = "svc-row-img-el"; wrap.insertBefore(img, wrap.querySelector("input")); }
+  img.src = previewUrl;
+  row.dataset.image = previewUrl;
+  updatePreviewLive();
+
+  // Upload in background
+  const spinner = _showUploadSpinner(wrap);
+  const permanentUrl = await uploadImageToStorage(file, 'service');
+  spinner.remove();
+  if (permanentUrl) {
+    img.src = permanentUrl;
+    row.dataset.image = permanentUrl;
     updatePreviewLive();
-  };
-  reader.readAsDataURL(input.files[0]);
+  } else {
+    showToast('⚠ Image preview only — could not reach storage. Paste a URL to save permanently.');
+  }
 }
 
 function addEditServiceRow() {
@@ -2232,23 +2261,134 @@ function openPreviewTab() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   UPLOAD
+   IMAGE COMPRESSION + SUPABASE STORAGE UPLOAD
+   ─────────────────────────────────────────────────────────
+   1. compressImage(file, maxPx, quality) → Promise<Blob>
+      Draws the image on a canvas, resizes to maxPx on the
+      longest side, exports as JPEG at given quality (0–1).
+      A 3 MB phone photo → ~150 KB at quality 0.72, 1200px.
+
+   2. uploadImageToStorage(file, slot) → Promise<string|null>
+      Compresses then POSTs to Supabase Storage bucket
+      "portfolio-images". Returns a permanent https:// URL
+      on success, or null on failure (falls back to base64
+      preview so the UI still works).
 ══════════════════════════════════════════════════════════ */
-function handleHeroUpload(event) {
-  Array.from(event.target.files || []).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      if (!psState.activePortfolio) return;
-      psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
-      // Store for local preview — base64 is stripped before saving to avoid 413
-      psState.activePortfolio.hero_media.unshift({ type: file.type.startsWith("video") ? "video" : "image", url: e.target.result, credit:"Uploaded" });
+
+function compressImage(file, maxPx = 1200, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > maxPx || height > maxPx) {
+        if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx; }
+        else                 { width = Math.round(width * maxPx / height); height = maxPx; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Image load failed')); };
+    img.src = objectUrl;
+  });
+}
+
+async function uploadImageToStorage(file, slot) {
+  /* slot = 'hero' | 'catalogue' | 'logo' | 'service'
+     Path: portfolio-images/<userId>/<slot>/<timestamp>-<name> */
+  const userId = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
+  const ext    = file.type === 'image/png' ? 'png' : 'jpg';
+  const path   = `${userId}/${slot}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  try {
+    const blob = await compressImage(file);
+
+    const res = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/portfolio-images/${path}`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type':  'image/jpeg',
+          'x-upsert':      'true'
+        },
+        body: blob
+      }
+    );
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn('[Upload] Storage error', res.status, errText.slice(0, 200));
+      return null; // fall back to base64 preview
+    }
+
+    return `${SUPABASE_URL}/storage/v1/object/public/portfolio-images/${path}`;
+
+  } catch (err) {
+    console.warn('[Upload] Compression/upload error:', err);
+    return null;
+  }
+}
+
+/* Show an uploading spinner inside an img-wrap element */
+function _showUploadSpinner(wrap) {
+  let sp = wrap.querySelector('.img-upload-spinner');
+  if (!sp) {
+    sp = document.createElement('div');
+    sp.className = 'img-upload-spinner';
+    sp.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);border-radius:inherit;z-index:5;font-size:11px;color:#fff;font-family:monospace;gap:6px;';
+    sp.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span> Uploading…';
+    if (!document.getElementById('_spinKF')) {
+      const s = document.createElement('style'); s.id = '_spinKF';
+      s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(s);
+    }
+    wrap.style.position = 'relative';
+    wrap.appendChild(sp);
+  }
+  return sp;
+}
+
+/* ══════════════════════════════════════════════════════════
+   UPLOAD HANDLERS
+══════════════════════════════════════════════════════════ */
+async function handleHeroUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+
+  // Give immediate base64 preview for each file, then replace with real URL
+  for (const file of files) {
+    if (!psState.activePortfolio) return;
+    psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
+
+    // 1. Instant base64 preview so the user sees something immediately
+    const previewUrl = await new Promise(res => {
+      const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(file);
+    });
+    const entry = { type: file.type.startsWith('video') ? 'video' : 'image', url: previewUrl, credit: 'Uploaded', _uploading: true };
+    psState.activePortfolio.hero_media.unshift(entry);
+    renderHeroMediaStrip(psState.activePortfolio.hero_media);
+    updatePreviewLive();
+
+    // 2. Compress + upload in background
+    showToast('Uploading image…');
+    const permanentUrl = await uploadImageToStorage(file, 'hero');
+    if (permanentUrl) {
+      entry.url = permanentUrl;
+      delete entry._uploading;
       renderHeroMediaStrip(psState.activePortfolio.hero_media);
       updatePreviewLive();
-      // Inform user the image is preview-only
-      showToast("Image added (preview only — paste a hosted URL to save permanently)");
-    };
-    reader.readAsDataURL(file);
-  });
+      showToast('Image uploaded ✓');
+    } else {
+      // Upload failed — keep base64 preview but warn
+      delete entry._uploading;
+      showToast('⚠ Could not upload to server — image is preview only. Paste a hosted URL to save permanently.');
+    }
+  }
 }
 
 function dzOver(e, el)   { e.preventDefault(); el.classList.add("over"); }
