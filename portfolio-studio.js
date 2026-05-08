@@ -85,10 +85,10 @@ function _isAdmin() {
   // Check email first — email is the ground truth, plan field in DB may be wrong
   var email = (window.igUser && window.igUser.email) || '';
   if (email === PS_ADMIN_EMAIL) return true;
-  // Also accept plan field set to 'admin' or 'enterprise'
+  // Only the 'admin' plan bypasses limits — enterprise is a paid plan with its own limits
   try {
     var plan = (window.igUser && window.igUser.plan) || localStorage.getItem('ig_plan') || '';
-    if (plan === 'admin' || plan === 'enterprise') return true;
+    if (plan === 'admin') return true;
   } catch(e) {}
   return false;
 }
