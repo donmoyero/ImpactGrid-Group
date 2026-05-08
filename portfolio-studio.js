@@ -761,8 +761,6 @@ function renderDashGrid() {
    via the Render server. ImpactGrid takes 5% per booking.
 ══════════════════════════════════════════════════════════ */
 
-const DIJO_SERVER_URL = "https://impactgrid-dijo.onrender.com";
-
 /* Render one editable catalogue item row — with image upload */
 function addCatalogueItem(item) {
   const list = document.getElementById("catItemsList");
@@ -868,7 +866,7 @@ async function generatePaymentLink(btn) {
     const pf = psState.activePortfolio || {};
     const connected_account_id = pf.stripe_account_id || null;
 
-    const res  = await fetch(DIJO_SERVER_URL + "/stripe/create-payment-link", {
+    const res  = await fetch(DIJO_SERVER + "/stripe/create-payment-link", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -936,7 +934,7 @@ async function stripeOnboard() {
   _stripeOnboardInFlight = true;
 
   try {
-    const res  = await fetch(DIJO_SERVER_URL + "/stripe/onboard", {
+    const res  = await fetch(DIJO_SERVER + "/stripe/onboard", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
