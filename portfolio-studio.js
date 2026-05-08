@@ -1774,7 +1774,7 @@ a{color:inherit;text-decoration:none}
 /* HERO SLIDESHOW */
 .hero{min-height:90vh;position:relative;display:flex;align-items:center;overflow:hidden}
 #heroBg{position:absolute;inset:0;background-color:var(--sf)}
-.hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease}
+.hero-slide{position:absolute;inset:0;background-size:cover;background-position:top;opacity:0;transition:opacity 1.2s ease}
 .hero-slide.active{opacity:1}
 .hero-dots{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:8px;align-items:center}
 .hero-dot{width:7px;height:7px;border-radius:50%;border:none;background:rgba(255,255,255,.35);cursor:pointer;transition:.2s;padding:0}
