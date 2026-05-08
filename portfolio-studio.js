@@ -440,6 +440,102 @@ async function loadPortfolios() {
   return _portfoliosLoadPromise;
 }
 
+/* ── Upload a single base64 data URL to Supabase Storage ─────────────────
+   Bucket: "portfolio-assets" (must exist and have public read policy).
+   Returns the public https:// URL, or null on failure.
+──────────────────────────────────────────────────────────────────────── */
+async function uploadAssetToSupabase(dataUrl, filename) {
+  try {
+    // Convert data URL → Blob
+    const [header, b64] = dataUrl.split(',');
+    const mimeMatch = header.match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const ext  = mime.split('/')[1] || 'jpg';
+    const fname = filename || ('asset_' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext);
+    const byteChars = atob(b64);
+    const byteArr = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([byteArr], { type: mime });
+
+    const userId = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
+    const path   = `portfolios/${userId}/${fname}`;
+
+    const uploadRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/portfolio-assets/${path}`,
+      {
+        method:  'POST',
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type':  mime,
+          'x-upsert':      'true',
+        },
+        body: blob,
+      }
+    );
+
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text();
+      console.warn('[Storage] Upload failed:', uploadRes.status, errText);
+      return null;
+    }
+
+    // Return the public URL
+    return `${SUPABASE_URL}/storage/v1/object/public/portfolio-assets/${path}`;
+  } catch (e) {
+    console.warn('[Storage] Upload exception:', e.message);
+    return null;
+  }
+}
+
+/* ── Upload all base64 images in a portfolio to Storage, replacing data: URLs ── */
+async function uploadPortfolioAssets(pf) {
+  const isDataUrl = s => typeof s === 'string' && s.startsWith('data:');
+  let anyUploaded = false;
+
+  // Hero media
+  if (Array.isArray(pf.hero_media)) {
+    for (let i = 0; i < pf.hero_media.length; i++) {
+      if (isDataUrl(pf.hero_media[i].url)) {
+        const url = await uploadAssetToSupabase(pf.hero_media[i].url, `hero_${i}_${Date.now()}`);
+        if (url) { pf.hero_media[i].url = url; anyUploaded = true; }
+      }
+    }
+  }
+
+  // Logo
+  if (isDataUrl(pf.logo_url)) {
+    const url = await uploadAssetToSupabase(pf.logo_url, `logo_${Date.now()}`);
+    if (url) { pf.logo_url = url; anyUploaded = true; }
+    // Also keep window refs in sync
+    if (url && window._obLogoDataUrl) window._obLogoDataUrl = url;
+    if (url && window._beLogoDataUrl) window._beLogoDataUrl = url;
+  }
+
+  // Catalogue images
+  if (Array.isArray(pf.catalogue)) {
+    for (let i = 0; i < pf.catalogue.length; i++) {
+      if (isDataUrl(pf.catalogue[i].image)) {
+        const url = await uploadAssetToSupabase(pf.catalogue[i].image, `cat_${i}_${Date.now()}`);
+        if (url) { pf.catalogue[i].image = url; anyUploaded = true; }
+      }
+    }
+  }
+
+  // Service images
+  if (Array.isArray(pf.services)) {
+    for (let i = 0; i < pf.services.length; i++) {
+      if (isDataUrl(pf.services[i].image)) {
+        const url = await uploadAssetToSupabase(pf.services[i].image, `svc_${i}_${Date.now()}`);
+        if (url) { pf.services[i].image = url; anyUploaded = true; }
+      }
+    }
+  }
+
+  if (anyUploaded) console.log('[Storage] Asset uploads complete');
+  return pf;
+}
+
 async function savePortfolioToDB(pf){
 
   // Require authenticated user — no anonymous saving
@@ -451,72 +547,97 @@ async function savePortfolioToDB(pf){
     return false;
   }
 
-  // ── Strip base64 data: URLs before sending — they blow the 413 limit ──
-  // Only real https:// URLs survive. Base64 blobs are local-only previews;
-  // they should be uploaded to storage separately before saving.
-  function isDataUrl(s) { return typeof s === 'string' && s.startsWith('data:'); }
+  // ── Show loading state on Save button ──
+  const saveBtn = document.querySelector('.bl-save-btn');
+  const origLabel = saveBtn ? saveBtn.innerHTML : null;
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
 
-  const pfClean = JSON.parse(JSON.stringify(pf)); // deep clone, don't mutate
+  try {
+    // ── 1. Upload any base64 images to Supabase Storage first ──
+    // This mutates `pf` in-place so URLs become real https:// links before saving
+    const isDataUrl = s => typeof s === 'string' && s.startsWith('data:');
+    const hasBase64 = (
+      (Array.isArray(pf.hero_media) && pf.hero_media.some(m => isDataUrl(m.url))) ||
+      isDataUrl(pf.logo_url) ||
+      (Array.isArray(pf.catalogue) && pf.catalogue.some(c => isDataUrl(c.image))) ||
+      (Array.isArray(pf.services)  && pf.services.some(s => isDataUrl(s.image)))
+    );
+    if (hasBase64) {
+      if (saveBtn) saveBtn.textContent = 'Uploading images…';
+      await uploadPortfolioAssets(pf); // uploads to Supabase bucket, replaces data: URLs in pf
+    }
 
-  // Strip base64 from hero_media
-  if (Array.isArray(pfClean.hero_media)) {
-    pfClean.hero_media = pfClean.hero_media
-      .map(m => ({ ...m, url: isDataUrl(m.url) ? '' : (m.url || '') }))
-      .filter(m => m.url); // drop items with no real URL
-  }
+    // ── 2. Deep clone and strip any remaining base64 (fallback safety) ──
+    const pfClean = JSON.parse(JSON.stringify(pf));
 
-  // Strip base64 logo
-  if (isDataUrl(pfClean.logo_url)) pfClean.logo_url = '';
+    if (Array.isArray(pfClean.hero_media)) {
+      pfClean.hero_media = pfClean.hero_media
+        .map(m => ({ ...m, url: isDataUrl(m.url) ? '' : (m.url || '') }))
+        .filter(m => m.url);
+    }
+    if (isDataUrl(pfClean.logo_url)) pfClean.logo_url = '';
+    if (Array.isArray(pfClean.catalogue)) {
+      pfClean.catalogue = pfClean.catalogue.map(c => ({ ...c, image: isDataUrl(c.image) ? '' : (c.image || '') }));
+    }
+    if (Array.isArray(pfClean.services)) {
+      pfClean.services = pfClean.services.map(s => ({ ...s, image: isDataUrl(s.image) ? '' : (s.image || '') }));
+    }
 
-  // Strip base64 catalogue images (keep payment links + metadata)
-  if (Array.isArray(pfClean.catalogue)) {
-    pfClean.catalogue = pfClean.catalogue.map(c => ({
-      ...c,
-      image: isDataUrl(c.image) ? '' : (c.image || '')
-    }));
-  }
-
-  // Strip base64 service images
-  if (Array.isArray(pfClean.services)) {
-    pfClean.services = pfClean.services.map(s => ({
-      ...s,
-      image: isDataUrl(s.image) ? '' : (s.image || '')
-    }));
-  }
-
-  try{
-    const res = await fetch("https://impactgrid-dijo.onrender.com/portfolio/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session: userId, portfolio: pfClean })
-    });
+    // ── 3. Send to Render server (with retry on cold-start 503/502) ──
+    if (saveBtn) saveBtn.textContent = 'Saving…';
+    let res, text, data;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        res  = await fetch("https://impactgrid-dijo.onrender.com/portfolio/save", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ session: userId, portfolio: pfClean })
+        });
+        text = await res.text();
+        break; // success — exit retry loop
+      } catch (fetchErr) {
+        if (attempt === 2) throw fetchErr;
+        if (saveBtn) saveBtn.textContent = 'Retrying…';
+        await sleep(3000);
+      }
+    }
 
     // Guard against non-JSON responses (e.g. 413 HTML error page)
-    const text = await res.text();
-    let data;
     try { data = JSON.parse(text); }
     catch(_) {
       console.error('[Save] Non-JSON response:', res.status, text.slice(0, 200));
       if (res.status === 413) {
         showToast('Portfolio too large to save — remove local image uploads and try again');
+      } else if (res.status === 502 || res.status === 503) {
+        showToast('Server is waking up — please try saving again in 30 seconds');
       } else {
         showToast('Save failed (' + res.status + ')');
       }
       return false;
     }
 
-    if(data.success){
-      showToast("Portfolio saved 🚀");
+    if (data.success) {
+      showToast("Portfolio saved ✓");
+      // Refresh the preview pill URL in case slug changed
+      const pill = document.getElementById("previewUrlPill");
+      if (pill && pf.slug) pill.textContent = `impactgridgroup.com/p.html?slug=${pf.slug}`;
       return true;
-    }else{
+    } else {
       showToast("Save failed: " + (data.error || 'unknown error'));
       return false;
     }
 
-  }catch(err){
+  } catch(err) {
     console.error('[Save] Error:', err);
-    showToast("Could not reach server — check your connection");
+    showToast("Could not reach server — check your connection and try again");
     return false;
+  } finally {
+    // Always restore the save button
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      if (origLabel) saveBtn.innerHTML = origLabel;
+      else saveBtn.textContent = 'Save';
+    }
   }
 }
 
@@ -937,6 +1058,28 @@ function openPortfolio(id, action) {
 function copyLink(slug) {
   navigator.clipboard.writeText(`https://impactgridgroup.com/p.html?slug=${slug}`).catch(() => {});
   showToast("✓ Link copied!");
+}
+
+/* Copy the URL shown in the builder preview pill */
+function copyPreviewUrl() {
+  const pill = document.getElementById("previewUrlPill");
+  if (!pill) return;
+  const text = pill.textContent.trim();
+  if (!text || text.includes("—")) { showToast("No URL yet — save your portfolio first"); return; }
+  const url = text.startsWith("http") ? text : "https://" + text;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast("✓ Link copied!");
+    pill.classList.add("copied");
+    setTimeout(() => pill.classList.remove("copied"), 1200);
+  }).catch(() => {
+    // Fallback for browsers that block clipboard without gesture
+    const ta = document.createElement("textarea");
+    ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showToast("✓ Link copied!");
+  });
 }
 
 /* ══════════════════════════════════════════════════════════
