@@ -2378,9 +2378,14 @@ async function publishPortfolio() {
 
   const linkEl = document.getElementById("pubLinkText");
   if (linkEl) linkEl.textContent = `impactgridgroup.com/p.html?slug=${pf.slug}`;
-  setValue("pubViewCount", "0");
-  setValue("pubEnqCount",  "0");
-  setValue("pubDaysLive",  "0");
+
+  // These are <div> elements — use textContent not setValue
+  const vcEl = document.getElementById("pubViewCount");
+  const ecEl = document.getElementById("pubEnqCount");
+  const dlEl = document.getElementById("pubDaysLive");
+  if (vcEl) vcEl.textContent = "0";
+  if (ecEl) ecEl.textContent = "0";
+  if (dlEl) dlEl.textContent = "0";
 
   showScreen("screenPublished");
   spawnConfetti();
@@ -2545,45 +2550,65 @@ function closeContactForm(){
 }
 
 async function sendInquiry(){
+  const nameEl    = document.getElementById("cName");
+  const emailEl   = document.getElementById("cEmail");
+  const msgEl     = document.getElementById("cMsg");
+  const sendBtn   = document.querySelector("#contactModal button");
+  const statusEl  = document.getElementById("cStatus");
 
-  const name  = document.getElementById("cName").value;
-  const email = document.getElementById("cEmail").value;
-  const message = document.getElementById("cMsg").value;
+  const name    = (nameEl  && nameEl.value.trim())  || "";
+  const email   = (emailEl && emailEl.value.trim())  || "";
+  const message = (msgEl   && msgEl.value.trim())    || "";
 
-  const creatorEmail = psState.activePortfolio && psState.activePortfolio.email;
+  // Clear previous status
+  if (statusEl) { statusEl.textContent = ""; statusEl.style.color = ""; }
 
-  if(!creatorEmail){
-    showToast("Creator email not set");
+  // Validate all fields
+  if (!name || !email || !message) {
+    if (statusEl) { statusEl.textContent = "Please fill in all fields."; statusEl.style.color = "#f87171"; }
     return;
   }
 
-  try{
+  // Validate email format
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (statusEl) { statusEl.textContent = "Please enter a valid email address."; statusEl.style.color = "#f87171"; }
+    return;
+  }
 
+  const creatorEmail = psState.activePortfolio && psState.activePortfolio.email;
+  if (!creatorEmail) {
+    if (statusEl) { statusEl.textContent = "Creator email not set — cannot send."; statusEl.style.color = "#f87171"; }
+    return;
+  }
+
+  // Disable button while sending
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "Sending…"; }
+
+  try {
     const res = await fetch("https://impactgrid-dijo.onrender.com/contact/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name,
-        email,
-        message,
-        creatorEmail
-      })
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, message, creatorEmail })
     });
 
     const data = await res.json();
 
-    if(data.success){
+    if (data.success) {
       showToast("Inquiry sent 🚀");
+      // Clear the form
+      if (nameEl)  nameEl.value  = "";
+      if (emailEl) emailEl.value = "";
+      if (msgEl)   msgEl.value   = "";
       closeContactForm();
-    }else{
-      showToast("Failed to send");
+    } else {
+      if (statusEl) { statusEl.textContent = "Failed to send — please try again."; statusEl.style.color = "#f87171"; }
     }
 
-  }catch(err){
-    console.error(err);
-    showToast("Server error");
+  } catch(err) {
+    console.error("[sendInquiry]", err);
+    if (statusEl) { statusEl.textContent = "Server error — please try again."; statusEl.style.color = "#f87171"; }
+  } finally {
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send"; }
   }
 }
 
