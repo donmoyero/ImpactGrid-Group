@@ -279,6 +279,20 @@
 
     stage.appendChild(book);
     grid.appendChild(stage);
+
+    /* Touch swipe support for mobile */
+    var _touchX = 0;
+    book.addEventListener('touchstart', function (e) {
+      _touchX = e.touches[0].clientX;
+    }, { passive: true });
+    book.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - _touchX;
+      if (Math.abs(dx) > 40) {
+        if (dx < 0 && _pageIndex < 6) window.calNextDay();
+        else if (dx > 0 && _pageIndex > 0) window.calPrevDay();
+      }
+    }, { passive: true });
+
     return stage;
   }
 
@@ -1041,39 +1055,45 @@
       .cal-book {
         position: relative;
         width: 100%;
-        aspect-ratio: 3 / 4;
         perspective: 1400px;
         cursor: pointer;
-        /* Allow page content to overflow for tall pages */
-        min-height: 480px;
       }
-      /* Each page stacked absolutely, flips from left spine */
+      /* The first (unflipped) page drives the height; all others sit on top of it */
       .cal-fp-page {
         position: absolute;
-        inset: 0;
+        top: 0; left: 0; right: 0;
         transform-origin: left center;
         transform-style: preserve-3d;
         transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
         border-radius: 4px 12px 12px 4px;
         box-shadow: 6px 0 32px rgba(0,0,0,.35), -2px 0 6px rgba(0,0,0,.15);
       }
+      /* Page 0 is position:relative so it sets the container height */
+      .cal-fp-page:first-child {
+        position: relative;
+      }
       .cal-fp-page.flipped {
         transform: rotateY(-180deg);
       }
       /* Front and back faces */
       .cal-fp-front, .cal-fp-back {
-        position: absolute;
-        inset: 0;
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
-        overflow-y: auto;
+        overflow: hidden;
         border-radius: 4px 12px 12px 4px;
         background: var(--card);
         border: 1px solid var(--border);
       }
+      .cal-fp-front {
+        position: relative; /* drives the page height */
+        width: 100%;
+      }
       .cal-fp-back {
+        position: absolute;
+        inset: 0;
         transform: rotateY(180deg);
         border-radius: 12px 4px 4px 12px;
+        overflow-y: auto;
       }
       /* Spine shadow crease on each page */
       .cal-fp-front::before {
@@ -1271,6 +1291,11 @@
         .cal-spine-dot { width:36px; }
         .cal-spine-num { font-size:13px; }
         .cal-spine { gap:3px; }
+        .cal-page-daynum { font-size:52px; }
+        .cal-page-inner { padding:10px 10px 12px; gap:10px; }
+        .cal-slot-card { padding:11px 12px; }
+        .cal-book-stage { padding:0; }
+        #calWeekGrid { overflow: hidden; }
       }
     `;
     document.head.appendChild(s);
