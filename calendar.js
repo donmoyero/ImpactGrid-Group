@@ -218,18 +218,221 @@
     return String(s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   }
 
-  /* ─── PAGE-FLIP ANIMATION ────────────────────────────────────── */
+  /* ─── 3-D PAGE-FLIP ANIMATION ───────────────────────────────────
+     Layout inside #calWeekGrid:
+       .cal-book-scene  (perspective container)
+         .cal-book-wrap (transform-style: preserve-3d; transitions rotateY)
+           .cal-book-front  (face A — current page)
+           .cal-book-back   (face B — next page, pre-rendered, rotateY 180deg)
+     On flip forward: wrap goes 0 → -180deg
+     On flip backward: wrap goes 0 → +180deg
+     After animation: swap faces, reset transform instantly, re-render.
+  ─────────────────────────────────────────────────────────────── */
+  var _flipping = false;
+
+  /* Build the two-face book structure once, then reuse it */
+  function ensureBookDOM() {
+    var grid = document.getElementById('calWeekGrid');
+    if (!grid) return null;
+    var scene = grid.querySelector('.cal-book-scene');
+    if (scene) return scene;
+    scene = document.createElement('div');
+    scene.className = 'cal-book-scene';
+    var wrap = document.createElement('div');
+    wrap.className = 'cal-book-wrap';
+    wrap.id = 'calBookWrap';
+    var front = document.createElement('div');
+    front.className = 'cal-book-front cal-book-face';
+    front.id = 'calBookFront';
+    var back = document.createElement('div');
+    back.className = 'cal-book-back cal-book-face';
+    back.id = 'calBookBack';
+    wrap.appendChild(front);
+    wrap.appendChild(back);
+    scene.appendChild(wrap);
+    grid.appendChild(scene);
+
+    /* Tap-zone on the page corners */
+    wrap.addEventListener('click', function (e) {
+      if (_flipping) return;
+      var r = wrap.getBoundingClientRect();
+      var x = e.clientX - r.left;
+      /* Right 30% → next page, left 30% → prev */
+      if (x > r.width * 0.70 && _pageIndex < 6) { window.calNextDay(); }
+      else if (x < r.width * 0.30 && _pageIndex > 0) { window.calPrevDay(); }
+    });
+    return scene;
+  }
+
+  /* Render page content into a DOM node (not innerHTML on grid) */
+  function buildPageHTML(dayIndex) {
+    var dates     = getWeekDates();
+    var dateObj   = dates[dayIndex];
+    var ti        = todayIndex();
+    var isT       = dayIndex === ti;
+    var isP       = (function(){ var n=new Date(); n.setHours(0,0,0,0); return dates[dayIndex] < n; })();
+    var isF       = (function(){ var n=new Date(); n.setHours(0,0,0,0); return dates[dayIndex] > n; })();
+    var trends    = getTrends();
+    var hasTrends = trends.length > 0;
+    if (hasTrends && isT) predictBestTimes();
+
+    var savedPosts = _weekData[dayIndex] || {};
+
+    var usedSug = [];
+    var slotSuggestions = SLOTS.map(function (slot, idx) {
+      if (!hasTrends) return null;
+      var tp = ['gt','yt','tt'];
+      var t = bestTrendForPlat(tp[idx], usedSug);
+      if (t) usedSug.push(t.topic);
+      return t;
+    });
+    var slotDefPlat = ['li','yt','tt'];
+
+    var h = '';
+
+    /* ── Page tab (red header like a calendar pad) ── */
+    h += '<div class="cal-page-tab">'
+      + '<span class="cal-page-tab-month">' + MONTHS[dateObj.getMonth()].toUpperCase() + '</span>'
+      + (isT ? '<span class="cal-today-pill" style="margin-left:auto">Today</span>' : '')
+      + '</div>';
+
+    /* ── Big date number ── */
+    h += '<div class="cal-page-bigdate">'
+      + '<span class="cal-page-dayname">' + DAYS_LONG[dateObj.getDay()] + '</span>'
+      + '<span class="cal-page-daynum">' + dateObj.getDate() + '</span>'
+      + '<div class="cal-page-curl"></div>'
+      + '</div>';
+
+    /* ── Day banner ── */
+    h += '<div class="cal-page-inner">';
+
+    if (isP) {
+      h += '<div class="cal-day-banner cal-day-past">📖 Past day — review or edit your entries</div>';
+    } else if (isF) {
+      h += '<div class="cal-day-banner cal-day-future">📅 Planned — Dijo has auto-filled ideas. Tap any slot to customise.</div>';
+    } else if (hasTrends) {
+      var topT = trends.slice().sort(function(a,b){return b.score-a.score;})[0];
+      var sl   = scoreLabel(topT.score);
+      h += '<div class="cal-day-banner cal-day-today">'
+        + '<span style="color:var(--text3);font-size:11px">Top trend: </span>'
+        + '<span style="color:' + sl.color + ';font-weight:800">' + sl.text + '</span> '
+        + '<span style="color:var(--text2)">' + escH(topT.topic.length > 38 ? topT.topic.slice(0,38)+'…' : topT.topic) + '</span>'
+        + '</div>';
+    } else {
+      h += '<div class="cal-day-banner cal-day-today" style="color:var(--text3)">⏳ Scanning trends…</div>';
+    }
+
+    /* ── 3 Slot cards ── */
+    SLOTS.forEach(function (slot, idx) {
+      var post     = savedPosts[slot.id];
+      var sug      = slotSuggestions[idx];
+      var predTime = _predictedTimes[slot.id];
+
+      h += '<div class="cal-slot-card' + (isP ? ' cal-slot-past' : '') + '">';
+      h += '<div class="cal-slot-hdr">'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<span style="font-size:18px">' + slot.icon + '</span>'
+        + '<div>'
+        + '<div class="cal-slot-name">' + slot.label + '</div>'
+        + '<div class="cal-slot-time">';
+      if (hasTrends && isT) {
+        h += '⏰ Best: <strong style="color:var(--gold)">' + escH(predTime) + '</strong>'
+          + ' <span class="cal-time-source">· trend data</span>';
+      } else {
+        h += '<span style="color:var(--text3)">' + escH(slot.defaultTime) + '</span>';
+      }
+      h += '</div></div></div>';
+      if (hasTrends && sug) {
+        var pm = PLAT[sug.plat === 'gt' ? slotDefPlat[idx] : sug.plat] || PLAT.tt;
+        h += '<span class="cal-slot-plat-badge" style="color:' + pm.color + ';border-color:' + pm.color + '50">' + pm.icon + ' ' + pm.label + '</span>';
+      }
+      h += '</div>';
+
+      if (post) {
+        var pm2 = PLAT[post.plat] || PLAT.tt;
+        var sm  = STATUS[post.status] || STATUS.draft;
+        var sl2 = post.score ? scoreLabel(post.score) : null;
+        h += '<div class="cal-post-body" style="border-left:3px solid ' + pm2.color + '">';
+        h += '<div class="cal-post-meta-row">'
+          + '<span class="cal-post-plat" style="color:' + pm2.color + ';background:' + pm2.color + '18">' + pm2.icon + ' ' + pm2.label + '</span>'
+          + '<span class="cal-post-status" style="color:' + sm.color + '">' + sm.dot + ' ' + sm.label + '</span>';
+        if (sl2) h += '<span class="cal-post-score" style="color:' + sl2.color + ';margin-left:auto">' + sl2.text + ' · ' + post.score.toFixed(1) + '</span>';
+        if (post.autoFilled) h += '<span style="font-size:9px;color:var(--text3);font-family:\'DM Mono\',monospace;margin-left:4px">✨ Dijo</span>';
+        h += '</div>';
+        h += '<div class="cal-post-topic">' + escH(post.topic) + '</div>';
+        if (post.notes) h += '<div class="cal-post-notes">' + escH(post.notes.slice(0,100)) + (post.notes.length > 100 ? '…' : '') + '</div>';
+        if (post.postTime) h += '<div class="cal-post-posttime">⏰ <strong>' + escH(post.postTime) + '</strong></div>';
+        h += '<div class="cal-post-btns">'
+          + '<button class="cal-btn cal-btn-edit" onclick="window.calEditPost(\'' + slot.id + '\')">✏️ Edit</button>'
+          + '<button class="cal-btn cal-btn-gen"  onclick="window.calGeneratePost(\'' + escJ(post.topic) + '\')">⚡ Generate</button>';
+        var notifOn = isT && hasActiveNotif(slot.id);
+        if (isT) {
+          h += '<button class="cal-btn cal-btn-notif' + (notifOn ? ' notif-on' : '') + '" onclick="window.calEnableSlotNotif(\'' + slot.id + '\')" title="' + (notifOn ? 'Reminder set' : 'Set reminder') + '">' + (notifOn ? '🔔' : '🔕') + '</button>';
+        }
+        h += '<button class="cal-btn cal-btn-del" onclick="window.calDeletePost(\'' + slot.id + '\')">✕</button>';
+        h += '</div>';
+        h += '</div>';
+      } else {
+        if (sug) {
+          var sugPm = PLAT[sug.plat === 'gt' ? slotDefPlat[idx] : sug.plat] || PLAT.tt;
+          var sugSl = scoreLabel(sug.score);
+          h += '<div class="cal-sug-card" onclick="window.calAcceptSuggestion(\'' + slot.id + '\')">'
+            + '<div class="cal-sug-row"><span class="cal-sug-label">✨ Dijo suggests</span>'
+            + '<span style="font-size:10px;font-weight:800;font-family:\'DM Mono\',monospace;color:' + sugSl.color + '">' + sugSl.text + ' · ' + sug.score.toFixed(1) + '/10</span></div>'
+            + '<div class="cal-sug-topic">' + escH(sug.topic) + '</div>'
+            + '<div class="cal-sug-meta" style="color:' + sugPm.color + '">' + sugPm.icon + ' ' + sugPm.label + ' · Tap to schedule</div>'
+            + '</div>';
+        }
+        h += '<button class="cal-add-btn" onclick="window.openModal(\'' + slot.id + '\')">＋ Add your own</button>';
+        if (isT && 'Notification' in window && Notification.permission === 'default') {
+          h += '<button class="cal-notif-nudge" onclick="window.calRequestNotifFromUI()">🔔 Enable posting reminders</button>';
+        }
+      }
+      h += '</div>';
+    });
+
+    /* ── Page footer ── */
+    h += '<div class="cal-page-footer">'
+      + '<span class="cal-page-num">Page ' + (dayIndex + 1) + ' of 7</span>';
+    if (!isT) {
+      h += '<button class="cal-today-jump-btn" onclick="window.calGoToday()">Jump to today</button>';
+    }
+    h += '</div>';
+
+    h += '</div>'; /* .cal-page-inner */
+
+    return h;
+  }
+
   function animateFlip(dir, cb) {
-    var g = document.getElementById('calWeekGrid');
-    if (!g) { cb(); return; }
-    var ex = dir > 0 ? 'cal-flip-exit-left'  : 'cal-flip-exit-right';
-    var en = dir > 0 ? 'cal-flip-enter-right': 'cal-flip-enter-left';
-    g.classList.add(ex);
+    if (_flipping) return;
+    ensureBookDOM();
+    var wrap  = document.getElementById('calBookWrap');
+    var front = document.getElementById('calBookFront');
+    var back  = document.getElementById('calBookBack');
+    if (!wrap) { cb(); return; }
+
+    /* Pre-render the incoming page onto the back face */
+    var nextIdx = _pageIndex + dir;
+    back.innerHTML = buildPageHTML(nextIdx);
+
+    _flipping = true;
+    wrap.style.transition = 'none';
+    wrap.style.transform  = 'rotateY(0deg)';
+    void wrap.offsetWidth; /* force reflow */
+
+    wrap.style.transition = 'transform 0.55s cubic-bezier(0.645,0.045,0.355,1.000)';
+    wrap.style.transform  = dir > 0 ? 'rotateY(-180deg)' : 'rotateY(180deg)';
+
     setTimeout(function () {
-      g.classList.remove(ex); cb();
-      g.classList.add(en);
-      setTimeout(function () { g.classList.remove(en); }, 320);
-    }, 200);
+      cb(); /* update _pageIndex */
+      /* Swap: render new current page onto front, reset wrap instantly */
+      front.innerHTML = buildPageHTML(_pageIndex);
+      wrap.style.transition = 'none';
+      wrap.style.transform  = 'rotateY(0deg)';
+      back.innerHTML = '';
+      _flipping = false;
+    }, 560);
   }
 
   /* ─── DATE HELPERS ───────────────────────────────────────────── */
@@ -242,6 +445,7 @@
 
   /* ─── RENDER SPINE ───────────────────────────────────────────── */
   function renderSpine() {
+    /* Legacy — kept so nothing breaks; actual spine is renderSpineEl() */
     var dates = getWeekDates();
     var ti    = todayIndex();
     var h = '<div class="cal-spine">';
@@ -261,7 +465,41 @@
   function renderGrid() {
     var grid = document.getElementById('calWeekGrid');
     if (!grid) return;
+    ensureBookDOM();
+    var front = document.getElementById('calBookFront');
+    if (front) front.innerHTML = buildPageHTML(_pageIndex);
+    renderSpineEl();
+  }
 
+  /* ─── SPINE (rendered outside the flip book) ──────────────────── */
+  function renderSpineEl() {
+    var grid = document.getElementById('calWeekGrid');
+    if (!grid) return;
+    var existing = grid.querySelector('.cal-spine');
+    var dates = getWeekDates();
+    var ti    = todayIndex();
+    var h = '<div class="cal-spine">';
+    for (var i = 0; i < 7; i++) {
+      var cls = 'cal-spine-dot';
+      if (i === _pageIndex) cls += ' active';
+      if (i === ti)         cls += ' is-today';
+      h += '<button class="' + cls + '" onclick="window.calGoToPage(' + i + ')" title="' + DAYS_LONG[dates[i].getDay()] + '">'
+        + '<span class="cal-spine-day">' + DAYS_SHORT[dates[i].getDay()] + '</span>'
+        + '<span class="cal-spine-num">' + dates[i].getDate() + '</span>'
+        + '</button>';
+    }
+    h += '</div>';
+    var tmp = document.createElement('div');
+    tmp.innerHTML = h;
+    var newSpine = tmp.firstChild;
+    if (existing) { existing.parentNode.replaceChild(newSpine, existing); }
+    else { grid.insertBefore(newSpine, grid.firstChild); }
+  }
+
+  /* ─── OLD renderGrid body (unused, kept for reference) ────────── */
+  function _renderGrid_old() {
+    var grid = document.getElementById('calWeekGrid');
+    if (!grid) return;
     var dates     = getWeekDates();
     var dateObj   = dates[_pageIndex];
     var isT       = isPageToday();
@@ -750,16 +988,98 @@
     var s = document.createElement('style');
     s.id = '_calStyles';
     s.textContent = `
-      #calWeekGrid { display: block !important; overflow: hidden; }
+      #calWeekGrid { display: block !important; overflow: visible; }
 
-      @keyframes calFlipExitLeft  { from{opacity:1;transform:translateX(0) rotateY(0)} to{opacity:0;transform:translateX(-36px) rotateY(6deg)} }
-      @keyframes calFlipExitRight { from{opacity:1;transform:translateX(0) rotateY(0)} to{opacity:0;transform:translateX(36px) rotateY(-6deg)} }
-      @keyframes calFlipEnterLeft { from{opacity:0;transform:translateX(36px) rotateY(-6deg)} to{opacity:1;transform:translateX(0) rotateY(0)} }
-      @keyframes calFlipEnterRight{ from{opacity:0;transform:translateX(-36px) rotateY(6deg)} to{opacity:1;transform:translateX(0) rotateY(0)} }
-      .cal-flip-exit-left  { animation: calFlipExitLeft  .2s ease-in  forwards; }
-      .cal-flip-exit-right { animation: calFlipExitRight .2s ease-in  forwards; }
-      .cal-flip-enter-left { animation: calFlipEnterLeft .32s ease-out forwards; }
-      .cal-flip-enter-right{ animation: calFlipEnterRight .32s ease-out forwards; }
+      /* ── 3-D book flip ── */
+      .cal-book-scene {
+        perspective: 1400px;
+        perspective-origin: center center;
+      }
+      .cal-book-wrap {
+        position: relative;
+        transform-style: preserve-3d;
+        transform-origin: center center;
+        cursor: pointer;
+      }
+      .cal-book-face {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      .cal-book-front {
+        position: relative;
+      }
+      .cal-book-back {
+        position: absolute;
+        inset: 0;
+        transform: rotateY(180deg);
+        overflow-y: auto;
+      }
+
+      /* ── Page tab (red top strip like a calendar pad) ── */
+      .cal-page-tab {
+        background: #c0392b;
+        border-radius: 12px 12px 0 0;
+        padding: 9px 16px 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0;
+      }
+      .cal-page-tab-month {
+        font-family: 'DM Mono', monospace;
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(255,255,255,.9);
+        letter-spacing: .14em;
+      }
+
+      /* ── Big date number with page-curl ── */
+      .cal-page-bigdate {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-top: none;
+        border-radius: 0 0 0 0;
+        padding: 14px 20px 10px;
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        position: relative;
+        overflow: hidden;
+      }
+      .cal-page-dayname {
+        font-family: 'Syne', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: .1em;
+      }
+      .cal-page-daynum {
+        font-family: 'Syne', sans-serif;
+        font-size: 72px;
+        font-weight: 900;
+        color: var(--text);
+        line-height: 1;
+      }
+      .cal-page-curl {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, transparent 50%, var(--bg2) 50%, var(--border) 70%, var(--card) 100%);
+        border-radius: 48px 0 0 0;
+        opacity: .7;
+      }
+
+      /* ── Page wrapper (everything below the tab lives here) ── */
+      .cal-book-front, .cal-book-back {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 3px 3px 16px rgba(0,0,0,.10), -1px 0 0 rgba(0,0,0,.04);
+      }
 
       .cal-spine { display:flex; gap:5px; justify-content:center; padding:10px 0 14px; }
       .cal-spine-dot {
@@ -778,25 +1098,11 @@
       .cal-spine-day { font-family:'DM Mono',monospace; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
       .cal-spine-num { font-family:'Syne',sans-serif; font-size:15px; font-weight:900; line-height:1; }
 
-      .cal-page { display:flex; flex-direction:column; gap:12px; padding-bottom:16px; perspective:1000px; }
-
-      .cal-day-nav { display:flex; align-items:center; gap:8px; padding:4px 0; }
-      .cal-nav-arrow {
-        width:36px; height:36px; border-radius:10px; border:1px solid var(--border);
-        background:var(--card); color:var(--text); font-size:22px; line-height:1;
-        cursor:pointer; display:flex; align-items:center; justify-content:center;
-        flex-shrink:0; transition:background .15s,border-color .15s,transform .1s;
-        font-weight:300; user-select:none;
-      }
-      .cal-nav-arrow:hover:not([disabled]) { background:var(--bg2); border-color:var(--gold-glo,rgba(201,126,8,.4)); transform:scale(1.08); }
-      .cal-nav-arrow:active:not([disabled]) { transform:scale(.95); }
-      .cal-day-nav-center { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; }
-      .cal-page-label { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; color:var(--text); line-height:1.2; }
-      .cal-today-pill { display:inline-block; padding:1px 8px; border-radius:99px; background:var(--gold); color:#fff; font-size:10px; font-weight:800; margin-right:4px; vertical-align:middle; font-family:'DM Mono',monospace; }
+      .cal-page-inner { display:flex; flex-direction:column; gap:12px; padding:14px 14px 16px; }
+      .cal-today-pill { display:inline-block; padding:1px 8px; border-radius:99px; background:var(--gold); color:#fff; font-size:10px; font-weight:800; margin-left:auto; vertical-align:middle; font-family:'DM Mono',monospace; }
       [data-theme="dark"] .cal-today-pill { color:#07090f; }
       .cal-today-jump-btn { padding:3px 12px; border-radius:99px; border:1px solid var(--gold-glo,rgba(201,126,8,.4)); background:var(--gold-dim,rgba(201,126,8,.08)); color:var(--gold); font-size:11px; font-weight:700; cursor:pointer; font-family:'DM Mono',monospace; transition:background .15s; }
       .cal-today-jump-btn:hover { background:rgba(201,126,8,.16); }
-
       .cal-day-banner { padding:9px 14px; border-radius:10px; font-size:12px; font-weight:600; font-family:'DM Mono',monospace; line-height:1.4; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
       .cal-day-today  { background:var(--card); border:1px solid var(--border); }
       .cal-day-past   { background:var(--bg2); border:1px dashed var(--border); color:var(--text3); }
