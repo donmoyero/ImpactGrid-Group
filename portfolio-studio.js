@@ -488,51 +488,66 @@ async function uploadAssetToSupabase(dataUrl, filename) {
   }
 }
 
-/* ── Upload all base64 images in a portfolio to Storage, replacing data: URLs ── */
+/* ── Upload all base64 images in a portfolio to Storage, replacing data: URLs ──
+   All uploads fire in parallel via Promise.all for maximum speed.           ── */
 async function uploadPortfolioAssets(pf) {
   const isDataUrl = s => typeof s === 'string' && s.startsWith('data:');
-  let anyUploaded = false;
+  const tasks = [];
 
-  // Hero media
+  // Hero media — collect all base64 slots
   if (Array.isArray(pf.hero_media)) {
-    for (let i = 0; i < pf.hero_media.length; i++) {
-      if (isDataUrl(pf.hero_media[i].url)) {
-        const url = await uploadAssetToSupabase(pf.hero_media[i].url, `hero_${i}_${Date.now()}`);
-        if (url) { pf.hero_media[i].url = url; anyUploaded = true; }
+    pf.hero_media.forEach((m, i) => {
+      if (isDataUrl(m.url)) {
+        tasks.push(
+          uploadAssetToSupabase(m.url, `hero_${i}_${Date.now()}`)
+            .then(url => { if (url) pf.hero_media[i].url = url; })
+        );
       }
-    }
+    });
   }
 
   // Logo
   if (isDataUrl(pf.logo_url)) {
-    const url = await uploadAssetToSupabase(pf.logo_url, `logo_${Date.now()}`);
-    if (url) { pf.logo_url = url; anyUploaded = true; }
-    // Also keep window refs in sync
-    if (url && window._obLogoDataUrl) window._obLogoDataUrl = url;
-    if (url && window._beLogoDataUrl) window._beLogoDataUrl = url;
+    tasks.push(
+      uploadAssetToSupabase(pf.logo_url, `logo_${Date.now()}`)
+        .then(url => {
+          if (url) {
+            pf.logo_url = url;
+            if (window._obLogoDataUrl) window._obLogoDataUrl = url;
+            if (window._beLogoDataUrl) window._beLogoDataUrl = url;
+          }
+        })
+    );
   }
 
   // Catalogue images
   if (Array.isArray(pf.catalogue)) {
-    for (let i = 0; i < pf.catalogue.length; i++) {
-      if (isDataUrl(pf.catalogue[i].image)) {
-        const url = await uploadAssetToSupabase(pf.catalogue[i].image, `cat_${i}_${Date.now()}`);
-        if (url) { pf.catalogue[i].image = url; anyUploaded = true; }
+    pf.catalogue.forEach((c, i) => {
+      if (isDataUrl(c.image)) {
+        tasks.push(
+          uploadAssetToSupabase(c.image, `cat_${i}_${Date.now()}`)
+            .then(url => { if (url) pf.catalogue[i].image = url; })
+        );
       }
-    }
+    });
   }
 
   // Service images
   if (Array.isArray(pf.services)) {
-    for (let i = 0; i < pf.services.length; i++) {
-      if (isDataUrl(pf.services[i].image)) {
-        const url = await uploadAssetToSupabase(pf.services[i].image, `svc_${i}_${Date.now()}`);
-        if (url) { pf.services[i].image = url; anyUploaded = true; }
+    pf.services.forEach((s, i) => {
+      if (isDataUrl(s.image)) {
+        tasks.push(
+          uploadAssetToSupabase(s.image, `svc_${i}_${Date.now()}`)
+            .then(url => { if (url) pf.services[i].image = url; })
+        );
       }
-    }
+    });
   }
 
-  if (anyUploaded) console.log('[Storage] Asset uploads complete');
+  if (tasks.length) {
+    await Promise.all(tasks);
+    console.log(`[Storage] ${tasks.length} asset(s) uploaded in parallel`);
+  }
   return pf;
 }
 
