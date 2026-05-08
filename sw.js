@@ -3,7 +3,7 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v9'; // bumped — calendar posting reminders
+const CACHE_NAME = 'impactgrid-v10'; // bumped — 7-day book calendar + cookie banner
 
 const CORE_FILES = [
   '/',
