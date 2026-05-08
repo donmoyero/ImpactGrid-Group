@@ -1104,8 +1104,21 @@ function copyPreviewUrl() {
 function obValidate() {
   const name  = (document.getElementById("obName")  || {}).value || "";
   const niche = (document.getElementById("obNiche") || {}).value || "";
+  const email = (document.getElementById("obEmail") || {}).value || "";
   const btn   = document.getElementById("obNextBtn");
-  if (btn && psState.currentStep === 1) btn.disabled = !(name.trim() && niche.trim());
+  const emailErr = document.getElementById("obEmailError");
+
+  // Basic email format check
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  // Show/hide inline error — only show after they've typed something
+  if (emailErr) {
+    emailErr.style.display = (email.trim().length > 0 && !emailOk) ? "" : "none";
+  }
+
+  if (btn && psState.currentStep === 1) {
+    btn.disabled = !(name.trim() && niche.trim() && emailOk);
+  }
 }
 
 function obNext() {
@@ -1984,15 +1997,17 @@ a{color:inherit;text-decoration:none}
 .cat-book-btn{display:inline-flex;align-items:center;gap:6px;background:var(--ac);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;transition:.2s;white-space:nowrap}
 .cat-book-btn:hover{opacity:.85;transform:translateY(-1px)}
 /* FLIP PAGE GALLERY */
-.fp-stage{display:flex;flex-direction:column;align-items:center;padding:32px 0 64px;gap:32px;width:100%}
-.fp-book{position:relative;width:100%;max-width:1200px;aspect-ratio:3/2;perspective:1800px;cursor:pointer}
-.fp-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.645,.045,.355,1),z-index 0s .35s;border-radius:4px 14px 14px 4px;box-shadow:6px 0 40px rgba(0,0,0,.45),-2px 0 8px rgba(0,0,0,.2)}
+.fp-stage{display:flex;flex-direction:column;align-items:center;padding:32px 20px 64px;gap:28px;width:100%;box-sizing:border-box}
+.fp-book-wrap{position:relative;width:100%;max-width:960px;perspective:2000px;-webkit-perspective:2000px}
+.fp-book-wrap::before{content:"";display:block;padding-top:66.66%}
+.fp-book{position:absolute;top:0;left:0;right:0;bottom:0;cursor:pointer}
+.fp-page{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:left center;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .8s cubic-bezier(.645,.045,.355,1);border-radius:4px 16px 16px 4px;box-shadow:8px 0 48px rgba(0,0,0,.55),-2px 0 10px rgba(0,0,0,.3),inset -3px 0 8px rgba(0,0,0,.15)}
 .fp-page.flipped{transform:rotateY(-180deg)}
-.fp-front,.fp-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:4px 14px 14px 4px}
-.fp-back{transform:rotateY(180deg);border-radius:14px 4px 4px 14px}
-.fp-front img,.fp-back img{width:100%;height:100%;object-fit:contain;object-position:center top;display:block;background:var(--bg)}
-.fp-crease{position:absolute;left:0;top:0;bottom:0;width:28px;background:linear-gradient(to right,rgba(0,0,0,.35),rgba(0,0,0,.05) 60%,transparent);pointer-events:none}
-.fp-crease.back-crease{left:auto;right:0;background:linear-gradient(to left,rgba(0,0,0,.35),rgba(0,0,0,.05) 60%,transparent)}
+.fp-front,.fp-back{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:4px 16px 16px 4px}
+.fp-back{transform:rotateY(180deg);-webkit-transform:rotateY(180deg);border-radius:16px 4px 4px 14px}
+.fp-front img,.fp-back img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;background:var(--bg)}
+.fp-crease{position:absolute;left:0;top:0;bottom:0;width:40px;background:linear-gradient(to right,rgba(0,0,0,.5),rgba(0,0,0,.08) 70%,transparent);pointer-events:none;z-index:2}
+.fp-crease.back-crease{left:auto;right:0;background:linear-gradient(to left,rgba(0,0,0,.5),rgba(0,0,0,.08) 70%,transparent)}
 .fp-page-num{position:absolute;bottom:14px;right:18px;font-size:11px;font-family:monospace;color:rgba(255,255,255,.9);background:rgba(0,0,0,.55);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px);letter-spacing:.5px}
 .fp-back .fp-page-num{right:auto;left:18px}
 .fp-back-blank{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--sf)}
@@ -2061,7 +2076,8 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
   .pg-header{padding:32px 20px 0}
   .page-inner{padding:24px 20px 60px}
   footer{padding:20px}
-  .fp-book{width:92vw}
+  .fp-book-wrap{width:calc(100vw - 24px);max-width:calc(100vw - 24px)}
+  .fp-stage{padding:16px 12px 48px}
   .fp-btn{padding:8px 14px;font-size:12px}
   .grid{grid-template-columns:1fr}
 }
@@ -2212,7 +2228,9 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
     <div class="sec-ttl">My Work</div>
   </div>
   <div class="fp-stage">
+    <div class="fp-book-wrap">
     <div class="fp-book" id="fpBook">${flipPagesHTML}</div>
+    </div>
     <div class="fp-controls">
       <button class="fp-btn fp-btn-prev" onclick="fpStep(-1)" aria-label="Previous page">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>Prev
@@ -2318,10 +2336,11 @@ document.addEventListener('keydown', function(e) {
 document.querySelectorAll('.fp-btn-prev').forEach(function(b) { b.id = 'fpBtnPrev'; b.disabled = true; });
 document.querySelectorAll('.fp-btn-next').forEach(function(b) { b.id = 'fpBtnNext'; });
 var _fpTx = 0, fpBook = document.getElementById('fpBook');
-if (fpBook) {
-  fpBook.addEventListener('touchstart', function(e) { _fpTx = e.touches[0].clientX; }, { passive: true });
-  fpBook.addEventListener('touchend',   function(e) { var dx = e.changedTouches[0].clientX - _fpTx; if (Math.abs(dx) > 50) fpStep(dx < 0 ? 1 : -1); });
-  fpBook.addEventListener('click',      function(e) { var r = fpBook.getBoundingClientRect(); if (e.clientX - r.left > r.width / 2) fpStep(1); else fpStep(-1); });
+var fpWrap = fpBook ? fpBook.parentElement : null;
+if (fpWrap) {
+  fpWrap.addEventListener('touchstart', function(e) { _fpTx = e.touches[0].clientX; }, { passive: true });
+  fpWrap.addEventListener('touchend',   function(e) { var dx = e.changedTouches[0].clientX - _fpTx; if (Math.abs(dx) > 50) fpStep(dx < 0 ? 1 : -1); });
+  fpWrap.addEventListener('click',      function(e) { var r = fpWrap.getBoundingClientRect(); if (e.clientX - r.left > r.width / 2) fpStep(1); else fpStep(-1); });
 }
 
 // Intersection observer for animations
