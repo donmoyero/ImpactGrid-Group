@@ -663,7 +663,14 @@ async function deletePortfolio(id) {
   if (!pf) return;
 
   const label = pf.name ? `"${pf.name}"` : 'this portfolio';
-  if (!confirm(`Delete ${label}? This can't be undone.`)) return;
+  const plan  = _getPlan();
+  const isFreeUser = (plan === 'free') && !_isAdmin();
+
+  const warningMsg = isFreeUser
+    ? `Delete ${label}?\n\n⚠ Free plan warning: this action cannot be undone. Creating a new portfolio uses AI credits — if you've used yours up, you won't be able to rebuild this portfolio without upgrading.\n\nAre you sure you want to permanently delete it?`
+    : `Delete ${label}? This can't be undone.`;
+
+  if (!confirm(warningMsg)) return;
 
   const userId = (window.igUser && window.igUser.id)
     || localStorage.getItem('ig_user_id');
