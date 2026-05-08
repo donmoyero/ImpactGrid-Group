@@ -344,11 +344,19 @@
     var usageEl = document.getElementById('pgUsage');
     if (usageEl) {
       var aiRemain  = isFinite(aiLimit) ? Math.max(0, aiLimit - aiUses) : '∞';
+
+      // Use actual used counts from psState/localStorage so we show REMAINING, not total limit.
+      // psState is defined in portfolio-studio.js and is always in scope on the studio page.
+      var pfUsed  = (window.psState && Array.isArray(window.psState.portfolios))
+        ? window.psState.portfolios.length
+        : (parseInt(localStorage.getItem('ig_portfolio_count') || '0') || 0);
+      var carUsed = parseInt(localStorage.getItem('ig_carousel_count') || '0') || 0;
+
       var carRemain = cfg.carousels !== undefined
-        ? (isFinite(cfg.carousels) ? cfg.carousels : '∞')
+        ? (isFinite(cfg.carousels) ? Math.max(0, cfg.carousels - carUsed) : '∞')
         : '∞';
       var pfRemain  = cfg.portfolios !== undefined
-        ? (isFinite(cfg.portfolios) ? cfg.portfolios : '∞')
+        ? (isFinite(cfg.portfolios) ? Math.max(0, cfg.portfolios - pfUsed) : '∞')
         : '∞';
 
       usageEl.innerHTML = `
@@ -358,11 +366,11 @@
         </div>
         <div class="pg-usage-item">
           <div class="pg-usage-num">${esc(String(carRemain))}</div>
-          <div class="pg-usage-label">Carousel slots</div>
+          <div class="pg-usage-label">Carousel slots left</div>
         </div>
         <div class="pg-usage-item">
           <div class="pg-usage-num">${esc(String(pfRemain))}</div>
-          <div class="pg-usage-label">Portfolio slots</div>
+          <div class="pg-usage-label">Portfolio slots left</div>
         </div>`;
     }
 
