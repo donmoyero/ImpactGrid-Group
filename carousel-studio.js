@@ -1005,7 +1005,7 @@ function renderSlide(){
       hcEl.appendChild(hcSwirl);
       var hcBot=document.createElement('div');
       hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;align-items:center;padding:0 14px;height:26px;border-top:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      hcBot.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.78);">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.IMPACTGRIDGROUP.COM')+'</span>';
+      hcBot.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.78);">'+'WWW.IMPACTGRIDGROUP.COM'+'</span>';
       hcEl.appendChild(hcBot);
       break;
     }
@@ -1044,7 +1044,7 @@ function renderSlide(){
       }
       var ecFoot=document.createElement('div');
       ecFoot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:26px;border-top:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      var urlTxt=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+      var urlTxt='www.impactgridgroup.com';
       ecFoot.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.78);">'+urlTxt+'</span>'+'<span style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:4px;">✽ ✽ ✽</span>';
       ecEl.appendChild(ecFoot);
       break;
@@ -1091,7 +1091,7 @@ function renderSlide(){
       ecolEl.appendChild(ecolText);
       var ecolFootBar=document.createElement('div');
       ecolFootBar.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:26px;border-top:1px solid rgba(140,120,100,.35);background:rgba(240,235,225,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      var ecolUrl=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+      var ecolUrl='www.impactgridgroup.com';
       ecolFootBar.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a09888;">'+ecolUrl+'</span>'+'<span style="font-size:11px;color:#b0a090;letter-spacing:4px;">✽ ✽ ✽</span>';
       ecolEl.appendChild(ecolFootBar);
       break;
@@ -1141,7 +1141,7 @@ function renderSlide(){
       ec3El.appendChild(ec3b2);
       var ec3FootBar=document.createElement('div');
       ec3FootBar.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:26px;border-top:1px solid rgba(140,120,100,.35);background:rgba(240,235,225,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      var ec3Url=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+      var ec3Url='www.impactgridgroup.com';
       ec3FootBar.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a09888;">'+ec3Url+'</span>'+'<span style="font-size:11px;color:#b0a090;letter-spacing:4px;">✽ ✽ ✽</span>';
       ec3El.appendChild(ec3FootBar);
       break;
@@ -1153,7 +1153,7 @@ function renderSlide(){
   var brandEl=document.getElementById('sBrand');
   var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
   if(editorialLayouts.indexOf(layout)===-1){
-    var urlText=ST.brand?'www.'+ST.brand.toLowerCase().replace(/\s+/g,'')+'.com':'www.impactgridgroup.com';
+    var urlText='www.impactgridgroup.com';
     brandEl.textContent=urlText;
     brandEl.style.color='';  /* use CSS class color */
   } else {
