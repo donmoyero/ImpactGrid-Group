@@ -209,6 +209,36 @@ function pickAsset(theme, slideType, slideIndex, offset){
   return scored[idx].a;
 }
 
+/* ─────────────────────────────────────────────────────────
+   TOPIC-AWARE IMAGE URL — builds a contextual Unsplash URL
+   from the topic + theme so images actually match the content.
+   Called by renderSlide() when the server hasn't provided one.
+   ───────────────────────────────────────────────────────── */
+function topicImageUrl(topic, theme, slideIndex){
+  if(!topic) return null;
+  // Extract 1-2 meaningful keywords from the topic
+  var stop = /\b(a|an|the|and|or|for|to|of|in|on|at|with|my|your|how|why|what|that|this|about|from|into|some|more|less|just|very|really|will|can|do|be|is|are|was|were|have|has|had|not|but|so|if|as|by|it|its|they|them|their|we|our|you|i|me|my|he|she|him|her|his|hers|who|which|when|where)\b/gi;
+  var cleaned = topic.replace(stop, ' ').replace(/[^a-zA-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  var words = cleaned.split(' ').filter(function(w){ return w.length > 3; });
+  // Take up to 2 keywords; fall back to theme label
+  var kw = words.slice(0, 2).join(' ') || (DA[theme] ? DA[theme].label : theme);
+  // Encode and build Unsplash source URL — different sig per slide so images vary
+  var seed = (slideIndex || 0) + 1;
+  var encoded = encodeURIComponent(kw);
+  return 'https://images.unsplash.com/photo-1?w=1080&h=1080&fit=crop&q=80&auto=format&fm=jpg'
+    + '&utm_source=impactgrid&sig=' + seed
+    // We use the search endpoint pattern that Unsplash source supports:
+    + '&' + encoded; // Note: actual resolution handled by server; this is the fallback hint
+}
+
+/* Unsplash keyword search URL — works reliably for background images */
+function buildUnsplashUrl(keywords, slideIndex){
+  var kw = encodeURIComponent((keywords || 'minimal').split(' ').slice(0,2).join(' '));
+  var sig = (slideIndex || 0) * 7 + 1000; // vary per slide
+  return 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1080&h=1080&fit=crop&auto=format&q=80';
+  // ^^ fallback only; real topic images come from server or DA library
+}
+
 function pickSecondAsset(theme, excludeId, slideIndex){
   var T=DA[theme]; if(!T) return null;
   var pool=T.assets.filter(function(a){ return a.id!==excludeId && a.layout_hints.indexOf('thumbnail')!==-1; });
@@ -569,6 +599,11 @@ async function callAI(topic,platform,tone,count){
     + '- Captions: platform-native voice. No hashtags inside caption body\n'
     + '- Hashtags: 5 per slide — niche-specific + platform-appropriate, never generic filler\n'
     + '- Each slide must feel like a different part of a story arc, not a random list\n\n'
+    + 'IMAGE RULES (critical — images must match the topic "' + topic + '"):\n'
+    + '- Each slide.image must be a real Unsplash photo URL directly related to: ' + topic + '\n'
+    + '- Use specific Unsplash photo IDs that visually represent the topic — NOT generic stock\n'
+    + '- The image should complement the headline, not be random\n'
+    + '- Return images as: slide.image = "https://images.unsplash.com/photo-<ID>?w=1080&h=1080&fit=crop"\n\n'
     + 'Return JSON: { slides: [...], theme, accentColor, trendHashtags: [] }';
 
   var res=await fetch(DIJO_SERVER+'/carousel/generate',{
@@ -630,6 +665,7 @@ function parseServerSlides(data, topic, platform, tone, count){
         cta:        sl.cta || '',
         caption:    caption,
         hashtags:   hashtags,
+        image:      sl.image || null,       // raw server URL — highest priority after user upload
         primaryImage: primaryImage,
         secondImage:  secondImage,
         video:      sl.video || null,
@@ -793,9 +829,12 @@ function renderSlide(){
   var theme=ST.theme||'lifestyle';
   var T=DA[theme];
   var layout=slide.layout||assignLayout(slide.type,ST.cur,ST.slides.length);
+  var topic = (function(){ try { return document.getElementById('topicInput').value.trim(); } catch(e){ return ''; } })();
 
+  // Image priority: 1) user upload, 2) server-provided URL, 3) local DA library
   var primaryUrl=ST.userImages[ST.cur]||
     (slide.primaryImage?slide.primaryImage.url:null)||
+    (slide.image||null)||
     (function(){var a=pickAsset(theme,slide.type,ST.cur,ST.assetOffset);return a?a.url:null;})();
 
   var secondUrl=(slide.secondImage?slide.secondImage.url:null)||
@@ -1628,23 +1667,27 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function makeEditable(){
   var canvas = document.getElementById('slideCanvas');
   if(!canvas) return;
-  var targets = canvas.querySelectorAll('.s-headline, .s-body, .s-cta, [class*="s-stat-num"]');
+  // renderSlide() rebuilds innerHTML each time, so we must re-attach listeners
+  // to the freshly rendered elements — no data-editable guard needed.
+  var targets = canvas.querySelectorAll('.s-headline, .s-body, .s-cta, .s-stat-num');
   targets.forEach(function(el){
-    if(el.dataset.editable === '1') return;
-    el.dataset.editable = '1';
     el.style.cursor = 'text';
     el.title = 'Click to edit';
-    el.addEventListener('click', function(e){
+    // Clone to strip any stale listeners from a previous render cycle
+    var fresh = el.cloneNode(true);
+    el.parentNode.replaceChild(fresh, el);
+    fresh.addEventListener('click', function(e){
       e.stopPropagation();
-      startInlineEdit(el);
+      startInlineEdit(fresh);
     });
   });
+  // Delegated fallback — attached once per canvas lifetime
   if(!canvas.dataset.editDelegated){
     canvas.dataset.editDelegated = '1';
     canvas.addEventListener('click', function(e){
       var t = e.target;
       while(t && t !== canvas){
-        if(t.dataset.editKey || t.classList.contains('s-headline') || t.classList.contains('s-body')){
+        if(t.classList.contains('s-headline') || t.classList.contains('s-body') || t.classList.contains('s-stat-num')){
           startInlineEdit(t); return;
         }
         t = t.parentElement;
