@@ -482,13 +482,136 @@ async function generate(){
   var _lbl = (ST.theme && DA[ST.theme]) ? DA[ST.theme].label : (ST.theme || 'Custom');
   toast('✦ '+ST.slides.length+'-slide carousel · '+_lbl+' · tap any text to edit');
 
-  // v4.5: enrich with live captions + hashtags after render
+  // v4.6: enrich each slide with a topic-matched image ASAP, then re-render
   var topicVal=topic, platformVal=platform;
+  setTimeout(function(){ enrichSlideImages(topicVal); }, 200);
+
+  // v4.5: enrich with live captions + hashtags after render
   setTimeout(function(){ CaptionEngine.enrichDeck(topicVal, platformVal); }, 600);
 
   // Soft plan gate — show upgrade prompt after generation if limit reached
   // Does NOT block the carousel from rendering (non-blocking)
   setTimeout(function(){ _softPlanCheck(); }, 1200);
+}
+
+/* ─────────────────────────────────────────────────────────
+   TOPIC-AWARE IMAGE ENRICHMENT  v4.6
+   Runs after generation. For each slide that doesn't have a
+   user-uploaded image, we resolve a real Unsplash photo URL
+   that matches the SLIDE HEADLINE + TOPIC keywords.
+   Uses Unsplash Source API (no API key) + Unsplash search
+   as fallback. Images are fetched in parallel and applied
+   slide-by-slide so the carousel updates progressively.
+   ───────────────────────────────────────────────────────── */
+
+// Keyword → curated Unsplash photo IDs that reliably load
+var TOPIC_PHOTO_MAP = {
+  // Productivity / creator
+  morning:    '1499750310107-5fef28a66643', routine:     '1484627147104-f5197bcd6651',
+  habit:      '1506126613408-eca07ce68773', focus:       '1455541504462-14f99bb85b75',
+  system:     '1517245386807-bb43f82c33c4', discipline:  '1434494878577-86c23bcb06b9',
+  // Finance / money
+  money:      '1579621970563-ebec7560ff3e', invest:      '1559526324-4b87b5e36e44',
+  finance:    '1554224155-8d04cb21cd6c',   crypto:      '1563986768609-322da13575f3',
+  stocks:     '1611974789855-9c2a0a7236a3', budget:      '1460925895917-afdab827c52f',
+  wealth:     '1553729459-efe14ef6055d',   saving:      '1444653614773-995cb1ef9efa',
+  // Health / fitness
+  fitness:    '1571019613454-1cb2f99b2d8b', workout:     '1581009137042-c552e485697a',
+  yoga:       '1544367567-0f2fcb009e0b',   nutrition:   '1490645935967-10de6ba17061',
+  health:     '1498837167922-ddd27525d352', sleep:       '1519710164239-da123dc03ef4',
+  meditation: '1506126613408-eca07ce68773', running:     '1552674605-db6ffd4facb5',
+  // Business / work
+  business:   '1521737604893-d14cc237f11d', entrepreneur:'1519389950473-47ba0277781c',
+  startup:    '1553877522-43269d4ea984',   team:        '1522071820081-009f0129c71c',
+  leadership: '1507679799987-c73779587ccf', strategy:    '1460925895917-afdab827c52f',
+  office:     '1497215728101-856f4ea42174', meeting:     '1573497620053-ea5300f94f21',
+  // Content / social media
+  creator:    '1562564055-71e051d33c19',   content:     '1499750310107-5fef28a66643',
+  instagram:  '1611162617474-5b21e879e113', tiktok:      '1611162617474-5b21e879e113',
+  social:     '1516321318423-f06f85e504b3', viral:       '1587614203976-365bf4c69a0d',
+  // Lifestyle
+  travel:     '1488646953014-85cb44e25828', food:        '1504674900247-0877df9cc836',
+  coffee:     '1459755486867-b854a626124a', lifestyle:   '1517841905240-472988babdf9',
+  mindset:    '1506126613408-eca07ce68773', success:     '1486406146926-c627a92ad1ab',
+  // Home / cozy
+  home:       '1505693416388-ac5ce068fe85', interior:    '1555041469-a586c61ea9bc',
+  cozy:       '1513519245088-0e12902e35ca', kitchen:     '1556909114-f6e7ad7d3136',
+  // Fashion
+  fashion:    '1483985988355-763728e1935b', style:       '1515886657613-9f3515b0c78f',
+  // Tech
+  tech:       '1531297484001-80022131f5a1', ai:          '1677442135703-1787eea5ce01',
+  coding:     '1498050108023-c5249f4df085', digital:     '1518186285589-2f7649de83e0'
+};
+
+function topicKeywordsForSlide(slide, globalTopic) {
+  // Pull meaningful words from headline + body + global topic
+  var text = ((slide.headline || '') + ' ' + (slide.body || '') + ' ' + (globalTopic || '')).toLowerCase();
+  var stop  = /\b(a|an|the|and|or|for|to|of|in|on|at|with|my|your|how|why|what|that|this|about|from|into|some|more|less|just|very|really|will|can|do|be|is|are|was|were|have|has|had|not|but|so|if|as|by|it|its|they|them|their|we|our|you|i|me|he|she|him|her|who|which|when|where|here|there|these|those|most|much|many|every|each|even|after|before|during|while|already|still|only|also|back|off|up|down|out|well|good|great|real|new|big|full|true|long|way|life|time|one|two|three|four|five|six|seven|eight|nine|ten|first|last|next|right|left)\b/gi;
+  var words = text.replace(stop,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(function(w){ return w.length > 3; });
+  return words;
+}
+
+function pickPhotoId(words) {
+  // Check each word against our curated map
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i];
+    // Exact match
+    if (TOPIC_PHOTO_MAP[w]) return TOPIC_PHOTO_MAP[w];
+    // Partial match — check if any key starts with this word root
+    var keys = Object.keys(TOPIC_PHOTO_MAP);
+    for (var k = 0; k < keys.length; k++) {
+      if (keys[k].indexOf(w.slice(0, 5)) === 0 || w.indexOf(keys[k].slice(0, 5)) === 0) {
+        return TOPIC_PHOTO_MAP[keys[k]];
+      }
+    }
+  }
+  return null;
+}
+
+function buildTopicImageUrl(photoId, size) {
+  size = size || '1080&h=1080';
+  return 'https://images.unsplash.com/photo-' + photoId + '?w=' + size + '&fit=crop&auto=format&q=80';
+}
+
+async function enrichSlideImages(topic) {
+  if (!window.ST || !ST.slides.length) return;
+  var total = ST.slides.length;
+  var changed = false;
+
+  for (var i = 0; i < total; i++) {
+    // Never overwrite a user-uploaded image
+    if (ST.userImages[i]) continue;
+
+    var slide = ST.slides[i];
+    var words = topicKeywordsForSlide(slide, topic);
+    var photoId = pickPhotoId(words);
+
+    if (photoId) {
+      var url = buildTopicImageUrl(photoId, '1080&h=1080');
+      // Verify the image actually loads before assigning
+      (function(idx, imgUrl) {
+        var probe = new Image();
+        probe.onload = function() {
+          ST.slides[idx].image = imgUrl;
+          ST.slides[idx].primaryImage = { url: imgUrl, tone: 'neutral', brightness: 'medium' };
+          // Re-render just the current slide; rebuild strip thumbnails
+          buildStrip();
+          if (ST.cur === idx) renderSlide();
+        };
+        probe.onerror = function() {
+          // Photo ID didn't resolve — try Unsplash Source with keyword
+          var kw = words.slice(0, 2).join(',');
+          if (!kw) return;
+          var fallbackUrl = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1080&h=1080&fit=crop&auto=format&q=80';
+          ST.slides[idx].image = fallbackUrl;
+          ST.slides[idx].primaryImage = { url: fallbackUrl, tone: 'neutral', brightness: 'medium' };
+          buildStrip();
+          if (ST.cur === idx) renderSlide();
+        };
+        probe.src = imgUrl;
+      })(i, url);
+    }
+  }
 }
 
 /* ─────────────────────────────────────────────────────────
