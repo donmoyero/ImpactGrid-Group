@@ -625,7 +625,78 @@
 .dl-bar-fill  { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 99px; transition: width .2s; }
 
 /* Animation used by toast and modal */
-@keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+@keyframes fadeUp   { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+@keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUp  { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:translateY(0); } }
+@keyframes csPulse  { 0%,100%{opacity:1;} 50%{opacity:.5;} }
+@keyframes csSpin   { to{transform:rotate(360deg);} }
+
+/* ── iOS batch-download modal ──────────────────────────── */
+.ios-dl-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:9995;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .25s ease;}
+.ios-dl-sheet{width:100%;max-width:580px;background:#111114;border-radius:28px 28px 0 0;border-top:1px solid rgba(255,255,255,.1);padding:0 0 max(28px,env(safe-area-inset-bottom));animation:slideUp .32s cubic-bezier(.32,1,.6,1);overflow:hidden;max-height:92vh;display:flex;flex-direction:column;}
+.ios-dl-handle-wrap{display:flex;justify-content:center;padding:14px 0 0;flex-shrink:0;}
+.ios-dl-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);}
+.ios-dl-header{padding:16px 28px 20px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.07);}
+.ios-dl-title{font-size:20px;font-weight:800;color:#fff;font-family:var(--fm);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+.ios-dl-title-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.ios-dl-subtitle{font-size:13px;color:rgba(255,255,255,.45);font-family:var(--fm);margin-top:6px;line-height:1.5;}
+.ios-dl-progress-area{padding:24px 28px 20px;display:flex;align-items:center;gap:20px;flex-shrink:0;}
+.ios-dl-ring-wrap{position:relative;width:72px;height:72px;flex-shrink:0;}
+.ios-dl-ring-svg{transform:rotate(-90deg);}
+.ios-dl-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:6;}
+.ios-dl-ring-fill{fill:none;stroke:#22c55e;stroke-width:6;stroke-linecap:round;stroke-dasharray:188;stroke-dashoffset:188;transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);}
+.ios-dl-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ios-dl-ring-num{font-size:18px;font-weight:800;color:#fff;line-height:1;}
+.ios-dl-ring-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-top:1px;}
+.ios-dl-progress-text{flex:1;}
+.ios-dl-batch-label{font-size:16px;font-weight:700;color:#fff;font-family:var(--fm);margin-bottom:4px;}
+.ios-dl-batch-sub{font-size:13px;color:rgba(255,255,255,.45);font-family:var(--fm);line-height:1.5;}
+.ios-dl-instruction{margin:0 28px 20px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:16px;padding:16px 18px;display:flex;align-items:flex-start;gap:14px;flex-shrink:0;}
+.ios-dl-instruction-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.ios-dl-instruction-text{font-size:14px;color:rgba(255,255,255,.8);font-family:var(--fm);line-height:1.6;font-weight:500;}
+.ios-dl-instruction-text strong{color:#4ade80;}
+.ios-dl-thumbs{display:flex;gap:6px;padding:0 28px 20px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;}
+.ios-dl-thumbs::-webkit-scrollbar{display:none;}
+.ios-dl-thumb{width:56px;height:56px;border-radius:10px;overflow:hidden;flex-shrink:0;position:relative;border:2px solid rgba(255,255,255,.08);transition:all .2s;background:var(--bg3);}
+.ios-dl-thumb.saved{border-color:#22c55e;}
+.ios-dl-thumb.saving{border-color:rgba(34,197,94,.5);animation:csPulse .8s ease-in-out infinite;}
+.ios-dl-thumb img{width:100%;height:100%;object-fit:cover;}
+.ios-dl-thumb-check{position:absolute;inset:0;background:rgba(22,163,74,.6);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0;transition:opacity .2s;}
+.ios-dl-thumb.saved .ios-dl-thumb-check{opacity:1;}
+.ios-dl-btn-area{padding:0 28px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
+.ios-dl-save-btn{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:16px;font-weight:800;font-family:var(--fm);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .2s;box-shadow:0 8px 28px rgba(22,163,74,.3);-webkit-tap-highlight-color:transparent;}
+.ios-dl-save-btn:active{transform:scale(.97);}
+.ios-dl-save-btn:disabled{background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);box-shadow:none;cursor:not-allowed;}
+.ios-dl-save-btn.loading{background:rgba(255,255,255,.08);animation:csPulse .8s ease-in-out infinite;}
+.ios-dl-next-btn{width:100%;padding:14px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:14px;font-weight:700;font-family:var(--fm);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.ios-dl-next-btn:active{background:rgba(255,255,255,.12);}
+.ios-dl-cancel-btn{width:100%;padding:13px;border-radius:16px;background:transparent;color:rgba(255,255,255,.35);font-size:13px;font-weight:600;font-family:var(--fm);cursor:pointer;border:none;transition:color .2s;-webkit-tap-highlight-color:transparent;}
+.ios-dl-cancel-btn:active{color:rgba(255,255,255,.6);}
+.ios-dl-done{padding:32px 28px;text-align:center;flex-shrink:0;}
+.ios-dl-done-icon{font-size:52px;margin-bottom:14px;display:block;}
+.ios-dl-done-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;font-family:var(--fm);}
+.ios-dl-done-sub{font-size:14px;color:rgba(255,255,255,.45);font-family:var(--fm);line-height:1.6;margin-bottom:24px;}
+.ios-dl-done-btn{width:100%;padding:15px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:15px;font-weight:700;font-family:var(--fm);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+
+/* ── iOS fallback modal (old Safari without share API) ── */
+.ios-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);z-index:9994;display:flex;align-items:flex-end;justify-content:center;padding:0;animation:fadeIn .2s ease;}
+.ios-modal-box{width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:28px 28px max(28px,env(safe-area-inset-bottom));animation:slideUp .3s ease;background:#1c1c1e;color:#fff;border-top:1px solid rgba(255,255,255,.1);}
+.ios-modal-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);margin:0 auto 20px;}
+.ios-modal-title{font-size:18px;font-weight:700;margin-bottom:6px;text-align:center;font-family:var(--fm);}
+.ios-modal-sub{font-size:13px;color:rgba(255,255,255,.6);text-align:center;margin-bottom:24px;line-height:1.6;font-family:var(--fm);}
+.ios-fb-step{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.06);margin-bottom:8px;}
+.ios-fb-step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff;}
+.ios-fb-step-text{font-size:13px;color:rgba(255,255,255,.85);line-height:1.5;padding-top:4px;font-family:var(--fm);}
+.ios-photos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:20px;border-radius:12px;overflow:hidden;}
+.ios-photo-thumb{aspect-ratio:1;background:#333;overflow:hidden;cursor:pointer;position:relative;}
+.ios-photo-thumb img{width:100%;height:100%;object-fit:cover;}
+.ios-photo-thumb-open{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0;transition:opacity .2s;}
+.ios-photo-thumb:hover .ios-photo-thumb-open{opacity:1;}
+.ios-open-all-btn{width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;font-family:var(--fm);}
+.ios-open-all-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,.35);}
+.ios-cancel-btn{width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:none;cursor:pointer;transition:background .2s;font-family:var(--fm);}
+.ios-cancel-btn:hover{background:rgba(255,255,255,.12);}
+.hidden{display:none!important;}
 
 /* ── MOBILE ─────────────────────────────────────────── */
 .cs-mob-left-btn, .cs-mob-right-btn { display: none; }
@@ -1145,6 +1216,71 @@
 <!-- Toast shelf -->
 <div class="toast-shelf" id="toastShelf"></div>
 
+<!-- ══════════ iOS BATCH DOWNLOAD MODAL ══════════ -->
+<div class="ios-dl-backdrop hidden" id="iosDlModal">
+  <div class="ios-dl-sheet" id="iosDlSheet">
+    <div class="ios-dl-handle-wrap"><div class="ios-dl-handle"></div></div>
+    <div class="ios-dl-header">
+      <div class="ios-dl-title"><div class="ios-dl-title-icon">📲</div><span id="iosDlTitle">Save Slides</span></div>
+      <div class="ios-dl-subtitle" id="iosDlSubtitle">Saving in batches — tap the button after each share sheet</div>
+    </div>
+    <div class="ios-dl-progress-area">
+      <div class="ios-dl-ring-wrap">
+        <svg class="ios-dl-ring-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="ios-dl-ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ios-dl-ring-fill" id="iosDlRingFill" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="ios-dl-ring-text">
+          <div class="ios-dl-ring-num" id="iosDlRingNum">0</div>
+          <div class="ios-dl-ring-label">saved</div>
+        </div>
+      </div>
+      <div class="ios-dl-progress-text">
+        <div class="ios-dl-batch-label" id="iosDlBatchLabel">Ready to start</div>
+        <div class="ios-dl-batch-sub"   id="iosDlBatchSub">Tap the button below to begin</div>
+      </div>
+    </div>
+    <div class="ios-dl-instruction" id="iosDlInstruction">
+      <div class="ios-dl-instruction-icon">👆</div>
+      <div class="ios-dl-instruction-text" id="iosDlInstructionText">
+        Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all slides in this batch to your Camera Roll.
+      </div>
+    </div>
+    <div class="ios-dl-thumbs" id="iosDlThumbs"></div>
+    <div class="ios-dl-btn-area" id="iosDlBtnArea">
+      <button class="ios-dl-save-btn" id="iosDlSaveBtn" onclick="iosDlTriggerShare()">
+        <span id="iosDlSaveBtnIcon">📲</span>
+        <span id="iosDlSaveBtnText">Save to Device</span>
+      </button>
+      <button class="ios-dl-next-btn hidden" id="iosDlNextBtn" onclick="iosDlNextBatch()">
+        Next Batch → <span id="iosDlNextLabel"></span>
+      </button>
+      <button class="ios-dl-cancel-btn" onclick="iosDlClose()">Cancel</button>
+    </div>
+    <div class="ios-dl-done hidden" id="iosDlDone">
+      <span class="ios-dl-done-icon">🎉</span>
+      <div class="ios-dl-done-title" id="iosDlDoneTitle">All Slides Saved!</div>
+      <div class="ios-dl-done-sub"   id="iosDlDoneSub">Check your Camera Roll — all your slides are there.</div>
+      <button class="ios-dl-done-btn" onclick="iosDlClose()">Done ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ iOS FALLBACK MODAL ══════════ -->
+<div class="ios-modal-backdrop hidden" id="iosModal" onclick="if(event.target===this)closeIosModal()">
+  <div class="ios-modal-box">
+    <div class="ios-modal-handle"></div>
+    <div class="ios-modal-title" id="iosModalTitle">📱 Save Your Slides</div>
+    <div class="ios-modal-sub"   id="iosModalSub">Here's how to save slides on your device</div>
+    <div class="ios-fb-step"><div class="ios-fb-step-num">1</div><div class="ios-fb-step-text">Tap each slide thumbnail below — it opens in a new tab</div></div>
+    <div class="ios-fb-step"><div class="ios-fb-step-num">2</div><div class="ios-fb-step-text" id="iosStep2Text"><strong>Long-press</strong> the image until a menu appears</div></div>
+    <div class="ios-fb-step"><div class="ios-fb-step-num">3</div><div class="ios-fb-step-text" id="iosStep3Text">Tap <strong>"Save to Photos"</strong> — saves to Camera Roll 📷</div></div>
+    <div class="ios-photos-grid" id="iosPhotosGrid" style="margin-top:16px;"></div>
+    <button class="ios-open-all-btn" id="iosOpenAllBtn" onclick="iosOpenAll()" style="margin-top:16px;">📂 Open All Slides</button>
+    <button class="ios-cancel-btn" onclick="closeIosModal()">Cancel</button>
+  </div>
+</div>
+
 <!-- Download progress bar -->
 <div id="dlProgressBar">
   <div class="dl-bar-top">
@@ -1455,9 +1591,13 @@ function closeAllPanels() {
 })();
 
 // ── 8. DOWNLOAD ALL with progress bar ───────────────────
-function isSafariIOS() {
-  return /iP(ad|hone|od)/.test(navigator.userAgent) &&
-         /WebKit/.test(navigator.userAgent) && !window.MSStream;
+
+/* ── Platform detection (ported from event.html) ── */
+function isSafariIOS(){
+  var ua = navigator.userAgent;
+  var isiOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  var isSafari = /AppleWebKit/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/OPiOS/.test(ua) && !/EdgiOS/.test(ua);
+  return isiOS && isSafari;
 }
 
 var _dlCancelled = false;
@@ -1481,8 +1621,6 @@ function hideDlProgress() {
 }
 window.cancelDl = function() { _dlCancelled = true; hideDlProgress(); toast('Download cancelled'); };
 
-// Pre-fetch a cross-origin image URL as a local blob URL so html2canvas
-// can read it without the canvas being tainted and toBlob() returning null.
 async function fetchImageAsBlob(url) {
   if (!url) return null;
   try {
@@ -1496,12 +1634,8 @@ async function fetchImageAsBlob(url) {
   }
 }
 
-// Collect every element inside `root` that has a CSS background-image set,
-// swap it for a local blob URL, and return a cleanup function that restores
-// the originals (and revokes the blob URLs).
 async function swapBgImagesToBlobs(root) {
   var els = Array.from(root.querySelectorAll('*'));
-  // Include root itself
   els.unshift(root);
   var swaps = [];
   for (var k = 0; k < els.length; k++) {
@@ -1510,7 +1644,6 @@ async function swapBgImagesToBlobs(root) {
     var match = bg && bg.match(/url\(["']?([^"')]+)["']?\)/);
     if (!match) continue;
     var originalUrl = match[1];
-    // Skip already-local blob URLs and data URIs
     if (originalUrl.startsWith('blob:') || originalUrl.startsWith('data:')) continue;
     var blobUrl = await fetchImageAsBlob(originalUrl);
     if (blobUrl) {
@@ -1527,105 +1660,259 @@ async function swapBgImagesToBlobs(root) {
   };
 }
 
+/* ════════════════════════════════════════════════════════
+   iOS BATCH DOWNLOAD MODAL  (ported from event.html)
+════════════════════════════════════════════════════════ */
+var iosDl = {
+  blobs: [], batches: [], batchIdx: 0, saved: 0, total: 0,
+  BATCH_SIZE: 9, fetching: false, cancelled: false,
+};
+
+function showIosDlModal(blobItems) {
+  if (!(navigator.share && navigator.canShare)) { iosFallbackTabs(blobItems); return; }
+  iosDl.blobs = blobItems; iosDl.total = blobItems.length;
+  iosDl.saved = 0; iosDl.batchIdx = 0; iosDl.cancelled = false; iosDl.fetching = false;
+  iosDl.batches = [];
+  for (var i = 0; i < blobItems.length; i += iosDl.BATCH_SIZE)
+    iosDl.batches.push(blobItems.slice(i, i + iosDl.BATCH_SIZE));
+
+  document.getElementById('iosDlDone').classList.add('hidden');
+  document.getElementById('iosDlBtnArea').classList.remove('hidden');
+  document.getElementById('iosDlNextBtn').classList.add('hidden');
+  document.getElementById('iosDlInstruction').style.display = '';
+
+  var tb = iosDl.batches.length;
+  document.getElementById('iosDlTitle').textContent = 'Save ' + blobItems.length + ' Slide' + (blobItems.length > 1 ? 's' : '');
+  document.getElementById('iosDlSubtitle').textContent = tb === 1
+    ? 'All ' + blobItems.length + ' slide' + (blobItems.length > 1 ? 's' : '') + ' in one tap'
+    : blobItems.length + ' slides · ' + tb + ' batches of up to ' + iosDl.BATCH_SIZE;
+
+  iosDlUpdateProgress();
+  iosDlRenderThumbs(0);
+  document.getElementById('iosDlSaveBtn').disabled = false;
+  document.getElementById('iosDlSaveBtn').className = 'ios-dl-save-btn';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+  document.getElementById('iosDlSaveBtnText').textContent = tb === 1 ? 'Save All to Camera Roll' : 'Save Batch 1 of ' + tb;
+  document.getElementById('iosDlInstructionText').innerHTML =
+    'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all slides in this batch.';
+  document.getElementById('iosDlModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function iosDlUpdateProgress() {
+  var pct = iosDl.total > 0 ? iosDl.saved / iosDl.total : 0;
+  var fill = document.getElementById('iosDlRingFill');
+  if (fill) fill.style.strokeDashoffset = 188.5 * (1 - pct);
+  document.getElementById('iosDlRingNum').textContent = iosDl.saved;
+  var batch = iosDl.batches[iosDl.batchIdx];
+  if (batch) {
+    var bs = iosDl.batchIdx * iosDl.BATCH_SIZE + 1;
+    var be = Math.min((iosDl.batchIdx + 1) * iosDl.BATCH_SIZE, iosDl.total);
+    var tb = iosDl.batches.length;
+    document.getElementById('iosDlBatchLabel').textContent = tb === 1 ? 'All ' + iosDl.total + ' slides' : 'Batch ' + (iosDl.batchIdx + 1) + ' of ' + tb;
+    document.getElementById('iosDlBatchSub').textContent   = tb === 1 ? 'Tap to open your Share Sheet' : 'Slides ' + bs + '–' + be + ' of ' + iosDl.total;
+  }
+}
+
+function iosDlRenderThumbs(batchIdx) {
+  var batch = iosDl.batches[batchIdx]; if (!batch) return;
+  var offset = batchIdx * iosDl.BATCH_SIZE;
+  document.getElementById('iosDlThumbs').innerHTML = batch.map(function(item, i) {
+    var gi = offset + i;
+    return '<div class="ios-dl-thumb' + (gi < iosDl.saved ? ' saved' : '') + '" id="iosDlThumb-' + gi + '">'
+      + (item.previewUrl ? '<img src="' + item.previewUrl + '" loading="lazy"/>' : '')
+      + '<div class="ios-dl-thumb-check">✓</div></div>';
+  }).join('');
+}
+
+window.iosDlTriggerShare = async function() {
+  if (iosDl.fetching) return;
+  var bi = iosDl.batchIdx, batch = iosDl.batches[bi]; if (!batch) return;
+  iosDl.fetching = true;
+  var btn = document.getElementById('iosDlSaveBtn');
+  btn.disabled = true; btn.className = 'ios-dl-save-btn loading';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '⏳';
+  document.getElementById('iosDlSaveBtnText').textContent = 'Preparing…';
+  document.getElementById('iosDlNextBtn').classList.add('hidden');
+  document.getElementById('iosDlInstructionText').innerHTML = '⏳ Preparing ' + batch.length + ' slide' + (batch.length > 1 ? 's' : '') + '…';
+  var offset = bi * iosDl.BATCH_SIZE;
+  batch.forEach(function(_, i) { var el = document.getElementById('iosDlThumb-' + (offset + i)); if (el) el.classList.add('saving'); });
+
+  var files = batch.map(function(item) { return new File([item.blob], item.name, { type: 'image/png' }); });
+  iosDl.fetching = false;
+
+  var canShare = false;
+  try { canShare = navigator.canShare({ files: files }); } catch(e) {}
+  if (!canShare) { iosFallbackTabs(iosDl.blobs); iosDlClose(); return; }
+
+  btn.disabled = false; btn.className = 'ios-dl-save-btn';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '📤';
+  document.getElementById('iosDlSaveBtnText').textContent = 'Opening Share Sheet…';
+  document.getElementById('iosDlInstructionText').innerHTML = 'Share Sheet opening — tap <strong>"Save Image"</strong> to save all ' + files.length + ' slides.';
+
+  try {
+    await navigator.share({ files: files, title: 'ImpactGrid Carousel', text: 'Tap "Save Image" to save to Camera Roll' });
+    iosDl.saved += files.length;
+    batch.forEach(function(_, i) { var el = document.getElementById('iosDlThumb-' + (offset + i)); if (el) { el.classList.remove('saving'); el.classList.add('saved'); } });
+    var tb = iosDl.batches.length, isLast = iosDl.batchIdx >= tb - 1;
+    if (isLast) {
+      iosDlShowDone();
+    } else {
+      iosDl.batchIdx++;
+      iosDlUpdateProgress(); iosDlRenderThumbs(iosDl.batchIdx);
+      var nbs = iosDl.batchIdx * iosDl.BATCH_SIZE + 1;
+      var nbe = Math.min((iosDl.batchIdx + 1) * iosDl.BATCH_SIZE, iosDl.total);
+      btn.disabled = true; btn.className = 'ios-dl-save-btn';
+      document.getElementById('iosDlSaveBtnIcon').textContent = '✅';
+      document.getElementById('iosDlSaveBtnText').textContent = 'Batch ' + iosDl.batchIdx + ' of ' + tb + ' saved!';
+      var nb = document.getElementById('iosDlNextBtn'); nb.classList.remove('hidden');
+      document.getElementById('iosDlNextLabel').textContent = 'Slides ' + nbs + '–' + nbe;
+      document.getElementById('iosDlInstructionText').innerHTML = '✅ <strong>' + iosDl.saved + ' of ' + iosDl.total + '</strong> saved. Tap <strong>"Next Batch"</strong> to continue.';
+    }
+  } catch(e) {
+    if (e.name === 'AbortError') {
+      btn.disabled = false; btn.className = 'ios-dl-save-btn';
+      document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+      document.getElementById('iosDlSaveBtnText').textContent = 'Try Batch ' + (iosDl.batchIdx + 1) + ' Again';
+      document.getElementById('iosDlInstructionText').innerHTML = 'Cancelled — tap again, then tap <strong>"Save Image"</strong>.';
+      batch.forEach(function(_, i) { var el = document.getElementById('iosDlThumb-' + (offset + i)); if (el) el.classList.remove('saving'); });
+    } else { console.warn('Share error:', e); }
+  }
+};
+
+window.iosDlNextBatch = function() {
+  var tb = iosDl.batches.length, btn = document.getElementById('iosDlSaveBtn');
+  btn.disabled = false; btn.className = 'ios-dl-save-btn';
+  document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+  document.getElementById('iosDlSaveBtnText').textContent = 'Save Batch ' + (iosDl.batchIdx + 1) + ' of ' + tb;
+  document.getElementById('iosDlNextBtn').classList.add('hidden');
+  document.getElementById('iosDlInstructionText').innerHTML = 'Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong>.';
+};
+
+function iosDlShowDone() {
+  document.getElementById('iosDlBtnArea').classList.add('hidden');
+  document.getElementById('iosDlInstruction').style.display = 'none';
+  document.getElementById('iosDlDone').classList.remove('hidden');
+  document.getElementById('iosDlDoneTitle').textContent = '🎉 All ' + iosDl.saved + ' Slides Saved!';
+  document.getElementById('iosDlDoneSub').textContent   = 'Check your Camera Roll — all your slides are there.';
+  iosDlUpdateProgress();
+}
+
+window.iosDlClose = function() {
+  document.getElementById('iosDlModal').classList.add('hidden');
+  document.body.style.overflow = '';
+  iosDl.cancelled = true;
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  var m = document.getElementById('iosDlModal');
+  if (m) m.addEventListener('click', function(e) { if (e.target === m) iosDlClose(); });
+});
+
+/* ── iOS fallback: old Safari without share API ── */
+var iosPendingPhotos = [];
+
+function iosFallbackTabs(blobItems) {
+  iosPendingPhotos = blobItems;
+  document.getElementById('iosModalTitle').textContent = '📱 Save Your Slides';
+  document.getElementById('iosModalSub').textContent   = 'Save ' + blobItems.length + ' slide' + (blobItems.length > 1 ? 's' : '') + ' to your Camera Roll';
+  var grid = document.getElementById('iosPhotosGrid');
+  grid.innerHTML = blobItems.slice(0, 8).map(function(item, i) {
+    return '<div class="ios-photo-thumb" onclick="iosTapThumb(' + i + ')">'
+      + (item.previewUrl ? '<img src="' + item.previewUrl + '" loading="lazy"/>' : '<div style="width:100%;height:100%;background:var(--bg3)"></div>')
+      + '<div class="ios-photo-thumb-open">↗</div></div>';
+  }).join('');
+  document.getElementById('iosOpenAllBtn').textContent = blobItems.length > 1 ? '📂 Open All ' + blobItems.length + ' Slides' : '📂 Open Slide';
+  document.getElementById('iosModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+window.iosTapThumb = function(idx) {
+  var item = iosPendingPhotos[idx]; if (!item) return;
+  window.open(URL.createObjectURL(item.blob), '_blank');
+  toast('📱 Slide opened — long-press → "Save to Photos"');
+};
+
+window.iosOpenAll = function() {
+  iosPendingPhotos.forEach(function(item) { window.open(URL.createObjectURL(item.blob), '_blank'); });
+  toast('📱 ' + iosPendingPhotos.length + ' slides opened — long-press each → "Save to Photos"');
+  closeIosModal();
+};
+
+window.closeIosModal = function() {
+  document.getElementById('iosModal').classList.add('hidden');
+  document.body.style.overflow = '';
+};
+
+/* ── Main download entry point ── */
 window.downloadAll = async function() {
   if (!window.ST || !ST.slides.length) { toast('Generate a carousel first'); return; }
   if (typeof html2canvas === 'undefined') { toast('💡 html2canvas not loaded — please refresh'); return; }
   _dlCancelled = false;
-  var total = ST.slides.length, blobs = [];
+  var total = ST.slides.length, blobItems = [];
   showDlProgress('Preparing slides…', 0);
-  var origCur    = ST.cur;
-  var canvas     = document.getElementById('slideCanvas');
-  var displayW   = canvas.offsetWidth || 480;
-  var targetPx   = 1080;
-  var exportScale = Math.round((targetPx / displayW) * 10) / 10;
+  var origCur     = ST.cur;
+  var canvas      = document.getElementById('slideCanvas');
+  var displayW    = canvas.offsetWidth || 480;
+  var exportScale = Math.round((1080 / displayW) * 10) / 10;
 
   for (var i = 0; i < total; i++) {
     if (_dlCancelled) break;
     ST.cur = i;
-    if (typeof renderSlide  === 'function') renderSlide();
+    if (typeof renderSlide   === 'function') renderSlide();
     if (typeof updateCounter === 'function') updateCounter();
-
-    // Wait for the DOM to paint + <img> tags to load
     await new Promise(function(r) { setTimeout(r, 600); });
     var imgs = canvas.querySelectorAll('img');
     await Promise.all(Array.from(imgs).map(function(img) {
       if (img.complete) return Promise.resolve();
-      return new Promise(function(res) {
-        img.onload = res; img.onerror = res; setTimeout(res, 2000);
-      });
+      return new Promise(function(res) { img.onload = res; img.onerror = res; setTimeout(res, 2000); });
     }));
     await new Promise(function(r) { setTimeout(r, 200); });
-
     updateDlProgress('Capturing slide ' + (i + 1) + ' of ' + total + '…', Math.round((i / total) * 80));
-
-    // ── KEY FIX: swap cross-origin CSS background-images to local blob URLs
-    // before html2canvas runs, so the canvas stays untainted and toBlob()
-    // returns a real PNG instead of null. ───────────────────────────────────
     var restoreBgs = await swapBgImagesToBlobs(canvas);
-
     try {
-      var c = await html2canvas(canvas, {
-        useCORS: true, allowTaint: false,
-        scale: exportScale, backgroundColor: '#111111',
-        imageTimeout: 8000, logging: false
-      });
+      var c = await html2canvas(canvas, { useCORS: true, allowTaint: false, scale: exportScale, backgroundColor: '#111111', imageTimeout: 8000, logging: false });
+      var previewUrl = null;
+      try { previewUrl = c.toDataURL('image/jpeg', 0.4); } catch(e) {}
       await new Promise(function(res) {
         c.toBlob(function(blob) {
-          if (blob) {
-            blobs.push({ blob: blob, name: 'ImpactGrid-slide-' + String(i + 1).padStart(2, '0') + '.png' });
-          } else {
-            console.warn('[downloadAll] toBlob returned null for slide', i + 1);
-          }
+          if (blob) blobItems.push({ blob: blob, name: 'ImpactGrid-slide-' + String(i + 1).padStart(2, '0') + '.png', previewUrl: previewUrl });
+          else console.warn('[downloadAll] toBlob null slide', i + 1);
           res();
         }, 'image/png');
       });
-    } catch(e) {
-      console.warn('[downloadAll] Capture failed slide', i + 1, e);
-    } finally {
-      // Always restore original background-image values and free blob URLs
-      restoreBgs();
-    }
+    } catch(e) { console.warn('[downloadAll] Capture failed slide', i + 1, e);
+    } finally { restoreBgs(); }
   }
 
   ST.cur = origCur;
-  if (typeof renderSlide  === 'function') renderSlide();
+  if (typeof renderSlide   === 'function') renderSlide();
   if (typeof updateCounter === 'function') updateCounter();
   if (typeof fillEdit      === 'function') fillEdit();
+  hideDlProgress();
 
-  if (_dlCancelled || !blobs.length) {
-    hideDlProgress();
+  if (_dlCancelled || !blobItems.length) {
     if (!_dlCancelled) toast('⚠️ Capture failed — try screenshot or JSON export');
     return;
   }
 
-  updateDlProgress('Downloading ' + blobs.length + ' slides…', 85);
+  /* iOS Safari → batch share modal */
+  if (isSafariIOS()) { showIosDlModal(blobItems); return; }
 
-  // iOS Safari: use Web Share API
-  if (isSafariIOS() && navigator.share && navigator.canShare) {
-    var files = blobs.map(function(b) { return new File([b.blob], b.name, { type: 'image/png' }); });
-    if (navigator.canShare({ files: files })) {
-      hideDlProgress();
-      try { await navigator.share({ files: files, title: 'ImpactGrid Carousel' }); } catch(e) {}
-      return;
-    }
-  }
-
-  for (var j = 0; j < blobs.length; j++) {
+  /* All other browsers → direct blob download */
+  for (var j = 0; j < blobItems.length; j++) {
     if (_dlCancelled) break;
-    updateDlProgress('Saving ' + (j + 1) + ' of ' + blobs.length, 85 + Math.round((j / blobs.length) * 15));
     try {
-      var url = URL.createObjectURL(blobs[j].blob);
-      var a   = document.createElement('a');
-      a.href = url; a.download = blobs[j].name;
+      var url = URL.createObjectURL(blobItems[j].blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = blobItems[j].name;
       a.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
       document.body.appendChild(a); a.click();
       await new Promise(function(r) { setTimeout(r, 400); });
       document.body.removeChild(a); URL.revokeObjectURL(url);
     } catch(e) { console.warn('[downloadAll] save failed:', e); }
   }
-
-  hideDlProgress();
-  toast('✦ ' + blobs.length + ' slides saved at 1080px');
+  toast('✦ ' + blobItems.length + ' slides saved at 1080px');
 };
 
 // ── 10. MOBILE DOCK TAB LOGIC ────────────────────────────
