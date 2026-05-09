@@ -1481,6 +1481,52 @@ function hideDlProgress() {
 }
 window.cancelDl = function() { _dlCancelled = true; hideDlProgress(); toast('Download cancelled'); };
 
+// Pre-fetch a cross-origin image URL as a local blob URL so html2canvas
+// can read it without the canvas being tainted and toBlob() returning null.
+async function fetchImageAsBlob(url) {
+  if (!url) return null;
+  try {
+    var res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch(e) {
+    console.warn('[downloadAll] Could not fetch image as blob:', url, e.message);
+    return null;
+  }
+}
+
+// Collect every element inside `root` that has a CSS background-image set,
+// swap it for a local blob URL, and return a cleanup function that restores
+// the originals (and revokes the blob URLs).
+async function swapBgImagesToBlobs(root) {
+  var els = Array.from(root.querySelectorAll('*'));
+  // Include root itself
+  els.unshift(root);
+  var swaps = [];
+  for (var k = 0; k < els.length; k++) {
+    var el = els[k];
+    var bg = el.style.backgroundImage || window.getComputedStyle(el).backgroundImage;
+    var match = bg && bg.match(/url\(["']?([^"')]+)["']?\)/);
+    if (!match) continue;
+    var originalUrl = match[1];
+    // Skip already-local blob URLs and data URIs
+    if (originalUrl.startsWith('blob:') || originalUrl.startsWith('data:')) continue;
+    var blobUrl = await fetchImageAsBlob(originalUrl);
+    if (blobUrl) {
+      var originalStyle = el.style.backgroundImage;
+      el.style.backgroundImage = 'url(' + blobUrl + ')';
+      swaps.push({ el: el, originalStyle: originalStyle, blobUrl: blobUrl });
+    }
+  }
+  return function cleanup() {
+    swaps.forEach(function(s) {
+      s.el.style.backgroundImage = s.originalStyle;
+      URL.revokeObjectURL(s.blobUrl);
+    });
+  };
+}
+
 window.downloadAll = async function() {
   if (!window.ST || !ST.slides.length) { toast('Generate a carousel first'); return; }
   if (typeof html2canvas === 'undefined') { toast('💡 html2canvas not loaded — please refresh'); return; }
@@ -1499,7 +1545,7 @@ window.downloadAll = async function() {
     if (typeof renderSlide  === 'function') renderSlide();
     if (typeof updateCounter === 'function') updateCounter();
 
-    // Wait for render + images
+    // Wait for the DOM to paint + <img> tags to load
     await new Promise(function(r) { setTimeout(r, 600); });
     var imgs = canvas.querySelectorAll('img');
     await Promise.all(Array.from(imgs).map(function(img) {
@@ -1508,22 +1554,37 @@ window.downloadAll = async function() {
         img.onload = res; img.onerror = res; setTimeout(res, 2000);
       });
     }));
-    await new Promise(function(r) { setTimeout(r, 300); });
+    await new Promise(function(r) { setTimeout(r, 200); });
 
     updateDlProgress('Capturing slide ' + (i + 1) + ' of ' + total + '…', Math.round((i / total) * 80));
+
+    // ── KEY FIX: swap cross-origin CSS background-images to local blob URLs
+    // before html2canvas runs, so the canvas stays untainted and toBlob()
+    // returns a real PNG instead of null. ───────────────────────────────────
+    var restoreBgs = await swapBgImagesToBlobs(canvas);
+
     try {
       var c = await html2canvas(canvas, {
-        useCORS: true, allowTaint: true,
+        useCORS: true, allowTaint: false,
         scale: exportScale, backgroundColor: '#111111',
         imageTimeout: 8000, logging: false
       });
       await new Promise(function(res) {
         c.toBlob(function(blob) {
-          if (blob) blobs.push({ blob: blob, name: 'ImpactGrid-slide-' + String(i + 1).padStart(2, '0') + '.png' });
+          if (blob) {
+            blobs.push({ blob: blob, name: 'ImpactGrid-slide-' + String(i + 1).padStart(2, '0') + '.png' });
+          } else {
+            console.warn('[downloadAll] toBlob returned null for slide', i + 1);
+          }
           res();
         }, 'image/png');
       });
-    } catch(e) { console.warn('[downloadAll] Capture failed slide', i + 1, e); }
+    } catch(e) {
+      console.warn('[downloadAll] Capture failed slide', i + 1, e);
+    } finally {
+      // Always restore original background-image values and free blob URLs
+      restoreBgs();
+    }
   }
 
   ST.cur = origCur;
@@ -1531,7 +1592,11 @@ window.downloadAll = async function() {
   if (typeof updateCounter === 'function') updateCounter();
   if (typeof fillEdit      === 'function') fillEdit();
 
-  if (_dlCancelled || !blobs.length) { hideDlProgress(); return; }
+  if (_dlCancelled || !blobs.length) {
+    hideDlProgress();
+    if (!_dlCancelled) toast('⚠️ Capture failed — try screenshot or JSON export');
+    return;
+  }
 
   updateDlProgress('Downloading ' + blobs.length + ' slides…', 85);
 
