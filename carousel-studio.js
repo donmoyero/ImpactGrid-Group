@@ -209,34 +209,6 @@ function pickAsset(theme, slideType, slideIndex, offset){
   return scored[idx].a;
 }
 
-/* ─────────────────────────────────────────────────────────
-   TOPIC-AWARE IMAGE URL — builds a contextual Unsplash URL
-   from the topic + theme so images actually match the content.
-   Called by renderSlide() when the server hasn't provided one.
-   ───────────────────────────────────────────────────────── */
-function topicImageUrl(topic, theme, slideIndex){
-  if(!topic) return null;
-  // Extract 1-2 meaningful keywords from the topic
-  var stop = /\b(a|an|the|and|or|for|to|of|in|on|at|with|my|your|how|why|what|that|this|about|from|into|some|more|less|just|very|really|will|can|do|be|is|are|was|were|have|has|had|not|but|so|if|as|by|it|its|they|them|their|we|our|you|i|me|my|he|she|him|her|his|hers|who|which|when|where)\b/gi;
-  var cleaned = topic.replace(stop, ' ').replace(/[^a-zA-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
-  var words = cleaned.split(' ').filter(function(w){ return w.length > 3; });
-  // Take up to 2 keywords; fall back to theme label
-  var kw = words.slice(0, 2).join(' ') || (DA[theme] ? DA[theme].label : theme);
-  // Encode and build Unsplash source URL — different sig per slide so images vary
-  var seed = (slideIndex || 0) + 1;
-  var encoded = encodeURIComponent(kw);
-  // Fallback: return a Pexels direct URL (server handles real images)
-  return 'https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=1080&h=1080&fit=crop';
-}
-
-/* Unsplash keyword search URL — works reliably for background images */
-function buildUnsplashUrl(keywords, slideIndex){
-  var kw = encodeURIComponent((keywords || 'minimal').split(' ').slice(0,2).join(' '));
-  var sig = (slideIndex || 0) * 7 + 1000; // vary per slide
-  return 'https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=1080&h=1080&fit=crop';
-  // ^^ fallback only; real topic images come from server
-}
-
 function pickSecondAsset(theme, excludeId, slideIndex){
   var T=DA[theme]; if(!T) return null;
   var pool=T.assets.filter(function(a){ return a.id!==excludeId && a.layout_hints.indexOf('thumbnail')!==-1; });
@@ -283,25 +255,23 @@ var LAYOUT_SEQUENCE = [
   'FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE',
   'TOP_STRIP','STAT_HERO','QUOTE_PULL',
   'EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3',
-  'HABIT_COVER',
-  'CLEAN_EDITORIAL','SERIF_MINIMAL','MAGAZINE_COVER',
-  'GRID_MOSAIC','POLAROID_CARD','RISOGRAPH'
+  'HABIT_COVER'
 ];
 
 function assignLayout(slideType,idx,total){
   var sets={
-    hook:['FULL_BLEED','OVERLAP_BAND','EDITORIAL_COVER','HABIT_COVER','CLEAN_EDITORIAL','MAGAZINE_COVER','RISOGRAPH'],
-    cta:['FULL_BLEED','BOTTOM_STRIP','OVERLAP_BAND','CLEAN_EDITORIAL','SERIF_MINIMAL'],
-    stat:['STAT_HERO','OVERLAP_BAND','BOTTOM_STRIP','RISOGRAPH'],
-    value:['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE','EDITORIAL_COLLAGE','CLEAN_EDITORIAL','SERIF_MINIMAL','POLAROID_CARD'],
-    insight:['OVERLAP_BAND','FULL_BLEED','TOP_STRIP','BOTTOM_STRIP','SERIF_MINIMAL','CLEAN_EDITORIAL'],
-    lesson:['BOTTOM_STRIP','FULL_BLEED','EDITORIAL_COLLAGE_3','TOP_STRIP','POLAROID_CARD','SERIF_MINIMAL'],
+    hook:['FULL_BLEED','OVERLAP_BAND','EDITORIAL_COVER','HABIT_COVER'],
+    cta:['FULL_BLEED','BOTTOM_STRIP','OVERLAP_BAND'],
+    stat:['STAT_HERO','OVERLAP_BAND','BOTTOM_STRIP'],
+    value:['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE','EDITORIAL_COLLAGE'],
+    insight:['OVERLAP_BAND','FULL_BLEED','TOP_STRIP','BOTTOM_STRIP'],
+    lesson:['BOTTOM_STRIP','FULL_BLEED','EDITORIAL_COLLAGE_3','TOP_STRIP'],
     proof:['DUAL_IMAGE','OVERLAP_BAND','BOTTOM_STRIP'],
     quote:['QUOTE_PULL','FULL_BLEED'],
-    story:['FULL_BLEED','TOP_STRIP','OVERLAP_BAND','GRID_MOSAIC','MAGAZINE_COVER'],
+    story:['FULL_BLEED','TOP_STRIP','OVERLAP_BAND'],
     problem:['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP'],
-    list:['BOTTOM_STRIP','EDITORIAL_COLLAGE_3','OVERLAP_BAND','POLAROID_CARD','GRID_MOSAIC'],
-    tip:['OVERLAP_BAND','BOTTOM_STRIP','TOP_STRIP','FULL_BLEED','CLEAN_EDITORIAL']
+    list:['BOTTOM_STRIP','EDITORIAL_COLLAGE_3','OVERLAP_BAND'],
+    tip:['OVERLAP_BAND','BOTTOM_STRIP','TOP_STRIP','FULL_BLEED']
   };
   var set=sets[slideType]||LAYOUT_SEQUENCE;
   return set[idx%set.length];
@@ -310,7 +280,7 @@ function assignLayout(slideType,idx,total){
 function normalizeLayoutSafe(layout, slideType, idx, total){
   var fallback=assignLayout(slideType||'value',idx||0,total||1);
   var blocked=['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
-  var allowed=['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE','TOP_STRIP','STAT_HERO','QUOTE_PULL','EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER','CLEAN_EDITORIAL','SERIF_MINIMAL','MAGAZINE_COVER','GRID_MOSAIC','POLAROID_CARD','RISOGRAPH'];
+  var allowed=['FULL_BLEED','OVERLAP_BAND','BOTTOM_STRIP','DUAL_IMAGE','TOP_STRIP','STAT_HERO','QUOTE_PULL','EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
   if(!layout||blocked.indexOf(layout)!==-1||allowed.indexOf(layout)===-1) return fallback;
   return layout;
 }
@@ -480,136 +450,13 @@ async function generate(){
   var _lbl = (ST.theme && DA[ST.theme]) ? DA[ST.theme].label : (ST.theme || 'Custom');
   toast('✦ '+ST.slides.length+'-slide carousel · '+_lbl+' · tap any text to edit');
 
-  // v4.6: enrich each slide with a topic-matched image ASAP, then re-render
-  var topicVal=topic, platformVal=platform;
-  setTimeout(function(){ enrichSlideImages(topicVal); }, 200);
-
   // v4.5: enrich with live captions + hashtags after render
+  var topicVal=topic, platformVal=platform;
   setTimeout(function(){ CaptionEngine.enrichDeck(topicVal, platformVal); }, 600);
 
   // Soft plan gate — show upgrade prompt after generation if limit reached
   // Does NOT block the carousel from rendering (non-blocking)
   setTimeout(function(){ _softPlanCheck(); }, 1200);
-}
-
-/* ─────────────────────────────────────────────────────────
-   TOPIC-AWARE IMAGE ENRICHMENT  v4.6
-   Runs after generation. For each slide that doesn't have a
-   user-uploaded image, we resolve a real Unsplash photo URL
-   that matches the SLIDE HEADLINE + TOPIC keywords.
-   Uses Unsplash Source API (no API key) + Unsplash search
-   as fallback. Images are fetched in parallel and applied
-   slide-by-slide so the carousel updates progressively.
-   ───────────────────────────────────────────────────────── */
-
-// Keyword → curated Unsplash photo IDs that reliably load
-var TOPIC_PHOTO_MAP = {
-  // Productivity / creator
-  morning:    '1499750310107-5fef28a66643', routine:     '1484627147104-f5197bcd6651',
-  habit:      '1506126613408-eca07ce68773', focus:       '1455541504462-14f99bb85b75',
-  system:     '1517245386807-bb43f82c33c4', discipline:  '1434494878577-86c23bcb06b9',
-  // Finance / money
-  money:      '1579621970563-ebec7560ff3e', invest:      '1559526324-4b87b5e36e44',
-  finance:    '1554224155-8d04cb21cd6c',   crypto:      '1563986768609-322da13575f3',
-  stocks:     '1611974789855-9c2a0a7236a3', budget:      '1460925895917-afdab827c52f',
-  wealth:     '1553729459-efe14ef6055d',   saving:      '1444653614773-995cb1ef9efa',
-  // Health / fitness
-  fitness:    '1571019613454-1cb2f99b2d8b', workout:     '1581009137042-c552e485697a',
-  yoga:       '1544367567-0f2fcb009e0b',   nutrition:   '1490645935967-10de6ba17061',
-  health:     '1498837167922-ddd27525d352', sleep:       '1519710164239-da123dc03ef4',
-  meditation: '1506126613408-eca07ce68773', running:     '1552674605-db6ffd4facb5',
-  // Business / work
-  business:   '1521737604893-d14cc237f11d', entrepreneur:'1519389950473-47ba0277781c',
-  startup:    '1553877522-43269d4ea984',   team:        '1522071820081-009f0129c71c',
-  leadership: '1507679799987-c73779587ccf', strategy:    '1460925895917-afdab827c52f',
-  office:     '1497215728101-856f4ea42174', meeting:     '1573497620053-ea5300f94f21',
-  // Content / social media
-  creator:    '1562564055-71e051d33c19',   content:     '1499750310107-5fef28a66643',
-  instagram:  '1611162617474-5b21e879e113', tiktok:      '1611162617474-5b21e879e113',
-  social:     '1516321318423-f06f85e504b3', viral:       '1587614203976-365bf4c69a0d',
-  // Lifestyle
-  travel:     '1488646953014-85cb44e25828', food:        '1504674900247-0877df9cc836',
-  coffee:     '1459755486867-b854a626124a', lifestyle:   '1517841905240-472988babdf9',
-  mindset:    '1506126613408-eca07ce68773', success:     '1486406146926-c627a92ad1ab',
-  // Home / cozy
-  home:       '1505693416388-ac5ce068fe85', interior:    '1555041469-a586c61ea9bc',
-  cozy:       '1513519245088-0e12902e35ca', kitchen:     '1556909114-f6e7ad7d3136',
-  // Fashion
-  fashion:    '1483985988355-763728e1935b', style:       '1515886657613-9f3515b0c78f',
-  // Tech
-  tech:       '1531297484001-80022131f5a1', ai:          '1677442135703-1787eea5ce01',
-  coding:     '1498050108023-c5249f4df085', digital:     '1518186285589-2f7649de83e0'
-};
-
-function topicKeywordsForSlide(slide, globalTopic) {
-  // Pull meaningful words from headline + body + global topic
-  var text = ((slide.headline || '') + ' ' + (slide.body || '') + ' ' + (globalTopic || '')).toLowerCase();
-  var stop  = /\b(a|an|the|and|or|for|to|of|in|on|at|with|my|your|how|why|what|that|this|about|from|into|some|more|less|just|very|really|will|can|do|be|is|are|was|were|have|has|had|not|but|so|if|as|by|it|its|they|them|their|we|our|you|i|me|he|she|him|her|who|which|when|where|here|there|these|those|most|much|many|every|each|even|after|before|during|while|already|still|only|also|back|off|up|down|out|well|good|great|real|new|big|full|true|long|way|life|time|one|two|three|four|five|six|seven|eight|nine|ten|first|last|next|right|left)\b/gi;
-  var words = text.replace(stop,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(function(w){ return w.length > 3; });
-  return words;
-}
-
-function pickPhotoId(words) {
-  // Check each word against our curated map
-  for (var i = 0; i < words.length; i++) {
-    var w = words[i];
-    // Exact match
-    if (TOPIC_PHOTO_MAP[w]) return TOPIC_PHOTO_MAP[w];
-    // Partial match — check if any key starts with this word root
-    var keys = Object.keys(TOPIC_PHOTO_MAP);
-    for (var k = 0; k < keys.length; k++) {
-      if (keys[k].indexOf(w.slice(0, 5)) === 0 || w.indexOf(keys[k].slice(0, 5)) === 0) {
-        return TOPIC_PHOTO_MAP[keys[k]];
-      }
-    }
-  }
-  return null;
-}
-
-function buildTopicImageUrl(photoId, size) {
-  // Unsplash photo IDs no longer used — return Pexels fallback
-  return 'https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=1080&h=1080&fit=crop';
-}
-
-async function enrichSlideImages(topic) {
-  if (!window.ST || !ST.slides.length) return;
-  var total = ST.slides.length;
-  var changed = false;
-
-  for (var i = 0; i < total; i++) {
-    // Never overwrite a user-uploaded image
-    if (ST.userImages[i]) continue;
-
-    var slide = ST.slides[i];
-    var words = topicKeywordsForSlide(slide, topic);
-    var photoId = pickPhotoId(words);
-
-    if (photoId) {
-      var url = buildTopicImageUrl(photoId, '1080&h=1080');
-      // Verify the image actually loads before assigning
-      (function(idx, imgUrl) {
-        var probe = new Image();
-        probe.onload = function() {
-          ST.slides[idx].image = imgUrl;
-          ST.slides[idx].primaryImage = { url: imgUrl, tone: 'neutral', brightness: 'medium' };
-          // Re-render just the current slide; rebuild strip thumbnails
-          buildStrip();
-          if (ST.cur === idx) renderSlide();
-        };
-        probe.onerror = function() {
-          // Photo ID didn't resolve — try Unsplash Source with keyword
-          var kw = words.slice(0, 2).join(',');
-          if (!kw) return;
-          var fallbackUrl = 'https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=1080&h=1080&fit=crop';
-          ST.slides[idx].image = fallbackUrl;
-          ST.slides[idx].primaryImage = { url: fallbackUrl, tone: 'neutral', brightness: 'medium' };
-          buildStrip();
-          if (ST.cur === idx) renderSlide();
-        };
-        probe.src = imgUrl;
-      })(i, url);
-    }
-  }
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -720,11 +567,6 @@ async function callAI(topic,platform,tone,count){
     + '- Captions: platform-native voice. No hashtags inside caption body\n'
     + '- Hashtags: 5 per slide — niche-specific + platform-appropriate, never generic filler\n'
     + '- Each slide must feel like a different part of a story arc, not a random list\n\n'
-    + 'IMAGE RULES (critical — images must match the topic "' + topic + '"):\n'
-    + '- Each slide.image must be a real Unsplash photo URL directly related to: ' + topic + '\n'
-    + '- Use specific Unsplash photo IDs that visually represent the topic — NOT generic stock\n'
-    + '- The image should complement the headline, not be random\n'
-    + '- Return images as: slide.image = "https://images.unsplash.com/photo-<ID>?w=1080&h=1080&fit=crop"\n\n'
     + 'Return JSON: { slides: [...], theme, accentColor, trendHashtags: [] }';
 
   var res=await fetch(DIJO_SERVER+'/carousel/generate',{
@@ -786,7 +628,6 @@ function parseServerSlides(data, topic, platform, tone, count){
         cta:        sl.cta || '',
         caption:    caption,
         hashtags:   hashtags,
-        image:      sl.image || null,       // raw server URL — highest priority after user upload
         primaryImage: primaryImage,
         secondImage:  secondImage,
         video:      sl.video || null,
@@ -922,8 +763,7 @@ function fallbackSlides(topic, platform, tone, count){
    ───────────────────────────────────────────────────────── */
 function clearLayouts(){
   ['sContent','sSplit','sCorner','sDual','sBand','sEditorial','sQuote','sStat','sGrid','sTopStrip','sBottomStrip',
-   'sEditorialCover','sEditorialCollage','sHabitCover','sHabitSlide',
-   'sCleanEditorial','sSerifMinimal','sMagazineCover','sGridMosaic','sPolaroidCard','sRisograph'].forEach(function(id){
+   'sEditorialCover','sEditorialCollage','sHabitCover','sHabitSlide'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.innerHTML='';el.className=el.className.replace(/\bhidden\b/g,'').trim()+' hidden';}
   });
@@ -950,12 +790,9 @@ function renderSlide(){
   var theme=ST.theme||'lifestyle';
   var T=DA[theme];
   var layout=slide.layout||assignLayout(slide.type,ST.cur,ST.slides.length);
-  var topic = (function(){ try { return document.getElementById('topicInput').value.trim(); } catch(e){ return ''; } })();
 
-  // Image priority: 1) user upload, 2) server-provided URL, 3) local DA library
   var primaryUrl=ST.userImages[ST.cur]||
     (slide.primaryImage?slide.primaryImage.url:null)||
-    (slide.image||null)||
     (function(){var a=pickAsset(theme,slide.type,ST.cur,ST.assetOffset);return a?a.url:null;})();
 
   var secondUrl=(slide.secondImage?slide.secondImage.url:null)||
@@ -1167,8 +1004,9 @@ function renderSlide(){
       hcSwirl.innerHTML='<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M55 20 C55 20 70 30 62 48 C54 66 30 62 22 46 C14 30 28 14 44 18" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M44 18 L38 10 M44 18 L52 14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       hcEl.appendChild(hcSwirl);
       var hcBot=document.createElement('div');
-      hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;align-items:center;padding:0 14px;height:26px;border-top:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      hcBot.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.78);">'+'WWW.IMPACTGRIDGROUP.COM'+'</span>';
+      hcBot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;';
+      hcBot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.06em;">'+(ST.brand?'WWW.'+ST.brand.toUpperCase().replace(/\s+/g,'')+'.COM':'WWW.IMPACTGRIDGROUP.COM')+'</span>'
+        +'<span style="font-size:9px;font-family:'+getFont('mono')+';color:rgba(255,255,255,.55);letter-spacing:.08em;">SLIDE '+String(ST.cur+1).padStart(2,'0')+'</span>';
       hcEl.appendChild(hcBot);
       break;
     }
@@ -1205,11 +1043,14 @@ function renderSlide(){
         ecBody.textContent=slide.body;
         ecEl.appendChild(ecBody);
       }
-      var ecFoot=document.createElement('div');
-      ecFoot.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:26px;border-top:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      var urlTxt='www.impactgridgroup.com';
-      ecFoot.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.78);">'+urlTxt+'</span>'+'<span style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:4px;">✽ ✽ ✽</span>';
-      ecEl.appendChild(ecFoot);
+      var ecHandle=document.createElement('div');
+      ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
+      ecHandle.style.cssText='position:absolute;bottom:16px;left:18px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:rgba(255,255,255,.65);letter-spacing:.2px;';
+      ecEl.appendChild(ecHandle);
+      var ecStars=document.createElement('div');
+      ecStars.innerHTML='✽ ✽ ✽';
+      ecStars.style.cssText='position:absolute;bottom:14px;right:16px;z-index:2;font-size:13px;color:rgba(255,255,255,.55);letter-spacing:5px;';
+      ecEl.appendChild(ecStars);
       break;
     }
 
@@ -1252,11 +1093,14 @@ function renderSlide(){
       if(slide.body) ecolH+='<div class="s-body" style="font-size:11px;line-height:1.7;color:#555;margin-top:6px;">'+esc(slide.body)+'</div>';
       ecolText.innerHTML=ecolH;
       ecolEl.appendChild(ecolText);
-      var ecolFootBar=document.createElement('div');
-      ecolFootBar.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:26px;border-top:1px solid rgba(140,120,100,.35);background:rgba(240,235,225,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      var ecolUrl='www.impactgridgroup.com';
-      ecolFootBar.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a09888;">'+ecolUrl+'</span>'+'<span style="font-size:11px;color:#b0a090;letter-spacing:4px;">✽ ✽ ✽</span>';
-      ecolEl.appendChild(ecolFootBar);
+      var ecolFoot=document.createElement('div');
+      ecolFoot.style.cssText='position:absolute;bottom:12px;left:14px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
+      ecolFoot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
+      ecolEl.appendChild(ecolFoot);
+      var ecolStars=document.createElement('div');
+      ecolStars.innerHTML='✽ ✽ ✽';
+      ecolStars.style.cssText='position:absolute;bottom:12px;right:14px;z-index:6;font-size:14px;color:#b0a090;letter-spacing:4px;';
+      ecolEl.appendChild(ecolStars);
       break;
     }
 
@@ -1302,435 +1146,14 @@ function renderSlide(){
       var ec3b2=document.createElement('div');
       ec3b2.style.cssText='position:absolute;right:12px;width:24%;bottom:28px;height:46%;background-size:cover;background-position:center top;background-color:#8a7258;border-radius:3px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:3;'+(imgUrls[2]?'background-image:url('+imgUrls[2]+')':'');
       ec3El.appendChild(ec3b2);
-      var ec3FootBar=document.createElement('div');
-      ec3FootBar.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:26px;border-top:1px solid rgba(140,120,100,.35);background:rgba(240,235,225,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
-      var ec3Url='www.impactgridgroup.com';
-      ec3FootBar.innerHTML='<span style="font-size:8.5px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#a09888;">'+ec3Url+'</span>'+'<span style="font-size:11px;color:#b0a090;letter-spacing:4px;">✽ ✽ ✽</span>';
-      ec3El.appendChild(ec3FootBar);
-      break;
-    }
-
-    case 'CLEAN_EDITORIAL':{
-      // Light editorial — eyebrow tag, large headline, body, brush CTA
-      // Suppress bg image and overlay
-      sBgImg.style.opacity='0';
-      sBg.style.background='#faf8f4';
-      sOverlay.style.background='none';
-      sTexture.className='s-texture'; // clear texture
-
-      var ceEl=ensureContainer('sCleanEditorial');
-      showLayout('sCleanEditorial');
-      ceEl.innerHTML='';
-      ceEl.style.cssText='position:absolute;inset:0;z-index:5;background:#faf8f4;display:flex;flex-direction:column;font-family:var(--fb,\'DM Sans\',sans-serif);';
-
-      var useSerif=(ST.fontPair==='cormorant'||ST.fontPair==='playfair');
-      var headFont=useSerif
-        ? (ST.fontPair==='playfair'?'\'Playfair Display\',Georgia,serif':'\'Cormorant Garant\',Georgia,serif')
-        : getFont('head');
-
-      // Inner content area
-      var ceInner=document.createElement('div');
-      ceInner.style.cssText='flex:1;display:flex;flex-direction:column;justify-content:center;padding:44px 38px 20px;gap:0;position:relative;';
-
-      // Eyebrow
-      var ceEyebrow=document.createElement('div');
-      ceEyebrow.style.cssText='font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:'+accent2+';font-family:'+getFont('mono')+';margin-bottom:20px;';
-      ceEyebrow.textContent=slide.tag||slide.type.toUpperCase();
-      ceInner.appendChild(ceEyebrow);
-
-      // Headline
-      var ceHead=document.createElement('div');
-      ceHead.className='s-headline';
-      var ceFontSz=Math.min(38,headlineSize(slide.headline));
-      ceHead.style.cssText='font-family:'+headFont+';font-size:'+ceFontSz+'px;font-weight:'+(useSerif?'700':'800')+';line-height:1.1;color:#1a1814;letter-spacing:-.03em;margin-bottom:18px;'+(useSerif?'font-style:italic;':'');
-      ceHead.textContent=slide.headline;
-      ceInner.appendChild(ceHead);
-
-      // Body
-      if(slide.body){
-        var ceBody=document.createElement('div');
-        ceBody.className='s-body';
-        ceBody.style.cssText='font-size:13px;line-height:1.72;color:#5a5550;max-width:88%;margin-bottom:28px;';
-        ceBody.textContent=slide.body;
-        ceInner.appendChild(ceBody);
-      }
-
-      // CTA row
-      var ceCtaWrap=document.createElement('div');
-      ceCtaWrap.style.cssText='display:flex;align-items:center;gap:14px;';
-
-      if(slide.cta||slide.type==='cta'){
-        var ceCta=document.createElement('div');
-        ceCta.className='s-cta';
-        ceCta.style.cssText='display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:'+getFont('head')+';color:#fff;background:'+accent2+';box-shadow:2px 2px 0 rgba(0,0,0,.12);position:relative;overflow:hidden;';
-        ceCta.textContent=(slide.cta||'Check details')+' →';
-        ceCtaWrap.appendChild(ceCta);
-      }
-
-      // Slide number badge
-      var ceSlideNum=document.createElement('div');
-      ceSlideNum.style.cssText='font-size:11px;font-family:'+getFont('mono')+';font-weight:700;color:#1a1814;padding:5px 12px;border:1.5px solid rgba(0,0,0,.2);border-radius:4px;letter-spacing:.05em;margin-left:auto;';
-      ceSlideNum.textContent=String(ST.cur+1).padStart(2,'0');
-      ceCtaWrap.appendChild(ceSlideNum);
-      ceInner.appendChild(ceCtaWrap);
-
-      // Swirl arrow decoration
-      var ceSwirl=document.createElement('div');
-      ceSwirl.style.cssText='position:absolute;right:28px;bottom:20px;width:44px;opacity:.55;pointer-events:none;';
-      ceSwirl.innerHTML='<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M40 10 C50 20 55 40 42 55 C30 68 12 62 8 48" stroke="'+accent2+'" stroke-width="2" stroke-linecap="round"/><path d="M8 48 L4 38 M8 48 L18 44" stroke="'+accent2+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      ceInner.appendChild(ceSwirl);
-      ceEl.appendChild(ceInner);
-
-      // Footer bar
-      var ceFoot=document.createElement('div');
-      ceFoot.style.cssText='flex-shrink:0;padding:10px 38px;border-top:1px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;';
-      var ceBrand=ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup';
-      ceFoot.innerHTML='<span style="font-size:9px;font-family:'+getFont('mono')+';letter-spacing:.14em;text-transform:uppercase;color:#a09890;">www.'+ceBrand+'.com</span>'
-        +'<span style="font-size:12px;color:#c0b8b0;letter-spacing:4px;">✽ ✽ ✽</span>';
-      ceEl.appendChild(ceFoot);
-      break;
-    }
-
-    case 'SERIF_MINIMAL':{
-      // Pure minimal — rule lines, circled number, Cormorant headline, arrow CTA pill
-      sBgImg.style.opacity='0';
-      sBg.style.background='#faf8f4';
-      sOverlay.style.background='none';
-      sTexture.className='s-texture';
-
-      var smEl=ensureContainer('sSerifMinimal');
-      showLayout('sSerifMinimal');
-      smEl.innerHTML='';
-      smEl.style.cssText='position:absolute;inset:0;z-index:5;background:#faf8f4;display:flex;flex-direction:column;';
-
-      // Top rule line
-      var smRuleTop=document.createElement('div');
-      smRuleTop.style.cssText='flex-shrink:0;height:1px;background:rgba(0,0,0,.14);margin:44px 28px 0;';
-      smEl.appendChild(smRuleTop);
-
-      // Inner content
-      var smInner=document.createElement('div');
-      smInner.style.cssText='flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 38px;gap:0;';
-
-      // Circled number
-      var smNumWrap=document.createElement('div');
-      smNumWrap.style.cssText='display:flex;align-items:center;justify-content:center;margin-bottom:24px;';
-      var smNum=document.createElement('div');
-      smNum.style.cssText='width:52px;height:52px;border-radius:50%;border:1.5px solid rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;font-family:\'Cormorant Garant\',Georgia,serif;font-size:22px;font-weight:600;font-style:italic;color:#1a1814;';
-      smNum.textContent=String(ST.cur+1).padStart(2,'0');
-      smNumWrap.appendChild(smNum);
-      smInner.appendChild(smNumWrap);
-
-      // Headline — always serif for this layout
-      var smHead=document.createElement('div');
-      smHead.className='s-headline';
-      var smFontSz=Math.min(40,headlineSize(slide.headline));
-      smHead.style.cssText='font-family:\'Cormorant Garant\',Georgia,serif;font-size:'+smFontSz+'px;font-weight:600;line-height:1.15;color:#1a1814;text-align:center;margin-bottom:16px;letter-spacing:-.01em;';
-      smHead.textContent=slide.headline;
-      smInner.appendChild(smHead);
-
-      // Body
-      if(slide.body){
-        var smBody=document.createElement('div');
-        smBody.className='s-body';
-        smBody.style.cssText='font-size:13px;line-height:1.7;color:#5a5550;text-align:center;max-width:82%;margin:0 auto 26px;';
-        smBody.textContent=slide.body;
-        smInner.appendChild(smBody);
-      }
-
-      // Arrow CTA pill
-      var smCtaWrap=document.createElement('div');
-      smCtaWrap.style.cssText='display:flex;justify-content:flex-end;align-items:center;margin-top:auto;padding-top:12px;';
-      var smCta=document.createElement('div');
-      smCta.className='s-cta';
-      smCta.style.cssText='display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:99px;background:#f0ece5;border:1px solid rgba(0,0,0,.1);font-size:12px;font-weight:600;color:#1a1814;font-family:'+getFont('mono')+';letter-spacing:.05em;';
-      smCta.innerHTML='→';
-      smCtaWrap.appendChild(smCta);
-      smInner.appendChild(smCtaWrap);
-      smEl.appendChild(smInner);
-
-      // Bottom rule line
-      var smRuleBot=document.createElement('div');
-      smRuleBot.style.cssText='flex-shrink:0;height:1px;background:rgba(0,0,0,.14);margin:0 28px 36px;';
-      smEl.appendChild(smRuleBot);
-      break;
-    }
-
-    case 'MAGAZINE_COVER':{
-      // Full-bleed photo, date/page header, serif number + title, bottom nav bar
-      var mcEl=ensureContainer('sMagazineCover');
-      showLayout('sMagazineCover');
-      mcEl.innerHTML='';
-      mcEl.style.cssText='position:absolute;inset:0;z-index:5;overflow:hidden;';
-
-      // Background photo
-      var mcBg=document.createElement('div');
-      mcBg.style.cssText='position:absolute;inset:0;background-size:cover;background-position:center;'+(primaryUrl?'background-image:url('+primaryUrl+')':'background:#2a2020;');
-      mcEl.appendChild(mcBg);
-
-      // Gradient overlay
-      var mcOv=document.createElement('div');
-      mcOv.style.cssText='position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.22) 0%,transparent 38%,transparent 50%,rgba(0,0,0,.78) 100%);';
-      mcEl.appendChild(mcOv);
-
-      // Header — date + page number
-      var now=new Date();
-      var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-      var dateStr=months[now.getMonth()].toUpperCase()+' '+now.getFullYear();
-      var mcHeader=document.createElement('div');
-      mcHeader.style.cssText='position:absolute;top:0;left:0;right:0;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,.22);z-index:2;';
-      mcHeader.innerHTML='<span style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.85);font-family:'+getFont('mono')+'">'+dateStr+'</span>'
-        +'<span style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.85);font-family:'+getFont('mono')+'">PAGE '+String(ST.cur+1).padStart(2,'0')+'</span>';
-      mcEl.appendChild(mcHeader);
-
-      // Optional frame box (for inner photo crop look)
-      if(slide.type==='hook'||slide.type==='cta'){
-        var mcFrame=document.createElement('div');
-        mcFrame.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);width:52%;aspect-ratio:1;border:1.5px solid rgba(255,255,255,.5);border-radius:2px;z-index:2;pointer-events:none;';
-        // Corner sparkles
-        ['top:-8px;left:50%;transform:translateX(-50%)',
-         'bottom:-8px;left:50%;transform:translateX(-50%)',
-         'left:-8px;top:50%;transform:translateY(-50%)',
-         'right:-8px;top:50%;transform:translateY(-50%)'].forEach(function(pos){
-          var sp=document.createElement('div');
-          sp.style.cssText='position:absolute;'+pos+';font-size:10px;color:rgba(255,255,255,.7);line-height:1;';
-          sp.textContent='✦';
-          mcFrame.appendChild(sp);
-        });
-        mcEl.appendChild(mcFrame);
-      }
-
-      // Title area
-      var mcBody=document.createElement('div');
-      mcBody.style.cssText='position:absolute;bottom:44px;left:0;right:0;padding:0 22px;z-index:2;';
-
-      var mcNum=document.createElement('div');
-      mcNum.style.cssText='font-family:\'Cormorant Garant\',Georgia,serif;font-size:72px;font-style:italic;font-weight:700;line-height:.9;color:#fff;opacity:.95;letter-spacing:-2px;display:block;margin-bottom:4px;';
-      mcNum.textContent=slide.stat||String(ST.cur+1);
-      mcBody.appendChild(mcNum);
-
-      var mcTitle=document.createElement('div');
-      mcTitle.className='s-headline';
-      var mcFontSz=Math.min(26,headlineSize(slide.headline));
-      mcTitle.style.cssText='font-family:\'Cormorant Garant\',Georgia,serif;font-size:'+mcFontSz+'px;font-weight:600;font-style:italic;line-height:1.2;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.4);';
-      mcTitle.textContent=slide.headline;
-      mcBody.appendChild(mcTitle);
-
-      if(slide.body){
-        var mcSub=document.createElement('div');
-        mcSub.style.cssText='margin-top:8px;font-size:11px;font-family:'+getFont('mono')+';font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.65);';
-        mcSub.textContent=slide.body.substring(0,60)+(slide.body.length>60?'…':'');
-        mcBody.appendChild(mcSub);
-      }
-      mcEl.appendChild(mcBody);
-
-      // Footer nav bar
-      var mcFoot=document.createElement('div');
-      mcFoot.style.cssText='position:absolute;bottom:0;left:0;right:0;height:40px;background:rgba(0,0,0,.32);backdrop-filter:blur(6px);border-top:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:2;';
-      var footBrand=ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup';
-      mcFoot.innerHTML='<span style="font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);font-family:'+getFont('mono')+'">www.'+footBrand+'.com</span>'
-        +'<span style="font-size:13px;color:rgba(255,255,255,.5);letter-spacing:2px;">›  ›  ›</span>';
-      mcEl.appendChild(mcFoot);
-      break;
-    }
-
-    case 'GRID_MOSAIC':{
-      // 2×2 photo grid with floating note-card caption overlay
-      sBgImg.style.opacity='0';
-      sBg.style.background='#111';
-      sOverlay.style.background='none';
-      sTexture.className='s-texture';
-
-      var gmEl=ensureContainer('sGridMosaic');
-      showLayout('sGridMosaic');
-      gmEl.innerHTML='';
-      gmEl.style.cssText='position:absolute;inset:0;z-index:5;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;background:#111;';
-
-      var imgPool=[primaryUrl,secondUrl,thirdUrl];
-      // Fill 4 cells — cycle through available images
-      var cellLabels=[null,null,null,null];
-      if(slide.body){
-        var bodyWords=slide.body.split('.').filter(function(s){return s.trim().length>3;});
-        cellLabels=bodyWords.slice(0,4);
-      }
-
-      for(var gi=0;gi<4;gi++){
-        var gCell=document.createElement('div');
-        gCell.style.cssText='position:relative;overflow:hidden;background:#2a2420;';
-        var gImg=imgPool[gi%imgPool.length];
-        if(gImg){
-          var gImgEl=document.createElement('img');
-          gImgEl.src=gImg;
-          gImgEl.alt='';
-          gImgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';
-          gCell.appendChild(gImgEl);
-        }
-        // Optional cell tag on 3rd and 4th cells
-        if(gi===2||gi===3){
-          var gTag=document.createElement('div');
-          gTag.style.cssText='position:absolute;bottom:6px;left:8px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border-radius:4px;padding:2px 7px;font-family:'+getFont('mono')+';';
-          gTag.textContent=(gi===2)?'♥ COFFEESHOP':'1 2 3 0';
-          gCell.appendChild(gTag);
-        }
-        gmEl.appendChild(gCell);
-      }
-
-      // Floating note card
-      var gmCard=document.createElement('div');
-      gmCard.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-46%,-54%);z-index:8;background:#fff;border-radius:8px;padding:12px 16px 14px;box-shadow:0 6px 28px rgba(0,0,0,.4),0 1px 0 rgba(0,0,0,.08);min-width:130px;max-width:190px;';
-
-      // Browser dots
-      var gmDots=document.createElement('div');
-      gmDots.style.cssText='display:flex;gap:4px;margin-bottom:9px;';
-      [['#ff5f56'],['#ffbd2e'],['#27c93f']].forEach(function(c){
-        var d=document.createElement('div');
-        d.style.cssText='width:8px;height:8px;border-radius:50%;background:'+c[0]+';';
-        gmDots.appendChild(d);
-      });
-      gmCard.appendChild(gmDots);
-
-      var gmText=document.createElement('div');
-      gmText.style.cssText='font-size:12px;line-height:1.5;color:#1a1814;font-family:\'DM Sans\',sans-serif;font-weight:500;';
-      gmText.textContent=slide.headline||'random whimsical things that bring me joy lately';
-      gmCard.appendChild(gmText);
-
-      if(slide.tag){
-        var gmEmoji=document.createElement('span');
-        gmEmoji.style.cssText='font-size:14px;margin-top:5px;display:block;';
-        gmEmoji.textContent='😊 ☀️';
-        gmCard.appendChild(gmEmoji);
-      }
-      gmEl.appendChild(gmCard);
-      break;
-    }
-
-    case 'POLAROID_CARD':{
-      // Numbered polaroid frame, handwritten-style label, body text below
-      sBgImg.style.opacity='0';
-      sBg.style.background='#faf8f4';
-      sOverlay.style.background='none';
-      sTexture.className='s-texture';
-
-      var pcEl=ensureContainer('sPolaroidCard');
-      showLayout('sPolaroidCard');
-      pcEl.innerHTML='';
-      pcEl.style.cssText='position:absolute;inset:0;z-index:5;background:#faf8f4;display:flex;flex-direction:column;align-items:center;padding:24px 20px 16px;gap:0;';
-
-      // Number row with rule lines
-      var pcNumRow=document.createElement('div');
-      pcNumRow.style.cssText='width:100%;display:flex;align-items:center;gap:0;margin-bottom:16px;';
-      var pcRuleL=document.createElement('div');
-      pcRuleL.style.cssText='flex:1;height:1px;background:rgba(0,0,0,.14);';
-      var pcNumBox=document.createElement('div');
-      pcNumBox.style.cssText='width:64px;height:64px;border:1.5px solid rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-family:\'Cormorant Garant\',Georgia,serif;font-size:30px;font-weight:400;font-style:italic;color:#1a1814;flex-shrink:0;';
-      pcNumBox.textContent=String(ST.cur+1);
-      var pcRuleR=document.createElement('div');
-      pcRuleR.style.cssText='flex:1;height:1px;background:rgba(0,0,0,.14);';
-      pcNumRow.appendChild(pcRuleL);
-      pcNumRow.appendChild(pcNumBox);
-      pcNumRow.appendChild(pcRuleR);
-      pcEl.appendChild(pcNumRow);
-
-      // Polaroid frame
-      var pcWrap=document.createElement('div');
-      pcWrap.style.cssText='position:relative;width:78%;flex-shrink:0;background:#fff;padding:7px 7px 28px;box-shadow:0 4px 16px rgba(0,0,0,.14),0 1px 0 rgba(0,0,0,.06);transform:rotate(-1.2deg);';
-
-      var pcImg=document.createElement('div');
-      pcImg.style.cssText='width:100%;aspect-ratio:1;background-size:cover;background-position:center;background-color:#d4cec8;'+(primaryUrl?'background-image:url('+primaryUrl+')':'');
-      pcWrap.appendChild(pcImg);
-
-      // Handwritten-style label inside polaroid
-      var pcLabel=document.createElement('div');
-      pcLabel.style.cssText='position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:12px;color:#3a3530;letter-spacing:.02em;font-style:italic;font-family:Georgia,serif;';
-      pcLabel.textContent=slide.tag||slide.type;
-      pcWrap.appendChild(pcLabel);
-      pcEl.appendChild(pcWrap);
-
-      // Body text
-      if(slide.body){
-        var pcBody=document.createElement('div');
-        pcBody.className='s-body';
-        pcBody.style.cssText='margin-top:14px;padding:0 4px;font-size:12px;line-height:1.65;color:#5a5550;text-align:left;width:100%;';
-        pcBody.textContent=slide.body;
-        pcEl.appendChild(pcBody);
-      }
-
-      // Arrow at bottom right
-      var pcArrow=document.createElement('div');
-      pcArrow.style.cssText='align-self:flex-end;margin-top:auto;padding-top:8px;font-size:18px;color:#1a1814;opacity:.35;font-family:'+getFont('mono')+';';
-      pcArrow.textContent='→';
-      pcEl.appendChild(pcArrow);
-      break;
-    }
-
-    case 'RISOGRAPH':{
-      // Bold flat colour, halftone dots, large number + title, torn newspaper strip
-      var rgEl=ensureContainer('sRisograph');
-      showLayout('sRisograph');
-      rgEl.innerHTML='';
-
-      // Pick a bold bg colour — use accent, or themed bold colour
-      var rgBgColor=accent2||'#e8231a';
-      // Map some accents to classic risograph combos
-      var rgBgMap={'#f5e400':'#e8231a','#ef4444':'#e8231a','#2563eb':'#1a3ae8','#22c55e':'#1a7a3a','#7c3aed':'#4a1aed','#0891b2':'#0a4fb2','#ea580c':'#d44008'};
-      var rgBg=rgBgMap[accent2]||accent2||'#e8231a';
-
-      rgEl.style.cssText='position:absolute;inset:0;z-index:5;overflow:hidden;display:flex;flex-direction:column;';
-      sBgImg.style.opacity='0';
-      sBg.style.background=rgBg;
-      sOverlay.style.background='none';
-
-      // Solid bg div
-      var rgBgDiv=document.createElement('div');
-      rgBgDiv.style.cssText='position:absolute;inset:0;background:'+rgBg+';';
-      rgEl.appendChild(rgBgDiv);
-
-      // Halftone dots overlay
-      var rgHalftone=document.createElement('div');
-      rgHalftone.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:1;background-image:radial-gradient(circle,rgba(0,0,0,.16) 1px,transparent 1px);background-size:8px 8px;mix-blend-mode:multiply;';
-      rgEl.appendChild(rgHalftone);
-
-      // Inner content
-      var rgInner=document.createElement('div');
-      rgInner.style.cssText='position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 28px 16px;';
-
-      // Big number
-      var rgNum=document.createElement('div');
-      rgNum.style.cssText='font-family:'+getFont('head')+';font-size:min(120px,22vw);font-weight:900;line-height:.85;color:#fef4d4;letter-spacing:-6px;margin-bottom:4px;text-shadow:4px 4px 0 rgba(0,0,0,.12);';
-      rgNum.textContent=slide.stat||String(ST.cur+1);
-      rgInner.appendChild(rgNum);
-
-      // Title
-      var rgTitle=document.createElement('div');
-      rgTitle.className='s-headline';
-      var rgFontSz=Math.min(30,headlineSize(slide.headline));
-      rgTitle.style.cssText='font-family:'+getFont('head')+';font-size:'+rgFontSz+'px;font-weight:900;line-height:1.05;color:#fef4d4;text-transform:uppercase;letter-spacing:-.02em;text-shadow:2px 2px 0 rgba(0,0,0,.15);';
-      rgTitle.textContent=slide.headline;
-      rgInner.appendChild(rgTitle);
-
-      // Cutout image top-right (uses the primary image, halftone-filtered)
-      if(primaryUrl){
-        var rgCutout=document.createElement('img');
-        rgCutout.src=primaryUrl;
-        rgCutout.alt='';
-        rgCutout.style.cssText='position:absolute;top:16px;right:16px;width:46%;max-height:52%;object-fit:contain;filter:grayscale(1) contrast(1.5) brightness(.9);mix-blend-mode:multiply;z-index:3;pointer-events:none;';
-        rgEl.appendChild(rgCutout);
-      }
-
-      rgEl.appendChild(rgInner);
-
-      // Torn newspaper strip
-      var rgNews=document.createElement('div');
-      rgNews.style.cssText='flex-shrink:0;height:72px;position:relative;z-index:4;background:#f0ebe0;'
-        +'clip-path:polygon(0% 28%,3% 12%,6% 22%,9% 8%,12% 18%,15% 5%,18% 20%,21% 10%,24% 24%,27% 6%,30% 18%,33% 10%,36% 22%,39% 4%,42% 16%,45% 8%,48% 20%,51% 5%,54% 18%,57% 10%,60% 24%,63% 8%,66% 20%,69% 5%,72% 18%,75% 10%,78% 22%,81% 6%,84% 20%,87% 8%,90% 22%,93% 4%,96% 16%,100% 10%,100% 100%,0% 100%);';
-      // Faux newspaper text
-      var newsText=slide.body||slide.headline||'';
-      var rgNewsContent=document.createElement('div');
-      rgNewsContent.style.cssText='position:absolute;bottom:8px;left:14px;right:14px;font-family:Georgia,serif;font-size:7.5px;line-height:1.5;color:#3a3530;opacity:.55;letter-spacing:.01em;overflow:hidden;height:32px;';
-      // Repeat text to simulate columns
-      rgNewsContent.textContent=(newsText+' '+newsText+' '+newsText).substring(0,320);
-      rgNews.appendChild(rgNewsContent);
-      rgEl.appendChild(rgNews);
+      var ec3Foot=document.createElement('div');
+      ec3Foot.style.cssText='position:absolute;bottom:12px;left:12px;z-index:6;font-size:10px;font-family:'+getFont('body')+';color:#a09888;';
+      ec3Foot.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
+      ec3El.appendChild(ec3Foot);
+      var ec3Stars=document.createElement('div');
+      ec3Stars.innerHTML='✽ ✽ ✽';
+      ec3Stars.style.cssText='position:absolute;bottom:12px;right:12px;z-index:6;font-size:14px;color:#b0a090;letter-spacing:4px;';
+      ec3El.appendChild(ec3Stars);
       break;
     }
 
@@ -1738,15 +1161,9 @@ function renderSlide(){
 
   document.getElementById('sNum').textContent=(ST.cur+1)+' / '+ST.slides.length;
   var brandEl=document.getElementById('sBrand');
-  var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER',
-    'CLEAN_EDITORIAL','SERIF_MINIMAL','MAGAZINE_COVER','POLAROID_CARD','RISOGRAPH'];
-  if(editorialLayouts.indexOf(layout)===-1){
-    var urlText='www.impactgridgroup.com';
-    brandEl.textContent=urlText;
-    brandEl.style.color='';  /* use CSS class color */
-  } else {
-    brandEl.textContent='';
-  }
+  var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
+  brandEl.textContent=editorialLayouts.indexOf(layout)===-1?(ST.brand||''):'';
+  brandEl.style.color=tc.head;
 
   var badge2=document.getElementById('layoutBadge');
   if(badge2) badge2.textContent=layout.replace(/_/g,' ');
@@ -1788,27 +1205,23 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function makeEditable(){
   var canvas = document.getElementById('slideCanvas');
   if(!canvas) return;
-  // renderSlide() rebuilds innerHTML each time, so we must re-attach listeners
-  // to the freshly rendered elements — no data-editable guard needed.
-  var targets = canvas.querySelectorAll('.s-headline, .s-body, .s-cta, .s-stat-num');
+  var targets = canvas.querySelectorAll('.s-headline, .s-body, .s-cta, [class*="s-stat-num"]');
   targets.forEach(function(el){
+    if(el.dataset.editable === '1') return;
+    el.dataset.editable = '1';
     el.style.cursor = 'text';
     el.title = 'Click to edit';
-    // Clone to strip any stale listeners from a previous render cycle
-    var fresh = el.cloneNode(true);
-    el.parentNode.replaceChild(fresh, el);
-    fresh.addEventListener('click', function(e){
+    el.addEventListener('click', function(e){
       e.stopPropagation();
-      startInlineEdit(fresh);
+      startInlineEdit(el);
     });
   });
-  // Delegated fallback — attached once per canvas lifetime
   if(!canvas.dataset.editDelegated){
     canvas.dataset.editDelegated = '1';
     canvas.addEventListener('click', function(e){
       var t = e.target;
       while(t && t !== canvas){
-        if(t.classList.contains('s-headline') || t.classList.contains('s-body') || t.classList.contains('s-stat-num')){
+        if(t.dataset.editKey || t.classList.contains('s-headline') || t.classList.contains('s-body')){
           startInlineEdit(t); return;
         }
         t = t.parentElement;
