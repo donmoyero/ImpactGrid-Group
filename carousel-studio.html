@@ -1719,55 +1719,113 @@ function iosDlRenderThumbs(batchIdx) {
 window.iosDlTriggerShare = async function() {
   if (iosDl.fetching) return;
   var bi = iosDl.batchIdx, batch = iosDl.batches[bi]; if (!batch) return;
+
+  /* ── CRITICAL: build File objects synchronously BEFORE any await.
+     iOS Safari requires navigator.share() to be called in the same
+     call stack as the user gesture (button tap). Any await before
+     navigator.share() breaks the gesture chain and Safari throws
+     NotAllowedError. Since our blobs are already in memory from
+     html2canvas (no fetch needed), we can build Files instantly. ── */
+  var offset = bi * iosDl.BATCH_SIZE;
+  var files = [];
+  for (var fi = 0; fi < batch.length; fi++) {
+    var item = batch[fi];
+    if (item && item.blob) {
+      files.push(new File([item.blob], item.name || ('ImpactGrid-slide-' + String(offset + fi + 1).padStart(2,'0') + '.png'), { type: 'image/png' }));
+    }
+  }
+
+  if (!files.length) { toast('No slides captured yet — tap Download again'); return; }
+
+  /* Check canShare synchronously — also must happen before any await */
+  var canShare = false;
+  try { canShare = navigator.canShare && navigator.canShare({ files: files }); } catch(e) {}
+  if (!canShare) {
+    iosFallbackTabs(iosDl.blobs);
+    iosDlClose();
+    return;
+  }
+
+  /* Now update UI and trigger share — navigator.share IS the first await */
   iosDl.fetching = true;
   var btn = document.getElementById('iosDlSaveBtn');
   btn.disabled = true; btn.className = 'ios-dl-save-btn loading';
-  document.getElementById('iosDlSaveBtnIcon').textContent = '⏳';
-  document.getElementById('iosDlSaveBtnText').textContent = 'Preparing…';
-  document.getElementById('iosDlNextBtn').classList.add('hidden');
-  document.getElementById('iosDlInstructionText').innerHTML = '⏳ Preparing ' + batch.length + ' slide' + (batch.length > 1 ? 's' : '') + '…';
-  var offset = bi * iosDl.BATCH_SIZE;
-  batch.forEach(function(_, i) { var el = document.getElementById('iosDlThumb-' + (offset + i)); if (el) el.classList.add('saving'); });
-
-  var files = batch.map(function(item) { return new File([item.blob], item.name, { type: 'image/png' }); });
-  iosDl.fetching = false;
-
-  var canShare = false;
-  try { canShare = navigator.canShare({ files: files }); } catch(e) {}
-  if (!canShare) { iosFallbackTabs(iosDl.blobs); iosDlClose(); return; }
-
-  btn.disabled = false; btn.className = 'ios-dl-save-btn';
   document.getElementById('iosDlSaveBtnIcon').textContent = '📤';
   document.getElementById('iosDlSaveBtnText').textContent = 'Opening Share Sheet…';
-  document.getElementById('iosDlInstructionText').innerHTML = 'Share Sheet opening — tap <strong>"Save Image"</strong> to save all ' + files.length + ' slides.';
+  document.getElementById('iosDlNextBtn').classList.add('hidden');
+  document.getElementById('iosDlInstructionText').innerHTML =
+    'Share Sheet opening — tap <strong>"Save Image"</strong> to save all ' + files.length + ' slide' + (files.length > 1 ? 's' : '') + '.';
+  batch.forEach(function(_, i) {
+    var el = document.getElementById('iosDlThumb-' + (offset + i));
+    if (el) el.classList.add('saving');
+  });
 
   try {
+    /* navigator.share is the first and only await — gesture chain intact */
     await navigator.share({ files: files, title: 'ImpactGrid Carousel', text: 'Tap "Save Image" to save to Camera Roll' });
+
+    /* Share completed */
+    iosDl.fetching = false;
     iosDl.saved += files.length;
-    batch.forEach(function(_, i) { var el = document.getElementById('iosDlThumb-' + (offset + i)); if (el) { el.classList.remove('saving'); el.classList.add('saved'); } });
+    batch.forEach(function(_, i) {
+      var el = document.getElementById('iosDlThumb-' + (offset + i));
+      if (el) { el.classList.remove('saving'); el.classList.add('saved'); }
+    });
+
     var tb = iosDl.batches.length, isLast = iosDl.batchIdx >= tb - 1;
     if (isLast) {
       iosDlShowDone();
     } else {
       iosDl.batchIdx++;
-      iosDlUpdateProgress(); iosDlRenderThumbs(iosDl.batchIdx);
+      iosDlUpdateProgress();
+      iosDlRenderThumbs(iosDl.batchIdx);
       var nbs = iosDl.batchIdx * iosDl.BATCH_SIZE + 1;
       var nbe = Math.min((iosDl.batchIdx + 1) * iosDl.BATCH_SIZE, iosDl.total);
       btn.disabled = true; btn.className = 'ios-dl-save-btn';
       document.getElementById('iosDlSaveBtnIcon').textContent = '✅';
       document.getElementById('iosDlSaveBtnText').textContent = 'Batch ' + iosDl.batchIdx + ' of ' + tb + ' saved!';
-      var nb = document.getElementById('iosDlNextBtn'); nb.classList.remove('hidden');
+      var nb = document.getElementById('iosDlNextBtn');
+      nb.classList.remove('hidden');
       document.getElementById('iosDlNextLabel').textContent = 'Slides ' + nbs + '–' + nbe;
-      document.getElementById('iosDlInstructionText').innerHTML = '✅ <strong>' + iosDl.saved + ' of ' + iosDl.total + '</strong> saved. Tap <strong>"Next Batch"</strong> to continue.';
+      document.getElementById('iosDlInstructionText').innerHTML =
+        '✅ <strong>' + iosDl.saved + ' of ' + iosDl.total + '</strong> saved. Tap <strong>"Next Batch"</strong> to continue.';
     }
+
   } catch(e) {
+    iosDl.fetching = false;
+    batch.forEach(function(_, i) {
+      var el = document.getElementById('iosDlThumb-' + (offset + i));
+      if (el) el.classList.remove('saving');
+    });
+    btn.disabled = false; btn.className = 'ios-dl-save-btn';
+    document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
+
     if (e.name === 'AbortError') {
-      btn.disabled = false; btn.className = 'ios-dl-save-btn';
-      document.getElementById('iosDlSaveBtnIcon').textContent = '📲';
-      document.getElementById('iosDlSaveBtnText').textContent = 'Try Batch ' + (iosDl.batchIdx + 1) + ' Again';
-      document.getElementById('iosDlInstructionText').innerHTML = 'Cancelled — tap again, then tap <strong>"Save Image"</strong>.';
-      batch.forEach(function(_, i) { var el = document.getElementById('iosDlThumb-' + (offset + i)); if (el) el.classList.remove('saving'); });
-    } else { console.warn('Share error:', e); }
+      /* User dismissed the Share Sheet — let them retry */
+      document.getElementById('iosDlSaveBtnText').textContent = 'Try Again';
+      document.getElementById('iosDlInstructionText').innerHTML =
+        'Dismissed — tap again, then tap <strong>"Save Image"</strong> on the Share Sheet.';
+
+    } else if (e.name === 'NotAllowedError') {
+      /* Gesture chain was broken somehow — fall back to tab method */
+      document.getElementById('iosDlSaveBtnText').textContent = 'Try Again';
+      document.getElementById('iosDlInstructionText').innerHTML =
+        'Share Sheet blocked — tap the button <strong>immediately</strong> when ready, without any other taps first.';
+
+    } else {
+      /* Unknown error — offer fallback */
+      console.warn('[iosDlTriggerShare] Share error:', e.name, e.message);
+      document.getElementById('iosDlSaveBtnText').textContent = 'Use Fallback Method';
+      document.getElementById('iosDlInstructionText').innerHTML =
+        'Share Sheet unavailable — tap to open slides individually and long-press to save.';
+      document.getElementById('iosDlSaveBtn').onclick = function() {
+        iosFallbackTabs(iosDl.blobs);
+        iosDlClose();
+        /* Restore onclick after fallback */
+        document.getElementById('iosDlSaveBtn').onclick = null;
+        document.getElementById('iosDlSaveBtn').setAttribute('onclick', 'iosDlTriggerShare()');
+      };
+    }
   }
 };
 
@@ -1842,10 +1900,20 @@ window.downloadAll = async function() {
   _dlCancelled = false;
   var total = ST.slides.length, blobItems = [];
   showDlProgress('Preparing slides…', 0);
-  var origCur     = ST.cur;
-  var canvas      = document.getElementById('slideCanvas');
-  var displayW    = canvas.offsetWidth || 480;
-  var exportScale = Math.round((1080 / displayW) * 10) / 10;
+  var origCur  = ST.cur;
+  var canvas   = document.getElementById('slideCanvas');
+  var displayW = canvas.offsetWidth || 480;
+
+  /* ── iOS Safari canvas memory limit is ~16MP.
+     At 480px display: 1080/480 = 2.25× → 1080×1080 = 1.16MP ✓
+     BUT on iPhone the canvas is 320px wide: 1080/320 = 3.375×
+     → rendered canvas = 3.375×480 = 1620×1620 = 2.6MP — fine alone,
+     but html2canvas also allocates intermediary buffers that stack up.
+     Cap at 2× on mobile (still gives 640px output, plenty for social).
+     On desktop keep the full 1080px scale.                          ── */
+  var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  var rawScale = 1080 / displayW;
+  var exportScale = isMobile ? Math.min(rawScale, 2) : Math.round(rawScale * 10) / 10;
 
   for (var i = 0; i < total; i++) {
     if (_dlCancelled) break;
@@ -1862,7 +1930,13 @@ window.downloadAll = async function() {
     updateDlProgress('Capturing slide ' + (i + 1) + ' of ' + total + '…', Math.round((i / total) * 80));
     var restoreBgs = await swapBgImagesToBlobs(canvas);
     try {
-      var c = await html2canvas(canvas, { useCORS: true, allowTaint: false, scale: exportScale, backgroundColor: '#111111', imageTimeout: 8000, logging: false });
+      var c = await html2canvas(canvas, {
+        useCORS: true, allowTaint: false,
+        scale: exportScale,
+        backgroundColor: '#111111',
+        imageTimeout: isMobile ? 12000 : 8000,  /* iOS fetch can be slow on mobile */
+        logging: false
+      });
       var previewUrl = null;
       try { previewUrl = c.toDataURL('image/jpeg', 0.4); } catch(e) {}
       await new Promise(function(res) {
@@ -1872,8 +1946,11 @@ window.downloadAll = async function() {
           res();
         }, 'image/png');
       });
-    } catch(e) { console.warn('[downloadAll] Capture failed slide', i + 1, e);
-    } finally { restoreBgs(); }
+    } catch(e) {
+      console.warn('[downloadAll] Capture failed slide', i + 1, e);
+    } finally {
+      restoreBgs();
+    }
   }
 
   ST.cur = origCur;
@@ -1883,7 +1960,7 @@ window.downloadAll = async function() {
   hideDlProgress();
 
   if (_dlCancelled || !blobItems.length) {
-    if (!_dlCancelled) toast('⚠️ Capture failed — try screenshot or JSON export');
+    if (!_dlCancelled) toast('⚠️ Capture failed — try reducing slide count or refreshing');
     return;
   }
 
