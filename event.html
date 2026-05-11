@@ -1159,6 +1159,9 @@ document.addEventListener('DOMContentLoaded', async function(){
     var settings = Array.isArray(ev.event_settings)
       ? ev.event_settings[0] : (ev.event_settings || {});
 
+    /* ── VISIT TRACKING ── */
+    trackVisit(ev.id, ev.name);
+
     var type = ev.type || ev.template || 'professional';
     var tpl  = TPL_MAP[type] || TPL_MAP.professional;
     document.body.className = tpl.cls;
@@ -2172,6 +2175,32 @@ function showError(msg){
     + '<a href="index.html" style="display:inline-block;padding:10px 24px;background:#3b4eff;'
     + 'color:#fff;border-radius:8px;font-weight:700;font-size:13px;">← Back to ImpactGrid</a>'
     + '</div></div>';
+}
+
+/* ══════════════════════════════════════
+   VISIT TRACKING
+   Fires once per page load — logs device,
+   country, city and IP to Supabase so the
+   admin Event Activity dashboard stays live.
+══════════════════════════════════════ */
+async function trackVisit(eventId, eventName){
+  try{
+    var geo = {};
+    try{
+      var r = await fetch('https://ipapi.co/json/');
+      if(r.ok) geo = await r.json();
+    }catch(e){}
+    await getSupabase().from('event_page_visits').insert({
+      event_id:   eventId,
+      event_name: eventName,
+      user_agent: navigator.userAgent,
+      country:    geo.country_name || null,
+      city:       geo.city        || null,
+      ip:         geo.ip          || null
+    });
+  }catch(e){
+    /* Silently ignore — table may not exist yet */
+  }
 }
 
 /* ══════════════════════════════════════
