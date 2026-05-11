@@ -199,16 +199,7 @@ tr:hover td{background:var(--bg2);}
 [data-theme="dark"] .profile-avatar{color:#07090f;}
 .mobile-menu-btn{display:none;width:36px;height:36px;border-radius:8px;background:var(--card);border:1px solid var(--border2);align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all .2s;}
 .mobile-menu-btn:hover{border-color:var(--gold);}
-.face-group-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px;transition:border-color .2s;}
-.face-group-card:hover{border-color:var(--border2);}
-.face-group-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;}
-.face-group-id{font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:.08em;}
-.face-group-count{font-size:11px;color:var(--text2);background:var(--card);border:1px solid var(--border);padding:2px 8px;border-radius:100px;}
-.face-thumbs{display:flex;gap:6px;flex-wrap:wrap;}
-.face-thumb{width:56px;height:56px;border-radius:var(--r);overflow:hidden;background:var(--card);border:1px solid var(--border);flex-shrink:0;cursor:pointer;transition:all .2s;position:relative;}
-.face-thumb:hover{border-color:var(--gold);transform:scale(1.08);}
-.face-thumb img{width:100%;height:100%;object-fit:cover;}
-.face-thumb-more{width:56px;height:56px;border-radius:var(--r);background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3);}
+
 @media(max-width:1100px){.ws-layout{grid-template-columns:1fr;}.ws-sticky{position:static;}}
 @media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr);}.quick-grid{grid-template-columns:repeat(2,1fr);}.form-grid{grid-template-columns:1fr;}}
 @media(max-width:700px){:root{--sidebar-w:280px;}.sidebar{position:fixed;top:0;left:0;bottom:0;z-index:500;transform:translateX(-100%);transition:transform .3s ease;}.sidebar.open{transform:translateX(0);}.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:499;backdrop-filter:blur(2px);}.sidebar-overlay.open{display:block;}.shell{position:relative;}.page{padding:18px 16px;}.mobile-menu-btn{display:flex!important;}.stats-row{grid-template-columns:repeat(2,1fr)!important;}.quick-grid{grid-template-columns:repeat(2,1fr)!important;}}
@@ -388,11 +379,9 @@ tr:hover td{background:var(--bg2);}
       </div>
 
       <!-- Stats row -->
-      <div class="stats-row" style="margin-bottom:18px;" id="activity-stats-row">
+      <div class="stats-row" style="margin-bottom:18px;grid-template-columns:repeat(2,1fr);" id="activity-stats-row">
         <div class="stat-card"><div class="stat-label">Total Visits</div><div class="stat-val" id="act-stat-visits" style="color:var(--blue);">—</div><div class="stat-sub">Page loads recorded</div></div>
         <div class="stat-card"><div class="stat-label">Unique Visitors</div><div class="stat-val" id="act-stat-unique" style="color:var(--gold);">—</div><div class="stat-sub">By IP / fingerprint</div></div>
-        <div class="stat-card"><div class="stat-label">Download Requests</div><div class="stat-val" id="act-stat-requests" style="color:var(--green);">—</div><div class="stat-sub">All time</div></div>
-        <div class="stat-card"><div class="stat-label">Pending Approvals</div><div class="stat-val" id="act-stat-pending" style="color:var(--red);">—</div><div class="stat-sub">Awaiting your action</div></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
@@ -423,21 +412,6 @@ tr:hover td{background:var(--bg2);}
         </div>
       </div>
 
-      <!-- Download requests for selected event -->
-      <div class="card">
-        <div class="card-head">
-          <h2>📥 Download Requests</h2>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-ghost btn-sm" id="act-req-all"     onclick="actFilterReq('all',this)">All</button>
-            <button class="btn btn-ghost btn-sm" id="act-req-pending"  onclick="actFilterReq('pending',this)">⏳ Pending</button>
-            <button class="btn btn-ghost btn-sm" id="act-req-approved" onclick="actFilterReq('approved',this)">✅ Approved</button>
-            <button class="btn btn-ghost btn-sm" id="act-req-rejected" onclick="actFilterReq('rejected',this)">✕ Rejected</button>
-          </div>
-        </div>
-        <div class="card-body table-wrap" id="act-requests-list">
-          <div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>
-        </div>
-      </div>
     </div>
     <!-- ALL EVENTS -->
     <div class="page" id="page-events">
@@ -489,14 +463,14 @@ tr:hover td{background:var(--bg2);}
     </div>
     <!-- UPLOAD PHOTOS -->
     <div class="page" id="page-uploadphotos">
-      <div class="page-header"><div class="page-title">Upload Photos</div><div class="page-sub">Upload photos to an event. Faces are indexed automatically.</div></div>
+      <div class="page-header"><div class="page-title">Upload Photos</div><div class="page-sub">Upload photos to an event. Preview versions are available immediately.</div></div>
       <div class="ws-layout">
         <div>
           <div class="card"><div class="card-head"><h2>📅 Select Event</h2></div><div class="card-body"><div class="field-group"><div class="field-label">Event</div><select id="upload-event-select" onchange="onUploadEventChange()"><option value="">— Select an event —</option></select></div><div id="upload-event-info" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-top:4px;"><div style="font-size:12px;color:var(--text2);" id="upload-event-meta"></div></div></div></div>
           <div class="card" id="upload-dropcard" style="display:none;"><div class="card-head"><h2>📤 Upload Photos</h2></div><div class="card-body"><div class="upload-zone" id="photoDropZone" onclick="document.getElementById('photoFileIn').click()" ondragover="onDragOver(event,'photoDropZone')" ondragleave="onDragLeave(event,'photoDropZone')" ondrop="onDropMulti(event,'photoDropZone')"><div class="upload-zone-ico">📸</div><div class="upload-zone-title">Drop photos here or click to browse</div><div class="upload-zone-sub">JPG · PNG · WebP · Multiple files supported</div><input type="file" id="photoFileIn" accept="image/jpeg,image/png,image/webp" multiple onchange="handlePhotoInputChange(event)"/></div><div id="photoUploadProgress" style="margin-top:12px;"></div></div></div>
           <div class="card" id="upload-photos-list-card" style="display:none;"><div class="card-head"><h2>🖼️ Event Photos</h2><button class="btn btn-ghost btn-sm" onclick="loadEventPhotos()">↻ Refresh</button></div><div class="card-body" id="eventPhotosList"><div class="empty"><div class="empty-ico">📸</div><div class="empty-txt">No photos yet.</div></div></div></div>
         </div>
-        <div class="ws-sticky"><div class="hint-box"><strong>Face indexing</strong><br><br>After each upload:<br>1. <strong>Face++</strong> detects and indexes the face<br>2. Backend searches FaceSet first — same person reuses their group<br>3. New people get a new group automatically<br><br>Guests scan their selfie → matched instantly.</div></div>
+        <div class="ws-sticky"><div class="hint-box"><strong>Upload tips</strong><br><br>You can upload multiple photos at once.<br><br>Photos are stored in the event bucket and are available immediately in the gallery after upload.</div></div>
       </div>
     </div>
 
@@ -1130,26 +1104,13 @@ async function uploadPhotos(files){
       setStatus('Saving…',60,'');
       var {data:photoRow,error:dbErr}=await c.from('photos').insert({event_id:selectedEventId,preview_url:origUrlData.publicUrl,original_url:origUrlData.publicUrl}).select().single();
       if(dbErr) throw dbErr;
-      setStatus('Indexing face…',80,'');
-      indexPhotoFaces(photoRow.id,origUrlData.publicUrl,selectedEventId).then(function(){setStatus('✅ Done',100,'var(--green)');}).catch(function(){setStatus('✅ Done (no face)',100,'var(--green)');});
+      setStatus('✅ Done',100,'var(--green)');
     }catch(err){setStatus('⚠️ '+err.message,100,'var(--red)');}
   }
   toast('✅','Upload complete!',files.length+' photo'+(files.length>1?'s':'')+' added');
   loadEventPhotos();
 }
 
-async function indexPhotoFaces(photoId,photoUrl,eventId){
-  try{
-    var urlWithCacheBust=photoUrl+(photoUrl.includes('?')?'&':'?')+'cb='+Date.now();
-    var res=await fetch(EVENTS_API+'/api/facepp-embed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrl:urlWithCacheBust,eventId:eventId})});
-    if(res.status===429){await new Promise(function(r){setTimeout(r,5000);});res=await fetch(EVENTS_API+'/api/facepp-embed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrl:urlWithCacheBust,eventId:eventId})});if(res.status===429)return;}
-    if(!res.ok)return;
-    var data=await res.json();
-    if(!data.faceFound||!data.face_token)return;
-    var c=getSupabase();
-    await c.from('face_embeddings').insert({event_id:eventId,photo_id:photoId,face_index:0,face_token:data.face_token,embedding:null,face_crop_url:data.face_crop_url||null,group_id:(data.group_id!==undefined&&data.group_id!==null)?data.group_id:-1});
-  }catch(e){console.warn('[indexPhotoFaces] Error:',e.message);}
-}
 
 async function loadEventPhotos(){
   var el=document.getElementById('eventPhotosList');if(!el||!selectedEventId)return;
@@ -1172,7 +1133,6 @@ async function deletePhoto(id,originalUrl){
   var c=getSupabase();
   try{var base='https://wedjsnizcvtgptobwugc.supabase.co/storage/v1/object/public/events/';if(originalUrl)await c.storage.from('events').remove([originalUrl.replace(base,'')]);}catch(e){}
   await c.from('photos').delete().eq('id',id);
-  await c.from('face_embeddings').delete().eq('photo_id',id);
   toast('🗑️','Photo deleted','');loadEventPhotos();
 }
 
@@ -1189,9 +1149,6 @@ async function igLogout(){
      download_requests  (id, event_id, user_email, status, created_at)
    Falls back gracefully if table doesn't exist yet.
 ══════════════════════════════════════════════════════ */
-var _actAllRequests = [];
-var _actReqFilter   = 'all';
-
 async function loadEventActivity(){
   var c        = getSupabase();
   var eventId  = (document.getElementById('activity-event-select')||{}).value || '';
@@ -1228,24 +1185,6 @@ async function loadEventActivity(){
     }
   }catch(e){
     renderActivitySetupPrompt();
-  }
-
-  /* ── Load download requests ── */
-  try{
-    var reqQ = c.from('download_requests').select('*, events(name)').order('created_at',{ascending:false});
-    if(eventId) reqQ = reqQ.eq('event_id', eventId);
-    var { data: reqs } = await reqQ;
-    _actAllRequests = reqs || [];
-    actFilterReq(_actReqFilter, null);
-
-    var pending = _actAllRequests.filter(function(r){ return r.status==='pending'; }).length;
-    var pEl = document.getElementById('act-stat-pending');
-    if(pEl){ pEl.textContent = pending; pEl.style.color = pending > 0 ? 'var(--red)' : 'var(--text)'; }
-    var rEl = document.getElementById('act-stat-requests');
-    if(rEl) rEl.textContent = _actAllRequests.length;
-  }catch(e){
-    var rList = document.getElementById('act-requests-list');
-    if(rList) rList.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">Could not load requests.</div></div>';
   }
 }
 
@@ -1337,35 +1276,6 @@ function renderVisitLog(visits){
       }).join('')
     + '</tbody></table>'
     + (visits.length > 100 ? '<div style="text-align:center;padding:12px;font-size:11px;color:var(--text3);">Showing 100 of '+visits.length+' visits</div>' : '');
-}
-
-function actFilterReq(status, btn){
-  _actReqFilter = status;
-  document.querySelectorAll('[id^="act-req-"]').forEach(function(b){
-    b.style.background=''; b.style.color='';
-  });
-  if(btn){ btn.style.background='var(--gold)'; btn.style.color='#fff'; }
-  var list = status==='all' ? _actAllRequests : _actAllRequests.filter(function(r){ return r.status===status; });
-  var el = document.getElementById('act-requests-list');
-  if(!el) return;
-  if(!list.length){
-    el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No '+status+' requests.</div></div>';
-    return;
-  }
-  el.innerHTML = '<table><thead><tr><th>Guest Email</th><th>Event</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>'
-    + list.map(function(r){
-        var pc = {pending:'pill-pending',approved:'pill-active',rejected:'pill-rejected'}[r.status]||'pill-pending';
-        return '<tr>'
-          + '<td style="font-weight:600;">'+esc(r.user_email)+'</td>'
-          + '<td>'+esc((r.events&&r.events.name)||'—')+'</td>'
-          + '<td><span class="pill '+pc+'">'+(r.status||'pending')+'</span></td>'
-          + '<td style="color:var(--text3);font-size:12px;">'+new Date(r.created_at).toLocaleDateString('en-GB')+'</td>'
-          + '<td><div class="td-actions">'
-          + (r.status!=='approved'?'<button class="btn btn-green btn-sm" onclick="approveRequest(\''+r.id+'\',\''+esc(r.user_email)+'\',\''+r.event_id+'\')">✓ Approve</button>':'')
-          + (r.status!=='rejected'?'<button class="btn btn-red btn-sm" onclick="rejectRequest(\''+r.id+'\')">✕ Reject</button>':'')
-          + '</div></td></tr>';
-      }).join('')
-    + '</tbody></table>';
 }
 
 function renderActivitySetupPrompt(){
