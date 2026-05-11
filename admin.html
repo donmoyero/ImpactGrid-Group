@@ -244,6 +244,7 @@ tr:hover td{background:var(--bg2);}
         <a href="#" onclick="return nav('events',this)"><span class="sb-ico">📅</span>All Events</a>
         <a href="#" onclick="return nav('createevent',this)"><span class="sb-ico">➕</span>Create Event</a>
         <a href="#" onclick="return nav('uploadphotos',this)"><span class="sb-ico">🖼️</span>Upload Photos</a>
+        <a href="#" onclick="return nav('reviews',this)"><span class="sb-ico">⭐</span>Reviews<span class="sb-badge" id="reviewsBadge" style="display:none;">0</span></a>
 
       </nav>
     </div>
@@ -481,12 +482,26 @@ tr:hover td{background:var(--bg2);}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="ig-supabase.js"></script>
+<script src="events-script.js"></script>
+<script src="reviews-script.js"></script>
 
 <script>
 /* ══ CONFIG ══ */
 var IG_ADMIN_EMAIL = 'admin@impactgridgroup.com';
 var BUCKET      = 'site-media';
 var EVENTS_API  = 'https://impactgrid-events-api.onrender.com';
+
+/* ══ EVENTS SUPABASE BRIDGE ══
+   Reviews are stored in the events Supabase project.
+   Replace the URL and key with your events project credentials. */
+var _eventsSupabaseClient = null;
+function getEventsSupabase() {
+  if (_eventsSupabaseClient) return _eventsSupabaseClient;
+  var EVENTS_URL = 'https://wedjsnizcvtgptobwugc.supabase.co'; /* ← your events project URL */
+  var EVENTS_KEY = 'YOUR_EVENTS_ANON_KEY';                      /* ← your events anon key   */
+  _eventsSupabaseClient = window.supabase.createClient(EVENTS_URL, EVENTS_KEY);
+  return _eventsSupabaseClient;
+}
 var heroSlides=[], heroEditId=null, tickerItems=[], testimonials=[], updateCards=[];
 
 /* ══ BOOT ══ */
@@ -539,7 +554,8 @@ function nav(id,el){
   var loaders={
     eventactivity:'loadEventActivity',
     events:'loadEvents',createevent:'setDefaultExpiry',
-    uploadphotos:'loadUploadPhotos'
+    uploadphotos:'loadUploadPhotos',
+    reviews:'loadEventReviews'
   };
   if(loaders[id]&&window[loaders[id]]) window[loaders[id]]();
   return false;
