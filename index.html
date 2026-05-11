@@ -338,6 +338,69 @@
   .demo-section { padding: 60px 0; }
   .newsletter-section { padding: 60px 0 72px; }
 }
+
+/* ── EVENT REVIEWS SECTION ── */
+.reviews-section {
+  padding: 96px 0 80px;
+  background: var(--bg2);
+}
+.reviews-head {
+  text-align: center;
+  margin-bottom: 52px;
+}
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.review-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--sh);
+  transition: transform .25s, box-shadow .25s;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: reviewFadeIn .4s ease forwards;
+}
+@keyframes reviewFadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+.review-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sh2);
+}
+.review-card-top {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.review-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 16px; font-weight: 900;
+  color: #fff; flex-shrink: 0;
+}
+[data-theme="dark"] .review-avatar { color: #07090f; }
+.review-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.review-event { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.review-stars {
+  font-size: 15px; letter-spacing: 1px;
+  color: #f0b429; margin-bottom: 10px;
+}
+.review-message {
+  font-size: 13px; color: var(--text2); line-height: 1.65;
+}
+.review-card:nth-child(2) { animation-delay: .08s; }
+.review-card:nth-child(3) { animation-delay: .16s; }
+.review-card:nth-child(4) { animation-delay: .24s; }
+.review-card:nth-child(5) { animation-delay: .32s; }
+.review-card:nth-child(6) { animation-delay: .40s; }
+
+@media(max-width: 700px) {
+  .reviews-section { padding: 64px 0 56px; }
+  .reviews-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -560,6 +623,22 @@
   </div>
 </div>
 
+<!-- ═══════════════ EVENT REVIEWS ═══════════════ -->
+<div class="reviews-section" id="eventReviewsSection" style="display:none;">
+  <div class="wrap">
+    <div class="reviews-head anim">
+      <div class="label-tag">From Our Events</div>
+      <h2 class="sec-h">What guests are saying.</h2>
+      <p class="sec-p" style="max-width:500px;margin:12px auto 0;">
+        Real reviews from people at ImpactGrid photo events.
+      </p>
+    </div>
+    <div class="reviews-grid" id="reviewsGrid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ FOOTER ═══════════════ -->
 <footer class="footer">
   <div class="footer-in wrap">
@@ -677,6 +756,56 @@ var io = new IntersectionObserver(function(entries){
   entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.06 });
 document.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
+
+/* ── LOAD EVENT REVIEWS from main Supabase ── */
+(async function loadEventReviewsHomepage() {
+  try {
+    var _esc = function(s){
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    };
+
+    var { data, error } = await getSupabase()
+      .from('event_reviews')
+      .select('reviewer_name, event_name, rating, message')
+      .order('approved_at', { ascending: false })
+      .limit(9);
+
+    if (error || !data || !data.length) return;
+
+    var section = document.getElementById('eventReviewsSection');
+    var grid    = document.getElementById('reviewsGrid');
+    if (!section || !grid) return;
+
+    var stars = function(n) {
+      var s = '';
+      for (var i = 1; i <= 5; i++) s += (i <= n ? '★' : '☆');
+      return s;
+    };
+
+    grid.innerHTML = data.map(function(r) {
+      var initial = (r.reviewer_name || '?')[0].toUpperCase();
+      return '<div class="review-card">'
+        + '<div class="review-card-top">'
+        +   '<div class="review-avatar">' + initial + '</div>'
+        +   '<div>'
+        +     '<div class="review-name">' + _esc(r.reviewer_name) + '</div>'
+        +     (r.event_name ? '<div class="review-event">📸 ' + _esc(r.event_name) + '</div>' : '')
+        +   '</div>'
+        + '</div>'
+        + '<div class="review-stars">' + stars(r.rating) + '</div>'
+        + (r.message ? '<div class="review-message">' + _esc(r.message) + '</div>' : '')
+        + '</div>';
+    }).join('');
+
+    section.style.display = 'block';
+
+    /* Hook into intersection observer for .anim */
+    section.querySelectorAll('.anim').forEach(function(el){ io.observe(el); });
+
+  } catch (e) {
+    /* Silent — section stays hidden */
+  }
+})();
 
 /* ── KEEPALIVE ── */
 window.addEventListener('load', function(){
