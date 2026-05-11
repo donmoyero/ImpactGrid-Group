@@ -1662,9 +1662,10 @@ function quickDownload(url, idx){
     return;
   }
   var filename = 'ImpactGrid-Photo-' + (parseInt(idx) + 1) + '.jpg';
+  var _qdPhoto = allPhotos[parseInt(idx)] || { id: null };
   toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
   blobDownload(url, filename)
-    .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
+    .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); trackDownload([_qdPhoto]); })
     .catch(function(){ toast('⚠️', 'Download failed', 'Try again or check your connection'); });
 }
 
@@ -1678,7 +1679,7 @@ async function downloadBatch(photos){
     var url = photos[0].original_url || photos[0].preview_url;
     toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
     blobDownload(url, 'ImpactGrid-Photo-001.jpg')
-      .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
+      .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); trackDownload(photos); })
       .catch(function(){ toast('⚠️', 'Download failed', 'Try again'); });
     return;
   }
@@ -1708,6 +1709,7 @@ async function downloadBatch(photos){
   removeDlProgress();
   if(!dlCancelled){
     var saved = photos.length - failed;
+    trackDownload(photos.slice(0, saved));
     if(failed === 0){
       toast('✅', 'All ' + photos.length + ' photos saved!', 'Check your Downloads / Gallery');
     } else {
@@ -1934,6 +1936,7 @@ async function iosDlTriggerShare(){
 
     /* User completed share */
     iosDl.saved += files.length;
+    trackDownload(batch.slice(0, files.length));
     batch.forEach(function(_, i){
       var el = document.getElementById('iosDlThumb-' + (offset + i));
       if(el){ el.classList.remove('saving'); el.classList.add('saved'); }
@@ -2105,7 +2108,7 @@ function lbDownload(){
   }
   toast('⬇', 'Saving photo…', 'Check your Downloads / Gallery');
   blobDownload(url, 'ImpactGrid-Photo-' + (lbIndex + 1) + '.jpg')
-    .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); })
+    .then(function(){ toast('✅', 'Photo saved!', 'Check your Downloads / Gallery'); trackDownload([p]); })
     .catch(function(){ toast('⚠️', 'Download failed', 'Try again or check your connection'); });
 }
 
@@ -2201,6 +2204,28 @@ async function trackVisit(eventId, eventName){
   }catch(e){
     /* Silently ignore — table may not exist yet */
   }
+}
+
+/* ══════════════════════════════════════
+   DOWNLOAD TRACKING
+   Fires after each successful download —
+   logs event, photo count and device to
+   Supabase photo_downloads table.
+══════════════════════════════════════ */
+async function trackDownload(photos){
+  try{
+    if(!eventData || !eventData.id) return;
+    var arr = Array.isArray(photos) ? photos : [photos];
+    var rows = arr.map(function(p){
+      return {
+        event_id:   eventData.id,
+        event_name: eventData.name || null,
+        photo_id:   p.id          || null,
+        user_agent: navigator.userAgent
+      };
+    });
+    await getSupabase().from('photo_downloads').insert(rows);
+  }catch(e){ /* silent */ }
 }
 
 /* ══════════════════════════════════════
