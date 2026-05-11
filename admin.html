@@ -1365,17 +1365,20 @@ function renderDownloadsLog(data){
     + '</div>'
     + '</div>'
     + '<table><thead><tr>'
-    + '<th>Time</th><th>Event</th><th>Device</th><th>Photo ID</th>'
+    + '<th>Time</th><th>Event</th><th>Device</th><th>Location</th><th>IP</th><th>Photo ID</th>'
     + '</tr></thead><tbody>'
     + data.slice(0, 100).map(function(d){
         var dev = parseDevice(d.user_agent);
         var dt  = new Date(d.created_at);
         var timeStr = dt.toLocaleDateString('en-GB') + ' ' + dt.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
         var shortId = d.photo_id ? d.photo_id.slice(0, 8) + '…' : '—';
+        var loc = (d.city && d.country) ? d.city + ', ' + d.country : (d.country || d.city || '—');
         return '<tr>'
           + '<td style="font-size:11px;color:var(--text3);white-space:nowrap;">' + esc(timeStr) + '</td>'
           + '<td style="font-size:12px;font-weight:600;">' + esc(d.event_name || d.event_id || '—') + '</td>'
           + '<td>' + dev.icon + ' <span style="font-size:11px;color:var(--text2);">' + dev.type + '</span></td>'
+          + '<td style="font-size:12px;">🌍 ' + esc(loc) + '</td>'
+          + '<td style="font-family:var(--fm);font-size:10px;color:var(--text3);">' + esc(d.ip || '—') + '</td>'
           + '<td style="font-family:var(--fm);font-size:10px;color:var(--text3);">' + esc(shortId) + '</td>'
           + '</tr>';
       }).join('')
