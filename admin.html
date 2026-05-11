@@ -244,11 +244,7 @@ tr:hover td{background:var(--bg2);}
       <div class="sb-section-label">Workstation</div>
       <nav class="sb-nav">
         <a href="#" class="active" onclick="return nav('overview',this)"><span class="sb-ico">◈</span>Overview</a>
-        <a href="#" onclick="return nav('homepage',this)"><span class="sb-ico">🏠</span>Homepage Content</a>
-        <a href="#" onclick="return nav('hero',this)"><span class="sb-ico">🎞️</span>Hero Slideshow</a>
-        <a href="#" onclick="return nav('updates',this)"><span class="sb-ico">📢</span>Updates Section</a>
-        <a href="#" onclick="return nav('testimonials',this)"><span class="sb-ico">💬</span>Testimonials</a>
-        <a href="#" onclick="return nav('ticker',this)"><span class="sb-ico">📡</span>Ticker</a>
+        <a href="#" onclick="return nav('eventactivity',this)"><span class="sb-ico">📊</span>Event Activity</a>
       </nav>
     </div>
     <div class="sb-section">
@@ -288,8 +284,7 @@ tr:hover td{background:var(--bg2);}
         <div class="stat-card"><div class="stat-label">Events</div><div class="stat-val" id="stat-events" style="color:var(--blue);">—</div><div class="stat-sub">Active</div></div>
       </div>
       <div class="quick-grid">
-        <div class="quick-card" onclick="nav('hero',null)" style="border-color:var(--gold-glo);background:var(--gold-dim);"><div class="quick-ico">🎞️</div><div class="quick-title" style="color:var(--gold);">Homepage Slideshow</div><div class="quick-desc">Upload images &amp; videos, edit captions and CTAs for the hero</div></div>
-        <div class="quick-card" onclick="nav('homepage',null)"><div class="quick-ico">🏠</div><div class="quick-title">Homepage Content</div><div class="quick-desc">Edit section text, ecosystem cards, CTAs and copy</div></div>
+        <div class="quick-card" onclick="nav('eventactivity',null)" style="border-color:var(--gold-glo);background:var(--gold-dim);"><div class="quick-ico">📊</div><div class="quick-title" style="color:var(--gold);">Event Activity</div><div class="quick-desc">See page visits, device types, locations and download requests per event</div></div>
         <div class="quick-card" onclick="nav('postjob',null)"><div class="quick-ico">📋</div><div class="quick-title">Post a Job</div><div class="quick-desc">Add a new job listing to the public network</div></div>
         <div class="quick-card" onclick="nav('professionals',null)"><div class="quick-ico">👤</div><div class="quick-title">View Professionals</div><div class="quick-desc">Browse and manage all active professionals on the network</div></div>
         <div class="quick-card" onclick="nav('createevent',null)"><div class="quick-ico">📅</div><div class="quick-title">Create Event</div><div class="quick-desc">Set up a new photo event with access code and expiry</div></div>
@@ -376,6 +371,82 @@ tr:hover td{background:var(--bg2);}
           <div style="margin-top:16px;"><div class="field-label" style="margin-bottom:8px;">Preview</div>
             <div class="ticker-preview-strip"><div class="tp-badge"><div class="tp-dot"></div>ImpactGrid</div><div class="tp-text" id="tickerPreview">—</div></div>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- EVENT ACTIVITY -->
+    <div class="page" id="page-eventactivity">
+      <div class="page-header">
+        <div class="page-title">Event Activity</div>
+        <div class="page-sub">See exactly who visits your events, what device they use, where they are, and all download requests.</div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="padding:14px 18px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <div class="field-label" style="margin-bottom:6px;">Filter by Event</div>
+              <select id="activity-event-select" class="form-select" onchange="loadEventActivity()">
+                <option value="">— All Events —</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:2px;">
+              <button class="btn btn-ghost btn-sm" onclick="loadEventActivity()">↻ Refresh</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-row" style="margin-bottom:18px;" id="activity-stats-row">
+        <div class="stat-card"><div class="stat-label">Total Visits</div><div class="stat-val" id="act-stat-visits" style="color:var(--blue);">—</div><div class="stat-sub">Page loads recorded</div></div>
+        <div class="stat-card"><div class="stat-label">Unique Visitors</div><div class="stat-val" id="act-stat-unique" style="color:var(--gold);">—</div><div class="stat-sub">By IP / fingerprint</div></div>
+        <div class="stat-card"><div class="stat-label">Download Requests</div><div class="stat-val" id="act-stat-requests" style="color:var(--green);">—</div><div class="stat-sub">All time</div></div>
+        <div class="stat-card"><div class="stat-label">Pending Approvals</div><div class="stat-val" id="act-stat-pending" style="color:var(--red);">—</div><div class="stat-sub">Awaiting your action</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <!-- Device breakdown -->
+        <div class="card">
+          <div class="card-head"><h2>📱 Device Types</h2></div>
+          <div class="card-body" id="act-devices">
+            <div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>
+          </div>
+        </div>
+        <!-- Location breakdown -->
+        <div class="card">
+          <div class="card-head"><h2>🌍 Visitor Locations</h2></div>
+          <div class="card-body" id="act-locations">
+            <div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visit log table -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-head">
+          <h2>👁 Page Visit Log</h2>
+          <span style="font-size:11px;color:var(--text3);">Most recent first</span>
+        </div>
+        <div class="card-body table-wrap" id="act-visit-log">
+          <div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- Download requests for selected event -->
+      <div class="card">
+        <div class="card-head">
+          <h2>📥 Download Requests</h2>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" id="act-req-all"     onclick="actFilterReq('all',this)">All</button>
+            <button class="btn btn-ghost btn-sm" id="act-req-pending"  onclick="actFilterReq('pending',this)">⏳ Pending</button>
+            <button class="btn btn-ghost btn-sm" id="act-req-approved" onclick="actFilterReq('approved',this)">✅ Approved</button>
+            <button class="btn btn-ghost btn-sm" id="act-req-rejected" onclick="actFilterReq('rejected',this)">✕ Rejected</button>
+          </div>
+        </div>
+        <div class="card-body table-wrap" id="act-requests-list">
+          <div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>
         </div>
       </div>
     </div>
@@ -551,8 +622,7 @@ function nav(id,el){
   if(page) page.classList.add('active');
   if(el) el.classList.add('active');
   var loaders={
-    homepage:'loadHomepageEditor',hero:'loadHeroSlides',
-    updates:'loadUpdateCards',testimonials:'loadTestimonials',ticker:'loadTicker',
+    eventactivity:'loadEventActivity',
     applications:'loadApplications',
     professionals:'loadProfessionals',employers:'loadEmployers',
     jobs:'loadJobs',postjob:'loadEditJobs',
@@ -1444,6 +1514,213 @@ async function loadEditJobs() {
 async function igLogout(){
   await getSupabase().auth.signOut();
   window.location.href='index.html';
+}
+
+/* ══════════════════════════════════════════════════════
+   EVENT ACTIVITY DASHBOARD
+   Reads from:
+     event_page_visits  (id, event_id, visited_at, user_agent, country, city, ip)
+     download_requests  (id, event_id, user_email, status, created_at)
+   Falls back gracefully if table doesn't exist yet.
+══════════════════════════════════════════════════════ */
+var _actAllRequests = [];
+var _actReqFilter   = 'all';
+
+async function loadEventActivity(){
+  var c        = getSupabase();
+  var eventId  = (document.getElementById('activity-event-select')||{}).value || '';
+
+  /* ── Populate event dropdown if empty ── */
+  var sel = document.getElementById('activity-event-select');
+  if(sel && sel.options.length <= 1){
+    try{
+      var { data: evList } = await c.from('events').select('id,name').order('created_at',{ascending:false});
+      (evList||[]).forEach(function(ev){
+        var o = document.createElement('option');
+        o.value = ev.id; o.textContent = ev.name;
+        sel.appendChild(o);
+      });
+      eventId = sel.value;
+    }catch(e){}
+  }
+
+  /* ── Load visits ── */
+  try{
+    var visitsQ = c.from('event_page_visits').select('*').order('visited_at',{ascending:false}).limit(500);
+    if(eventId) visitsQ = visitsQ.eq('event_id', eventId);
+    var { data: visits, error: vErr } = await visitsQ;
+
+    if(vErr && vErr.code === '42P01'){
+      /* Table doesn't exist yet — show setup prompt */
+      renderActivitySetupPrompt();
+    } else {
+      visits = visits || [];
+      renderActivityStats(visits, eventId);
+      renderDeviceBreakdown(visits);
+      renderLocationBreakdown(visits);
+      renderVisitLog(visits);
+    }
+  }catch(e){
+    renderActivitySetupPrompt();
+  }
+
+  /* ── Load download requests ── */
+  try{
+    var reqQ = c.from('download_requests').select('*, events(name)').order('created_at',{ascending:false});
+    if(eventId) reqQ = reqQ.eq('event_id', eventId);
+    var { data: reqs } = await reqQ;
+    _actAllRequests = reqs || [];
+    actFilterReq(_actReqFilter, null);
+
+    var pending = _actAllRequests.filter(function(r){ return r.status==='pending'; }).length;
+    var pEl = document.getElementById('act-stat-pending');
+    if(pEl){ pEl.textContent = pending; pEl.style.color = pending > 0 ? 'var(--red)' : 'var(--text)'; }
+    var rEl = document.getElementById('act-stat-requests');
+    if(rEl) rEl.textContent = _actAllRequests.length;
+  }catch(e){
+    var rList = document.getElementById('act-requests-list');
+    if(rList) rList.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">Could not load requests.</div></div>';
+  }
+}
+
+function renderActivityStats(visits, eventId){
+  var uniq = {};
+  visits.forEach(function(v){ if(v.ip) uniq[v.ip] = true; else if(v.id) uniq[v.id] = true; });
+  var vEl = document.getElementById('act-stat-visits');
+  var uEl = document.getElementById('act-stat-unique');
+  if(vEl) vEl.textContent = visits.length;
+  if(uEl) uEl.textContent = Object.keys(uniq).length || visits.length;
+}
+
+function parseDevice(ua){
+  if(!ua) return { type:'Unknown', icon:'❓' };
+  ua = ua.toLowerCase();
+  if(/iphone|android.*mobile|windows phone/.test(ua)) return { type:'Mobile', icon:'📱' };
+  if(/ipad|android(?!.*mobile)/.test(ua))             return { type:'Tablet', icon:'📲' };
+  if(/mac|windows|linux/.test(ua))                    return { type:'Desktop', icon:'🖥️' };
+  return { type:'Other', icon:'🌐' };
+}
+
+function renderDeviceBreakdown(visits){
+  var el = document.getElementById('act-devices');
+  if(!el) return;
+  if(!visits.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">📱</div><div class="empty-txt">No visit data yet.</div></div>';
+    return;
+  }
+  var counts = {};
+  visits.forEach(function(v){
+    var d = parseDevice(v.user_agent);
+    counts[d.icon + ' ' + d.type] = (counts[d.icon + ' ' + d.type] || 0) + 1;
+  });
+  var total = visits.length;
+  el.innerHTML = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; }).map(function(k){
+    var pct = Math.round(counts[k]/total*100);
+    return '<div style="margin-bottom:14px;">'
+      + '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:5px;"><span>'+esc(k)+'</span><span style="color:var(--text3);">'+counts[k]+' <span style="font-size:11px;">('+pct+'%)</span></span></div>'
+      + '<div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;">'
+      + '<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;transition:width .5s;"></div>'
+      + '</div></div>';
+  }).join('');
+}
+
+function renderLocationBreakdown(visits){
+  var el = document.getElementById('act-locations');
+  if(!el) return;
+  if(!visits.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🌍</div><div class="empty-txt">No location data yet.</div></div>';
+    return;
+  }
+  var counts = {};
+  visits.forEach(function(v){
+    var loc = (v.city && v.country) ? v.city+', '+v.country : (v.country || v.city || 'Unknown');
+    counts[loc] = (counts[loc] || 0) + 1;
+  });
+  var total = visits.length;
+  var sorted = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; }).slice(0,8);
+  el.innerHTML = sorted.map(function(k){
+    var pct = Math.round(counts[k]/total*100);
+    return '<div style="margin-bottom:14px;">'
+      + '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:5px;"><span>🌍 '+esc(k)+'</span><span style="color:var(--text3);">'+counts[k]+' <span style="font-size:11px;">('+pct+'%)</span></span></div>'
+      + '<div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;">'
+      + '<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:4px;transition:width .5s;"></div>'
+      + '</div></div>';
+  }).join('');
+}
+
+function renderVisitLog(visits){
+  var el = document.getElementById('act-visit-log');
+  if(!el) return;
+  if(!visits.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">👁</div><div class="empty-txt">No page visits recorded yet. See setup instructions below.</div></div>';
+    return;
+  }
+  el.innerHTML = '<table><thead><tr><th>Time</th><th>Event</th><th>Device</th><th>Location</th><th>IP</th></tr></thead><tbody>'
+    + visits.slice(0,100).map(function(v){
+        var dev = parseDevice(v.user_agent);
+        var loc = (v.city && v.country) ? v.city+', '+v.country : (v.country || v.city || '—');
+        var dt  = new Date(v.visited_at);
+        var timeStr = dt.toLocaleDateString('en-GB') + ' ' + dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        return '<tr>'
+          + '<td style="font-size:11px;color:var(--text3);white-space:nowrap;">'+esc(timeStr)+'</td>'
+          + '<td style="font-size:12px;font-weight:600;">'+esc(v.event_name||v.event_id||'—')+'</td>'
+          + '<td>'+dev.icon+' <span style="font-size:11px;color:var(--text2);">'+dev.type+'</span></td>'
+          + '<td style="font-size:12px;">'+esc(loc)+'</td>'
+          + '<td style="font-family:var(--fm);font-size:10px;color:var(--text3);">'+esc(v.ip||'—')+'</td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table>'
+    + (visits.length > 100 ? '<div style="text-align:center;padding:12px;font-size:11px;color:var(--text3);">Showing 100 of '+visits.length+' visits</div>' : '');
+}
+
+function actFilterReq(status, btn){
+  _actReqFilter = status;
+  document.querySelectorAll('[id^="act-req-"]').forEach(function(b){
+    b.style.background=''; b.style.color='';
+  });
+  if(btn){ btn.style.background='var(--gold)'; btn.style.color='#fff'; }
+  var list = status==='all' ? _actAllRequests : _actAllRequests.filter(function(r){ return r.status===status; });
+  var el = document.getElementById('act-requests-list');
+  if(!el) return;
+  if(!list.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No '+status+' requests.</div></div>';
+    return;
+  }
+  el.innerHTML = '<table><thead><tr><th>Guest Email</th><th>Event</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>'
+    + list.map(function(r){
+        var pc = {pending:'pill-pending',approved:'pill-active',rejected:'pill-rejected'}[r.status]||'pill-pending';
+        return '<tr>'
+          + '<td style="font-weight:600;">'+esc(r.user_email)+'</td>'
+          + '<td>'+esc((r.events&&r.events.name)||'—')+'</td>'
+          + '<td><span class="pill '+pc+'">'+(r.status||'pending')+'</span></td>'
+          + '<td style="color:var(--text3);font-size:12px;">'+new Date(r.created_at).toLocaleDateString('en-GB')+'</td>'
+          + '<td><div class="td-actions">'
+          + (r.status!=='approved'?'<button class="btn btn-green btn-sm" onclick="approveRequest(\''+r.id+'\',\''+esc(r.user_email)+'\',\''+r.event_id+'\')">✓ Approve</button>':'')
+          + (r.status!=='rejected'?'<button class="btn btn-red btn-sm" onclick="rejectRequest(\''+r.id+'\')">✕ Reject</button>':'')
+          + '</div></td></tr>';
+      }).join('')
+    + '</tbody></table>';
+}
+
+function renderActivitySetupPrompt(){
+  var html = '<div style="background:var(--gold-dim);border:1px solid var(--gold-glo);border-radius:var(--r2);padding:20px 24px;font-size:13px;line-height:1.8;">'
+    + '<strong style="font-size:15px;">⚙️ Setup Required — Add Visit Tracking</strong><br><br>'
+    + 'To see page visits, create an <code>event_page_visits</code> table in your Supabase project, then call the tracking function from your event page.<br><br>'
+    + '<strong>1. Create Supabase table</strong><br>'
+    + '<code style="display:block;background:var(--bg3);padding:12px;border-radius:8px;margin:8px 0;font-size:11px;white-space:pre-wrap;">create table event_page_visits (\n  id uuid primary key default gen_random_uuid(),\n  event_id uuid references events(id) on delete cascade,\n  event_name text,\n  visited_at timestamptz default now(),\n  user_agent text,\n  country text,\n  city text,\n  ip text\n);</code>'
+    + '<strong>2. Add this to your event.html page</strong><br>'
+    + '<code style="display:block;background:var(--bg3);padding:12px;border-radius:8px;margin:8px 0;font-size:11px;white-space:pre-wrap;">// Call once when the event page loads\nasync function trackVisit(eventId, eventName) {\n  var geo = {};\n  try {\n    var r = await fetch(\'https://ipapi.co/json/\');\n    geo = await r.json();\n  } catch(e){}\n  await getSupabase().from(\'event_page_visits\').insert({\n    event_id:   eventId,\n    event_name: eventName,\n    user_agent: navigator.userAgent,\n    country:    geo.country_name || null,\n    city:       geo.city || null,\n    ip:         geo.ip || null\n  });\n}</code>'
+    + 'Once set up, refresh this page to see live visit data.'
+    + '</div>';
+
+  ['act-devices','act-locations','act-visit-log'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.innerHTML = html;
+  });
+  var vEl = document.getElementById('act-stat-visits');
+  var uEl = document.getElementById('act-stat-unique');
+  if(vEl) vEl.textContent = '—';
+  if(uEl) uEl.textContent = '—';
 }
 </script>
 </body>
