@@ -253,8 +253,7 @@ tr:hover td{background:var(--bg2);}
         <a href="#" onclick="return nav('events',this)"><span class="sb-ico">📅</span>All Events</a>
         <a href="#" onclick="return nav('createevent',this)"><span class="sb-ico">➕</span>Create Event</a>
         <a href="#" onclick="return nav('uploadphotos',this)"><span class="sb-ico">🖼️</span>Upload Photos</a>
-        <a href="#" onclick="return nav('downloadrequests',this)"><span class="sb-ico">📥</span>Download Requests<span class="sb-badge" id="requestsBadge" style="display:none;">0</span></a>
-        <a href="#" onclick="return nav('faces',this)"><span class="sb-ico">👥</span>Face Index</a>
+
       </nav>
     </div>
     <div class="sb-section">
@@ -280,8 +279,7 @@ tr:hover td{background:var(--bg2);}
         <div class="quick-card" onclick="nav('eventactivity',null)" style="border-color:var(--gold-glo);background:var(--gold-dim);"><div class="quick-ico">📊</div><div class="quick-title" style="color:var(--gold);">Event Activity</div><div class="quick-desc">See page visits, device types, locations and download requests per event</div></div>
 <div class="quick-card" onclick="nav('createevent',null)"><div class="quick-ico">📅</div><div class="quick-title">Create Event</div><div class="quick-desc">Set up a new photo event with access code and expiry</div></div>
         <div class="quick-card" onclick="nav('uploadphotos',null)"><div class="quick-ico">🖼️</div><div class="quick-title">Upload Photos</div><div class="quick-desc">Add photos to an existing event gallery</div></div>
-        <div class="quick-card" onclick="nav('downloadrequests',null)"><div class="quick-ico">📥</div><div class="quick-title">Download Requests</div><div class="quick-desc">Approve or reject guest photo download requests</div></div>
-        <div class="quick-card" onclick="window.open('index.html','_blank')" style="border-style:dashed;"><div class="quick-ico">🔗</div><div class="quick-title">View Live Site</div><div class="quick-desc">Open homepage in a new tab to preview changes</div></div>
+<div class="quick-card" onclick="window.open('index.html','_blank')" style="border-style:dashed;"><div class="quick-ico">🔗</div><div class="quick-title">View Live Site</div><div class="quick-desc">Open homepage in a new tab to preview changes</div></div>
       </div>
     </div>
     <!-- HOMEPAGE CONTENT -->
@@ -501,21 +499,7 @@ tr:hover td{background:var(--bg2);}
         <div class="ws-sticky"><div class="hint-box"><strong>Face indexing</strong><br><br>After each upload:<br>1. <strong>Face++</strong> detects and indexes the face<br>2. Backend searches FaceSet first — same person reuses their group<br>3. New people get a new group automatically<br><br>Guests scan their selfie → matched instantly.</div></div>
       </div>
     </div>
-    <!-- DOWNLOAD REQUESTS -->
-    <div class="page" id="page-downloadrequests">
-      <div class="page-header"><div class="page-title">Download Requests</div><div class="page-sub">Review and approve guest photo download requests.</div></div>
-      <div class="card">
-        <div class="card-head"><h2>📥 Download Requests</h2><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" id="req-filter-all" onclick="filterRequests('all',this)">All</button><button class="btn btn-ghost btn-sm" id="req-filter-pending" onclick="filterRequests('pending',this)">⏳ Pending</button><button class="btn btn-ghost btn-sm" id="req-filter-approved" onclick="filterRequests('approved',this)">✅ Approved</button><button class="btn btn-ghost btn-sm" id="req-filter-rejected" onclick="filterRequests('rejected',this)">✕ Rejected</button><button class="btn btn-ghost btn-sm" onclick="loadDownloadRequests()">↻</button></div></div>
-        <div class="card-body table-wrap" id="downloadRequestsList"><div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div></div>
-      </div>
-    </div>
-    <!-- FACE INDEX -->
-    <div class="page" id="page-faces">
-      <div class="page-header"><div class="page-title">Face Index</div><div class="page-sub">Face++ detected faces grouped by person. Used for guest photo matching.</div></div>
-      <div class="card" style="margin-bottom:16px;"><div class="card-body" style="padding:16px 18px;"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><div style="flex:1;min-width:200px;"><div class="field-label" style="margin-bottom:6px;">Select Event</div><select id="faces-event-select" onchange="loadFacesForEvent()" style="width:100%;"><option value="">— Select an event —</option></select></div><div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:2px;"><button class="btn btn-ghost btn-sm" onclick="loadFacesPanel()">↻ Refresh</button><button class="btn btn-gold btn-sm" id="reindexBtn" onclick="reindexEventFaces()" style="display:none;">🔄 Re-index All</button></div></div></div></div>
-      <div id="facesStatsBar" style="display:none;margin-bottom:16px;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"><div class="stat-card"><div class="stat-label">Total Faces</div><div class="stat-val" id="stat-total-faces" style="color:var(--gold);">—</div><div class="stat-sub">Indexed by Face++</div></div><div class="stat-card"><div class="stat-label">Face Groups</div><div class="stat-val" id="stat-face-groups" style="color:var(--blue);">—</div><div class="stat-sub">Unique people</div></div><div class="stat-card"><div class="stat-label">Photos Indexed</div><div class="stat-val" id="stat-indexed-photos" style="color:var(--green);">—</div><div class="stat-sub">With detected faces</div></div></div></div>
-      <div class="card"><div class="card-head"><h2>👥 Detected Face Groups</h2><div style="font-size:12px;color:var(--text3);">Each group = one person across multiple photos</div></div><div class="card-body" id="facesGroupGrid"><div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Select an event to view face groups</div></div></div></div>
-    </div>
+
 
   </div>
 </div>
@@ -581,8 +565,7 @@ function nav(id,el){
   var loaders={
     eventactivity:'loadEventActivity',
     events:'loadEvents',createevent:'setDefaultExpiry',
-    uploadphotos:'loadUploadPhotos',downloadrequests:'loadDownloadRequests',
-    faces:'loadFacesPanel'
+    uploadphotos:'loadUploadPhotos'
   };
   if(loaders[id]&&window[loaders[id]]) window[loaders[id]]();
   return false;
@@ -1191,122 +1174,6 @@ async function deletePhoto(id,originalUrl){
   await c.from('photos').delete().eq('id',id);
   await c.from('face_embeddings').delete().eq('photo_id',id);
   toast('🗑️','Photo deleted','');loadEventPhotos();
-}
-
-/* ══ DOWNLOAD REQUESTS ══ */
-var allRequests=[];
-async function loadDownloadRequests(){
-  var el=document.getElementById('downloadRequestsList');if(!el)return;
-  el.innerHTML='<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
-  try{
-    var {data}=await getSupabase().from('download_requests').select('*, events(name)').order('created_at',{ascending:false});
-    allRequests=data||[];
-    var pending=allRequests.filter(function(r){return r.status==='pending';}).length;
-    var badge=document.getElementById('requestsBadge');
-    if(badge){badge.textContent=pending;badge.style.display=pending>0?'inline-flex':'none';}
-    if(!allRequests.length){el.innerHTML='<div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">No download requests yet.</div></div>';return;}
-    renderRequestsTable(allRequests);
-    if(pending>0)filterRequests('pending',document.getElementById('req-filter-pending'));
-  }catch(e){el.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
-}
-function filterRequests(status,btn){
-  document.querySelectorAll('[id^="req-filter-"]').forEach(function(b){b.classList.remove('active');b.style.cssText='';});
-  if(btn){btn.classList.add('active');btn.style.background='var(--gold)';btn.style.color='#fff';}
-  renderRequestsTable(status==='all'?allRequests:allRequests.filter(function(r){return r.status===status;}));
-}
-function renderRequestsTable(data){
-  var el=document.getElementById('downloadRequestsList');
-  if(!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No requests found.</div></div>';return;}
-  el.innerHTML='<table><thead><tr><th>Guest Email</th><th>Event</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>'+
-    data.map(function(r){
-      var pc={pending:'pill-pending',approved:'pill-active',rejected:'pill-rejected'}[r.status]||'pill-pending';
-      return'<tr><td style="font-weight:600;">'+esc(r.user_email)+'</td><td>'+esc((r.events&&r.events.name)||'—')+'</td>'+
-        '<td><span class="pill '+pc+'">'+(r.status||'pending')+'</span></td>'+
-        '<td style="color:var(--text3);">'+new Date(r.created_at).toLocaleDateString('en-GB')+'</td>'+
-        '<td><div class="td-actions">'+
-          (r.status!=='approved'?'<button class="btn btn-green btn-sm" onclick="approveRequest(\''+r.id+'\',\''+esc(r.user_email)+'\')">✓ Approve</button>':'')+
-          (r.status!=='rejected'?'<button class="btn btn-red btn-sm" onclick="rejectRequest(\''+r.id+'\')">✕ Reject</button>':'')+
-        '</div></td></tr>';
-    }).join('')+'</tbody></table>';
-}
-async function approveRequest(id,email){
-  if(!confirm('Approve download for '+email+'?')) return;
-  toast('📤','Sending approval…','',true);
-  try{
-    var res=await fetch(EVENTS_API+'/api/approve-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestId:id})});
-    var data=await res.json();
-    if(!res.ok) throw new Error(data.error||'Server error');
-    toast('✅','Approved & email sent!','');
-  }catch(e){await getSupabase().from('download_requests').update({status:'approved'}).eq('id',id);toast('✅','Approved','');}
-  loadDownloadRequests();
-}
-async function rejectRequest(id){if(!confirm('Reject?'))return;await getSupabase().from('download_requests').update({status:'rejected'}).eq('id',id);toast('🗑️','Rejected','');loadDownloadRequests();}
-
-/* ══ FACE INDEX ══ */
-async function loadFacesPanel(){
-  var sel=document.getElementById('faces-event-select');if(!sel)return;
-  sel.innerHTML='<option value="">— Select an event —</option>';
-  try{
-    var {data:events}=await getSupabase().from('events').select('id,name,event_code').eq('is_active',true).order('created_at',{ascending:false});
-    (events||[]).forEach(function(ev){var opt=document.createElement('option');opt.value=ev.id;opt.textContent=ev.name+' ('+ev.event_code+')';sel.appendChild(opt);});
-  }catch(e){}
-}
-async function loadFacesForEvent(){
-  var sel=document.getElementById('faces-event-select');
-  var eventId=sel?sel.value:'';
-  var grid=document.getElementById('facesGroupGrid');
-  var statsBar=document.getElementById('facesStatsBar');
-  var reindexBtn=document.getElementById('reindexBtn');
-  if(!eventId){grid.innerHTML='<div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Select an event</div></div>';statsBar.style.display='none';reindexBtn.style.display='none';return;}
-  reindexBtn.style.display='inline-flex';
-  grid.innerHTML='<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
-  try{
-    var {data:embeddings}=await getSupabase().from('face_embeddings').select('*').eq('event_id',eventId).order('group_id',{ascending:true});
-    if(!embeddings||!embeddings.length){grid.innerHTML='<div class="empty"><div class="empty-ico">📷</div><div class="empty-txt">No faces indexed yet.</div></div>';statsBar.style.display='none';return;}
-    var groups={},ungrouped=0;
-    embeddings.forEach(function(e){if(e.group_id<0){ungrouped++;return;}if(!groups[e.group_id])groups[e.group_id]=[];groups[e.group_id].push(e);});
-    var groupKeys=Object.keys(groups);
-    var totalPhotos=new Set(embeddings.map(function(e){return e.photo_id;})).size;
-    statsBar.style.display='block';
-    document.getElementById('stat-total-faces').textContent=embeddings.length;
-    document.getElementById('stat-face-groups').textContent=groupKeys.length;
-    document.getElementById('stat-indexed-photos').textContent=totalPhotos;
-    if(!groupKeys.length){grid.innerHTML='<div class="empty"><div class="empty-ico">🔄</div><div class="empty-txt">Faces found but not grouped. Click Re-index All.</div></div>';return;}
-    groupKeys.sort(function(a,b){return groups[b].length-groups[a].length;});
-    var html=ungrouped>0?'<div style="font-size:11px;color:var(--text3);margin-bottom:14px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);">⚠️ '+ungrouped+' face'+(ungrouped>1?'s':'')+' skipped (no face detected)</div>':'';
-    groupKeys.forEach(function(gid){
-      var members=groups[gid],shown=members.slice(0,8),extra=members.length-shown.length;
-      html+='<div class="face-group-card"><div class="face-group-header"><div style="display:flex;align-items:center;gap:8px;"><div style="font-size:13px;font-weight:700;">Person '+(parseInt(gid)+1)+'</div><div class="face-group-count">'+members.length+' photo'+(members.length>1?'s':'')+'</div></div><div class="face-group-id">Group #'+gid+'</div></div><div class="face-thumbs">';
-      shown.forEach(function(emb){if(emb.face_crop_url)html+='<div class="face-thumb"><img src="'+esc(emb.face_crop_url)+'" alt="" onerror="this.parentElement.style.background=\'var(--bg3)\'"/></div>';});
-      if(extra>0)html+='<div class="face-thumb-more">+'+extra+'</div>';
-      html+='</div></div>';
-    });
-    grid.innerHTML=html;
-  }catch(e){grid.innerHTML='<div class="empty"><div class="empty-txt">Error: '+esc(e.message)+'</div></div>';}
-}
-async function reindexEventFaces(){
-  var sel=document.getElementById('faces-event-select');
-  var eventId=sel?sel.value:'';
-  if(!eventId){toast('⚠️','No event selected','');return;}
-  if(!confirm('Re-index all faces? This deletes existing face data and rebuilds from scratch.')) return;
-  var btn=document.getElementById('reindexBtn');
-  btn.disabled=true;btn.textContent='⏳ Indexing…';
-  toast('🔄','Re-indexing…','',true);
-  try{
-    var c=getSupabase();
-    await c.from('face_embeddings').delete().eq('event_id',eventId);
-    try{var {data:crops}=await c.storage.from('events').list(eventId+'/faces');if(crops&&crops.length)await c.storage.from('events').remove(crops.map(function(f){return eventId+'/faces/'+f.name;}));}catch(e){}
-    var {data:photos}=await c.from('photos').select('id,preview_url,original_url').eq('event_id',eventId);
-    if(!photos||!photos.length){toast('⚠️','No photos found','Upload photos first');btn.disabled=false;btn.textContent='🔄 Re-index All';return;}
-    for(var i=0;i<photos.length;i++){
-      btn.textContent='⏳ '+(i+1)+' / '+photos.length;
-      await indexPhotoFaces(photos[i].id,photos[i].original_url||photos[i].preview_url,eventId);
-      if(i<photos.length-1)await new Promise(function(r){setTimeout(r,3000);});
-    }
-    toast('✅','Re-indexing complete!',photos.length+' photos processed');
-    btn.disabled=false;btn.textContent='🔄 Re-index All';
-    loadFacesForEvent();
-  }catch(e){toast('⚠️','Re-index failed',e.message);btn.disabled=false;btn.textContent='🔄 Re-index All';}
 }
 
 /* ══ LOGOUT ══ */
