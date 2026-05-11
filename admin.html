@@ -646,20 +646,30 @@ function toast(icon,msg,sub,persist){
 
 /* ══ STATS ══ */
 async function loadStats(){
-  try{
-    var c=getSupabase();
-    var [pros,emps,jobs,evts]=await Promise.all([
-      c.from('profiles').select('id').eq('role','professional').eq('status','active'),
-      c.from('profiles').select('id').eq('role','employer').eq('status','active'),
-      c.from('jobs').select('id').eq('status','active'),
-      c.from('events').select('id').eq('is_active',true)
-    ]);
-    function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
-    set('stat-pros',(pros.data||[]).length);
-    set('stat-emps',(emps.data||[]).length);
-    set('stat-jobs',(jobs.data||[]).length);
-    set('stat-events',(evts.data||[]).length);
-  }catch(e){}
+  var c=getSupabase();
+  function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+
+  /* Each query is independent — a 400/403 on one won't break the others */
+  async function safeCount(table,filters){
+    try{
+      var q=c.from(table).select('id',{count:'exact',head:true});
+      (filters||[]).forEach(function(f){q=q.eq(f[0],f[1]);});
+      var {count,error}=await q;
+      if(error){console.warn('loadStats ['+table+']',error.message);return '—';}
+      return count!=null?count:'—';
+    }catch(e){return '—';}
+  }
+
+  var [pros,emps,jobs,evts]=await Promise.all([
+    safeCount('profiles',[['role','professional'],['status','active']]),
+    safeCount('profiles',[['role','employer'],['status','active']]),
+    safeCount('jobs',[['status','active']]),
+    safeCount('events',[['is_active',true]])
+  ]);
+  set('stat-pros',pros);
+  set('stat-emps',emps);
+  set('stat-jobs',jobs);
+  set('stat-events',evts);
 }
 
 /* ══ HELPERS ══ */
