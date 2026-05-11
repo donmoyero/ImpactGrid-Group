@@ -532,7 +532,8 @@ input,textarea,select{font-family:inherit;}
 /* ══════════════════════════════════════
    SELECT OVERLAY
 ══════════════════════════════════════ */
-.select-overlay{position:absolute;inset:0;z-index:5;cursor:pointer;}
+.select-overlay{position:absolute;inset:0;z-index:5;cursor:pointer;pointer-events:none;}
+.selection-mode .select-overlay{pointer-events:auto;}
 .select-checkbox{
   position:absolute;top:10px;left:10px;z-index:6;
   width:24px;height:24px;border-radius:6px;
@@ -1504,10 +1505,10 @@ function renderPhotos(photos){
 
   grid.innerHTML = photos.map(function(p, i){
     var isSel = selectedIds.has(p.id);
-    return '<div class="photo-card' + (isSel?' selected':'') + '" id="card-' + p.id + '" data-id="' + p.id + '" data-idx="' + i + '">'
+    return '<div class="photo-card' + (isSel?' selected':'') + '" id="card-' + p.id + '" data-id="' + p.id + '" data-idx="' + i + '" onclick="handleCardClick(\'' + p.id + '\',' + i + ',event)">'
       + '<div class="select-checkbox"></div>'
       + '<div class="select-overlay" onclick="toggleSelect(\'' + p.id + '\',event)"></div>'
-      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy" onclick="openLightbox(' + i + ',event)"/>'
+      + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy"/>'
       + '<div class="photo-card-overlay">'
       + '<button class="lb-btn lb-btn-dl" style="font-size:11px;padding:7px 14px;" onclick="event.stopPropagation();quickDownload(\'' + esc(p.original_url||p.preview_url) + '\',' + i + ')">⬇ Save</button>'
       + '</div>'
