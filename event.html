@@ -855,107 +855,6 @@ input,textarea,select{font-family:inherit;}
   .gallery-actions{gap:6px;}
   #downloadAllBtn{display:none!important;}
 }
-
-/* ══ REVIEW MODAL ══ */
-.review-fab {
-  position: fixed;
-  bottom: 28px; left: 28px;
-  z-index: 900;
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 20px;
-  border-radius: 100px;
-  background: var(--accent, #c97e08);
-  color: #fff;
-  font-size: 13px; font-weight: 700;
-  box-shadow: 0 8px 28px rgba(0,0,0,.28);
-  border: none; cursor: pointer;
-  transition: transform .2s, box-shadow .2s;
-}
-.review-fab:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,.35); }
-
-.review-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.72);
-  z-index: 1100;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-  animation: fadeIn .2s ease;
-}
-.review-backdrop.hidden { display: none; }
-.review-modal {
-  background: #fff;
-  border-radius: 20px;
-  padding: 32px 28px 28px;
-  width: 100%; max-width: 440px;
-  box-shadow: 0 24px 64px rgba(0,0,0,.32);
-  animation: slideUp .3s ease;
-  position: relative;
-}
-[data-theme="dark"] .review-modal { background: #151a28; }
-
-.review-modal-close {
-  position: absolute; top: 16px; right: 18px;
-  font-size: 20px; color: #888; cursor: pointer; border: none; background: none;
-  transition: color .2s;
-}
-.review-modal-close:hover { color: #333; }
-[data-theme="dark"] .review-modal-close:hover { color: #eee; }
-
-.review-modal-title {
-  font-size: 18px; font-weight: 800; margin-bottom: 4px;
-  font-family: 'Syne', sans-serif;
-  color: #0d1017;
-}
-[data-theme="dark"] .review-modal-title { color: #eef0f6; }
-.review-modal-sub { font-size: 12px; color: #888; margin-bottom: 20px; }
-
-.review-stars-row {
-  display: flex; gap: 6px; margin-bottom: 18px;
-}
-.review-star {
-  font-size: 32px; cursor: pointer; line-height: 1;
-  transition: transform .15s;
-  color: #ddd;
-}
-[data-theme="dark"] .review-star { color: #444; }
-.review-star.lit { color: #f0b429; }
-.review-star:hover { transform: scale(1.15); }
-
-.review-field {
-  width: 100%; border: 1.5px solid #e0e3ef;
-  border-radius: 10px; padding: 10px 14px;
-  font-size: 13px; font-family: 'DM Sans', sans-serif;
-  outline: none; background: #f7f8fd;
-  color: #0d1017; margin-bottom: 12px;
-  transition: border-color .2s;
-}
-[data-theme="dark"] .review-field {
-  background: #0d1017; border-color: rgba(255,255,255,.1); color: #eef0f6;
-}
-.review-field:focus { border-color: var(--accent, #c97e08); }
-
-.review-submit-btn {
-  width: 100%; padding: 13px;
-  border-radius: 10px; border: none;
-  background: var(--accent, #c97e08);
-  color: #fff; font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: opacity .2s, transform .2s;
-  font-family: 'DM Sans', sans-serif;
-}
-.review-submit-btn:hover { opacity: .9; transform: translateY(-1px); }
-.review-submit-btn:disabled { opacity: .55; cursor: not-allowed; }
-
-.review-alert {
-  padding: 9px 14px; border-radius: 8px;
-  font-size: 12px; margin-bottom: 10px; display: none;
-}
-.review-alert.ok  { background: rgba(15,168,118,.12); color: #0fa876; border: 1px solid rgba(15,168,118,.22); }
-.review-alert.err { background: rgba(217,79,59,.10);  color: #d94f3b; border: 1px solid rgba(217,79,59,.2); }
-
-@media(max-width: 480px) {
-  .review-fab { bottom: 100px; left: 16px; }
-  .review-modal { padding: 24px 18px 20px; }
-}
 </style>
 </head>
 <body>
@@ -1051,38 +950,6 @@ input,textarea,select{font-family:inherit;}
     </div>
 
     <div class="photo-grid" id="photoGrid" style="display:none;"></div>
-
-    <!-- REVIEW FAB BUTTON (appears after photos load) -->
-    <button class="review-fab hidden" id="reviewFab" onclick="openReviewModal()">
-      ⭐ Rate This Event
-    </button>
-  </div>
-</div>
-
-<!-- ══ REVIEW MODAL ══════════════════════════════════════════ -->
-<div class="review-backdrop hidden" id="reviewBackdrop" onclick="closeReviewModalBg(event)">
-  <div class="review-modal" onclick="event.stopPropagation()">
-    <button class="review-modal-close" onclick="closeReviewModal()">✕</button>
-    <div class="review-modal-title">How was your experience?</div>
-    <div class="review-modal-sub" id="reviewModalSub">Share your thoughts about this event</div>
-
-    <!-- Stars -->
-    <div class="review-stars-row" id="reviewStarsRow">
-      <span class="review-star" data-val="1" onclick="setReviewRating(1)" onmouseover="hoverRating(1)" onmouseout="resetRatingHover()">★</span>
-      <span class="review-star" data-val="2" onclick="setReviewRating(2)" onmouseover="hoverRating(2)" onmouseout="resetRatingHover()">★</span>
-      <span class="review-star" data-val="3" onclick="setReviewRating(3)" onmouseover="hoverRating(3)" onmouseout="resetRatingHover()">★</span>
-      <span class="review-star" data-val="4" onclick="setReviewRating(4)" onmouseover="hoverRating(4)" onmouseout="resetRatingHover()">★</span>
-      <span class="review-star" data-val="5" onclick="setReviewRating(5)" onmouseover="hoverRating(5)" onmouseout="resetRatingHover()">★</span>
-    </div>
-
-    <div class="review-alert" id="reviewAlert"></div>
-
-    <input  type="text"     id="reviewName"    class="review-field" placeholder="Your name (e.g. Sarah J.)" maxlength="60"/>
-    <textarea               id="reviewMessage" class="review-field" rows="3" placeholder="Tell us about your experience…" maxlength="500" style="resize:vertical;"></textarea>
-
-    <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()">
-      Submit Review ✓
-    </button>
   </div>
 </div>
 
@@ -1385,8 +1252,6 @@ async function loadPhotos(){
     if(sg) sg.style.display = 'none';
     if(pg) pg.style.display = '';
     if(ss) ss.style.display = 'none';
-    var fab = document.getElementById('reviewFab');
-    if(fab) fab.classList.remove('hidden');
 
     var badge   = document.getElementById('photoCountBadge');
     var countEl = document.getElementById('photoCountNum');
@@ -2361,123 +2226,40 @@ async function trackVisit(eventId, eventName){
 
 /* ══════════════════════════════════════
    DOWNLOAD TRACKING
-   Fires after each successful download —
-   logs event, photo count and device to
-   Supabase photo_downloads table.
+   Fires after each successful download.
+   Captures IP, country, city, device and
+   photo count — geo is cached so ipapi.co
+   is only called once per page load.
 ══════════════════════════════════════ */
+var _geoCache = null;
+
+async function getGeo(){
+  if(_geoCache) return _geoCache;
+  try{
+    var r = await fetch('https://ipapi.co/json/');
+    if(r.ok) _geoCache = await r.json();
+  }catch(e){}
+  return _geoCache || {};
+}
+
 async function trackDownload(photos){
   try{
     if(!eventData || !eventData.id) return;
+    var geo = await getGeo();
     var arr = Array.isArray(photos) ? photos : [photos];
     var rows = arr.map(function(p){
       return {
         event_id:   eventData.id,
-        event_name: eventData.name || null,
-        photo_id:   p.id          || null,
-        user_agent: navigator.userAgent
+        event_name: eventData.name  || null,
+        photo_id:   p.id            || null,
+        user_agent: navigator.userAgent,
+        ip:         geo.ip          || null,
+        country:    geo.country_name|| null,
+        city:       geo.city        || null
       };
     });
     await getSupabase().from('photo_downloads').insert(rows);
   }catch(e){ /* silent */ }
-}
-
-/* ══════════════════════════════════════
-   REVIEW MODAL
-══════════════════════════════════════ */
-var reviewRating = 0;
-
-function openReviewModal() {
-  reviewRating = 0;
-  renderStars(0);
-  document.getElementById('reviewName').value    = '';
-  document.getElementById('reviewMessage').value = '';
-  hideReviewAlert();
-  document.getElementById('reviewSubmitBtn').disabled = false;
-  document.getElementById('reviewSubmitBtn').textContent = 'Submit Review ✓';
-  if (eventData) {
-    document.getElementById('reviewModalSub').textContent =
-      'Share your thoughts about ' + (eventData.name || 'this event');
-  }
-  document.getElementById('reviewBackdrop').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeReviewModal() {
-  document.getElementById('reviewBackdrop').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-function closeReviewModalBg(e) {
-  if (e.target === document.getElementById('reviewBackdrop')) closeReviewModal();
-}
-
-function setReviewRating(val) {
-  reviewRating = val;
-  renderStars(val);
-}
-
-function hoverRating(val) {
-  renderStars(val);
-}
-
-function resetRatingHover() {
-  renderStars(reviewRating);
-}
-
-function renderStars(val) {
-  document.querySelectorAll('.review-star').forEach(function(s) {
-    var n = parseInt(s.getAttribute('data-val'));
-    s.classList.toggle('lit', n <= val);
-  });
-}
-
-function showReviewAlert(msg, type) {
-  var el = document.getElementById('reviewAlert');
-  el.textContent = msg;
-  el.className = 'review-alert ' + type;
-  el.style.display = 'block';
-}
-
-function hideReviewAlert() {
-  var el = document.getElementById('reviewAlert');
-  if (el) { el.style.display = 'none'; el.textContent = ''; }
-}
-
-async function submitReview() {
-  var name    = (document.getElementById('reviewName').value || '').trim();
-  var message = (document.getElementById('reviewMessage').value || '').trim();
-
-  if (!reviewRating) { showReviewAlert('Please choose a star rating.', 'err'); return; }
-  if (!name)         { showReviewAlert('Please enter your name.', 'err'); return; }
-
-  var btn = document.getElementById('reviewSubmitBtn');
-  btn.disabled    = true;
-  btn.textContent = 'Submitting…';
-  hideReviewAlert();
-
-  try {
-    var { error } = await getSupabase()
-      .from('event_reviews')
-      .insert({
-        event_id      : eventData ? eventData.id   : null,
-        event_name    : eventData ? eventData.name : null,
-        reviewer_name : name,
-        rating        : reviewRating,
-        message       : message,
-        status        : 'pending'
-      });
-
-    if (error) throw error;
-
-    btn.textContent = 'Submitted ✓';
-    showReviewAlert('Thank you! Your review has been submitted and will appear once approved.', 'ok');
-    setTimeout(function() { closeReviewModal(); }, 2800);
-
-  } catch (e) {
-    btn.disabled    = false;
-    btn.textContent = 'Submit Review ✓';
-    showReviewAlert('Something went wrong. Please try again.', 'err');
-  }
 }
 
 /* ══════════════════════════════════════
