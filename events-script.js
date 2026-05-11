@@ -573,3 +573,20 @@ async function rejectRequest(id){
   toast('🗑️', 'Request rejected', '');
   loadDownloadRequests();
 }
+
+/* ════════════════════════════════════════════════════
+   REVIEWS — filter helper + cache
+   (Full CRUD lives in reviews-script.js)
+════════════════════════════════════════════════════ */
+var _allReviews = [];
+
+function filterReviews(status, btn){
+  document.querySelectorAll('[id^="rev-filter-"]').forEach(function(b){
+    b.classList.remove('active'); b.style.cssText = '';
+  });
+  if(btn){ btn.classList.add('active'); btn.style.background = 'var(--gold)'; btn.style.color = '#fff'; }
+  var filtered = status === 'all'
+    ? _allReviews
+    : _allReviews.filter(function(r){ return r.status === status; });
+  renderReviewsTable(filtered);
+}
