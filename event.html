@@ -1519,6 +1519,23 @@ function renderPhotos(photos){
 }
 
 /* ══════════════════════════════════════
+   CARD CLICK — opens lightbox on a tap,
+   falls through to toggleSelect when the
+   user holds or clicks the overlay.
+══════════════════════════════════════ */
+function handleCardClick(id, idx, event){
+  /* If the click originated on the select overlay, let toggleSelect handle it */
+  if(event && event.target && event.target.classList.contains('select-overlay')) return;
+  /* If any cards are already selected, treat the tap as a selection toggle */
+  if(selectedIds.size > 0){
+    toggleSelect(id, event);
+    return;
+  }
+  /* Otherwise open the fullscreen lightbox */
+  openLightbox(idx, event);
+}
+
+/* ══════════════════════════════════════
    SELECTION
 ══════════════════════════════════════ */
 function toggleSelect(id, event){
