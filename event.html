@@ -540,7 +540,7 @@ input,textarea,select{font-family:inherit;}
   border:2px solid rgba(255,255,255,.7);
   background:rgba(0,0,0,.3);backdrop-filter:blur(4px);
   display:flex;align-items:center;justify-content:center;
-  transition:all .2s;pointer-events:none;
+  transition:all .2s;pointer-events:auto;cursor:pointer;
 }
 .photo-card.selected .select-checkbox{background:var(--accent);border-color:var(--accent);}
 .photo-card.selected .select-checkbox::after{
@@ -1506,8 +1506,8 @@ function renderPhotos(photos){
   grid.innerHTML = photos.map(function(p, i){
     var isSel = selectedIds.has(p.id);
     return '<div class="photo-card' + (isSel?' selected':'') + '" id="card-' + p.id + '" data-id="' + p.id + '" data-idx="' + i + '" onclick="handleCardClick(\'' + p.id + '\',' + i + ',event)">'
-      + '<div class="select-checkbox"></div>'
-      + '<div class="select-overlay" onclick="toggleSelect(\'' + p.id + '\',event)"></div>'
+      + '<div class="select-checkbox" onclick="toggleSelect(\'' + p.id + '\',event)"></div>'
+      + '<div class="select-overlay"></div>'
       + '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy"/>'
       + '<div class="photo-card-overlay">'
       + '<button class="lb-btn lb-btn-dl" style="font-size:11px;padding:7px 14px;" onclick="event.stopPropagation();quickDownload(\'' + esc(p.original_url||p.preview_url) + '\',' + i + ')">⬇ Save</button>'
@@ -1524,8 +1524,8 @@ function renderPhotos(photos){
    user holds or clicks the overlay.
 ══════════════════════════════════════ */
 function handleCardClick(id, idx, event){
-  /* If the click originated on the select overlay, let toggleSelect handle it */
-  if(event && event.target && event.target.classList.contains('select-overlay')) return;
+  /* If the click originated on the select checkbox, let toggleSelect handle it */
+  if(event && event.target && (event.target.classList.contains('select-overlay') || event.target.classList.contains('select-checkbox'))) return;
   /* If any cards are already selected, treat the tap as a selection toggle */
   if(selectedIds.size > 0){
     toggleSelect(id, event);
