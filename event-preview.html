@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ImpactGrid — Event Preview</title>
+<link rel="icon" href="favicon.ico"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&family=Nunito:wght@400;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="ig-supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:#000;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;border:none;font-family:inherit;background:none;}
+img{display:block;max-width:100%;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-28px);}to{opacity:1;transform:translateY(0);}}
+@keyframes kenBurns{0%{transform:scale(1) translate(0,0);}50%{transform:scale(1.08) translate(-1.2%,-0.8%);}100%{transform:scale(1.04) translate(1%,0.5%);}}
+@keyframes shimmer{0%{background-position:-400% 0;}100%{background-position:400% 0;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ── FULL SCREEN STAGE ── */
+.stage{
+  position:fixed;inset:0;
+  overflow:hidden;
+}
+
+/* ── BACKGROUND PHOTO ── */
+.bg-photo{
+  position:absolute;inset:0;
+  transition:opacity .9s ease;
+  z-index:0;
+}
+.bg-photo img{
+  width:100%;height:100%;
+  object-fit:cover;object-position:center top;
+  animation:kenBurns 14s ease-in-out infinite;
+}
+.bg-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(0,0,0,.35) 0%,
+    rgba(0,0,0,.05) 30%,
+    rgba(0,0,0,.1) 55%,
+    rgba(0,0,0,.75) 100%
+  );
+  z-index:1;
+}
+
+/* ── SKELETON / LOADING ── */
+.bg-skeleton{
+  position:absolute;inset:0;z-index:0;
+  background:linear-gradient(90deg,#111 25%,#1c1c1c 50%,#111 75%);
+  background-size:400% 100%;
+  animation:shimmer 1.8s infinite;
+}
+
+/* ── TOP NAV ── */
+.top-nav{
+  position:absolute;top:0;left:0;right:0;
+  z-index:20;
+  display:flex;align-items:center;
+  padding:18px 28px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);
+}
+.nav-logo{
+  display:flex;align-items:center;gap:8px;
+  font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:#fff;
+  letter-spacing:-.01em;
+}
+.nav-logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:#3b4eff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;
+}
+.nav-right{
+  margin-left:auto;
+  display:flex;align-items:center;gap:10px;
+}
+.nav-counter{
+  font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:.12em;color:rgba(255,255,255,.55);
+}
+.nav-close{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:15px;
+  transition:background .2s;
+}
+.nav-close:hover{background:rgba(255,255,255,.22);}
+
+/* ── CONTENT LAYER ── */
+.content{
+  position:absolute;inset:0;z-index:10;
+  display:flex;flex-direction:column;
+  justify-content:flex-end;
+  padding:0 0 0;
+  pointer-events:none;
+}
+.content-inner{
+  padding:40px 48px 36px;
+  background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.5) 60%,transparent 100%);
+  pointer-events:auto;
+  animation:slideUp .55s ease;
+}
+.event-type-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);margin-bottom:14px;
+}
+.event-type-badge-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:currentColor;opacity:.7;
+}
+.event-title{
+  font-family:'Syne',sans-serif;font-weight:900;
+  font-size:clamp(28px,4.5vw,58px);
+  line-height:1.04;letter-spacing:-.02em;color:#fff;
+  margin-bottom:14px;
+  text-shadow:0 2px 24px rgba(0,0,0,.4);
+}
+.event-meta{
+  display:flex;align-items:center;gap:20px;
+  flex-wrap:wrap;margin-bottom:28px;
+}
+.meta-pill{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:rgba(255,255,255,.6);
+  font-weight:500;
+}
+.meta-pill svg{opacity:.7;flex-shrink:0;}
+.event-actions{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.btn-enter{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 26px;border-radius:10px;
+  background:#fff;color:#0c0e1a;
+  font-weight:700;font-size:14px;
+  transition:all .2s;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+.btn-enter:hover{background:#f0f0f0;transform:translateY(-1px);}
+.btn-share{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:12px 20px;border-radius:10px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);
+  color:#fff;font-weight:600;font-size:13px;
+  transition:all .2s;
+}
+.btn-share:hover{background:rgba(255,255,255,.2);}
+
+/* ── SIDE NAV ARROWS ── */
+.side-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  z-index:20;
+}
+.side-nav-btn{
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.22);
+  backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:20px;
+  transition:all .22s;
+  -webkit-tap-highlight-color:transparent;
+}
+.side-nav-btn:hover{background:rgba(255,255,255,.24);transform:scale(1.06);}
+.side-nav-btn:active{transform:scale(.95);}
+.side-nav-btn:disabled{opacity:.25;pointer-events:none;}
+.side-nav-prev{left:20px;}
+.side-nav-next{right:20px;}
+
+/* ── BOTTOM DOTS ── */
+.dots-bar{
+  position:absolute;bottom:0;left:0;right:0;z-index:15;
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;padding-bottom:14px;
+  pointer-events:none;
+}
+.dot{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.35);
+  transition:all .3s;
+}
+.dot.active{
+  background:#fff;width:20px;border-radius:3px;
+}
+
+/* ── SWIPE INDICATOR (mobile) ── */
+.swipe-hint{
+  position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
+  z-index:16;
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;color:rgba(255,255,255,.45);
+  letter-spacing:.1em;text-transform:uppercase;
+  pointer-events:none;
+  animation:pulse 3s ease-in-out 2s infinite;
+}
+.swipe-hint-arrow{font-size:13px;}
+
+/* ── TEMPLATE ACCENT COLOURS ── */
+.accent-professional{ --clr:#3b4eff; }
+.accent-wedding      { --clr:#9b7030; }
+.accent-birthday,
+.accent-kids         { --clr:#ff5c00; }
+.accent-gala         { --clr:#d4aa28; }
+.accent-nightlife    { --clr:#8050ff; }
+.accent-sports,
+.accent-ceremony     { --clr:#3b4eff; }
+
+.btn-enter.themed{
+  background:var(--clr,#fff);color:#fff;
+}
+.btn-enter.themed:hover{filter:brightness(1.1);}
+.btn-enter.light-text{color:#0c0e1a;}
+
+/* ── LOADING STATE ── */
+#loadingScreen{
+  position:fixed;inset:0;z-index:999;
+  background:#080808;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  transition:opacity .5s;
+}
+#loadingScreen.fade{opacity:0;pointer-events:none;}
+.load-spinner{
+  width:36px;height:36px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.1);
+  border-top-color:rgba(255,255,255,.6);
+  animation:spin .75s linear infinite;
+}
+.load-label{
+  font-size:12px;color:rgba(255,255,255,.35);
+  letter-spacing:.14em;text-transform:uppercase;
+}
+
+/* ── ERROR ── */
+#errorScreen{
+  position:fixed;inset:0;z-index:998;
+  background:#080808;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:40px;
+}
+.error-icon{font-size:48px;margin-bottom:16px;}
+.error-title{font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;}
+.error-sub{font-size:14px;color:rgba(255,255,255,.4);margin-bottom:24px;line-height:1.7;}
+.error-back{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:11px 22px;border-radius:9px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.7);font-size:13px;font-weight:600;
+  transition:background .2s;
+}
+.error-back:hover{background:rgba(255,255,255,.16);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:28px;right:24px;z-index:9999;
+  padding:12px 18px;border-radius:12px;
+  background:rgba(30,30,35,.96);border:1px solid rgba(255,255,255,.1);
+  color:#fff;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:8px;
+  transform:translateY(60px);opacity:0;
+  transition:all .35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ── KEYBOARD HINT ── */
+.kb-hint{
+  position:absolute;top:50%;right:20px;
+  transform:translateY(-50%);
+  z-index:20;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  opacity:0;transition:opacity .4s;
+  pointer-events:none;
+}
+.kb-hint.visible{opacity:1;}
+.kb-key{
+  width:26px;height:26px;border-radius:5px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:rgba(255,255,255,.5);
+  font-family:'DM Mono',monospace;
+}
+
+/* ── PHOTO STRIP MINI PREVIEW ── */
+.photo-strip{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  z-index:15;
+  display:flex;flex-direction:column;gap:4px;
+  padding-right:16px;
+  pointer-events:none;
+  opacity:0;transition:opacity .4s .3s;
+}
+.photo-strip.visible{opacity:1;}
+.strip-thumb{
+  width:48px;height:36px;border-radius:6px;
+  overflow:hidden;border:1.5px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+  transition:all .2s;
+}
+.strip-thumb.active-thumb{
+  border-color:rgba(255,255,255,.6);
+  transform:scaleX(1.08);
+}
+.strip-thumb img{width:100%;height:100%;object-fit:cover;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .content-inner{padding:28px 22px 24px;}
+  .event-title{font-size:clamp(24px,7vw,36px);}
+  .side-nav-btn{width:42px;height:42px;font-size:17px;}
+  .side-nav-prev{left:12px;}
+  .side-nav-next{right:12px;}
+  .photo-strip{display:none;}
+  .btn-enter,.btn-share{font-size:13px;padding:11px 18px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <div style="width:26px;height:26px;border-radius:6px;background:#3b4eff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;">IG</div>
+    <span style="font-family:'Syne',sans-serif;font-weight:900;font-size:15px;color:#fff;">ImpactGrid</span>
+  </div>
+  <div class="load-spinner"></div>
+  <div class="load-label">Loading Events…</div>
+</div>
+
+<!-- ERROR -->
+<div id="errorScreen">
+  <div class="error-icon">⚠️</div>
+  <div class="error-title">Couldn't Load Events</div>
+  <div class="error-sub" id="errorMsg">Something went wrong. Please check your connection and try again.</div>
+  <a href="index.html" class="error-back">← Back to ImpactGrid</a>
+</div>
+
+<!-- MAIN STAGE -->
+<div class="stage" id="stage">
+
+  <!-- BG SKELETON -->
+  <div class="bg-skeleton" id="bgSkeleton"></div>
+
+  <!-- BG PHOTOS (current + next for crossfade) -->
+  <div class="bg-photo" id="bgA" style="opacity:1;"></div>
+  <div class="bg-photo" id="bgB" style="opacity:0;"></div>
+  <div class="bg-overlay"></div>
+
+  <!-- TOP NAV -->
+  <nav class="top-nav">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-mark">IG</div>
+      ImpactGrid
+    </a>
+    <div class="nav-right">
+      <span class="nav-counter" id="navCounter">— / —</span>
+      <button class="nav-close" onclick="history.back()" title="Close">✕</button>
+    </div>
+  </nav>
+
+  <!-- SIDE ARROWS -->
+  <div class="side-nav side-nav-prev">
+    <button class="side-nav-btn" id="btnPrev" onclick="navigate(-1)" disabled title="Previous (←)">‹</button>
+  </div>
+  <div class="side-nav side-nav-next">
+    <button class="side-nav-btn" id="btnNext" onclick="navigate(1)" title="Next (→)">›</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="content-inner" id="contentInner">
+      <div class="event-type-badge" id="evTypeBadge">
+        <span class="event-type-badge-dot"></span>
+        <span id="evTypeLabel">Loading</span>
+      </div>
+      <div class="event-title" id="evTitle">Event Name</div>
+      <div class="event-meta" id="evMeta"></div>
+      <div class="event-actions" id="evActions"></div>
+    </div>
+  </div>
+
+  <!-- DOTS -->
+  <div class="dots-bar" id="dotsBar"></div>
+
+  <!-- SWIPE HINT (mobile) -->
+  <div class="swipe-hint" id="swipeHint">
+    <span class="swipe-hint-arrow">←</span>
+    swipe to browse
+    <span class="swipe-hint-arrow">→</span>
+  </div>
+
+  <!-- MINI PHOTO STRIP -->
+  <div class="photo-strip" id="photoStrip"></div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✅</span>
+  <span id="toastMsg">Done</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════ */
+var TPL_META = {
+  professional : { label:'Professional',  icon:'📸', accent:'#3b4eff', light:false },
+  wedding      : { label:'Wedding',       icon:'💍', accent:'#9b7030', light:false },
+  birthday     : { label:'Birthday',      icon:'🎂', accent:'#ff5c00', light:false },
+  kids         : { label:'Kids',          icon:'🎉', accent:'#ff5c00', light:false },
+  gala         : { label:'Gala / Luxury', icon:'✦',  accent:'#d4aa28', light:false },
+  nightlife    : { label:'Nightlife',     icon:'🎧', accent:'#8050ff', light:false },
+  sports       : { label:'Sports',        icon:'🏆', accent:'#3b4eff', light:false },
+  ceremony     : { label:'Ceremony',      icon:'🎓', accent:'#3b4eff', light:false },
+};
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+var allEvents   = [];
+var curIdx      = 0;
+var transitioning = false;
+var bgCurrent   = 'A'; // which bg div is active
+
+/* ═══════════════════════════════════════
+   BOOT
+═══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async function(){
+  // Check URL params — optionally start at a specific event slug
+  var params    = new URLSearchParams(window.location.search);
+  var startSlug = params.get('event') || params.get('slug') || null;
+
+  try{
+    var c = getSupabase();
+    var { data: events, error } = await c
+      .from('events')
+      .select('id,name,type,template,event_code,event_slug,expiry_date,is_active,created_at')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if(error) throw error;
+    if(!events || !events.length){
+      showError('No active events found.');
+      return;
+    }
+
+    allEvents = events;
+
+    // If a slug is specified, start on that event
+    if(startSlug){
+      var idx = events.findIndex(function(e){ return e.event_slug === startSlug; });
+      if(idx !== -1) curIdx = idx;
+    }
+
+    // Load first set of preview photos for each event (just 1 photo for background)
+    await preloadEventPhotos();
+
+    buildDots();
+    buildPhotoStrip();
+    showEvent(curIdx, 'none');
+    hideLoading();
+
+  }catch(e){
+    console.error(e);
+    showError('Could not load events: ' + e.message);
+  }
+});
+
+/* ═══════════════════════════════════════
+   PRELOAD PREVIEW PHOTOS
+═══════════════════════════════════════ */
+async function preloadEventPhotos(){
+  var c = getSupabase();
+  for(var i = 0; i < allEvents.length; i++){
+    try{
+      var { data } = await c
+        .from('photos')
+        .select('preview_url')
+        .eq('event_id', allEvents[i].id)
+        .order('created_at', { ascending: true })
+        .limit(4);
+      allEvents[i]._photos = data || [];
+    }catch(e){
+      allEvents[i]._photos = [];
+    }
+  }
+}
+
+/* ═══════════════════════════════════════
+   SHOW EVENT
+═══════════════════════════════════════ */
+function showEvent(idx, dir){
+  var ev       = allEvents[idx];
+  var type     = ev.type || ev.template || 'professional';
+  var meta     = TPL_META[type] || TPL_META.professional;
+  var photos   = ev._photos || [];
+  var bgUrl    = photos.length ? photos[0].preview_url : '';
+
+  // ── Background crossfade ──
+  var incoming = bgCurrent === 'A' ? 'B' : 'A';
+  var inEl     = document.getElementById('bg' + incoming.toUpperCase());
+  var outEl    = document.getElementById('bg' + bgCurrent.toUpperCase());
+
+  if(bgUrl){
+    inEl.innerHTML = '<img src="' + esc(bgUrl) + '" alt="" loading="eager"/>';
+    inEl.style.opacity = '0';
+    // Short delay so image starts loading before fade
+    setTimeout(function(){
+      inEl.style.transition  = 'opacity .9s ease';
+      inEl.style.opacity     = '1';
+      outEl.style.transition = 'opacity .9s ease';
+      outEl.style.opacity    = '0';
+      bgCurrent = incoming;
+      document.getElementById('bgSkeleton').style.display = 'none';
+    }, 60);
+  } else {
+    document.getElementById('bgSkeleton').style.display = 'block';
+  }
+
+  // ── Type badge ──
+  document.getElementById('evTypeLabel').textContent = meta.icon + '  ' + meta.label;
+
+  // ── Title (with slide animation) ──
+  var titleEl = document.getElementById('evTitle');
+  titleEl.style.animation = 'none';
+  titleEl.offsetHeight; // reflow
+  titleEl.style.animation = dir === 'next' ? 'slideUp .4s ease' : dir === 'prev' ? 'slideDown .4s ease' : '';
+  titleEl.textContent = ev.name;
+
+  // ── Meta pills ──
+  var daysLeft = Math.max(0, Math.ceil((new Date(ev.expiry_date) - new Date()) / (864e5)));
+  var photoCount = photos.length;
+  document.getElementById('evMeta').innerHTML =
+      metaPill('📅', fmtDate(ev.expiry_date) + ' · ' + daysLeft + ' days left')
+    + metaPill('📸', photoCount + ' preview photo' + (photoCount !== 1 ? 's' : ''))
+    + metaPill('🔑', ev.event_code);
+
+  // ── Actions ──
+  var enterUrl = 'event.html?event=' + encodeURIComponent(ev.event_slug);
+  document.getElementById('evActions').innerHTML =
+    '<a href="' + enterUrl + '" class="btn-enter" style="background:' + meta.accent + ';color:#fff;">'\
+    + 'View Gallery →</a>'\
+    + '<button class="btn-share" onclick="shareEvent()">↗ Share Link</button>';
+
+  // ── Counter ──
+  document.getElementById('navCounter').textContent = (idx + 1) + ' / ' + allEvents.length;
+
+  // ── Arrow states ──
+  document.getElementById('btnPrev').disabled = (idx === 0);
+  document.getElementById('btnNext').disabled = (idx === allEvents.length - 1);
+
+  // ── Dots ──
+  document.querySelectorAll('.dot').forEach(function(d, i){
+    d.classList.toggle('active', i === idx);
+  });
+
+  // ── Strip thumbs ──
+  updatePhotoStrip(idx);
+
+  // ── URL update (no reload) ──
+  var newUrl = window.location.pathname + '?event=' + encodeURIComponent(ev.event_slug);
+  history.replaceState(null, '', newUrl);
+}
+
+function metaPill(icon, text){
+  return '<div class="meta-pill"><span>' + icon + '</span><span>' + esc(text) + '</span></div>';
+}
+
+function fmtDate(d){
+  if(!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+function navigate(dir){
+  var next = curIdx + dir;
+  if(next < 0 || next >= allEvents.length) return;
+  if(transitioning) return;
+  transitioning = true;
+  curIdx = next;
+  showEvent(curIdx, dir > 0 ? 'next' : 'prev');
+  setTimeout(function(){ transitioning = false; }, 500);
+}
+
+/* ── Keyboard ── */
+document.addEventListener('keydown', function(e){
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
+  if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigate(-1);
+});
+
+/* ── Touch / swipe ── */
+var touchX = 0, touchY = 0;
+document.addEventListener('touchstart', function(e){ touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }, {passive:true});
+document.addEventListener('touchend', function(e){
+  var dx = e.changedTouches[0].clientX - touchX;
+  var dy = e.changedTouches[0].clientY - touchY;
+  if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44){
+    dx < 0 ? navigate(1) : navigate(-1);
+  }
+}, {passive:true});
+
+/* ═══════════════════════════════════════
+   DOTS
+═══════════════════════════════════════ */
+function buildDots(){
+  var bar = document.getElementById('dotsBar');
+  var max = Math.min(allEvents.length, 30); // cap dots at 30
+  bar.innerHTML = allEvents.slice(0, max).map(function(_, i){
+    return '<div class="dot' + (i===0?' active':'') + '" onclick="jumpTo(' + i + ')"></div>';
+  }).join('');
+}
+
+function jumpTo(idx){
+  if(idx === curIdx) return;
+  var dir = idx > curIdx ? 1 : -1;
+  curIdx = idx;
+  showEvent(curIdx, dir > 0 ? 'next' : 'prev');
+}
+
+/* ═══════════════════════════════════════
+   MINI PHOTO STRIP (right side)
+═══════════════════════════════════════ */
+function buildPhotoStrip(){
+  // Show on desktop only — rendered per event update
+  var strip = document.getElementById('photoStrip');
+  if(allEvents.length > 1) strip.classList.add('visible');
+}
+
+function updatePhotoStrip(activeIdx){
+  var strip = document.getElementById('photoStrip');
+  // Show surrounding events as thumbnails
+  var range = [];
+  for(var i = Math.max(0, activeIdx - 3); i <= Math.min(allEvents.length - 1, activeIdx + 3); i++){
+    range.push(i);
+  }
+  strip.innerHTML = range.map(function(i){
+    var photos = allEvents[i]._photos || [];
+    var url = photos.length ? photos[0].preview_url : '';
+    return '<div class="strip-thumb' + (i===activeIdx?' active-thumb':'') + '" onclick="jumpTo(' + i + ')" style="pointer-events:auto;cursor:pointer;">'
+      + (url ? '<img src="' + esc(url) + '" alt="" loading="lazy"/>' : '')
+      + '</div>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   SHARE
+═══════════════════════════════════════ */
+function shareEvent(){
+  var ev  = allEvents[curIdx];
+  var url = window.location.origin + '/event.html?event=' + encodeURIComponent(ev.event_slug);
+  if(navigator.share){
+    navigator.share({ title: ev.name + ' — ImpactGrid', url: url }).catch(function(){});
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){ showToast('🔗 Link copied!'); }).catch(function(){ fallbackCopy(url); });
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); showToast('🔗 Link copied!'); }
+  catch(e){ showToast('📋 Copy: ' + text.slice(0, 30) + '…'); }
+  document.body.removeChild(ta);
+}
+
+/* ═══════════════════════════════════════
+   UTILS
+═══════════════════════════════════════ */
+function hideLoading(){
+  var el = document.getElementById('loadingScreen');
+  el.classList.add('fade');
+  setTimeout(function(){ el.style.display = 'none'; }, 600);
+  // Hide swipe hint after 5s
+  setTimeout(function(){
+    var hint = document.getElementById('swipeHint');
+    if(hint) hint.style.opacity = '0';
+  }, 5000);
+}
+
+function showError(msg){
+  document.getElementById('loadingScreen').style.display = 'none';
+  var el = document.getElementById('errorScreen');
+  el.style.display = 'flex';
+  document.getElementById('errorMsg').textContent = msg;
+}
+
+var toastTimer = null;
+function showToast(msg){
+  var t   = document.getElementById('toast');
+  var ico = document.getElementById('toastIcon');
+  var txt = document.getElementById('toastMsg');
+  // Split emoji + text
+  var parts = msg.match(/^(\p{Emoji}+\s*)?(.*)$/u);
+  ico.textContent = parts && parts[1] ? parts[1].trim() : '✅';
+  txt.textContent = parts && parts[2] ? parts[2].trim() : msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+
+function esc(s){
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
