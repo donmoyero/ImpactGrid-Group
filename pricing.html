@@ -336,8 +336,8 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
         <div class="plan-name">Professional</div>
         <div class="plan-tagline">For solo creators and freelancers</div>
         <div class="plan-price">
-          <span class="price-currency">£</span>
-          <span class="price-amount">8.99</span>
+          <span class="price-currency" id="pro-currency">£</span>
+          <span class="price-amount" id="pro-amount">8.99</span>
           <span class="price-period">/mo</span>
         </div>
         <div class="price-note">Billed monthly · Cancel anytime</div>
@@ -357,6 +357,7 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
         </ul>
         <a href="https://buy.stripe.com/cNiaEQgYEgpO0Akgik8N206"
            class="btn btn-primary"
+           id="pro-stripe-btn"
            target="_blank"
            rel="noopener">Get Professional →</a>
         <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center;">
@@ -369,8 +370,8 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
         <div class="plan-name">Enterprise</div>
         <div class="plan-tagline">For businesses, agencies &amp; serious operators</div>
         <div class="plan-price">
-          <span class="price-currency">£</span>
-          <span class="price-amount">13.99</span>
+          <span class="price-currency" id="ent-currency">£</span>
+          <span class="price-amount" id="ent-amount">13.99</span>
           <span class="price-period">/mo</span>
         </div>
         <div class="price-note">Billed monthly · Cancel anytime</div>
@@ -390,6 +391,7 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
         </ul>
         <a href="https://buy.stripe.com/28E28k4bS8Xmera2ru8N207"
            class="btn btn-ghost"
+           id="ent-stripe-btn"
            target="_blank"
            rel="noopener">Get Enterprise →</a>
         <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center;">
@@ -398,6 +400,12 @@ tbody td.col-featured{color:var(--text);font-weight:600;}
       </div>
 
     </div>
+
+    <!-- Geo pricing badge — shown only when a non-GB region is detected -->
+    <div style="text-align:center;margin-top:18px;">
+      <span id="geo-badge" style="display:none;font-size:12px;color:var(--text2);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:var(--fm);letter-spacing:.02em;"></span>
+    </div>
+
   </section>
 
   <div class="divider"></div>
@@ -592,6 +600,117 @@ document.addEventListener('DOMContentLoaded', function() {
   set('tbl-pro-support',     p.support || 'Email');
   set('tbl-ent-support',     e.support || 'Priority (24hr)');
 });
+
+// ═══════════════════════════════════════
+// GEO-BASED PRICING
+// Detects country via ipapi.co and switches
+// currency symbol, price amounts, and Stripe links.
+// Falls back silently to GBP if API is unavailable.
+// ═══════════════════════════════════════
+(function() {
+  // ── 1. Define your pricing tiers per region ──────────────────────────────
+  // Add/edit regions here. 'stripe_pro' and 'stripe_ent' are your Stripe links.
+  // 'countries' lists ISO 3166-1 alpha-2 codes that map to this region.
+  var GEO_PRICING = [
+    {
+      region: 'GB',
+      currency: '£',
+      pro_price: '8.99',
+      ent_price: '13.99',
+      stripe_pro: 'https://buy.stripe.com/cNiaEQgYEgpO0Akgik8N206',
+      stripe_ent: 'https://buy.stripe.com/28E28k4bS8Xmera2ru8N207',
+      countries: ['GB']
+    },
+    {
+      region: 'US',
+      currency: '$',
+      pro_price: '11.99',
+      ent_price: '17.99',
+      stripe_pro: 'https://buy.stripe.com/cNiaEQgYEgpO0Akgik8N206', // ← replace with US Stripe link
+      stripe_ent: 'https://buy.stripe.com/28E28k4bS8Xmera2ru8N207', // ← replace with US Stripe link
+      countries: ['US', 'CA']
+    },
+    {
+      region: 'EU',
+      currency: '€',
+      pro_price: '10.99',
+      ent_price: '15.99',
+      stripe_pro: 'https://buy.stripe.com/cNiaEQgYEgpO0Akgik8N206', // ← replace with EU Stripe link
+      stripe_ent: 'https://buy.stripe.com/28E28k4bS8Xmera2ru8N207', // ← replace with EU Stripe link
+      countries: ['DE','FR','IT','ES','NL','BE','AT','PT','IE','FI','SE','DK','PL','CZ','HU','RO','GR','HR','SK','SI','EE','LV','LT','LU','MT','CY','BG']
+    },
+    {
+      region: 'AU',
+      currency: 'A$',
+      pro_price: '18.99',
+      ent_price: '27.99',
+      stripe_pro: 'https://buy.stripe.com/cNiaEQgYEgpO0Akgik8N206', // ← replace with AUD Stripe link
+      stripe_ent: 'https://buy.stripe.com/28E28k4bS8Xmera2ru8N207', // ← replace with AUD Stripe link
+      countries: ['AU', 'NZ']
+    }
+    // Add more regions here as needed
+  ];
+
+  // ── 2. Default (fallback) ─────────────────────────────────────────────────
+  var DEFAULT = GEO_PRICING[0]; // GBP
+
+  // ── 3. Apply pricing to the DOM ───────────────────────────────────────────
+  function applyPricing(tier, countryCode) {
+    var t = tier || DEFAULT;
+
+    // Currency symbols
+    var proCur = document.getElementById('pro-currency');
+    var entCur = document.getElementById('ent-currency');
+    if (proCur) proCur.textContent = t.currency;
+    if (entCur) entCur.textContent = t.currency;
+
+    // Price amounts
+    var proAmt = document.getElementById('pro-amount');
+    var entAmt = document.getElementById('ent-amount');
+    if (proAmt) proAmt.textContent = t.pro_price;
+    if (entAmt) entAmt.textContent = t.ent_price;
+
+    // Stripe button links
+    var proBtn = document.getElementById('pro-stripe-btn');
+    var entBtn = document.getElementById('ent-stripe-btn');
+    if (proBtn) proBtn.href = t.stripe_pro;
+    if (entBtn) entBtn.href = t.stripe_ent;
+
+    // Show geo badge if not default region
+    var badge = document.getElementById('geo-badge');
+    if (badge) {
+      if (countryCode && countryCode !== 'GB') {
+        badge.style.display = 'inline-flex';
+        badge.textContent = '🌍 Prices shown in ' + t.currency + ' for your region';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+
+  // ── 4. Find the right tier for a country code ─────────────────────────────
+  function findTier(countryCode) {
+    for (var i = 0; i < GEO_PRICING.length; i++) {
+      if (GEO_PRICING[i].countries.indexOf(countryCode) !== -1) {
+        return GEO_PRICING[i];
+      }
+    }
+    return DEFAULT;
+  }
+
+  // ── 5. Fetch country via ipapi.co (free, no key needed up to 1k/day) ──────
+  fetch('https://ipapi.co/json/', { cache: 'force-cache' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var code = (data && data.country_code) ? data.country_code : null;
+      var tier = code ? findTier(code) : DEFAULT;
+      applyPricing(tier, code);
+    })
+    .catch(function() {
+      // Silently fall back to default GBP pricing
+      applyPricing(DEFAULT, null);
+    });
+})();
 
 // FAQ accordion
 document.querySelectorAll('.faq-q').forEach(btn => {
