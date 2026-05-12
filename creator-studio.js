@@ -335,13 +335,30 @@ function checkAccess() {
 
   // Not logged in
   if (!getUser()) {
-    showUpgrade("Create an account to save and unlock more");
+    if (typeof window.showUpgradeBar_gate === 'function') {
+      window.showUpgradeBar_gate('Create an account to save and unlock more', false);
+    } else {
+      showUpgrade('Create an account to save and unlock more');
+    }
     return false;
   }
 
-  // Free plan limit
-  if (getPlan() === 'free' && getUses() >= 3) {
-    showUpgrade("You've hit your free limit — upgrade to continue");
+  // AI use limit — uses canUse() from auth.js (covers all plans, not just free)
+  if (!canUse('ai_uses')) {
+    var _plan = getPlan();
+    var _planLabel = _plan.charAt(0).toUpperCase() + _plan.slice(1);
+    var _limit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) ? window.IG_PLAN_CONFIG[_plan].ai_uses : 3;
+    if (typeof window.showPlanGate === 'function') {
+      window.showPlanGate({
+        icon:     '⚡',
+        title:    'Monthly AI limit reached',
+        subtitle: "You've used all " + _limit + " AI generations on the " + _planLabel + " plan. Upgrade to keep creating."
+      });
+    } else if (typeof window.showUpgradeBar_gate === 'function') {
+      window.showUpgradeBar_gate(_planLabel + ' plan: ' + _limit + ' AI uses/mo reached — upgrade for more', true);
+    } else {
+      showUpgrade("You've hit your plan limit — upgrade to continue");
+    }
     return false;
   }
 
