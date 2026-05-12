@@ -418,6 +418,34 @@ var DIJO_SERVER='https://impactgrid-dijo.onrender.com';
 async function generate(){
   var topic=document.getElementById('topicInput').value.trim();
   if(!topic){toast('⚠️ Add a topic first');document.getElementById('topicInput').focus();return;}
+
+  // ── Hard pre-generation gate ─────────────────────────────
+  // Uses auth.js canUse() as single source of truth — no inline counters.
+  if (typeof isAdmin === 'function' && !isAdmin()) {
+    if (typeof getUser === 'function' && !getUser()) {
+      // Not logged in
+      if (typeof window.showUpgradeBar_gate === 'function') {
+        window.showUpgradeBar_gate('Sign in to generate carousels', false);
+      } else { toast('⚠️ Sign in to generate carousels'); }
+      return;
+    }
+    if (typeof canUse === 'function' && !canUse('carousel')) {
+      var _plan = (typeof getPlan === 'function') ? getPlan() : 'free';
+      var _limit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) ? window.IG_PLAN_CONFIG[_plan].ai_uses : 3;
+      var _planLabel = _plan.charAt(0).toUpperCase() + _plan.slice(1);
+      if (typeof window.showPlanGate === 'function') {
+        window.showPlanGate({
+          icon:     '⚡',
+          title:    'Monthly AI limit reached',
+          subtitle: "You've used all " + _limit + " AI generations on the " + _planLabel + " plan. Upgrade to keep creating."
+        });
+      } else if (typeof window.showUpgradeBar_gate === 'function') {
+        window.showUpgradeBar_gate(_planLabel + ' plan: ' + _limit + ' AI uses/mo reached — upgrade for more', true);
+      } else { toast('⚡ Upgrade to generate more carousels'); }
+      return;
+    }
+  }
+
   if(!ST.theme) ST.theme=detectTheme(topic);
   var platform=document.getElementById('platSelect').value;
   var tone=document.getElementById('toneSelect').value;
@@ -454,69 +482,17 @@ async function generate(){
   var topicVal=topic, platformVal=platform;
   setTimeout(function(){ CaptionEngine.enrichDeck(topicVal, platformVal); }, 600);
 
-  // Soft plan gate — show upgrade prompt after generation if limit reached
-  // Does NOT block the carousel from rendering (non-blocking)
-  setTimeout(function(){ _softPlanCheck(); }, 1200);
-}
-
-/* ─────────────────────────────────────────────────────────
-   SOFT PLAN GATE — non-blocking upgrade nudge
-   Shows after generation succeeds. Does NOT prevent use.
-   Uses plan-gate.js if loaded, otherwise shows upgrade bar.
-───────────────────────────────────────────────────────── */
-function _softPlanCheck() {
-  // Read plan from window.igUser (nav.js) or localStorage
-  var plan = 'free';
-  var aiUses = 0;
-  try { plan = (window.igUser && window.igUser.plan) ? window.igUser.plan : (localStorage.getItem('ig_plan') || 'free'); } catch(e) {}
-  try { aiUses = (window.igUser && typeof window.igUser.aiUses === 'number') ? window.igUser.aiUses : parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
-
-  // Increment local use counter
-  aiUses++;
-  try { localStorage.setItem('ig_ai_uses', String(aiUses)); } catch(e) {}
-  if (window.igUser) window.igUser.aiUses = aiUses;
-
-  // Also update Supabase if user is logged in
-  if (window.igUser && window.igUser.id && typeof getSupabase === 'function') {
-    try {
-      var sb = getSupabase();
-      if (sb) sb.from('profiles').update({ ai_uses_month: aiUses }).eq('user_id', window.igUser.id).then(function(){});
-    } catch(e) {}
-  }
-
-  // Get limit from plan-config.js or fallback
-  var limit = 3;
-  if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) {
-    limit = window.IG_PLAN_CONFIG[plan].ai_uses;
-  } else if (plan === 'professional') { limit = 100; }
-  else if (plan === 'enterprise' || plan === 'admin') { limit = Infinity; }
-
-  if (!isFinite(limit)) return; // enterprise/admin — no gate
-
-  // Show upgrade prompt when approaching or at limit
-  if (aiUses >= limit) {
-    var planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(plan) : (plan.charAt(0).toUpperCase() + plan.slice(1));
-    if (typeof window.showPlanGate === 'function') {
-      window.showPlanGate({
-        icon: '⚡',
-        title: 'Monthly AI limit reached',
-        subtitle: "You've used all " + limit + " AI generations on the " + planLabel + " plan. Upgrade to keep creating."
-      });
-    } else {
-      _showUpgradeBar(planLabel + ' plan: ' + limit + ' AI uses/mo reached — upgrade for more', true);
+  // Increment the shared monthly AI counter (auth.js single source of truth)
+  if (typeof isAdmin === 'function' && !isAdmin()) {
+    if (typeof incrementUses === 'function') {
+      incrementUses();
+    } else if (typeof window.incrementAIUse === 'function') {
+      window.incrementAIUse();
     }
-  } else if (aiUses >= limit - 1) {
-    _showUpgradeBar('1 AI generation left this month — upgrade for unlimited access', true);
   }
 }
 
-function _showUpgradeBar(msg, isLoggedIn) {
-  if (typeof window.showUpgradeBar_gate === 'function') {
-    window.showUpgradeBar_gate(msg, isLoggedIn);
-  } else {
-    toast('⚡ ' + msg);
-  }
-}
+
 
 /* ─────────────────────────────────────────────────────────
    v4.5 UPGRADED callAI — sends a full storytelling brief
