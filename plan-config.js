@@ -7,7 +7,7 @@
 //
 //  Usage anywhere:
 //    var cfg = window.IG_PLAN_CONFIG[getPlan()];
-//    cfg.portfolios      → 3 (free) / 1 (professional) / 3 (enterprise)
+//    cfg.portfolios      → 3 (free) / 3 (professional) / 3 (enterprise)
 //    cfg.ai_uses         → 3 / 100 / Infinity
 //    cfg.label           → 'Free' / 'Professional' / 'Enterprise'
 //
@@ -33,9 +33,9 @@ window.IG_PLAN_CONFIG = {
   professional: {
     label:               'Professional',
     ai_uses:             100,
-    portfolios:          1,       // 1 live portfolio, saved permanently
-    carousels:           20,
-    adviser:             50,
+    portfolios:          3,       // up to 3 live portfolios, saved permanently
+    carousels:           10,
+    adviser:             10,
     evaluator:           10,
     content_plan:        99,
     data_retention_days: null,    // kept while subscription is active
