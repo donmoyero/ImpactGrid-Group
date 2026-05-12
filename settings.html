@@ -1031,8 +1031,8 @@
           <div class="trial-exhausted-banner" id="trialExhaustedBanner">
             <div class="teb-icon">🔒</div>
             <div class="teb-text">
-              <strong>You've used all your free AI credits this month</strong>
-              <span>AI-powered tools are locked until you upgrade or your credits reset on the 1st.</span>
+              <strong id="teb-heading">You've used all your free AI credits this month</strong>
+              <span id="teb-body">AI-powered tools are locked until you upgrade or your credits reset on the 1st.</span>
             </div>
             <a href="pricing.html">Upgrade →</a>
           </div>
@@ -1773,12 +1773,12 @@
 
     /* Tools available per plan */
     var ALL_TOOLS = [
-      { icon:'🎠', name:'Carousel Studio',   href:'carousel-studio.html',       plans:['free','professional','enterprise','admin'], limit:{ free:'3 AI uses/mo', professional:'100 AI uses/mo', enterprise:'Unlimited', admin:'Unlimited' } },
-      { icon:'💼', name:'Portfolio Studio',  href:'portfolio-studio.html',      plans:['free','professional','enterprise','admin'], limit:{ free:'3 portfolios (7-day)', professional:'1 portfolio', enterprise:'3 portfolios', admin:'Unlimited' } },
+      { icon:'🎠', name:'Carousel Studio',   href:'carousel-studio.html',       plans:['free','professional','enterprise','admin'], limit:{ free:'Up to 3/mo', professional:'Up to 10/mo', enterprise:'Unlimited', admin:'Unlimited' } },
+      { icon:'💼', name:'Portfolio Studio',  href:'portfolio-studio.html',      plans:['free','professional','enterprise','admin'], limit:{ free:'3 portfolios (7-day)', professional:'3 portfolios (permanent)', enterprise:'Unlimited (permanent)', admin:'Unlimited' } },
       { icon:'📊', name:'Creator Studio',    href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'Read-only', professional:'Full access', enterprise:'Full access', admin:'Full access' } },
-      { icon:'🤖', name:'Dijo Adviser',      href:'creator-studio.html',        plans:['professional','enterprise','admin'],        limit:{ free:'Upgrade to Pro', professional:'50 msgs/mo', enterprise:'Unlimited', admin:'Unlimited' } },
+      { icon:'🤖', name:'Dijo Adviser',      href:'creator-studio.html',        plans:['professional','enterprise','admin'],        limit:{ free:'Upgrade to Pro', professional:'10 msgs/mo', enterprise:'Unlimited', admin:'Unlimited' } },
       { icon:'🔍', name:'Dijo Evaluator',    href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'3/mo', professional:'10/mo', enterprise:'Unlimited', admin:'Unlimited' } },
-      { icon:'📅', name:'Content Plan',      href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'3/mo', professional:'4 weeks saved', enterprise:'Unlimited', admin:'Unlimited' } },
+      { icon:'📅', name:'Content Calendar',  href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'3/mo', professional:'Unlimited', enterprise:'Unlimited', admin:'Unlimited' } },
       { icon:'📈', name:'Trend Feed',        href:'creator-studio.html',        plans:['free','professional','enterprise','admin'], limit:{ free:'Read-only', professional:'Full + personalised', enterprise:'Full + personalised', admin:'Full + personalised' } },
       { icon:'🎬', name:'YouTube Connect',   href:'settings.html#integrations', plans:['professional','enterprise','admin'],        limit:{ free:'Upgrade to Pro', professional:'Connected', enterprise:'Connected', admin:'Connected' } },
       { icon:'🎵', name:'TikTok Connect',    href:'settings.html#integrations', plans:['professional','enterprise','admin'],        limit:{ free:'Upgrade to Pro', professional:'Connected', enterprise:'Connected', admin:'Connected' } },
@@ -1860,7 +1860,7 @@
           : plan === 'free'
             ? 'Saved items deleted after ' + pfRetDays + ' days · upgrade to keep them permanently'
             : plan === 'professional'
-              ? (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.professional ? window.IG_PLAN_CONFIG.professional.portfolios : 1) + ' live portfolio saved permanently'
+              ? (function() { var n = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.professional ? window.IG_PLAN_CONFIG.professional.portfolios : 1); return n + ' live portfolio' + (n !== 1 ? 's' : '') + ' saved permanently'; })()
               : 'Up to ' + (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.enterprise ? window.IG_PLAN_CONFIG.enterprise.portfolios : 3) + ' live portfolios saved permanently';
 
         grid.innerHTML = [
@@ -1869,8 +1869,8 @@
           _usageBar('Portfolio Slots', pfNote, pfPct, pfClass, pfClass, pfSub, ''),
         ].join('');
 
-        /* ── Trial exhausted: blur tools + show banner — never for admin ── */
-        var isExhausted = !isAdmin && (plan === 'free') && (aiLimit !== Infinity) && (aiPct >= 100);
+        /* ── Usage exhausted: blur tools + show banner — never for admin ── */
+        var isExhausted = !isAdmin && (aiLimit !== Infinity) && (aiPct >= 100);
         _applyTrialExhausted(isExhausted);
       }
 
@@ -1987,7 +1987,21 @@
     function _applyTrialExhausted(exhausted) {
       /* Banner */
       var banner = document.getElementById('trialExhaustedBanner');
-      if (banner) banner.classList.toggle('show', exhausted);
+      if (banner) {
+        banner.classList.toggle('show', exhausted);
+        if (exhausted) {
+          var _pd2 = _getPlanData();
+          var _isFree2 = (_pd2.plan === 'free');
+          var _headEl = document.getElementById('teb-heading');
+          var _bodyEl = document.getElementById('teb-body');
+          if (_headEl) _headEl.textContent = _isFree2
+            ? "You've used all your free AI credits this month"
+            : "You've used all your monthly AI credits";
+          if (_bodyEl) _bodyEl.textContent = _isFree2
+            ? "AI-powered tools are locked until you upgrade or your credits reset on the 1st."
+            : "AI-powered tools are locked until your credits reset on the 1st.";
+        }
+      }
 
       /* Blur wrap */
       var wrap    = document.getElementById('toolsBlurWrap');
@@ -2000,15 +2014,26 @@
 
       if (exhausted) {
         content.classList.add('trial-blur-content');
+        /* Determine current plan for copy */
+        var _pd   = _getPlanData();
+        var _plan = _pd.plan;
+        var _cfg  = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) || {};
+        var _limit = _cfg.ai_uses || 0;
+        var _isFree = (_plan === 'free');
+        var _heading = _isFree ? 'Free Trial Limit Reached' : 'Monthly AI Limit Reached';
+        var _body    = _isFree
+          ? 'You\'ve used all ' + _limit + ' AI credits included in the Free plan this month. Upgrade to keep using AI-powered tools.'
+          : 'You\'ve used all ' + _limit + ' AI credits in your ' + (_plan.charAt(0).toUpperCase() + _plan.slice(1)) + ' plan this month. They reset on the 1st.';
+        var _cta     = _isFree ? '<a href="pricing.html">Upgrade Now →</a>' : '';
         /* Build overlay */
         var overlay = document.createElement('div');
         overlay.className = 'trial-blur-overlay';
         overlay.innerHTML =
           '<div class="trial-blur-card">' +
             '<div class="trial-blur-icon">🔒</div>' +
-            '<h4>Free Trial Limit Reached</h4>' +
-            '<p>You\'ve used all ' + (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG.free ? window.IG_PLAN_CONFIG.free.ai_uses : '') + ' AI credits included in the Free plan this month. Upgrade to keep using AI-powered tools.</p>' +
-            '<a href="pricing.html">Upgrade Now →</a>' +
+            '<h4>' + _heading + '</h4>' +
+            '<p>' + _body + '</p>' +
+            _cta +
             '<div class="trial-reset">Credits reset on the 1st of each month</div>' +
           '</div>';
         wrap.appendChild(overlay);
