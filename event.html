@@ -2269,6 +2269,78 @@ function esc(s){
   return String(s||'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+/* ══════════════════════════════════════
+   CONTACT FORM
+══════════════════════════════════════ */
+function toggleContact(){
+  var modal = document.getElementById('contact-modal');
+  if(!modal) return;
+  var open = modal.style.display === 'flex';
+  modal.style.display = open ? 'none' : 'flex';
+  if(!open) document.getElementById('contact-name').focus();
+}
+
+async function submitContact(e){
+  e.preventDefault();
+  var name    = (document.getElementById('contact-name').value||'').trim();
+  var email   = (document.getElementById('contact-email').value||'').trim();
+  var message = (document.getElementById('contact-message').value||'').trim();
+  if(!name||!email||!message) return;
+
+  var btn = document.getElementById('contact-submit');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  try{
+    var eventId = new URLSearchParams(window.location.search).get('event') || null;
+    var { error } = await getSupabase().from('admin_mail_inbox').insert({
+      from_email:  email,
+      subject:     'Message from ' + name + (eventId ? ' (Event: ' + eventId + ')' : ''),
+      body:        message,
+      read:        false,
+      received_at: new Date().toISOString()
+    });
+    if(error) throw error;
+    document.getElementById('contact-form').style.display  = 'none';
+    document.getElementById('contact-success').style.display = 'block';
+  }catch(err){
+    btn.disabled=false; btn.textContent='Send Message';
+    alert('Sorry, something went wrong. Please try again.');
+  }
+}
 </script>
+
+<!-- Contact Us Button -->
+<button onclick="toggleContact()" id="contact-fab" style="position:fixed;bottom:24px;left:24px;z-index:900;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:100px;background:#0d1017;color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.25);transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,0.35)';" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.25)';">
+  <span style="font-size:16px;">✉️</span> Contact Us
+</button>
+
+<!-- Contact Modal -->
+<div id="contact-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,0.2);position:relative;">
+    <button onclick="toggleContact()" style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,0.06);border:none;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div style="font-size:20px;margin-bottom:4px;">✉️</div>
+    <div style="font-size:17px;font-weight:800;margin-bottom:4px;">Get in touch</div>
+    <div style="font-size:12px;color:#666;margin-bottom:20px;">We'll get back to you as soon as possible.</div>
+
+    <div id="contact-form">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <input id="contact-name"    type="text"  placeholder="Your name"    style="padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;width:100%;" onfocus="this.style.borderColor='#0d1017'" onblur="this.style.borderColor='#e0e0e0'"/>
+        <input id="contact-email"   type="email" placeholder="Your email"   style="padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;width:100%;" onfocus="this.style.borderColor='#0d1017'" onblur="this.style.borderColor='#e0e0e0'"/>
+        <textarea id="contact-message" rows="4"  placeholder="Your message" style="padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;outline:none;width:100%;resize:none;font-family:inherit;" onfocus="this.style.borderColor='#0d1017'" onblur="this.style.borderColor='#e0e0e0'"></textarea>
+        <button id="contact-submit" onclick="submitContact(event)" style="padding:11px;background:#0d1017;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Send Message</button>
+      </div>
+    </div>
+
+    <div id="contact-success" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:36px;margin-bottom:12px;">✅</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Message sent!</div>
+      <div style="font-size:12px;color:#666;margin-bottom:20px;">We'll be in touch soon.</div>
+      <button onclick="toggleContact();document.getElementById('contact-form').style.display='';document.getElementById('contact-success').style.display='none';" style="padding:9px 20px;background:#0d1017;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/impactgrid-chat-bubble.js"></script>
 </body>
 </html>
