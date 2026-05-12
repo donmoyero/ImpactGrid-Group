@@ -43,76 +43,6 @@
     contact:    'Hey! 👋 Need to reach the team? I might be able to help right now.'
   };
 
-  /* ── Suggestion chips per page ── */
-  var CHIPS = {
-    home: [
-      ['What is ImpactGrid?',   'What does ImpactGrid actually do?'],
-      ['See pricing',           'What are the pricing plans?'],
-      ['How do I start?',       'How do I get started with ImpactGrid?'],
-      ['Talk to the team',      'I want to speak to someone on the team']
-    ],
-    creator: [
-      ['Build a carousel',      'Help me build a carousel'],
-      ['Trending topics',       'What topics are trending right now in my niche?'],
-      ['Write a hook',          'Write me a scroll-stopping hook for my content'],
-      ['Best time to post',     'When is the best time to post on Instagram?']
-    ],
-    carousel: [
-      ['Suggest a topic',       'Suggest a carousel topic that would perform well right now'],
-      ['Write my hook',         'Write a hook slide for my carousel'],
-      ['Review my idea',        'I have a carousel idea — tell me if it will work'],
-      ['Caption + hashtags',    'Write a caption and hashtags for my carousel']
-    ],
-    pricing: [
-      ['Which plan suits me?',  'Help me choose the right plan for my business'],
-      ['What\'s in Pro?',       'What do I get with the Pro plan?'],
-      ['Free vs paid',          'What\'s the difference between free and paid?'],
-      ['Book a demo',           'How do I book a demo?']
-    ],
-    events: [
-      ['How does it work?',     'How does ImpactGrid Events work?'],
-      ['Book an event',         'How do I book an event?'],
-      ['What\'s included?',     'What\'s included in an events package?'],
-      ['Event pricing',         'What does an event cost?']
-    ],
-    jobs: [
-      ['Open roles',            'What roles are currently open at ImpactGrid?'],
-      ['Company culture',       'What\'s it like working at ImpactGrid?'],
-      ['How to apply',          'How do I apply for a role?'],
-      ['Remote work',           'Does ImpactGrid offer remote positions?']
-    ],
-    network: [
-      ['What is the Network?',  'What is the ImpactGrid Network?'],
-      ['Who is it for?',        'Who is the ImpactGrid Network for?'],
-      ['How to join',           'How do I join the ImpactGrid Network?'],
-      ['Network benefits',      'What are the benefits of joining the Network?']
-    ],
-    dashboard: [
-      ['Add my data',           'How do I add my monthly revenue and expenses?'],
-      ['Risk score',            'What does my risk score mean?'],
-      ['Improve margins',       'How can I improve my profit margins?'],
-      ['Upgrade plan',          'What do I get if I upgrade my plan?']
-    ],
-    consulting: [
-      ['What\'s included?',     'What does the consulting service include?'],
-      ['Book a session',        'How do I book a consulting session?'],
-      ['Consulting pricing',    'How much does consulting cost?'],
-      ['Is it right for me?',   'Is consulting right for my business?']
-    ],
-    about: [
-      ['Our story',             'Tell me about ImpactGrid\'s story'],
-      ['The team',              'Who is behind ImpactGrid?'],
-      ['Our mission',           'What is ImpactGrid\'s mission?'],
-      ['Get in touch',          'How do I contact the ImpactGrid team?']
-    ],
-    contact: [
-      ['Response time',         'How quickly will I hear back?'],
-      ['Support',               'I need help with my account'],
-      ['Partnership',           'I\'d like to discuss a partnership with ImpactGrid'],
-      ['General enquiry',       'I have a general question about ImpactGrid']
-    ]
-  };
-
   var PAGE_LABELS = {
     home: 'Home', creator: 'Creator Studio', carousel: 'Carousel Studio',
     pricing: 'Pricing', events: 'Events', jobs: 'Jobs', network: 'Network',
@@ -221,9 +151,6 @@
     .ig-typing-dots span:nth-child(2){animation-delay:0.2s;}
     .ig-typing-dots span:nth-child(3){animation-delay:0.4s;}
     @keyframes ig-dot{0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-5px);opacity:1}}
-    .ig-suggestions{display:flex;gap:6px;flex-wrap:wrap;padding:6px 16px 10px;background:#f8faff;border-top:1px solid #f1f5f9;}
-    .ig-chip{padding:5px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:11.5px;color:#475569;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
-    .ig-chip:hover{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;}
     .ig-input-row{display:flex;align-items:center;gap:8px;padding:12px 16px 16px;background:#fff;border-top:1px solid #f1f5f9;flex-shrink:0;}
     .ig-input{flex:1;padding:10px 14px;background:#f8faff;border:1.5px solid #e2e8f0;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:#1e293b;outline:none;transition:border-color 0.2s;}
     .ig-input:focus{border-color:#93c5fd;}
@@ -264,7 +191,6 @@
       '</div>' +
       '<div class="ig-messages" id="ig-messages"></div>' +
       '<div class="ig-typing" id="ig-typing" style="display:none;"><div class="ig-typing-av">AI</div><div class="ig-typing-dots"><span></span><span></span><span></span></div></div>' +
-      '<div class="ig-suggestions" id="ig-suggestions"></div>' +
       '<div class="ig-input-row">' +
         '<input id="ig-input" class="ig-input" placeholder="Ask me anything&hellip;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();igSend();}">' +
         '<button class="ig-send" id="ig-send-btn" onclick="igSend()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>' +
@@ -277,16 +203,6 @@
   setTimeout(function () {
     igAppendMsg('ai', WELCOMES[PAGE_CTX] || WELCOMES.home);
   }, 600);
-
-  /* ── Chips ── */
-  (function () {
-    var chips = CHIPS[PAGE_CTX] || CHIPS.home;
-    var el = document.getElementById('ig-suggestions');
-    if (!el) return;
-    el.innerHTML = chips.map(function (c) {
-      return '<button class="ig-chip" onclick="igAsk(' + JSON.stringify(c[1]) + ')">' + c[0] + '</button>';
-    }).join('');
-  })();
 
   /* ── Toggle ── */
   window.igToggleChat = function () {
@@ -343,8 +259,6 @@
 
   window.igAsk = async function (message) {
     if (!message || TYPING) return;
-    var chips = document.getElementById('ig-suggestions');
-    if (chips) chips.style.display = 'none';
     igAppendMsg('user', igEsc(message));
     HISTORY.push({ role: 'user', content: message });
     TYPING = true;
@@ -368,7 +282,7 @@
     try {
       var res = await fetch(AI_URL + '/chat', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
         body:    JSON.stringify({ message: prompt, mode: 'site' })
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
