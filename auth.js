@@ -16,30 +16,15 @@
 // ═══════════════════════════════════════════════════════════
 
 // ── Supabase client init ─────────────────────────────────────────────────
+// Client is created by ig-supabase.js (which must load before auth.js).
+// auth.js never creates its own client — it calls getSupabase() instead.
 (function () {
-  if (window.supabaseClient) return;
-
-  var url = window.SUPABASE_URL;
-  var key = window.SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    console.error("[Auth] SUPABASE_URL / SUPABASE_ANON_KEY not set on window");
-    return;
-  }
   if (!window.supabase || typeof window.supabase.createClient !== 'function') {
     console.error("[Auth] Supabase SDK not loaded — check script tag order");
     return;
   }
-
-  window.supabaseClient = window.supabase.createClient(url, key, {
-    auth: {
-      persistSession:     true,
-      autoRefreshToken:   true,
-      detectSessionInUrl: true,
-      storageKey:         'ig-auth-token'  // matches ig-supabase.js
-    }
-  });
-  console.log("[Auth] Supabase client ready");
+  // Trigger ig-supabase.js singleton creation if not done yet
+  if (typeof getSupabase === 'function') getSupabase();
 })();
 
 // ── State ────────────────────────────────────────────────────────────────
@@ -50,17 +35,15 @@ var IG_IS_ADMIN = false;
 // Plans: 'free' | 'professional' | 'enterprise'
 var IG_PLAN_LIMITS = {
   ai_uses:     { free: 3, professional: 100, enterprise: Infinity },
-  portfolio:   { free: 3, professional: 1,   enterprise: 3        },
-  carousel:    { free: 3, professional: 100, enterprise: Infinity },
+  portfolio:   { free: 3, professional: 3,   enterprise: 3        },
+  carousel:    { free: 3, professional: 10,  enterprise: Infinity },
   generator:   { free: 3, professional: 100, enterprise: Infinity },
   evaluator:   { free: 3, professional: 10,  enterprise: Infinity },
   content_plan:{ free: 3, professional: 99,  enterprise: Infinity }
 };
 
 // ── Public accessors ─────────────────────────────────────────────────────
-function getSupabase() {
-  return window.supabaseClient || null;
-}
+// getSupabase() is defined in ig-supabase.js — do not redefine here.
 function getUser()      { return IG_USER; }
 function setUser(user)  { IG_USER = user || null; }
 
