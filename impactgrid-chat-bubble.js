@@ -282,7 +282,7 @@
     try {
       var res = await fetch(AI_URL + '/chat', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+        headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ message: prompt, mode: 'site' })
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
