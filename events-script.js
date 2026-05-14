@@ -1,20 +1,46 @@
 /* ════════════════════════════════════════════════════
-   EVENTS MANAGEMENT
-   - No face detection / face indexing
-   - No QR print, no copy link
-   - loadEvents: 👁 View Event · 📧 Resend Email · 📤 Upload · Activate/Deactivate · ✕ Delete
-   - uploadPhotos: web-resized preview (1400px) + original kept separately
-   - deletePhoto: cleans preview + original from storage only (no face_embeddings)
-   - deleteEvent: cleans original/web/selfies/celebrant folders only
-   - approveRequest: calls backend email route
+   EVENTS MANAGEMENT — Firebase Firestore + Cloudinary
+   Replaces Supabase entirely.
+   DB  → Firebase Firestore
+   Storage → Cloudinary (free 25GB)
 ════════════════════════════════════════════════════ */
+
+/* ── Firebase imports (CDN, no build step needed) ── */
+import { initializeApp }          from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
+import {
+  getFirestore, collection, doc,
+  addDoc, getDoc, getDocs, updateDoc, deleteDoc,
+  query, where, orderBy, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey           : 'AIzaSyDzI3fDAM46_Gp96YMnrA-DG7oAprHs4g4',
+  authDomain       : 'impactgrid-events.firebaseapp.com',
+  projectId        : 'impactgrid-events',
+  storageBucket    : 'impactgrid-events.firebasestorage.app',
+  messagingSenderId: '197404801498',
+  appId            : '1:197404801498:web:15675f79edc02e6348a8e3'
+};
+
+const _app = initializeApp(firebaseConfig);
+const db   = getFirestore(_app);
+
+/* ════════════════════════════════════════════════════
+   CLOUDINARY CONFIG
+   Sign up free at cloudinary.com → get your cloud name
+   Replace YOUR_CLOUD_NAME below
+════════════════════════════════════════════════════ */
+var CLOUDINARY_CLOUD_NAME  = 'dr7wqaqbm';
+var CLOUDINARY_UPLOAD_PRESET = 'impactgrid_photos'; /* ← create unsigned preset in Cloudinary dashboard */
 
 var EVENTS_API      = 'https://impactgrid-events-api.onrender.com';
 var evWatermark     = true;
 var evRequireCode   = true;
 var selectedEventId = null;
 
-/* ── Set default expiry to 30 days from today ── */
+/* ── helpers ── */
+function esc(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 function setDefaultExpiry(){
   var el = document.getElementById('ev-expiry');
   if(!el) return;
@@ -23,7 +49,6 @@ function setDefaultExpiry(){
   el.value = d.toISOString().split('T')[0];
 }
 
-/* ── Generate random 6-char access code ── */
 function generateCode(){
   var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   var code  = '';
@@ -32,7 +57,6 @@ function generateCode(){
   if(el) el.value = code;
 }
 
-/* ── URL-safe slug ── */
 function slugify(text){
   return text.toLowerCase()
     .replace(/[^a-z0-9\s-]/g,'')
@@ -78,29 +102,27 @@ async function igCreateEvent(){
   var slug = slugify(name) + '-' + Date.now();
 
   try{
-    var c = getSupabase();
-    var { data: sess } = await c.auth.getSession();
-
-    var { data: ev, error: evErr } = await c.from('events').insert({
+    /* Save event to Firestore */
+    var evRef = await addDoc(collection(db, 'events'), {
       name        : name,
       type        : template,
       template    : template,
-      owner_id    : sess.session ? sess.session.user.id : null,
       owner_email : document.getElementById('ev-owner') ? document.getElementById('ev-owner').value.trim() || null : null,
       owner_name  : document.getElementById('ev-owner-name') ? document.getElementById('ev-owner-name').value.trim() || null : null,
       event_code  : code,
       event_slug  : slug,
       expiry_date : new Date(expiry).toISOString(),
-      is_active   : true
-    }).select().single();
+      is_active   : true,
+      created_at  : serverTimestamp()
+    });
 
-    if(evErr) throw evErr;
-
-    await c.from('event_settings').insert({
-      event_id          : ev.id,
+    /* Save event settings */
+    await addDoc(collection(db, 'event_settings'), {
+      event_id          : evRef.id,
       require_code      : evRequireCode,
       template          : template,
-      watermark_enabled : evWatermark
+      watermark_enabled : evWatermark,
+      created_at        : serverTimestamp()
     });
 
     showAlert('✅ Event created! Code: ' + code, true);
@@ -144,20 +166,17 @@ async function sendOwnerNotification(ownerEmail, ownerName, eventName, eventCode
 
 /* ════════════════════════════════════════════════════
    LOAD EVENTS LIST
-   Actions: 👁 View Event · 📧 Resend Email · 📤 Upload · Activate/Deactivate · ✕ Delete
-   (No QR print, no copy link)
 ════════════════════════════════════════════════════ */
 async function loadEvents(){
   var el = document.getElementById('eventsList');
   if(!el) return;
   el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
   try{
-    var { data } = await getSupabase()
-      .from('events')
-      .select('*, event_settings(*)')
-      .order('created_at', { ascending: false });
+    var q        = query(collection(db, 'events'), orderBy('created_at', 'desc'));
+    var snap     = await getDocs(q);
+    var data     = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
 
-    if(!data || !data.length){
+    if(!data.length){
       el.innerHTML = '<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No events yet.</div></div>';
       return;
     }
@@ -208,23 +227,32 @@ async function resendOwnerEmail(ownerEmail, eventName){
 }
 
 async function toggleEvent(id, cur){
-  await getSupabase().from('events').update({ is_active: !cur }).eq('id', id);
+  await updateDoc(doc(db, 'events', id), { is_active: !cur });
   loadEvents(); loadStats();
   toast(cur ? '⏸' : '▶️', cur ? 'Event deactivated' : 'Event activated', '');
 }
 
 async function deleteEvent(id){
   if(!confirm('Delete this event and ALL its photos? This cannot be undone.')) return;
-  var c = getSupabase();
   try{
-    /* Clean up all storage subfolders */
-    for(var folder of ['original', 'web', 'thumb', 'selfies', 'celebrant']){
-      var { data: files } = await c.storage.from('events').list(id + '/' + folder);
-      if(files && files.length)
-        await c.storage.from('events').remove(files.map(function(f){ return id + '/' + folder + '/' + f.name; }));
+    /* Delete all photos for this event from Firestore */
+    var pSnap = await getDocs(query(collection(db, 'photos'), where('event_id', '==', id)));
+    for(var pd of pSnap.docs){
+      /* Delete from Cloudinary via your backend (optional) */
+      var pData = pd.data();
+      if(pData.cloudinary_id){
+        try{ await fetch(EVENTS_API + '/api/delete-photo', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ publicId: pData.cloudinary_id })
+        }); }catch(e){}
+      }
+      await deleteDoc(doc(db, 'photos', pd.id));
     }
+    /* Delete event settings */
+    var sSnap = await getDocs(query(collection(db, 'event_settings'), where('event_id', '==', id)));
+    for(var sd of sSnap.docs) await deleteDoc(doc(db, 'event_settings', sd.id));
   }catch(e){}
-  await c.from('events').delete().eq('id', id);
+  await deleteDoc(doc(db, 'events', id));
   toast('🗑️', 'Event deleted', '');
   loadEvents(); loadStats();
 }
@@ -240,25 +268,19 @@ function goUploadForEvent(eventId){
 }
 
 /* ════════════════════════════════════════════════════
-   UPLOAD PHOTOS
-   - Generates a web-resized preview (max 1400px wide, 82% quality)
-   - Keeps original at full resolution separately
-   - Both URLs saved to photos table
-   - No face indexing
+   UPLOAD PHOTOS — Cloudinary + Firestore
 ════════════════════════════════════════════════════ */
 async function loadUploadPhotos(){
   var sel = document.getElementById('upload-event-select');
   if(!sel) return;
   sel.innerHTML = '<option value="">— Select an event —</option>';
   try{
-    var { data } = await getSupabase()
-      .from('events')
-      .select('id,name,event_code')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    (data||[]).forEach(function(ev){
+    var q    = query(collection(db, 'events'), where('is_active','==',true), orderBy('created_at','desc'));
+    var snap = await getDocs(q);
+    snap.docs.forEach(function(d){
+      var ev  = d.data();
       var opt = document.createElement('option');
-      opt.value       = ev.id;
+      opt.value       = d.id;
       opt.textContent = ev.name + ' (' + ev.event_code + ')';
       sel.appendChild(opt);
     });
@@ -286,8 +308,6 @@ function handlePhotoInputChange(e){
   e.target.value = '';
 }
 
-/* ── Resize a File/Blob to maxWidth px wide, returns a JPEG Blob ──
-   quality: 0–1 (e.g. 0.70 for thumbnails, 0.82 for web previews)   ── */
 function resizeImage(file, maxWidth, quality){
   return new Promise(function(resolve){
     var img = new Image();
@@ -301,16 +321,26 @@ function resizeImage(file, maxWidth, quality){
       URL.revokeObjectURL(url);
       canvas.toBlob(function(blob){ resolve(blob); }, 'image/jpeg', quality);
     };
-    img.onerror = function(){ URL.revokeObjectURL(url); resolve(file); }; /* fallback to original */
+    img.onerror = function(){ URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
   });
 }
 
-/* Thumbnail: max 800px wide, 70% quality → ~80–150 KB, used in gallery grid */
-function resizeImageToThumb(file){ return resizeImage(file, 800, 0.70); }
+function resizeImageToThumb(file)      { return resizeImage(file, 800,  0.70); }
+function resizeImageToWebVersion(file) { return resizeImage(file, 1400, 0.82); }
 
-/* Web preview: max 1400px wide, 82% quality → used for full-screen lightbox view */
-function resizeImageToWebVersion(file){ return resizeImage(file, 1400, 0.82); }
+/* Upload a blob to Cloudinary unsigned upload preset */
+async function uploadToCloudinary(blob, folder){
+  var fd = new FormData();
+  fd.append('file',         blob);
+  fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  fd.append('folder',        'impactgrid/' + folder);
+  var res  = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload', {
+    method: 'POST', body: fd
+  });
+  if(!res.ok) throw new Error('Cloudinary upload failed');
+  return await res.json(); /* { secure_url, public_id, ... } */
+}
 
 async function uploadPhotos(files){
   if(!selectedEventId){ toast('⚠️', 'No event selected', 'Pick an event first'); return; }
@@ -325,12 +355,7 @@ async function uploadPhotos(files){
       continue;
     }
 
-    var ts        = Date.now() + '-' + Math.random().toString(36).substring(2,8);
-    var origPath  = selectedEventId + '/original/' + ts + '.jpg';
-    var webPath   = selectedEventId + '/web/'      + ts + '.jpg';
-    var thumbPath = selectedEventId + '/thumb/'    + ts + '.jpg';
-    var rowId     = 'prog-' + i;
-
+    var rowId = 'prog-' + i;
     prog.innerHTML += '<div id="' + rowId + '" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:6px;">'
       + '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
       + '<span style="font-size:12px;font-weight:600;">' + esc(file.name) + '</span>'
@@ -349,50 +374,32 @@ async function uploadPhotos(files){
     })(rowId);
 
     try{
-      var c = getSupabase();
+      var folder = selectedEventId;
 
-      /* 1 — Upload original at full resolution */
+      /* 1 — Upload original to Cloudinary */
       setStatus('Uploading original…', 15, '');
-      var { error: origErr } = await c.storage.from('events').upload(origPath, file, {
-        contentType: 'image/jpeg', upsert: false
-      });
-      if(origErr) throw origErr;
-      var { data: origUrlData } = c.storage.from('events').getPublicUrl(origPath);
+      var origResult = await uploadToCloudinary(file, folder + '/original');
 
-      /* 2 — Generate + upload web-sized preview (max 1400px, 82% quality) for lightbox */
+      /* 2 — Upload web preview */
       setStatus('Creating web preview…', 40, '');
-      var webBlob = await resizeImageToWebVersion(file);
-      var webUrl  = origUrlData.publicUrl; /* fallback */
-      var { error: webErr } = await c.storage.from('events').upload(webPath, webBlob, {
-        contentType: 'image/jpeg', upsert: false
-      });
-      if(!webErr){
-        var { data: webUrlData } = c.storage.from('events').getPublicUrl(webPath);
-        webUrl = webUrlData.publicUrl;
-      }
+      var webBlob   = await resizeImageToWebVersion(file);
+      var webResult = await uploadToCloudinary(webBlob, folder + '/web');
 
-      /* 3 — Generate + upload thumbnail (max 800px, 70% quality) for gallery grid
-             Target: ~80-150 KB vs 6-8 MB original = ~97% egress reduction per grid view */
+      /* 3 — Upload thumbnail */
       setStatus('Creating thumbnail…', 65, '');
-      var thumbBlob = await resizeImageToThumb(file);
-      var thumbUrl  = webUrl; /* fallback to web preview if thumb upload fails */
-      var { error: thumbErr } = await c.storage.from('events').upload(thumbPath, thumbBlob, {
-        contentType: 'image/jpeg', upsert: false
-      });
-      if(!thumbErr){
-        var { data: thumbUrlData } = c.storage.from('events').getPublicUrl(thumbPath);
-        thumbUrl = thumbUrlData.publicUrl;
-      }
+      var thumbBlob   = await resizeImageToThumb(file);
+      var thumbResult = await uploadToCloudinary(thumbBlob, folder + '/thumb');
 
-      /* 4 — Save to photos table */
+      /* 4 — Save to Firestore photos collection */
       setStatus('Saving record…', 85, '');
-      var { error: dbErr } = await c.from('photos').insert({
-        event_id    : selectedEventId,
-        preview_url : thumbUrl,              /* gallery grid — tiny, fast (~100 KB) */
-        web_url     : webUrl,                /* lightbox / full-screen view (~400 KB) */
-        original_url: origUrlData.publicUrl  /* download only — full resolution */
-      }).select().single();
-      if(dbErr) throw dbErr;
+      await addDoc(collection(db, 'photos'), {
+        event_id      : selectedEventId,
+        preview_url   : thumbResult.secure_url,
+        web_url       : webResult.secure_url,
+        original_url  : origResult.secure_url,
+        cloudinary_id : origResult.public_id,
+        created_at    : serverTimestamp()
+      });
 
       setStatus('✅ Done', 100, 'var(--green)');
 
@@ -406,25 +413,6 @@ async function uploadPhotos(files){
 }
 
 /* ════════════════════════════════════════════════════
-   UPLOAD CELEBRANT PHOTO
-   Uploads to {event_id}/celebrant/ in storage.
-   Called from the admin upload page celebrant card.
-════════════════════════════════════════════════════ */
-async function uploadCelebrantPhoto(file, eventId){
-  if(!file || !eventId) return;
-  var c    = getSupabase();
-  var path = eventId + '/celebrant/hero.jpg';
-  /* Remove old celebrant photo first (ignore error if not exists) */
-  try{ await c.storage.from('events').remove([path]); }catch(e){}
-  var { error } = await c.storage.from('events').upload(path, file, {
-    contentType: 'image/jpeg', upsert: true
-  });
-  if(error) throw error;
-  var { data } = c.storage.from('events').getPublicUrl(path);
-  return data.publicUrl;
-}
-
-/* ════════════════════════════════════════════════════
    LOAD EVENT PHOTOS (thumbnail grid in admin)
 ════════════════════════════════════════════════════ */
 async function loadEventPhotos(){
@@ -432,31 +420,24 @@ async function loadEventPhotos(){
   if(!el || !selectedEventId) return;
   el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div></div>';
   try{
-    var { data } = await getSupabase()
-      .from('photos')
-      .select('*')
-      .eq('event_id', selectedEventId)
-      .order('created_at', { ascending: false });
+    var q    = query(collection(db, 'photos'), where('event_id','==',selectedEventId), orderBy('created_at','desc'));
+    var snap = await getDocs(q);
+    var data = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
 
-    if(!data || !data.length){
+    if(!data.length){
       el.innerHTML = '<div class="empty"><div class="empty-ico">📸</div><div class="empty-txt">No photos yet.</div></div>';
       return;
     }
 
     el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;">'
       + data.map(function(p){
-          var viewUrl = p.web_url || p.preview_url;  /* lightbox / full-screen */
-          var dlUrl   = p.original_url || viewUrl;   /* full-res download */
+          var viewUrl = p.web_url || p.preview_url;
+          var dlUrl   = p.original_url || viewUrl;
           return '<div style="position:relative;border-radius:var(--r);overflow:hidden;background:var(--bg2);border:1px solid var(--border);">'
             + '<img src="' + esc(p.preview_url) + '" style="width:100%;height:90px;object-fit:cover;" onerror="this.style.background=\'var(--bg3)\'"/>'
-            /* View button — opens web-sized version, NOT the original */
-            + '<a href="' + esc(viewUrl) + '" target="_blank" '
-            + 'style="position:absolute;bottom:22px;left:0;right:0;text-align:center;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 0;text-decoration:none;">👁 View</a>'
-            /* Download button — opens original only on explicit click */
-            + '<a href="' + esc(dlUrl) + '" download target="_blank" '
-            + 'style="position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 0;text-decoration:none;">⬇ Download</a>'
-            + '<button onclick="deletePhoto(\'' + p.id + '\',\'' + esc(p.preview_url) + '\',\'' + esc(p.web_url||'') + '\',\'' + esc(p.original_url||'') + '\')" '
-            + 'style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:11px;cursor:pointer;">✕</button>'
+            + '<a href="' + esc(viewUrl) + '" target="_blank" style="position:absolute;bottom:22px;left:0;right:0;text-align:center;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 0;text-decoration:none;">👁 View</a>'
+            + '<a href="' + esc(dlUrl) + '" download target="_blank" style="position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 0;text-decoration:none;">⬇ Download</a>'
+            + '<button onclick="deletePhoto(\'' + p.id + '\',\'' + esc(p.cloudinary_id||'') + '\')" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:11px;cursor:pointer;">✕</button>'
             + '</div>';
         }).join('')
       + '</div>';
@@ -465,24 +446,24 @@ async function loadEventPhotos(){
   }
 }
 
-async function deletePhoto(id, previewUrl, webUrl, originalUrl){
+async function deletePhoto(id, cloudinaryId){
   if(!confirm('Delete this photo?')) return;
-  var c    = getSupabase();
-  var base = 'https://wedjsnizcvtgptobwugc.supabase.co/storage/v1/object/public/events/';
   try{
-    if(previewUrl  && previewUrl.includes(base))  await c.storage.from('events').remove([previewUrl.replace(base, '')]);
-    if(webUrl      && webUrl.includes(base))      await c.storage.from('events').remove([webUrl.replace(base, '')]);
-    if(originalUrl && originalUrl.includes(base)) await c.storage.from('events').remove([originalUrl.replace(base, '')]);
-  }catch(e){}
-  await c.from('photos').delete().eq('id', id);
-  toast('🗑️', 'Photo deleted', '');
-  loadEventPhotos();
+    /* Tell backend to remove from Cloudinary */
+    if(cloudinaryId){
+      await fetch(EVENTS_API + '/api/delete-photo', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ publicId: cloudinaryId })
+      });
+    }
+    await deleteDoc(doc(db, 'photos', id));
+    toast('🗑️', 'Photo deleted', '');
+    loadEventPhotos();
+  }catch(e){ toast('⚠️', 'Error', e.message); }
 }
 
 /* ════════════════════════════════════════════════════
    DOWNLOAD REQUESTS
-   approveRequest calls backend email route so the
-   guest receives their download links automatically.
 ════════════════════════════════════════════════════ */
 var allRequests = [];
 
@@ -491,12 +472,22 @@ async function loadDownloadRequests(){
   if(!el) return;
   el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
   try{
-    var { data } = await getSupabase()
-      .from('download_requests')
-      .select('*, events(name, event_slug, event_code)')
-      .order('created_at', { ascending: false });
+    var q    = query(collection(db, 'download_requests'), orderBy('created_at', 'desc'));
+    var snap = await getDocs(q);
+    allRequests = [];
 
-    allRequests = data || [];
+    for(var d of snap.docs){
+      var r = Object.assign({ id: d.id }, d.data());
+      /* Fetch event name */
+      if(r.event_id){
+        try{
+          var evDoc = await getDoc(doc(db, 'events', r.event_id));
+          r.event_name = evDoc.exists() ? evDoc.data().name : '—';
+        }catch(e){ r.event_name = '—'; }
+      }
+      allRequests.push(r);
+    }
+
     var pending = allRequests.filter(function(r){ return r.status === 'pending'; }).length;
     var badge   = document.getElementById('requestsBadge');
     if(badge){ badge.textContent = pending; badge.style.display = pending > 0 ? 'inline-flex' : 'none'; }
@@ -507,8 +498,6 @@ async function loadDownloadRequests(){
     }
 
     renderRequestsTable(allRequests);
-
-    /* Auto-switch to pending filter if there are pending ones */
     if(pending > 0) filterRequests('pending', document.getElementById('req-filter-pending'));
 
   }catch(e){
@@ -535,12 +524,12 @@ function renderRequestsTable(data){
         var pc = { pending:'pill-pending', approved:'pill-active', rejected:'pill-rejected' }[r.status] || 'pill-pending';
         return '<tr>'
           + '<td style="font-weight:600;">' + esc(r.user_email) + '</td>'
-          + '<td>' + esc((r.events && r.events.name) || '—') + '</td>'
+          + '<td>' + esc(r.event_name || '—') + '</td>'
           + '<td><span class="pill ' + pc + '">' + (r.status||'pending') + '</span></td>'
-          + '<td style="color:var(--text3);">' + new Date(r.created_at).toLocaleDateString('en-GB') + '</td>'
+          + '<td style="color:var(--text3);">' + (r.created_at && r.created_at.toDate ? r.created_at.toDate().toLocaleDateString('en-GB') : '—') + '</td>'
           + '<td><div class="td-actions">'
           + (r.status !== 'approved' ? '<button class="btn btn-green btn-sm" onclick="approveRequest(\'' + r.id + '\',\'' + esc(r.user_email) + '\',\'' + r.event_id + '\')">✓ Approve</button>' : '')
-          + (r.status !== 'rejected' ? '<button class="btn btn-red btn-sm"   onclick="rejectRequest(\'' + r.id + '\')">✕ Reject</button>' : '')
+          + (r.status !== 'rejected' ? '<button class="btn btn-red btn-sm" onclick="rejectRequest(\'' + r.id + '\')">✕ Reject</button>' : '')
           + '</div></td></tr>';
       }).join('')
     + '</tbody></table>';
@@ -550,7 +539,6 @@ async function approveRequest(id, email, eventId){
   if(!confirm('Approve download for ' + email + '? This will email them their photos.')) return;
   toast('📤', 'Approving…', '', true);
   try{
-    /* Call backend — it marks approved AND emails the guest their download links */
     var res  = await fetch(EVENTS_API + '/api/approve-request', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -560,8 +548,7 @@ async function approveRequest(id, email, eventId){
     if(!res.ok) throw new Error(data.error || 'Server error');
     toast('✅', 'Approved & email sent!', email + ' will receive their photos');
   }catch(e){
-    /* Fallback: at least mark approved in DB even if email fails */
-    await getSupabase().from('download_requests').update({ status: 'approved' }).eq('id', id);
+    await updateDoc(doc(db, 'download_requests', id), { status: 'approved' });
     toast('✅', 'Approved (email may have failed)', e.message);
   }
   loadDownloadRequests();
@@ -569,14 +556,13 @@ async function approveRequest(id, email, eventId){
 
 async function rejectRequest(id){
   if(!confirm('Reject this download request?')) return;
-  await getSupabase().from('download_requests').update({ status: 'rejected' }).eq('id', id);
+  await updateDoc(doc(db, 'download_requests', id), { status: 'rejected' });
   toast('🗑️', 'Request rejected', '');
   loadDownloadRequests();
 }
 
 /* ════════════════════════════════════════════════════
-   REVIEWS — filter helper + cache
-   (Full CRUD lives in reviews-script.js)
+   REVIEWS — filter helper
 ════════════════════════════════════════════════════ */
 var _allReviews = [];
 
@@ -590,3 +576,36 @@ function filterReviews(status, btn){
     : _allReviews.filter(function(r){ return r.status === status; });
   renderReviewsTable(filtered);
 }
+
+/* ════════════════════════════════════════════════════
+   UPLOAD CELEBRANT PHOTO
+════════════════════════════════════════════════════ */
+async function uploadCelebrantPhoto(file, eventId){
+  if(!file || !eventId) return;
+  var result = await uploadToCloudinary(file, eventId + '/celebrant');
+  return result.secure_url;
+}
+
+/* Export for non-module usage */
+window.igCreateEvent        = igCreateEvent;
+window.loadEvents           = loadEvents;
+window.loadUploadPhotos     = loadUploadPhotos;
+window.loadEventPhotos      = loadEventPhotos;
+window.loadDownloadRequests = loadDownloadRequests;
+window.loadDownloadRequests = loadDownloadRequests;
+window.approveRequest       = approveRequest;
+window.rejectRequest        = rejectRequest;
+window.filterRequests       = filterRequests;
+window.filterReviews        = filterReviews;
+window.toggleEvent          = toggleEvent;
+window.deleteEvent          = deleteEvent;
+window.deletePhoto          = deletePhoto;
+window.goUploadForEvent     = goUploadForEvent;
+window.onUploadEventChange  = onUploadEventChange;
+window.handlePhotoInputChange = handlePhotoInputChange;
+window.generateCode         = generateCode;
+window.toggleWatermark      = toggleWatermark;
+window.toggleRequireCode    = toggleRequireCode;
+window.setDefaultExpiry     = setDefaultExpiry;
+window.uploadCelebrantPhoto = uploadCelebrantPhoto;
+window.resendOwnerEmail     = resendOwnerEmail;
