@@ -9,11 +9,13 @@
    REQUIRED LOAD ORDER on every page:
      1. supabase.min.js  (CDN)
      2. plan-config.js
-     3. supabase-config.js
-     4. ig-supabase.js   ← sets window.SUPABASE_URL + ANON_KEY
-     5. auth.js
-     6. nav.js           ← this file
-     7. [page-specific JS]
+     3. supabase-config.js  ← auth + content clients (getSupabase / getAuthClient / getContentClient)
+     4. auth.js
+     5. nav.js           ← this file
+     6. [page-specific JS]
+
+   NOTE: ig-supabase.js is now a no-op shim — supabase-config.js owns all clients.
+         Remove ig-supabase.js script tags from pages as you update them.
 
    HOW TO USE:
      1. <div id="ig-nav"></div>    — top of <body>
