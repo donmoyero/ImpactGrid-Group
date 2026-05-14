@@ -1,387 +1,941 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Creator Studio — ImpactGrid</title>
-<meta name="description" content="AI-powered creator intelligence. Trend tracking, content generation, portfolio builder and more."/>
+<title>ImpactGrid — Creator Studio</title>
 <link rel="icon" href="logo.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="shared.css"/>
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-KVJC5DE2WT"></script>
-<script>
-  window.dataLayer=window.dataLayer||[];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js',new Date());gtag('config','G-KVJC5DE2WT');
-</script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
 :root{
-  --bg:#07090f;--bg2:#0b0d14;--card:#13151f;
-  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
-  --text:#fff;--text2:rgba(255,255,255,.55);--text3:rgba(255,255,255,.28);
-  --gold:#c97e08;--gold2:#f0b429;--green:#4ade80;
-  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+  --bg:#060810;
+  --surface:#0d1020;
+  --card:#111425;
+  --card2:#161929;
+  --border:rgba(255,255,255,.06);
+  --border2:rgba(255,255,255,.12);
+  --text:#f0f2ff;
+  --text2:rgba(240,242,255,.5);
+  --text3:rgba(240,242,255,.22);
+  --gold:#d4952a;
+  --gold2:#f5c842;
+  --gold-glow:rgba(212,149,42,.18);
+  --red:#ff5e5e;
+  --green:#3dffa0;
+  --blue:#5b8fff;
+  --pink:#f472b6;
+  --purple:#a78bfa;
+  --ff-display:'Bebas Neue',sans-serif;
+  --ff-body:'Outfit',sans-serif;
+  --ff-mono:'JetBrains Mono',monospace;
 }
+
 html,body{
-  background:var(--bg);color:var(--text);font-family:var(--fb);
-  min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  background:var(--bg);color:var(--text);
+  font-family:var(--ff-body);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
+
+/* ===================== NOISE OVERLAY ===================== */
 body::after{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  opacity:.4;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity:.5;
 }
 
-/* LAYOUT */
-.layout{
-  display:grid;
-  grid-template-columns:460px 1fr;
-  min-height:100vh;
+/* ===================== SCREENS ===================== */
+.screen{
+  position:fixed;inset:0;
+  opacity:0;pointer-events:none;
+  transition:opacity .7s cubic-bezier(.22,1,.36,1);
+  z-index:1;
+}
+.screen.active{
+  opacity:1;pointer-events:all;
+  z-index:2;
 }
 
-/* LEFT */
-.left{
-  display:flex;flex-direction:column;justify-content:center;
-  padding:96px 44px 56px;
+/* ===================== SCREEN 1: SPLASH ===================== */
+#splash{
+  display:grid;grid-template-columns:1fr 1fr;
   background:var(--bg);
-  border-right:1px solid var(--border);
-  position:relative;z-index:2;
-  overflow-y:auto;
 }
 
-.live-pill{
+/* Left art panel */
+.splash-art{
+  position:relative;overflow:hidden;
+}
+.splash-art-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 60%, rgba(212,149,42,.13) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 80% at 70% 20%, rgba(91,143,255,.08) 0%, transparent 60%),
+    linear-gradient(160deg, #0a0c18 0%, #060810 100%);
+}
+
+/* The main visual: abstract creator silhouette with light */
+.splash-art-img{
+  position:absolute;inset:0;
+  background-image:url('https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=900&h=1200&fit=crop&crop=center');
+  background-size:cover;background-position:center top;
+  filter:brightness(.55) saturate(1.1);
+  transition:transform 14s linear;
+}
+.splash-art-img.loaded{transform:scale(1.06);}
+
+/* Overlays */
+.splash-art-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent 0%, var(--bg) 100%),
+             linear-gradient(to top, var(--bg) 0%, transparent 40%);
+}
+
+/* Fine grid lines */
+.splash-art-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:60px 60px;
+  mask-image:linear-gradient(to right, transparent, rgba(0,0,0,.4) 40%, transparent);
+}
+
+/* Decorative lines */
+.splash-art-lines{
+  position:absolute;inset:0;overflow:hidden;
+}
+.splash-art-lines::before{
+  content:'';position:absolute;
+  left:20%;top:0;width:1px;height:100%;
+  background:linear-gradient(to bottom, transparent, var(--gold) 40%, rgba(212,149,42,.1) 80%, transparent);
+  opacity:.3;
+}
+.splash-art-lines::after{
+  content:'';position:absolute;
+  left:50%;top:0;width:1px;height:100%;
+  background:linear-gradient(to bottom, transparent 20%, rgba(91,143,255,.4) 60%, transparent);
+  opacity:.2;
+}
+
+/* Corner accents */
+.corner{
+  position:absolute;width:40px;height:40px;
+}
+.corner.tl{top:32px;left:32px;border-top:1px solid var(--gold);border-left:1px solid var(--gold);opacity:.5;}
+.corner.br{bottom:32px;right:0;border-bottom:1px solid rgba(91,143,255,.5);border-right:1px solid rgba(91,143,255,.5);opacity:.4;}
+
+
+
+/* Right content */
+.splash-content{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:80px 72px 80px 60px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Ambient glow */
+.splash-content::before{
+  content:'';position:absolute;
+  top:-200px;right:-200px;
+  width:600px;height:600px;
+  background:radial-gradient(circle, rgba(212,149,42,.07) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.splash-eyebrow{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--ff-mono);font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:40px;
+  animation:fadeSlideUp .6s .1s both;
+}
+.splash-eyebrow-line{
+  width:32px;height:1px;background:var(--gold);opacity:.6;
+}
+.pulse-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--gold);
+  box-shadow:0 0 0 0 rgba(212,149,42,.4);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(212,149,42,.4);}
+  70%{box-shadow:0 0 0 8px rgba(212,149,42,0);}
+  100%{box-shadow:0 0 0 0 rgba(212,149,42,0);}
+}
+
+.splash-headline{
+  font-family:var(--ff-display);
+  font-size:clamp(64px,6.5vw,108px);
+  line-height:.92;
+  letter-spacing:.01em;
+  color:var(--text);
+  margin-bottom:28px;
+  animation:fadeSlideUp .6s .2s both;
+}
+.splash-headline .hl-gold{
+  color:var(--gold2);
+  text-shadow:0 0 80px rgba(212,149,42,.4);
+}
+.splash-headline .hl-dim{
+  color:var(--text3);
+}
+
+.splash-desc{
+  font-size:15px;color:var(--text2);
+  line-height:1.75;
+  max-width:380px;
+  margin-bottom:52px;
+  font-weight:300;
+  animation:fadeSlideUp .6s .3s both;
+}
+.splash-desc strong{color:var(--text);font-weight:600;}
+
+.splash-cta-group{
+  display:flex;flex-direction:column;gap:14px;
+  animation:fadeSlideUp .6s .4s both;
+}
+
+.btn-primary{
+  display:inline-flex;align-items:center;justify-content:center;gap:12px;
+  padding:16px 32px;
+  background:linear-gradient(135deg, var(--gold) 0%, var(--gold2) 100%);
+  color:#07090f;font-family:var(--ff-body);font-size:14px;font-weight:700;
+  border-radius:10px;border:none;cursor:pointer;
+  text-decoration:none;letter-spacing:.02em;
+  transition:all .25s cubic-bezier(.22,1,.36,1);
+  width:fit-content;
+  position:relative;overflow:hidden;
+}
+.btn-primary::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg, transparent 40%, rgba(255,255,255,.15) 100%);
+}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 16px 48px rgba(212,149,42,.4),0 4px 12px rgba(0,0,0,.3);
+}
+.btn-primary .btn-arr{
+  font-size:18px;transition:transform .2s;
+}
+.btn-primary:hover .btn-arr{transform:translateX(4px);}
+
+.btn-secondary{
   display:inline-flex;align-items:center;gap:8px;
-  font-family:var(--fm);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:26px;font-weight:700;
+  font-size:13px;color:var(--text2);
+  background:none;border:none;cursor:pointer;
+  font-family:var(--ff-body);
+  text-decoration:none;
+  transition:color .2s;
+  width:fit-content;
+  letter-spacing:.02em;
 }
-.live-dot{
-  width:6px;height:6px;border-radius:50%;background:var(--gold);
-  animation:blink 1.8s ease-in-out infinite;
-}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.btn-secondary:hover{color:var(--text);}
 
-.title{
-  font-family:var(--fd);
-  font-size:clamp(36px,3.5vw,54px);
-  font-weight:900;line-height:.96;letter-spacing:-.04em;
-  color:var(--text);margin-bottom:18px;
-}
-.title em{
-  font-style:normal;
-  background:linear-gradient(120deg,var(--gold),var(--gold2) 55%,#ffd700);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-.subtitle{
-  font-size:14px;color:var(--text2);line-height:1.7;
-  max-width:340px;margin-bottom:36px;
+
+
+/* ===================== SCREEN 2: SELECTOR ===================== */
+#selector{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  min-height:100vh;
+  padding:60px 40px;
+  background:var(--bg);
+  position:relative;overflow:hidden;
 }
 
-/* Feature list */
-.feats{display:flex;flex-direction:column;gap:7px;margin-bottom:32px;}
+/* Background grid */
+#selector::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size:80px 80px;
+}
 
-.feat{
-  display:flex;align-items:center;gap:13px;
-  padding:12px 14px;
-  background:var(--card);border:1px solid var(--border);border-radius:12px;
-  text-decoration:none;transition:all .2s cubic-bezier(.22,1,.36,1);
-  position:relative;overflow:hidden;cursor:pointer;
+/* Glow centres */
+#selector::after{
+  content:'';position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  width:800px;height:800px;
+  background:radial-gradient(circle, rgba(212,149,42,.05) 0%, transparent 65%);
+  pointer-events:none;
 }
-.feat::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;
-  width:3px;border-radius:0 2px 2px 0;
-  background:var(--c,var(--gold));transition:width .2s;
+
+.selector-header{
+  text-align:center;margin-bottom:56px;position:relative;z-index:2;
+  animation:fadeSlideUp .5s .05s both;
 }
-.feat:hover{
-  border-color:var(--c,var(--gold));
-  background:rgba(255,255,255,.03);
+.selector-eyebrow{
+  font-family:var(--ff-mono);font-size:10px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--gold);
+  margin-bottom:16px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+}
+.selector-eyebrow-line{width:24px;height:1px;background:var(--gold);opacity:.5;}
+.selector-title{
+  font-family:var(--ff-display);
+  font-size:clamp(42px,5vw,72px);
+  line-height:.95;letter-spacing:.02em;color:var(--text);
+  margin-bottom:14px;
+}
+.selector-sub{font-size:14px;color:var(--text2);font-weight:300;}
+
+/* Cards grid */
+.selector-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  max-width:1100px;width:100%;
+  position:relative;z-index:2;
+}
+
+.sel-card{
+  position:relative;overflow:hidden;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px 24px 28px;
+  cursor:pointer;text-decoration:none;
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+  display:flex;flex-direction:column;
+  min-height:280px;
+}
+
+/* Animated gradient on hover */
+.sel-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 100% 80% at 50% 120%, var(--card-glow,rgba(212,149,42,.1)) 0%, transparent 70%);
+  opacity:0;transition:opacity .3s;
+}
+.sel-card:hover::before{opacity:1;}
+.sel-card:hover{
+  border-color:var(--card-accent, var(--gold));
+  transform:translateY(-6px);
+  box-shadow:0 24px 60px rgba(0,0,0,.5), 0 0 0 1px var(--card-accent, var(--gold));
+}
+
+/* Top accent bar */
+.sel-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg, var(--card-accent, var(--gold)), transparent);
+  opacity:.6;
+}
+
+.sel-icon{
+  width:52px;height:52px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-bottom:20px;
+  flex-shrink:0;
+  transition:all .3s;
+}
+.sel-card:hover .sel-icon{
+  background:rgba(255,255,255,.07);
+  border-color:var(--card-accent, var(--gold));
+}
+
+.sel-card-title{
+  font-family:var(--ff-body);font-size:17px;font-weight:700;
+  color:var(--text);margin-bottom:8px;
+  letter-spacing:-.01em;
+}
+.sel-card-desc{
+  font-size:12px;color:var(--text2);line-height:1.6;
+  flex:1;font-weight:300;
+}
+
+.sel-card-footer{
+  margin-top:24px;padding-top:16px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sel-badge{
+  font-family:var(--ff-mono);font-size:9px;
+  letter-spacing:.12em;text-transform:uppercase;
+  padding:3px 9px;border-radius:99px;
+  color:var(--card-accent, var(--gold));
+  border:1px solid var(--card-accent, var(--gold));
+  opacity:.7;
+}
+.sel-arr{
+  color:var(--text3);font-size:14px;
+  transition:all .2s;
+}
+.sel-card:hover .sel-arr{
+  color:var(--card-accent, var(--gold));
   transform:translateX(4px);
 }
-.feat:hover::before{width:5px;}
-.feat:hover .farr{opacity:1;transform:translateX(3px);}
 
-.fthumb{
-  width:48px;height:36px;border-radius:7px;overflow:hidden;flex-shrink:0;
-  opacity:.65;transition:opacity .2s;
+/* Card specific colors */
+.sel-card.dashboard{--card-accent:var(--gold);--card-glow:rgba(212,149,42,.12);}
+.sel-card.calendar{--card-accent:var(--green);--card-glow:rgba(61,255,160,.1);}
+.sel-card.carousel{--card-accent:var(--pink);--card-glow:rgba(244,114,182,.1);}
+.sel-card.portfolio{--card-accent:var(--purple);--card-glow:rgba(167,139,250,.1);}
+
+/* Stagger */
+.sel-card:nth-child(1){animation:fadeSlideUp .5s .1s both;}
+.sel-card:nth-child(2){animation:fadeSlideUp .5s .18s both;}
+.sel-card:nth-child(3){animation:fadeSlideUp .5s .26s both;}
+.sel-card:nth-child(4){animation:fadeSlideUp .5s .34s both;}
+
+/* ===================== SCREEN 3: DASHBOARD ===================== */
+#dashboard{
+  display:grid;
+  grid-template-columns:260px 1fr;
+  min-height:100vh;
+  background:var(--bg);
 }
-.feat:hover .fthumb{opacity:1;}
-.fthumb img{width:100%;height:100%;object-fit:cover;display:block;}
 
-.fbody{flex:1;min-width:0;}
-.ftitle{
-  font-family:var(--fd);font-size:13px;font-weight:800;
-  color:var(--text);margin-bottom:1px;letter-spacing:-.01em;
+/* SIDEBAR */
+.sidebar{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:0;
+  position:relative;
+  overflow:hidden;
 }
-.fdesc{font-size:11px;color:var(--text2);line-height:1.4;}
 
-.fbadge{
-  font-family:var(--fm);font-size:8px;font-weight:700;
+.sidebar::before{
+  content:'';position:absolute;
+  bottom:0;left:0;right:0;height:200px;
+  background:linear-gradient(to top, rgba(212,149,42,.04) 0%, transparent 100%);
+  pointer-events:none;
+}
+
+/* Logo row */
+.sb-logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+  text-decoration:none;flex-shrink:0;
+}
+.sb-logo-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg, var(--gold), var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:900;color:#07090f;
+  font-family:var(--ff-display);letter-spacing:.02em;
+  flex-shrink:0;
+}
+.sb-logo-name{
+  font-family:var(--ff-display);font-size:18px;letter-spacing:.05em;
+  color:var(--text);
+}
+.sb-logo-name span{color:var(--gold);}
+
+/* Status pill */
+.sb-status{
+  padding:10px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--ff-mono);font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--green);flex-shrink:0;
+}
+.sb-status-dot{
+  width:5px;height:5px;border-radius:50%;background:var(--green);
+  animation:pulse2 2s infinite;
+}
+@keyframes pulse2{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(61,255,160,.4);}
+  50%{opacity:.7;box-shadow:0 0 0 4px rgba(61,255,160,0);}
+}
+.sb-status-text{flex:1;}
+.sb-status-live{
+  font-size:8px;padding:1px 6px;border-radius:99px;
+  border:1px solid rgba(61,255,160,.3);color:var(--green);opacity:.8;
+}
+
+/* Nav sections */
+.sb-nav{flex:1;overflow-y:auto;padding:12px 0;}
+.sb-nav::-webkit-scrollbar{width:3px;}
+.sb-nav::-webkit-scrollbar-track{background:transparent;}
+.sb-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:99px;}
+
+.sb-section{margin-bottom:4px;}
+.sb-section-label{
+  padding:16px 20px 6px;
+  font-family:var(--ff-mono);font-size:8.5px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--text3);
+}
+
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 20px;
+  margin:1px 8px;
+  border-radius:9px;
+  cursor:pointer;
+  text-decoration:none;
+  transition:all .18s;
+  position:relative;
+}
+.sb-item:hover{
+  background:rgba(255,255,255,.04);
+}
+.sb-item.active{
+  background:rgba(212,149,42,.1);
+}
+.sb-item.active::before{
+  content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);
+  width:3px;height:16px;border-radius:0 2px 2px 0;
+  background:var(--gold);
+}
+
+.sb-item-icon{
+  width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;
+  border-radius:7px;
+  background:rgba(255,255,255,.04);
+  flex-shrink:0;
+  transition:background .18s;
+}
+.sb-item:hover .sb-item-icon,
+.sb-item.active .sb-item-icon{
+  background:rgba(255,255,255,.08);
+}
+
+.sb-item-text{
+  font-size:13px;font-weight:500;
+  color:var(--text2);flex:1;
+  letter-spacing:-.01em;
+  transition:color .18s;
+}
+.sb-item:hover .sb-item-text,
+.sb-item.active .sb-item-text{
+  color:var(--text);
+}
+
+.sb-item-badge{
+  font-family:var(--ff-mono);font-size:8px;
   letter-spacing:.1em;text-transform:uppercase;
   padding:2px 7px;border-radius:99px;
-  color:var(--c,var(--gold));
-  border:1px solid var(--c,var(--gold));
-  opacity:.65;flex-shrink:0;
+  font-weight:700;flex-shrink:0;
 }
-.farr{font-size:13px;color:var(--text3);opacity:0;transition:all .2s;flex-shrink:0;}
+.badge-live{color:var(--red);border:1px solid rgba(255,94,94,.3);background:rgba(255,94,94,.06);}
+.badge-ai{color:var(--gold);border:1px solid rgba(212,149,42,.3);background:rgba(212,149,42,.06);}
+.badge-soon{color:var(--text3);border:1px solid var(--border);background:transparent;}
+.badge-new{color:var(--purple);border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.06);}
 
-/* CTA */
-.cta{
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:14px 24px;border-radius:12px;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#07090f;font-family:var(--fd);font-size:14px;font-weight:900;
-  text-decoration:none;transition:all .2s;letter-spacing:-.01em;
-  border:none;cursor:pointer;width:100%;
+/* Platform status */
+.platform-status{
+  margin:0 8px 8px;
+  padding:14px 16px;
+  background:rgba(255,255,255,.025);
+  border:1px solid var(--border);
+  border-radius:12px;
 }
-.cta:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(201,126,8,.35);}
-.cta-sub{text-align:center;margin-top:12px;font-size:12px;color:var(--text3);}
-.cta-sub a{color:var(--text2);text-decoration:none;}
-.cta-sub a:hover{color:var(--text);}
+.ps-title{
+  font-family:var(--ff-mono);font-size:8px;
+  letter-spacing:.15em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:10px;
+}
+.ps-row{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,.03);
+}
+.ps-row:last-child{border-bottom:none;}
+.ps-icon{font-size:12px;width:20px;text-align:center;flex-shrink:0;}
+.ps-name{font-size:11px;color:var(--text2);flex:1;letter-spacing:-.01em;}
+.ps-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.ps-dot.live{background:var(--green);box-shadow:0 0 6px rgba(61,255,160,.5);}
+.ps-dot.ai{background:var(--gold);}
+.ps-dot.soon{background:var(--text3);}
+.ps-status-text{
+  font-family:var(--ff-mono);font-size:8px;
+  letter-spacing:.1em;
+  color:var(--text3);
+}
+.ps-status-text.live{color:var(--green);}
+.ps-status-text.ai{color:var(--gold);}
 
-/* RIGHT */
-.right{position:relative;overflow:hidden;background:var(--bg2);}
+/* Sidebar footer */
+.sb-footer{
+  padding:14px 20px;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+.sb-settings{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;
+  border-radius:9px;
+  cursor:pointer;text-decoration:none;
+  transition:all .18s;
+  margin:-2px;
+}
+.sb-settings:hover{background:rgba(255,255,255,.04);}
+.sb-settings-icon{
+  width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;
+  border-radius:7px;
+  background:rgba(255,255,255,.04);
+  flex-shrink:0;
+}
+.sb-settings-text{font-size:13px;color:var(--text2);flex:1;font-weight:500;}
+.sb-settings:hover .sb-settings-text{color:var(--text);}
 
-.showcase{width:100%;height:100%;position:relative;}
+/* MAIN content */
+.dash-main{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px;
+  background:var(--bg);
+  text-align:center;
+}
+.dash-welcome{
+  font-family:var(--ff-display);
+  font-size:clamp(32px,4vw,56px);
+  letter-spacing:.03em;color:var(--text);
+  margin-bottom:12px;
+}
+.dash-welcome span{color:var(--gold);}
+.dash-welcome-sub{font-size:14px;color:var(--text2);max-width:380px;line-height:1.7;font-weight:300;}
 
-.slide{
-  position:absolute;inset:0;opacity:0;
-  transition:opacity .5s cubic-bezier(.22,1,.36,1);overflow:hidden;
+/* ===================== ANIMATIONS ===================== */
+@keyframes fadeSlideUp{
+  from{opacity:0;transform:translateY(20px);}
+  to{opacity:1;transform:translateY(0);}
 }
-.slide.on{opacity:1;}
-.slide img{
-  width:100%;height:100%;object-fit:cover;display:block;
-  filter:brightness(.55) saturate(.9);
-  transition:transform .8s cubic-bezier(.22,1,.36,1);
-}
-.slide.on img{transform:scale(1.04);}
 
-.slide-info{
-  position:absolute;bottom:0;left:0;right:0;
-  padding:80px 52px 52px;
-  background:linear-gradient(to top, rgba(7,9,15,.96) 0%, rgba(7,9,15,.5) 55%, transparent 100%);
+/* ===================== RESPONSIVE ===================== */
+@media(max-width:1100px){
+  .selector-grid{grid-template-columns:repeat(2,1fr);max-width:640px;}
 }
-.slide-tag{
-  display:inline-flex;align-items:center;gap:7px;
-  font-family:var(--fm);font-size:10px;font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;
-  color:var(--sc,var(--gold));margin-bottom:14px;
-}
-.slide-tag-dot{width:5px;height:5px;border-radius:50%;background:var(--sc,var(--gold));}
-.slide-h{
-  font-family:var(--fd);font-size:clamp(28px,3vw,44px);font-weight:900;
-  letter-spacing:-.035em;color:var(--text);margin-bottom:10px;line-height:1.05;
-}
-.slide-p{font-size:14px;color:var(--text2);line-height:1.65;max-width:360px;}
-
-/* Dots */
-.dots{
-  position:absolute;top:50%;right:20px;transform:translateY(-50%);
-  display:flex;flex-direction:column;gap:7px;z-index:10;
-}
-.dot{
-  width:4px;height:18px;border-radius:99px;
-  background:rgba(255,255,255,.18);transition:all .3s;cursor:pointer;
-}
-.dot.on{height:30px;background:var(--gold);}
-.dot:hover{background:rgba(255,255,255,.45);}
-
-/* Animations */
-@keyframes fadeUp{to{opacity:1;transform:none;}}
-.fu{opacity:0;transform:translateY(18px);animation:fadeUp .5s cubic-bezier(.16,1,.3,1) forwards;}
-.fu:nth-child(1){animation-delay:.06s;}
-.fu:nth-child(2){animation-delay:.13s;}
-.fu:nth-child(3){animation-delay:.19s;}
-.fu:nth-child(4){animation-delay:.26s;}
-.fu:nth-child(5){animation-delay:.32s;}
-.fu:nth-child(6){animation-delay:.38s;}
-
-/* Mobile */
 @media(max-width:900px){
-  .layout{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:100vh;}
-  .left{padding:84px 20px 36px;order:2;border-right:none;border-top:1px solid var(--border);}
-  .right{order:1;height:280px;}
-  .title{font-size:36px;}
-  .subtitle{max-width:100%;font-size:13px;}
-  .slide-info{padding:36px 24px 30px;}
-  .slide-h{font-size:24px;}
-  .dots{right:12px;}
-  .fthumb{width:42px;height:32px;}
+  #splash{grid-template-columns:1fr;}
+  .splash-art{display:none;}
+  .splash-content{padding:100px 32px 60px;}
+  #dashboard{grid-template-columns:1fr;}
+  .sidebar{display:none;}
 }
-@media(max-width:480px){
-  .nav{padding:14px 18px;}
-  .left{padding:78px 16px 28px;}
-  .title{font-size:30px;}
+@media(max-width:580px){
+  .selector-grid{grid-template-columns:1fr;max-width:360px;}
+  .splash-stats{gap:24px;}
 }
 </style>
 </head>
 <body>
 
-<div id="ig-nav"></div>
+<!-- ====================================================
+     SCREEN 1: SPLASH / WELCOME
+     ==================================================== -->
+<div class="screen active" id="splash">
 
-<div class="layout">
+  <!-- LEFT: Art -->
+  <div class="splash-art">
+    <div class="splash-art-bg"></div>
+    <div class="splash-art-img" id="artImg"></div>
+    <div class="splash-art-overlay"></div>
+    <div class="splash-art-grid"></div>
+    <div class="splash-art-lines"></div>
 
-  <!-- LEFT -->
-  <div class="left">
+    <div class="corner tl"></div>
+    <div class="corner br"></div>
 
-    <div class="live-pill fu">
-      <span class="live-dot"></span>
-      Dijo AI · All tools live
-    </div>
-
-    <h1 class="title fu">Your creator<br/>intelligence<br/><em>hub.</em></h1>
-
-    <p class="subtitle fu">Pick a tool and start. Every feature is AI-powered and live right now.</p>
-
-    <div class="feats fu">
-
-      <!-- Trending: person watching phone with fire/viral energy -->
-      <a href="creator-studio.html?tab=trends" class="feat" style="--c:#ff6464" data-s="0" onmouseenter="go(0)">
-        <div class="fthumb"><img src="https://images.unsplash.com/photo-1600267175161-cfaa711b4a81?w=120&h=90&fit=crop&crop=center" alt="" loading="eager"/></div>
-        <div class="fbody">
-          <div class="ftitle">What's Trending</div>
-          <div class="fdesc">Live TikTok, YouTube & Google — updated every 30 min</div>
-        </div>
-        <div class="fbadge" style="--c:#ff6464">Live</div>
-        <div class="farr">→</div>
-      </a>
-
-      <!-- Write Content: person typing on phone/keyboard -->
-      <a href="creator-studio.html?tab=generator" class="feat" style="--c:#f0b429" data-s="1" onmouseenter="go(1)">
-        <div class="fthumb"><img src="https://images.unsplash.com/photo-1512314889357-e157c22f938d?w=120&h=90&fit=crop&crop=center" alt="" loading="eager"/></div>
-        <div class="fbody">
-          <div class="ftitle">Write My Content</div>
-          <div class="fdesc">Hook, caption, hashtags — Dijo AI in 60 seconds</div>
-        </div>
-        <div class="fbadge" style="--c:#f0b429">AI</div>
-        <div class="farr">→</div>
-      </a>
-
-      <!-- Calendar: planner/schedule on desk -->
-      <a href="creator-studio.html?tab=calendar" class="feat" style="--c:#4ade80" data-s="2" onmouseenter="go(2)">
-        <div class="fthumb"><img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=120&h=90&fit=crop&crop=center" alt="" loading="lazy"/></div>
-        <div class="fbody">
-          <div class="ftitle">Content Calendar</div>
-          <div class="fdesc">Auto-filled week — best topics, best times + notifications</div>
-        </div>
-        <div class="fbadge" style="--c:#4ade80">AI</div>
-        <div class="farr">→</div>
-      </a>
-
-      <!-- Analyse Channel: graph/chart going up -->
-      <a href="creator-studio.html?tab=evaluator" class="feat" style="--c:#78b4ff" data-s="3" onmouseenter="go(3)">
-        <div class="fthumb"><img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=120&h=90&fit=crop&crop=center" alt="" loading="lazy"/></div>
-        <div class="fbody">
-          <div class="ftitle">Analyse My Channel</div>
-          <div class="fdesc">Connect YouTube or TikTok — AI score + what to fix</div>
-        </div>
-        <div class="fbadge" style="--c:#78b4ff">AI</div>
-        <div class="farr">→</div>
-      </a>
-
-      <!-- Portfolio: confident creator, professional headshot -->
-      <a href="portfolio-studio.html" class="feat" style="--c:#a78bfa" data-s="4" onmouseenter="go(4)">
-        <div class="fthumb"><img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=120&h=90&fit=crop&crop=faces,top" alt="" loading="lazy"/></div>
-        <div class="fbody">
-          <div class="ftitle">Portfolio Studio</div>
-          <div class="fdesc">One link. Every brand deal. AI builds it for you</div>
-        </div>
-        <div class="fbadge" style="--c:#a78bfa">New</div>
-        <div class="farr">→</div>
-      </a>
-
-      <!-- Carousel: person designing colourful slides on phone -->
-      <a href="carousel-studio.html" class="feat" style="--c:#f472b6" data-s="5" onmouseenter="go(5)">
-        <div class="fthumb"><img src="https://images.unsplash.com/photo-1626785774573-4b799315345d?w=120&h=90&fit=crop&crop=center" alt="" loading="lazy"/></div>
-        <div class="fbody">
-          <div class="ftitle">Carousel Studio</div>
-          <div class="fdesc">AI-written slides — styled, ready to post</div>
-        </div>
-        <div class="fbadge" style="--c:#f472b6">AI</div>
-        <div class="farr">→</div>
-      </a>
-
-    </div>
-
-    <a href="creator-studio.html" class="cta fu" onclick="skip()">
-      Open My Dashboard →
-    </a>
-    <p class="cta-sub fu">Have an account? <a href="login.html">Sign in</a></p>
-
+  
   </div>
 
-  <!-- RIGHT: Visual showcase -->
-  <div class="right">
-    <div class="showcase">
-
-      <!-- Slide 0: Trending — person intensely watching phone, viral moment energy -->
-      <div class="slide on" id="s0">
-        <img src="https://images.unsplash.com/photo-1600267175161-cfaa711b4a81?w=1400&h=1000&fit=crop&crop=center" alt="Trending" loading="eager"/>
-        <div class="slide-info">
-          <div class="slide-tag" style="--sc:#ff6464"><span class="slide-tag-dot" style="background:#ff6464"></span>Live Now</div>
-          <div class="slide-h">What's<br/>Trending</div>
-          <div class="slide-p">TikTok · YouTube · Google. See it before everyone else does — refreshed every 30 minutes.</div>
-        </div>
-      </div>
-
-      <!-- Slide 1: Write Content — person typing on phone, creating a post -->
-      <div class="slide" id="s1">
-        <img src="https://images.unsplash.com/photo-1512314889357-e157c22f938d?w=1400&h=1000&fit=crop&crop=center" alt="Write" loading="lazy"/>
-        <div class="slide-info">
-          <div class="slide-tag" style="--sc:#f0b429"><span class="slide-tag-dot" style="background:#f0b429"></span>Dijo AI</div>
-          <div class="slide-h">Write My<br/>Content</div>
-          <div class="slide-p">Type a topic. Get your hook, caption and hashtags in under 60 seconds.</div>
-        </div>
-      </div>
-
-      <!-- Slide 2: Calendar — flat lay planner with schedule -->
-      <div class="slide" id="s2">
-        <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1400&h=1000&fit=crop&crop=center" alt="Calendar" loading="lazy"/>
-        <div class="slide-info">
-          <div class="slide-tag" style="--sc:#4ade80"><span class="slide-tag-dot" style="background:#4ade80"></span>AI Scheduler</div>
-          <div class="slide-h">Content<br/>Calendar</div>
-          <div class="slide-p">Dijo auto-fills your week and alerts you when it's time to post. Never miss a peak.</div>
-        </div>
-      </div>
-
-      <!-- Slide 3: Analyse — charts, growth metrics going up -->
-      <div class="slide" id="s3">
-        <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1400&h=1000&fit=crop&crop=center" alt="Analytics" loading="lazy"/>
-        <div class="slide-info">
-          <div class="slide-tag" style="--sc:#78b4ff"><span class="slide-tag-dot" style="background:#78b4ff"></span>Channel AI</div>
-          <div class="slide-h">Analyse My<br/>Channel</div>
-          <div class="slide-p">Connect YouTube or TikTok. Full AI score, gap analysis, and exactly what to fix.</div>
-        </div>
-      </div>
-
-      <!-- Slide 4: Portfolio — confident creator, professional presence -->
-      <div class="slide" id="s4">
-        <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=1400&h=1000&fit=crop&crop=faces,top" alt="Portfolio" loading="lazy"/>
-        <div class="slide-info">
-          <div class="slide-tag" style="--sc:#a78bfa"><span class="slide-tag-dot" style="background:#a78bfa"></span>Portfolio Studio</div>
-          <div class="slide-h">One Link.<br/>Every Brand.</div>
-          <div class="slide-p">Your creator portfolio — stats, niches, contact. AI builds it. You share it.</div>
-        </div>
-      </div>
-
-      <!-- Slide 5: Carousel — designer creating colourful content slides -->
-      <div class="slide" id="s5">
-        <img src="https://images.unsplash.com/photo-1626785774573-4b799315345d?w=1400&h=1000&fit=crop&crop=center" alt="Carousel" loading="lazy"/>
-        <div class="slide-info">
-          <div class="slide-tag" style="--sc:#f472b6"><span class="slide-tag-dot" style="background:#f472b6"></span>Carousel Studio</div>
-          <div class="slide-h">AI-Designed<br/>Slides</div>
-          <div class="slide-p">Type your topic. Dijo writes and designs the full carousel. Post in minutes.</div>
-        </div>
-      </div>
-
-      <div class="dots" id="dots"></div>
+  <!-- RIGHT: Content -->
+  <div class="splash-content">
+    <div class="splash-eyebrow">
+      <div class="splash-eyebrow-line"></div>
+      <div class="pulse-dot"></div>
+      ImpactGrid · All Systems Live
+      <div class="splash-eyebrow-line"></div>
     </div>
+
+    <h1 class="splash-headline">
+      CREATE<br/>
+      <span class="hl-gold">IMPACT</span><br/>
+      <span class="hl-dim">DOMINATE.</span>
+    </h1>
+
+    <p class="splash-desc">
+      The AI intelligence studio built for <strong>creators who take their craft seriously</strong>. 
+      Trend tracking, AI content, analytics, and portfolio — all in one.
+    </p>
+
+    <div class="splash-cta-group">
+      <button class="btn-primary" onclick="goTo('splash','selector')">
+        Enter Creator Studio
+        <span class="btn-arr">→</span>
+      </button>
+      <a href="login.html" class="btn-secondary">
+        Already a member? Sign in ↗
+      </a>
+    </div>
+
+
   </div>
 
 </div>
 
+<!-- ====================================================
+     SCREEN 2: TOOL SELECTOR
+     ==================================================== -->
+<div class="screen" id="selector">
+
+  <div class="selector-header">
+    <div class="selector-eyebrow">
+      <div class="selector-eyebrow-line"></div>
+      Choose Your Studio
+      <div class="selector-eyebrow-line"></div>
+    </div>
+    <div class="selector-title">WHERE TO<br/>TODAY?</div>
+    <div class="selector-sub">Select a studio to open, or launch your dashboard for the full experience.</div>
+  </div>
+
+  <div class="selector-grid">
+
+    <!-- Dashboard -->
+    <div class="sel-card dashboard" onclick="goTo('selector','dashboard')">
+      <div class="sel-icon">📊</div>
+      <div class="sel-card-title">My Dashboard</div>
+      <div class="sel-card-desc">Overview, trends, AI content writer, audience insights and full channel analytics in one command centre.</div>
+      <div class="sel-card-footer">
+        <span class="sel-badge">Live</span>
+        <span class="sel-arr">→</span>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <a href="creator-studio.html?tab=calendar" class="sel-card calendar">
+      <div class="sel-icon">📅</div>
+      <div class="sel-card-title">Content Calendar</div>
+      <div class="sel-card-desc">AI-filled weekly schedule. Best topics at the best times. Smart notifications so you never miss a peak moment.</div>
+      <div class="sel-card-footer">
+        <span class="sel-badge" style="color:var(--green);border-color:var(--green);">AI</span>
+        <span class="sel-arr">→</span>
+      </div>
+    </a>
+
+    <!-- Carousel Studio -->
+    <a href="https://impactgridgroup.com/carousel-studio.html" class="sel-card carousel">
+      <div class="sel-icon">🎨</div>
+      <div class="sel-card-title">Carousel Studio</div>
+      <div class="sel-card-desc">Type a topic — Dijo writes and designs a full carousel. Styled, on-brand, and ready to post in minutes.</div>
+      <div class="sel-card-footer">
+        <span class="sel-badge" style="color:var(--pink);border-color:var(--pink);">AI</span>
+        <span class="sel-arr">→</span>
+      </div>
+    </a>
+
+    <!-- Portfolio Studio -->
+    <a href="https://impactgridgroup.com/portfolio-studio.html" class="sel-card portfolio">
+      <div class="sel-icon">🌐</div>
+      <div class="sel-card-title">Portfolio Studio</div>
+      <div class="sel-card-desc">One link, every brand deal. AI builds your creator portfolio — stats, niches, contact. Share it anywhere.</div>
+      <div class="sel-card-footer">
+        <span class="sel-badge" style="color:var(--purple);border-color:var(--purple);">New</span>
+        <span class="sel-arr">→</span>
+      </div>
+    </a>
+
+  </div>
+
+</div>
+
+<!-- ====================================================
+     SCREEN 3: DASHBOARD (with futuristic sidebar)
+     ==================================================== -->
+<div class="screen" id="dashboard">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- Logo -->
+    <a href="creator-welcome.html" class="sb-logo" onclick="goTo('dashboard','selector');return false;">
+      <div class="sb-logo-mark">IG</div>
+      <div class="sb-logo-name">Impact<span>Grid</span></div>
+    </a>
+
+    <!-- Live status -->
+    <div class="sb-status">
+      <div class="sb-status-dot"></div>
+      <span class="sb-status-text">Dijo AI online</span>
+      <span class="sb-status-live">LIVE</span>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sb-nav">
+
+      <!-- Overview -->
+      <div class="sb-section">
+        <div class="sb-section-label">Overview</div>
+
+        <a href="creator-studio.html?tab=overview" class="sb-item active">
+          <div class="sb-item-icon">📊</div>
+          <div class="sb-item-text">My Overview</div>
+          <span class="sb-item-badge badge-live">Live</span>
+        </a>
+
+        <a href="creator-studio.html?tab=trends" class="sb-item">
+          <div class="sb-item-icon">🔥</div>
+          <div class="sb-item-text">What's Trending</div>
+          <span class="sb-item-badge badge-live">Live</span>
+        </a>
+      </div>
+
+      <!-- Create -->
+      <div class="sb-section">
+        <div class="sb-section-label">Create</div>
+
+        <a href="creator-studio.html?tab=generator" class="sb-item">
+          <div class="sb-item-icon">✍️</div>
+          <div class="sb-item-text">Write My Content</div>
+          <span class="sb-item-badge badge-ai">AI</span>
+        </a>
+
+        <a href="creator-studio.html?tab=audience" class="sb-item">
+          <div class="sb-item-icon">👥</div>
+          <div class="sb-item-text">Post Audience</div>
+        </a>
+      </div>
+
+      <!-- Analyse -->
+      <div class="sb-section">
+        <div class="sb-section-label">Analyse</div>
+
+        <a href="creator-studio.html?tab=evaluator" class="sb-item">
+          <div class="sb-item-icon">⚡</div>
+          <div class="sb-item-text">Analyse My Channel</div>
+          <span class="sb-item-badge badge-ai">AI</span>
+        </a>
+
+        <a href="creator-studio.html?tab=youtube" class="sb-item">
+          <div class="sb-item-icon">▶️</div>
+          <div class="sb-item-text">YouTube</div>
+          <span class="sb-item-badge badge-live">Live</span>
+        </a>
+
+        <a href="creator-studio.html?tab=tiktok" class="sb-item">
+          <div class="sb-item-icon">🎵</div>
+          <div class="sb-item-text">TikTok</div>
+          <span class="sb-item-badge badge-live">Live</span>
+        </a>
+
+        <a href="#" class="sb-item" style="opacity:.5;pointer-events:none;">
+          <div class="sb-item-icon">📸</div>
+          <div class="sb-item-text">Instagram</div>
+          <span class="sb-item-badge badge-soon">Soon</span>
+        </a>
+      </div>
+
+      <!-- Platform Status block -->
+      <div style="padding:0 8px;margin-top:8px;">
+        <div class="platform-status">
+          <div class="ps-title">Platform Status</div>
+
+          <div class="ps-row">
+            <div class="ps-icon">🤖</div>
+            <div class="ps-name">Dijo AI</div>
+            <div class="ps-dot ai"></div>
+            <div class="ps-status-text ai">Active</div>
+          </div>
+          <div class="ps-row">
+            <div class="ps-icon">📈</div>
+            <div class="ps-name">Google Trends</div>
+            <div class="ps-dot live"></div>
+            <div class="ps-status-text live">Live</div>
+          </div>
+          <div class="ps-row">
+            <div class="ps-icon">▶️</div>
+            <div class="ps-name">YouTube</div>
+            <div class="ps-dot live"></div>
+            <div class="ps-status-text live">Live</div>
+          </div>
+          <div class="ps-row">
+            <div class="ps-icon">🎵</div>
+            <div class="ps-name">TikTok</div>
+            <div class="ps-dot live"></div>
+            <div class="ps-status-text live">Live</div>
+          </div>
+          <div class="ps-row">
+            <div class="ps-icon">📸</div>
+            <div class="ps-name">Instagram</div>
+            <div class="ps-dot soon"></div>
+            <div class="ps-status-text" style="color:var(--text3);">Coming Soon</div>
+          </div>
+        </div>
+      </div>
+
+    </nav>
+
+    <!-- Footer: Settings -->
+    <div class="sb-footer">
+      <a href="https://impactgridgroup.com/settings.html" class="sb-settings">
+        <div class="sb-settings-icon">⚙️</div>
+        <div class="sb-settings-text">Settings</div>
+        <span style="font-size:10px;color:var(--text3);">↗</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="dash-main">
+    <div class="dash-welcome">WELCOME TO<br/><span>YOUR STUDIO</span></div>
+    <div class="dash-welcome-sub">Choose a section from the sidebar to get started. Everything is live and ready.</div>
+  </main>
+
+</div>
+
+<script>
+// Animate art image
+setTimeout(function(){
+  document.getElementById('artImg').classList.add('loaded');
+},100);
+
+// Screen transitions
+function goTo(from, to){
+  var fromEl=document.getElementById(from);
+  var toEl=document.getElementById(to);
+  fromEl.classList.remove('active');
+  toEl.classList.add('active');
+
+  // Re-trigger animations on selector cards
+  if(to==='selector'){
+    var cards=toEl.querySelectorAll('.sel-card');
+    cards.forEach(function(c){
+      c.style.animation='none';
+      c.offsetHeight;
+      c.style.animation='';
+    });
+    var header=toEl.querySelector('.selector-header');
+    if(header){header.style.animation='none';header.offsetHeight;header.style.animation='';}
+  }
+}
+window.goTo=goTo;
+
+// Keyboard back
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    if(document.getElementById('dashboard').classList.contains('active')) goTo('dashboard','selector');
+    else if(document.getElementById('selector').classList.contains('active')) goTo('selector','splash');
+  }
+});
+
+// Connect real nav if available
+try{
+  if(typeof renderNav==='function') renderNav('creator-welcome.html');
+}catch(e){}
+</script>
+
+<!-- Your existing scripts — keep these -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="plan-config.js"></script>
 <script src="supabase-config.js"></script>
@@ -389,53 +943,5 @@ body::after{
 <script src="auth.js"></script>
 <script src="nav.js"></script>
 
-<script>
-// Theme
-try{var t=localStorage.getItem('ig_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
-
-// Render shared nav
-if(typeof renderNav==='function') renderNav('creator-welcome.html');
-
-// Slideshow
-var cur=0,N=6,timer;
-
-function go(n){
-  clearInterval(timer);
-  show(n);
-  auto();
-}
-window.go=go;
-
-function show(n){
-  cur=n;
-  for(var i=0;i<N;i++){
-    document.getElementById('s'+i).classList.toggle('on',i===n);
-    var d=document.querySelectorAll('.dot')[i];
-    if(d)d.classList.toggle('on',i===n);
-  }
-}
-
-function auto(){
-  timer=setInterval(function(){show((cur+1)%N);},4200);
-}
-
-// Build dots
-var dEl=document.getElementById('dots');
-for(var i=0;i<N;i++){
-  (function(idx){
-    var d=document.createElement('div');
-    d.className='dot'+(idx===0?' on':'');
-    d.onclick=function(){go(idx);};
-    dEl.appendChild(d);
-  })(i);
-}
-auto();
-
-// Skip to dashboard
-function skip(){
-  try{localStorage.setItem('ig_skip_welcome','1');}catch(e){}
-}
-window.skip=skip;
-</script>
 </body>
 </html>
