@@ -36,37 +36,6 @@ body::after{
   opacity:.4;
 }
 
-/* NAV */
-.nav{
-  position:fixed;top:0;left:0;right:0;z-index:200;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 32px;
-  background:rgba(7,9,15,.88);backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--border);
-}
-.nav-logo{
-  display:flex;align-items:center;gap:9px;
-  font-family:var(--fd);font-size:15px;font-weight:900;
-  color:var(--text);text-decoration:none;letter-spacing:-.02em;
-}
-.nav-mark{
-  width:28px;height:28px;border-radius:7px;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:900;color:#07090f;
-}
-.nav-logo img{width:28px;height:28px;object-fit:contain;border-radius:6px;}
-.nav-links{display:flex;align-items:center;gap:24px;}
-.nav-links a{font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;transition:color .2s;}
-.nav-links a:hover{color:var(--text);}
-.nav-cta{
-  padding:9px 20px;border-radius:8px;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#07090f;font-size:13px;font-weight:800;
-  font-family:var(--fd);text-decoration:none;transition:all .2s;white-space:nowrap;
-}
-.nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,126,8,.35);}
-
 /* LAYOUT */
 .layout{
   display:grid;
@@ -231,7 +200,6 @@ body::after{
 
 /* Mobile */
 @media(max-width:900px){
-  .nav-links{display:none;}
   .layout{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:100vh;}
   .left{padding:84px 20px 36px;order:2;border-right:none;border-top:1px solid var(--border);}
   .right{order:1;height:280px;}
@@ -251,20 +219,7 @@ body::after{
 </head>
 <body>
 
-<nav class="nav">
-  <a href="index.html" class="nav-logo">
-    <img src="logo.png" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-    <div class="nav-mark" style="display:none">IG</div>
-    ImpactGrid
-  </a>
-  <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="pricing.html">Pricing</a>
-    <a href="about.html">About</a>
-    <a href="login.html">Sign in</a>
-  </div>
-  <a href="join.html" class="nav-cta">Start Free →</a>
-</nav>
+<div id="ig-nav"></div>
 
 <div class="layout">
 
@@ -420,10 +375,14 @@ body::after{
 <script src="supabase-config.js"></script>
 <script src="ig-supabase.js"></script>
 <script src="auth.js"></script>
+<script src="nav.js"></script>
 
 <script>
 // Theme
 try{var t=localStorage.getItem('ig_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
+
+// Render shared nav
+if(typeof renderNav==='function') renderNav('creator-welcome.html');
 
 // Slideshow
 var cur=0,N=6,timer;
