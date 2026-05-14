@@ -686,6 +686,362 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- ✅ FIX: Pinned to exact version — avoids silent breakage from @2 latest drift -->
+<!-- ═══════════════ ONBOARDING OVERLAY ═══════════════ -->
+<style>
+#igOnboarding {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: obFadeIn .3s ease;
+}
+@keyframes obFadeIn { from { opacity: 0; } to { opacity: 1; } }
+#igOnboarding.hidden { display: none; }
+
+.ob-modal {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 20px;
+  width: 100%; max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 40px 100px rgba(0,0,0,.5);
+}
+[data-theme="dark"] .ob-modal { background: #13151f; border-color: rgba(255,255,255,.1); }
+
+.ob-header {
+  padding: 28px 28px 0;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.ob-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 900;
+  color: var(--text, #07090f); letter-spacing: -.02em;
+}
+.ob-logo-mark {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: linear-gradient(135deg, #c97e08, #f0b429);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; color: #07090f;
+}
+.ob-skip {
+  background: none; border: none; font-size: 12px;
+  color: var(--text3, #9ca3af); cursor: pointer; padding: 4px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.ob-skip:hover { color: var(--text2, #6b7280); }
+
+.ob-body { padding: 20px 28px 28px; }
+.ob-greeting {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(22px, 4vw, 28px);
+  font-weight: 900; letter-spacing: -.025em;
+  color: var(--text, #07090f);
+  margin-bottom: 6px; line-height: 1.15;
+}
+.ob-sub {
+  font-size: 14px; color: var(--text2, #6b7280);
+  line-height: 1.65; margin-bottom: 24px;
+}
+
+/* Steps indicator */
+.ob-steps {
+  display: flex; gap: 6px; margin-bottom: 24px;
+}
+.ob-step-dot {
+  height: 4px; border-radius: 99px; background: var(--border2, #e5e7eb);
+  transition: all .3s; flex: 1;
+}
+.ob-step-dot.active { background: #c97e08; }
+.ob-step-dot.done { background: #0fa876; }
+
+/* Step panels */
+.ob-step { display: none; }
+.ob-step.active { display: block; }
+
+/* Feature list */
+.ob-features {
+  display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;
+}
+.ob-feature {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg, #f9fafb);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+}
+[data-theme="dark"] .ob-feature { background: rgba(255,255,255,.04); }
+.ob-feature:hover { border-color: #c97e08; background: rgba(201,126,8,.05); }
+.ob-feature-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.ob-feature-title {
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800;
+  color: var(--text, #07090f); margin-bottom: 2px; letter-spacing: -.01em;
+}
+.ob-feature-desc { font-size: 12px; color: var(--text2, #6b7280); line-height: 1.55; }
+.ob-feature-badge {
+  margin-left: auto; flex-shrink: 0;
+  font-size: 9px; font-weight: 700; font-family: 'DM Mono', monospace;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 99px;
+}
+.ob-feature-badge.live { background: rgba(15,168,118,.12); color: #0fa876; border: 1px solid rgba(15,168,118,.2); }
+.ob-feature-badge.ai { background: rgba(201,126,8,.1); color: #c97e08; border: 1px solid rgba(201,126,8,.2); }
+.ob-feature-badge.new { background: rgba(79,142,247,.1); color: #4f8ef7; border: 1px solid rgba(79,142,247,.2); }
+
+/* Choose path buttons */
+.ob-paths {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px;
+}
+@media(max-width: 480px) { .ob-paths { grid-template-columns: 1fr; } }
+.ob-path {
+  display: flex; flex-direction: column; align-items: flex-start;
+  padding: 16px 16px 14px;
+  background: var(--bg, #f9fafb);
+  border: 1.5px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+}
+[data-theme="dark"] .ob-path { background: rgba(255,255,255,.04); }
+.ob-path:hover { border-color: #c97e08; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,126,8,.12); }
+.ob-path-icon { font-size: 24px; margin-bottom: 8px; }
+.ob-path-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 900; color: var(--text, #07090f); margin-bottom: 3px; }
+.ob-path-desc { font-size: 11px; color: var(--text2, #6b7280); line-height: 1.5; }
+
+/* Buttons */
+.ob-btn-row { display: flex; gap: 10px; align-items: center; }
+.ob-btn-primary {
+  flex: 1; padding: 13px 20px; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800;
+  background: linear-gradient(135deg, #c97e08, #f0b429);
+  color: #07090f; border: none; cursor: pointer;
+  transition: all .2s; letter-spacing: -.01em;
+}
+.ob-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,126,8,.3); }
+.ob-btn-secondary {
+  padding: 13px 20px; border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+  background: none; border: 1px solid var(--border2, #e5e7eb);
+  color: var(--text2, #6b7280); cursor: pointer; transition: all .2s;
+}
+.ob-btn-secondary:hover { border-color: var(--text2, #6b7280); color: var(--text, #07090f); }
+
+.ob-notif-tip {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px; border-radius: 12px;
+  background: rgba(201,126,8,.07); border: 1px solid rgba(201,126,8,.2);
+  margin-bottom: 20px; font-size: 13px; color: var(--text2, #6b7280); line-height: 1.6;
+}
+.ob-notif-tip strong { color: var(--text, #07090f); }
+</style>
+
+<div id="igOnboarding" class="hidden">
+  <div class="ob-modal">
+    <div class="ob-header">
+      <div class="ob-logo">
+        <div class="ob-logo-mark">IG</div>
+        ImpactGrid
+      </div>
+      <button class="ob-skip" onclick="obDismiss()">Skip intro ✕</button>
+    </div>
+    <div class="ob-body">
+
+      <!-- Step dots -->
+      <div class="ob-steps">
+        <div class="ob-step-dot active" id="obDot0"></div>
+        <div class="ob-step-dot" id="obDot1"></div>
+        <div class="ob-step-dot" id="obDot2"></div>
+      </div>
+
+      <!-- STEP 1: Welcome + What's here -->
+      <div class="ob-step active" id="obStep0">
+        <div class="ob-greeting">Welcome to your<br/>Creator Studio. 👋</div>
+        <p class="ob-sub">Here's everything you have access to right now — all live, all powered by Dijo AI.</p>
+        <div class="ob-features">
+          <div class="ob-feature" onclick="obGoTab('trends')">
+            <div class="ob-feature-icon">🔥</div>
+            <div>
+              <div class="ob-feature-title">What's Trending</div>
+              <div class="ob-feature-desc">Live trend data from TikTok, YouTube & Google — refreshed every 30 minutes. See exactly what's blowing up right now.</div>
+            </div>
+            <div class="ob-feature-badge live">Live</div>
+          </div>
+          <div class="ob-feature" onclick="obGoTab('calendar')">
+            <div class="ob-feature-icon">📅</div>
+            <div>
+              <div class="ob-feature-title">Content Calendar</div>
+              <div class="ob-feature-desc">Dijo scans trends and auto-fills your week. You'll get notified when it's time to post — never miss a peak.</div>
+            </div>
+            <div class="ob-feature-badge ai">AI</div>
+          </div>
+          <div class="ob-feature" onclick="obGoTab('generator')">
+            <div class="ob-feature-icon">✍️</div>
+            <div>
+              <div class="ob-feature-title">Write My Content</div>
+              <div class="ob-feature-desc">Type a topic — Dijo writes your hook, caption, hashtags and content outline. Done in under 60 seconds.</div>
+            </div>
+            <div class="ob-feature-badge ai">AI</div>
+          </div>
+          <div class="ob-feature" onclick="obGoTab('evaluator')">
+            <div class="ob-feature-icon">⚡</div>
+            <div>
+              <div class="ob-feature-title">Analyse My Channel</div>
+              <div class="ob-feature-desc">Connect YouTube or TikTok and get a full AI analysis of your channel — score, gaps, and what to fix.</div>
+            </div>
+            <div class="ob-feature-badge new">AI</div>
+          </div>
+        </div>
+        <div class="ob-btn-row">
+          <button class="ob-btn-primary" onclick="obNext()">Next: Where to start →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Choose your path -->
+      <div class="ob-step" id="obStep1">
+        <div class="ob-greeting">What do you want<br/>to do first?</div>
+        <p class="ob-sub">Pick where to start — you can come back to everything else from the sidebar.</p>
+        <div class="ob-paths">
+          <div class="ob-path" onclick="obGoTab('trends')">
+            <div class="ob-path-icon">🔥</div>
+            <div class="ob-path-title">See what's trending</div>
+            <div class="ob-path-desc">Find out what's blowing up on TikTok, YouTube & Google right now</div>
+          </div>
+          <div class="ob-path" onclick="obGoTab('generator')">
+            <div class="ob-path-icon">✍️</div>
+            <div class="ob-path-title">Write my content</div>
+            <div class="ob-path-desc">Get a hook, caption and hashtags written by Dijo AI in seconds</div>
+          </div>
+          <div class="ob-path" onclick="obGoTab('calendar')">
+            <div class="ob-path-icon">📅</div>
+            <div class="ob-path-title">Plan my week</div>
+            <div class="ob-path-desc">Auto-fill your content calendar with the best topics and post times</div>
+          </div>
+          <a class="ob-path" href="portfolio-studio.html">
+            <div class="ob-path-icon">🌐</div>
+            <div class="ob-path-title">Build my portfolio</div>
+            <div class="ob-path-desc">Create a shareable creator portfolio to pitch to brands and clients</div>
+          </a>
+        </div>
+        <div class="ob-btn-row">
+          <button class="ob-btn-secondary" onclick="obPrev()">← Back</button>
+          <button class="ob-btn-primary" onclick="obNext()">Next: Notifications →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Notifications -->
+      <div class="ob-step" id="obStep2">
+        <div class="ob-greeting">Never miss a<br/>peak moment. 🔔</div>
+        <p class="ob-sub">ImpactGrid notifies you when it's time to post, when trends spike, and when your calendar is ready.</p>
+        <div class="ob-notif-tip">
+          <span style="font-size:20px;flex-shrink:0">💡</span>
+          <div><strong>How notifications work:</strong> Dijo monitors trend velocity every 30 minutes. When a topic spikes in your niche, you'll get a push notification so you can post while it's still hot — before everyone else does.</div>
+        </div>
+        <div class="ob-features">
+          <div class="ob-feature" style="cursor:default">
+            <div class="ob-feature-icon">📅</div>
+            <div>
+              <div class="ob-feature-title">Calendar Reminders</div>
+              <div class="ob-feature-desc">Get notified 1 hour before your scheduled post time — straight to your phone.</div>
+            </div>
+            <div class="ob-feature-badge live">Live</div>
+          </div>
+          <div class="ob-feature" style="cursor:default">
+            <div class="ob-feature-icon">🔥</div>
+            <div>
+              <div class="ob-feature-title">Trend Spike Alerts</div>
+              <div class="ob-feature-desc">When a topic crosses the high-momentum threshold, Dijo alerts you immediately.</div>
+            </div>
+            <div class="ob-feature-badge ai">AI</div>
+          </div>
+        </div>
+        <div class="ob-btn-row">
+          <button class="ob-btn-secondary" onclick="obPrev()">← Back</button>
+          <button class="ob-btn-primary" onclick="obEnableNotifs()">Enable Notifications →</button>
+        </div>
+        <div style="text-align:center;margin-top:12px;">
+          <button onclick="obDismiss()" style="background:none;border:none;font-size:12px;color:var(--text3);cursor:pointer;">Skip for now — go to my dashboard</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var STORAGE_KEY = 'ig_onboarded_v1';
+  var currentStep = 0;
+  var totalSteps = 3;
+
+  function obShow() {
+    document.getElementById('igOnboarding').classList.remove('hidden');
+  }
+
+  function obDismiss() {
+    document.getElementById('igOnboarding').classList.add('hidden');
+    try { localStorage.setItem(STORAGE_KEY, '1'); } catch(e) {}
+  }
+  window.obDismiss = obDismiss;
+
+  function obGoStep(n) {
+    // Hide all steps
+    for (var i = 0; i < totalSteps; i++) {
+      document.getElementById('obStep' + i).classList.remove('active');
+      var dot = document.getElementById('obDot' + i);
+      dot.classList.remove('active', 'done');
+      if (i < n) dot.classList.add('done');
+    }
+    document.getElementById('obStep' + n).classList.add('active');
+    document.getElementById('obDot' + n).classList.add('active');
+    currentStep = n;
+  }
+
+  window.obNext = function() {
+    if (currentStep < totalSteps - 1) obGoStep(currentStep + 1);
+  };
+  window.obPrev = function() {
+    if (currentStep > 0) obGoStep(currentStep - 1);
+  };
+
+  window.obGoTab = function(tabName) {
+    obDismiss();
+    // Switch to the requested tab
+    setTimeout(function() {
+      var tabEl = document.querySelector('[data-tab="' + tabName + '"].tab-btn') ||
+                  document.querySelector('[data-tab="' + tabName + '"].sb-item');
+      if (tabEl) tabEl.click();
+    }, 200);
+  };
+
+  window.obEnableNotifs = function() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(function(perm) {
+        obDismiss();
+        if (perm === 'granted' && typeof toast === 'function') {
+          toast('🔔 Notifications enabled — Dijo will alert you when trends spike');
+        }
+      });
+    } else {
+      obDismiss();
+    }
+  };
+
+  // Show onboarding if first visit
+  try {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      // Wait for page to settle before showing
+      setTimeout(obShow, 800);
+    }
+  } catch(e) {
+    setTimeout(obShow, 800);
+  }
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <!-- ✅ CORRECT LOAD ORDER (per nav.js requirements):
      1. supabase.min.js  — SDK
