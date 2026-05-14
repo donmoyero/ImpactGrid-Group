@@ -1,58 +1,25 @@
 /* ═══════════════════════════════════════════════════════
-   ImpactGrid — Auth Supabase Client (Singleton)
-   Project: wedjsnizcvtgptobwugc  (login / profiles)
+   ImpactGrid — ig-supabase.js  (SHIM — safe to remove later)
 
-   This file handles AUTH only:
-     - User login, sessions, profiles table
-     - window.supabaseClient  ← the auth client (singleton)
-     - window.getSupabase()   ← returns auth client
-     - window.getAuthClient() ← alias for getSupabase()
+   Auth has moved to supabase-config.js.
+   This file is kept only so pages that still load ig-supabase.js
+   don't break. It does nothing: getSupabase / getAuthClient are
+   already defined on window by supabase-config.js.
 
-   Credentials (_SUPABASE_URL, _SUPABASE_ANON_KEY) are kept as
-   module-level vars — NOT exposed on window — so no third-party
-   script can read them from the global scope.
+   Load order:  supabase-config.js  →  ig-supabase.js  (if kept)
 
-   DO NOT use for content/data tables (portfolios, slides).
-   For content → use supabase-config.js / getContentClient()
-
-   NOTE: getContentClient is intentionally NOT defined here.
-   It lives exclusively in supabase-config.js so there is
-   only one definition and zero naming conflicts.
+   TODO: Once you've confirmed all pages load supabase-config.js
+         directly, remove the <script> tag for ig-supabase.js and
+         delete this file.
 ═══════════════════════════════════════════════════════ */
 
-/* ── Credentials stay private — NOT exposed on window ── */
-var _SUPABASE_URL      = 'https://wedjsnizcvtgptobwugc.supabase.co';
-var _SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZGpzbml6Y3Z0Z3B0b2J3dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzU3MzcsImV4cCI6MjA4OTQ1MTczN30._o8QcqElPb1ug3DgTi5uUaILMI40yLcZl1Uk21uWrkc';
-
-/* Singleton instance — created once, reused everywhere */
-var _supabaseClient = null;
-
-function getSupabase() {
-  /* If auth.js already created window.supabaseClient, reuse it — one client only */
-  if (window.supabaseClient) return window.supabaseClient;
-  if (!_supabaseClient) {
-    _supabaseClient = window.supabase.createClient(_SUPABASE_URL, _SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession    : true,
-        autoRefreshToken  : true,
-        detectSessionInUrl: true,
-        storageKey        : 'ig-auth-token'
-      }
-    });
-    /* Store on window so auth.js / nav.js can also reach it */
-    window.supabaseClient = _supabaseClient;
+(function () {
+  if (typeof window.getSupabase !== 'function') {
+    console.error(
+      '[ig-supabase] supabase-config.js must load before ig-supabase.js. ' +
+      'Check your <script> tag order.'
+    );
   }
-  return _supabaseClient;
-}
-
-/* getAuthClient — explicit alias so call sites are self-documenting.
-   admin.html and any page that needs the AUTH project uses this.
-   Never conflicts with getContentClient() from supabase-config.js. */
-function getAuthClient() {
-  return getSupabase();
-}
-
-/* ── Expose on window ── */
-window.getSupabase    = getSupabase;
-window.getAuthClient  = getAuthClient;
-/* NOTE: window.getContentClient is NOT set here — supabase-config.js owns it */
+  /* getSupabase, getAuthClient, getContentClient are all on window
+     courtesy of supabase-config.js — nothing else to do here. */
+})();
