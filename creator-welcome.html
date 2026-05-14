@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Creator Studio — ImpactGrid</title>
+<meta name="description" content="AI-powered creator intelligence. Trend tracking, content generation, portfolio builder and more."/>
+<link rel="icon" href="logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KVJC5DE2WT"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date());gtag('config','G-KVJC5DE2WT');
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#07090f;--bg2:#0b0d14;--card:#13151f;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#fff;--text2:rgba(255,255,255,.55);--text3:rgba(255,255,255,.28);
+  --gold:#c97e08;--gold2:#f0b429;--green:#4ade80;
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+}
+html,body{
+  background:var(--bg);color:var(--text);font-family:var(--fb);
+  min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:.4;
+}
+
+/* NAV */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;
+  background:rgba(7,9,15,.88);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{
+  display:flex;align-items:center;gap:9px;
+  font-family:var(--fd);font-size:15px;font-weight:900;
+  color:var(--text);text-decoration:none;letter-spacing:-.02em;
+}
+.nav-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#07090f;
+}
+.nav-logo img{width:28px;height:28px;object-fit:contain;border-radius:6px;}
+.nav-links{display:flex;align-items:center;gap:24px;}
+.nav-links a{font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{
+  padding:9px 20px;border-radius:8px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#07090f;font-size:13px;font-weight:800;
+  font-family:var(--fd);text-decoration:none;transition:all .2s;white-space:nowrap;
+}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,126,8,.35);}
+
+/* LAYOUT */
+.layout{
+  display:grid;
+  grid-template-columns:460px 1fr;
+  min-height:100vh;
+}
+
+/* LEFT */
+.left{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:96px 44px 56px;
+  background:var(--bg);
+  border-right:1px solid var(--border);
+  position:relative;z-index:2;
+  overflow-y:auto;
+}
+
+.live-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:26px;font-weight:700;
+}
+.live-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--gold);
+  animation:blink 1.8s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.title{
+  font-family:var(--fd);
+  font-size:clamp(36px,3.5vw,54px);
+  font-weight:900;line-height:.96;letter-spacing:-.04em;
+  color:var(--text);margin-bottom:18px;
+}
+.title em{
+  font-style:normal;
+  background:linear-gradient(120deg,var(--gold),var(--gold2) 55%,#ffd700);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.subtitle{
+  font-size:14px;color:var(--text2);line-height:1.7;
+  max-width:340px;margin-bottom:36px;
+}
+
+/* Feature list */
+.feats{display:flex;flex-direction:column;gap:7px;margin-bottom:32px;}
+
+.feat{
+  display:flex;align-items:center;gap:13px;
+  padding:12px 14px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  text-decoration:none;transition:all .2s cubic-bezier(.22,1,.36,1);
+  position:relative;overflow:hidden;cursor:pointer;
+}
+.feat::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;border-radius:0 2px 2px 0;
+  background:var(--c,var(--gold));transition:width .2s;
+}
+.feat:hover{
+  border-color:var(--c,var(--gold));
+  background:rgba(255,255,255,.03);
+  transform:translateX(4px);
+}
+.feat:hover::before{width:5px;}
+.feat:hover .farr{opacity:1;transform:translateX(3px);}
+
+.fthumb{
+  width:48px;height:36px;border-radius:7px;overflow:hidden;flex-shrink:0;
+  opacity:.65;transition:opacity .2s;
+}
+.feat:hover .fthumb{opacity:1;}
+.fthumb img{width:100%;height:100%;object-fit:cover;display:block;}
+
+.fbody{flex:1;min-width:0;}
+.ftitle{
+  font-family:var(--fd);font-size:13px;font-weight:800;
+  color:var(--text);margin-bottom:1px;letter-spacing:-.01em;
+}
+.fdesc{font-size:11px;color:var(--text2);line-height:1.4;}
+
+.fbadge{
+  font-family:var(--fm);font-size:8px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 7px;border-radius:99px;
+  color:var(--c,var(--gold));
+  border:1px solid var(--c,var(--gold));
+  opacity:.65;flex-shrink:0;
+}
+.farr{font-size:13px;color:var(--text3);opacity:0;transition:all .2s;flex-shrink:0;}
+
+/* CTA */
+.cta{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:14px 24px;border-radius:12px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#07090f;font-family:var(--fd);font-size:14px;font-weight:900;
+  text-decoration:none;transition:all .2s;letter-spacing:-.01em;
+  border:none;cursor:pointer;width:100%;
+}
+.cta:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(201,126,8,.35);}
+.cta-sub{text-align:center;margin-top:12px;font-size:12px;color:var(--text3);}
+.cta-sub a{color:var(--text2);text-decoration:none;}
+.cta-sub a:hover{color:var(--text);}
+
+/* RIGHT */
+.right{position:relative;overflow:hidden;background:var(--bg2);}
+
+.showcase{width:100%;height:100%;position:relative;}
+
+.slide{
+  position:absolute;inset:0;opacity:0;
+  transition:opacity .5s cubic-bezier(.22,1,.36,1);overflow:hidden;
+}
+.slide.on{opacity:1;}
+.slide img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  filter:brightness(.55) saturate(.9);
+  transition:transform .8s cubic-bezier(.22,1,.36,1);
+}
+.slide.on img{transform:scale(1.04);}
+
+.slide-info{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:80px 52px 52px;
+  background:linear-gradient(to top, rgba(7,9,15,.96) 0%, rgba(7,9,15,.5) 55%, transparent 100%);
+}
+.slide-tag{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--fm);font-size:10px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--sc,var(--gold));margin-bottom:14px;
+}
+.slide-tag-dot{width:5px;height:5px;border-radius:50%;background:var(--sc,var(--gold));}
+.slide-h{
+  font-family:var(--fd);font-size:clamp(28px,3vw,44px);font-weight:900;
+  letter-spacing:-.035em;color:var(--text);margin-bottom:10px;line-height:1.05;
+}
+.slide-p{font-size:14px;color:var(--text2);line-height:1.65;max-width:360px;}
+
+/* Dots */
+.dots{
+  position:absolute;top:50%;right:20px;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:7px;z-index:10;
+}
+.dot{
+  width:4px;height:18px;border-radius:99px;
+  background:rgba(255,255,255,.18);transition:all .3s;cursor:pointer;
+}
+.dot.on{height:30px;background:var(--gold);}
+.dot:hover{background:rgba(255,255,255,.45);}
+
+/* Animations */
+@keyframes fadeUp{to{opacity:1;transform:none;}}
+.fu{opacity:0;transform:translateY(18px);animation:fadeUp .5s cubic-bezier(.16,1,.3,1) forwards;}
+.fu:nth-child(1){animation-delay:.06s;}
+.fu:nth-child(2){animation-delay:.13s;}
+.fu:nth-child(3){animation-delay:.19s;}
+.fu:nth-child(4){animation-delay:.26s;}
+.fu:nth-child(5){animation-delay:.32s;}
+.fu:nth-child(6){animation-delay:.38s;}
+
+/* Mobile */
+@media(max-width:900px){
+  .nav-links{display:none;}
+  .layout{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:100vh;}
+  .left{padding:84px 20px 36px;order:2;border-right:none;border-top:1px solid var(--border);}
+  .right{order:1;height:280px;}
+  .title{font-size:36px;}
+  .subtitle{max-width:100%;font-size:13px;}
+  .slide-info{padding:36px 24px 30px;}
+  .slide-h{font-size:24px;}
+  .dots{right:12px;}
+  .fthumb{width:42px;height:32px;}
+}
+@media(max-width:480px){
+  .nav{padding:14px 18px;}
+  .left{padding:78px 16px 28px;}
+  .title{font-size:30px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo">
+    <img src="logo.png" alt="ImpactGrid" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+    <div class="nav-mark" style="display:none">IG</div>
+    ImpactGrid
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="about.html">About</a>
+    <a href="login.html">Sign in</a>
+  </div>
+  <a href="join.html" class="nav-cta">Start Free →</a>
+</nav>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <div class="left">
+
+    <div class="live-pill fu">
+      <span class="live-dot"></span>
+      Dijo AI · All tools live
+    </div>
+
+    <h1 class="title fu">Your creator<br/>intelligence<br/><em>hub.</em></h1>
+
+    <p class="subtitle fu">Pick a tool and start. Every feature is AI-powered and live right now.</p>
+
+    <div class="feats fu">
+
+      <a href="creator-studio.html?tab=trends" class="feat" style="--c:#ff6464" data-s="0" onmouseenter="go(0)">
+        <div class="fthumb"><img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=120&h=90&fit=crop" alt="" loading="eager"/></div>
+        <div class="fbody">
+          <div class="ftitle">What's Trending</div>
+          <div class="fdesc">Live TikTok, YouTube & Google — updated every 30 min</div>
+        </div>
+        <div class="fbadge" style="--c:#ff6464">Live</div>
+        <div class="farr">→</div>
+      </a>
+
+      <a href="creator-studio.html?tab=generator" class="feat" style="--c:#f0b429" data-s="1" onmouseenter="go(1)">
+        <div class="fthumb"><img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?w=120&h=90&fit=crop" alt="" loading="eager"/></div>
+        <div class="fbody">
+          <div class="ftitle">Write My Content</div>
+          <div class="fdesc">Hook, caption, hashtags — Dijo AI in 60 seconds</div>
+        </div>
+        <div class="fbadge" style="--c:#f0b429">AI</div>
+        <div class="farr">→</div>
+      </a>
+
+      <a href="creator-studio.html?tab=calendar" class="feat" style="--c:#4ade80" data-s="2" onmouseenter="go(2)">
+        <div class="fthumb"><img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=120&h=90&fit=crop" alt="" loading="lazy"/></div>
+        <div class="fbody">
+          <div class="ftitle">Content Calendar</div>
+          <div class="fdesc">Auto-filled week — best topics, best times + notifications</div>
+        </div>
+        <div class="fbadge" style="--c:#4ade80">AI</div>
+        <div class="farr">→</div>
+      </a>
+
+      <a href="creator-studio.html?tab=evaluator" class="feat" style="--c:#78b4ff" data-s="3" onmouseenter="go(3)">
+        <div class="fthumb"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=120&h=90&fit=crop" alt="" loading="lazy"/></div>
+        <div class="fbody">
+          <div class="ftitle">Analyse My Channel</div>
+          <div class="fdesc">Connect YouTube or TikTok — AI score + what to fix</div>
+        </div>
+        <div class="fbadge" style="--c:#78b4ff">AI</div>
+        <div class="farr">→</div>
+      </a>
+
+      <a href="portfolio-studio.html" class="feat" style="--c:#a78bfa" data-s="4" onmouseenter="go(4)">
+        <div class="fthumb"><img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=120&h=90&fit=crop" alt="" loading="lazy"/></div>
+        <div class="fbody">
+          <div class="ftitle">Portfolio Studio</div>
+          <div class="fdesc">One link. Every brand deal. AI builds it for you</div>
+        </div>
+        <div class="fbadge" style="--c:#a78bfa">New</div>
+        <div class="farr">→</div>
+      </a>
+
+      <a href="carousel-studio.html" class="feat" style="--c:#f472b6" data-s="5" onmouseenter="go(5)">
+        <div class="fthumb"><img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=120&h=90&fit=crop" alt="" loading="lazy"/></div>
+        <div class="fbody">
+          <div class="ftitle">Carousel Studio</div>
+          <div class="fdesc">AI-written slides — styled, ready to post</div>
+        </div>
+        <div class="fbadge" style="--c:#f472b6">AI</div>
+        <div class="farr">→</div>
+      </a>
+
+    </div>
+
+    <a href="creator-studio.html" class="cta fu" onclick="skip()">
+      Open My Dashboard →
+    </a>
+    <p class="cta-sub fu">Have an account? <a href="login.html">Sign in</a></p>
+
+  </div>
+
+  <!-- RIGHT: Visual showcase -->
+  <div class="right">
+    <div class="showcase">
+
+      <div class="slide on" id="s0">
+        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1400&h=1000&fit=crop" alt="Trending" loading="eager"/>
+        <div class="slide-info">
+          <div class="slide-tag" style="--sc:#ff6464"><span class="slide-tag-dot" style="background:#ff6464"></span>Live Now</div>
+          <div class="slide-h">What's<br/>Trending</div>
+          <div class="slide-p">TikTok · YouTube · Google. See it before everyone else does — refreshed every 30 minutes.</div>
+        </div>
+      </div>
+
+      <div class="slide" id="s1">
+        <img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1400&h=1000&fit=crop" alt="Write" loading="lazy"/>
+        <div class="slide-info">
+          <div class="slide-tag" style="--sc:#f0b429"><span class="slide-tag-dot" style="background:#f0b429"></span>Dijo AI</div>
+          <div class="slide-h">Write My<br/>Content</div>
+          <div class="slide-p">Type a topic. Get your hook, caption and hashtags in under 60 seconds.</div>
+        </div>
+      </div>
+
+      <div class="slide" id="s2">
+        <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1400&h=1000&fit=crop" alt="Calendar" loading="lazy"/>
+        <div class="slide-info">
+          <div class="slide-tag" style="--sc:#4ade80"><span class="slide-tag-dot" style="background:#4ade80"></span>AI Scheduler</div>
+          <div class="slide-h">Content<br/>Calendar</div>
+          <div class="slide-p">Dijo auto-fills your week and alerts you when it's time to post. Never miss a peak.</div>
+        </div>
+      </div>
+
+      <div class="slide" id="s3">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&h=1000&fit=crop" alt="Analytics" loading="lazy"/>
+        <div class="slide-info">
+          <div class="slide-tag" style="--sc:#78b4ff"><span class="slide-tag-dot" style="background:#78b4ff"></span>Channel AI</div>
+          <div class="slide-h">Analyse My<br/>Channel</div>
+          <div class="slide-p">Connect YouTube or TikTok. Full AI score, gap analysis, and exactly what to fix.</div>
+        </div>
+      </div>
+
+      <div class="slide" id="s4">
+        <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1400&h=1000&fit=crop" alt="Portfolio" loading="lazy"/>
+        <div class="slide-info">
+          <div class="slide-tag" style="--sc:#a78bfa"><span class="slide-tag-dot" style="background:#a78bfa"></span>Portfolio Studio</div>
+          <div class="slide-h">One Link.<br/>Every Brand.</div>
+          <div class="slide-p">Your creator portfolio — stats, niches, contact. AI builds it. You share it.</div>
+        </div>
+      </div>
+
+      <div class="slide" id="s5">
+        <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1400&h=1000&fit=crop" alt="Carousel" loading="lazy"/>
+        <div class="slide-info">
+          <div class="slide-tag" style="--sc:#f472b6"><span class="slide-tag-dot" style="background:#f472b6"></span>Carousel Studio</div>
+          <div class="slide-h">AI-Designed<br/>Slides</div>
+          <div class="slide-p">Type your topic. Dijo writes and designs the full carousel. Post in minutes.</div>
+        </div>
+      </div>
+
+      <div class="dots" id="dots"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="plan-config.js"></script>
+<script src="supabase-config.js"></script>
+<script src="ig-supabase.js"></script>
+<script src="auth.js"></script>
+
+<script>
+// Theme
+try{var t=localStorage.getItem('ig_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
+
+// Slideshow
+var cur=0,N=6,timer;
+
+function go(n){
+  clearInterval(timer);
+  show(n);
+  auto();
+}
+window.go=go;
+
+function show(n){
+  cur=n;
+  for(var i=0;i<N;i++){
+    document.getElementById('s'+i).classList.toggle('on',i===n);
+    var d=document.querySelectorAll('.dot')[i];
+    if(d)d.classList.toggle('on',i===n);
+  }
+}
+
+function auto(){
+  timer=setInterval(function(){show((cur+1)%N);},4200);
+}
+
+// Build dots
+var dEl=document.getElementById('dots');
+for(var i=0;i<N;i++){
+  (function(idx){
+    var d=document.createElement('div');
+    d.className='dot'+(idx===0?' on':'');
+    d.onclick=function(){go(idx);};
+    dEl.appendChild(d);
+  })(i);
+}
+auto();
+
+// Skip to dashboard
+function skip(){
+  try{localStorage.setItem('ig_skip_welcome','1');}catch(e){}
+}
+window.skip=skip;
+</script>
+</body>
+</html>
