@@ -588,6 +588,16 @@ window.addEventListener('resize', applyMobileLayout);
 
 function skip(){ try{ localStorage.setItem('ig_skip_welcome','1'); }catch(e){} }
 window.skip = skip;
+
+// After welcome, redirect to the originally intended destination if set
+(function(){
+  try {
+    var dest = sessionStorage.getItem('ig_post_welcome_dest');
+    if (dest) sessionStorage.removeItem('ig_post_welcome_dest');
+    // Store it so feat-box links can use it if needed
+    window._postWelcomeDest = dest || null;
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>
