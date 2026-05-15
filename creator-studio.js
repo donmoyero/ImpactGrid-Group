@@ -364,8 +364,55 @@ function getFont(type){
 }
 
 /* ─────────────────────────────────────────────────────────
+   5b. WIZARD BOOT — reads sessionStorage set by dijo-wizard.html
+       and auto-fires generate() so the studio opens ready
+   ─────────────────────────────────────────────────────────── */
+function wizardBoot(){
+  var raw;
+  try { raw = sessionStorage.getItem('dijo_wizard'); } catch(e){ return; }
+  if(!raw) return;
+
+  var cfg;
+  try { cfg = JSON.parse(raw); } catch(e){ return; }
+  if(!cfg || !cfg.fromWizard || !cfg.topic) return;
+
+  // Clear so a page-refresh does not re-fire
+  try { sessionStorage.removeItem('dijo_wizard'); } catch(e){}
+
+  // Push values into ST
+  ST.count    = cfg.slides   || 7;
+  ST.platform = cfg.platform || 'Instagram';
+  ST.tone     = cfg.tone     || 'Bold & Direct';
+
+  // Push photos into userImages if the wizard collected any
+  if(Array.isArray(cfg.photos) && cfg.photos.length){
+    cfg.photos.forEach(function(src, i){ ST.userImages[i] = src; });
+  }
+
+  // Populate studio inputs so generate() can read them
+  var topicEl = document.getElementById('topicInput');
+  var platEl  = document.getElementById('platSelect');
+  var toneEl  = document.getElementById('toneSelect');
+  var cntEl   = document.getElementById('cntVal');
+
+  if(topicEl) topicEl.value     = cfg.topic;
+  if(platEl)  platEl.value      = cfg.platform || 'Instagram';
+  if(toneEl)  toneEl.value      = cfg.tone     || 'Bold & Direct';
+  if(cntEl)   cntEl.textContent = ST.count;
+
+  // Run theme detection so intel card updates
+  runDetect(cfg.topic);
+
+  // Fire generation after DOM has settled
+  setTimeout(function(){ generate(); }, 200);
+}
+
+// Run on DOMContentLoaded so all elements exist
+document.addEventListener('DOMContentLoaded', function(){ wizardBoot(); });
+
+/* ─────────────────────────────────────────────────────────
    6. TOPIC INPUT → INTEL DETECTION
-   ───────────────────────────────────────────────────────── */
+   ─────────────────────────────────────────────────────────── */
 var dTimer;
 function onTopicInput(){
   clearTimeout(dTimer);
