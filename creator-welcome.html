@@ -288,48 +288,147 @@
 .s2-in .feat-box:nth-child(4)      { animation: enterRight 0.45s 0.31s cubic-bezier(.16,1,.3,1) both; }
 
 /* ══════════════════════════════════════
-   MOBILE  (≤ 860px — stacked layout)
+   MOBILE  (≤ 860px — full-bleed hero)
 ══════════════════════════════════════ */
 @media (max-width: 860px) {
 
-  /* Keep root as full-screen pager on mobile too */
-  .slider-root { height: 100vh; overflow: hidden; }
-  .slider-track { flex-direction: column; width: 100%; height: 200vh; transition: transform 0.55s cubic-bezier(.77,0,.18,1); }
-  .slide { width: 100%; height: 100vh; overflow: hidden; flex-shrink: 0; }
+  /* ── Pager shell ── */
+  .slider-root  { height: 100dvh; overflow: hidden; }
+  .slider-track {
+    flex-direction: column; width: 100%; height: 200dvh;
+    transition: transform 0.55s cubic-bezier(.77,0,.18,1);
+  }
+  .slide { width: 100%; height: 100dvh; overflow: hidden; flex-shrink: 0; position: relative; }
 
-  /* On mobile: image on top, content below */
-  .split { grid-template-columns: 1fr; grid-template-rows: 45vw auto; height: 100vh; }
-  .split-right { height: 45vw; min-height: 200px; max-height: 280px; }
-  .split-right::before { background: linear-gradient(to bottom, transparent 30%, var(--bg) 100%); }
-  .split-left { padding: 20px 20px 80px; justify-content: flex-start; overflow-y: auto; }
+  /* ── SLIDE 1: full-bleed image behind content ── */
+  #slide1 .split {
+    display: block;
+    position: relative;
+    height: 100dvh;
+  }
 
-  /* Dual image panel on mobile — side by side still */
-  .split-right[style*="grid-template-columns"] { display: flex !important; }
-  .split-right[style*="grid-template-columns"] > div { flex: 1; }
+  /* Image fills the whole slide behind everything */
+  #slide1 .split-right {
+    position: absolute;
+    inset: 0;
+    height: 100dvh;
+    max-height: none;
+    z-index: 0;
+  }
 
-  /* Hide mosaic on mobile — just show first image */
-  .mosaic { grid-template-columns: 1fr; grid-template-rows: 1fr; }
-  .mosaic-cell:not(:first-child) { display: none; }
+  /* Make the dual-image panel fill properly on mobile */
+  #slide1 .split-right[style*="grid-template-columns"] {
+    display: flex !important;
+  }
+  #slide1 .split-right[style*="grid-template-columns"] > div {
+    flex: 1;
+  }
 
-  .hero-title { font-size: 36px; }
-  .hero-stats { gap: 20px; }
-  .feat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .feat-thumb { height: 70px; }
+  /* Strong gradient scrim so text is always readable */
+  #slide1 .split-right::before {
+    background: linear-gradient(
+      to top,
+      rgba(0,0,0,0.85) 0%,
+      rgba(0,0,0,0.45) 45%,
+      rgba(0,0,0,0.1)  100%
+    );
+  }
+
+  /* Content floats over the image, pinned to bottom */
+  #slide1 .split-left {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 22px 80px;
+    overflow: visible;
+    background: none;
+  }
+
+  /* Force text white so it shows on the dark scrim */
+  #slide1 .hero-title  { color: #fff; font-size: clamp(38px, 10vw, 54px); margin-bottom: 12px; }
+  #slide1 .hero-desc   { color: rgba(255,255,255,0.78); margin-bottom: 20px; max-width: 100%; }
+  #slide1 .hero-eyebrow { margin-bottom: 14px; }
+
+  #slide1 .hero-stats {
+    border-color: rgba(255,255,255,0.18);
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 14px 0;
+  }
+  #slide1 .hero-stat-n { color: #fff; font-size: 22px; }
+  #slide1 .hero-stat-l { color: rgba(255,255,255,0.55); }
+
+  /* Caption hidden on mobile (content replaces it) */
+  .img-caption { display: none; }
+
+  /* ── SLIDE 2: scrollable tools card list ── */
+  #slide2 .split {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Hide the desktop mosaic panel entirely on mobile */
+  #slide2 .split-right { display: none !important; }
+
+  /* Tools panel takes full width, scrollable */
+  #slide2 .split-left {
+    flex: 1;
+    width: 100%;
+    padding: 16px 18px 90px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+  }
+
+  .tools-title { font-size: clamp(26px, 7vw, 36px); margin-bottom: 4px; }
+  .tools-sub   { font-size: 13px; margin-bottom: 0; }
+  .tools-header { margin-bottom: 16px; }
+
+  /* 2-column grid for tools — full-width cards with bigger thumbs */
+  .feat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .feat-box {
+    padding: 14px 12px 12px;
+    border-radius: 16px;
+  }
+
+  .feat-thumb {
+    height: 90px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+
+  .feat-title { font-size: 13px; }
+  .feat-desc  { font-size: 10.5px; }
+  .feat-arrow { font-size: 13px; padding-top: 6px; }
+
+  /* Back button */
+  .back-btn { margin-bottom: 14px; }
 
   /* Show the Creator Tools button on mobile */
   #toolsBtn { display: inline-flex !important; }
 
-  /* Dots visible on mobile as page indicators */
+  /* Dots — page indicators */
   .slide-dots { display: flex; }
 
   .slide2-mobile-sep { display: none; }
 }
 
 @media (max-width: 480px) {
-  .split-right { height: 200px; max-height: 200px; }
-  .hero-title { font-size: 30px; }
-  .split-left { padding: 16px 16px 72px; }
-  .feat-grid { grid-template-columns: 1fr; }
+  #slide1 .split-left { padding: 0 18px 72px; }
+  #slide1 .hero-title { font-size: 34px; }
+
+  .feat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .feat-thumb { height: 76px; }
+  #slide2 .split-left { padding: 14px 14px 80px; }
 }
 </style>
 </head>
@@ -546,8 +645,8 @@ function goSlide(n) {
   if (n === current) return;
   current = n;
   if (isMobile()) {
-    // Vertical scroll between slides on mobile
-    track.style.transform = n === 1 ? 'translateY(-100vh)' : 'translateY(0)';
+    // Vertical scroll between slides on mobile — use px to avoid browser chrome offset
+    track.style.transform = n === 1 ? 'translateY(-' + window.innerHeight + 'px)' : 'translateY(0)';
   } else {
     track.style.transform = n === 1 ? 'translateX(-50%)' : 'translateX(0)';
   }
@@ -564,9 +663,10 @@ window.goSlide = goSlide;
 function applyLayout() {
   // Reset transform when switching breakpoints
   if (isMobile()) {
-    track.style.transform = current === 1 ? 'translateY(-100vh)' : 'translateY(0)';
+    var vh = window.innerHeight + 'px';
+    track.style.transform = current === 1 ? 'translateY(-' + vh + ')' : 'translateY(0)';
     track.style.flexDirection = 'column';
-    track.style.height = '200vh';
+    track.style.height = (window.innerHeight * 2) + 'px';
     track.style.width = '100%';
     document.getElementById('toolsBtn').style.display = '';
   } else {
