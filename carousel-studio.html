@@ -747,25 +747,6 @@
           </div>
         </div>
 
-        <!-- Background image upload -->
-        <div>
-          <label class="cs-label">Background Image</label>
-          <div class="cs-dzone" id="dzone"
-            onclick="document.getElementById('imgUp').click()"
-            ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
-            <div class="cs-dzone-icon">🖼️</div>
-            <p><strong style="color:var(--gold)">Upload image</strong> or drag &amp; drop<br/>
-            <span style="font-size:10px;color:var(--text3)">Replaces AI-selected background</span></p>
-          </div>
-          <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
-        </div>
-
-        <!-- Regenerate button (replaces old Generate button in studio mode) -->
-        <button class="cs-gen-btn" id="genBtn" onclick="generate()" style="opacity:.45;cursor:not-allowed;" disabled>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          Regenerate with Dijo
-        </button>
-
       </div>
     </aside>
 
@@ -983,10 +964,13 @@
       </div>
     </aside>
 
-    <!-- Hidden layout stubs — carousel-studio.js references these IDs -->
+    <!-- Hidden stubs — carousel-studio.js references these IDs -->
     <div style="display:none">
       <input type="checkbox" id="applyAllToggle" checked/>
       <div id="layoutBadge"></div>
+      <div class="cs-dzone" id="dzone" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)"></div>
+      <input type="file" id="imgUp" accept="image/*" onchange="handleUpload(event)"/>
+      <button id="genBtn" onclick="generate()"></button>
       <div class="layout-switcher">
         <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
         <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
@@ -2041,13 +2025,17 @@ function wovLaunch() {
   setTimeout(function() {
     clearInterval(wovInterval);
 
-    // 1. Populate hidden inputs in the studio
+    // 1. Populate ALL hidden inputs the studio reads
     var topicEl = document.getElementById('topicInput');
     var platEl  = document.getElementById('platSelect');
     var toneEl  = document.getElementById('toneSelect');
     var cntEl   = document.getElementById('cntVal');
 
-    if (topicEl) topicEl.value = WIZ.topic;
+    if (topicEl) {
+      topicEl.value = WIZ.topic;
+      // Dispatch an input event so any listeners on the textarea fire
+      topicEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 
     if (platEl) {
       for (var i = 0; i < platEl.options.length; i++) {
@@ -2060,15 +2048,23 @@ function wovLaunch() {
         if (toneEl.options[j].value.replace(/&amp;/g,'&') === tc) { toneEl.selectedIndex = j; break; }
       }
     }
-    if (window.ST) window.ST.count = WIZ.slides;
+
+    // 2. Sync ST (carousel engine state object)
+    if (window.ST) {
+      window.ST.count = WIZ.slides;
+      // Pass style preference into ST so the engine picks the right layout
+      if (WIZ.style) window.ST.preferredStyle = WIZ.style;
+    }
     if (cntEl) cntEl.textContent = WIZ.slides;
 
-    // 2. Enable gen btn + trigger onTopicInput so intel card activates
+    // 3. Un-disable genBtn so generate() doesn't bail early
     var genBtn = document.getElementById('genBtn');
-    if (genBtn) { genBtn.disabled = false; genBtn.style.opacity = ''; genBtn.style.cursor = ''; }
+    if (genBtn) { genBtn.disabled = false; }
+
+    // 4. Call onTopicInput() — activates intel card and enables the real button
     if (typeof window.onTopicInput === 'function') window.onTopicInput();
 
-    // 3. Close overlay and show summary banner
+    // 5. Close overlay and show summary banner immediately
     document.getElementById('wizOverlay').classList.remove('open');
     document.getElementById('wizOverlay').classList.add('closeable');
 
@@ -2078,18 +2074,22 @@ function wovLaunch() {
       var topicStr = WIZ.topic.length > 70 ? WIZ.topic.slice(0,70) + '…' : WIZ.topic;
       document.getElementById('wizTopicDisplay').textContent = topicStr;
       var pillRow = document.getElementById('wizPillRow');
-      var pillStyle = 'padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--fm,monospace);letter-spacing:.04em;background:rgba(201,168,76,.13);border:1px solid rgba(201,168,76,.22);color:var(--gold);';
+      var ps = 'padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--fm,monospace);letter-spacing:.04em;background:rgba(201,168,76,.13);border:1px solid rgba(201,168,76,.22);color:var(--gold);';
       pillRow.innerHTML =
-        '<span style="'+pillStyle+'">' + WIZ.platform + '</span>' +
-        '<span style="'+pillStyle+'">' + WIZ.tone     + '</span>' +
-        '<span style="'+pillStyle+'">' + WIZ.slides   + ' slides</span>' +
-        (WIZ.style ? '<span style="'+pillStyle+'">' + WIZ.style + '</span>' : '');
+        '<span style="'+ps+'">' + WIZ.platform + '</span>' +
+        '<span style="'+ps+'">' + WIZ.tone     + '</span>' +
+        '<span style="'+ps+'">' + WIZ.slides   + ' slides</span>' +
+        (WIZ.style ? '<span style="'+ps+'">' + WIZ.style + '</span>' : '');
     }
 
-    // 4. Fire generate()!
+    // 6. Fire generate() — small delay lets onTopicInput's debounce settle
     setTimeout(function() {
-      if (typeof window.generate === 'function') window.generate();
-    }, 100);
+      if (typeof window.generate === 'function') {
+        window.generate();
+      } else {
+        console.error('[Dijo Wizard] window.generate not found — is carousel-studio.js loaded?');
+      }
+    }, 300);
 
   }, 2400);
 }
