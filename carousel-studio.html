@@ -1457,8 +1457,6 @@ window.downloadAll = async function() {
 };
 
 // ── 9. setFmt PATCH — sync cs-fmt-btn active state ──────
-// carousel-studio.js setFmt() adds .on to #fmtX toolbar buttons.
-// Also sync the left-panel format buttons which use .active.
 window.addEventListener('load', function() {
   var _origSetFmt = window.setFmt;
   if (typeof _origSetFmt !== 'function') return;
@@ -1472,149 +1470,139 @@ window.addEventListener('load', function() {
 });
 </script>
 
-// ── 10. DIJO WIZARD INTEGRATION ─────────────────────────────
-// When arriving from dijo-wizard.html, sessionStorage has the user's
-// choices. We: hide the input fields they already answered, pre-fill
-// everything, show a "from wizard" banner, and auto-trigger generate().
-(function initFromWizard() {
+<!-- ══════════ DIJO WIZARD INTEGRATION ══════════
+     Reads sessionStorage set by dijo-wizard.html, hides already-answered
+     fields, injects a summary banner, and auto-fires generate().
+     Must be a separate <script> tag AFTER all other scripts have loaded.
+-->
+<script>
+(function() {
+  'use strict';
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Read wizard state ──────────────────────────────────
   var raw = sessionStorage.getItem('dijo_wizard');
   if (!raw) return;
-
   var wiz;
   try { wiz = JSON.parse(raw); } catch(e) { return; }
   if (!wiz || !wiz.fromWizard || !wiz.topic) return;
+  sessionStorage.removeItem('dijo_wizard'); // consume — no re-trigger on refresh
 
-  // Clear so a refresh doesn't re-trigger
-  sessionStorage.removeItem('dijo_wizard');
+  // ── Inject banner CSS immediately (no FOUC) ───────────
+  var css = document.createElement('style');
+  css.textContent =
+    '.wiz-summary-banner{margin-top:10px;padding:10px 12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:10px;display:flex;flex-direction:column;gap:8px;}' +
+    '.wsb-topic{font-size:12px;color:var(--text);font-family:var(--fb);line-height:1.45;word-break:break-word;}' +
+    '.wsb-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;}' +
+    '.wsb-pill{padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--fm);letter-spacing:.04em;background:rgba(201,168,76,.13);border:1px solid rgba(201,168,76,.22);color:var(--gold);}' +
+    '.wsb-edit{font-size:10px;color:var(--text3);text-decoration:none;letter-spacing:.02em;transition:color .15s;align-self:flex-start;}' +
+    '.wsb-edit:hover{color:var(--gold);}';
+  document.head.appendChild(css);
 
-  // Wait for the DOM & carousel-studio.js to be ready
-  window.addEventListener('load', function() {
+  // ── Run after the page (and all scripts) are fully ready ─
+  function boot() {
+    // 1. Set values into the hidden inputs so generate() reads them correctly
+    var topicEl = document.getElementById('topicInput');
+    var platEl  = document.getElementById('platSelect');
+    var toneEl  = document.getElementById('toneSelect');
+    var cntEl   = document.getElementById('cntVal');
+
+    if (topicEl) topicEl.value = wiz.topic;
+
+    if (platEl && wiz.platform) {
+      for (var i = 0; i < platEl.options.length; i++) {
+        if (platEl.options[i].value === wiz.platform || platEl.options[i].text === wiz.platform) {
+          platEl.selectedIndex = i; break;
+        }
+      }
+    }
+
+    if (toneEl && wiz.tone) {
+      var toneClean = wiz.tone.replace(/&amp;/g, '&');
+      for (var j = 0; j < toneEl.options.length; j++) {
+        var optVal = toneEl.options[j].value.replace(/&amp;/g, '&');
+        if (optVal === toneClean || toneEl.options[j].text === toneClean) {
+          toneEl.selectedIndex = j; break;
+        }
+      }
+    }
+
+    // Slide count: adjust ST.count directly, then sync the display
+    var targetSlides = parseInt(wiz.slides) || 7;
+    if (window.ST) {
+      window.ST.count = targetSlides;
+    }
+    if (cntEl) cntEl.textContent = targetSlides;
+
+    // 2. Swap left panel header to summary banner
+    var leftHead = document.querySelector('.cs-left-head');
+    if (leftHead) {
+      var topicDisplay = wiz.topic.length > 70 ? wiz.topic.slice(0, 70) + '…' : wiz.topic;
+      leftHead.innerHTML =
+        '<div class="cs-left-title" style="margin-bottom:6px">✦ Dijo Carousel</div>' +
+        '<div class="wiz-summary-banner">' +
+          '<div class="wsb-topic">' + escHtml(topicDisplay) + '</div>' +
+          '<div class="wsb-pills">' +
+            '<span class="wsb-pill">' + escHtml(wiz.platform || 'Instagram') + '</span>' +
+            '<span class="wsb-pill">' + escHtml(wiz.tone || 'Bold & Direct') + '</span>' +
+            '<span class="wsb-pill">' + targetSlides + ' slides</span>' +
+            (wiz.style ? '<span class="wsb-pill">' + escHtml(wiz.style) + '</span>' : '') +
+          '</div>' +
+          '<a class="wsb-edit" href="dijo-wizard.html">← Back to wizard</a>' +
+        '</div>';
+    }
+
+    // 3. Hide the wizard-already-collected fields from the left body
+    var leftBody = document.querySelector('.cs-left-body');
+    if (leftBody) {
+      // IDs of elements whose parent <div> wrapper we want to hide
+      var collapseTargets = ['topicInput', 'platSelect', 'toneSelect', 'dzone'];
+      collapseTargets.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          // Walk up to find the direct child of .cs-left-body
+          var node = el;
+          while (node && node.parentElement !== leftBody) node = node.parentElement;
+          if (node) node.style.display = 'none';
+        }
+      });
+
+      // Also hide the slides counter row (find by cs-cnt-row)
+      var cntRow = leftBody.querySelector('.cs-cnt-row');
+      if (cntRow) {
+        var node2 = cntRow;
+        while (node2 && node2.parentElement !== leftBody) node2 = node2.parentElement;
+        if (node2) node2.style.display = 'none';
+      }
+    }
+
+    // 4. Call onTopicInput() so the intelligence card activates + button enables
+    if (typeof window.onTopicInput === 'function') {
+      window.onTopicInput();
+    } else {
+      // Fallback: enable the button manually
+      var btn = document.getElementById('genBtn');
+      if (btn) btn.disabled = false;
+    }
+
+    // 5. Auto-fire generate() — slight delay so onTopicInput's debounce finishes
     setTimeout(function() {
-
-      // ── 1. HIDE wizard-collected fields from left panel ──
-      var hideIds = [
-        'topicInput', 'platSelect', 'toneSelect',
-        'dzone', 'imgUp',
-        // Slides count row, label
-        'cntVal',
-      ];
-      // Hide their parent wrapper divs
-      var leftBody = document.querySelector('.cs-left-body');
-      if (leftBody) {
-        var children = Array.from(leftBody.children);
-        children.forEach(function(el) {
-          // Keep intel card, asset preview, canvas format, and gen button
-          var keepIds = ['intelCard', 'assetPreviewField', 'genBtn'];
-          var isKeep = keepIds.some(function(id) {
-            return el.id === id || el.querySelector && el.querySelector('#' + id);
-          });
-          // Keep canvas format row
-          var hasFmt = el.querySelector && el.querySelector('.cs-fmt-row');
-          if (!isKeep && !hasFmt) {
-            el.style.display = 'none';
-          }
-        });
+      if (typeof window.generate === 'function') {
+        window.generate();
       }
+    }, 500);
+  }
 
-      // ── 2. UPDATE LEFT PANEL HEADER ─────────────────────
-      var leftHead = document.querySelector('.cs-left-head');
-      if (leftHead) {
-        leftHead.innerHTML = [
-          '<div class="cs-left-title">✦ Dijo Carousel</div>',
-          '<div class="wiz-summary-banner">',
-          '  <div class="wsb-row">',
-          '    <span class="wsb-label">Topic</span>',
-          '    <span class="wsb-val">' + escapeHtml(wiz.topic.length > 60 ? wiz.topic.slice(0, 60) + '…' : wiz.topic) + '</span>',
-          '  </div>',
-          '  <div class="wsb-pills">',
-          '    <span class="wsb-pill">' + escapeHtml(wiz.platform || 'Instagram') + '</span>',
-          '    <span class="wsb-pill">' + escapeHtml(wiz.tone || 'Bold & Direct') + '</span>',
-          '    <span class="wsb-pill">' + (wiz.slides || 7) + ' slides</span>',
-          wiz.style ? '    <span class="wsb-pill wsb-style">' + escapeHtml(wiz.style) + '</span>' : '',
-          '  </div>',
-          '  <a class="wsb-edit" href="dijo-wizard.html">← Edit in wizard</a>',
-          '</div>',
-        ].join('');
-      }
-
-      // ── 3. INJECT BANNER STYLES ──────────────────────────
-      var style = document.createElement('style');
-      style.textContent = [
-        '.wiz-summary-banner{margin-top:10px;padding:10px 12px;background:var(--gold-dim);border:1px solid rgba(201,168,76,.25);border-radius:10px;display:flex;flex-direction:column;gap:7px;}',
-        '.wsb-row{display:flex;flex-direction:column;gap:2px;}',
-        '.wsb-label{font-size:9px;font-family:var(--fm);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);opacity:.75;}',
-        '.wsb-val{font-size:12px;color:var(--text);font-family:var(--fb);line-height:1.4;}',
-        '.wsb-pills{display:flex;flex-wrap:wrap;gap:4px;}',
-        '.wsb-pill{padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--fm);background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.2);color:var(--gold);}',
-        '.wsb-style{background:rgba(201,168,76,.22);}',
-        '.wsb-edit{font-size:10px;color:var(--text3);text-decoration:none;transition:color .15s;}',
-        '.wsb-edit:hover{color:var(--gold);}',
-      ].join('\n');
-      document.head.appendChild(style);
-
-      // ── 4. PRE-FILL VALUES into existing inputs ───────────
-      var topicEl = document.getElementById('topicInput');
-      if (topicEl) { topicEl.value = wiz.topic; }
-
-      var platEl = document.getElementById('platSelect');
-      if (platEl) {
-        for (var i = 0; i < platEl.options.length; i++) {
-          if (platEl.options[i].value === wiz.platform) { platEl.selectedIndex = i; break; }
-        }
-      }
-
-      var toneEl = document.getElementById('toneSelect');
-      if (toneEl) {
-        var toneVal = wiz.tone || 'Bold & Direct';
-        for (var j = 0; j < toneEl.options.length; j++) {
-          if (toneEl.options[j].value === toneVal || toneEl.options[j].text === toneVal) {
-            toneEl.selectedIndex = j; break;
-          }
-        }
-      }
-
-      // Slide count
-      if (wiz.slides && typeof window.chgCount === 'function') {
-        var cntEl = document.getElementById('cntVal');
-        if (cntEl) {
-          var cur = parseInt(cntEl.textContent) || 7;
-          var target = parseInt(wiz.slides) || 7;
-          var diff = target - cur;
-          // Use chgCount to properly update the internal state
-          for (var k = 0; k < Math.abs(diff); k++) {
-            window.chgCount(diff > 0 ? 1 : -1);
-          }
-        }
-      }
-
-      // User-uploaded photos: if any, load the first as background
-      if (wiz.photos && wiz.photos.length > 0 && typeof window.setUserBg === 'function') {
-        window.setUserBg(wiz.photos[0]);
-      }
-
-      // ── 5. TRIGGER TOPIC INPUT HANDLER & GENERATE ────────
-      if (typeof window.onTopicInput === 'function') {
-        window.onTopicInput();
-      }
-
-      // Enable and click generate button
-      var genBtn = document.getElementById('genBtn');
-      if (genBtn) {
-        genBtn.disabled = false;
-        setTimeout(function() {
-          if (typeof window.generate === 'function') {
-            window.generate();
-          } else {
-            genBtn.click();
-          }
-        }, 300);
-      }
-
-    }, 600); // wait 600ms for carousel-studio.js to fully init
-  });
-
-  function escapeHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // Use load event if page not yet loaded, otherwise run immediately
+  if (document.readyState === 'complete') {
+    setTimeout(boot, 100);
+  } else {
+    window.addEventListener('load', function() {
+      setTimeout(boot, 100);
+    });
   }
 })();
 </script>
