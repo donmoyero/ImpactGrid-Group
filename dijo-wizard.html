@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Create Carousel · Dijo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<style>
+/* ═══════════════════════════════════════
+   DIJO-SPECIFIC OVERRIDES
+   (shared.css owns tokens & nav/footer)
+═══════════════════════════════════════ */
+:root {
+  --gold-glo: rgba(201,168,76,.35);
+  /* wizard uses 56px nav — override shared.css 64px */
+  --nav-h: 64px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── WIZ TOPBAR (step bar injected inside shared nav) ───── */
+.wiz-sp { flex: 1; }
+
+/* Step indicators */
+.wiz-steps {
+  display: flex; align-items: center; gap: 0;
+}
+.wiz-step-item {
+  display: flex; align-items: center; gap: 8px;
+}
+.wiz-step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-family: var(--fd); font-weight: 800;
+  color: var(--text3); transition: all .35s;
+}
+.wiz-step-num.done  { background: var(--gold); border-color: var(--gold); color: #07090f; }
+.wiz-step-num.active { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.wiz-step-label {
+  font-size: 10.5px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text3); transition: color .35s;
+  white-space: nowrap;
+}
+.wiz-step-item.active .wiz-step-label { color: var(--gold); }
+.wiz-step-item.done  .wiz-step-label  { color: var(--text2); }
+.wiz-step-line {
+  width: 32px; height: 1px; background: var(--border2);
+  margin: 0 6px; flex-shrink: 0;
+  transition: background .35s;
+}
+.wiz-step-line.done { background: var(--gold); }
+
+/* ── MAIN SHELL ─────────────────────────── */
+.wiz-shell {
+  padding-top: calc(var(--nav-h) + 48px); /* shared nav + step bar */
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Ambient background glow */
+.wiz-shell::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 60%, rgba(201,168,76,.04) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 20%, rgba(201,168,76,.03) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── PAGE SYSTEM ────────────────────────── */
+.wiz-pages {
+  flex: 1; overflow: hidden;
+  position: relative;
+}
+
+.wiz-page {
+  position: absolute; inset: 0;
+  overflow-y: auto;
+  padding: 40px 24px 120px;
+  opacity: 0; transform: translateX(40px);
+  transition: opacity .4s cubic-bezier(.4,0,.2,1), transform .4s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center;
+}
+.wiz-page::-webkit-scrollbar { width: 4px; }
+.wiz-page::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+.wiz-page.active {
+  opacity: 1; transform: translateX(0);
+  pointer-events: all;
+}
+.wiz-page.exit-left {
+  opacity: 0; transform: translateX(-40px);
+  pointer-events: none;
+}
+
+/* Page container — max width */
+.wiz-page-inner {
+  width: 100%; max-width: 640px;
+  display: flex; flex-direction: column; gap: 28px;
+}
+
+/* Page heading */
+.wiz-page-head { text-align: center; }
+.wiz-page-kicker {
+  font-size: 10px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 12px; display: block;
+}
+.wiz-page-title {
+  font-family: var(--fs); font-size: clamp(28px, 5vw, 42px);
+  font-weight: 700; line-height: 1.1; color: var(--text);
+  margin-bottom: 10px;
+}
+.wiz-page-title em { font-style: italic; color: var(--gold); }
+.wiz-page-sub {
+  font-size: 14px; color: var(--text3); line-height: 1.6; max-width: 480px; margin: 0 auto;
+}
+
+/* ── FORM ELEMENTS ──────────────────────── */
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field-label {
+  font-size: 10px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
+}
+
+.wiz-textarea {
+  width: 100%; min-height: 110px;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 12px; color: var(--text); font-family: var(--fb);
+  font-size: 15px; line-height: 1.6; padding: 16px;
+  outline: none; resize: none; transition: all .25s;
+}
+.wiz-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+.wiz-textarea::placeholder { color: var(--text3); }
+
+/* Char counter */
+.field-hint { font-size: 11px; color: var(--text3); text-align: right; margin-top: -4px; }
+
+/* ── PILL BUTTON GROUPS ──────────────────── */
+.pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.pill {
+  padding: 8px 16px; border-radius: 99px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  font-size: 12.5px; font-weight: 600; font-family: var(--fb);
+  color: var(--text2); cursor: pointer;
+  transition: all .2s; white-space: nowrap;
+  display: flex; align-items: center; gap: 6px;
+}
+.pill:hover { border-color: var(--gold); color: var(--text); }
+.pill.sel {
+  background: var(--gold-dim); border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+.pill-icon { font-size: 14px; line-height: 1; }
+
+/* ── SLIDE COUNT ──────────────────────── */
+.slide-count-row {
+  display: flex; align-items: center; gap: 0;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 12px; overflow: hidden; width: fit-content;
+  align-self: flex-start;
+}
+.sc-btn {
+  width: 44px; height: 44px;
+  background: none; border: none;
+  color: var(--text2); font-size: 20px; font-weight: 300;
+  cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.sc-btn:hover { color: var(--gold); background: var(--gold-dim); }
+.sc-inner {
+  padding: 0 20px; text-align: center;
+  border-left: 1px solid var(--border2);
+  border-right: 1px solid var(--border2);
+  min-width: 80px;
+}
+.sc-val {
+  font-family: var(--fd); font-size: 24px; font-weight: 800;
+  color: var(--text); line-height: 1; display: block;
+}
+.sc-sub {
+  font-size: 9px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); display: block; margin-top: 2px;
+}
+
+/* ── STYLE CARDS (Page 2) ───────────────── */
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.style-card {
+  border-radius: 14px; overflow: hidden;
+  border: 2px solid var(--border2);
+  cursor: pointer; transition: all .25s;
+  background: var(--card);
+  position: relative;
+}
+.style-card:hover { border-color: rgba(201,168,76,.4); transform: translateY(-2px); }
+.style-card.sel {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold), 0 8px 32px rgba(201,168,76,.2);
+}
+
+/* Style preview — this IS the style */
+.style-preview {
+  width: 100%; aspect-ratio: 1;
+  position: relative; overflow: hidden;
+  background: #0a0c12;
+}
+
+/* Selected check */
+.style-check {
+  position: absolute; top: 8px; right: 8px; z-index: 10;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--gold); border: 2px solid #07090f;
+  display: none; align-items: center; justify-content: center;
+}
+.style-card.sel .style-check { display: flex; }
+.style-check svg { width: 10px; height: 10px; }
+
+.style-name {
+  padding: 10px 12px 12px;
+  font-size: 11px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text2);
+}
+
+/* ═══ STYLE PREVIEWS — each is its own mini layout ═══ */
+
+/* 1. Full Bleed */
+.prev-fullbleed {
+  background: linear-gradient(160deg, #1a1208 0%, #0a0c12 100%);
+  display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;
+}
+.prev-fullbleed .prev-img {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #2a1f0e 0%, #1a1208 40%, #0d1018 100%);
+}
+.prev-fullbleed .prev-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.75) 100%);
+}
+.prev-fullbleed .prev-text { position: relative; z-index: 2; }
+.prev-fullbleed .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700;
+  color: #fff; line-height: 1.15; margin-bottom: 4px;
+}
+.prev-fullbleed .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-fullbleed .prev-p { font-size: 9px; color: rgba(255,255,255,.6); line-height: 1.4; }
+
+/* 2. Bot Strip */
+.prev-botstrip {
+  background: #0a0c12;
+  display: flex; flex-direction: column;
+}
+.prev-botstrip .prev-img-area {
+  flex: 1;
+  background: linear-gradient(135deg, #1e160a 0%, #0d1018 100%);
+  position: relative; overflow: hidden;
+}
+.prev-botstrip .prev-img-area::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(10,12,18,.9) 100%);
+}
+.prev-botstrip .prev-bar {
+  background: #0f1118; padding: 10px 12px;
+  border-top: 1px solid rgba(201,168,76,.2);
+}
+.prev-botstrip .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700;
+  color: #fff; margin-bottom: 2px;
+}
+.prev-botstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-botstrip .prev-p { font-size: 8px; color: rgba(255,255,255,.5); }
+
+/* 3. Top Strip */
+.prev-topstrip {
+  background: #0f1118;
+  display: flex; flex-direction: column;
+}
+.prev-topstrip .prev-bar {
+  background: #0f1118; padding: 10px 12px;
+  border-bottom: 1px solid rgba(201,168,76,.2);
+}
+.prev-topstrip .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700;
+  color: #fff; margin-bottom: 2px;
+}
+.prev-topstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-topstrip .prev-p { font-size: 8px; color: rgba(255,255,255,.5); }
+.prev-topstrip .prev-img-area {
+  flex: 1; background: linear-gradient(135deg, #1e160a 0%, #0d1018 100%);
+}
+
+/* 4. Band */
+.prev-band {
+  background: #0a0c12;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative;
+}
+.prev-band .prev-img-area {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #1e160a 0%, #0a0a12 100%);
+  opacity: .35;
+}
+.prev-band .prev-bar {
+  position: relative; z-index: 2;
+  background: rgba(15,17,24,.9); padding: 16px 14px;
+  margin: 20px 0;
+  border-top: 1px solid rgba(201,168,76,.3);
+  border-bottom: 1px solid rgba(201,168,76,.3);
+}
+.prev-band .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700;
+  color: #fff; text-align: center;
+}
+.prev-band .prev-h1 em { color: #c9a84c; font-style: normal; }
+
+/* 5. Dual Image */
+.prev-dual {
+  background: #0a0c12;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+}
+.prev-dual .prev-img-left {
+  background: linear-gradient(160deg, #1e160a 0%, #0d1018 100%);
+  position: relative;
+}
+.prev-dual .prev-img-left::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(0,0,0,.35);
+}
+.prev-dual .prev-text-right {
+  background: #0f1118; padding: 12px 10px;
+  display: flex; flex-direction: column; justify-content: center;
+  border-left: 1px solid rgba(201,168,76,.2);
+}
+.prev-dual .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700;
+  color: #fff; margin-bottom: 4px; line-height: 1.2;
+}
+.prev-dual .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-dual .prev-p { font-size: 8px; color: rgba(255,255,255,.5); line-height: 1.4; }
+
+/* 6. Stat */
+.prev-stat {
+  background: #0f1118; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px; padding: 16px;
+}
+.prev-stat .prev-num {
+  font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 800;
+  color: #c9a84c; line-height: 1;
+}
+.prev-stat .prev-label {
+  font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,.5); text-align: center;
+}
+.prev-stat .prev-rule { width: 32px; height: 1px; background: rgba(201,168,76,.4); }
+
+/* 7. Editorial Cover */
+.prev-edcover {
+  background: #0a0c12; position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.prev-edcover .prev-img {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, #1e140a 0%, #0a0c18 100%);
+}
+.prev-edcover .prev-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.85) 100%);
+}
+.prev-edcover .prev-num {
+  position: relative; z-index: 2;
+  font-size: 10px; font-family: 'DM Sans', sans-serif; font-weight: 700;
+  letter-spacing: .14em; color: #c9a84c; padding: 12px 14px 0; text-transform: uppercase;
+}
+.prev-edcover .prev-text {
+  position: relative; z-index: 2;
+  padding: 0 14px 14px; margin-top: auto;
+}
+.prev-edcover .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 800;
+  color: #fff; line-height: 1.1;
+}
+.prev-edcover .prev-h1 em { color: #c9a84c; font-style: italic; }
+.prev-edcover .prev-rule { width: 24px; height: 2px; background: #c9a84c; margin: 6px 0; }
+.prev-edcover .prev-p { font-size: 8.5px; color: rgba(255,255,255,.55); line-height: 1.5; }
+
+/* 8. Editorial Collage */
+.prev-edcollage {
+  background: #0f1118;
+  display: grid; grid-template-rows: 1fr 1fr; gap: 0;
+}
+.prev-edcollage .prev-top {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+}
+.prev-edcollage .prev-img-cell {
+  background: linear-gradient(135deg, #1e160a, #0d1018);
+}
+.prev-edcollage .prev-img-cell:nth-child(2) {
+  background: linear-gradient(135deg, #0d1018, #1a1208);
+}
+.prev-edcollage .prev-bottom {
+  background: #0f1118; padding: 10px 12px;
+  display: flex; flex-direction: column; justify-content: center;
+  border-top: 2px solid rgba(201,168,76,.25);
+}
+.prev-edcollage .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700;
+  color: #fff; line-height: 1.2; margin-bottom: 3px;
+}
+.prev-edcollage .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-edcollage .prev-p { font-size: 8px; color: rgba(255,255,255,.45); }
+
+/* 9. Editorial Col×3 */
+.prev-edcol3 {
+  background: #0f1118; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px; justify-content: center;
+}
+.prev-edcol3 .prev-h1 {
+  font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700;
+  color: #fff; line-height: 1.2;
+}
+.prev-edcol3 .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-edcol3 .prev-cols { display: flex; gap: 6px; }
+.prev-edcol3 .prev-col {
+  flex: 1; background: rgba(201,168,76,.08);
+  border: 1px solid rgba(201,168,76,.2);
+  border-radius: 6px; padding: 6px 6px;
+}
+.prev-edcol3 .prev-col-icon { font-size: 12px; margin-bottom: 3px; }
+.prev-edcol3 .prev-col-t { font-size: 7.5px; font-weight: 700; color: #c9a84c; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
+.prev-edcol3 .prev-col-p { font-size: 7px; color: rgba(255,255,255,.45); line-height: 1.4; }
+
+/* 10. Habit Cover */
+.prev-habit {
+  background: #0a0c12; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  gap: 4px; padding: 16px;
+}
+.prev-habit .prev-img {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #0e1a10 0%, #0a0c18 100%);
+  opacity: .6;
+}
+.prev-habit .prev-num {
+  position: relative; z-index: 2;
+  font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 800;
+  color: rgba(255,255,255,.08); line-height: 1;
+}
+.prev-habit .prev-h1 {
+  position: relative; z-index: 2;
+  font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700;
+  color: #fff; text-align: center; line-height: 1.2;
+}
+.prev-habit .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-habit .prev-p {
+  position: relative; z-index: 2;
+  font-size: 8px; color: rgba(255,255,255,.45); text-align: center;
+}
+
+/* ── IMAGE UPLOAD (Page 3) ────────────── */
+.img-upload-zone {
+  border: 2px dashed var(--border2); border-radius: 16px;
+  padding: 48px 24px; text-align: center;
+  background: var(--card); cursor: pointer; transition: all .25s;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  position: relative; overflow: hidden;
+}
+.img-upload-zone:hover, .img-upload-zone.drag { border-color: var(--gold); background: var(--gold-dim); }
+.img-upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(201,168,76,.1); border: 1px solid rgba(201,168,76,.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.upload-icon svg { width: 22px; height: 22px; color: var(--gold); }
+.upload-title { font-family: var(--fd); font-size: 16px; font-weight: 700; color: var(--text); }
+.upload-sub { font-size: 13px; color: var(--text3); }
+
+/* Uploaded preview thumbnails */
+.upload-preview {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;
+}
+.upload-thumb {
+  width: 80px; height: 80px; border-radius: 10px; overflow: hidden;
+  position: relative; border: 1px solid var(--border2);
+}
+.upload-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.upload-thumb-rm {
+  position: absolute; top: 4px; right: 4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,.8); border: none; color: var(--text2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; line-height: 1;
+}
+
+.skip-note { font-size: 12px; color: var(--text3); text-align: center; }
+.skip-note a { color: var(--gold); cursor: pointer; text-decoration: none; }
+.skip-note a:hover { text-decoration: underline; }
+
+/* ── BOTTOM NAV BAR ─────────────────── */
+.wiz-foot {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(10,12,18,.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: 16px 24px calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 12px; z-index: 100;
+}
+
+.wiz-progress {
+  flex: 1; height: 3px; background: var(--border2); border-radius: 99px; overflow: hidden;
+}
+.wiz-progress-fill {
+  height: 100%; background: var(--gold); border-radius: 99px;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+
+.wiz-btn-back {
+  padding: 11px 20px; border-radius: 10px;
+  border: 1px solid var(--border2); background: var(--card);
+  font-size: 13px; font-weight: 600; font-family: var(--fd);
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text2); cursor: pointer; transition: all .2s;
+  white-space: nowrap;
+}
+.wiz-btn-back:hover { border-color: var(--gold); color: var(--gold); }
+
+.wiz-btn-next {
+  padding: 12px 28px; border-radius: 10px;
+  background: var(--gold); border: none;
+  font-size: 13px; font-weight: 700; font-family: var(--fd);
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #07090f; cursor: pointer; transition: all .25s;
+  white-space: nowrap; display: flex; align-items: center; gap: 8px;
+}
+.wiz-btn-next:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(201,168,76,.35); }
+.wiz-btn-next:disabled { opacity: .4; transform: none; box-shadow: none; cursor: not-allowed; }
+.wiz-btn-next svg { width: 14px; height: 14px; }
+
+/* ── PAGE 4 — GENERATING / RESULT ───── */
+.gen-shell {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 80vh; gap: 32px;
+  padding: 40px 24px;
+}
+
+.gen-spinner {
+  width: 72px; height: 72px; position: relative;
+}
+.gen-spinner::before, .gen-spinner::after {
+  content: ''; position: absolute; border-radius: 50%;
+}
+.gen-spinner::before {
+  inset: 0; border: 2px solid var(--border2);
+}
+.gen-spinner::after {
+  inset: 4px; border: 2px solid transparent;
+  border-top-color: var(--gold);
+  animation: spin 1s linear infinite;
+}
+.gen-star {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; animation: pulse-star 2s ease-in-out infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse-star { 0%,100% { opacity: .4; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.05); } }
+
+.gen-title {
+  font-family: var(--fs); font-size: 28px; font-weight: 700;
+  color: var(--text); text-align: center;
+}
+.gen-title em { font-style: italic; color: var(--gold); }
+
+.gen-steps-list {
+  display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px;
+}
+.gen-step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; border-radius: 12px;
+  background: var(--card); border: 1px solid var(--border);
+  transition: all .4s;
+}
+.gen-step.done { border-color: rgba(201,168,76,.25); background: var(--gold-dim); }
+.gen-step.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-dim); }
+.gen-step-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--border2); flex-shrink: 0; transition: all .4s;
+}
+.gen-step.done .gen-step-dot { background: var(--gold); }
+.gen-step.active .gen-step-dot { background: var(--gold); box-shadow: 0 0 8px var(--gold-glo); animation: blink .8s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+.gen-step-text { font-size: 13px; color: var(--text3); transition: color .4s; }
+.gen-step.active .gen-step-text, .gen-step.done .gen-step-text { color: var(--text2); }
+
+/* ── RESULT CAROUSEL (Page 4 done) ──── */
+.result-shell {
+  width: 100%; max-width: 900px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 320px;
+  gap: 24px; min-height: 80vh; padding: 24px;
+}
+
+.result-canvas-area { display: flex; flex-direction: column; gap: 16px; }
+
+.result-slide {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px; overflow: hidden;
+  position: relative; background: #0a0c12;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+
+.result-slide-img {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+}
+.result-slide-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.75) 55%, rgba(0,0,0,.9) 100%);
+}
+.result-slide-num {
+  position: absolute; top: 20px; left: 22px;
+  font-size: 11px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .14em; color: var(--gold); z-index: 3;
+  display: flex; align-items: center; gap: 8px;
+}
+.result-slide-num::after {
+  content: ''; display: block; width: 48px; height: 1px;
+  background: rgba(201,168,76,.4);
+}
+.result-slide-star {
+  position: absolute; top: 18px; right: 22px; z-index: 3;
+  font-size: 16px; color: var(--gold);
+}
+.result-slide-text {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 24px 22px; z-index: 3;
+}
+.result-slide-h1 {
+  font-family: var(--fs); font-size: clamp(22px, 4vw, 36px);
+  font-weight: 700; color: #fff; line-height: 1.1;
+  margin-bottom: 10px;
+}
+.result-slide-h1 em { font-style: normal; color: var(--gold); }
+.result-slide-rule { width: 28px; height: 2px; background: var(--gold); margin-bottom: 10px; }
+.result-slide-body {
+  font-size: clamp(12px, 1.8vw, 15px); color: rgba(255,255,255,.65);
+  line-height: 1.6; max-width: 480px;
+}
+.result-slide-swipe {
+  position: absolute; bottom: 20px; right: 22px; z-index: 3;
+  font-size: 10px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .14em; color: rgba(255,255,255,.4);
+  display: flex; align-items: center; gap: 4px; text-transform: uppercase;
+}
+
+/* Thumbnail strip */
+.result-strip {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+}
+.result-strip::-webkit-scrollbar { height: 3px; }
+.result-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.result-thumb {
+  width: 54px; height: 54px; border-radius: 8px; overflow: hidden;
+  border: 2px solid var(--border2); cursor: pointer; flex-shrink: 0;
+  transition: all .2s; background: var(--card);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-family: var(--fd); font-weight: 700; color: var(--text3);
+}
+.result-thumb.active { border-color: var(--gold); }
+.result-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Edit sidebar */
+.result-sidebar {
+  display: flex; flex-direction: column; gap: 0;
+  border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--bg2);
+  height: fit-content; position: sticky; top: 24px;
+}
+.rsb-head {
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.rsb-head-title {
+  font-family: var(--fd); font-size: 12px; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text2);
+  display: flex; align-items: center; gap: 8px;
+}
+.rsb-head-title span { color: var(--gold); }
+.rsb-head-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.rsb-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.rsb-field { display: flex; flex-direction: column; gap: 6px; }
+.rsb-label {
+  font-size: 9.5px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
+}
+.rsb-input, .rsb-ta {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text); font-family: var(--fb);
+  font-size: 13px; padding: 9px 12px; outline: none;
+  transition: all .2s; resize: none;
+}
+.rsb-ta { min-height: 80px; line-height: 1.55; }
+.rsb-input:focus, .rsb-ta:focus { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold-dim); }
+
+.rsb-regen {
+  padding: 11px 16px; border-radius: 10px;
+  background: var(--gold-dim); border: 1px solid rgba(201,168,76,.3);
+  font-size: 12px; font-weight: 700; font-family: var(--fd);
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--gold); cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.rsb-regen:hover { background: var(--gold); color: #07090f; }
+
+.rsb-actions {
+  padding: 14px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px;
+}
+.rsb-dl {
+  flex: 1; padding: 11px; border-radius: 10px;
+  background: var(--gold); border: none;
+  font-size: 12px; font-weight: 700; font-family: var(--fd);
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #07090f; cursor: pointer; transition: all .2s;
+}
+.rsb-dl:hover { background: var(--gold2); }
+.rsb-share {
+  width: 42px; height: 42px; border-radius: 10px;
+  border: 1px solid var(--border2); background: var(--card);
+  color: var(--text2); cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.rsb-share:hover { border-color: var(--gold); color: var(--gold); }
+.rsb-share svg { width: 16px; height: 16px; }
+
+/* ── RESPONSIVE ──────────────────────── */
+@media (max-width: 700px) {
+  .wiz-step-label { display: none; }
+  .wiz-step-line { width: 16px; }
+  .result-shell { grid-template-columns: 1fr; }
+  .result-sidebar { position: static; }
+  .style-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+@media (max-width: 480px) {
+  .wiz-page { padding: 24px 16px 100px; }
+  .wiz-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .page-hero { height: 180px; }
+  .page-hero-faces { gap: 8px; }
+  .page-hero-face { width: 64px; height: 64px; }
+}
+
+/* ── HERO PHOTO STRIPS ───────────────────────────────────── */
+.page-hero {
+  width: 100%;
+  height: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: -8px; /* bleeds into page head slightly */
+}
+.page-hero img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center top;
+  filter: brightness(.75) saturate(1.1);
+  transition: transform .6s ease;
+}
+.page-hero:hover img { transform: scale(1.03); }
+.page-hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(10,12,18,.85) 100%);
+  pointer-events: none;
+}
+.page-hero-tag {
+  position: absolute; bottom: 14px; left: 16px;
+  font-size: 9px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gold); background: rgba(10,12,18,.6);
+  backdrop-filter: blur(6px);
+  padding: 4px 10px; border-radius: 99px;
+  border: 1px solid rgba(201,168,76,.3);
+}
+
+/* ── FACE ROW (Step 2 & 3) ──────────────────────────────── */
+.page-hero-faces {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 4px 0 8px;
+}
+.page-hero-face {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border2);
+  transition: transform .25s, border-color .25s;
+  flex-shrink: 0;
+}
+.page-hero-face:hover { transform: scale(1.08); border-color: var(--gold); }
+.page-hero-face img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center top;
+  filter: brightness(.85) saturate(1.1);
+}
+
+/* ── WIDE MOSAIC (Page 4 generating) ───────────────────── */
+.page-hero-mosaic {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 160px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto 4px;
+}
+.page-hero-mosaic .moz-cell {
+  overflow: hidden; position: relative;
+}
+.page-hero-mosaic .moz-cell img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center top;
+  filter: brightness(.7) saturate(1.2);
+}
+.page-hero-mosaic .moz-cell:first-child {
+  grid-row: span 2;
+}
+</style>
+</head>
+<body>
+
+<!-- SHARED NAV -->
+<div id="ig-nav"></div>
+
+<!-- WIZARD STEP BAR (sits below the shared nav) -->
+<div class="wiz-steps-bar" style="
+  position:fixed; top:var(--nav-h); left:0; right:0; z-index:90;
+  background:rgba(10,12,18,.95); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  padding:8px 24px; gap:0;
+">
+  <div class="wiz-steps" id="wizSteps">
+    <div class="wiz-step-item active" data-step="1">
+      <div class="wiz-step-num active">1</div>
+      <div class="wiz-step-label">Topic</div>
+    </div>
+    <div class="wiz-step-line" id="line12"></div>
+    <div class="wiz-step-item" data-step="2">
+      <div class="wiz-step-num">2</div>
+      <div class="wiz-step-label">Style</div>
+    </div>
+    <div class="wiz-step-line" id="line23"></div>
+    <div class="wiz-step-item" data-step="3">
+      <div class="wiz-step-num">3</div>
+      <div class="wiz-step-label">Photos</div>
+    </div>
+    <div class="wiz-step-line" id="line34"></div>
+    <div class="wiz-step-item" data-step="4">
+      <div class="wiz-step-num">4</div>
+      <div class="wiz-step-label">Result</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div class="wiz-shell">
+  <div class="wiz-pages">
+
+    <!-- PAGE 1: Topic -->
+    <div class="wiz-page active" id="page1">
+      <div class="wiz-page-inner">
+
+        <!-- Hero photo — diverse creator at work -->
+        <div class="page-hero">
+          <img
+            src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&q=80&auto=format&fit=crop"
+            alt="Creator at work"
+            loading="eager"
+          />
+          <div class="page-hero-overlay"></div>
+          <span class="page-hero-tag">✦ Step 1 — Define your story</span>
+        </div>
+
+        <div class="wiz-page-head">
+          <span class="wiz-page-kicker">Step 1 of 3</span>
+          <h1 class="wiz-page-title">What's your carousel <em>about?</em></h1>
+          <p class="wiz-page-sub">Describe your topic in a sentence or two. Dijo handles the narrative, copy, and design.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Your Topic</label>
+          <textarea class="wiz-textarea" id="topicInput" placeholder="e.g. Why most brands fail at content marketing — and how to fix it in 30 days" maxlength="300"></textarea>
+          <div class="field-hint"><span id="topicCount">0</span> / 300</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Platform</label>
+          <div class="pill-group" id="platformGroup">
+            <button class="pill sel" data-val="Instagram"><span class="pill-icon">📸</span>Instagram</button>
+            <button class="pill" data-val="LinkedIn"><span class="pill-icon">💼</span>LinkedIn</button>
+            <button class="pill" data-val="TikTok"><span class="pill-icon">🎵</span>TikTok</button>
+            <button class="pill" data-val="Twitter"><span class="pill-icon">𝕏</span>Twitter / X</button>
+            <button class="pill" data-val="Pinterest"><span class="pill-icon">📌</span>Pinterest</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Tone</label>
+          <div class="pill-group" id="toneGroup">
+            <button class="pill sel" data-val="Bold & Direct">Bold & Direct</button>
+            <button class="pill" data-val="Conversational">Conversational</button>
+            <button class="pill" data-val="Professional">Professional</button>
+            <button class="pill" data-val="Inspirational">Inspirational</button>
+            <button class="pill" data-val="Educational">Educational</button>
+            <button class="pill" data-val="Playful">Playful</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Number of Slides</label>
+          <div class="slide-count-row">
+            <button class="sc-btn" id="scMinus">−</button>
+            <div class="sc-inner">
+              <span class="sc-val" id="scVal">7</span>
+              <span class="sc-sub">slides</span>
+            </div>
+            <button class="sc-btn" id="scPlus">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2: Style -->
+    <div class="wiz-page" id="page2">
+      <div class="wiz-page-inner" style="max-width:760px">
+
+        <!-- Face row — mixed-race creators -->
+        <div class="page-hero-faces">
+          <div class="page-hero-face"><img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&q=80&auto=format&fit=crop&crop=face" alt=""/></div>
+          <div class="page-hero-face"><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&q=80&auto=format&fit=crop&crop=face" alt=""/></div>
+          <div class="page-hero-face"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&q=80&auto=format&fit=crop&crop=face" alt=""/></div>
+          <div class="page-hero-face"><img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&q=80&auto=format&fit=crop&crop=face" alt=""/></div>
+          <div class="page-hero-face"><img src="https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=200&q=80&auto=format&fit=crop&crop=face" alt=""/></div>
+        </div>
+
+        <div class="wiz-page-head">
+          <span class="wiz-page-kicker">Step 2 of 3</span>
+          <h1 class="wiz-page-title">Pick your <em>visual style.</em></h1>
+          <p class="wiz-page-sub">Each preview shows exactly how your slides will look.</p>
+        </div>
+
+        <div class="style-grid" id="styleGrid">
+
+          <!-- Full Bleed -->
+          <div class="style-card sel" data-style="Full Bleed">
+            <div class="style-preview">
+              <div class="prev-fullbleed">
+                <div class="prev-img"></div>
+                <div class="prev-overlay"></div>
+                <div class="prev-text">
+                  <div class="prev-h1">From ideas<br>to <em>impact.</em></div>
+                  <div class="prev-p">We help brands show up with intention.</div>
+                </div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Full Bleed</div>
+          </div>
+
+          <!-- Bot Strip -->
+          <div class="style-card" data-style="Bot Strip">
+            <div class="style-preview">
+              <div class="prev-botstrip">
+                <div class="prev-img-area"></div>
+                <div class="prev-bar">
+                  <div class="prev-h1">Most brands don't lack <em>talent.</em></div>
+                  <div class="prev-p">They lack structure.</div>
+                </div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Bot Strip</div>
+          </div>
+
+          <!-- Top Strip -->
+          <div class="style-card" data-style="Top Strip">
+            <div class="style-preview">
+              <div class="prev-topstrip">
+                <div class="prev-bar">
+                  <div class="prev-h1">Ready to build a brand people <em>remember?</em></div>
+                  <div class="prev-p">Strategy · Content · Growth</div>
+                </div>
+                <div class="prev-img-area"></div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Top Strip</div>
+          </div>
+
+          <!-- Band -->
+          <div class="style-card" data-style="Band">
+            <div class="style-preview">
+              <div class="prev-band">
+                <div class="prev-img-area"></div>
+                <div class="prev-bar">
+                  <div class="prev-h1">That's where we <em>come in.</em></div>
+                </div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Band</div>
+          </div>
+
+          <!-- Dual Img -->
+          <div class="style-card" data-style="Dual Img">
+            <div class="style-preview">
+              <div class="prev-dual">
+                <div class="prev-img-left"></div>
+                <div class="prev-text-right">
+                  <div class="prev-h1">Some people post content. Others create <em>presence.</em></div>
+                  <div class="prev-p">Strategy, storytelling and consistency.</div>
+                </div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Dual Img</div>
+          </div>
+
+          <!-- Stat -->
+          <div class="style-card" data-style="Stat">
+            <div class="style-preview">
+              <div class="prev-stat">
+                <div class="prev-num">87%</div>
+                <div class="prev-rule"></div>
+                <div class="prev-label">of buyers research on social<br>before deciding</div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Stat</div>
+          </div>
+
+          <!-- Ed. Cover -->
+          <div class="style-card" data-style="Ed. Cover">
+            <div class="style-preview">
+              <div class="prev-edcover">
+                <div class="prev-img"></div>
+                <div class="prev-overlay"></div>
+                <div class="prev-num">01 ——</div>
+                <div class="prev-text">
+                  <div class="prev-h1">From ideas to <em>impact.</em></div>
+                  <div class="prev-rule"></div>
+                  <div class="prev-p">We help brands and creators show up with content that looks intentional — not random.</div>
+                </div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Ed. Cover</div>
+          </div>
+
+          <!-- Ed. Collage -->
+          <div class="style-card" data-style="Ed. Collage">
+            <div class="style-preview">
+              <div class="prev-edcollage">
+                <div class="prev-top">
+                  <div class="prev-img-cell"></div>
+                  <div class="prev-img-cell"></div>
+                </div>
+                <div class="prev-bottom">
+                  <div class="prev-h1">That's where we <em>come in.</em></div>
+                  <div class="prev-p">Content · Creative · Community</div>
+                </div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Ed. Collage</div>
+          </div>
+
+          <!-- Ed. Col×3 -->
+          <div class="style-card" data-style="Ed. Col3">
+            <div class="style-preview">
+              <div class="prev-edcol3">
+                <div class="prev-h1">Three things that build a <em>brand.</em></div>
+                <div class="prev-cols">
+                  <div class="prev-col"><div class="prev-col-icon">📅</div><div class="prev-col-t">Plan</div><div class="prev-col-p">Purposeful content calendar</div></div>
+                  <div class="prev-col"><div class="prev-col-icon">✍️</div><div class="prev-col-t">Create</div><div class="prev-col-p">Stories that connect</div></div>
+                  <div class="prev-col"><div class="prev-col-icon">📈</div><div class="prev-col-t">Grow</div><div class="prev-col-p">Consistency creates trust</div></div>
+                </div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Ed. Col×3</div>
+          </div>
+
+          <!-- Habit Cover -->
+          <div class="style-card" data-style="Habit Cover">
+            <div class="style-preview">
+              <div class="prev-habit">
+                <div class="prev-img"></div>
+                <div class="prev-num">01</div>
+                <div class="prev-h1">Post with <em>purpose.</em></div>
+                <div class="prev-p">Habit 1 of 5 for brand growth</div>
+              </div>
+              <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="style-name">Habit Cover</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Photos -->
+    <div class="wiz-page" id="page3">
+      <div class="wiz-page-inner">
+
+        <!-- Hero — photographer with camera, warm editorial -->
+        <div class="page-hero">
+          <img
+            src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=900&q=80&auto=format&fit=crop"
+            alt="Photographer at work"
+            loading="lazy"
+          />
+          <div class="page-hero-overlay"></div>
+          <span class="page-hero-tag">✦ Step 3 — Your visuals</span>
+        </div>
+
+        <div class="wiz-page-head">
+          <span class="wiz-page-kicker">Step 3 of 3</span>
+          <h1 class="wiz-page-title">Got photos to <em>include?</em></h1>
+          <p class="wiz-page-sub">Upload your own images and Dijo will use them in the carousel. Or skip — the AI selects cinematic photography for you.</p>
+        </div>
+
+        <div class="img-upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept="image/*" multiple/>
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="upload-title">Upload images</div>
+          <div class="upload-sub">Drag & drop or click to browse · PNG, JPG, WEBP</div>
+        </div>
+
+        <div class="upload-preview" id="uploadPreview"></div>
+
+        <p class="skip-note">No photos? <a id="skipPhotos">Skip this step</a> — Dijo picks cinematic editorial photography automatically.</p>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Generate + Result -->
+    <div class="wiz-page" id="page4">
+      <!-- Generating state -->
+      <div class="gen-shell" id="genShell">
+
+        <!-- Mosaic of creators while generating -->
+        <div class="page-hero-mosaic">
+          <div class="moz-cell"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="moz-cell"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="moz-cell"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="moz-cell"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="moz-cell"><img src="https://images.unsplash.com/photo-1614644147798-f8c0fc9da7f6?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+        </div>
+
+        <div class="gen-spinner">
+          <div class="gen-star">✦</div>
+        </div>
+        <div class="gen-title">Dijo is building your<br><em>carousel…</em></div>
+        <div class="gen-steps-list">
+          <div class="gen-step active" id="gs1"><div class="gen-step-dot"></div><div class="gen-step-text">Analysing topic & narrative structure</div></div>
+          <div class="gen-step" id="gs2"><div class="gen-step-dot"></div><div class="gen-step-text">Writing slide copy with keyword emphasis</div></div>
+          <div class="gen-step" id="gs3"><div class="gen-step-dot"></div><div class="gen-step-text">Selecting cinematic photography</div></div>
+          <div class="gen-step" id="gs4"><div class="gen-step-dot"></div><div class="gen-step-text">Applying layout & overlay system</div></div>
+          <div class="gen-step" id="gs5"><div class="gen-step-dot"></div><div class="gen-step-text">Finalising your carousel</div></div>
+        </div>
+      </div>
+
+      <!-- Result state (hidden until done) -->
+      <div class="result-shell" id="resultShell" style="display:none">
+        <div class="result-canvas-area">
+          <div class="result-slide" id="resultSlide">
+            <div class="result-slide-img" id="rSlideImg"></div>
+            <div class="result-slide-overlay"></div>
+            <div class="result-slide-num" id="rSlideNum">01</div>
+            <div class="result-slide-star">✦</div>
+            <div class="result-slide-text">
+              <div class="result-slide-h1" id="rSlideH1"></div>
+              <div class="result-slide-rule"></div>
+              <div class="result-slide-body" id="rSlideBody"></div>
+            </div>
+            <div class="result-slide-swipe" id="rSlideSwipe">SWIPE →</div>
+          </div>
+          <div class="result-strip" id="resultStrip"></div>
+        </div>
+
+        <div class="result-sidebar">
+          <div class="rsb-head">
+            <div class="rsb-head-title">Edit Slide <span id="rsbSlideNum">01</span></div>
+            <div class="rsb-head-sub">Click any field to edit — updates live</div>
+          </div>
+          <div class="rsb-body">
+            <div class="rsb-field">
+              <div class="rsb-label">Headline</div>
+              <input class="rsb-input" id="rsbH1" type="text" placeholder="Slide headline…"/>
+            </div>
+            <div class="rsb-field">
+              <div class="rsb-label">Keyword (gold emphasis)</div>
+              <input class="rsb-input" id="rsbKw" type="text" placeholder="impact."/>
+            </div>
+            <div class="rsb-field">
+              <div class="rsb-label">Body copy</div>
+              <textarea class="rsb-ta" id="rsbBody" placeholder="Supporting copy…"></textarea>
+            </div>
+            <button class="rsb-regen" id="rsbRegen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Regenerate this slide
+            </button>
+          </div>
+          <div class="rsb-actions">
+            <button class="rsb-dl" id="rsbDl">↓ Download All</button>
+            <button class="rsb-share">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.wiz-pages -->
+
+  <!-- FOOTER NAV -->
+  <div class="wiz-foot" id="wizFoot">
+    <button class="wiz-btn-back" id="btnBack" style="display:none">← Back</button>
+    <div class="wiz-progress">
+      <div class="wiz-progress-fill" id="progressFill" style="width:33%"></div>
+    </div>
+    <button class="wiz-btn-next" id="btnNext">
+      Continue
+      <svg viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   WIZARD STATE
+═══════════════════════════════════════ */
+const STATE = {
+  page: 1,
+  topic: '',
+  platform: 'Instagram',
+  tone: 'Bold & Direct',
+  slides: 7,
+  style: 'Full Bleed',
+  photos: [],
+  generated: []
+};
+
+/* ═══════════════════════════════════════
+   PAGE NAVIGATION
+═══════════════════════════════════════ */
+function goTo(n) {
+  const cur = document.getElementById('page' + STATE.page);
+  const next = document.getElementById('page' + n);
+  if (!next) return;
+
+  cur.classList.remove('active');
+  cur.classList.add('exit-left');
+  setTimeout(() => cur.classList.remove('exit-left'), 400);
+
+  next.classList.add('active');
+  STATE.page = n;
+
+  updateNav();
+  updateSteps();
+}
+
+function updateNav() {
+  const p = STATE.page;
+  document.getElementById('btnBack').style.display = p === 1 ? 'none' : '';
+  const btnNext = document.getElementById('btnNext');
+  const foot = document.getElementById('wizFoot');
+
+  if (p === 4) {
+    foot.style.display = 'none';
+  } else {
+    foot.style.display = 'flex';
+    btnNext.textContent = p === 3 ? '✦ Generate Carousel' : 'Continue';
+    if (p === 3) {
+      btnNext.innerHTML = '✦ Generate Carousel';
+    } else {
+      btnNext.innerHTML = 'Continue <svg viewBox="0 0 14 14" fill="none" width="14" height="14"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+  }
+
+  const pcts = { 1: 33, 2: 66, 3: 90, 4: 100 };
+  document.getElementById('progressFill').style.width = pcts[p] + '%';
+}
+
+function updateSteps() {
+  const p = STATE.page;
+  document.querySelectorAll('.wiz-step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.toggle('active', s === p);
+    el.classList.toggle('done', s < p);
+    const num = el.querySelector('.wiz-step-num');
+    num.classList.toggle('active', s === p);
+    num.classList.toggle('done', s < p);
+  });
+  ['line12','line23','line34'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('done', p > i + 1);
+  });
+}
+
+document.getElementById('btnBack').addEventListener('click', () => {
+  if (STATE.page > 1) goTo(STATE.page - 1);
+});
+
+document.getElementById('btnNext').addEventListener('click', () => {
+  if (STATE.page === 1) {
+    STATE.topic = document.getElementById('topicInput').value.trim();
+    if (!STATE.topic) {
+      document.getElementById('topicInput').focus();
+      document.getElementById('topicInput').style.borderColor = '#e05555';
+      return;
+    }
+    document.getElementById('topicInput').style.borderColor = '';
+    goTo(2);
+  } else if (STATE.page === 2) {
+    goTo(3);
+  } else if (STATE.page === 3) {
+    goTo(4);
+    startGeneration();
+  }
+});
+
+/* ═══════════════════════════════════════
+   PAGE 1 — INTERACTIONS
+═══════════════════════════════════════ */
+// Topic textarea
+const topicEl = document.getElementById('topicInput');
+topicEl.addEventListener('input', () => {
+  STATE.topic = topicEl.value;
+  document.getElementById('topicCount').textContent = topicEl.value.length;
+});
+
+// Single-select pill groups
+function makeSingleSelect(groupId, stateKey) {
+  document.getElementById(groupId).addEventListener('click', e => {
+    const pill = e.target.closest('.pill');
+    if (!pill) return;
+    document.querySelectorAll(`#${groupId} .pill`).forEach(p => p.classList.remove('sel'));
+    pill.classList.add('sel');
+    STATE[stateKey] = pill.dataset.val;
+  });
+}
+makeSingleSelect('platformGroup', 'platform');
+makeSingleSelect('toneGroup', 'tone');
+
+// Slide count
+let slideCount = 7;
+document.getElementById('scMinus').addEventListener('click', () => {
+  if (slideCount > 3) { slideCount--; STATE.slides = slideCount; document.getElementById('scVal').textContent = slideCount; }
+});
+document.getElementById('scPlus').addEventListener('click', () => {
+  if (slideCount < 15) { slideCount++; STATE.slides = slideCount; document.getElementById('scVal').textContent = slideCount; }
+});
+
+/* ═══════════════════════════════════════
+   PAGE 2 — STYLE SELECT
+═══════════════════════════════════════ */
+document.getElementById('styleGrid').addEventListener('click', e => {
+  const card = e.target.closest('.style-card');
+  if (!card) return;
+  document.querySelectorAll('.style-card').forEach(c => c.classList.remove('sel'));
+  card.classList.add('sel');
+  STATE.style = card.dataset.style;
+});
+
+/* ═══════════════════════════════════════
+   PAGE 3 — PHOTO UPLOAD
+═══════════════════════════════════════ */
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const uploadPreview = document.getElementById('uploadPreview');
+
+fileInput.addEventListener('change', handleFiles);
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  handleFiles({ target: { files: e.dataTransfer.files } });
+});
+
+function handleFiles(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      STATE.photos.push(ev.target.result);
+      renderThumbs();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderThumbs() {
+  uploadPreview.innerHTML = STATE.photos.map((src, i) => `
+    <div class="upload-thumb">
+      <img src="${src}" alt="Photo ${i+1}"/>
+      <button class="upload-thumb-rm" data-i="${i}">×</button>
+    </div>
+  `).join('');
+  uploadPreview.querySelectorAll('.upload-thumb-rm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      STATE.photos.splice(parseInt(btn.dataset.i), 1);
+      renderThumbs();
+    });
+  });
+}
+
+document.getElementById('skipPhotos').addEventListener('click', () => {
+  goTo(4); startGeneration();
+});
+
+/* ═══════════════════════════════════════
+   PAGE 4 — AI GENERATION
+═══════════════════════════════════════ */
+const GEN_STEPS = ['gs1','gs2','gs3','gs4','gs5'];
+let genStepIdx = 0;
+let genInterval;
+
+function advanceGenStep() {
+  if (genStepIdx < GEN_STEPS.length) {
+    const prev = GEN_STEPS[genStepIdx - 1];
+    if (prev) { document.getElementById(prev).classList.remove('active'); document.getElementById(prev).classList.add('done'); }
+    document.getElementById(GEN_STEPS[genStepIdx]).classList.add('active');
+    genStepIdx++;
+  }
+}
+
+async function startGeneration() {
+  genStepIdx = 0;
+  GEN_STEPS.forEach(id => { document.getElementById(id).classList.remove('active','done'); });
+  advanceGenStep();
+
+  genInterval = setInterval(advanceGenStep, 2000);
+
+  try {
+    const slides = await callDijoAI();
+    clearInterval(genInterval);
+    GEN_STEPS.forEach(id => { document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('done'); });
+
+    await new Promise(r => setTimeout(r, 600));
+    showResult(slides);
+  } catch(err) {
+    clearInterval(genInterval);
+    console.error(err);
+    // Fallback demo slides
+    showResult(getDemoSlides());
+  }
+}
+
+// ── Backend URL — update if your Render service URL differs ──────────────────
+const DIJO_API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://impactgrid-dijo.onrender.com';
+
+// Adapts the carousel-engine.js slide shape → wizard display shape
+function adaptEngineSlides(engineSlides) {
+  return engineSlides.map((s, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const headline = s.headline || s.title || '';
+    // Pick the first meaningful word as the keyword for gold emphasis
+    const words = headline.replace(/\n/g, ' ').split(' ').filter(w => w.length > 3);
+    const keyword = s.keyword || words[0] || '';
+    return {
+      num,
+      type:       s.type || (i === 0 ? 'hook' : i === engineSlides.length - 1 ? 'cta' : 'value'),
+      headline:   headline.replace(/\\n/g, '\n'),
+      keyword,
+      body:       s.body || s.caption || s.subline || '',
+      // Prefer real Pexels URL from engine; fall back to imageQuery for Unsplash
+      imageUrl:   s.imageUrl || s.image_url || null,
+      imageQuery: s.imageQuery || s.pexels_query || s.theme || 'cinematic editorial',
+      layout:     s.layout || 'FULL_BLEED',
+      hashtags:   s.hashtags || [],
+      stat:       s.stat || null,
+      showSwipe:  i < engineSlides.length - 1,
+    };
+  });
+}
+
+async function callDijoAI() {
+  const res = await fetch(`${DIJO_API}/api/carousel/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic:    STATE.topic,
+      platform: STATE.platform,
+      tone:     STATE.tone,
+      slides:   STATE.slides,
+      style:    STATE.style,
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Backend error ${res.status}`);
+  }
+
+  const data = await res.json();
+  // data.carousel.slides is the engine's slide array
+  const rawSlides = data.carousel?.slides || data.slides || [];
+  if (!rawSlides.length) throw new Error('No slides returned from backend');
+  return adaptEngineSlides(rawSlides);
+}
+
+function getDemoSlides() {
+  const topic = STATE.topic || 'Building a brand that people remember';
+  return [
+    { num:'01', type:'hook', headline:`Most brands\ndon't lack ${topic.split(' ')[0] || 'talent'}.`, keyword: topic.split(' ')[0] || 'talent', body:'They lack structure, strategy, and consistency.', imageQuery:'woman working laptop dark moody', showSwipe:true },
+    { num:'02', type:'pain', headline:'Random posts\ndon\'t build a brand.', keyword:'brand', body:'No content calendar. No direction. No plan.', imageQuery:'chaotic desk notes overwhelmed entrepreneur', showSwipe:true },
+    { num:'03', type:'solution', headline:`That's where\nwe come in.`, keyword:'come in', body:'Strategic carousels, planned calendars, and creative direction built around your goals.', imageQuery:'professional creative team agency dark', showSwipe:true },
+    { num:'04', type:'proof', headline:'From ideas\nto impact.', keyword:'impact', body:'We help brands show up with content that looks intentional — not random.', imageQuery:'confident woman camera cinematic editorial', showSwipe:true },
+    { num:'05', type:'cta', headline:'Ready to build\na brand people remember?', keyword:'remember', body:'Start creating with purpose. Visit us today.', imageQuery:'brand moodboard dark luxury desk', showSwipe:false }
+  ].slice(0, STATE.slides);
+}
+
+/* ═══════════════════════════════════════
+   RESULT RENDER
+═══════════════════════════════════════ */
+let SLIDES = [];
+let curSlide = 0;
+
+// Unsplash image cache
+const imgCache = {};
+
+function getImageUrl(slide) {
+  // Prefer real Pexels URL from engine
+  if (slide.imageUrl) return slide.imageUrl;
+  // Fall back to Unsplash source (no API key needed)
+  const query = slide.imageQuery || 'cinematic editorial dark moody';
+  return `https://source.unsplash.com/800x800/?${encodeURIComponent(query)}&sig=${Math.random()}`;
+}
+
+function showResult(slides) {
+  SLIDES = slides;
+  curSlide = 0;
+  document.getElementById('genShell').style.display = 'none';
+  document.getElementById('resultShell').style.display = 'grid';
+  updateSteps();
+  buildStrip();
+  renderCurrentSlide();
+}
+
+function buildStrip() {
+  const strip = document.getElementById('resultStrip');
+  strip.innerHTML = SLIDES.map((s, i) => `
+    <div class="result-thumb ${i===0?'active':''}" data-i="${i}">
+      <span style="font-family:'Playfair Display',serif;font-size:14px;color:#c9a84c;">${s.num}</span>
+    </div>
+  `).join('');
+  strip.querySelectorAll('.result-thumb').forEach(th => {
+    th.addEventListener('click', () => {
+      curSlide = parseInt(th.dataset.i);
+      strip.querySelectorAll('.result-thumb').forEach(t => t.classList.remove('active'));
+      th.classList.add('active');
+      renderCurrentSlide();
+    });
+  });
+}
+
+function renderCurrentSlide() {
+  const s = SLIDES[curSlide];
+  if (!s) return;
+
+  // Headline with keyword emphasis
+  const hl = s.headline.replace(/\n/g, '<br>');
+  const kw = s.keyword || '';
+  const hlHtml = kw ? hl.replace(new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<em>$1</em>') : hl;
+  document.getElementById('rSlideH1').innerHTML = hlHtml;
+  document.getElementById('rSlideBody').textContent = s.body;
+  document.getElementById('rSlideNum').innerHTML = s.num + ' <span style="display:inline-block;width:48px;height:1px;background:rgba(201,168,76,.4);vertical-align:middle;margin-left:8px;"></span>';
+  document.getElementById('rSlideSwipe').style.display = s.showSwipe === false ? 'none' : 'flex';
+
+  // Background image — prefer Pexels URL, fall back to Unsplash
+  const imgEl = document.getElementById('rSlideImg');
+  const url = getImageUrl(s);
+  imgEl.style.backgroundImage = `url(${url})`;
+
+  // Sidebar
+  document.getElementById('rsbSlideNum').textContent = s.num;
+  document.getElementById('rsbH1').value = s.headline.replace(/\n/g,' ');
+  document.getElementById('rsbKw').value = s.keyword || '';
+  document.getElementById('rsbBody').value = s.body;
+}
+
+// Live edit sync
+document.getElementById('rsbH1').addEventListener('input', e => {
+  SLIDES[curSlide].headline = e.target.value;
+  renderCurrentSlide();
+});
+document.getElementById('rsbKw').addEventListener('input', e => {
+  SLIDES[curSlide].keyword = e.target.value;
+  renderCurrentSlide();
+});
+document.getElementById('rsbBody').addEventListener('input', e => {
+  SLIDES[curSlide].body = e.target.value;
+  renderCurrentSlide();
+});
+
+// Regen single slide
+document.getElementById('rsbRegen').addEventListener('click', async () => {
+  const btn = document.getElementById('rsbRegen');
+  btn.textContent = 'Regenerating…';
+  btn.disabled = true;
+  try {
+    const s = SLIDES[curSlide];
+    const res = await fetch(`${DIJO_API}/api/carousel/regen-slide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic:    STATE.topic,
+        platform: STATE.platform,
+        tone:     STATE.tone,
+        type:     s.type,
+        layout:   s.layout || 'FULL_BLEED',
+        index:    curSlide,
+      })
+    });
+    const data = await res.json();
+    const raw  = data.slide || data;
+    const adapted = adaptEngineSlides([raw])[0];
+    // Keep original num and showSwipe
+    adapted.num       = s.num;
+    adapted.showSwipe = s.showSwipe;
+    SLIDES[curSlide]  = adapted;
+    renderCurrentSlide();
+  } catch(e) {
+    console.warn('Regen failed', e);
+  }
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"/></svg> Regenerate this slide';
+  btn.disabled = false;
+});
+
+document.getElementById('rsbDl').addEventListener('click', () => {
+  alert('Download all — wire to your downloadAll() function in carousel-studio.js');
+});
+</script>
+
+<!-- SHARED SCRIPTS (must load after DOM) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="plan-config.js"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+<script src="nav.js"></script>
+<script>
+  renderNav('dijo-wizard.html');
+  renderFooter();
+</script>
+
+<div id="ig-footer"></div>
+</body>
+</html>
