@@ -1769,13 +1769,22 @@ document.getElementById('rsbDl').addEventListener('click', () => {
 
 <!-- SHARED SCRIPTS (must load after DOM) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- ✅ CORRECT LOAD ORDER (must match creator-studio.html)
+     1. supabase.min.js   — SDK
+     2. plan-config.js    — plan constants
+     3. supabase-config.js — project URL / anon key
+     4. ig-supabase.js    — sets window.SUPABASE_URL + SUPABASE_ANON_KEY, creates client
+     5. auth.js           — initialises session
+     6. nav.js            — reads credentials, renders nav, runs checkAuth -->
 <script src="plan-config.js"></script>
 <script src="supabase-config.js"></script>
+<script src="ig-supabase.js"></script>
 <script src="auth.js"></script>
 <script src="nav.js"></script>
 <script>
-  renderNav('dijo-wizard.html');
-  renderFooter();
+  // ✅ Match creator-studio.html init pattern — ig-supabase.js must load first
+  if (typeof renderNav === 'function') renderNav('dijo-wizard.html');
+  if (typeof renderFooter === 'function') renderFooter();
 </script>
 
 <div id="ig-footer"></div>
