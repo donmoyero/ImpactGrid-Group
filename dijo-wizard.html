@@ -1415,10 +1415,40 @@ document.getElementById('btnNext').addEventListener('click', () => {
   } else if (STATE.page === 2) {
     goTo(3);
   } else if (STATE.page === 3) {
-    goTo(4);
-    startGeneration();
+    // Save wizard state and redirect to carousel studio
+    launchCarouselStudio();
   }
 });
+
+function launchCarouselStudio() {
+  // Collect final state
+  STATE.topic    = document.getElementById('topicInput').value.trim();
+  STATE.platform = (document.querySelector('#platformGroup .pill.sel') || {}).dataset?.val || STATE.platform;
+  STATE.tone     = (document.querySelector('#toneGroup .pill.sel')     || {}).dataset?.val || STATE.tone;
+  STATE.style    = (document.querySelector('.style-card.sel')          || {}).dataset?.style || STATE.style;
+
+  // Save to sessionStorage so carousel-studio can pick it up
+  sessionStorage.setItem('dijo_wizard', JSON.stringify({
+    topic:    STATE.topic,
+    platform: STATE.platform,
+    tone:     STATE.tone,
+    slides:   STATE.slides,
+    style:    STATE.style,
+    photos:   STATE.photos,
+    fromWizard: true,
+  }));
+
+  // Show a brief transition before redirect
+  goTo(4); // show the generating animation briefly
+  document.getElementById('genShell').style.display = 'flex';
+
+  // Animate a couple of steps then redirect
+  advanceGenStep();
+  setTimeout(advanceGenStep, 700);
+  setTimeout(() => {
+    window.location.href = 'carousel-studio.html';
+  }, 1400);
+}
 
 /* ═══════════════════════════════════════
    PAGE 1 — INTERACTIONS
@@ -1508,7 +1538,7 @@ function renderThumbs() {
 }
 
 document.getElementById('skipPhotos').addEventListener('click', () => {
-  goTo(4); startGeneration();
+  launchCarouselStudio();
 });
 
 /* ═══════════════════════════════════════
