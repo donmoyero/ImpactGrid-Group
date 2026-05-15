@@ -1163,11 +1163,14 @@ function renderSlide(){
 
   } /* end switch */
 
-  document.getElementById('sNum').textContent=(ST.cur+1)+' / '+ST.slides.length;
+  var sNumEl=document.getElementById('sNum');
+  if(sNumEl) sNumEl.textContent=(ST.cur+1)+' / '+ST.slides.length;
   var brandEl=document.getElementById('sBrand');
   var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
-  brandEl.textContent=editorialLayouts.indexOf(layout)===-1?(ST.brand||''):'';
-  brandEl.style.color=tc.head;
+  if(brandEl){
+    brandEl.textContent=editorialLayouts.indexOf(layout)===-1?(ST.brand||''):'';
+    brandEl.style.color=tc.head;
+  }
 
   var badge2=document.getElementById('layoutBadge');
   if(badge2) badge2.textContent=layout.replace(/_/g,' ');
@@ -1280,7 +1283,8 @@ function startInlineEdit(el){
    10. STRIP BUILDER
    ───────────────────────────────────────────────────────── */
 function buildStrip(){
-  var strip=document.getElementById('strip');
+  var strip=document.getElementById('strip')||document.getElementById('sDualThumb')||document.getElementById('thumbStrip');
+  if(!strip) return;
   strip.innerHTML=ST.slides.map(function(s,i){
     var theme=ST.theme||'lifestyle';
     var T=DA[theme];
@@ -1306,11 +1310,11 @@ function updateThumbActive(){
 function goTo(idx){ST.cur=idx;renderSlide();updateCounter();fillEdit();}
 function prevSlide(){if(ST.cur>0) goTo(ST.cur-1);}
 function nextSlide(){if(ST.cur<ST.slides.length-1) goTo(ST.cur+1);}
-function updateCounter(){document.getElementById('slideCtr').textContent=ST.slides.length?(ST.cur+1)+' / '+ST.slides.length:'0 / 0';}
-function chgCount(d){ST.count=Math.max(3,Math.min(12,ST.count+d));document.getElementById('cntVal').textContent=ST.count;}
-function prefill(t){document.getElementById('topicInput').value=t;onTopicInput();}
-function zoom(d){ST.zoom=Math.max(40,Math.min(150,ST.zoom+d));document.getElementById('zoomLbl').textContent=ST.zoom+'%';document.getElementById('slideCanvas').style.transform='scale('+ST.zoom/100+')';}
-function setFmt(f){ST.format=f;['square','portrait','landscape'].forEach(function(x){document.getElementById('fmt'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('on',x===f);});var c=document.getElementById('slideCanvas');c.className='slide-canvas'+(f!=='square'?' '+f:'');}
+function updateCounter(){var el=document.getElementById('slideCtr');if(el) el.textContent=ST.slides.length?(ST.cur+1)+' / '+ST.slides.length:'0 / 0';}
+function chgCount(d){ST.count=Math.max(3,Math.min(12,ST.count+d));var el=document.getElementById('cntVal');if(el) el.textContent=ST.count;}
+function prefill(t){var el=document.getElementById('topicInput');if(el){el.value=t;onTopicInput();}}
+function zoom(d){ST.zoom=Math.max(40,Math.min(150,ST.zoom+d));var lbl=document.getElementById('zoomLbl');var cvs=document.getElementById('slideCanvas');if(lbl) lbl.textContent=ST.zoom+'%';if(cvs) cvs.style.transform='scale('+ST.zoom/100+')';}
+function setFmt(f){ST.format=f;['square','portrait','landscape'].forEach(function(x){var el=document.getElementById('fmt'+x.charAt(0).toUpperCase()+x.slice(1));if(el) el.classList.toggle('on',x===f);});var c=document.getElementById('slideCanvas');if(c) c.className='slide-canvas'+(f!=='square'?' '+f:'');}
 function shuffleAssets(){ST.assetOffset=(ST.assetOffset+1)%10;buildStrip();renderSlide();toast('🔀 New assets selected');}
 
 /* ─────────────────────────────────────────────────────────
@@ -1325,7 +1329,8 @@ function fillEdit(){
   if(eBody) eBody.value=s.body||s.subline||'';
   var capEl=document.getElementById('eCap');
   if(capEl) capEl.value=buildCaption(s);
-  document.getElementById('editNum').textContent='Slide '+(ST.cur+1);
+  var editNumEl=document.getElementById('editNum');
+  if(editNumEl) editNumEl.textContent='Slide '+(ST.cur+1);
   var badge=document.getElementById('layoutBadge');
   if(badge) badge.textContent=(s.layout||'').replace(/_/g,' ');
   var statSec=document.getElementById('eStatSection');
@@ -1381,9 +1386,9 @@ function setFontPair(pair){
    13. IMAGE UPLOAD
    ───────────────────────────────────────────────────────── */
 function handleUpload(e){var f=e.target.files[0];if(!f) return;var r=new FileReader();r.onload=function(ev){ST.userImages[ST.cur]=ev.target.result;renderSlide();buildStrip();toast('🖼️ Image added to slide '+(ST.cur+1));};r.readAsDataURL(f);}
-function dzOver(e){e.preventDefault();document.getElementById('dzone').classList.add('over');}
-function dzLeave(){document.getElementById('dzone').classList.remove('over');}
-function dzDrop(e){e.preventDefault();document.getElementById('dzone').classList.remove('over');var f=e.dataTransfer.files[0];if(!f||!f.type.startsWith('image/')) return;var r=new FileReader();r.onload=function(ev){ST.userImages[ST.cur]=ev.target.result;renderSlide();buildStrip();toast('🖼️ Image dropped on slide '+(ST.cur+1));};r.readAsDataURL(f);}
+function dzOver(e){e.preventDefault();var dz=document.getElementById('dzone');if(dz) dz.classList.add('over');}
+function dzLeave(){var dz=document.getElementById('dzone');if(dz) dz.classList.remove('over');}
+function dzDrop(e){e.preventDefault();var _dz=document.getElementById('dzone');if(_dz) _dz.classList.remove('over');var f=e.dataTransfer.files[0];if(!f||!f.type.startsWith('image/')) return;var r=new FileReader();r.onload=function(ev){ST.userImages[ST.cur]=ev.target.result;renderSlide();buildStrip();toast('🖼️ Image dropped on slide '+(ST.cur+1));};r.readAsDataURL(f);}
 
 /* ─────────────────────────────────────────────────────────
    14. ACCENT / THEME / FONT
@@ -1411,8 +1416,8 @@ function copyAll(){
   navigator.clipboard.writeText(all).then(function(){toast('✓ All copy + captions copied');});
 }
 
-function openExport(){document.getElementById('exportModal').classList.add('show');}
-function closeExport(){document.getElementById('exportModal').classList.remove('show');}
+function openExport(){var m=document.getElementById('exportModal');if(m) m.classList.add('show');}
+function closeExport(){var m=document.getElementById('exportModal');if(m) m.classList.remove('show');}
 function selExport(t){ST.exportType=t;['png','copy','json','video'].forEach(function(x){var el=document.getElementById('eo'+x.charAt(0).toUpperCase()+x.slice(1));if(el)el.classList.toggle('sel',x===t);});}
 
 function doExport(){
