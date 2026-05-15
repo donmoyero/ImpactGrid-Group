@@ -292,15 +292,20 @@
 ══════════════════════════════════════ */
 @media (max-width: 860px) {
 
-  .slider-root { height: auto; overflow: visible; }
-  .slider-track { flex-direction: column; width: 100%; height: auto; transition: none; }
-  .slide { width: 100%; height: auto; overflow: visible; }
+  /* Keep root as full-screen pager on mobile too */
+  .slider-root { height: 100vh; overflow: hidden; }
+  .slider-track { flex-direction: column; width: 100%; height: 200vh; transition: transform 0.55s cubic-bezier(.77,0,.18,1); }
+  .slide { width: 100%; height: 100vh; overflow: hidden; flex-shrink: 0; }
 
-  /* Stack: image top, content bottom */
-  .split { grid-template-columns: 1fr; grid-template-rows: 260px auto; }
-  .split-right { height: 260px; }
-  .split-right::before { background: linear-gradient(to bottom, transparent 40%, var(--bg) 100%); }
-  .split-left { padding: 28px 20px 32px; justify-content: flex-start; }
+  /* On mobile: image on top, content below */
+  .split { grid-template-columns: 1fr; grid-template-rows: 45vw auto; height: 100vh; }
+  .split-right { height: 45vw; min-height: 200px; max-height: 280px; }
+  .split-right::before { background: linear-gradient(to bottom, transparent 30%, var(--bg) 100%); }
+  .split-left { padding: 20px 20px 80px; justify-content: flex-start; overflow-y: auto; }
+
+  /* Dual image panel on mobile — side by side still */
+  .split-right[style*="grid-template-columns"] { display: flex !important; }
+  .split-right[style*="grid-template-columns"] > div { flex: 1; }
 
   /* Hide mosaic on mobile — just show first image */
   .mosaic { grid-template-columns: 1fr; grid-template-rows: 1fr; }
@@ -308,32 +313,23 @@
 
   .hero-title { font-size: 36px; }
   .hero-stats { gap: 20px; }
-  .feat-grid { grid-template-columns: 1fr; }
-
-  /* Hide thumbnails on mobile to save space */
+  .feat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .feat-thumb { height: 70px; }
 
-  /* Slide 2 visible below slide 1 on mobile */
-  .slide2-mobile-sep {
-    display: flex; align-items: center; gap: 12px;
-    padding: 0 20px; margin: 8px 0;
-  }
-  .slide2-mobile-sep::before,
-  .slide2-mobile-sep::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
-  }
+  /* Show the Creator Tools button on mobile */
+  #toolsBtn { display: inline-flex !important; }
 
-  /* Dots hidden on mobile since both slides visible */
-  .slide-dots { display: none; }
+  /* Dots visible on mobile as page indicators */
+  .slide-dots { display: flex; }
 
-  /* On mobile kill the slide transition — show both */
-  .mobile-show { display: block !important; }
+  .slide2-mobile-sep { display: none; }
 }
 
 @media (max-width: 480px) {
-  .split-right { height: 200px; }
+  .split-right { height: 200px; max-height: 200px; }
   .hero-title { font-size: 30px; }
-  .split-left { padding: 20px 16px 28px; }
+  .split-left { padding: 16px 16px 72px; }
+  .feat-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -401,7 +397,7 @@
           <!-- White muscular man happy on phone -->
           <div style="position:relative;overflow:hidden;height:100%;">
             <img
-              src="https://images.unsplash.com/photo-1546961342-ea5f60d193cc?w=700&h=1000&fit=crop&crop=faces,top"
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=700&h=1000&fit=crop&crop=faces,top"
               alt="Stylish man smiling at his phone"
               loading="eager"
               onload="this.classList.add('loaded')"
@@ -435,7 +431,7 @@
 
             <a href="creator-studio.html?tab=generator" class="feat-box" style="--ac:var(--gold)">
               <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1512314889357-e157c22f938d?w=400&h=200&fit=crop&crop=center" alt="" loading="lazy"/>
+                <img src="https://images.unsplash.com/photo-1596815064285-45ed8a9c0463?w=400&h=200&fit=crop&crop=top" alt="" loading="lazy"/>
               </div>
               <div class="feat-top">
                 <div class="feat-title">Write My Content</div>
@@ -447,7 +443,7 @@
 
             <a href="creator-studio.html?tab=calendar" class="feat-box" style="--ac:var(--green)">
               <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&h=200&fit=crop&crop=center" alt="" loading="lazy"/>
+                <img src="https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&h=200&fit=crop&crop=center" alt="" loading="lazy"/>
               </div>
               <div class="feat-top">
                 <div class="feat-title">Content Calendar</div>
@@ -459,7 +455,7 @@
 
             <a href="portfolio-studio.html" class="feat-box" style="--ac:var(--purple)">
               <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=200&fit=crop&crop=faces,top" alt="" loading="lazy"/>
+                <img src="https://images.unsplash.com/photo-1523264939339-c89f9dadde2e?w=400&h=200&fit=crop&crop=bottom" alt="" loading="lazy"/>
               </div>
               <div class="feat-top">
                 <div class="feat-title">Portfolio Studio</div>
@@ -471,7 +467,7 @@
 
             <a href="carousel-studio.html" class="feat-box" style="--ac:var(--blue)">
               <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=200&fit=crop&crop=center" alt="" loading="lazy"/>
+                <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=200&fit=crop&crop=top" alt="" loading="lazy"/>
               </div>
               <div class="feat-top">
                 <div class="feat-title">Carousel Studio</div>
@@ -485,23 +481,27 @@
 
         </div>
 
-        <!-- RIGHT: 4-image mosaic -->
+        <!-- RIGHT: 4-image mosaic — diverse young women creators -->
         <div class="split-right">
           <div class="mosaic">
+            <!-- UK/tribe lady — close crop, bold fashion -->
             <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1512314889357-e157c22f938d?w=600&h=500&fit=crop&crop=center" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
+              <img src="https://images.unsplash.com/photo-1596815064285-45ed8a9c0463?w=600&h=700&fit=crop&crop=top" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
               <span class="mosaic-cell-label">Write Content</span>
             </div>
+            <!-- African lady — phone in hand, street style -->
             <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=600&h=500&fit=crop&crop=center" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
+              <img src="https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&h=700&fit=crop&crop=center" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
               <span class="mosaic-cell-label">Calendar</span>
             </div>
+            <!-- Chinese lady — partial crop, shoe/outfit detail -->
             <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=600&h=500&fit=crop&crop=faces,top" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
+              <img src="https://images.unsplash.com/photo-1523264939339-c89f9dadde2e?w=600&h=700&fit=crop&crop=bottom" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
               <span class="mosaic-cell-label">Portfolio</span>
             </div>
+            <!-- Asian lady — on phone, lifestyle creator vibe -->
             <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&h=500&fit=crop&crop=center" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
+              <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=700&fit=crop&crop=top" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
               <span class="mosaic-cell-label">Carousel</span>
             </div>
           </div>
@@ -536,26 +536,21 @@ if (typeof renderNav==='function') renderNav('creator-welcome.html');
 // ── Mobile detection ──
 function isMobile() { return window.innerWidth <= 860; }
 
-// ── On mobile: show both slides stacked, no JS slider needed ──
-function applyMobileLayout() {
-  if (isMobile()) {
-    document.getElementById('sliderTrack').style.transform = 'none';
-    document.getElementById('slide2').style.display = 'block';
-    document.getElementById('toolsBtn').style.display = 'none';
-  }
-}
-
-// ── Slider (desktop) ──
+// ── Slider — works on both desktop (horizontal) and mobile (vertical) ──
 var current = 0;
 var track   = document.getElementById('sliderTrack');
 var slide2  = document.getElementById('slide2');
 var pips    = document.querySelectorAll('.dot-pip');
 
 function goSlide(n) {
-  if (isMobile()) return;
   if (n === current) return;
   current = n;
-  track.style.transform = n === 1 ? 'translateX(-50%)' : 'translateX(0)';
+  if (isMobile()) {
+    // Vertical scroll between slides on mobile
+    track.style.transform = n === 1 ? 'translateY(-100vh)' : 'translateY(0)';
+  } else {
+    track.style.transform = n === 1 ? 'translateX(-50%)' : 'translateX(0)';
+  }
   pips.forEach(function(p,i){ p.classList.toggle('on', i===n); });
   if (n === 1) {
     slide2.classList.remove('s2-in');
@@ -565,26 +560,46 @@ function goSlide(n) {
 }
 window.goSlide = goSlide;
 
-// ── Swipe (desktop / tablet) ──
-var sx = 0;
+// ── Reset track direction on resize ──
+function applyLayout() {
+  // Reset transform when switching breakpoints
+  if (isMobile()) {
+    track.style.transform = current === 1 ? 'translateY(-100vh)' : 'translateY(0)';
+    track.style.flexDirection = 'column';
+    track.style.height = '200vh';
+    track.style.width = '100%';
+    document.getElementById('toolsBtn').style.display = '';
+  } else {
+    track.style.transform = current === 1 ? 'translateX(-50%)' : 'translateX(0)';
+    track.style.flexDirection = '';
+    track.style.height = '';
+    track.style.width = '';
+  }
+}
+
+// ── Swipe support (both axes) ──
+var sx = 0, sy = 0;
 var root = document.getElementById('sliderRoot');
-root.addEventListener('touchstart', function(e){ sx=e.touches[0].clientX; }, {passive:true});
+root.addEventListener('touchstart', function(e){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; }, {passive:true});
 root.addEventListener('touchend', function(e){
-  if (isMobile()) return;
   var dx = sx - e.changedTouches[0].clientX;
-  if (Math.abs(dx) > 48) goSlide(dx > 0 ? 1 : 0);
+  var dy = sy - e.changedTouches[0].clientY;
+  if (isMobile()) {
+    if (Math.abs(dy) > 48) goSlide(dy > 0 ? 1 : 0);
+  } else {
+    if (Math.abs(dx) > 48) goSlide(dx > 0 ? 1 : 0);
+  }
 }, {passive:true});
 
 // ── Keyboard arrows ──
 document.addEventListener('keydown', function(e){
-  if (isMobile()) return;
-  if (e.key==='ArrowRight') goSlide(1);
-  if (e.key==='ArrowLeft')  goSlide(0);
+  if (e.key==='ArrowRight' || e.key==='ArrowDown') goSlide(1);
+  if (e.key==='ArrowLeft'  || e.key==='ArrowUp')   goSlide(0);
 });
 
 // ── Init ──
-applyMobileLayout();
-window.addEventListener('resize', applyMobileLayout);
+applyLayout();
+window.addEventListener('resize', applyLayout);
 
 function skip(){ try{ localStorage.setItem('ig_skip_welcome','1'); }catch(e){} }
 window.skip = skip;
