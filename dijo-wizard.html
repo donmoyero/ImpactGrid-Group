@@ -252,236 +252,343 @@ html, body {
 
 /* ═══ STYLE PREVIEWS — each is its own mini layout ═══ */
 
-/* 1. Full Bleed */
-.prev-fullbleed {
-  background: linear-gradient(160deg, #1a1208 0%, #0a0c12 100%);
-  display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;
-}
-.prev-fullbleed .prev-img {
+/* ── SHARED preview image utility ─── */
+.prev-photo {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, #2a1f0e 0%, #1a1208 40%, #0d1018 100%);
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+}
+.prev-photo-fill {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+}
+
+/* 1. Full Bleed — photo fills entire card, text overlaid at bottom */
+.prev-fullbleed {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;
+  background: #0a0c12;
 }
 .prev-fullbleed .prev-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.75) 100%);
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(180deg, rgba(0,0,0,.08) 0%, rgba(0,0,0,.78) 100%);
+  pointer-events: none;
 }
 .prev-fullbleed .prev-text { position: relative; z-index: 2; }
 .prev-fullbleed .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700;
+  font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700;
   color: #fff; line-height: 1.15; margin-bottom: 4px;
 }
 .prev-fullbleed .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-fullbleed .prev-p { font-size: 9px; color: rgba(255,255,255,.6); line-height: 1.4; }
+.prev-fullbleed .prev-p { font-size: 8.5px; color: rgba(255,255,255,.6); line-height: 1.4; }
+/* tag pill top-left — matches s-tag + s-brand in studio */
+.prev-fullbleed .prev-tag {
+  position: absolute; top: 10px; left: 10px; z-index: 3;
+  font-size: 7px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
+  color: rgba(255,255,255,.75); padding: 3px 7px; border-radius: 3px;
+  background: rgba(201,168,76,.28); border: 1px solid rgba(201,168,76,.4);
+}
+.prev-fullbleed .prev-slide-num {
+  position: absolute; top: 10px; right: 10px; z-index: 3;
+  font-size: 8px; font-weight: 700; color: rgba(255,255,255,.6);
+  background: rgba(0,0,0,.45); padding: 2px 6px; border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
 
-/* 2. Bot Strip */
+/* 2. Bot Strip — photo top 58%, dark text bar bottom */
 .prev-botstrip {
   background: #0a0c12;
   display: flex; flex-direction: column;
 }
 .prev-botstrip .prev-img-area {
-  flex: 1;
-  background: linear-gradient(135deg, #1e160a 0%, #0d1018 100%);
-  position: relative; overflow: hidden;
+  flex: 0 0 58%; position: relative; overflow: hidden;
 }
 .prev-botstrip .prev-img-area::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(10,12,18,.9) 100%);
+  background: linear-gradient(180deg, transparent 50%, rgba(10,12,18,.8) 100%);
 }
 .prev-botstrip .prev-bar {
-  background: #0f1118; padding: 10px 12px;
-  border-top: 1px solid rgba(201,168,76,.2);
+  flex: 1; background: #0f1118; padding: 8px 11px;
+  display: flex; flex-direction: column; justify-content: center;
+  border-top: 1px solid rgba(201,168,76,.22);
 }
 .prev-botstrip .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700;
-  color: #fff; margin-bottom: 2px;
+  font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700;
+  color: #fff; margin-bottom: 2px; line-height: 1.2;
 }
 .prev-botstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-botstrip .prev-p { font-size: 8px; color: rgba(255,255,255,.5); }
+.prev-botstrip .prev-p { font-size: 7.5px; color: rgba(255,255,255,.5); }
 
-/* 3. Top Strip */
+/* 3. Top Strip — dark text bar top 42%, photo fills rest */
 .prev-topstrip {
   background: #0f1118;
   display: flex; flex-direction: column;
 }
 .prev-topstrip .prev-bar {
-  background: #0f1118; padding: 10px 12px;
-  border-bottom: 1px solid rgba(201,168,76,.2);
+  flex: 0 0 42%; background: #0f1118; padding: 8px 11px;
+  display: flex; flex-direction: column; justify-content: center;
+  border-bottom: 1px solid rgba(201,168,76,.22);
 }
 .prev-topstrip .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700;
-  color: #fff; margin-bottom: 2px;
+  font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700;
+  color: #fff; margin-bottom: 2px; line-height: 1.2;
 }
 .prev-topstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-topstrip .prev-p { font-size: 8px; color: rgba(255,255,255,.5); }
+.prev-topstrip .prev-p { font-size: 7.5px; color: rgba(255,255,255,.5); }
 .prev-topstrip .prev-img-area {
-  flex: 1; background: linear-gradient(135deg, #1e160a 0%, #0d1018 100%);
+  flex: 1; overflow: hidden; position: relative;
 }
 
-/* 4. Band */
+/* 4. Overlap Band — photo bg + colour band cutting across centre */
 .prev-band {
   background: #0a0c12;
   display: flex; flex-direction: column; justify-content: center;
   position: relative;
 }
 .prev-band .prev-img-area {
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, #1e160a 0%, #0a0a12 100%);
-  opacity: .35;
+  position: absolute; inset: 0; overflow: hidden;
+}
+.prev-band .prev-img-area::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(0,0,0,.45);
 }
 .prev-band .prev-bar {
   position: relative; z-index: 2;
-  background: rgba(15,17,24,.9); padding: 16px 14px;
-  margin: 20px 0;
-  border-top: 1px solid rgba(201,168,76,.3);
-  border-bottom: 1px solid rgba(201,168,76,.3);
+  background: #c9a84c; padding: 14px 12px;
+  margin: 22px 0;
+  display: flex; flex-direction: column; gap: 4px;
 }
 .prev-band .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700;
-  color: #fff; text-align: center;
+  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 800;
+  color: #07090f; line-height: 1.15;
 }
-.prev-band .prev-h1 em { color: #c9a84c; font-style: normal; }
+.prev-band .prev-p { font-size: 7.5px; color: rgba(0,0,0,.6); }
 
-/* 5. Dual Image */
+/* 5. Dual Image — full bg photo + thumbnail top-right + text bottom */
 .prev-dual {
-  background: #0a0c12;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  background: #0a0c12; position: relative;
 }
-.prev-dual .prev-img-left {
-  background: linear-gradient(160deg, #1e160a 0%, #0d1018 100%);
-  position: relative;
+.prev-dual .prev-bg {
+  position: absolute; inset: 0; overflow: hidden;
 }
-.prev-dual .prev-img-left::after {
+.prev-dual .prev-bg::after {
   content: ''; position: absolute; inset: 0;
-  background: rgba(0,0,0,.35);
+  background: rgba(0,0,0,.52);
 }
-.prev-dual .prev-text-right {
-  background: #0f1118; padding: 12px 10px;
-  display: flex; flex-direction: column; justify-content: center;
-  border-left: 1px solid rgba(201,168,76,.2);
+.prev-dual .prev-thumb {
+  position: absolute; top: 10px; right: 10px; z-index: 3;
+  width: 34%; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  border: 1.5px solid rgba(255,255,255,.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+.prev-dual .prev-text-bottom {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+  padding: 10px 11px;
 }
 .prev-dual .prev-h1 {
   font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700;
-  color: #fff; margin-bottom: 4px; line-height: 1.2;
+  color: #fff; margin-bottom: 3px; line-height: 1.2;
 }
 .prev-dual .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-dual .prev-p { font-size: 8px; color: rgba(255,255,255,.5); line-height: 1.4; }
+.prev-dual .prev-p { font-size: 7.5px; color: rgba(255,255,255,.55); line-height: 1.4; }
 
-/* 6. Stat */
+/* 6. Stat Hero — dark bg + giant number + optional photo strip at bottom */
 .prev-stat {
   background: #0f1118; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 8px; padding: 16px;
+  align-items: center; justify-content: center; gap: 6px; padding: 14px;
+  position: relative; overflow: hidden;
+}
+.prev-stat .prev-stat-strip {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 28%;
+  overflow: hidden; opacity: .4;
 }
 .prev-stat .prev-num {
-  font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 800;
-  color: #c9a84c; line-height: 1;
+  font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 800;
+  color: #c9a84c; line-height: 1; position: relative; z-index: 2;
 }
+.prev-stat .prev-rule { width: 28px; height: 1px; background: rgba(201,168,76,.45); position: relative; z-index: 2; }
 .prev-stat .prev-label {
-  font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
-  color: rgba(255,255,255,.5); text-align: center;
+  font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(255,255,255,.5); text-align: center; position: relative; z-index: 2;
 }
-.prev-stat .prev-rule { width: 32px; height: 1px; background: rgba(201,168,76,.4); }
 
-/* 7. Editorial Cover */
+/* 7. Editorial Cover — full photo, magazine-style serif title at bottom, light body */
 .prev-edcover {
   background: #0a0c12; position: relative; overflow: hidden;
   display: flex; flex-direction: column;
 }
-.prev-edcover .prev-img {
-  position: absolute; inset: 0;
-  background: linear-gradient(160deg, #1e140a 0%, #0a0c18 100%);
-}
 .prev-edcover .prev-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.85) 100%);
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(180deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.82) 100%);
+  pointer-events: none;
 }
-.prev-edcover .prev-num {
-  position: relative; z-index: 2;
-  font-size: 10px; font-family: 'DM Sans', sans-serif; font-weight: 700;
-  letter-spacing: .14em; color: #c9a84c; padding: 12px 14px 0; text-transform: uppercase;
+.prev-edcover .prev-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  font-size: 7.5px; color: rgba(255,255,255,.9);
+  border: 1px solid rgba(255,255,255,.55); border-radius: 40px; padding: 2px 8px;
+  letter-spacing: .3px;
+}
+.prev-edcover .prev-brand-top {
+  position: absolute; top: 12px; right: 10px; z-index: 2;
+  font-size: 8px; color: rgba(255,255,255,.8); letter-spacing: .3px;
 }
 .prev-edcover .prev-text {
-  position: relative; z-index: 2;
-  padding: 0 14px 14px; margin-top: auto;
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+  padding: 0 12px 12px;
 }
 .prev-edcover .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 800;
-  color: #fff; line-height: 1.1;
+  font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 400;
+  color: #fff; line-height: 1.05;
 }
-.prev-edcover .prev-h1 em { color: #c9a84c; font-style: italic; }
-.prev-edcover .prev-rule { width: 24px; height: 2px; background: #c9a84c; margin: 6px 0; }
-.prev-edcover .prev-p { font-size: 8.5px; color: rgba(255,255,255,.55); line-height: 1.5; }
+.prev-edcover .prev-h1 em { font-style: italic; color: #fff; }
+.prev-edcover .prev-rule { width: 20px; height: 1.5px; background: rgba(255,255,255,.5); margin: 5px 0; }
+.prev-edcover .prev-p { font-size: 8px; color: rgba(255,255,255,.6); line-height: 1.45; }
+.prev-edcover .prev-stars {
+  position: absolute; bottom: 10px; right: 10px; z-index: 2;
+  font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: 3px;
+}
 
-/* 8. Editorial Collage */
+/* 8. Editorial Collage — warm cream bg, overlapping photos left, text right */
 .prev-edcollage {
-  background: #0f1118;
-  display: grid; grid-template-rows: 1fr 1fr; gap: 0;
+  background: #f0ebe1; position: relative;
 }
-.prev-edcollage .prev-top {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+.prev-edcollage .prev-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 6;
+  font-size: 7.5px; color: #888; border: 1px solid #b0a898;
+  border-radius: 40px; padding: 2px 8px;
 }
-.prev-edcollage .prev-img-cell {
-  background: linear-gradient(135deg, #1e160a, #0d1018);
+.prev-edcollage .prev-brand-top {
+  position: absolute; top: 12px; right: 10px; z-index: 6;
+  font-size: 8px; color: #888;
 }
-.prev-edcollage .prev-img-cell:nth-child(2) {
-  background: linear-gradient(135deg, #0d1018, #1a1208);
+.prev-edcollage .prev-big-num {
+  position: absolute; top: 28px; right: 10px; z-index: 2;
+  font-family: Georgia, 'Times New Roman', serif; font-size: 80px;
+  font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .9;
 }
-.prev-edcollage .prev-bottom {
-  background: #0f1118; padding: 10px 12px;
+.prev-edcollage .prev-photo-1 {
+  position: absolute; left: 10px; top: 42px;
+  width: 42%; height: 46%; border-radius: 2px; overflow: hidden; z-index: 3;
+  background: #c8b89a;
+}
+.prev-edcollage .prev-photo-2 {
+  position: absolute; left: 24%; top: 40%;
+  width: 38%; height: 44%; border-radius: 2px; overflow: hidden; z-index: 4;
+  background: #a89070; box-shadow: 0 3px 14px rgba(0,0,0,.15);
+}
+.prev-edcollage .prev-text-right {
+  position: absolute; left: 50%; right: 0; top: 0; bottom: 0; z-index: 5;
+  background: #f0ebe1;
+  border-left: 1.5px solid rgba(180,160,130,.28);
   display: flex; flex-direction: column; justify-content: center;
-  border-top: 2px solid rgba(201,168,76,.25);
+  padding: 10px 10px 10px 10px; gap: 6px;
 }
 .prev-edcollage .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700;
-  color: #fff; line-height: 1.2; margin-bottom: 3px;
+  font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400;
+  color: #1a1814; line-height: 1.2;
 }
-.prev-edcollage .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-edcollage .prev-p { font-size: 8px; color: rgba(255,255,255,.45); }
+.prev-edcollage .prev-h1 em { font-style: italic; }
+.prev-edcollage .prev-p { font-size: 7.5px; color: #666; line-height: 1.5; }
+.prev-edcollage .prev-foot {
+  position: absolute; bottom: 8px; left: 10px; z-index: 6;
+  font-size: 7.5px; color: #a09888;
+}
+.prev-edcollage .prev-stars {
+  position: absolute; bottom: 8px; right: 8px; z-index: 6;
+  font-size: 10px; color: #b0a090; letter-spacing: 3px;
+}
 
-/* 9. Editorial Col×3 */
+/* 9. Editorial Col×3 — cream bg, big italic number, text left, 3-photo grid right */
 .prev-edcol3 {
-  background: #0f1118; padding: 12px;
-  display: flex; flex-direction: column; gap: 8px; justify-content: center;
+  background: #f0ebe1; position: relative;
+}
+.prev-edcol3 .prev-badge {
+  position: absolute; top: 10px; right: 10px; z-index: 6;
+  font-size: 7.5px; color: #888; border: 1px solid #b0a898;
+  border-radius: 40px; padding: 2px 8px;
+}
+.prev-edcol3 .prev-big-num {
+  position: absolute; top: 28px; left: 8px; z-index: 2;
+  font-family: Georgia, 'Times New Roman', serif; font-size: 80px;
+  font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .9;
+}
+.prev-edcol3 .prev-text-left {
+  position: absolute; left: 0; right: 50%; top: 0; bottom: 0; z-index: 5;
+  background: #f0ebe1; border-right: 1.5px solid rgba(180,160,130,.28);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 10px 8px;
 }
 .prev-edcol3 .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700;
-  color: #fff; line-height: 1.2;
+  font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400;
+  color: #1a1814; line-height: 1.2;
 }
-.prev-edcol3 .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-edcol3 .prev-cols { display: flex; gap: 6px; }
-.prev-edcol3 .prev-col {
-  flex: 1; background: rgba(201,168,76,.08);
-  border: 1px solid rgba(201,168,76,.2);
-  border-radius: 6px; padding: 6px 6px;
+.prev-edcol3 .prev-h1 em { font-style: italic; }
+.prev-edcol3 .prev-p { font-size: 7.5px; color: #666; line-height: 1.5; margin-top: 4px; }
+.prev-edcol3 .prev-photos-right {
+  position: absolute; left: 50%; right: 10px; top: 40px; bottom: 30px; z-index: 3;
+  display: grid; grid-template-columns: 1fr; gap: 4px;
 }
-.prev-edcol3 .prev-col-icon { font-size: 12px; margin-bottom: 3px; }
-.prev-edcol3 .prev-col-t { font-size: 7.5px; font-weight: 700; color: #c9a84c; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
-.prev-edcol3 .prev-col-p { font-size: 7px; color: rgba(255,255,255,.45); line-height: 1.4; }
+.prev-edcol3 .prev-photo-wide {
+  width: 100%; height: 44%; border-radius: 2px; overflow: hidden;
+  background: #c8b89a; position: absolute; top: 0; left: 0; right: 0;
+}
+.prev-edcol3 .prev-photos-bottom {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
+  display: flex; gap: 4px;
+}
+.prev-edcol3 .prev-photo-sm {
+  flex: 1; border-radius: 2px; overflow: hidden;
+  background: #a89070;
+}
+.prev-edcol3 .prev-foot {
+  position: absolute; bottom: 8px; left: 8px; z-index: 6;
+  font-size: 7.5px; color: #a09888;
+}
+.prev-edcol3 .prev-stars {
+  position: absolute; bottom: 8px; right: 8px; z-index: 6;
+  font-size: 10px; color: #b0a090; letter-spacing: 3px;
+}
 
-/* 10. Habit Cover */
+/* 10. Habit Cover — full photo bg, giant serif title in accent colour at bottom */
 .prev-habit {
   background: #0a0c12; position: relative; overflow: hidden;
-  display: flex; align-items: center; justify-content: center; flex-direction: column;
-  gap: 4px; padding: 16px;
 }
-.prev-habit .prev-img {
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, #0e1a10 0%, #0a0c18 100%);
-  opacity: .6;
+.prev-habit .prev-topbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+  padding: 8px 10px; display: flex; justify-content: space-between;
+  border-bottom: 0.5px solid rgba(255,255,255,.2);
 }
-.prev-habit .prev-num {
-  position: relative; z-index: 2;
-  font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 800;
-  color: rgba(255,255,255,.08); line-height: 1;
+.prev-habit .prev-topbar span {
+  font-size: 6.5px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(255,255,255,.78);
+}
+.prev-habit .prev-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: rgba(8,8,6,.36); pointer-events: none;
+}
+.prev-habit .prev-title-block {
+  position: absolute; left: 12px; right: 12px; bottom: 52px; z-index: 2;
 }
 .prev-habit .prev-h1 {
-  position: relative; z-index: 2;
-  font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700;
-  color: #fff; text-align: center; line-height: 1.2;
+  font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 800;
+  color: #c9a84c; line-height: .92; letter-spacing: -.3px;
 }
-.prev-habit .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-habit .prev-p {
-  position: relative; z-index: 2;
-  font-size: 8px; color: rgba(255,255,255,.45); text-align: center;
+.prev-habit .prev-sub {
+  font-size: 7.5px; font-weight: 400; color: #c9a84c;
+  letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; line-height: 1.4;
+}
+.prev-habit .prev-swirl {
+  position: absolute; right: 16px; bottom: 70px; z-index: 2;
+  width: 36px; height: 36px; opacity: .85;
+}
+.prev-habit .prev-botbar {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+  padding: 6px 10px; display: flex; justify-content: space-between;
+}
+.prev-habit .prev-botbar span {
+  font-size: 6.5px; color: rgba(255,255,255,.45); letter-spacing: .06em;
 }
 
 /* ── IMAGE UPLOAD (Page 3) ────────────── */
@@ -1058,12 +1165,14 @@ html, body {
 
         <div class="style-grid" id="styleGrid">
 
-          <!-- Full Bleed -->
+          <!-- 1. Full Bleed — FULL_BLEED: photo fills slide, text overlaid at bottom -->
           <div class="style-card sel" data-style="Full Bleed">
             <div class="style-preview">
               <div class="prev-fullbleed">
-                <div class="prev-img"></div>
+                <img class="prev-photo" src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
                 <div class="prev-overlay"></div>
+                <span class="prev-tag">INSIGHT</span>
+                <span class="prev-slide-num">01 / 07</span>
                 <div class="prev-text">
                   <div class="prev-h1">From ideas<br>to <em>impact.</em></div>
                   <div class="prev-p">We help brands show up with intention.</div>
@@ -1074,11 +1183,13 @@ html, body {
             <div class="style-name">Full Bleed</div>
           </div>
 
-          <!-- Bot Strip -->
+          <!-- 2. Bottom Strip — BOTTOM_STRIP: photo top 58%, text panel bottom -->
           <div class="style-card" data-style="Bot Strip">
             <div class="style-preview">
               <div class="prev-botstrip">
-                <div class="prev-img-area"></div>
+                <div class="prev-img-area">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                </div>
                 <div class="prev-bar">
                   <div class="prev-h1">Most brands don't lack <em>talent.</em></div>
                   <div class="prev-p">They lack structure.</div>
@@ -1089,7 +1200,7 @@ html, body {
             <div class="style-name">Bot Strip</div>
           </div>
 
-          <!-- Top Strip -->
+          <!-- 3. Top Strip — TOP_STRIP: text panel top 42%, photo fills rest -->
           <div class="style-card" data-style="Top Strip">
             <div class="style-preview">
               <div class="prev-topstrip">
@@ -1097,115 +1208,163 @@ html, body {
                   <div class="prev-h1">Ready to build a brand people <em>remember?</em></div>
                   <div class="prev-p">Strategy · Content · Growth</div>
                 </div>
-                <div class="prev-img-area"></div>
+                <div class="prev-img-area">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                </div>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
             <div class="style-name">Top Strip</div>
           </div>
 
-          <!-- Band -->
+          <!-- 4. Overlap Band — OVERLAP_BAND: photo bg, gold accent bar across centre -->
           <div class="style-card" data-style="Band">
             <div class="style-preview">
               <div class="prev-band">
-                <div class="prev-img-area"></div>
+                <div class="prev-img-area">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                </div>
                 <div class="prev-bar">
-                  <div class="prev-h1">That's where we <em>come in.</em></div>
+                  <div class="prev-h1">That's where we come in.</div>
+                  <div class="prev-p">Strategy & Creative Direction</div>
                 </div>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
-            <div class="style-name">Band</div>
+            <div class="style-name">Overlap Band</div>
           </div>
 
-          <!-- Dual Img -->
+          <!-- 5. Dual Image — DUAL_IMAGE: full bg + thumb top-right, text bottom -->
           <div class="style-card" data-style="Dual Img">
             <div class="style-preview">
               <div class="prev-dual">
-                <div class="prev-img-left"></div>
-                <div class="prev-text-right">
-                  <div class="prev-h1">Some people post content. Others create <em>presence.</em></div>
-                  <div class="prev-p">Strategy, storytelling and consistency.</div>
+                <div class="prev-bg">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1493666438817-866a91353ca9?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                </div>
+                <div class="prev-thumb">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1523413555250-4580a8bcd2df?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                </div>
+                <div class="prev-text-bottom">
+                  <div class="prev-h1">Some people post. Others build <em>presence.</em></div>
+                  <div class="prev-p">Strategy, storytelling, consistency.</div>
                 </div>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
-            <div class="style-name">Dual Img</div>
+            <div class="style-name">Dual Image</div>
           </div>
 
-          <!-- Stat -->
+          <!-- 6. Stat Hero — STAT_HERO: dark bg, giant accent number, photo strip at bottom -->
           <div class="style-card" data-style="Stat">
             <div class="style-preview">
               <div class="prev-stat">
+                <div class="prev-stat-strip">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                </div>
                 <div class="prev-num">87%</div>
                 <div class="prev-rule"></div>
-                <div class="prev-label">of buyers research on social<br>before deciding</div>
+                <div class="prev-label">of buyers research on<br>social before deciding</div>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
-            <div class="style-name">Stat</div>
+            <div class="style-name">Stat Hero</div>
           </div>
 
-          <!-- Ed. Cover -->
+          <!-- 7. Editorial Cover — EDITORIAL_COVER: full photo, serif title bottom, badge+brand top -->
           <div class="style-card" data-style="Ed. Cover">
             <div class="style-preview">
               <div class="prev-edcover">
-                <div class="prev-img"></div>
+                <img class="prev-photo" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
                 <div class="prev-overlay"></div>
-                <div class="prev-num">01 ——</div>
+                <span class="prev-badge">Page 01</span>
+                <span class="prev-brand-top">ImpactGrid</span>
                 <div class="prev-text">
                   <div class="prev-h1">From ideas to <em>impact.</em></div>
                   <div class="prev-rule"></div>
-                  <div class="prev-p">We help brands and creators show up with content that looks intentional — not random.</div>
+                  <div class="prev-p">We help brands show up with content that looks intentional.</div>
                 </div>
+                <span class="prev-stars">✽ ✽ ✽</span>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
             <div class="style-name">Ed. Cover</div>
           </div>
 
-          <!-- Ed. Collage -->
+          <!-- 8. Editorial Collage — EDITORIAL_COLLAGE: cream bg, 2 overlapping photos left, text right, italic big number -->
           <div class="style-card" data-style="Ed. Collage">
             <div class="style-preview">
               <div class="prev-edcollage">
-                <div class="prev-top">
-                  <div class="prev-img-cell"></div>
-                  <div class="prev-img-cell"></div>
+                <span class="prev-badge">Page 01</span>
+                <span class="prev-brand-top">ImpactGrid</span>
+                <span class="prev-big-num">01</span>
+                <div class="prev-photo-1">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
                 </div>
-                <div class="prev-bottom">
+                <div class="prev-photo-2">
+                  <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                </div>
+                <div class="prev-text-right">
                   <div class="prev-h1">That's where we <em>come in.</em></div>
                   <div class="prev-p">Content · Creative · Community</div>
                 </div>
+                <span class="prev-foot">@impactgrid</span>
+                <span class="prev-stars">✽ ✽ ✽</span>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
             <div class="style-name">Ed. Collage</div>
           </div>
 
-          <!-- Ed. Col×3 -->
+          <!-- 9. Editorial Col×3 — EDITORIAL_COLLAGE_3: cream bg, text left, 3-photo grid right -->
           <div class="style-card" data-style="Ed. Col3">
             <div class="style-preview">
               <div class="prev-edcol3">
-                <div class="prev-h1">Three things that build a <em>brand.</em></div>
-                <div class="prev-cols">
-                  <div class="prev-col"><div class="prev-col-icon">📅</div><div class="prev-col-t">Plan</div><div class="prev-col-p">Purposeful content calendar</div></div>
-                  <div class="prev-col"><div class="prev-col-icon">✍️</div><div class="prev-col-t">Create</div><div class="prev-col-p">Stories that connect</div></div>
-                  <div class="prev-col"><div class="prev-col-icon">📈</div><div class="prev-col-t">Grow</div><div class="prev-col-p">Consistency creates trust</div></div>
+                <span class="prev-badge">Page 01</span>
+                <span class="prev-big-num">01</span>
+                <div class="prev-text-left">
+                  <div class="prev-h1">Three things that build a <em>brand.</em></div>
+                  <div class="prev-p">Plan · Create · Grow</div>
                 </div>
+                <div class="prev-photos-right">
+                  <div class="prev-photo-wide">
+                    <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=300&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                  </div>
+                  <div class="prev-photos-bottom">
+                    <div class="prev-photo-sm">
+                      <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1523413555250-4580a8bcd2df?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                    </div>
+                    <div class="prev-photo-sm">
+                      <img class="prev-photo-fill" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                    </div>
+                  </div>
+                </div>
+                <span class="prev-foot">@impactgrid</span>
+                <span class="prev-stars">✽ ✽ ✽</span>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
             <div class="style-name">Ed. Col×3</div>
           </div>
 
-          <!-- Habit Cover -->
+          <!-- 10. Habit Cover — HABIT_COVER: full photo bg, topbar brand/handle, giant serif accent title -->
           <div class="style-card" data-style="Habit Cover">
             <div class="style-preview">
               <div class="prev-habit">
-                <div class="prev-img"></div>
-                <div class="prev-num">01</div>
-                <div class="prev-h1">Post with <em>purpose.</em></div>
-                <div class="prev-p">Habit 1 of 5 for brand growth</div>
+                <img class="prev-photo" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
+                <div class="prev-overlay"></div>
+                <div class="prev-topbar">
+                  <span>IMPACTGRID</span>
+                  <span>@impactgrid</span>
+                </div>
+                <div class="prev-title-block">
+                  <div class="prev-h1">Post<br>With</div>
+                  <div class="prev-sub">Habit 1 of 5 · Brand Growth</div>
+                </div>
+                <svg class="prev-swirl" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M55 20 C55 20 70 30 62 48 C54 66 30 62 22 46 C14 30 28 14 44 18" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M44 18 L38 10 M44 18 L52 14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div class="prev-botbar">
+                  <span>WWW.IMPACTGRID.COM</span>
+                  <span>SLIDE 01</span>
+                </div>
               </div>
               <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             </div>
