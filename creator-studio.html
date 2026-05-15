@@ -185,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="sb-item active" data-tab="dashboard"><span class="sb-icon">📊</span>My Overview<span class="sb-badge live">Live</span></div>
       <div class="sb-item" data-tab="trends"><span class="sb-icon">🔥</span>What's Trending</div>
       <div class="sb-item" data-tab="generator"><span class="sb-icon">✍️</span>Write My Content</div>
-      <div class="sb-item" data-tab="audience"><span class="sb-icon">👥</span>Post Audience</div>
       <div class="sb-item" data-tab="evaluator"><span class="sb-icon">⚡</span>Analyse My Channel<span class="sb-badge live">AI</span></div>
     </div>
     <div class="sb-sec">
@@ -219,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard">📊 My Overview</button>
       <button class="tab-btn" id="tab-trends" data-tab="trends">🔥 What's Trending</button>
       <button class="tab-btn" id="tab-generator" data-tab="generator">✍️ Write My Content</button>
-      <button class="tab-btn" id="tab-audience" data-tab="audience">👥 Post Audience</button>
       <button class="tab-btn" id="tab-evaluator" data-tab="evaluator">🎯 Analyse My Channel</button>
       <button class="tab-btn" id="tab-calendar" data-tab="calendar">📅 Calendar</button>
     </div>
@@ -406,42 +404,154 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </div>
 
-      <!-- GENERATOR -->
+      <!-- GENERATOR (unified with audience) -->
       <div class="panel" id="panel-generator">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <h2 style="font-size:20px">AI Content Generator</h2>
-          <span class="card-tag tag-gold">Dijo AI</span>
-        </div>
-        <div id="genLoading" class="gen-loading"><span class="spinner"></span><span id="genLoadingMsg">Generating…</span></div>
-        <div class="ai-hint" id="aiHint">💡 Enter a topic — Dijo will generate high-performing content based on trends.</div>
-        <div class="gen-layout">
-          <div class="gen-input-area">
-            <div class="input-group"><label class="input-label">Topic</label><input type="text" class="form-input" id="genTopic" placeholder="e.g. AI productivity tools, UK street style…" onkeydown="if(event.key==='Enter')fullGenerate()"/></div>
-            <div class="input-group"><label class="input-label">Platform</label><select class="form-select" id="genPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option><option>All Platforms</option></select></div>
-            <div class="input-group"><label class="input-label">Style</label><div class="style-chips"><button class="style-chip active" onclick="selectStyle(this)">Educational</button><button class="style-chip" onclick="selectStyle(this)">Entertaining</button><button class="style-chip" onclick="selectStyle(this)">Motivational</button><button class="style-chip" onclick="selectStyle(this)">Hot Take</button></div></div>
-            <div class="input-group"><label class="input-label">Niche (optional)</label><input type="text" class="form-input" id="genNiche" placeholder="e.g. finance, fitness, fashion…"/></div>
-            <button class="gen-btn" onclick="fullGenerate()" id="fullGenBtn">⚡ Generate Full Package</button>
-            <div id="genError" class="gen-error"></div>
-            <div class="score-card">
-              <div class="score-label">Trend Score™</div>
-              <div class="score-num" id="previewScore">—</div>
-              <div class="score-verdict" id="previewVerdict">Enter a topic to score</div>
+
+        <!-- ── Studio Header ── -->
+        <div class="studio-header">
+          <div class="studio-header-left">
+            <div class="studio-title-badge">
+              <span class="studio-badge-dot"></span>
+              <span>Dijo AI</span>
             </div>
+            <h2 class="studio-title">Content Studio</h2>
+            <p class="studio-subtitle">Enter a topic. Dijo writes your content <em>and</em> maps your audience — all in one shot.</p>
           </div>
-          <div class="gen-output">
-            <div class="output-block"><div class="ob-header"><span>Video Hook</span><button class="copy-btn" onclick="copyEl('outHook')">Copy</button></div><div class="ob-body ob-placeholder" id="outHook">Your hook appears here…</div></div>
-            <div class="output-block"><div class="ob-header"><span>Caption</span><button class="copy-btn" onclick="copyEl('outCaption')">Copy</button></div><div class="ob-body ob-placeholder" id="outCaption">Your caption appears here…</div></div>
-            <div class="hashtag-bar">
-              <div class="hashtag-bar-title">Suggested Hashtags</div>
-              <div class="hashtag-bar-list" id="hashtagBar"></div>
-            </div>
-            <div class="output-block"><div class="ob-header"><span>Content Outline</span><button class="copy-btn" onclick="copyEl('outOutline')">Copy</button></div><div class="ob-body ob-placeholder" id="outOutline">Your outline appears here…</div></div>
-            <div class="output-block"><div class="ob-header"><span>Hashtags</span><button class="copy-btn" onclick="copyTags('outHashtags')">Copy</button></div><div class="ob-tags" id="outHashtags"><span style="color:var(--text3);font-style:italic;font-size:12px">Hashtags appear here…</span></div></div>
-            <div class="output-block"><div class="ob-header"><span>Best Posting Time</span></div><div class="timing-grid" id="outTiming"><div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div></div></div>
+          <div class="studio-score-pill" id="scorePill">
+            <span class="ssp-label">Trend Score™</span>
+            <span class="ssp-val" id="previewScore">—</span>
+            <span class="ssp-verdict" id="previewVerdict">awaiting topic</span>
           </div>
         </div>
 
+        <!-- ── Input Row ── -->
+        <div class="studio-input-row">
+          <div class="studio-topic-wrap">
+            <span class="studio-topic-icon">✍️</span>
+            <input type="text" class="studio-topic-input" id="genTopic"
+              placeholder="What do you want to create content about?"
+              onkeydown="if(event.key==='Enter')fullGenerate()"/>
+            <button class="studio-generate-btn" onclick="fullGenerate()" id="fullGenBtn">
+              <span class="sgb-lightning">⚡</span>
+              <span class="sgb-text">Generate</span>
+            </button>
+          </div>
+          <div class="studio-controls-row">
+            <div class="studio-control-group">
+              <label class="sc-label">Platform</label>
+              <select class="sc-select" id="genPlatform">
+                <option>TikTok</option>
+                <option>YouTube</option>
+                <option>Instagram</option>
+                <option>All Platforms</option>
+              </select>
+            </div>
+            <div class="studio-control-group">
+              <label class="sc-label">Niche</label>
+              <input type="text" class="sc-input" id="genNiche" placeholder="e.g. finance, fitness…"/>
+            </div>
+            <div class="studio-control-group">
+              <label class="sc-label">Style</label>
+              <div class="sc-chips">
+                <button class="sc-chip active" onclick="selectStyle(this)">Educational</button>
+                <button class="sc-chip" onclick="selectStyle(this)">Entertaining</button>
+                <button class="sc-chip" onclick="selectStyle(this)">Motivational</button>
+                <button class="sc-chip" onclick="selectStyle(this)">Hot Take</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="genLoading" class="gen-loading"><span class="spinner spinner-gold"></span><span id="genLoadingMsg">Dijo is building your content package…</span></div>
+        <div id="genError" class="gen-error"></div>
+
+        <!-- ── Output Grid ── -->
+        <div class="studio-output-grid" id="studioOutputGrid">
+
+          <!-- LEFT: Content outputs -->
+          <div class="studio-outputs">
+
+            <!-- Hook card -->
+            <div class="sout-card sout-hero">
+              <div class="sout-card-header">
+                <div class="sout-label-row">
+                  <span class="sout-icon">🎣</span>
+                  <span class="sout-label">Video Hook</span>
+                  <span class="sout-hint">First 1.5s — make or break</span>
+                </div>
+                <button class="sout-copy-btn" onclick="copyEl('outHook')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+              <div class="sout-body sout-hook-body" id="outHook">Your hook will appear here after you hit Generate…</div>
+            </div>
+
+            <!-- Caption + Outline side by side -->
+            <div class="sout-pair">
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-icon">📝</span><span class="sout-label">Caption</span></div>
+                  <button class="sout-copy-btn" onclick="copyEl('outCaption')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>
+                </div>
+                <div class="sout-body" id="outCaption">Caption appears here…</div>
+              </div>
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-icon">🗂️</span><span class="sout-label">Content Outline</span></div>
+                  <button class="sout-copy-btn" onclick="copyEl('outOutline')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>
+                </div>
+                <div class="sout-body" id="outOutline">Outline appears here…</div>
+              </div>
+            </div>
+
+            <!-- Hashtags + Timing -->
+            <div class="sout-pair">
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-icon">#</span><span class="sout-label">Hashtags</span></div>
+                  <button class="sout-copy-btn" onclick="copyTags('outHashtags')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy all</button>
+                </div>
+                <div class="sout-tags" id="outHashtags">
+                  <span class="sout-tags-placeholder">Hashtags appear after generating…</span>
+                </div>
+                <div class="hashtag-bar-list" id="hashtagBar" style="display:none"></div>
+              </div>
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-icon">⏰</span><span class="sout-label">Best Time to Post</span></div>
+                </div>
+                <div class="timing-grid" id="outTiming">
+                  <div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT: Audience intel (auto-generated) -->
+          <div class="studio-audience-panel" id="studioAudiencePanel">
+            <div class="saud-header">
+              <div class="saud-title-row">
+                <span class="saud-icon">👥</span>
+                <span class="saud-title">Audience Intel</span>
+                <span class="saud-badge">Auto-generated</span>
+              </div>
+              <p class="saud-desc">Generated alongside your content — know exactly who you're writing for.</p>
+            </div>
+            <div id="audOutput" class="saud-output">
+              <div class="saud-empty">
+                <div class="saud-empty-icon">👁️</div>
+                <div class="saud-empty-text">Your audience breakdown appears here once you generate content above.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
+
+      <!-- AUDIENCE panel kept as hidden redirect target for legacy links -->
+      <div class="panel" id="panel-audience" style="display:none"></div>
 
       <!-- CALENDAR -->
       <div class="panel" id="panel-calendar">
@@ -512,16 +622,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </div>
 
-      <!-- AUDIENCE -->
-      <div class="panel" id="panel-audience">
-        <h2 style="font-size:20px;margin-bottom:6px">Post Audience</h2>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
-        <div style="display:flex;gap:10px;margin-bottom:20px">
-          <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
-          <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
-        </div>
-        <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
-      </div>
 
       <!-- EVALUATOR -->
       <div class="panel" id="panel-evaluator">
