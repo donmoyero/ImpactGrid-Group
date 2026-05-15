@@ -252,344 +252,161 @@ html, body {
 
 /* ═══ STYLE PREVIEWS — each is its own mini layout ═══ */
 
-/* ── SHARED preview image utility ─── */
-.prev-photo {
+/* Every inner layout div must fill the preview square */
+.prev-fullbleed, .prev-botstrip, .prev-topstrip,
+.prev-band, .prev-dual, .prev-stat,
+.prev-edcover, .prev-edcollage, .prev-edcol3, .prev-habit {
+  width: 100%; height: 100%;
+  position: relative; overflow: hidden;
+}
+
+/* Shared photo helpers */
+.prev-photo {           /* absolute fill — for backgrounds */
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; object-position: center;
-  display: block;
+  display: block; z-index: 0;
 }
-.prev-photo-fill {
+.prev-photo-fill {      /* flow fill — inside a sized container */
   width: 100%; height: 100%;
   object-fit: cover; object-position: center;
   display: block;
 }
 
-/* 1. Full Bleed — photo fills entire card, text overlaid at bottom */
-.prev-fullbleed {
-  position: relative;
-  display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;
-  background: #0a0c12;
-}
-.prev-fullbleed .prev-overlay {
-  position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(180deg, rgba(0,0,0,.08) 0%, rgba(0,0,0,.78) 100%);
-  pointer-events: none;
-}
+/* ─────────────────────────────────────────
+   1. FULL BLEED
+   photo fills card · gradient overlay · text bottom
+──────────────────────────────────────────── */
+.prev-fullbleed { background: #0a0c12; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px; }
+.prev-fullbleed .prev-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.80) 100%); pointer-events: none; }
+.prev-fullbleed .prev-tag { position: absolute; top: 9px; left: 9px; z-index: 3; font-size: 6.5px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,.8); padding: 2px 6px; border-radius: 3px; background: rgba(201,168,76,.28); border: 1px solid rgba(201,168,76,.45); }
+.prev-fullbleed .prev-slide-num { position: absolute; top: 9px; right: 9px; z-index: 3; font-size: 7.5px; font-weight: 700; color: rgba(255,255,255,.65); background: rgba(0,0,0,.5); padding: 2px 5px; border-radius: 4px; }
 .prev-fullbleed .prev-text { position: relative; z-index: 2; }
-.prev-fullbleed .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700;
-  color: #fff; line-height: 1.15; margin-bottom: 4px;
-}
+.prev-fullbleed .prev-h1 { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: #fff; line-height: 1.15; margin-bottom: 3px; }
 .prev-fullbleed .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-fullbleed .prev-p { font-size: 8.5px; color: rgba(255,255,255,.6); line-height: 1.4; }
-/* tag pill top-left — matches s-tag + s-brand in studio */
-.prev-fullbleed .prev-tag {
-  position: absolute; top: 10px; left: 10px; z-index: 3;
-  font-size: 7px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
-  color: rgba(255,255,255,.75); padding: 3px 7px; border-radius: 3px;
-  background: rgba(201,168,76,.28); border: 1px solid rgba(201,168,76,.4);
-}
-.prev-fullbleed .prev-slide-num {
-  position: absolute; top: 10px; right: 10px; z-index: 3;
-  font-size: 8px; font-weight: 700; color: rgba(255,255,255,.6);
-  background: rgba(0,0,0,.45); padding: 2px 6px; border-radius: 4px;
-  backdrop-filter: blur(4px);
-}
+.prev-fullbleed .prev-p { font-size: 8px; color: rgba(255,255,255,.6); line-height: 1.4; }
 
-/* 2. Bot Strip — photo top 58%, dark text bar bottom */
-.prev-botstrip {
-  background: #0a0c12;
-  display: flex; flex-direction: column;
-}
-.prev-botstrip .prev-img-area {
-  flex: 0 0 58%; position: relative; overflow: hidden;
-}
-.prev-botstrip .prev-img-area::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 50%, rgba(10,12,18,.8) 100%);
-}
-.prev-botstrip .prev-bar {
-  flex: 1; background: #0f1118; padding: 8px 11px;
-  display: flex; flex-direction: column; justify-content: center;
-  border-top: 1px solid rgba(201,168,76,.22);
-}
-.prev-botstrip .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700;
-  color: #fff; margin-bottom: 2px; line-height: 1.2;
-}
+/* ─────────────────────────────────────────
+   2. BOTTOM STRIP
+   photo fills top 58% · dark text panel bottom
+──────────────────────────────────────────── */
+.prev-botstrip { background: #0a0c12; display: flex; flex-direction: column; }
+.prev-botstrip .prev-img-area { flex: 0 0 58%; position: relative; overflow: hidden; }
+.prev-botstrip .prev-img-area::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(10,12,18,.75) 100%); z-index: 1; }
+.prev-botstrip .prev-bar { flex: 1; background: #0f1118; padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; border-top: 1px solid rgba(201,168,76,.2); }
+.prev-botstrip .prev-h1 { font-family: 'Playfair Display', serif; font-size: 11.5px; font-weight: 700; color: #fff; margin-bottom: 2px; line-height: 1.2; }
 .prev-botstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
 .prev-botstrip .prev-p { font-size: 7.5px; color: rgba(255,255,255,.5); }
 
-/* 3. Top Strip — dark text bar top 42%, photo fills rest */
-.prev-topstrip {
-  background: #0f1118;
-  display: flex; flex-direction: column;
-}
-.prev-topstrip .prev-bar {
-  flex: 0 0 42%; background: #0f1118; padding: 8px 11px;
-  display: flex; flex-direction: column; justify-content: center;
-  border-bottom: 1px solid rgba(201,168,76,.22);
-}
-.prev-topstrip .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700;
-  color: #fff; margin-bottom: 2px; line-height: 1.2;
-}
+/* ─────────────────────────────────────────
+   3. TOP STRIP
+   dark text panel top 42% · photo below
+──────────────────────────────────────────── */
+.prev-topstrip { background: #0f1118; display: flex; flex-direction: column; }
+.prev-topstrip .prev-bar { flex: 0 0 42%; background: #0f1118; padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid rgba(201,168,76,.2); }
+.prev-topstrip .prev-img-area { flex: 1; overflow: hidden; position: relative; }
+.prev-topstrip .prev-h1 { font-family: 'Playfair Display', serif; font-size: 11.5px; font-weight: 700; color: #fff; margin-bottom: 2px; line-height: 1.2; }
 .prev-topstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
 .prev-topstrip .prev-p { font-size: 7.5px; color: rgba(255,255,255,.5); }
-.prev-topstrip .prev-img-area {
-  flex: 1; overflow: hidden; position: relative;
-}
 
-/* 4. Overlap Band — photo bg + colour band cutting across centre */
-.prev-band {
-  background: #0a0c12;
-  display: flex; flex-direction: column; justify-content: center;
-  position: relative;
-}
-.prev-band .prev-img-area {
-  position: absolute; inset: 0; overflow: hidden;
-}
-.prev-band .prev-img-area::after {
-  content: ''; position: absolute; inset: 0;
-  background: rgba(0,0,0,.45);
-}
-.prev-band .prev-bar {
-  position: relative; z-index: 2;
-  background: #c9a84c; padding: 14px 12px;
-  margin: 22px 0;
-  display: flex; flex-direction: column; gap: 4px;
-}
-.prev-band .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 800;
-  color: #07090f; line-height: 1.15;
-}
+/* ─────────────────────────────────────────
+   4. OVERLAP BAND
+   photo bg · solid accent bar cuts across centre
+──────────────────────────────────────────── */
+.prev-band { background: #0a0c12; display: flex; flex-direction: column; justify-content: center; }
+.prev-band .prev-img-area { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+.prev-band .prev-img-area::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.42); z-index: 1; }
+.prev-band .prev-bar { position: relative; z-index: 2; background: #c9a84c; padding: 13px 12px; margin: 20px 0; display: flex; flex-direction: column; gap: 3px; }
+.prev-band .prev-h1 { font-family: 'Playfair Display', serif; font-size: 12.5px; font-weight: 800; color: #07090f; line-height: 1.15; }
 .prev-band .prev-p { font-size: 7.5px; color: rgba(0,0,0,.6); }
 
-/* 5. Dual Image — full bg photo + thumbnail top-right + text bottom */
-.prev-dual {
-  background: #0a0c12; position: relative;
-}
-.prev-dual .prev-bg {
-  position: absolute; inset: 0; overflow: hidden;
-}
-.prev-dual .prev-bg::after {
-  content: ''; position: absolute; inset: 0;
-  background: rgba(0,0,0,.52);
-}
-.prev-dual .prev-thumb {
-  position: absolute; top: 10px; right: 10px; z-index: 3;
-  width: 34%; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
-  border: 1.5px solid rgba(255,255,255,.2);
-  box-shadow: 0 4px 16px rgba(0,0,0,.5);
-}
-.prev-dual .prev-text-bottom {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
-  padding: 10px 11px;
-}
-.prev-dual .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700;
-  color: #fff; margin-bottom: 3px; line-height: 1.2;
-}
+/* ─────────────────────────────────────────
+   5. DUAL IMAGE
+   full bg photo · thumbnail top-right · text overlay bottom
+──────────────────────────────────────────── */
+.prev-dual { background: #0a0c12; }
+.prev-dual .prev-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.prev-dual .prev-bg::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.50); z-index: 1; }
+.prev-dual .prev-thumb { position: absolute; top: 10px; right: 10px; z-index: 3; width: 34%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1.5px solid rgba(255,255,255,.22); box-shadow: 0 4px 16px rgba(0,0,0,.5); }
+.prev-dual .prev-text-bottom { position: absolute; bottom: 0; left: 0; right: 0; z-index: 3; padding: 10px; }
+.prev-dual .prev-h1 { font-family: 'Playfair Display', serif; font-size: 11.5px; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1.2; }
 .prev-dual .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-dual .prev-p { font-size: 7.5px; color: rgba(255,255,255,.55); line-height: 1.4; }
+.prev-dual .prev-p { font-size: 7.5px; color: rgba(255,255,255,.55); line-height: 1.35; }
 
-/* 6. Stat Hero — dark bg + giant number + optional photo strip at bottom */
-.prev-stat {
-  background: #0f1118; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 6px; padding: 14px;
-  position: relative; overflow: hidden;
-}
-.prev-stat .prev-stat-strip {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 28%;
-  overflow: hidden; opacity: .4;
-}
-.prev-stat .prev-num {
-  font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 800;
-  color: #c9a84c; line-height: 1; position: relative; z-index: 2;
-}
-.prev-stat .prev-rule { width: 28px; height: 1px; background: rgba(201,168,76,.45); position: relative; z-index: 2; }
-.prev-stat .prev-label {
-  font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase;
-  color: rgba(255,255,255,.5); text-align: center; position: relative; z-index: 2;
-}
+/* ─────────────────────────────────────────
+   6. STAT HERO
+   dark bg · giant gold number · faint photo strip bottom
+──────────────────────────────────────────── */
+.prev-stat { background: #0f1118; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 12px; }
+.prev-stat .prev-stat-strip { position: absolute; bottom: 0; left: 0; right: 0; height: 26%; overflow: hidden; opacity: .38; z-index: 0; }
+.prev-stat .prev-num { font-family: 'Playfair Display', serif; font-size: 46px; font-weight: 800; color: #c9a84c; line-height: 1; position: relative; z-index: 2; }
+.prev-stat .prev-rule { width: 26px; height: 1px; background: rgba(201,168,76,.5); position: relative; z-index: 2; }
+.prev-stat .prev-label { font-size: 8px; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.5); text-align: center; position: relative; z-index: 2; line-height: 1.4; }
 
-/* 7. Editorial Cover — full photo, magazine-style serif title at bottom, light body */
-.prev-edcover {
-  background: #0a0c12; position: relative; overflow: hidden;
-  display: flex; flex-direction: column;
-}
-.prev-edcover .prev-overlay {
-  position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(180deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.82) 100%);
-  pointer-events: none;
-}
-.prev-edcover .prev-badge {
-  position: absolute; top: 10px; left: 10px; z-index: 2;
-  font-size: 7.5px; color: rgba(255,255,255,.9);
-  border: 1px solid rgba(255,255,255,.55); border-radius: 40px; padding: 2px 8px;
-  letter-spacing: .3px;
-}
-.prev-edcover .prev-brand-top {
-  position: absolute; top: 12px; right: 10px; z-index: 2;
-  font-size: 8px; color: rgba(255,255,255,.8); letter-spacing: .3px;
-}
-.prev-edcover .prev-text {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
-  padding: 0 12px 12px;
-}
-.prev-edcover .prev-h1 {
-  font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 400;
-  color: #fff; line-height: 1.05;
-}
-.prev-edcover .prev-h1 em { font-style: italic; color: #fff; }
-.prev-edcover .prev-rule { width: 20px; height: 1.5px; background: rgba(255,255,255,.5); margin: 5px 0; }
-.prev-edcover .prev-p { font-size: 8px; color: rgba(255,255,255,.6); line-height: 1.45; }
-.prev-edcover .prev-stars {
-  position: absolute; bottom: 10px; right: 10px; z-index: 2;
-  font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: 3px;
-}
+/* ─────────────────────────────────────────
+   7. EDITORIAL COVER
+   full photo · gradient · magazine serif title bottom
+──────────────────────────────────────────── */
+.prev-edcover { background: #0a0c12; }
+.prev-edcover .prev-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.84) 100%); pointer-events: none; }
+.prev-edcover .prev-badge { position: absolute; top: 10px; left: 10px; z-index: 3; font-size: 7px; color: rgba(255,255,255,.88); border: 1px solid rgba(255,255,255,.5); border-radius: 40px; padding: 2px 7px; letter-spacing: .3px; }
+.prev-edcover .prev-brand-top { position: absolute; top: 11px; right: 10px; z-index: 3; font-size: 7.5px; color: rgba(255,255,255,.75); letter-spacing: .3px; }
+.prev-edcover .prev-text { position: absolute; bottom: 0; left: 0; right: 0; z-index: 3; padding: 0 11px 11px; }
+.prev-edcover .prev-h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: 400; color: #fff; line-height: 1.05; }
+.prev-edcover .prev-h1 em { font-style: italic; }
+.prev-edcover .prev-rule { width: 18px; height: 1.5px; background: rgba(255,255,255,.5); margin: 5px 0; }
+.prev-edcover .prev-p { font-size: 7.5px; color: rgba(255,255,255,.6); line-height: 1.45; }
+.prev-edcover .prev-stars { position: absolute; bottom: 9px; right: 9px; z-index: 3; font-size: 9px; color: rgba(255,255,255,.38); letter-spacing: 3px; }
 
-/* 8. Editorial Collage — warm cream bg, overlapping photos left, text right */
-.prev-edcollage {
-  background: #f0ebe1; position: relative;
-}
-.prev-edcollage .prev-badge {
-  position: absolute; top: 10px; left: 10px; z-index: 6;
-  font-size: 7.5px; color: #888; border: 1px solid #b0a898;
-  border-radius: 40px; padding: 2px 8px;
-}
-.prev-edcollage .prev-brand-top {
-  position: absolute; top: 12px; right: 10px; z-index: 6;
-  font-size: 8px; color: #888;
-}
-.prev-edcollage .prev-big-num {
-  position: absolute; top: 28px; right: 10px; z-index: 2;
-  font-family: Georgia, 'Times New Roman', serif; font-size: 80px;
-  font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .9;
-}
-.prev-edcollage .prev-photo-1 {
-  position: absolute; left: 10px; top: 42px;
-  width: 42%; height: 46%; border-radius: 2px; overflow: hidden; z-index: 3;
-  background: #c8b89a;
-}
-.prev-edcollage .prev-photo-2 {
-  position: absolute; left: 24%; top: 40%;
-  width: 38%; height: 44%; border-radius: 2px; overflow: hidden; z-index: 4;
-  background: #a89070; box-shadow: 0 3px 14px rgba(0,0,0,.15);
-}
-.prev-edcollage .prev-text-right {
-  position: absolute; left: 50%; right: 0; top: 0; bottom: 0; z-index: 5;
-  background: #f0ebe1;
-  border-left: 1.5px solid rgba(180,160,130,.28);
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 10px 10px 10px 10px; gap: 6px;
-}
-.prev-edcollage .prev-h1 {
-  font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400;
-  color: #1a1814; line-height: 1.2;
-}
+/* ─────────────────────────────────────────
+   8. EDITORIAL COLLAGE
+   cream bg · overlapping photos left · serif text right
+──────────────────────────────────────────── */
+.prev-edcollage { background: #f0ebe1; }
+.prev-edcollage .prev-badge { position: absolute; top: 9px; left: 9px; z-index: 6; font-size: 7px; color: #888; border: 1px solid #b0a898; border-radius: 40px; padding: 2px 7px; }
+.prev-edcollage .prev-brand-top { position: absolute; top: 10px; right: 9px; z-index: 6; font-size: 7.5px; color: #888; }
+.prev-edcollage .prev-big-num { position: absolute; top: 22px; right: 8px; z-index: 2; font-family: Georgia, 'Times New Roman', serif; font-size: 76px; font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .88; }
+.prev-edcollage .prev-photo-1 { position: absolute; left: 9px; top: 38px; width: 40%; height: 44%; border-radius: 2px; overflow: hidden; z-index: 3; }
+.prev-edcollage .prev-photo-2 { position: absolute; left: 22%; top: 42%; width: 36%; height: 42%; border-radius: 2px; overflow: hidden; z-index: 4; box-shadow: 0 3px 12px rgba(0,0,0,.18); }
+.prev-edcollage .prev-text-right { position: absolute; left: 52%; right: 0; top: 0; bottom: 0; z-index: 5; background: #f0ebe1; border-left: 1.5px solid rgba(180,160,130,.3); display: flex; flex-direction: column; justify-content: center; padding: 8px 9px; gap: 5px; }
+.prev-edcollage .prev-h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400; color: #1a1814; line-height: 1.2; }
 .prev-edcollage .prev-h1 em { font-style: italic; }
-.prev-edcollage .prev-p { font-size: 7.5px; color: #666; line-height: 1.5; }
-.prev-edcollage .prev-foot {
-  position: absolute; bottom: 8px; left: 10px; z-index: 6;
-  font-size: 7.5px; color: #a09888;
-}
-.prev-edcollage .prev-stars {
-  position: absolute; bottom: 8px; right: 8px; z-index: 6;
-  font-size: 10px; color: #b0a090; letter-spacing: 3px;
-}
+.prev-edcollage .prev-p { font-size: 7px; color: #666; line-height: 1.5; }
+.prev-edcollage .prev-foot { position: absolute; bottom: 7px; left: 9px; z-index: 6; font-size: 7px; color: #a09888; }
+.prev-edcollage .prev-stars { position: absolute; bottom: 7px; right: 7px; z-index: 6; font-size: 9px; color: #b0a090; letter-spacing: 3px; }
 
-/* 9. Editorial Col×3 — cream bg, big italic number, text left, 3-photo grid right */
-.prev-edcol3 {
-  background: #f0ebe1; position: relative;
-}
-.prev-edcol3 .prev-badge {
-  position: absolute; top: 10px; right: 10px; z-index: 6;
-  font-size: 7.5px; color: #888; border: 1px solid #b0a898;
-  border-radius: 40px; padding: 2px 8px;
-}
-.prev-edcol3 .prev-big-num {
-  position: absolute; top: 28px; left: 8px; z-index: 2;
-  font-family: Georgia, 'Times New Roman', serif; font-size: 80px;
-  font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .9;
-}
-.prev-edcol3 .prev-text-left {
-  position: absolute; left: 0; right: 50%; top: 0; bottom: 0; z-index: 5;
-  background: #f0ebe1; border-right: 1.5px solid rgba(180,160,130,.28);
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 10px 8px;
-}
-.prev-edcol3 .prev-h1 {
-  font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400;
-  color: #1a1814; line-height: 1.2;
-}
+/* ─────────────────────────────────────────
+   9. EDITORIAL COL×3
+   cream bg · text left · 3-photo grid right
+──────────────────────────────────────────── */
+.prev-edcol3 { background: #f0ebe1; }
+.prev-edcol3 .prev-badge { position: absolute; top: 9px; right: 9px; z-index: 6; font-size: 7px; color: #888; border: 1px solid #b0a898; border-radius: 40px; padding: 2px 7px; }
+.prev-edcol3 .prev-big-num { position: absolute; top: 22px; left: 6px; z-index: 2; font-family: Georgia, 'Times New Roman', serif; font-size: 76px; font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .88; }
+.prev-edcol3 .prev-text-left { position: absolute; left: 0; right: 50%; top: 0; bottom: 0; z-index: 5; background: #f0ebe1; border-right: 1.5px solid rgba(180,160,130,.3); display: flex; flex-direction: column; justify-content: center; padding: 8px; }
+.prev-edcol3 .prev-h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400; color: #1a1814; line-height: 1.2; }
 .prev-edcol3 .prev-h1 em { font-style: italic; }
-.prev-edcol3 .prev-p { font-size: 7.5px; color: #666; line-height: 1.5; margin-top: 4px; }
-.prev-edcol3 .prev-photos-right {
-  position: absolute; left: 50%; right: 10px; top: 40px; bottom: 30px; z-index: 3;
-  display: grid; grid-template-columns: 1fr; gap: 4px;
-}
-.prev-edcol3 .prev-photo-wide {
-  width: 100%; height: 44%; border-radius: 2px; overflow: hidden;
-  background: #c8b89a; position: absolute; top: 0; left: 0; right: 0;
-}
-.prev-edcol3 .prev-photos-bottom {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
-  display: flex; gap: 4px;
-}
-.prev-edcol3 .prev-photo-sm {
-  flex: 1; border-radius: 2px; overflow: hidden;
-  background: #a89070;
-}
-.prev-edcol3 .prev-foot {
-  position: absolute; bottom: 8px; left: 8px; z-index: 6;
-  font-size: 7.5px; color: #a09888;
-}
-.prev-edcol3 .prev-stars {
-  position: absolute; bottom: 8px; right: 8px; z-index: 6;
-  font-size: 10px; color: #b0a090; letter-spacing: 3px;
-}
+.prev-edcol3 .prev-p { font-size: 7px; color: #666; line-height: 1.5; margin-top: 4px; }
+.prev-edcol3 .prev-photos-right { position: absolute; left: 51%; right: 9px; top: 36px; bottom: 26px; z-index: 3; display: flex; flex-direction: column; gap: 4px; }
+.prev-edcol3 .prev-photo-wide { flex: 0 0 46%; overflow: hidden; border-radius: 2px; }
+.prev-edcol3 .prev-photos-bottom { flex: 1; display: flex; gap: 4px; }
+.prev-edcol3 .prev-photo-sm { flex: 1; overflow: hidden; border-radius: 2px; }
+.prev-edcol3 .prev-foot { position: absolute; bottom: 7px; left: 7px; z-index: 6; font-size: 7px; color: #a09888; }
+.prev-edcol3 .prev-stars { position: absolute; bottom: 7px; right: 7px; z-index: 6; font-size: 9px; color: #b0a090; letter-spacing: 3px; }
 
-/* 10. Habit Cover — full photo bg, giant serif title in accent colour at bottom */
-.prev-habit {
-  background: #0a0c12; position: relative; overflow: hidden;
-}
-.prev-habit .prev-topbar {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
-  padding: 8px 10px; display: flex; justify-content: space-between;
-  border-bottom: 0.5px solid rgba(255,255,255,.2);
-}
-.prev-habit .prev-topbar span {
-  font-size: 6.5px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: rgba(255,255,255,.78);
-}
-.prev-habit .prev-overlay {
-  position: absolute; inset: 0; z-index: 1;
-  background: rgba(8,8,6,.36); pointer-events: none;
-}
-.prev-habit .prev-title-block {
-  position: absolute; left: 12px; right: 12px; bottom: 52px; z-index: 2;
-}
-.prev-habit .prev-h1 {
-  font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 800;
-  color: #c9a84c; line-height: .92; letter-spacing: -.3px;
-}
-.prev-habit .prev-sub {
-  font-size: 7.5px; font-weight: 400; color: #c9a84c;
-  letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; line-height: 1.4;
-}
-.prev-habit .prev-swirl {
-  position: absolute; right: 16px; bottom: 70px; z-index: 2;
-  width: 36px; height: 36px; opacity: .85;
-}
-.prev-habit .prev-botbar {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
-  padding: 6px 10px; display: flex; justify-content: space-between;
-}
-.prev-habit .prev-botbar span {
-  font-size: 6.5px; color: rgba(255,255,255,.45); letter-spacing: .06em;
-}
+/* ─────────────────────────────────────────
+   10. HABIT COVER
+   full photo bg · topbar · giant gold serif title bottom
+──────────────────────────────────────────── */
+.prev-habit { background: #0a0c12; }
+.prev-habit .prev-overlay { position: absolute; inset: 0; z-index: 1; background: rgba(8,8,6,.38); pointer-events: none; }
+.prev-habit .prev-topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 3; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid rgba(255,255,255,.2); }
+.prev-habit .prev-topbar span { font-size: 6px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.8); }
+.prev-habit .prev-title-block { position: absolute; left: 11px; right: 11px; bottom: 28px; z-index: 2; }
+.prev-habit .prev-h1 { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 800; color: #c9a84c; line-height: .9; letter-spacing: -.3px; }
+.prev-habit .prev-sub { font-size: 7px; color: #c9a84c; letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; line-height: 1.4; }
+.prev-habit .prev-swirl { position: absolute; right: 14px; bottom: 68px; z-index: 3; width: 32px; height: 32px; opacity: .8; }
+.prev-habit .prev-botbar { position: absolute; bottom: 0; left: 0; right: 0; z-index: 3; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; }
+.prev-habit .prev-botbar span { font-size: 6px; color: rgba(255,255,255,.42); letter-spacing: .06em; }
 
 /* ── IMAGE UPLOAD (Page 3) ────────────── */
 .img-upload-zone {
