@@ -13,6 +13,25 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="ImpactGrid"/>
 <link rel="apple-touch-icon" href="logo.png"/>
+<script>
+  // Redirect to welcome page unless coming from it
+  (function(){
+    try {
+      var ref = document.referrer;
+      var fromWelcome = ref && (ref.indexOf('creator-welcome.html') !== -1 || ref.indexOf('impactgridgroup.com/creator-welcome') !== -1);
+      var hasFlag = sessionStorage.getItem('ig_from_welcome');
+      if (!fromWelcome && !hasFlag) {
+        // Save the intended destination so welcome page can redirect back
+        var dest = window.location.href;
+        try { sessionStorage.setItem('ig_post_welcome_dest', dest); } catch(e){}
+        window.location.replace('creator-welcome.html');
+      } else {
+        // Clear the flag so it's consumed (referrer handles same-session navigation)
+        try { sessionStorage.removeItem('ig_from_welcome'); } catch(e){}
+      }
+    } catch(e){}
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="shared.css"/>
@@ -175,8 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <span class="sb-icon">📅</span>
         Content Calendar
       </div>
-      <a class="sb-item" href="carousel-studio.html"><span class="sb-icon">🎨</span>Carousel Studio</a>
-      <a class="sb-item" href="portfolio-studio.html"><span class="sb-icon">🌐</span>Portfolio Studio</a>
+
     </div>
     <div class="sb-sec">
       <div class="sb-sec-title">Platforms</div>
@@ -289,16 +307,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <!-- Quick launch cards -->
         <div class="quick-launch-grid">
-          <a class="quick-launch-card" href="carousel-studio.html" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);text-decoration:none;display:block">
-            <div class="qlc-icon">🎨</div>
-            <div class="qlc-title">Carousel Studio</div>
-            <div class="qlc-desc">AI-designed carousel slides</div>
-          </a>
-          <a class="quick-launch-card" href="portfolio-studio.html" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border:1px solid rgba(79,142,247,.2);text-decoration:none;display:block">
-            <div class="qlc-icon">🌐</div>
-            <div class="qlc-title">Portfolio Studio</div>
-            <div class="qlc-desc">Your creator link-in-bio</div>
-          </a>
           <div class="quick-launch-card" data-tab="evaluator" style="background:linear-gradient(135deg,#0a0f0a,#1a3a1a);border:1px solid rgba(15,168,118,.2)">
             <div class="qlc-icon">🎯</div>
             <div class="qlc-title">Analyse My Channel</div>
