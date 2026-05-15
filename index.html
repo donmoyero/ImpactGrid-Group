@@ -63,21 +63,24 @@ body::before{
   display:flex;align-items:flex-end;
 }
 
-/* Background slideshow */
+/* Static hero background — man with camera */
 .bg-reel{position:absolute;inset:0;z-index:0;}
-.bg-slide{
-  position:absolute;inset:0;opacity:0;
-  transition:opacity 1.2s cubic-bezier(.4,0,.2,1);
-}
-.bg-slide.on{opacity:1;}
+.bg-slide{position:absolute;inset:0;}
 .bg-slide img{
-  width:100%;height:100%;object-fit:cover;
+  width:100%;height:100%;object-fit:cover;object-position:center top;
   display:block;
-  transform:scale(1.08);
-  transition:transform 7s cubic-bezier(.4,0,.2,1);
-  filter:brightness(.38) saturate(1.1);
+  filter:brightness(.42) saturate(.85);
 }
-.bg-slide.on img{transform:scale(1.0);}
+/* Blend edges into the dark bg — left, right, and extra bottom */
+.bg-reel::after{
+  content:'';
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 55% 100% at 0% 50%,   rgba(7,9,15,.92) 0%, transparent 100%),
+    radial-gradient(ellipse 30% 100% at 100% 50%,  rgba(7,9,15,.80) 0%, transparent 100%),
+    linear-gradient(to top, rgba(7,9,15,1) 0%, transparent 38%),
+    linear-gradient(to bottom, rgba(7,9,15,.6) 0%, transparent 22%);
+}
 
 /* Cinematic letterbox bars */
 .hero::before,.hero::after{
@@ -173,21 +176,7 @@ body::before{
   min-width:200px;
 }
 
-/* Vertical slide dots */
-.v-dots{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
-.v-dot{
-  height:3px;border-radius:99px;background:rgba(255,255,255,.2);
-  transition:all .4s cubic-bezier(.22,1,.36,1);cursor:pointer;
-}
-.v-dot.on{background:var(--gold);width:28px!important;}
-.v-dot:hover{background:rgba(255,255,255,.5);}
-
-/* Slide label */
-.slide-label{
-  font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--text2);text-align:right;
-  transition:opacity .4s;
-}
+/* hero-right kept for layout spacing */
 
 /* ══════════════════════════════════════
    FEATURE STRIP — below hero
@@ -616,23 +605,8 @@ body::before{
 <section class="hero">
 
   <div class="bg-reel">
-    <div class="bg-slide on" id="bg0">
-      <img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1800&h=1100&fit=crop&crop=center" alt="" loading="eager"/>
-    </div>
-    <div class="bg-slide" id="bg1">
-      <img src="https://images.unsplash.com/photo-1516414447565-b14be0adf13e?w=1800&h=1100&fit=crop&crop=center" alt="" loading="lazy"/>
-    </div>
-    <div class="bg-slide" id="bg2">
-      <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1800&h=1100&fit=crop&crop=center" alt="" loading="lazy"/>
-    </div>
-    <div class="bg-slide" id="bg3">
-      <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1800&h=1100&fit=crop&crop=center" alt="" loading="lazy"/>
-    </div>
-    <div class="bg-slide" id="bg4">
-      <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=1800&h=1100&fit=crop&crop=faces,top" alt="" loading="lazy"/>
-    </div>
-    <div class="bg-slide" id="bg5">
-      <img src="https://images.unsplash.com/photo-1626785774573-4b799315345d?w=1800&h=1100&fit=crop&crop=center" alt="" loading="lazy"/>
+    <div class="bg-slide">
+      <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1800&h=1100&fit=crop&crop=center" alt="" loading="eager"/>
     </div>
   </div>
 
@@ -674,8 +648,6 @@ body::before{
     </div>
 
     <div class="hero-right au au-5">
-      <div class="slide-label" id="slideLabel">What's Trending</div>
-      <div class="v-dots" id="vDots"></div>
     </div>
 
   </div>
@@ -881,46 +853,6 @@ function goCreator(e, destination) {
 
 // Nav
 if(typeof renderNav==='function') renderNav('index.html');
-
-// ── Slideshow ──
-var SLIDES = [
-  { label:'What\'s Trending',   sub:'Live TikTok, YouTube & Google trend signals — see it before everyone else.' },
-  { label:'Write My Content',   sub:'Hook, caption, hashtags — Dijo AI writes your content in 60 seconds.' },
-  { label:'Content Calendar',   sub:'Dijo fills your whole week and alerts you when it\'s time to post.' },
-  { label:'Analyse My Channel', sub:'AI channel score, gap analysis, and exactly what to fix next.' },
-  { label:'Portfolio Studio',   sub:'One link. Every brand deal. AI builds your creator portfolio.' },
-  { label:'Carousel Studio',    sub:'Type your topic. Dijo designs the full carousel. Done.' },
-];
-
-var cur = 0, N = SLIDES.length, timer;
-
-var dotsEl = document.getElementById('vDots');
-SLIDES.forEach(function(_, i) {
-  var d = document.createElement('div');
-  d.className = 'v-dot' + (i===0?' on':'');
-  d.style.width = (i===0?'28':'14') + 'px';
-  d.addEventListener('click', function(){ jump(i); });
-  dotsEl.appendChild(d);
-});
-
-function setSlide(n) {
-  document.getElementById('bg' + cur).classList.remove('on');
-  document.getElementById('bg' + n).classList.add('on');
-  var dots = document.querySelectorAll('.v-dot');
-  dots[cur].classList.remove('on'); dots[cur].style.width = '14px';
-  dots[n].classList.add('on'); dots[n].style.width = '28px';
-  document.getElementById('slideLabel').textContent = SLIDES[n].label;
-  document.getElementById('heroSub').style.opacity = '0';
-  setTimeout(function(){
-    document.getElementById('heroSub').textContent = SLIDES[n].sub;
-    document.getElementById('heroSub').style.opacity = '1';
-  }, 300);
-  cur = n;
-}
-
-function jump(n) { clearInterval(timer); setSlide(n); startAuto(); }
-function startAuto() { timer = setInterval(function(){ setSlide((cur + 1) % N); }, 5000); }
-startAuto();
 
 /* ── THEME ── */
 var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
