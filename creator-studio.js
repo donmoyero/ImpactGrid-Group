@@ -224,7 +224,7 @@ function switchTab(name, sidebarItem) {
 ───────────────────────────────────────────── */
 function studioOpenSidebar() {
   var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('mobOverlay');
+  var ov  = document.getElementById('studioOverlay');
   var ham = document.querySelector('.hamburger');
   if (sb)  sb.classList.add('open');
   if (ov)  ov.classList.add('open');
@@ -233,7 +233,7 @@ function studioOpenSidebar() {
 }
 function studioCloseSidebar() {
   var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('mobOverlay');
+  var ov  = document.getElementById('studioOverlay');
   var ham = document.querySelector('.hamburger');
   if (sb)  sb.classList.remove('open');
   if (ov)  ov.classList.remove('open');
