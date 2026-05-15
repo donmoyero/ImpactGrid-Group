@@ -243,12 +243,10 @@ function studioCloseSidebar() {
   if (mobSb) mobSb.classList.remove('open');
   document.body.style.overflow = '';
 }
-/* Keep bare names working for HTML onclick="openSidebar()" attributes
-   on the studio page — these shadow nav.js's globals only on this page,
-   but nav.js's #mobSidebar is not used on creator-studio.html so there
-   is no conflict: the studio uses #sidebar, not #mobSidebar. */
-window.openSidebar  = studioOpenSidebar;
-window.closeSidebar = studioCloseSidebar;
+/* Do NOT overwrite window.openSidebar / window.closeSidebar —
+   nav.js owns those and they power the mobile hamburger menu.
+   The sb-x close button on the PC sidebar calls closeSidebar()
+   which correctly closes nav's mobile drawer if open. */
 
 /* ─────────────────────────────────────────────
    USER MENU
