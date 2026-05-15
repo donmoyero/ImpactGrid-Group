@@ -730,7 +730,8 @@ async function fetchTrends() {
       status:       t.status       || 'rising',
       igPrediction: t.instagram_prediction || 0,
       confidence:   t.confidence_score || t.velocity_score ||
-                    (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'youtube' ? 70 : 60)
+                    (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'youtube' ? 70 : 60),
+      image_url:    t.image_url    || null
     };
   }
 
@@ -1875,34 +1876,50 @@ async function loadBriefing(forceRefresh) {
   var dateEl = document.getElementById('briefingDate');
   if (!el) return;
 
-  // ── Build compact pulse strip from local trend data ──────────────────────
+  // ── Build news-style pulse strip from local trend data ──────────────────
   function renderPulseStrip() {
     if (!_allTrends.length) return false;
     var best = getBest3(_allTrends);
     var rows = [
-      { icon: '▶️', label: 'YouTube', trend: best.youtube, color: '#FFD700' },
-      { icon: '⚡', label: 'TikTok',  trend: best.tiktok,  color: '#ff6464' },
-      { icon: '🔍', label: 'Google',  trend: best.google,  color: '#78b4ff' }
+      { icon: '▶️', label: 'YouTube', trend: best.youtube, color: '#FFD700', accentBg: 'rgba(255,215,0,0.10)' },
+      { icon: '⚡', label: 'TikTok',  trend: best.tiktok,  color: '#ff6464', accentBg: 'rgba(255,100,100,0.10)' },
+      { icon: '🔍', label: 'Google',  trend: best.google,  color: '#78b4ff', accentBg: 'rgba(120,180,255,0.10)' }
     ].filter(function(r) { return r.trend; });
     if (!rows.length) return false;
 
-    el.innerHTML = rows.map(function(r) {
-      var t = r.trend;
+    el.innerHTML = rows.map(function(r, idx) {
+      var t   = r.trend;
       var cls = classifyTrend(t);
       var badge = cls === 'blowup'      ? '🔥 Blowing up'
                 : cls === 'rising_fast' ? '⚡ Rising fast'
                 : cls === 'early'       ? '🟢 Early signal'
                 : '📊 Stable';
-      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)">'
-        + '<span style="font-size:14px">' + r.icon + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + r.color + ';min-width:46px;letter-spacing:.06em">' + r.label + '</span>'
-        + '<span style="font-size:12px;color:var(--text1);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</span>'
-        + '<span style="font-size:9px;color:var(--text3);white-space:nowrap">' + badge + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:800;color:' + r.color + ';min-width:24px;text-align:right">' + t.score.toFixed(1) + '</span>'
-        + '</div>';
-    }).join('') + '<div style="border-bottom:none"></div>';
+      var isLast  = idx === rows.length - 1;
+      var imgHtml = t.image_url
+        ? '<div style="width:54px;height:54px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg3)">'
+            + '<img src="' + escH(t.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="this.parentElement.style.display=\'none\'">'
+            + '</div>'
+        : '<div style="width:54px;height:54px;border-radius:8px;flex-shrink:0;background:' + r.accentBg + ';display:flex;align-items:center;justify-content:center;font-size:22px">' + r.icon + '</div>';
 
-    if (tagsEl) tagsEl.innerHTML = ''; // hide old tags
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;'
+        + (isLast ? '' : 'border-bottom:1px solid var(--border);') + '">'
+        + imgHtml
+        + '<div style="flex:1;min-width:0">'
+          + '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">'
+            + '<span style="font-family:\'DM Mono\',monospace;font-size:8px;font-weight:700;color:' + r.color + ';text-transform:uppercase;letter-spacing:.08em">' + r.label + '</span>'
+            + '<span style="font-size:8px;color:var(--text3)">·</span>'
+            + '<span style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--text3)">' + badge + '</span>'
+          + '</div>'
+          + '<div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</div>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">'
+          + '<span style="font-family:\'DM Mono\',monospace;font-size:16px;font-weight:900;color:' + r.color + ';line-height:1">' + t.score.toFixed(1) + '</span>'
+          + '<span style="font-size:8px;color:var(--text3)">score</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    if (tagsEl) tagsEl.innerHTML = '';
     if (dateEl) {
       var now = new Date();
       dateEl.textContent = '📡 ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
