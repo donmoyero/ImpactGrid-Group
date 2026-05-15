@@ -2129,6 +2129,8 @@ async function fullGenerate() {
       incrementUses();
     }
     toast('✅ Package generated!');
+    // Auto-generate audience intel in the right panel
+    loadAudience(topic);
   } catch(e) {
     errEl.classList.add('visible');
     errEl.textContent = '⚠ ' + (e.message || 'Request failed');
@@ -2142,16 +2144,17 @@ async function fullGenerate() {
 /* ─────────────────────────────────────────────
    AUDIENCE
 ───────────────────────────────────────────── */
-async function loadAudience() {
-  var topic = document.getElementById('audTopic').value.trim();
-  if (!topic) { toast('⚠️ Enter a topic'); return; }
-  var btn = document.getElementById('audBtn');
-  btn.disabled = true; btn.textContent = 'Analysing…';
-  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
+async function loadAudience(topicOverride) {
+  var topicEl = document.getElementById("genTopic") || document.getElementById("audTopic");
+  var topic = topicOverride || (topicEl ? topicEl.value.trim() : "");
+  if (!topic) { toast("⚠️ Enter a topic first"); return; }
+  var audEl = document.getElementById("audOutput");
+  if (!audEl) return;
+  audEl.innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing audience…</div>';
   try {
-    var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
-    var reply = await callDijo(prompt, 'creator');
-    var ages = extractAges(reply) || [{ label: '18–24', pct: 30 }, { label: '25–34', pct: 40 }, { label: '35–44', pct: 20 }, { label: '45+', pct: 10 }];
+    var prompt = "Audience breakdown for topic: \"" + topic + "\"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.";
+    var reply = await callDijo(prompt, "creator");
+    var ages = extractAges(reply) || [{ label: "18–24", pct: 30 }, { label: "25–34", pct: 40 }, { label: "35–44", pct: 20 }, { label: "45+", pct: 10 }];
     var pa = extractPA(reply) || { YouTube: 72, TikTok: 65, Instagram: 58, Google: 78 };
     var html = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px">'
       + '<h3 style="font-size:15px;font-weight:800;margin-bottom:8px">👥 ' + escH(topic) + ' — Audience</h3>'
@@ -2163,19 +2166,18 @@ async function loadAudience() {
         + '<span class="demo-pct">' + ag.pct + '%</span></div>';
     });
     html += '</div></div><div class="aud-card"><div class="aud-head">Platform Affinity</div><div class="aud-body">';
-    [{ k: 'YouTube', cls: 'pa-yt' }, { k: 'TikTok', cls: 'pa-tt' }, { k: 'Instagram', cls: 'pa-ig' }, { k: 'Google', cls: 'pa-gt' }].forEach(function(p) {
+    [{ k: "YouTube", cls: "pa-yt" }, { k: "TikTok", cls: "pa-tt" }, { k: "Instagram", cls: "pa-ig" }, { k: "Google", cls: "pa-gt" }].forEach(function(p) {
       html += '<div class="pa-item"><span class="pa-label">' + p.k + '</span>'
         + '<div class="pa-track"><div class="pa-fill ' + p.cls + '" style="width:' + (pa[p.k] || 0) + '%"></div></div>'
         + '<span class="pa-pct">' + (pa[p.k] || 0) + '%</span></div>';
     });
     html += '</div></div></div>';
-    document.getElementById('audOutput').innerHTML = html;
-    toast('✅ Analysis done!');
+    audEl.innerHTML = html;
+    toast("✅ Audience analysed!");
   } catch(e) {
-    document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
-    toast('⚠️ Error — try again');
+    audEl.innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
+    toast("⚠️ Error — try again");
   }
-  btn.disabled = false; btn.textContent = 'Analyse';
 }
 
 function extractAges(text) {
