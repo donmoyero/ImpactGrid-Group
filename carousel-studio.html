@@ -707,89 +707,40 @@
 
     <!-- ═══ LEFT PANEL — Generate ═══ -->
     <aside class="cs-left" id="csLeft">
-      <div class="cs-left-head">
-        <div class="cs-left-title">✦ AI Carousel Creator</div>
-        <div class="cs-left-sub">Describe your content. Dijo picks the theme, writes real captions with live trend context &amp; designs every slide.</div>
-      </div>
-      <div class="cs-left-body">
+      <div class="cs-left-head" id="csLeftHead" style="display:none"></div>
+      <div class="cs-left-body" style="padding-top:16px">
 
-        <div>
-          <label class="cs-label">What's your carousel about?</label>
-          <textarea class="cs-textarea" id="topicInput"
-            placeholder="e.g. 5 habits that helped me hit £10K/month as a creator…"
-            oninput="onTopicInput()" style="min-height:88px"></textarea>
-        </div>
+        <!-- Hidden inputs for carousel-studio.js compatibility -->
+        <textarea id="topicInput" style="display:none" oninput="onTopicInput()"></textarea>
+        <select id="platSelect" style="display:none"><option value="Instagram">Instagram</option><option value="LinkedIn">LinkedIn</option><option value="TikTok">TikTok</option><option value="Twitter/X">Twitter / X</option><option value="Pinterest">Pinterest</option></select>
+        <select id="toneSelect" style="display:none"><option value="Bold &amp; Direct">Bold &amp; Direct</option><option value="Conversational">Conversational</option><option value="Professional">Professional</option><option value="Inspirational">Inspirational</option><option value="Educational">Educational</option><option value="Playful">Playful</option></select>
+        <div style="display:none"><div id="cntVal">7</div></div>
+        <div class="cs-intel" id="intelCard" style="display:none"><div class="cs-intel-top"><div class="cs-intel-dot" id="intelDot"></div><span class="cs-intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span><span class="cs-intel-val" id="intelVal">Waiting…</span></div><div class="cs-intel-bar"><div class="cs-intel-seg" id="iseg0"></div><div class="cs-intel-seg" id="iseg1"></div><div class="cs-intel-seg" id="iseg2"></div><div class="cs-intel-seg" id="iseg3"></div><div class="cs-intel-seg" id="iseg4"></div></div></div>
+        <div id="assetPreviewField" style="display:none"><div class="cs-asset-row" id="assetRow"></div></div>
 
-        <div>
-          <label class="cs-label">Platform</label>
-          <select class="cs-select" id="platSelect">
-            <option value="Instagram">Instagram</option>
-            <option value="LinkedIn">LinkedIn</option>
-            <option value="TikTok">TikTok</option>
-            <option value="Twitter/X">Twitter / X</option>
-            <option value="Pinterest">Pinterest</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="cs-label">Tone</label>
-          <select class="cs-select" id="toneSelect">
-            <option value="Bold &amp; Direct">Bold &amp; Direct</option>
-            <option value="Conversational">Conversational</option>
-            <option value="Professional">Professional</option>
-            <option value="Inspirational">Inspirational</option>
-            <option value="Educational">Educational</option>
-            <option value="Playful">Playful</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="cs-label">Slides</label>
-          <div class="cs-cnt-row">
-            <button class="cs-cnt-btn" onclick="chgCount(-1)">−</button>
-            <div class="cs-cnt-inner">
-              <div class="cs-cnt-val" id="cntVal">7</div>
-              <div class="cs-cnt-sub">slides</div>
-            </div>
-            <button class="cs-cnt-btn" onclick="chgCount(1)">+</button>
+        <!-- Summary banner — shown after wizard completes -->
+        <div id="wizSummaryBanner" style="padding:12px 14px 10px;display:none;flex-direction:column;gap:8px;">
+          <div style="font-family:var(--fd);font-size:15px;font-weight:900;letter-spacing:-.02em;color:var(--text);">✦ Dijo Carousel</div>
+          <div style="padding:10px 12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:10px;display:flex;flex-direction:column;gap:8px;">
+            <div id="wizTopicDisplay" style="font-size:12px;color:var(--text);font-family:var(--fb);line-height:1.5;word-break:break-word;"></div>
+            <div id="wizPillRow" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+            <button onclick="openWizard()" style="all:unset;font-size:10px;color:var(--text3);cursor:pointer;letter-spacing:.02em;transition:color .15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text3)'">← Edit in wizard</button>
           </div>
-        </div>
-
-        <!-- Dijo Intelligence card — id used by carousel-studio.js -->
-        <div class="cs-intel" id="intelCard">
-          <div class="cs-intel-top">
-            <div class="cs-intel-dot" id="intelDot"></div>
-            <span class="cs-intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span>
-            <span class="cs-intel-val" id="intelVal">Waiting for topic…</span>
-          </div>
-          <div class="cs-intel-bar">
-            <div class="cs-intel-seg" id="iseg0"></div>
-            <div class="cs-intel-seg" id="iseg1"></div>
-            <div class="cs-intel-seg" id="iseg2"></div>
-            <div class="cs-intel-seg" id="iseg3"></div>
-            <div class="cs-intel-seg" id="iseg4"></div>
-          </div>
-        </div>
-
-        <!-- Asset preview — shown after theme detection -->
-        <div id="assetPreviewField" style="display:none">
-          <label class="cs-label">Auto-selected assets</label>
-          <div class="cs-asset-row" id="assetRow"></div>
         </div>
 
         <!-- Canvas format -->
         <div>
           <label class="cs-label">Canvas Format</label>
           <div class="cs-fmt-row">
-            <button class="cs-fmt-btn active" id="fmtSquare" onclick="setFmt('square')">
+            <button class="cs-fmt-btn active" id="lpFmtSquare" onclick="setFmt('square')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
               Square
             </button>
-            <button class="cs-fmt-btn" id="fmtPortrait" onclick="setFmt('portrait')">
+            <button class="cs-fmt-btn" id="lpFmtPortrait" onclick="setFmt('portrait')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="13"><rect x="3" y="1" width="18" height="22" rx="2"/></svg>
               Portrait
             </button>
-            <button class="cs-fmt-btn" id="fmtLandscape" onclick="setFmt('landscape')">
+            <button class="cs-fmt-btn" id="lpFmtLandscape" onclick="setFmt('landscape')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="9"><rect x="1" y="5" width="22" height="14" rx="2"/></svg>
               Wide
             </button>
@@ -809,9 +760,10 @@
           <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
         </div>
 
-        <button class="cs-gen-btn" id="genBtn" onclick="generate()" disabled>
+        <!-- Regenerate button (replaces old Generate button in studio mode) -->
+        <button class="cs-gen-btn" id="genBtn" onclick="generate()" style="opacity:.45;cursor:not-allowed;" disabled>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          Generate with Dijo
+          Regenerate with Dijo
         </button>
 
       </div>
@@ -831,11 +783,6 @@
           <button class="cs-tb on" id="fmtSquare"   onclick="setFmt('square')"    title="Square 1:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
           <button class="cs-tb"    id="fmtPortrait"  onclick="setFmt('portrait')"  title="Portrait 4:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
           <button class="cs-tb"    id="fmtLandscape" onclick="setFmt('landscape')" title="Landscape 16:9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></button>
-        </div>
-        <div class="cs-tgrp">
-          <button class="cs-tb" title="Shuffle assets"   onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
-          <button class="cs-tb" title="Regenerate"       onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
-          <button class="cs-tb" title="Reset text offsets" onclick="resetTextOffsets && resetTextOffsets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
         </div>
         <div class="cs-tsp"></div>
         <div class="cs-slide-nav">
@@ -953,33 +900,6 @@
       </div>
       <div class="cs-right-body">
 
-        <!-- Edit tip -->
-        <div style="padding:8px 10px;background:var(--gold-dim);border-radius:8px;border:1px solid var(--gold-glo);font-size:10px;color:var(--gold);font-family:var(--fm);line-height:1.6;letter-spacing:.2px;margin-bottom:12px;">
-          💡 <strong>Click any text or number</strong> on the slide to edit it directly.
-        </div>
-
-        <!-- Layout -->
-        <div class="cs-esec">
-          <div class="cs-esec-title">Layout</div>
-          <div class="cs-apply-row">
-            <input type="checkbox" class="cs-apply-toggle" id="applyAllToggle" checked/>
-            <label for="applyAllToggle">Apply layout change to ALL slides</label>
-          </div>
-          <div class="layout-badge" id="layoutBadge">—</div>
-          <div class="layout-switcher">
-            <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
-            <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
-            <button class="layout-btn" onclick="changeLayout('TOP_STRIP')">Top Strip</button>
-            <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')">Band</button>
-            <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')">Dual Img</button>
-            <button class="layout-btn" onclick="changeLayout('STAT_HERO')">Stat</button>
-            <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')">Ed. Cover</button>
-            <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')">Ed. Collage</button>
-            <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')">Ed. Col×3</button>
-            <button class="layout-btn" onclick="changeLayout('HABIT_COVER')">Habit Cover</button>
-          </div>
-        </div>
-
         <!-- Headline -->
         <div class="cs-esec">
           <div class="cs-esec-title">Headline</div>
@@ -1062,6 +982,24 @@
 
       </div>
     </aside>
+
+    <!-- Hidden layout stubs — carousel-studio.js references these IDs -->
+    <div style="display:none">
+      <input type="checkbox" id="applyAllToggle" checked/>
+      <div id="layoutBadge"></div>
+      <div class="layout-switcher">
+        <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
+        <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
+        <button class="layout-btn" onclick="changeLayout('TOP_STRIP')">Top Strip</button>
+        <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')">Band</button>
+        <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')">Dual Img</button>
+        <button class="layout-btn" onclick="changeLayout('STAT_HERO')">Stat</button>
+        <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')">Ed. Cover</button>
+        <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')">Ed. Collage</button>
+        <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')">Ed. Col×3</button>
+        <button class="layout-btn" onclick="changeLayout('HABIT_COVER')">Habit Cover</button>
+      </div>
+    </div>
 
   </div><!-- /cs-workspace -->
 
@@ -1470,140 +1408,697 @@ window.addEventListener('load', function() {
 });
 </script>
 
-<!-- ══════════ DIJO WIZARD INTEGRATION ══════════
-     Reads sessionStorage set by dijo-wizard.html, hides already-answered
-     fields, injects a summary banner, and auto-fires generate().
-     Must be a separate <script> tag AFTER all other scripts have loaded.
+<!-- ══════════ DIJO WIZARD OVERLAY ══════════
+     The wizard lives inline — no file handoff, no sessionStorage.
+     openWizard() shows it; on Generate it populates the hidden fields
+     and calls generate() directly.
 -->
+<style>
+/* ─── Wizard overlay shell ─────────────────────────── */
+#wizOverlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transition: opacity .35s;
+}
+#wizOverlay.open { opacity: 1; pointer-events: all; }
+
+/* re-use shared.css tokens already on page */
+:root { --gold-glo: rgba(201,168,76,.35); }
+
+/* Step bar */
+.wov-stepbar {
+  flex-shrink: 0;
+  background: rgba(10,12,18,.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 24px; gap: 0;
+  height: 48px;
+}
+.wov-steps { display: flex; align-items: center; gap: 0; }
+.wov-step-item { display: flex; align-items: center; gap: 8px; }
+.wov-step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-family: var(--fd); font-weight: 800;
+  color: var(--text3); transition: all .35s;
+}
+.wov-step-num.done  { background: var(--gold); border-color: var(--gold); color: #07090f; }
+.wov-step-num.active { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.15); }
+.wov-step-label {
+  font-size: 10.5px; font-family: var(--fd); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text3); transition: color .35s; white-space: nowrap;
+}
+.wov-step-item.active .wov-step-label { color: var(--gold); }
+.wov-step-item.done  .wov-step-label  { color: var(--text2); }
+.wov-step-line { width: 32px; height: 1px; background: var(--border2); margin: 0 6px; flex-shrink: 0; transition: background .35s; }
+.wov-step-line.done { background: var(--gold); }
+
+/* Close button (top-right, only shows if slides already generated) */
+.wov-close {
+  position: absolute; top: 10px; right: 16px; z-index: 10;
+  width: 32px; height: 32px; border-radius: 8px;
+  display: none; align-items: center; justify-content: center;
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--text2); cursor: pointer; font-size: 15px;
+  transition: all .15s;
+}
+.wov-close:hover { color: var(--text); border-color: var(--gold); }
+#wizOverlay.closeable .wov-close { display: flex; }
+
+/* Pages area */
+.wov-pages { flex: 1; overflow: hidden; position: relative; }
+.wov-page {
+  position: absolute; inset: 0; overflow-y: auto;
+  padding: 40px 24px 100px;
+  opacity: 0; transform: translateX(40px);
+  transition: opacity .4s cubic-bezier(.4,0,.2,1), transform .4s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center;
+}
+.wov-page::-webkit-scrollbar { width: 4px; }
+.wov-page::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.wov-page.active  { opacity: 1; transform: translateX(0); pointer-events: all; }
+.wov-page.exit-left { opacity: 0; transform: translateX(-40px); pointer-events: none; }
+.wov-inner { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 28px; }
+
+/* Split layout (pages 1 & 3) */
+.wov-split { display: grid; grid-template-columns: 1fr 1fr; border-radius: 20px; overflow: hidden; background: var(--card); border: 1px solid var(--border2); max-width: 880px; }
+@media (max-width: 700px) { .wov-split { grid-template-columns: 1fr; } }
+.wov-split-img { position: relative; min-height: 260px; overflow: hidden; }
+.wov-split-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; filter: brightness(.75) saturate(1.1); }
+.wov-split-img-ov { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(10,12,18,.82) 100%); }
+.wov-split-badge { position: absolute; bottom: 14px; left: 16px; font-size: 9px; font-family: var(--fd); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); background: rgba(10,12,18,.6); backdrop-filter: blur(6px); padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(201,168,76,.3); }
+.wov-split-form { padding: 36px 32px; display: flex; flex-direction: column; gap: 22px; justify-content: center; }
+@media (max-width: 500px) { .wov-split-form { padding: 24px 18px; } }
+
+/* Page heading */
+.wov-page-title { font-family: var(--fs,var(--fd)); font-size: clamp(22px,4vw,38px); font-weight: 700; line-height: 1.12; color: var(--text); }
+.wov-page-title em { font-style: italic; color: var(--gold); }
+.wov-page-sub { font-size: 13px; color: var(--text3); line-height: 1.6; margin-top: 6px; }
+
+/* Field */
+.wov-field { display: flex; flex-direction: column; gap: 8px; }
+.wov-label { font-size: 10px; font-family: var(--fd,var(--fb)); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); }
+.wov-textarea {
+  width: 100%; min-height: 100px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 12px; color: var(--text); font-family: var(--fb);
+  font-size: 14px; line-height: 1.6; padding: 14px 16px;
+  outline: none; resize: none; transition: all .25s;
+}
+.wov-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.12); }
+.wov-textarea::placeholder { color: var(--text3); }
+.wov-hint { font-size: 11px; color: var(--text3); text-align: right; margin-top: -4px; }
+
+/* Pills */
+.wov-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.wov-pill {
+  padding: 7px 15px; border-radius: 99px;
+  border: 1px solid var(--border2); background: var(--card);
+  font-size: 12px; font-weight: 600; font-family: var(--fb);
+  color: var(--text2); cursor: pointer; transition: all .2s;
+  white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.wov-pill:hover { border-color: var(--gold); color: var(--text); }
+.wov-pill.sel { background: rgba(201,168,76,.1); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+
+/* Slide count */
+.wov-sc-row { display: flex; align-items: center; background: var(--card); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; width: fit-content; }
+.wov-sc-btn { width: 42px; height: 42px; background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; }
+.wov-sc-btn:hover { color: var(--gold); background: rgba(201,168,76,.1); }
+.wov-sc-inner { padding: 0 18px; text-align: center; border-left: 1px solid var(--border2); border-right: 1px solid var(--border2); min-width: 72px; }
+.wov-sc-val { font-family: var(--fd); font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; display: block; }
+.wov-sc-sub { font-size: 9px; font-family: var(--fd,var(--fb)); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); display: block; margin-top: 2px; }
+
+/* Style grid (page 2) */
+.wov-style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 10px; width: 100%; max-width: 760px; }
+.wov-style-card { border-radius: 12px; overflow: hidden; border: 2px solid var(--border2); cursor: pointer; transition: all .25s; background: var(--card); position: relative; }
+.wov-style-card:hover { border-color: rgba(201,168,76,.4); transform: translateY(-2px); }
+.wov-style-card.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 8px 24px rgba(201,168,76,.18); }
+.wov-style-preview { width: 100%; aspect-ratio: 1; position: relative; overflow: hidden; background: #0a0c12; }
+.wov-style-check { position: absolute; top: 7px; right: 7px; z-index: 10; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); border: 2px solid #07090f; display: none; align-items: center; justify-content: center; }
+.wov-style-card.sel .wov-style-check { display: flex; }
+.wov-style-check svg { width: 9px; height: 9px; }
+.wov-style-name { padding: 9px 10px 11px; font-size: 10.5px; font-family: var(--fd,var(--fb)); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); }
+
+/* Page 3 upload */
+.wov-upload-zone {
+  border: 1.5px dashed var(--border2); border-radius: 16px;
+  padding: 32px 20px; text-align: center; cursor: pointer;
+  transition: all .2s; position: relative; overflow: hidden;
+}
+.wov-upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.wov-upload-zone:hover, .wov-upload-zone.drag { border-color: var(--gold); background: rgba(201,168,76,.04); }
+.wov-upload-icon { font-size: 28px; margin-bottom: 8px; }
+.wov-upload-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.wov-upload-sub { font-size: 12px; color: var(--text3); }
+.wov-upload-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.wov-thumb { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border2); }
+.wov-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wov-thumb-rm { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,.75); border: none; color: #fff; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.wov-skip { font-size: 11px; color: var(--text3); }
+.wov-skip a { color: var(--gold); cursor: pointer; }
+
+/* Generating page */
+.wov-gen-shell { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 48px 24px; max-width: 520px; margin: 0 auto; text-align: center; }
+.wov-gen-mosaic { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; border-radius: 16px; overflow: hidden; height: 150px; width: 100%; max-width: 480px; }
+.wov-moz-cell { overflow: hidden; }
+.wov-moz-cell:first-child { grid-row: span 2; }
+.wov-moz-cell img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.7) saturate(1.2); }
+.wov-gen-star { font-size: 28px; color: var(--gold); animation: wovSpin 3s linear infinite; }
+@keyframes wovSpin { to { transform: rotate(360deg); } }
+.wov-gen-title { font-family: var(--fd); font-size: 24px; font-weight: 900; color: var(--text); line-height: 1.15; }
+.wov-gen-title em { font-style: italic; color: var(--gold); }
+.wov-gen-steps { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 340px; text-align: left; }
+.wov-gen-step { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; transition: all .3s; }
+.wov-gen-step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background .3s; }
+.wov-gen-step-text { font-size: 12px; color: var(--text3); font-family: var(--fb); transition: color .3s; }
+.wov-gen-step.active { background: rgba(201,168,76,.06); }
+.wov-gen-step.active .wov-gen-step-dot { background: var(--gold); box-shadow: 0 0 6px rgba(201,168,76,.5); }
+.wov-gen-step.active .wov-gen-step-text { color: var(--gold); }
+.wov-gen-step.done .wov-gen-step-dot { background: var(--gold); }
+.wov-gen-step.done .wov-gen-step-text { color: var(--text2); }
+
+/* Footer nav */
+.wov-foot {
+  flex-shrink: 0; display: flex; align-items: center; gap: 12px;
+  padding: 12px 24px; background: var(--bg2);
+  border-top: 1px solid var(--border);
+}
+.wov-prog { flex: 1; height: 3px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+.wov-prog-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2,#b8962e)); border-radius: 99px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+.wov-btn-back {
+  padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; font-family: var(--fb);
+  color: var(--text2); border: 1px solid var(--border2); background: var(--card);
+  cursor: pointer; transition: all .2s;
+}
+.wov-btn-back:hover { border-color: var(--gold); color: var(--text); }
+.wov-btn-next {
+  padding: 11px 22px; border-radius: var(--r); font-size: 13px; font-weight: 700; font-family: var(--fb);
+  background: linear-gradient(135deg, var(--gold), var(--gold2,#b8962e));
+  color: #fff; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 7px; transition: all .2s;
+  box-shadow: 0 4px 14px rgba(201,168,76,.25);
+}
+[data-theme="dark"] .wov-btn-next { color: #07090f; }
+.wov-btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,.35); }
+
+/* Style preview reuse from wizard (copied) */
+.prev-photo { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;z-index:0; }
+.prev-photo-fill { width:100%;height:100%;object-fit:cover;object-position:center;display:block; }
+.prev-fullbleed{background:#0a0c12;display:flex;flex-direction:column;justify-content:flex-end;padding:12px;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-fullbleed .prev-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.05)0%,rgba(0,0,0,.80)100%);pointer-events:none;}
+.prev-fullbleed .prev-tag{position:absolute;top:9px;left:9px;z-index:3;font-size:6.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.8);padding:2px 6px;border-radius:3px;background:rgba(201,168,76,.28);border:1px solid rgba(201,168,76,.45);}
+.prev-fullbleed .prev-slide-num{position:absolute;top:9px;right:9px;z-index:3;font-size:7.5px;font-weight:700;color:rgba(255,255,255,.65);background:rgba(0,0,0,.5);padding:2px 5px;border-radius:4px;}
+.prev-fullbleed .prev-text{position:relative;z-index:2;}
+.prev-fullbleed .prev-h1{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:#fff;line-height:1.15;margin-bottom:3px;}
+.prev-fullbleed .prev-h1 em{color:#c9a84c;font-style:normal;}
+.prev-fullbleed .prev-p{font-size:8px;color:rgba(255,255,255,.6);line-height:1.4;}
+.prev-botstrip{background:#0a0c12;display:flex;flex-direction:column;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-botstrip .prev-img-area{flex:0 0 58%;position:relative;overflow:hidden;}
+.prev-botstrip .prev-img-area::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(10,12,18,.75)100%);z-index:1;}
+.prev-botstrip .prev-bar{flex:1;background:#0f1118;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;border-top:1px solid rgba(201,168,76,.2);}
+.prev-botstrip .prev-h1{font-family:'Playfair Display',serif;font-size:11.5px;font-weight:700;color:#fff;margin-bottom:2px;line-height:1.2;}
+.prev-botstrip .prev-h1 em{color:#c9a84c;font-style:normal;}
+.prev-botstrip .prev-p{font-size:7.5px;color:rgba(255,255,255,.5);}
+.prev-topstrip{background:#0f1118;display:flex;flex-direction:column;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-topstrip .prev-bar{flex:0 0 42%;background:#0f1118;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid rgba(201,168,76,.2);}
+.prev-topstrip .prev-img-area{flex:1;overflow:hidden;position:relative;}
+.prev-topstrip .prev-h1{font-family:'Playfair Display',serif;font-size:11.5px;font-weight:700;color:#fff;margin-bottom:2px;line-height:1.2;}
+.prev-topstrip .prev-h1 em{color:#c9a84c;font-style:normal;}
+.prev-topstrip .prev-p{font-size:7.5px;color:rgba(255,255,255,.5);}
+.prev-band{background:#0a0c12;display:flex;flex-direction:column;justify-content:center;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-band .prev-img-area{position:absolute;inset:0;overflow:hidden;z-index:0;}
+.prev-band .prev-img-area::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:1;}
+.prev-band .prev-bar{position:relative;z-index:2;background:#c9a84c;padding:13px 12px;margin:20px 0;display:flex;flex-direction:column;gap:3px;}
+.prev-band .prev-h1{font-family:'Playfair Display',serif;font-size:12.5px;font-weight:800;color:#07090f;line-height:1.15;}
+.prev-band .prev-p{font-size:7.5px;color:rgba(0,0,0,.6);}
+.prev-dual{background:#0a0c12;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-dual .prev-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
+.prev-dual .prev-bg::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.50);z-index:1;}
+.prev-dual .prev-thumb{position:absolute;top:10px;right:10px;z-index:3;width:34%;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1.5px solid rgba(255,255,255,.22);}
+.prev-dual .prev-text-bottom{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:10px;}
+.prev-dual .prev-h1{font-family:'Playfair Display',serif;font-size:11.5px;font-weight:700;color:#fff;margin-bottom:3px;line-height:1.2;}
+.prev-dual .prev-h1 em{color:#c9a84c;font-style:normal;}
+.prev-dual .prev-p{font-size:7.5px;color:rgba(255,255,255,.55);line-height:1.35;}
+.prev-stat{background:#0f1118;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-stat .prev-stat-strip{position:absolute;bottom:0;left:0;right:0;height:26%;overflow:hidden;opacity:.38;z-index:0;}
+.prev-stat .prev-num{font-family:'Playfair Display',serif;font-size:46px;font-weight:800;color:#c9a84c;line-height:1;position:relative;z-index:2;}
+.prev-stat .prev-rule{width:26px;height:1px;background:rgba(201,168,76,.5);position:relative;z-index:2;}
+.prev-stat .prev-label{font-size:8px;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5);text-align:center;position:relative;z-index:2;line-height:1.4;}
+.prev-edcover{background:#0a0c12;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-edcover .prev-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.04)0%,rgba(0,0,0,.84)100%);}
+.prev-edcover .prev-badge{position:absolute;top:10px;left:10px;z-index:3;font-size:7px;color:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.5);border-radius:40px;padding:2px 7px;letter-spacing:.3px;}
+.prev-edcover .prev-brand-top{position:absolute;top:11px;right:10px;z-index:3;font-size:7.5px;color:rgba(255,255,255,.75);}
+.prev-edcover .prev-text{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:0 11px 11px;}
+.prev-edcover .prev-h1{font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:400;color:#fff;line-height:1.05;}
+.prev-edcover .prev-h1 em{font-style:italic;}
+.prev-edcover .prev-rule{width:18px;height:1.5px;background:rgba(255,255,255,.5);margin:5px 0;}
+.prev-edcover .prev-p{font-size:7.5px;color:rgba(255,255,255,.6);line-height:1.45;}
+.prev-edcollage{background:#f0ebe1;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-edcollage .prev-badge,.prev-edcollage .prev-brand-top{position:absolute;top:9px;z-index:6;font-size:7px;color:#888;border:1px solid #b0a898;border-radius:40px;padding:2px 7px;}
+.prev-edcollage .prev-badge{left:9px;} .prev-edcollage .prev-brand-top{right:9px;border:none;}
+.prev-edcollage .prev-big-num{position:absolute;top:22px;right:8px;z-index:2;font-family:Georgia,'Times New Roman',serif;font-size:76px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.88;}
+.prev-edcollage .prev-photo-1{position:absolute;left:9px;top:38px;width:40%;height:44%;border-radius:2px;overflow:hidden;z-index:3;}
+.prev-edcollage .prev-photo-2{position:absolute;left:22%;top:42%;width:36%;height:42%;border-radius:2px;overflow:hidden;z-index:4;}
+.prev-edcollage .prev-text-right{position:absolute;left:52%;right:0;top:0;bottom:0;z-index:5;background:#f0ebe1;border-left:1.5px solid rgba(180,160,130,.3);display:flex;flex-direction:column;justify-content:center;padding:8px 9px;gap:5px;}
+.prev-edcollage .prev-h1{font-family:Georgia,'Times New Roman',serif;font-size:11px;font-weight:400;color:#1a1814;line-height:1.2;}
+.prev-edcollage .prev-h1 em{font-style:italic;}
+.prev-edcollage .prev-p{font-size:7px;color:#666;line-height:1.5;}
+.prev-edcollage .prev-foot,.prev-edcollage .prev-stars{position:absolute;bottom:7px;z-index:6;font-size:7px;color:#a09888;}
+.prev-edcollage .prev-foot{left:9px;} .prev-edcollage .prev-stars{right:7px;font-size:9px;color:#b0a090;letter-spacing:3px;}
+.prev-edcol3{background:#f0ebe1;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-edcol3 .prev-badge{position:absolute;top:9px;right:9px;z-index:6;font-size:7px;color:#888;border:1px solid #b0a898;border-radius:40px;padding:2px 7px;}
+.prev-edcol3 .prev-big-num{position:absolute;top:9px;left:6px;z-index:2;font-family:Georgia,serif;font-size:56px;font-style:italic;font-weight:700;color:#1a1814;line-height:1;opacity:.7;}
+.prev-edcol3 .prev-text-left{position:absolute;left:0;top:0;bottom:0;width:50%;z-index:3;display:flex;flex-direction:column;justify-content:flex-end;padding:8px 8px 14px;}
+.prev-edcol3 .prev-h1{font-family:Georgia,serif;font-size:9px;font-weight:400;color:#1a1814;line-height:1.3;margin-bottom:3px;}
+.prev-edcol3 .prev-h1 em{font-style:italic;}
+.prev-edcol3 .prev-p{font-size:6.5px;color:#888;}
+.prev-edcol3 .prev-photos-right{position:absolute;right:0;top:0;bottom:0;width:50%;display:flex;flex-direction:column;gap:3px;padding:6px 6px 6px 0;z-index:3;}
+.prev-edcol3 .prev-photo-wide{flex:1;border-radius:3px;overflow:hidden;}
+.prev-edcol3 .prev-photos-bottom{display:flex;gap:3px;height:42%;}
+.prev-edcol3 .prev-photo-sm{flex:1;border-radius:3px;overflow:hidden;}
+.prev-edcol3 .prev-foot,.prev-edcol3 .prev-stars{position:absolute;bottom:6px;z-index:6;font-size:6.5px;color:#a09888;}
+.prev-edcol3 .prev-foot{left:8px;} .prev-edcol3 .prev-stars{right:7px;font-size:8px;color:#b0a090;letter-spacing:2px;}
+.prev-habit{background:#0a0c12;width:100%;height:100%;position:relative;overflow:hidden;}
+.prev-habit .prev-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.3)0%,rgba(0,0,0,.65)100%);}
+.prev-habit .prev-topbar{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;padding:8px 10px;font-size:7px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);}
+.prev-habit .prev-title-block{position:absolute;bottom:28px;left:10px;z-index:3;}
+.prev-habit .prev-h1{font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:#fff;line-height:.95;letter-spacing:-.02em;}
+.prev-habit .prev-sub{font-size:7px;color:rgba(255,255,255,.55);letter-spacing:.1em;text-transform:uppercase;margin-top:5px;}
+.prev-habit .prev-botbar{position:absolute;bottom:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;padding:6px 10px;font-size:6px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);border-top:1px solid rgba(255,255,255,.1);}
+</style>
+
+<div id="wizOverlay">
+  <div class="wov-stepbar" style="position:relative;">
+    <div class="wov-steps" id="wovSteps">
+      <div class="wov-step-item active" data-wstep="1"><div class="wov-step-num active" id="wovN1">1</div><div class="wov-step-label">Topic</div></div>
+      <div class="wov-step-line" id="wovL12"></div>
+      <div class="wov-step-item" data-wstep="2"><div class="wov-step-num" id="wovN2">2</div><div class="wov-step-label">Style</div></div>
+      <div class="wov-step-line" id="wovL23"></div>
+      <div class="wov-step-item" data-wstep="3"><div class="wov-step-num" id="wovN3">3</div><div class="wov-step-label">Photos</div></div>
+      <div class="wov-step-line" id="wovL34"></div>
+      <div class="wov-step-item" data-wstep="4"><div class="wov-step-num" id="wovN4">4</div><div class="wov-step-label">Generating</div></div>
+    </div>
+    <button class="wov-close" id="wovClose" onclick="closeWizard()">✕</button>
+  </div>
+
+  <div class="wov-pages">
+
+    <!-- PAGE 1: Topic -->
+    <div class="wov-page active" id="wovP1">
+      <div class="wov-inner" style="max-width:880px;">
+        <div class="wov-split">
+          <div class="wov-split-img">
+            <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&q=80&auto=format&fit=crop" alt="" loading="eager"/>
+            <div class="wov-split-img-ov"></div>
+            <span class="wov-split-badge">✦ Step 1 — Define your story</span>
+          </div>
+          <div class="wov-split-form">
+            <div>
+              <div class="wov-page-title">What's your carousel <em>about?</em></div>
+              <div class="wov-page-sub">Describe your topic. Dijo handles the narrative, copy, and design.</div>
+            </div>
+            <div class="wov-field">
+              <div class="wov-label">Your Topic</div>
+              <textarea class="wov-textarea" id="wovTopic" placeholder="e.g. Why most brands fail at content marketing — and how to fix it in 30 days" maxlength="300"></textarea>
+              <div class="wov-hint"><span id="wovTopicCount">0</span> / 300</div>
+            </div>
+            <div class="wov-field">
+              <div class="wov-label">Platform</div>
+              <div class="wov-pills" id="wovPlatformGroup">
+                <button class="wov-pill sel" data-val="Instagram">📸 Instagram</button>
+                <button class="wov-pill" data-val="LinkedIn">💼 LinkedIn</button>
+                <button class="wov-pill" data-val="TikTok">🎵 TikTok</button>
+                <button class="wov-pill" data-val="Twitter/X">𝕏 Twitter / X</button>
+                <button class="wov-pill" data-val="Pinterest">📌 Pinterest</button>
+              </div>
+            </div>
+            <div class="wov-field">
+              <div class="wov-label">Tone</div>
+              <div class="wov-pills" id="wovToneGroup">
+                <button class="wov-pill sel" data-val="Bold & Direct">Bold &amp; Direct</button>
+                <button class="wov-pill" data-val="Conversational">Conversational</button>
+                <button class="wov-pill" data-val="Professional">Professional</button>
+                <button class="wov-pill" data-val="Inspirational">Inspirational</button>
+                <button class="wov-pill" data-val="Educational">Educational</button>
+                <button class="wov-pill" data-val="Playful">Playful</button>
+              </div>
+            </div>
+            <div class="wov-field">
+              <div class="wov-label">Number of Slides</div>
+              <div class="wov-sc-row">
+                <button class="wov-sc-btn" id="wovScMinus">−</button>
+                <div class="wov-sc-inner"><span class="wov-sc-val" id="wovScVal">7</span><span class="wov-sc-sub">slides</span></div>
+                <button class="wov-sc-btn" id="wovScPlus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2: Style -->
+    <div class="wov-page" id="wovP2">
+      <div class="wov-inner" style="max-width:820px;align-items:center;">
+        <div style="text-align:center;">
+          <div class="wov-page-title">Pick your <em>visual style.</em></div>
+          <div class="wov-page-sub">Each preview shows exactly how your slides will look.</div>
+        </div>
+        <div class="wov-style-grid" id="wovStyleGrid">
+          <div class="wov-style-card sel" data-style="Full Bleed"><div class="wov-style-preview"><div class="prev-fullbleed"><img class="prev-photo" src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/><div class="prev-overlay"></div><span class="prev-tag">INSIGHT</span><span class="prev-slide-num">01/07</span><div class="prev-text"><div class="prev-h1">From ideas<br>to <em>impact.</em></div><div class="prev-p">We help brands show up with intention.</div></div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Full Bleed</div></div>
+          <div class="wov-style-card" data-style="Bot Strip"><div class="wov-style-preview"><div class="prev-botstrip"><div class="prev-img-area"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-bar"><div class="prev-h1">Most brands don't lack <em>talent.</em></div><div class="prev-p">They lack structure.</div></div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Bot Strip</div></div>
+          <div class="wov-style-card" data-style="Top Strip"><div class="wov-style-preview"><div class="prev-topstrip"><div class="prev-bar"><div class="prev-h1">Ready to build a brand people <em>remember?</em></div><div class="prev-p">Strategy · Content · Growth</div></div><div class="prev-img-area"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Top Strip</div></div>
+          <div class="wov-style-card" data-style="Band"><div class="wov-style-preview"><div class="prev-band"><div class="prev-img-area"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-bar"><div class="prev-h1">Build a brand.<br>Be remembered.</div><div class="prev-p">Consistency wins.</div></div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Band</div></div>
+          <div class="wov-style-card" data-style="Dual Img"><div class="wov-style-preview"><div class="prev-dual"><div class="prev-bg"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1493666438817-866a91353ca9?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-thumb"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1523413555250-4580a8bcd2df?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-text-bottom"><div class="prev-h1">Some people post.<br>Others build <em>presence.</em></div><div class="prev-p">Strategy, storytelling, consistency.</div></div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Dual Image</div></div>
+          <div class="wov-style-card" data-style="Stat"><div class="wov-style-preview"><div class="prev-stat"><div class="prev-stat-strip"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-num">87%</div><div class="prev-rule"></div><div class="prev-label">of buyers research on<br>social before deciding</div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Stat Hero</div></div>
+          <div class="wov-style-card" data-style="Ed. Cover"><div class="wov-style-preview"><div class="prev-edcover"><img class="prev-photo" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/><div class="prev-overlay"></div><span class="prev-badge">Page 01</span><span class="prev-brand-top">ImpactGrid</span><div class="prev-text"><div class="prev-h1">From ideas to <em>impact.</em></div><div class="prev-rule"></div><div class="prev-p">We help brands show up with content that looks intentional.</div></div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Ed. Cover</div></div>
+          <div class="wov-style-card" data-style="Ed. Collage"><div class="wov-style-preview"><div class="prev-edcollage"><span class="prev-badge">Page 01</span><span class="prev-brand-top">ImpactGrid</span><span class="prev-big-num">01</span><div class="prev-photo-1"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-photo-2"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-text-right"><div class="prev-h1">That's where we <em>come in.</em></div><div class="prev-p">Content · Creative · Community</div></div><span class="prev-foot">@impactgrid</span><span class="prev-stars">✽ ✽ ✽</span></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Ed. Collage</div></div>
+          <div class="wov-style-card" data-style="Ed. Col3"><div class="wov-style-preview"><div class="prev-edcol3"><span class="prev-badge">Page 01</span><span class="prev-big-num">01</span><div class="prev-text-left"><div class="prev-h1">Three things that build a <em>brand.</em></div><div class="prev-p">Plan · Create · Grow</div></div><div class="prev-photos-right"><div class="prev-photo-wide"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=300&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-photos-bottom"><div class="prev-photo-sm"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1523413555250-4580a8bcd2df?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div><div class="prev-photo-sm"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div></div></div><span class="prev-foot">@impactgrid</span><span class="prev-stars">✽ ✽ ✽</span></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Ed. Col×3</div></div>
+          <div class="wov-style-card" data-style="Habit Cover"><div class="wov-style-preview"><div class="prev-habit"><img class="prev-photo" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/><div class="prev-overlay"></div><div class="prev-topbar"><span>IMPACTGRID</span><span>@impactgrid</span></div><div class="prev-title-block"><div class="prev-h1">Post<br>With</div><div class="prev-sub">Habit 1 of 5</div></div><div class="prev-botbar"><span>IMPACTGRID.COM</span><span>SLIDE 01</span></div></div><div class="wov-style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="wov-style-name">Habit Cover</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Photos -->
+    <div class="wov-page" id="wovP3">
+      <div class="wov-inner" style="max-width:880px;">
+        <div class="wov-split">
+          <div class="wov-split-img">
+            <img src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=900&q=80&auto=format&fit=crop" alt="" loading="lazy"/>
+            <div class="wov-split-img-ov"></div>
+            <span class="wov-split-badge">✦ Step 3 — Your visuals</span>
+          </div>
+          <div class="wov-split-form">
+            <div>
+              <div class="wov-page-title">Got photos to <em>include?</em></div>
+              <div class="wov-page-sub">Upload your own images or skip — Dijo selects cinematic photography for you.</div>
+            </div>
+            <div class="wov-upload-zone" id="wovUploadZone">
+              <input type="file" id="wovFileInput" accept="image/*" multiple/>
+              <div class="wov-upload-icon">🖼️</div>
+              <div class="wov-upload-title">Upload images</div>
+              <div class="wov-upload-sub">Drag &amp; drop or click · PNG, JPG, WEBP</div>
+            </div>
+            <div class="wov-upload-preview" id="wovUploadPreview"></div>
+            <div class="wov-skip">No photos? <a id="wovSkip">Skip this step</a> — Dijo picks cinematic editorial photography automatically.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Generating -->
+    <div class="wov-page" id="wovP4">
+      <div class="wov-gen-shell">
+        <div class="wov-gen-mosaic">
+          <div class="wov-moz-cell"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="wov-moz-cell"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="wov-moz-cell"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="wov-moz-cell"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+          <div class="wov-moz-cell"><img src="https://images.unsplash.com/photo-1614644147798-f8c0fc9da7f6?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
+        </div>
+        <div class="wov-gen-star">✦</div>
+        <div class="wov-gen-title">Dijo is building your<br><em>carousel…</em></div>
+        <div class="wov-gen-steps">
+          <div class="wov-gen-step active" id="wgs1"><div class="wov-gen-step-dot"></div><div class="wov-gen-step-text">Analysing topic &amp; narrative structure</div></div>
+          <div class="wov-gen-step" id="wgs2"><div class="wov-gen-step-dot"></div><div class="wov-gen-step-text">Writing slide copy with keyword emphasis</div></div>
+          <div class="wov-gen-step" id="wgs3"><div class="wov-gen-step-dot"></div><div class="wov-gen-step-text">Selecting cinematic photography</div></div>
+          <div class="wov-gen-step" id="wgs4"><div class="wov-gen-step-dot"></div><div class="wov-gen-step-text">Applying layout &amp; overlay system</div></div>
+          <div class="wov-gen-step" id="wgs5"><div class="wov-gen-step-dot"></div><div class="wov-gen-step-text">Finalising your carousel</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.wov-pages -->
+
+  <!-- Footer nav -->
+  <div class="wov-foot" id="wovFoot">
+    <button class="wov-btn-back" id="wovBtnBack" style="display:none">← Back</button>
+    <div class="wov-prog"><div class="wov-prog-fill" id="wovProgFill" style="width:33%"></div></div>
+    <button class="wov-btn-next" id="wovBtnNext">
+      Continue
+      <svg viewBox="0 0 14 14" fill="none" width="14" height="14"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
 <script>
+/* ═══════════════════════════════════════════════════════
+   INLINE DIJO WIZARD — no file boundary, no sessionStorage
+   Populates the hidden inputs in the studio and fires generate()
+   directly when the user hits Generate Carousel on page 3.
+═══════════════════════════════════════════════════════ */
 (function() {
-  'use strict';
+'use strict';
 
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const WIZ = {
+  page: 1,
+  topic: '',
+  platform: 'Instagram',
+  tone: 'Bold & Direct',
+  slides: 7,
+  style: 'Full Bleed',
+  photos: []
+};
+
+// ── Open / close ────────────────────────────────────────
+function openWizard() {
+  document.getElementById('wizOverlay').classList.add('open');
+  // Reset to page 1
+  wovGoTo(1);
+}
+function closeWizard() {
+  document.getElementById('wizOverlay').classList.remove('open');
+}
+window.openWizard  = openWizard;
+window.closeWizard = closeWizard;
+
+// ── Page navigation ────────────────────────────────────
+function wovGoTo(n) {
+  const cur  = document.getElementById('wovP' + WIZ.page);
+  const next = document.getElementById('wovP' + n);
+  if (!next) return;
+  cur.classList.remove('active');
+  cur.classList.add('exit-left');
+  setTimeout(function() { cur.classList.remove('exit-left'); }, 400);
+  next.classList.add('active');
+  WIZ.page = n;
+  wovUpdateNav();
+  wovUpdateSteps();
+}
+
+function wovUpdateNav() {
+  const p = WIZ.page;
+  document.getElementById('wovBtnBack').style.display = p === 1 ? 'none' : '';
+  const foot = document.getElementById('wovFoot');
+  const next = document.getElementById('wovBtnNext');
+  if (p === 4) {
+    foot.style.display = 'none';
+  } else {
+    foot.style.display = 'flex';
+    if (p === 3) {
+      next.innerHTML = '✦ Generate Carousel';
+    } else {
+      next.innerHTML = 'Continue <svg viewBox="0 0 14 14" fill="none" width="14" height="14"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
   }
+  const pcts = { 1:33, 2:66, 3:90, 4:100 };
+  document.getElementById('wovProgFill').style.width = pcts[p] + '%';
+}
 
-  // ── Read wizard state ──────────────────────────────────
-  var raw = sessionStorage.getItem('dijo_wizard');
-  if (!raw) return;
-  var wiz;
-  try { wiz = JSON.parse(raw); } catch(e) { return; }
-  if (!wiz || !wiz.fromWizard || !wiz.topic) return;
-  sessionStorage.removeItem('dijo_wizard'); // consume — no re-trigger on refresh
+function wovUpdateSteps() {
+  const p = WIZ.page;
+  document.querySelectorAll('.wov-step-item').forEach(function(el) {
+    const s = parseInt(el.dataset.wstep);
+    el.classList.toggle('active', s === p);
+    el.classList.toggle('done', s < p);
+    const num = el.querySelector('.wov-step-num');
+    num.classList.toggle('active', s === p);
+    num.classList.toggle('done', s < p);
+  });
+  [['wovL12',2],['wovL23',3],['wovL34',4]].forEach(function(pair) {
+    document.getElementById(pair[0]).classList.toggle('done', p >= pair[1]);
+  });
+}
 
-  // ── Inject banner CSS immediately (no FOUC) ───────────
-  var css = document.createElement('style');
-  css.textContent =
-    '.wiz-summary-banner{margin-top:10px;padding:10px 12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:10px;display:flex;flex-direction:column;gap:8px;}' +
-    '.wsb-topic{font-size:12px;color:var(--text);font-family:var(--fb);line-height:1.45;word-break:break-word;}' +
-    '.wsb-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;}' +
-    '.wsb-pill{padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--fm);letter-spacing:.04em;background:rgba(201,168,76,.13);border:1px solid rgba(201,168,76,.22);color:var(--gold);}' +
-    '.wsb-edit{font-size:10px;color:var(--text3);text-decoration:none;letter-spacing:.02em;transition:color .15s;align-self:flex-start;}' +
-    '.wsb-edit:hover{color:var(--gold);}';
-  document.head.appendChild(css);
+// ── Back / Next buttons ────────────────────────────────
+document.getElementById('wovBtnBack').addEventListener('click', function() {
+  if (WIZ.page > 1) wovGoTo(WIZ.page - 1);
+});
 
-  // ── Run after the page (and all scripts) are fully ready ─
-  function boot() {
-    // 1. Set values into the hidden inputs so generate() reads them correctly
+document.getElementById('wovBtnNext').addEventListener('click', function() {
+  if (WIZ.page === 1) {
+    WIZ.topic = document.getElementById('wovTopic').value.trim();
+    if (!WIZ.topic) {
+      var ta = document.getElementById('wovTopic');
+      ta.focus(); ta.style.borderColor = '#e05555';
+      return;
+    }
+    document.getElementById('wovTopic').style.borderColor = '';
+    wovGoTo(2);
+  } else if (WIZ.page === 2) {
+    wovGoTo(3);
+  } else if (WIZ.page === 3) {
+    wovLaunch();
+  }
+});
+
+// ── Page 1 interactions ────────────────────────────────
+document.getElementById('wovTopic').addEventListener('input', function() {
+  WIZ.topic = this.value;
+  document.getElementById('wovTopicCount').textContent = this.value.length;
+});
+
+function wovMakePills(groupId, key) {
+  document.getElementById(groupId).addEventListener('click', function(e) {
+    var pill = e.target.closest('.wov-pill');
+    if (!pill) return;
+    document.querySelectorAll('#' + groupId + ' .wov-pill').forEach(function(p) { p.classList.remove('sel'); });
+    pill.classList.add('sel');
+    WIZ[key] = pill.dataset.val;
+  });
+}
+wovMakePills('wovPlatformGroup', 'platform');
+wovMakePills('wovToneGroup', 'tone');
+
+var wovSlideCount = 7;
+document.getElementById('wovScMinus').addEventListener('click', function() {
+  if (wovSlideCount > 3) { wovSlideCount--; WIZ.slides = wovSlideCount; document.getElementById('wovScVal').textContent = wovSlideCount; }
+});
+document.getElementById('wovScPlus').addEventListener('click', function() {
+  if (wovSlideCount < 15) { wovSlideCount++; WIZ.slides = wovSlideCount; document.getElementById('wovScVal').textContent = wovSlideCount; }
+});
+
+// ── Page 2: style cards ────────────────────────────────
+document.getElementById('wovStyleGrid').addEventListener('click', function(e) {
+  var card = e.target.closest('.wov-style-card');
+  if (!card) return;
+  document.querySelectorAll('.wov-style-card').forEach(function(c) { c.classList.remove('sel'); });
+  card.classList.add('sel');
+  WIZ.style = card.dataset.style;
+});
+
+// ── Page 3: photo upload ───────────────────────────────
+var wovFileInput = document.getElementById('wovFileInput');
+var wovUploadZone = document.getElementById('wovUploadZone');
+var wovUploadPreview = document.getElementById('wovUploadPreview');
+
+wovFileInput.addEventListener('change', wovHandleFiles);
+wovUploadZone.addEventListener('dragover', function(e) { e.preventDefault(); wovUploadZone.classList.add('drag'); });
+wovUploadZone.addEventListener('dragleave', function() { wovUploadZone.classList.remove('drag'); });
+wovUploadZone.addEventListener('drop', function(e) { e.preventDefault(); wovUploadZone.classList.remove('drag'); wovHandleFiles({ target: { files: e.dataTransfer.files } }); });
+
+function wovHandleFiles(e) {
+  Array.from(e.target.files).forEach(function(file) {
+    if (!file.type.startsWith('image/')) return;
+    var r = new FileReader();
+    r.onload = function(ev) { WIZ.photos.push(ev.target.result); wovRenderThumbs(); };
+    r.readAsDataURL(file);
+  });
+}
+function wovRenderThumbs() {
+  wovUploadPreview.innerHTML = WIZ.photos.map(function(src, i) {
+    return '<div class="wov-thumb"><img src="' + src + '" alt=""/><button class="wov-thumb-rm" data-i="' + i + '">×</button></div>';
+  }).join('');
+  wovUploadPreview.querySelectorAll('.wov-thumb-rm').forEach(function(btn) {
+    btn.addEventListener('click', function() { WIZ.photos.splice(parseInt(btn.dataset.i), 1); wovRenderThumbs(); });
+  });
+}
+document.getElementById('wovSkip').addEventListener('click', function() { wovLaunch(); });
+
+// ── Launch: populate studio inputs and fire generate() ─
+function wovLaunch() {
+  // Collect fresh state from page 1
+  WIZ.topic    = document.getElementById('wovTopic').value.trim();
+  WIZ.platform = (document.querySelector('#wovPlatformGroup .wov-pill.sel') || {}).dataset?.val || WIZ.platform;
+  WIZ.tone     = (document.querySelector('#wovToneGroup .wov-pill.sel')     || {}).dataset?.val || WIZ.tone;
+  WIZ.style    = (document.querySelector('.wov-style-card.sel')             || {}).dataset?.style || WIZ.style;
+
+  if (!WIZ.topic) { wovGoTo(1); return; }
+
+  // Show generating animation
+  wovGoTo(4);
+  var wovGenSteps = ['wgs1','wgs2','wgs3','wgs4','wgs5'];
+  var wovGenIdx = 0;
+  wovGenSteps.forEach(function(id) { document.getElementById(id).classList.remove('active','done'); });
+  function wovAdvance() {
+    var prev = wovGenSteps[wovGenIdx - 1];
+    if (prev) { document.getElementById(prev).classList.remove('active'); document.getElementById(prev).classList.add('done'); }
+    if (wovGenIdx < wovGenSteps.length) {
+      document.getElementById(wovGenSteps[wovGenIdx]).classList.add('active');
+      wovGenIdx++;
+    }
+  }
+  wovAdvance();
+  var wovInterval = setInterval(wovAdvance, 800);
+
+  // After a short animation, populate the studio and generate
+  setTimeout(function() {
+    clearInterval(wovInterval);
+
+    // 1. Populate hidden inputs in the studio
     var topicEl = document.getElementById('topicInput');
     var platEl  = document.getElementById('platSelect');
     var toneEl  = document.getElementById('toneSelect');
     var cntEl   = document.getElementById('cntVal');
 
-    if (topicEl) topicEl.value = wiz.topic;
+    if (topicEl) topicEl.value = WIZ.topic;
 
-    if (platEl && wiz.platform) {
+    if (platEl) {
       for (var i = 0; i < platEl.options.length; i++) {
-        if (platEl.options[i].value === wiz.platform || platEl.options[i].text === wiz.platform) {
-          platEl.selectedIndex = i; break;
-        }
+        if (platEl.options[i].value === WIZ.platform) { platEl.selectedIndex = i; break; }
       }
     }
-
-    if (toneEl && wiz.tone) {
-      var toneClean = wiz.tone.replace(/&amp;/g, '&');
+    if (toneEl) {
+      var tc = WIZ.tone.replace(/&amp;/g,'&');
       for (var j = 0; j < toneEl.options.length; j++) {
-        var optVal = toneEl.options[j].value.replace(/&amp;/g, '&');
-        if (optVal === toneClean || toneEl.options[j].text === toneClean) {
-          toneEl.selectedIndex = j; break;
-        }
+        if (toneEl.options[j].value.replace(/&amp;/g,'&') === tc) { toneEl.selectedIndex = j; break; }
       }
     }
+    if (window.ST) window.ST.count = WIZ.slides;
+    if (cntEl) cntEl.textContent = WIZ.slides;
 
-    // Slide count: adjust ST.count directly, then sync the display
-    var targetSlides = parseInt(wiz.slides) || 7;
-    if (window.ST) {
-      window.ST.count = targetSlides;
-    }
-    if (cntEl) cntEl.textContent = targetSlides;
+    // 2. Enable gen btn + trigger onTopicInput so intel card activates
+    var genBtn = document.getElementById('genBtn');
+    if (genBtn) { genBtn.disabled = false; genBtn.style.opacity = ''; genBtn.style.cursor = ''; }
+    if (typeof window.onTopicInput === 'function') window.onTopicInput();
 
-    // 2. Swap left panel header to summary banner
-    var leftHead = document.querySelector('.cs-left-head');
-    if (leftHead) {
-      var topicDisplay = wiz.topic.length > 70 ? wiz.topic.slice(0, 70) + '…' : wiz.topic;
-      leftHead.innerHTML =
-        '<div class="cs-left-title" style="margin-bottom:6px">✦ Dijo Carousel</div>' +
-        '<div class="wiz-summary-banner">' +
-          '<div class="wsb-topic">' + escHtml(topicDisplay) + '</div>' +
-          '<div class="wsb-pills">' +
-            '<span class="wsb-pill">' + escHtml(wiz.platform || 'Instagram') + '</span>' +
-            '<span class="wsb-pill">' + escHtml(wiz.tone || 'Bold & Direct') + '</span>' +
-            '<span class="wsb-pill">' + targetSlides + ' slides</span>' +
-            (wiz.style ? '<span class="wsb-pill">' + escHtml(wiz.style) + '</span>' : '') +
-          '</div>' +
-          '<a class="wsb-edit" href="dijo-wizard.html">← Back to wizard</a>' +
-        '</div>';
-    }
+    // 3. Close overlay and show summary banner
+    document.getElementById('wizOverlay').classList.remove('open');
+    document.getElementById('wizOverlay').classList.add('closeable');
 
-    // 3. Hide the wizard-already-collected fields from the left body
-    var leftBody = document.querySelector('.cs-left-body');
-    if (leftBody) {
-      // IDs of elements whose parent <div> wrapper we want to hide
-      var collapseTargets = ['topicInput', 'platSelect', 'toneSelect', 'dzone'];
-      collapseTargets.forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) {
-          // Walk up to find the direct child of .cs-left-body
-          var node = el;
-          while (node && node.parentElement !== leftBody) node = node.parentElement;
-          if (node) node.style.display = 'none';
-        }
-      });
-
-      // Also hide the slides counter row (find by cs-cnt-row)
-      var cntRow = leftBody.querySelector('.cs-cnt-row');
-      if (cntRow) {
-        var node2 = cntRow;
-        while (node2 && node2.parentElement !== leftBody) node2 = node2.parentElement;
-        if (node2) node2.style.display = 'none';
-      }
+    var banner = document.getElementById('wizSummaryBanner');
+    if (banner) {
+      banner.style.display = 'flex';
+      var topicStr = WIZ.topic.length > 70 ? WIZ.topic.slice(0,70) + '…' : WIZ.topic;
+      document.getElementById('wizTopicDisplay').textContent = topicStr;
+      var pillRow = document.getElementById('wizPillRow');
+      var pillStyle = 'padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--fm,monospace);letter-spacing:.04em;background:rgba(201,168,76,.13);border:1px solid rgba(201,168,76,.22);color:var(--gold);';
+      pillRow.innerHTML =
+        '<span style="'+pillStyle+'">' + WIZ.platform + '</span>' +
+        '<span style="'+pillStyle+'">' + WIZ.tone     + '</span>' +
+        '<span style="'+pillStyle+'">' + WIZ.slides   + ' slides</span>' +
+        (WIZ.style ? '<span style="'+pillStyle+'">' + WIZ.style + '</span>' : '');
     }
 
-    // 4. Call onTopicInput() so the intelligence card activates + button enables
-    if (typeof window.onTopicInput === 'function') {
-      window.onTopicInput();
-    } else {
-      // Fallback: enable the button manually
-      var btn = document.getElementById('genBtn');
-      if (btn) btn.disabled = false;
-    }
-
-    // 5. Auto-fire generate() — slight delay so onTopicInput's debounce finishes
+    // 4. Fire generate()!
     setTimeout(function() {
-      if (typeof window.generate === 'function') {
-        window.generate();
-      }
-    }, 500);
-  }
+      if (typeof window.generate === 'function') window.generate();
+    }, 100);
 
-  // Use load event if page not yet loaded, otherwise run immediately
-  if (document.readyState === 'complete') {
-    setTimeout(boot, 100);
-  } else {
-    window.addEventListener('load', function() {
-      setTimeout(boot, 100);
-    });
-  }
+  }, 2400);
+}
+
+// ── Auto-open wizard on first load ─────────────────────
+window.addEventListener('load', function() {
+  setTimeout(openWizard, 80);
+});
+
 })();
 </script>
 
