@@ -1292,37 +1292,92 @@ select:focus-visible {
 </style>
 
 <script>
+/* ── Logo upload handlers — upload to Cloudinary immediately on file select ──
+   Both onboard (ob) and builder (be) logos follow the same pattern:
+   1. Show raw preview instantly so the UI feels responsive
+   2. Compress locally (canvas, 3840px cap, 0.88 quality)
+   3. Upload to Cloudinary via /media/upload on the Render server
+   4. Replace the base64 src with the real Cloudinary preview URL
+   The window._ob/beLogoDataUrl globals are kept for backward-compat
+   with populateBuilder() which reads them during portfolio generation.
+──────────────────────────────────────────────────────────────────────── */
 window._obLogoDataUrl = null;
-function obHandleLogoUpload(input) {
+async function obHandleLogoUpload(input) {
   var file = input.files && input.files[0];
   if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    window._obLogoDataUrl = e.target.result;
-    var preview = document.getElementById('obLogoPreview');
-    var placeholder = document.getElementById('obLogoPlaceholder');
-    preview.src = e.target.result;
-    preview.style.display = 'block';
-    placeholder.style.display = 'none';
-  };
-  reader.readAsDataURL(file);
+
+  var preview     = document.getElementById('obLogoPreview');
+  var placeholder = document.getElementById('obLogoPlaceholder');
+
+  // Step 1 — show raw preview immediately
+  var rawDataUrl = await new Promise(function(resolve) {
+    var r = new FileReader();
+    r.onload = function(e) { resolve(e.target.result); };
+    r.readAsDataURL(file);
+  });
+  window._obLogoDataUrl = rawDataUrl;
+  preview.src = rawDataUrl;
+  preview.style.display = 'block';
+  preview.style.opacity = '0.6';
+  if (placeholder) placeholder.style.display = 'none';
+
+  // Step 2 — compress + upload to Cloudinary
+  try {
+    if (typeof compressImageLocally === 'function' && typeof uploadToCloudinary === 'function') {
+      var compressed = await compressImageLocally(rawDataUrl, 800, 0.92); // logos: smaller cap, higher quality
+      var urls = await uploadToCloudinary(compressed, 'logos', 'logo');
+      if (urls) {
+        window._obLogoDataUrl = urls.preview;
+        preview.src = urls.preview;
+      }
+    }
+  } catch(err) {
+    console.warn('[obHandleLogoUpload] Cloudinary error:', err);
+    // Keep base64 preview — will be uploaded on save via uploadPortfolioAssets
+  } finally {
+    preview.style.opacity = '1';
+  }
 }
 
 window._beLogoDataUrl = null;
-function beHandleLogoUpload(input) {
+async function beHandleLogoUpload(input) {
   var file = input.files && input.files[0];
   if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    window._beLogoDataUrl = e.target.result;
-    var preview = document.getElementById('beLogoPreview');
-    var placeholder = document.getElementById('beLogoPlaceholder');
-    if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
-    if (placeholder) placeholder.style.display = 'none';
-    // Trigger live preview update if available
-    if (typeof updatePreviewLive === 'function') updatePreviewLive();
-  };
-  reader.readAsDataURL(file);
+
+  var preview     = document.getElementById('beLogoPreview');
+  var placeholder = document.getElementById('beLogoPlaceholder');
+
+  // Step 1 — show raw preview immediately
+  var rawDataUrl = await new Promise(function(resolve) {
+    var r = new FileReader();
+    r.onload = function(e) { resolve(e.target.result); };
+    r.readAsDataURL(file);
+  });
+  window._beLogoDataUrl = rawDataUrl;
+  if (preview) { preview.src = rawDataUrl; preview.style.display = 'block'; preview.style.opacity = '0.6'; }
+  if (placeholder) placeholder.style.display = 'none';
+  if (typeof updatePreviewLive === 'function') updatePreviewLive();
+
+  // Step 2 — compress + upload to Cloudinary
+  try {
+    if (typeof compressImageLocally === 'function' && typeof uploadToCloudinary === 'function') {
+      var compressed = await compressImageLocally(rawDataUrl, 800, 0.92);
+      var urls = await uploadToCloudinary(compressed, 'logos', 'logo');
+      if (urls) {
+        window._beLogoDataUrl = urls.preview;
+        if (preview) preview.src = urls.preview;
+        // Push the real URL into the active portfolio so save picks it up
+        if (window.psState && window.psState.activePortfolio) {
+          window.psState.activePortfolio.logo_url = urls.preview;
+        }
+        if (typeof updatePreviewLive === 'function') updatePreviewLive();
+      }
+    }
+  } catch(err) {
+    console.warn('[beHandleLogoUpload] Cloudinary error:', err);
+  } finally {
+    if (preview) preview.style.opacity = '1';
+  }
 }
 </script>
 
