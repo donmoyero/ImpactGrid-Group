@@ -1544,6 +1544,9 @@ document.addEventListener('keydown',function(e){
    ───────────────────────────────────────────────────────── */
 (function(){
   updateCounter();
+  // Wake Render server immediately — prevents cold-start spinners on dashboard
+  fetch(DIJO_SERVER+'/ping').catch(function(){});
+  // Keep alive every 10 min
   setInterval(function(){fetch(DIJO_SERVER+'/ping').catch(function(){});},600000);
 })();
 
