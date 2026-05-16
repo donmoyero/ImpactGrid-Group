@@ -177,16 +177,27 @@ async function igCreateEvent(){
 
 async function sendOwnerNotification(ownerEmail, ownerName, eventName, eventCode, eventSlug){
   if(!ownerEmail) return;
-  var eventUrl = window.location.origin + '/owner.html?code=' + eventCode;
+  var base     = 'https://impactgridgroup.com';
+  var eventUrl = base + '/event.html?event=' + eventSlug + '&code=' + eventCode;
   try{
     var res  = await fetch(EVENTS_API + '/api/notify-owner', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ ownerEmail, ownerName, eventName, eventCode, eventUrl })
+      body   : JSON.stringify({ ownerEmail: ownerEmail, ownerName: ownerName, eventName: eventName, eventCode: eventCode, eventUrl: eventUrl })
     });
+    if(!res.ok){
+      var txt = await res.text();
+      throw new Error('Server ' + res.status + ': ' + txt);
+    }
     var data = await res.json();
-    if(data.success) toast('📧', 'Owner notified!', 'Email sent to ' + ownerEmail);
-  }catch(e){}
+    if(data.success){
+      toast('📧', 'Owner notified!', 'Email sent to ' + ownerEmail);
+    } else {
+      throw new Error(data.error || 'Notification failed');
+    }
+  }catch(e){
+    toast('⚠️', 'Owner email failed', e.message);
+  }
 }
 
 /* ════════════════════════════════════════════════════
