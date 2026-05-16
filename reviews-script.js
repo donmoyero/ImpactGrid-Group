@@ -18,7 +18,7 @@
     _renderSkeleton();
 
     try {
-      var c = getContentClient();
+      var c = getSupabase();
       var q = c.from('event_reviews')
         .select('id, reviewer_name, event_name, rating, message, approved, created_at')
         .order('created_at', { ascending: false });
@@ -41,7 +41,7 @@
     var btn = document.getElementById('rev-approve-' + id);
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
     try {
-      var { error } = await getContentClient()
+      var { error } = await getSupabase()
         .from('event_reviews')
         .update({ approved: true, approved_at: new Date().toISOString() })
         .eq('id', id);
@@ -61,7 +61,7 @@
   window.deleteReview = async function (id) {
     if (!confirm('Delete this review permanently?')) return;
     try {
-      var { error } = await getContentClient()
+      var { error } = await getSupabase()
         .from('event_reviews')
         .delete()
         .eq('id', id);
