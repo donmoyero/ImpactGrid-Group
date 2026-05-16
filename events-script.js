@@ -5,15 +5,10 @@
    Storage → Cloudinary (free 25GB)
 ════════════════════════════════════════════════════ */
 
-/* ── Firebase imports (CDN, no build step needed) ── */
-import { initializeApp }          from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-import {
-  getFirestore, collection, doc,
-  addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  query, where, orderBy, serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+/* Firebase is loaded via CDN <script> tags in admin.html before this file.
+   The globals used here: firebase, firebase.initializeApp, firebase.firestore  */
 
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey           : 'AIzaSyDzI3fDAM46_Gp96YMnrA-DG7oAprHs4g4',
   authDomain       : 'impactgrid-events.firebaseapp.com',
   projectId        : 'impactgrid-events',
@@ -22,8 +17,38 @@ const firebaseConfig = {
   appId            : '1:197404801498:web:15675f79edc02e6348a8e3'
 };
 
-const _app = initializeApp(firebaseConfig);
-const db   = getFirestore(_app);
+/* Initialise only once (guard for hot-reload) */
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+var db = firebase.firestore();
+
+/* Firestore helpers to replace the ES-module named imports */
+var collection      = function(db, col)       { return db.collection(col); };
+var doc             = function(db, col, id)   { return db.collection(col).doc(id); };
+var addDoc          = function(colRef, data)  { return colRef.add(data); };
+var getDoc          = function(docRef)        { return docRef.get(); };
+var getDocs         = function(q)             { return q.get(); };
+var updateDoc       = function(docRef, data)  { return docRef.update(data); };
+var deleteDoc       = function(docRef)        { return docRef.delete(); };
+var serverTimestamp = function()              { return firebase.firestore.FieldValue.serverTimestamp(); };
+
+/* query / where / orderBy shims — build a Firestore query chain */
+function query(colRef) {
+  var q = colRef;
+  for (var i = 1; i < arguments.length; i++) {
+    q = arguments[i](q);
+  }
+  return q;
+}
+function where(field, op, val)  { return function(q) { return q.where(field, op, val); }; }
+function orderBy(field, dir)    { return function(q) { return q.orderBy(field, dir || 'asc'); }; }
+
+/* Wrap Firestore QuerySnapshot so .docs works the same as the modular SDK */
+function normSnap(snap) {
+  /* snap.docs already works in compat SDK — just return it unchanged */
+  return snap;
+}
 
 /* ════════════════════════════════════════════════════
    CLOUDINARY CONFIG
