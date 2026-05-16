@@ -19,7 +19,8 @@
 
 /* ── CONFIG ─────────────────────────────────────────────── */
 const DIJO_SERVER           = "https://impactgrid-dijo.onrender.com";
-const CLOUDINARY_CLOUD_NAME = "dcw30ifa7";
+const CLOUDINARY_CLOUD_NAME   = "dcw30ifa7";
+const CLOUDINARY_UPLOAD_PRESET = "impactgrid_portfolio";
 // ✅ FIX: portfolios table lives on the CONTENT project (exeiojgldxqaakkybdij),
 //         NOT the auth project (wedjsnizcvtgptobwugc).
 //         Using IG_CONTENT_URL / IG_CONTENT_ANON set by supabase-config.js.
@@ -552,24 +553,29 @@ async function compressImageLocally(dataUrl, maxDim = 2400, quality = 0.88) {
   });
 }
 
-/* ── Step 2: Single upload to Cloudinary via Render server ──
+/* ── Step 2: Single upload direct to Cloudinary (unsigned preset) ──
+   Mirrors events-script.js — no Render server involved.
    Returns { original, thumb, preview } or null on failure.
-   Never called concurrently — always awaited by the queue.
 ──────────────────────────────────────────────────────────── */
 async function uploadToCloudinary(dataUrl, folder = 'portfolio', tag = 'asset') {
   try {
-    const userId   = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
+    const userId     = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
     const compressed = await compressImageLocally(dataUrl);
 
-    const res = await fetch(`${DIJO_SERVER}/media/upload`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        data_url: compressed,
-        folder:   `impactgrid/${folder}/${userId}`,
-        tags:     ['impactgrid', tag, userId],
-      }),
-    });
+    // Convert base64 data URL → Blob for FormData
+    const res0     = await fetch(compressed);
+    const blob     = await res0.blob();
+
+    const fd = new FormData();
+    fd.append('file',          blob);
+    fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    fd.append('folder',        `impactgrid/${folder}/${userId}`);
+    fd.append('tags',          ['impactgrid', tag, userId].join(','));
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      { method: 'POST', body: fd }
+    );
 
     if (!res.ok) {
       console.warn('[Cloudinary] Upload failed:', res.status, await res.text());
@@ -577,11 +583,12 @@ async function uploadToCloudinary(dataUrl, folder = 'portfolio', tag = 'asset') 
     }
 
     const data = await res.json();
-    if (!data.success) { console.warn('[Cloudinary] Error:', data.error); return null; }
+    if (data.error) { console.warn('[Cloudinary] Error:', data.error.message); return null; }
 
     const base = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload`;
     const pid  = data.public_id;
 
+    console.log(`[Cloudinary] ✓ ${pid}`);
     return {
       original: data.secure_url,
       preview:  `${base}/w_1200,c_limit,q_auto:good,f_auto/${pid}`,
