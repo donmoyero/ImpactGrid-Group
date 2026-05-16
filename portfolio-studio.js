@@ -18,7 +18,12 @@
    ═══════════════════════════════════════════════════════════ */
 
 /* ── CONFIG ─────────────────────────────────────────────── */
-const DIJO_SERVER  = "https://impactgrid-dijo.onrender.com";
+const DIJO_SERVER           = "https://impactgrid-dijo.onrender.com";
+// Cloudinary cloud name — public, safe to hardcode (no secret here).
+// The API key + secret live only in Render env vars (CLOUDINARY_URL).
+// Transform URLs are built client-side from this name + the public_id
+// returned by the server after upload.
+const CLOUDINARY_CLOUD_NAME = "dcw30ifa7";
 // ✅ FIX: portfolios table lives on the CONTENT project (exeiojgldxqaakkybdij),
 //         NOT the auth project (wedjsnizcvtgptobwugc).
 //         Using IG_CONTENT_URL / IG_CONTENT_ANON set by supabase-config.js.
@@ -460,93 +465,193 @@ async function loadPortfolios() {
   return _portfoliosLoadPromise;
 }
 
-/* ── Upload a single base64 data URL to Supabase Storage ─────────────────
-   Bucket: "portfolio-images" (must exist and have public read policy).
-   Returns the public https:// URL, or null on failure.
-──────────────────────────────────────────────────────────────────────── */
-async function uploadAssetToSupabase(dataUrl, filename) {
-  try {
-    // Convert data URL → Blob
-    const [header, b64] = dataUrl.split(',');
-    const mimeMatch = header.match(/:(.*?);/);
-    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-    const ext  = mime.split('/')[1] || 'jpg';
-    const fname = filename || ('asset_' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext);
-    const byteChars = atob(b64);
-    const byteArr = new Uint8Array(byteChars.length);
-    for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
-    const blob = new Blob([byteArr], { type: mime });
+/* ══════════════════════════════════════════════════════════
+   CLOUDINARY IMAGE PIPELINE
+   ─────────────────────────────────────────────────────────
+   Architecture:
+     Browser → compress locally (canvas) → POST data URL
+             → Render server (/media/upload)
+             → Cloudinary (stores original + auto-transforms)
+             → returns { original, thumb, preview } URLs
 
-    const userId = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
-    const path   = `portfolios/${userId}/${fname}`;
+   URL transform strategy (all via Cloudinary URL params):
+     • thumb    — w_400,c_fill,q_auto,f_auto      (card grids, dashboards)
+     • preview  — w_1200,c_limit,q_auto:good,f_auto (portfolio page display)
+     • original — fl_attachment (4K download / print)
 
-    const uploadRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/portfolio-images/${path}`,
-      {
-        method:  'POST',
-        headers: {
-          'apikey':        SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Content-Type':  mime,
-          'x-upsert':      'true',
-        },
-        body: blob,
+   Compression before upload (client-side canvas):
+     • Max canvas dimension: 3840px (4K cap — preserves quality)
+     • JPEG quality: 0.88 (visually lossless, ~60–70% smaller than raw)
+     • PNG → converted to JPEG unless it has transparency
+     • Skips compression for images already < 300KB
+
+   This means:
+     - A 12MB RAW photo → ~1.5MB upload → Cloudinary stores original
+     - The portfolio page loads the 1200w preview (~120KB)
+     - The card thumbnail loads 400w (~25KB)
+     - Full 4K is always available via the original URL
+══════════════════════════════════════════════════════════ */
+
+/* ── Step 1: Client-side compression (canvas) ─────────────
+   Reduces upload size dramatically while keeping 4K fidelity.
+   Returns a compressed data URL (always JPEG unless PNG with alpha).
+──────────────────────────────────────────────────────────── */
+async function compressImageLocally(dataUrl, maxDim = 3840, quality = 0.88) {
+  return new Promise((resolve) => {
+    // Skip compression for small files or non-image data URLs
+    const isImage = dataUrl.startsWith('data:image');
+    const roughKB = Math.round((dataUrl.length * 0.75) / 1024);
+    if (!isImage || roughKB < 300) { resolve(dataUrl); return; }
+
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      // Scale down if either dimension exceeds maxDim (4K cap)
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        width  = Math.round(width  * ratio);
+        height = Math.round(height * ratio);
       }
-    );
 
-    if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      console.warn('[Storage] Upload failed:', uploadRes.status, errText);
+      const canvas = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Keep PNG only if it has real transparency (alpha channel used)
+      const hasPng = dataUrl.startsWith('data:image/png');
+      let outputType = 'image/jpeg';
+      if (hasPng) {
+        // Sample a few pixels for non-255 alpha to decide
+        const d = ctx.getImageData(0, 0, Math.min(width, 100), Math.min(height, 100)).data;
+        const hasAlpha = Array.from({ length: d.length / 4 }, (_, i) => d[i * 4 + 3]).some(a => a < 255);
+        if (hasAlpha) outputType = 'image/png';
+      }
+
+      const compressed = canvas.toDataURL(outputType, outputType === 'image/jpeg' ? quality : undefined);
+      const origKB = roughKB;
+      const newKB  = Math.round((compressed.length * 0.75) / 1024);
+      console.log(`[Cloudinary] Compressed ${origKB}KB → ${newKB}KB (${Math.round((1 - newKB/origKB)*100)}% reduction)`);
+      resolve(compressed);
+    };
+    img.onerror = () => resolve(dataUrl); // fallback: use original
+    img.src = dataUrl;
+  });
+}
+
+/* ── Step 2: Upload via Render server → Cloudinary ─────────
+   The Render server holds the Cloudinary API secret.
+   Returns { original, thumb, preview } or null on failure.
+
+   Cloudinary transform URLs are built from the returned public_id:
+     thumb   : w_400,c_fill,q_auto,f_auto
+     preview : w_1200,c_limit,q_auto:good,f_auto
+     original: (raw stored URL — full resolution)
+──────────────────────────────────────────────────────────── */
+async function uploadToCloudinary(dataUrl, folder = 'portfolio', tag = 'asset') {
+  try {
+    const userId = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
+
+    // Compress before sending
+    const compressed = await compressImageLocally(dataUrl);
+
+    const res = await fetch(`${DIJO_SERVER}/media/upload`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data_url: compressed,
+        folder:   `impactgrid/${folder}/${userId}`,
+        tags:     ['impactgrid', tag, userId],
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('[Cloudinary] Upload failed:', res.status, errText);
       return null;
     }
 
-    // Return the public URL
-    return `${SUPABASE_URL}/storage/v1/object/public/portfolio-images/${path}`;
+    const data = await res.json();
+    if (!data.success) {
+      console.warn('[Cloudinary] Upload error:', data.error);
+      return null;
+    }
+
+    // Build transform URLs from the returned public_id
+    // Cloud name is hardcoded at top of file — never sent from server to avoid
+    // an extra round-trip and so URL building works even if the server response
+    // omits cloud_name for any reason.
+    const cloudName = CLOUDINARY_CLOUD_NAME;
+    const publicId  = data.public_id;
+    const base      = `https://res.cloudinary.com/${cloudName}/image/upload`;
+
+    return {
+      original: data.secure_url,                                                    // Full resolution (stored original)
+      preview:  `${base}/w_1200,c_limit,q_auto:good,f_auto/${publicId}`,           // Portfolio page display
+      thumb:    `${base}/w_400,h_300,c_fill,g_auto,q_auto,f_auto/${publicId}`,     // Card/grid thumbnail
+    };
+
   } catch (e) {
-    console.warn('[Storage] Upload exception:', e.message);
+    console.warn('[Cloudinary] Upload exception:', e.message);
     return null;
   }
 }
 
-/* ── Upload all base64 images in a portfolio to Storage, replacing data: URLs ──
-   All uploads fire in parallel via Promise.all for maximum speed.           ── */
+/* ── Step 3: Upload all base64 images in a portfolio → Cloudinary ──────────
+   Replaces every data: URL in-place with Cloudinary URLs.
+   hero_media items gain { url (preview), thumb, original } fields.
+   All uploads fire in parallel via Promise.all for maximum speed.
+──────────────────────────────────────────────────────────────────────────── */
 async function uploadPortfolioAssets(pf) {
   const isDataUrl = s => typeof s === 'string' && s.startsWith('data:');
   const tasks = [];
 
-  // Hero media — collect all base64 slots
+  // Hero / gallery media
   if (Array.isArray(pf.hero_media)) {
     pf.hero_media.forEach((m, i) => {
       if (isDataUrl(m.url)) {
         tasks.push(
-          uploadAssetToSupabase(m.url, `hero_${i}_${Date.now()}`)
-            .then(url => { if (url) pf.hero_media[i].url = url; })
+          uploadToCloudinary(m.url, 'hero', 'hero')
+            .then(urls => {
+              if (urls) {
+                pf.hero_media[i].url      = urls.preview;   // shown on portfolio page
+                pf.hero_media[i].thumb    = urls.thumb;     // card / strip thumbnail
+                pf.hero_media[i].original = urls.original;  // 4K download link
+              }
+            })
         );
       }
     });
   }
 
-  // Logo
+  // Logo (small — no need for multiple sizes, just get the original)
   if (isDataUrl(pf.logo_url)) {
     tasks.push(
-      uploadAssetToSupabase(pf.logo_url, `logo_${Date.now()}`)
-        .then(url => {
-          if (url) {
-            pf.logo_url = url;
-            if (window._obLogoDataUrl) window._obLogoDataUrl = url;
-            if (window._beLogoDataUrl) window._beLogoDataUrl = url;
+      uploadToCloudinary(pf.logo_url, 'logos', 'logo')
+        .then(urls => {
+          if (urls) {
+            pf.logo_url = urls.preview;
+            if (window._obLogoDataUrl) window._obLogoDataUrl = urls.preview;
+            if (window._beLogoDataUrl) window._beLogoDataUrl = urls.preview;
           }
         })
     );
   }
 
-  // Catalogue images
+  // Catalogue / booking images
   if (Array.isArray(pf.catalogue)) {
     pf.catalogue.forEach((c, i) => {
       if (isDataUrl(c.image)) {
         tasks.push(
-          uploadAssetToSupabase(c.image, `cat_${i}_${Date.now()}`)
-            .then(url => { if (url) pf.catalogue[i].image = url; })
+          uploadToCloudinary(c.image, 'catalogue', 'catalogue')
+            .then(urls => {
+              if (urls) {
+                pf.catalogue[i].image    = urls.preview;
+                pf.catalogue[i].thumb    = urls.thumb;
+                pf.catalogue[i].original = urls.original;
+              }
+            })
         );
       }
     });
@@ -557,8 +662,14 @@ async function uploadPortfolioAssets(pf) {
     pf.services.forEach((s, i) => {
       if (isDataUrl(s.image)) {
         tasks.push(
-          uploadAssetToSupabase(s.image, `svc_${i}_${Date.now()}`)
-            .then(url => { if (url) pf.services[i].image = url; })
+          uploadToCloudinary(s.image, 'services', 'service')
+            .then(urls => {
+              if (urls) {
+                pf.services[i].image    = urls.preview;
+                pf.services[i].thumb    = urls.thumb;
+                pf.services[i].original = urls.original;
+              }
+            })
         );
       }
     });
@@ -566,7 +677,7 @@ async function uploadPortfolioAssets(pf) {
 
   if (tasks.length) {
     await Promise.all(tasks);
-    console.log(`[Storage] ${tasks.length} asset(s) uploaded in parallel`);
+    console.log(`[Cloudinary] ${tasks.length} asset(s) uploaded in parallel`);
   }
   return pf;
 }
@@ -611,8 +722,8 @@ async function savePortfolioToDB(pf){
       (Array.isArray(pf.services)  && pf.services.some(s => isDataUrl(s.image)))
     );
     if (hasBase64) {
-      if (saveBtn) saveBtn.textContent = 'Uploading images…';
-      await uploadPortfolioAssets(pf); // uploads to Supabase bucket, replaces data: URLs in pf
+      if (saveBtn) saveBtn.textContent = 'Uploading to Cloudinary…';
+      await uploadPortfolioAssets(pf); // compress + upload to Cloudinary, replaces data: URLs
     }
 
     // ── 2. Deep clone and strip any remaining base64 (fallback safety) ──
@@ -848,26 +959,57 @@ function catItemImageUpload(input) {
   const row = input.closest(".cat-item-row");
   if (!row || !input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
+    const rawDataUrl = e.target.result;
     const wrap = row.querySelector(".cat-item-img-wrap");
     if (!wrap) return;
-    // Replace placeholder with image (preview only — base64 won't be saved)
+
+    // 1. Show raw preview immediately
     wrap.querySelector(".cat-item-img-placeholder")?.remove();
     let img = wrap.querySelector(".cat-item-img");
     if (!img) { img = document.createElement("img"); img.className = "cat-item-img"; wrap.insertBefore(img, wrap.querySelector("input")); }
-    img.src = e.target.result;
-    // Store on row for local preview — stripped before server save to avoid 413
-    row.dataset.image = e.target.result;
-    // Show a note that image is local-only until an image URL is used
+    img.src = rawDataUrl;
+    img.style.opacity = "0.6";
+    row.dataset.image = rawDataUrl;
+    updatePreviewLive();
+
+    // 2. Show uploading state
     let note = row.querySelector('.cat-img-note');
     if (!note) {
       note = document.createElement('div');
       note.className = 'cat-img-note';
-      note.style.cssText = 'font-size:10px;color:rgba(255,180,0,.8);margin-top:4px;font-family:monospace';
-      note.textContent = '⚠ Preview only — paste an image URL to save permanently';
+      note.style.cssText = 'font-size:10px;margin-top:4px;font-family:monospace';
       row.querySelector('.cat-item-fields')?.prepend(note);
     }
-    updatePreviewLive();
+    note.style.color = 'rgba(201,168,76,.9)';
+    note.textContent = '↑ Uploading to Cloudinary…';
+
+    // 3. Compress + upload to Cloudinary
+    try {
+      const compressed = await compressImageLocally(rawDataUrl);
+      const urls = await uploadToCloudinary(compressed, 'catalogue', 'catalogue');
+      if (urls) {
+        // Swap in real Cloudinary URLs
+        img.src = urls.thumb;
+        img.style.opacity = "1";
+        row.dataset.image        = urls.preview;
+        row.dataset.imageThumb   = urls.thumb;
+        row.dataset.imageOriginal = urls.original;
+        note.style.color = 'rgba(74,222,128,.9)';
+        note.textContent = '✓ Uploaded to Cloudinary';
+        setTimeout(() => { if (note.parentNode) note.remove(); }, 3000);
+        updatePreviewLive();
+      } else {
+        img.style.opacity = "1";
+        note.style.color = 'rgba(248,113,113,.9)';
+        note.textContent = '⚠ Upload failed — image is preview only';
+      }
+    } catch (err) {
+      img.style.opacity = "1";
+      note.style.color = 'rgba(248,113,113,.9)';
+      note.textContent = '⚠ Upload failed — image is preview only';
+      console.warn('[catItemImageUpload] Cloudinary error:', err);
+    }
   };
   reader.readAsDataURL(input.files[0]);
 }
@@ -2484,19 +2626,44 @@ function openPreviewTab() {
    UPLOAD
 ══════════════════════════════════════════════════════════ */
 function handleHeroUpload(event) {
-  Array.from(event.target.files || []).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      if (!psState.activePortfolio) return;
-      psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
-      // Store for local preview — base64 is stripped before saving to avoid 413
-      psState.activePortfolio.hero_media.unshift({ type: file.type.startsWith("video") ? "video" : "image", url: e.target.result, credit:"Uploaded" });
-      renderHeroMediaStrip(psState.activePortfolio.hero_media);
-      updatePreviewLive();
-      // Inform user the image is preview-only
-      showToast("Image added (preview only — paste a hosted URL to save permanently)");
-    };
-    reader.readAsDataURL(file);
+  Array.from(event.target.files || []).forEach(async file => {
+    if (!psState.activePortfolio) return;
+    psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
+
+    // 1. Show a raw preview immediately (feels instant to the user)
+    const rawDataUrl = await new Promise(resolve => {
+      const r = new FileReader();
+      r.onload = e => resolve(e.target.result);
+      r.readAsDataURL(file);
+    });
+
+    const tempItem = { type: file.type.startsWith('video') ? 'video' : 'image', url: rawDataUrl, credit: 'Uploaded', _uploading: true };
+    psState.activePortfolio.hero_media.unshift(tempItem);
+    renderHeroMediaStrip(psState.activePortfolio.hero_media);
+    updatePreviewLive();
+    showToast('Uploading image…');
+
+    // 2. Compress locally then upload to Cloudinary
+    try {
+      const compressed = await compressImageLocally(rawDataUrl);
+      const urls = await uploadToCloudinary(compressed, 'hero', 'hero');
+
+      if (urls) {
+        // Replace temp base64 with real Cloudinary URLs
+        tempItem.url      = urls.preview;
+        tempItem.thumb    = urls.thumb;
+        tempItem.original = urls.original;
+        delete tempItem._uploading;
+        renderHeroMediaStrip(psState.activePortfolio.hero_media);
+        updatePreviewLive();
+        showToast('✓ Image uploaded and saved');
+      } else {
+        showToast('Upload failed — image kept as preview only');
+      }
+    } catch (err) {
+      console.warn('[handleHeroUpload] Upload error:', err);
+      showToast('Upload failed — image kept as preview only');
+    }
   });
 }
 
