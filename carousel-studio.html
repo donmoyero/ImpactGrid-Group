@@ -238,7 +238,15 @@
 }
 [data-theme="dark"] .cs-gen-btn { color: #07090f; }
 .cs-gen-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--sh-gold); }
-.cs-gen-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+/* Disabled state uses explicit colours instead of opacity fade so contrast ≥ 4.5:1 is maintained (WCAG AA). */
+.cs-gen-btn:disabled {
+  background: #4a4535;
+  color: #8a8067;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+[data-theme="dark"] .cs-gen-btn:disabled { color: #8a8067; }
 .cs-gen-btn .spin {
   width: 13px; height: 13px;
   border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
@@ -883,35 +891,35 @@
 
         <!-- Headline -->
         <div class="cs-esec">
-          <div class="cs-esec-title">Headline</div>
-          <textarea class="cs-textarea" id="eHead" style="min-height:60px" oninput="liveEdit()"></textarea>
+          <label class="cs-esec-title" for="eHead">Headline</label>
+          <textarea class="cs-textarea" id="eHead" style="min-height:60px" oninput="liveEdit()" aria-label="Slide headline"></textarea>
         </div>
 
         <!-- Body -->
         <div class="cs-esec">
-          <div class="cs-esec-title">Body Copy</div>
-          <textarea class="cs-textarea" id="eBody" style="min-height:72px" oninput="liveEdit()"></textarea>
+          <label class="cs-esec-title" for="eBody">Body Copy</label>
+          <textarea class="cs-textarea" id="eBody" style="min-height:72px" oninput="liveEdit()" aria-label="Slide body copy"></textarea>
         </div>
 
         <!-- Stat (shown only for STAT_HERO) -->
         <div class="cs-esec" id="eStatSection" style="display:none">
-          <div class="cs-esec-title">Stat / Number</div>
-          <input type="text" class="cs-input" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
+          <label class="cs-esec-title" for="eStat">Stat / Number</label>
+          <input type="text" class="cs-input" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()" aria-label="Stat or number for this slide"/>
         </div>
 
         <!-- Quote (shown only for QUOTE_PULL) -->
         <div class="cs-esec" id="eQuoteSection" style="display:none">
-          <div class="cs-esec-title">Quote / Pull Quote</div>
-          <textarea class="cs-textarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
+          <label class="cs-esec-title" for="eQuote">Quote / Pull Quote</label>
+          <textarea class="cs-textarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()" aria-label="Pull quote for this slide"></textarea>
         </div>
 
         <!-- Caption -->
         <div class="cs-esec">
-          <div class="cs-esec-title">
+          <label class="cs-esec-title" for="eCap">
             Caption
             <span id="capAiLabel" style="margin-left:6px;font-size:9px;color:var(--gold);font-family:var(--fm)">AI-written</span>
-          </div>
-          <textarea class="cs-textarea" id="eCap" style="min-height:72px" oninput="updateCap()"></textarea>
+          </label>
+          <textarea class="cs-textarea" id="eCap" style="min-height:72px" oninput="updateCap()" aria-label="Social media caption for this slide"></textarea>
           <button class="cs-copy-btn" onclick="copyCaption()">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copy Caption
@@ -972,7 +980,7 @@
     ">
 
       <!-- Main generate button (keeps id="genBtn" so carousel-studio.js works) -->
-      <button id="genBtn" onclick="generate()" disabled style="
+      <button id="genBtn" onclick="generate()" disabled aria-disabled="true" aria-describedby="genBtnHint" style="
         width:100%;padding:13px 18px;border-radius:var(--r);
         background:linear-gradient(135deg,var(--gold),var(--gold2));
         color:#07090f;font-family:var(--fd);font-size:14px;font-weight:900;
@@ -984,6 +992,7 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Generate
       </button>
+      <span id="genBtnHint" style="display:none" aria-live="polite">Enter a topic above to enable Generate</span>
     </div>
 
     <!-- Spacer so left panel content isn't hidden behind the fixed generate panel -->
@@ -1501,7 +1510,14 @@ window.addEventListener('load', function() {
   height: 48px;
 }
 .wov-steps { display: flex; align-items: center; gap: 0; }
-.wov-step-item { display: flex; align-items: center; gap: 8px; }
+.wov-step-item {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; padding: 0; cursor: pointer;
+  border-radius: 6px; transition: opacity .2s;
+}
+.wov-step-item:disabled { cursor: not-allowed; opacity: .5; }
+.wov-step-item:not(:disabled):hover .wov-step-label { color: var(--text); }
+.wov-step-item:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
 .wov-step-num {
   width: 26px; height: 26px; border-radius: 50%;
   border: 1.5px solid var(--border2);
@@ -1760,13 +1776,13 @@ window.addEventListener('load', function() {
 <div id="wizOverlay">
   <div class="wov-stepbar" style="position:relative;">
     <div class="wov-steps" id="wovSteps">
-      <div class="wov-step-item active" data-wstep="1"><div class="wov-step-num active" id="wovN1">1</div><div class="wov-step-label">Topic</div></div>
+      <button class="wov-step-item active" data-wstep="1" onclick="wovStepNav(1)" aria-label="Step 1: Topic" aria-current="step"><div class="wov-step-num active" id="wovN1">1</div><div class="wov-step-label">Topic</div></button>
       <div class="wov-step-line" id="wovL12"></div>
-      <div class="wov-step-item" data-wstep="2"><div class="wov-step-num" id="wovN2">2</div><div class="wov-step-label">Style</div></div>
+      <button class="wov-step-item" data-wstep="2" onclick="wovStepNav(2)" aria-label="Step 2: Style"><div class="wov-step-num" id="wovN2">2</div><div class="wov-step-label">Style</div></button>
       <div class="wov-step-line" id="wovL23"></div>
-      <div class="wov-step-item" data-wstep="3"><div class="wov-step-num" id="wovN3">3</div><div class="wov-step-label">Photos</div></div>
+      <button class="wov-step-item" data-wstep="3" onclick="wovStepNav(3)" aria-label="Step 3: Photos"><div class="wov-step-num" id="wovN3">3</div><div class="wov-step-label">Photos</div></button>
       <div class="wov-step-line" id="wovL34"></div>
-      <div class="wov-step-item" data-wstep="4"><div class="wov-step-num" id="wovN4">4</div><div class="wov-step-label">Generating</div></div>
+      <button class="wov-step-item" data-wstep="4" onclick="wovStepNav(4)" aria-label="Step 4: Generating" disabled><div class="wov-step-num" id="wovN4">4</div><div class="wov-step-label">Generating</div></button>
     </div>
     <button class="wov-close" id="wovClose" onclick="closeWizard()">✕</button>
   </div>
@@ -2013,6 +2029,11 @@ function wovUpdateSteps() {
     const s = parseInt(el.dataset.wstep);
     el.classList.toggle('active', s === p);
     el.classList.toggle('done', s < p);
+    // Only allow navigating to steps already visited (done) or current
+    el.disabled = s > p && s !== 4;
+    // aria-current for screen readers
+    if (s === p) { el.setAttribute('aria-current', 'step'); }
+    else         { el.removeAttribute('aria-current'); }
     const num = el.querySelector('.wov-step-num');
     num.classList.toggle('active', s === p);
     num.classList.toggle('done', s < p);
@@ -2021,6 +2042,13 @@ function wovUpdateSteps() {
     document.getElementById(pair[0]).classList.toggle('done', p >= pair[1]);
   });
 }
+
+// Allow clicking completed steps to go back
+function wovStepNav(target) {
+  if (target >= WIZ.page) return; // only allow going back
+  wovGoTo(target);
+}
+window.wovStepNav = wovStepNav;
 
 // ── Back / Next buttons ────────────────────────────────
 document.getElementById('wovBtnBack').addEventListener('click', function() {
