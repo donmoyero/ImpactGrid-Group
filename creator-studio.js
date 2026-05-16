@@ -1842,79 +1842,65 @@ async function loadPlatformStatus() {
    DAILY BRIEFING
 ───────────────────────────────────────────── */
 async function loadBriefing(forceRefresh) {
-  // Skip AI fetch on auto-refresh if we already have a cached result
   if (!forceRefresh && _aiCacheGet('briefing_done')) return;
-  var el = document.getElementById('briefingText');
+  var el     = document.getElementById('briefingText');
   var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
   if (!el) return;
 
-  // ── Build compact pulse strip from local trend data ──────────────────────
-  function renderPulseStrip() {
-    if (!_allTrends.length) return false;
-    var best = getBest3(_allTrends);
-    var rows = [
-      { icon: '▶️', label: 'YouTube', trend: best.youtube, color: '#FFD700' },
-      { icon: '⚡', label: 'TikTok',  trend: best.tiktok,  color: '#ff6464' },
-      { icon: '🔍', label: 'Google',  trend: best.google,  color: '#78b4ff' }
-    ].filter(function(r) { return r.trend; });
-    if (!rows.length) return false;
-
-    el.innerHTML = rows.map(function(r) {
-      var t = r.trend;
-      var cls = classifyTrend(t);
-      var badge = cls === 'blowup'      ? '🔥 Blowing up'
-                : cls === 'rising_fast' ? '⚡ Rising fast'
-                : cls === 'early'       ? '🟢 Early signal'
-                : '📊 Stable';
-      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)">'
-        + '<span style="font-size:14px">' + r.icon + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + r.color + ';min-width:46px;letter-spacing:.06em">' + r.label + '</span>'
-        + '<span style="font-size:12px;color:var(--text1);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</span>'
-        + '<span style="font-size:9px;color:var(--text3);white-space:nowrap">' + badge + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:800;color:' + r.color + ';min-width:24px;text-align:right">' + t.score.toFixed(1) + '</span>'
-        + '</div>';
-    }).join('') + '<div style="border-bottom:none"></div>';
-
-    if (tagsEl) tagsEl.innerHTML = ''; // hide old tags
+  function setTimestamp() {
     if (dateEl) {
       var now = new Date();
       dateEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '\n· live';
     }
-    return true;
   }
 
-  // Try local data first (instant), then fall back to API
-  if (renderPulseStrip()) {
-    if (forceRefresh) toast('🧠 Trends refreshed!');
-    return;
-  }
-
-  // Still loading — wait for trends then retry
   el.innerHTML = '<span class="spinner spinner-gold"></span>';
+
   try {
-    var res = await fetch(DIJO + '/ai/daily-briefing');
+    var res  = await fetch(DIJO + '/ai/daily-briefing');
     var data = await res.json();
-    // Even if API has data, prefer the compact pulse strip if trends are now loaded
-    if (_allTrends.length && renderPulseStrip()) {
-      if (forceRefresh) toast('🧠 Trends refreshed!');
+
+    if (data && data.briefing) {
+      // Show the full AI write-up as a paragraph — no truncation
+      el.style.fontStyle = 'normal';
+      el.textContent = data.briefing;
+
+      // Show topic tags if API returns them
+      if (tagsEl && data.tags && data.tags.length) {
+        tagsEl.innerHTML = data.tags.map(function(t) {
+          return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-family:\'DM Mono\',monospace;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);margin:2px">' + escH(t) + '</span>';
+        }).join('');
+        tagsEl.style.display = 'flex';
+        tagsEl.style.flexWrap = 'wrap';
+        tagsEl.style.gap = '4px';
+        tagsEl.style.marginTop = '8px';
+      }
+
+      _aiCacheSet('briefing_done', true);
+      setTimestamp();
+      if (forceRefresh) toast('🧠 Briefing refreshed!');
       return;
     }
-    // Fallback: show just the first sentence of the AI briefing (compact)
-    _aiCacheSet('briefing_done', true);
-    if (data.briefing) {
-      var first = data.briefing.split(/[.!?]/)[0].trim();
-      el.textContent = first + '.';
-      if (dateEl) {
-        var now2 = new Date();
-        dateEl.textContent = now2.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '\n· live';
-      }
-      if (tagsEl) tagsEl.innerHTML = '';
-      if (forceRefresh) toast('🧠 Briefing refreshed!');
-    }
   } catch(e) {
-    if (el) el.textContent = 'Trends unavailable — check back shortly.';
+    console.warn('[Briefing] API unavailable, using local fallback');
   }
+
+  // ── Local fallback: write a sentence from live trend data ────────────────
+  if (_allTrends && _allTrends.length) {
+    var best = getBest3(_allTrends);
+    var parts = [];
+    if (best.youtube) parts.push('▶️ ' + best.youtube.topic + ' is trending on YouTube');
+    if (best.tiktok)  parts.push('🎵 ' + best.tiktok.topic  + ' is blowing up on TikTok');
+    if (best.google)  parts.push('🔍 ' + best.google.topic  + ' is spiking on Google');
+    if (parts.length) {
+      el.textContent = parts.join(' · ') + '.';
+      setTimestamp();
+      return;
+    }
+  }
+
+  el.textContent = 'Trends unavailable — check back shortly.';
 }
 
 /* ─────────────────────────────────────────────
