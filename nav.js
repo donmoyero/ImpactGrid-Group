@@ -101,7 +101,7 @@
       '</style>' +
 
       /* ── Nav ── */
-      '<nav class="nav" id="mainNav">' +
+      '<nav class="nav" id="mainNav" aria-label="Main navigation">' +
         '<div class="nav-in">' +
 
           '<a href="index.html" class="logo" id="navLogo">' +
@@ -140,7 +140,7 @@
               '</div>' +
             '</div>' +
 
-            '<button class="hamburger" id="hamburger" aria-label="Open menu" onclick="openSidebar()">' +
+            '<button class="hamburger" id="hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobSidebar" onclick="openSidebar()">' +
               '<span></span><span></span><span></span>' +
             '</button>' +
           '</div>' +
@@ -149,14 +149,14 @@
 
       /* ── Mobile sidebar overlay ── */
       '<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>' +
-      '<div class="mob-sidebar" id="mobSidebar">' +
+      '<div class="mob-sidebar" id="mobSidebar" role="dialog" aria-modal="true" aria-label="Mobile navigation">' +
         '<div class="mob-head">' +
           '<div class="mob-logo">' +
             '<img src="logo.png" style="width:26px;height:26px;object-fit:contain;border-radius:5px;" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"/>' +
             '<div style="display:none;width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--gold),var(--gold2));align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;">IG</div>' +
             'ImpactGrid' +
           '</div>' +
-          '<button class="mob-close" onclick="closeSidebar()">✕</button>' +
+          '<button class="mob-close" onclick="closeSidebar()" aria-label="Close navigation menu">✕</button>' +
         '</div>' +
         /* ── Mobile user info card (shown when logged in) ── */
         '<div class="mob-user" id="mobUserCard">' +
@@ -249,7 +249,7 @@
           '<div class="footer-bot">' +
             '<span>© 2026 ImpactGrid Group Ltd. All rights reserved.</span>' +
             '<div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>' +
-            '<button class="footer-tbtn" onclick="toggleTheme()" id="footerTBtn">🌙 Dark Mode</button>' +
+            '<button class="footer-tbtn" onclick="toggleTheme()" id="footerTBtn" aria-label="Toggle dark/light mode">🌙 Dark Mode</button>' +
           '</div>' +
         '</div>' +
       '</footer>';
@@ -282,15 +282,21 @@
   window.openSidebar = function() {
     var s = document.getElementById('mobSidebar');
     var o = document.getElementById('mobOverlay');
-    if (s) s.classList.add('open');
+    var h = document.getElementById('hamburger');
+    if (s) { s.classList.add('open'); }
     if (o) o.classList.add('open');
+    if (h) h.setAttribute('aria-expanded', 'true');
     document.body.style.overflow = 'hidden';
+    /* Move focus into sidebar for keyboard users */
+    if (s) { var first = s.querySelector('button,a,[tabindex]'); if (first) first.focus(); }
   };
   window.closeSidebar = function() {
     var s = document.getElementById('mobSidebar');
     var o = document.getElementById('mobOverlay');
+    var h = document.getElementById('hamburger');
     if (s) s.classList.remove('open');
     if (o) o.classList.remove('open');
+    if (h) { h.setAttribute('aria-expanded', 'false'); h.focus(); }
     document.body.style.overflow = '';
   };
 
