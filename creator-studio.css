@@ -404,30 +404,93 @@ img { display:block; max-width:100%; }
 .card-body { padding:20px; }
 
 /* ═══════════════════════════
-   STAT CARDS
+   STAT CARDS — Premium uniform
 ═══════════════════════════ */
 .stat-grid {
   display:grid; grid-template-columns:repeat(4,1fr);
   gap:14px; margin-bottom:22px;
+  align-items:stretch;
 }
-.stat-card {
-  background:var(--card); border:1px solid var(--border);
-  border-radius:14px; padding:18px 20px;
-  transition:transform var(--transition), border-color var(--transition);
+
+/* All four top cards — including .card used in slots 1 & 2 — match exactly */
+.stat-grid > .card,
+.stat-grid > .stat-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px 20px;
+  min-height:90px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:6px;
+  transition:transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  overflow:visible;
 }
-.stat-card:hover { border-color:var(--border2); transform:translateY(-1px); }
+.stat-grid > .card:hover,
+.stat-grid > .stat-card:hover {
+  border-color:var(--gold-glo);
+  transform:translateY(-2px);
+  box-shadow:0 6px 24px rgba(201,126,8,0.10);
+}
+
+/* Override any inline padding on stat-grid children */
+.stat-grid > .card[style],
+.stat-grid > .stat-card[style] {
+  padding:18px 20px !important;
+}
+
+/* Card header inside stat-grid card — remove border/padding used by full cards */
+.stat-grid > .card .card-header {
+  padding:0;
+  border-bottom:none;
+  margin-bottom:4px;
+}
+.stat-grid > .card .card-title {
+  font-family:'DM Mono',monospace;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--text3);
+}
+
+/* Weekly trend value */
+.stat-grid #weeklyPrediction {
+  font-family:'Syne',sans-serif;
+  font-size:17px;
+  font-weight:900;
+  color:var(--text);
+  line-height:1.2;
+}
+
+/* Greeting card (slot 2) — flex row */
+.stat-grid > .card[style*="flex"] {
+  flex-direction:row !important;
+  align-items:center !important;
+  gap:12px;
+}
+
+/* Labels */
 .sc-label {
   font-family:'DM Mono',monospace; font-size:9px;
   letter-spacing:.12em; text-transform:uppercase;
-  color:var(--text3); margin-bottom:8px;
+  color:var(--text3); margin-bottom:4px;
 }
 .sc-val {
   font-family:'Syne',sans-serif; font-size:24px;
   font-weight:900; letter-spacing:-.03em; line-height:1;
 }
-.sc-val-sm { font-size:14px; font-weight:700; line-height:1.4; }
-.sc-delta { font-size:12px; margin-top:5px; color:var(--text3); }
-.sc-link { color:var(--blue2); text-decoration:underline; cursor:pointer; }
+.sc-val-sm { font-size:13px; font-weight:700; line-height:1.4; color:var(--text2); }
+.sc-delta { font-size:11px; margin-top:2px; color:var(--text3); }
+.sc-link {
+  color:var(--blue2);
+  text-decoration:underline;
+  cursor:pointer;
+  font-weight:600;
+  transition:color var(--transition);
+}
+.sc-link:hover { color:var(--gold); }
 
 /* ═══════════════════════════
    TWO-COLUMN LAYOUT
