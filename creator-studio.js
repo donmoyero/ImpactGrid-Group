@@ -1344,111 +1344,15 @@ function renderTrendChart() {
 async function runTrendPrediction() {
   const el = document.getElementById('weeklyPrediction');
   if (!el || !_allTrends || !_allTrends.length) return;
-
-  // Build insights first — used by other panels too
   window._trendInsights = buildTrendInsights();
-  console.log('[TrendInsights] 🔥 Blowup:', window._trendInsights.blowup.length,
-    '| ⚡ Rising fast:', window._trendInsights.rising_fast.length,
-    '| 💡 Early:', window._trendInsights.early.length);
-
-  // Show loading state immediately — don't leave "Analyzing trends..."
-  const topLocal = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  el.innerHTML = '<span class="spinner spinner-gold"></span>'
-    + '<span style="font-size:12px;color:var(--text3);margin-left:8px">Dijo is picking this week\'s best opportunity…</span>';
-
-  // ── Try Dijo AI briefing — cached 30 min so auto-refresh doesn't burn tokens ──
-  var _predKey    = 'weekly_prediction';
-  var _predCached = _aiCacheGet(_predKey);
-  if (_predCached) {
-    el.innerHTML = _predCached;
-    return;
-  }
-  try {
-    var res = await fetch(DIJO + '/ai/daily-briefing');
-    var data = await res.json();
-
-    if (data && data.briefing) {
-      // Match the top trend from briefing data to our local scored list
-      var aiTop = null;
-      if (data.top_trends && data.top_trends.length) {
-        var aiTopicName = data.top_trends[0].topic;
-        aiTop = _allTrends.find(function(t) {
-          return t.topic.toLowerCase() === aiTopicName.toLowerCase();
-        }) || null;
-      }
-      var pick = aiTop || topLocal;
-
-      // Extract a short reason from Dijo's briefing (first sentence only)
-      var reason = '';
-      if (data.briefing) {
-        var firstSentence = data.briefing.split(/[.!?]/)[0];
-        reason = firstSentence.length > 10 && firstSentence.length < 160
-          ? firstSentence.trim()
-          : '';
-      }
-
-      var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
-      var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-      var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
-
-      el.innerHTML =
-        '<div style="display:flex;flex-direction:column;gap:8px">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-        +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-        +     escH(pick.topic)
-        +   '</div>'
-        +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-        +     pick.score.toFixed(1)
-        +   '</div>'
-        + '</div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-        +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-        +     platIcon + ' ' + escH(pick.platLabel)
-        +   '</span>'
-        +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-        + '</div>'
-        + (reason
-          ? '<div style="font-size:12px;color:var(--text2);line-height:1.5;border-left:2px solid var(--gold);padding-left:8px">'
-            + escH(reason) + '.'
-            + '</div>'
-          : '')
-        + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · ' + escH(data.date || 'This week') + '</div>'
-        + '</div>';
-    _aiCacheSet(_predKey, el.innerHTML);
-
-      return;
-    }
-  } catch(e) {
-    console.warn('[WeeklyPrediction] AI briefing failed, using local fallback:', e.message);
-  }
-
-  // ── Local fallback — use best scored trend without AI text ────────────────
-  var pick = topLocal;
-  var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
-  var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-  var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
-
-  el.innerHTML =
-    '<div style="display:flex;flex-direction:column;gap:8px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-    +     escH(pick.topic)
-    +   '</div>'
-    +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-    +     pick.score.toFixed(1)
-    +   '</div>'
-    + '</div>'
-    + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-    +     platIcon + ' ' + escH(pick.platLabel)
-    +   '</span>'
-    +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-    + '</div>'
-    + '<div style="font-size:12px;color:var(--text2);line-height:1.5">'
-    +   'Highest scored trend across all platforms this week.'
-    + '</div>'
-    + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · local data</div>'
-    + '</div>';
+  var cached = _aiCacheGet('weekly_prediction');
+  if (cached) { el.innerHTML = cached; return; }
+  var top = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
+  if (!top) return;
+  var cap = top.topic.charAt(0).toUpperCase() + top.topic.slice(1);
+  var html = '<div style="font-family:\'Syne\',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text1)">' + escH(cap) + '</div>';
+  el.innerHTML = html;
+  _aiCacheSet('weekly_prediction', html);
 }
 
 function filterTrends(btn, plat) {
@@ -1904,8 +1808,6 @@ async function loadBriefing(forceRefresh) {
                   : cls === 'rising_fast' ? '⚡ Rising fast'
                   : cls === 'early'       ? '🟢 Early signal'
                   : '📊 Trending';
-
-    // Render headline + spinner for insight text
     el.innerHTML =
       '<div style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + platColor + ';letter-spacing:.08em;margin-bottom:6px;text-transform:uppercase">'
       + platIcon + ' ' + platName + ' &nbsp;·&nbsp; ' + heat
@@ -1916,9 +1818,8 @@ async function loadBriefing(forceRefresh) {
       + '<div id="dijoInsightText" style="font-size:12px;color:var(--text2);line-height:1.6">'
       + '<span class="spinner spinner-gold"></span>'
       + '</div>';
-
     setTimestamp();
-    return cap;
+    return { cap: cap, platName: platName, heat: heat };
   }
 
   async function fetchInsight(topicName, platName, heat) {
@@ -1934,53 +1835,40 @@ async function loadBriefing(forceRefresh) {
     }
   }
 
-  // ── Live trends available — render immediately ────────────────────────────
   var top = getTopTrend();
   if (top) {
-    var capName  = renderShell(top);
-    var platName2 = PLAT_NAME[top.plat] || 'Trending';
-    var cls2      = classifyTrend(top);
-    var heatLabel = cls2 === 'blowup' ? 'blowing up' : cls2 === 'rising_fast' ? 'rising fast' : 'trending';
+    var info = renderShell(top);
     _aiCacheSet('briefing_done', true);
     if (forceRefresh) toast('🧠 Briefing refreshed!');
-    fetchInsight(capName, platName2, heatLabel); // async — fills in behind the spinner
+    fetchInsight(info.cap, info.platName, info.heat);
     return;
   }
 
-  // ── No trends yet — hit Dijo API first ───────────────────────────────────
   el.innerHTML = '<span class="spinner spinner-gold"></span>';
   try {
-    var res2  = await fetch(DIJO + '/ai/daily-briefing');
-    var data2 = await res2.json();
-
-    // Trends may have loaded by now
+    var res  = await fetch(DIJO + '/ai/daily-briefing');
+    var data = await res.json();
     top = getTopTrend();
     if (top) {
-      var capName3   = renderShell(top);
-      var platName3  = PLAT_NAME[top.plat] || 'Trending';
-      var cls3       = classifyTrend(top);
-      var heatLabel3 = cls3 === 'blowup' ? 'blowing up' : cls3 === 'rising_fast' ? 'rising fast' : 'trending';
+      var info2 = renderShell(top);
       _aiCacheSet('briefing_done', true);
-      fetchInsight(capName3, platName3, heatLabel3);
+      fetchInsight(info2.cap, info2.platName, info2.heat);
       return;
     }
-
-    // Absolute fallback — use API top trend
-    var apiTop = (data2.top_trends && data2.top_trends[0]) || null;
+    var apiTop = (data.top_trends && data.top_trends[0]) || null;
     if (apiTop) {
       var fakeTrend = { topic: apiTop.topic, plat: 'cross', score: apiTop.score || 7 };
-      var capName4  = renderShell(fakeTrend);
+      var info3 = renderShell(fakeTrend);
       _aiCacheSet('briefing_done', true);
-      fetchInsight(capName4, 'multiple platforms', 'trending');
-    } else if (data2.briefing) {
-      el.textContent = data2.briefing;
+      fetchInsight(info3.cap, info3.platName, info3.heat);
+    } else if (data.briefing) {
+      el.textContent = data.briefing;
       setTimestamp();
     }
   } catch(e) {
     if (el) el.textContent = 'Trends unavailable — check back shortly.';
   }
 }
-
 
 async function quickGenerate() {
   if (!checkAccess()) return;
