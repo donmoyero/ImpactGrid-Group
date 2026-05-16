@@ -18,12 +18,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 /* ── CONFIG ─────────────────────────────────────────────── */
-const DIJO_SERVER           = "https://impactgrid-dijo.onrender.com";
-// Cloudinary cloud name — public, safe to hardcode (no secret here).
-// The API key + secret live only in Render env vars (CLOUDINARY_URL).
-// Transform URLs are built client-side from this name + the public_id
-// returned by the server after upload.
-const CLOUDINARY_CLOUD_NAME = "dcw30ifa7";
+const DIJO_SERVER  = "https://impactgrid-dijo.onrender.com";
 // ✅ FIX: portfolios table lives on the CONTENT project (exeiojgldxqaakkybdij),
 //         NOT the auth project (wedjsnizcvtgptobwugc).
 //         Using IG_CONTENT_URL / IG_CONTENT_ANON set by supabase-config.js.
@@ -466,47 +461,64 @@ async function loadPortfolios() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   CLOUDINARY IMAGE PIPELINE
+   CLOUDINARY IMAGE PIPELINE  v2 — Sequential Queue
    ─────────────────────────────────────────────────────────
-   Architecture:
-     Browser → compress locally (canvas) → POST data URL
-             → Render server (/media/upload)
-             → Cloudinary (stores original + auto-transforms)
-             → returns { original, thumb, preview } URLs
+   ROOT CAUSE OF CRASHES (fixed here):
+     The old code used forEach+async and Promise.all which fired
+     every image simultaneously. 5 photos = 5 canvas operations
+     + 5 network requests at once → browser main-thread freeze,
+     Render rate-limit errors, state corruption.
 
-   URL transform strategy (all via Cloudinary URL params):
-     • thumb    — w_400,c_fill,q_auto,f_auto      (card grids, dashboards)
-     • preview  — w_1200,c_limit,q_auto:good,f_auto (portfolio page display)
-     • original — fl_attachment (4K download / print)
+   New architecture:
+     • ONE upload at a time (sequential, not parallel)
+     • Canvas compression yielded via setTimeout(0) so the UI
+       never freezes between frames
+     • Upload queue: new files slot into the queue; each waits
+       for the previous to complete before starting
+     • Progress toast: "Uploading 2 of 5…" so user knows status
+     • Safe fallback: if Cloudinary fails, base64 is kept in
+       state — uploadPortfolioAssets retries on Save
+     • uploadPortfolioAssets (called on Save) also processes
+       sequentially with a 300ms gap between requests to avoid
+       hitting Render's rate limit on cold-start servers
 
-   Compression before upload (client-side canvas):
-     • Max canvas dimension: 3840px (4K cap — preserves quality)
-     • JPEG quality: 0.88 (visually lossless, ~60–70% smaller than raw)
-     • PNG → converted to JPEG unless it has transparency
-     • Skips compression for images already < 300KB
-
-   This means:
-     - A 12MB RAW photo → ~1.5MB upload → Cloudinary stores original
-     - The portfolio page loads the 1200w preview (~120KB)
-     - The card thumbnail loads 400w (~25KB)
-     - Full 4K is always available via the original URL
+   URL transform strategy (Cloudinary CDN — no extra cost):
+     thumb    → w_400,h_300,c_fill,g_auto,q_auto,f_auto
+     preview  → w_1200,c_limit,q_auto:good,f_auto
+     original → raw stored file (4K / full resolution)
 ══════════════════════════════════════════════════════════ */
 
-/* ── Step 1: Client-side compression (canvas) ─────────────
-   Reduces upload size dramatically while keeping 4K fidelity.
-   Returns a compressed data URL (always JPEG unless PNG with alpha).
-──────────────────────────────────────────────────────────── */
-async function compressImageLocally(dataUrl, maxDim = 3840, quality = 0.88) {
-  return new Promise((resolve) => {
-    // Skip compression for small files or non-image data URLs
-    const isImage = dataUrl.startsWith('data:image');
-    const roughKB = Math.round((dataUrl.length * 0.75) / 1024);
-    if (!isImage || roughKB < 300) { resolve(dataUrl); return; }
+/* ── Upload queue state ─────────────────────────────────── */
+const _uploadQueue = [];        // { file, tempItem, resolve }
+let   _uploadActive = false;    // true while a single upload is in progress
+let   _uploadTotal  = 0;        // total queued in the current batch
+let   _uploadDone   = 0;        // completed in the current batch
 
+/* ── Yield to the browser between heavy operations ──────── */
+function _yield() {
+  return new Promise(r => setTimeout(r, 0));
+}
+
+/* ── Step 1: Client-side compression ───────────────────────
+   Yields between decode and encode so the UI stays responsive.
+   Lower default maxDim (2400px) — still excellent quality but
+   ~40% faster canvas operation than 3840px on large photos.
+   Logos keep 800px cap passed explicitly from the logo handlers.
+──────────────────────────────────────────────────────────── */
+async function compressImageLocally(dataUrl, maxDim = 2400, quality = 0.88) {
+  const isImage = dataUrl.startsWith('data:image');
+  const roughKB = Math.round((dataUrl.length * 0.75) / 1024);
+  // Skip tiny files or non-images
+  if (!isImage || roughKB < 200) return dataUrl;
+
+  await _yield(); // let the browser breathe before heavy canvas work
+
+  return new Promise((resolve) => {
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
+      await _yield(); // yield again after decode
+
       let { width, height } = img;
-      // Scale down if either dimension exceeds maxDim (4K cap)
       if (width > maxDim || height > maxDim) {
         const ratio = Math.min(maxDim / width, maxDim / height);
         width  = Math.round(width  * ratio);
@@ -519,41 +531,33 @@ async function compressImageLocally(dataUrl, maxDim = 3840, quality = 0.88) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Keep PNG only if it has real transparency (alpha channel used)
+      // Preserve PNG only when transparency is actually used
       const hasPng = dataUrl.startsWith('data:image/png');
       let outputType = 'image/jpeg';
       if (hasPng) {
-        // Sample a few pixels for non-255 alpha to decide
         const d = ctx.getImageData(0, 0, Math.min(width, 100), Math.min(height, 100)).data;
         const hasAlpha = Array.from({ length: d.length / 4 }, (_, i) => d[i * 4 + 3]).some(a => a < 255);
         if (hasAlpha) outputType = 'image/png';
       }
 
+      await _yield(); // yield before toDataURL (can be slow on large canvases)
       const compressed = canvas.toDataURL(outputType, outputType === 'image/jpeg' ? quality : undefined);
-      const origKB = roughKB;
-      const newKB  = Math.round((compressed.length * 0.75) / 1024);
-      console.log(`[Cloudinary] Compressed ${origKB}KB → ${newKB}KB (${Math.round((1 - newKB/origKB)*100)}% reduction)`);
+      const newKB = Math.round((compressed.length * 0.75) / 1024);
+      console.log(`[Cloudinary] Compressed ${roughKB}KB → ${newKB}KB (${Math.round((1 - newKB / roughKB) * 100)}% saved)`);
       resolve(compressed);
     };
-    img.onerror = () => resolve(dataUrl); // fallback: use original
+    img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
   });
 }
 
-/* ── Step 2: Upload via Render server → Cloudinary ─────────
-   The Render server holds the Cloudinary API secret.
+/* ── Step 2: Single upload to Cloudinary via Render server ──
    Returns { original, thumb, preview } or null on failure.
-
-   Cloudinary transform URLs are built from the returned public_id:
-     thumb   : w_400,c_fill,q_auto,f_auto
-     preview : w_1200,c_limit,q_auto:good,f_auto
-     original: (raw stored URL — full resolution)
+   Never called concurrently — always awaited by the queue.
 ──────────────────────────────────────────────────────────── */
 async function uploadToCloudinary(dataUrl, folder = 'portfolio', tag = 'asset') {
   try {
-    const userId = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
-
-    // Compress before sending
+    const userId   = (window.igUser && window.igUser.id) || localStorage.getItem('ig_user_id') || 'anon';
     const compressed = await compressImageLocally(dataUrl);
 
     const res = await fetch(`${DIJO_SERVER}/media/upload`, {
@@ -567,118 +571,145 @@ async function uploadToCloudinary(dataUrl, folder = 'portfolio', tag = 'asset') 
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.warn('[Cloudinary] Upload failed:', res.status, errText);
+      console.warn('[Cloudinary] Upload failed:', res.status, await res.text());
       return null;
     }
 
     const data = await res.json();
-    if (!data.success) {
-      console.warn('[Cloudinary] Upload error:', data.error);
-      return null;
-    }
+    if (!data.success) { console.warn('[Cloudinary] Error:', data.error); return null; }
 
-    // Build transform URLs from the returned public_id
-    // Cloud name is hardcoded at top of file — never sent from server to avoid
-    // an extra round-trip and so URL building works even if the server response
-    // omits cloud_name for any reason.
-    const cloudName = CLOUDINARY_CLOUD_NAME;
-    const publicId  = data.public_id;
-    const base      = `https://res.cloudinary.com/${cloudName}/image/upload`;
+    const base = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+    const pid  = data.public_id;
 
     return {
-      original: data.secure_url,                                                    // Full resolution (stored original)
-      preview:  `${base}/w_1200,c_limit,q_auto:good,f_auto/${publicId}`,           // Portfolio page display
-      thumb:    `${base}/w_400,h_300,c_fill,g_auto,q_auto,f_auto/${publicId}`,     // Card/grid thumbnail
+      original: data.secure_url,
+      preview:  `${base}/w_1200,c_limit,q_auto:good,f_auto/${pid}`,
+      thumb:    `${base}/w_400,h_300,c_fill,g_auto,q_auto,f_auto/${pid}`,
     };
-
   } catch (e) {
-    console.warn('[Cloudinary] Upload exception:', e.message);
+    console.warn('[Cloudinary] Exception:', e.message);
     return null;
   }
 }
 
-/* ── Step 3: Upload all base64 images in a portfolio → Cloudinary ──────────
-   Replaces every data: URL in-place with Cloudinary URLs.
-   hero_media items gain { url (preview), thumb, original } fields.
-   All uploads fire in parallel via Promise.all for maximum speed.
-──────────────────────────────────────────────────────────────────────────── */
+/* ── Step 3: Queue processor ────────────────────────────────
+   Drains _uploadQueue one item at a time.
+   Each item is { tempItem, folder, tag, onDone(urls) }.
+   Shows "Uploading X of Y…" progress toast on every step.
+──────────────────────────────────────────────────────────── */
+async function _drainUploadQueue() {
+  if (_uploadActive) return;           // already running
+  if (!_uploadQueue.length) return;    // nothing to do
+
+  _uploadActive = true;
+
+  while (_uploadQueue.length) {
+    const job = _uploadQueue.shift();
+    _uploadDone++;
+
+    const total = _uploadTotal;
+    const done  = _uploadDone;
+    showToast(`Uploading ${done} of ${total} image${total > 1 ? 's' : ''}…`);
+
+    try {
+      const urls = await uploadToCloudinary(job.dataUrl, job.folder, job.tag);
+      job.onDone(urls);
+    } catch (err) {
+      console.warn('[Queue] Upload error:', err);
+      job.onDone(null);
+    }
+
+    // Small gap between requests — prevents hammering Render on cold-start
+    if (_uploadQueue.length) await new Promise(r => setTimeout(r, 300));
+  }
+
+  _uploadActive = false;
+  _uploadTotal  = 0;
+  _uploadDone   = 0;
+}
+
+/* ── Enqueue a single upload job ────────────────────────────
+   Returns a Promise that resolves with { urls } when done.
+──────────────────────────────────────────────────────────── */
+function _enqueueUpload(dataUrl, folder, tag) {
+  return new Promise(resolve => {
+    _uploadTotal++;
+    _uploadQueue.push({ dataUrl, folder, tag, onDone: resolve });
+    _drainUploadQueue(); // kick the queue (no-op if already running)
+  });
+}
+
+/* ── Step 4: Upload all base64 assets in a portfolio ────────
+   Called by savePortfolioToDB when the user taps Save.
+   Processes sequentially with 300ms gaps — never parallel.
+   Any image that failed live upload (still base64) is caught here.
+──────────────────────────────────────────────────────────── */
 async function uploadPortfolioAssets(pf) {
   const isDataUrl = s => typeof s === 'string' && s.startsWith('data:');
-  const tasks = [];
 
-  // Hero / gallery media
+  // Collect all items that still need uploading
+  const jobs = [];
+
   if (Array.isArray(pf.hero_media)) {
     pf.hero_media.forEach((m, i) => {
-      if (isDataUrl(m.url)) {
-        tasks.push(
-          uploadToCloudinary(m.url, 'hero', 'hero')
-            .then(urls => {
-              if (urls) {
-                pf.hero_media[i].url      = urls.preview;   // shown on portfolio page
-                pf.hero_media[i].thumb    = urls.thumb;     // card / strip thumbnail
-                pf.hero_media[i].original = urls.original;  // 4K download link
-              }
-            })
-        );
-      }
+      if (isDataUrl(m.url)) jobs.push({ type: 'hero_media', index: i });
     });
   }
-
-  // Logo (small — no need for multiple sizes, just get the original)
-  if (isDataUrl(pf.logo_url)) {
-    tasks.push(
-      uploadToCloudinary(pf.logo_url, 'logos', 'logo')
-        .then(urls => {
-          if (urls) {
-            pf.logo_url = urls.preview;
-            if (window._obLogoDataUrl) window._obLogoDataUrl = urls.preview;
-            if (window._beLogoDataUrl) window._beLogoDataUrl = urls.preview;
-          }
-        })
-    );
-  }
-
-  // Catalogue / booking images
+  if (isDataUrl(pf.logo_url))  jobs.push({ type: 'logo' });
   if (Array.isArray(pf.catalogue)) {
     pf.catalogue.forEach((c, i) => {
-      if (isDataUrl(c.image)) {
-        tasks.push(
-          uploadToCloudinary(c.image, 'catalogue', 'catalogue')
-            .then(urls => {
-              if (urls) {
-                pf.catalogue[i].image    = urls.preview;
-                pf.catalogue[i].thumb    = urls.thumb;
-                pf.catalogue[i].original = urls.original;
-              }
-            })
-        );
-      }
+      if (isDataUrl(c.image)) jobs.push({ type: 'catalogue', index: i });
     });
   }
-
-  // Service images
   if (Array.isArray(pf.services)) {
     pf.services.forEach((s, i) => {
-      if (isDataUrl(s.image)) {
-        tasks.push(
-          uploadToCloudinary(s.image, 'services', 'service')
-            .then(urls => {
-              if (urls) {
-                pf.services[i].image    = urls.preview;
-                pf.services[i].thumb    = urls.thumb;
-                pf.services[i].original = urls.original;
-              }
-            })
-        );
-      }
+      if (isDataUrl(s.image)) jobs.push({ type: 'service', index: i });
     });
   }
 
-  if (tasks.length) {
-    await Promise.all(tasks);
-    console.log(`[Cloudinary] ${tasks.length} asset(s) uploaded in parallel`);
+  if (!jobs.length) return pf;
+
+  console.log(`[Cloudinary] Saving ${jobs.length} asset(s) sequentially…`);
+
+  // Process ONE at a time
+  for (let j = 0; j < jobs.length; j++) {
+    const job = jobs[j];
+
+    if (job.type === 'hero_media') {
+      const urls = await uploadToCloudinary(pf.hero_media[job.index].url, 'hero', 'hero');
+      if (urls) {
+        pf.hero_media[job.index].url      = urls.preview;
+        pf.hero_media[job.index].thumb    = urls.thumb;
+        pf.hero_media[job.index].original = urls.original;
+      }
+    } else if (job.type === 'logo') {
+      const urls = await uploadToCloudinary(pf.logo_url, 'logos', 'logo');
+      if (urls) {
+        pf.logo_url = urls.preview;
+        if (window._obLogoDataUrl) window._obLogoDataUrl = urls.preview;
+        if (window._beLogoDataUrl) window._beLogoDataUrl = urls.preview;
+      }
+    } else if (job.type === 'catalogue') {
+      const urls = await uploadToCloudinary(pf.catalogue[job.index].image, 'catalogue', 'catalogue');
+      if (urls) {
+        pf.catalogue[job.index].image    = urls.preview;
+        pf.catalogue[job.index].thumb    = urls.thumb;
+        pf.catalogue[job.index].original = urls.original;
+      }
+    } else if (job.type === 'service') {
+      const urls = await uploadToCloudinary(pf.services[job.index].image, 'services', 'service');
+      if (urls) {
+        pf.services[job.index].image    = urls.preview;
+        pf.services[job.index].thumb    = urls.thumb;
+        pf.services[job.index].original = urls.original;
+      }
+    }
+
+    // 300ms gap between each upload — prevents rate-limit on Render free tier
+    if (j < jobs.length - 1) await new Promise(r => setTimeout(r, 300));
   }
+
+  console.log(`[Cloudinary] ${jobs.length} asset(s) saved`);
   return pf;
 }
 
@@ -959,57 +990,26 @@ function catItemImageUpload(input) {
   const row = input.closest(".cat-item-row");
   if (!row || !input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = async e => {
-    const rawDataUrl = e.target.result;
+  reader.onload = e => {
     const wrap = row.querySelector(".cat-item-img-wrap");
     if (!wrap) return;
-
-    // 1. Show raw preview immediately
+    // Replace placeholder with image (preview only — base64 won't be saved)
     wrap.querySelector(".cat-item-img-placeholder")?.remove();
     let img = wrap.querySelector(".cat-item-img");
     if (!img) { img = document.createElement("img"); img.className = "cat-item-img"; wrap.insertBefore(img, wrap.querySelector("input")); }
-    img.src = rawDataUrl;
-    img.style.opacity = "0.6";
-    row.dataset.image = rawDataUrl;
-    updatePreviewLive();
-
-    // 2. Show uploading state
+    img.src = e.target.result;
+    // Store on row for local preview — stripped before server save to avoid 413
+    row.dataset.image = e.target.result;
+    // Show a note that image is local-only until an image URL is used
     let note = row.querySelector('.cat-img-note');
     if (!note) {
       note = document.createElement('div');
       note.className = 'cat-img-note';
-      note.style.cssText = 'font-size:10px;margin-top:4px;font-family:monospace';
+      note.style.cssText = 'font-size:10px;color:rgba(255,180,0,.8);margin-top:4px;font-family:monospace';
+      note.textContent = '⚠ Preview only — paste an image URL to save permanently';
       row.querySelector('.cat-item-fields')?.prepend(note);
     }
-    note.style.color = 'rgba(201,168,76,.9)';
-    note.textContent = '↑ Uploading to Cloudinary…';
-
-    // 3. Compress + upload to Cloudinary
-    try {
-      const compressed = await compressImageLocally(rawDataUrl);
-      const urls = await uploadToCloudinary(compressed, 'catalogue', 'catalogue');
-      if (urls) {
-        // Swap in real Cloudinary URLs
-        img.src = urls.thumb;
-        img.style.opacity = "1";
-        row.dataset.image        = urls.preview;
-        row.dataset.imageThumb   = urls.thumb;
-        row.dataset.imageOriginal = urls.original;
-        note.style.color = 'rgba(74,222,128,.9)';
-        note.textContent = '✓ Uploaded to Cloudinary';
-        setTimeout(() => { if (note.parentNode) note.remove(); }, 3000);
-        updatePreviewLive();
-      } else {
-        img.style.opacity = "1";
-        note.style.color = 'rgba(248,113,113,.9)';
-        note.textContent = '⚠ Upload failed — image is preview only';
-      }
-    } catch (err) {
-      img.style.opacity = "1";
-      note.style.color = 'rgba(248,113,113,.9)';
-      note.textContent = '⚠ Upload failed — image is preview only';
-      console.warn('[catItemImageUpload] Cloudinary error:', err);
-    }
+    updatePreviewLive();
   };
   reader.readAsDataURL(input.files[0]);
 }
