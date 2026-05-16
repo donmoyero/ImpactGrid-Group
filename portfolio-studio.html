@@ -952,7 +952,18 @@
               </div>
             </div>
             <div class="be-sec">
-              <div class="be-sec-title">Hero Visuals</div>
+              <div class="be-sec-title">Profile Photo <span style="font-weight:400;opacity:.6;font-size:11px">— shown beside your bio in the About section</span></div>
+              <div class="ob-logo-upload" id="profilePhotoUploadArea" onclick="document.getElementById('profilePhotoFile').click()" style="min-height:80px;position:relative">
+                <img id="profilePhotoPrev" src="" alt="" style="display:none;max-height:72px;max-width:72px;object-fit:cover;border-radius:50%;border:2px solid rgba(255,255,255,.2);flex-shrink:0;"/>
+                <span id="profilePhotoPlaceholder" style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.4)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  Upload your photo — appears next to your bio
+                </span>
+                <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="handleProfilePhotoUpload(event)"/>
+              </div>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Hero Visuals <span style="font-weight:400;opacity:.6;font-size:11px">— max 4 shown in slideshow</span></div>
               <div class="hero-media-strip" id="heroMediaStrip">
                 <!-- thumbnails populated by JS -->
               </div>
@@ -964,6 +975,19 @@
                 <button class="ob-ai-mini-btn" onclick="regenSection('media')">✦ Let Dijo repick visuals</button>
               </div>
               <input type="file" id="heroUpload" accept="image/*,video/*" multiple style="display:none" onchange="handleHeroUpload(event)"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Gallery Photos <span style="font-weight:400;opacity:.6;font-size:11px">— full collection shown in Gallery page</span></div>
+              <div class="hero-media-strip" id="galleryMediaStrip" style="margin-bottom:10px">
+                <!-- thumbnails populated by JS -->
+              </div>
+              <div class="hero-visual-actions">
+                <div class="dzone-sm" id="dzoneGallery" onclick="document.getElementById('galleryUpload').click()" ondragover="dzOver(event,this)" ondragleave="dzLeave(this)" ondrop="dzDrop(event,'gallery')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:5px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Upload gallery photos</span>
+                </div>
+              </div>
+              <input type="file" id="galleryUpload" accept="image/*" multiple style="display:none" onchange="handleGalleryUpload(event)"/>
             </div>
             <div class="be-sec">
               <div class="be-sec-title">Services</div>
@@ -1302,6 +1326,8 @@ select:focus-visible {
    with populateBuilder() which reads them during portfolio generation.
 ──────────────────────────────────────────────────────────────────────── */
 window._obLogoDataUrl = null;
+window._beLogoDataUrl = null;
+window._profilePhotoDataUrl = null;
 async function obHandleLogoUpload(input) {
   var file = input.files && input.files[0];
   if (!file) return;
