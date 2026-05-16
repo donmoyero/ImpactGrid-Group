@@ -18,7 +18,8 @@
    ═══════════════════════════════════════════════════════════ */
 
 /* ── CONFIG ─────────────────────────────────────────────── */
-const DIJO_SERVER  = "https://impactgrid-dijo.onrender.com";
+const DIJO_SERVER           = "https://impactgrid-dijo.onrender.com";
+const CLOUDINARY_CLOUD_NAME = "dcw30ifa7";
 // ✅ FIX: portfolios table lives on the CONTENT project (exeiojgldxqaakkybdij),
 //         NOT the auth project (wedjsnizcvtgptobwugc).
 //         Using IG_CONTENT_URL / IG_CONTENT_ANON set by supabase-config.js.
