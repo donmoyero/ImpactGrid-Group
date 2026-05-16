@@ -332,7 +332,9 @@ function normalizeSlidesDeck(slides){
     }
     out.headline = trimHeadline(out.headline);
     if(!out.body || out.body.trim().length < 5){
-      if(out.type !== 'hook'){
+      if(out.type === 'cta'){
+        out.body = 'Save this carousel. Share it with someone who needs it. What was your biggest takeaway?';
+      } else if(out.type !== 'hook'){
         out.body = 'Apply this consistently and the results compound faster than you expect.';
       }
     }
@@ -445,7 +447,7 @@ async function generate(){
   document.getElementById('loadingOv').classList.remove('show');
   ST.cur=0;
   buildStrip();renderSlide();updateCounter();fillEdit();
-  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate';
+  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate';
   btn.disabled=false;
   var _lbl = (ST.theme && DA[ST.theme]) ? DA[ST.theme].label : (ST.theme || 'Custom');
   toast('✦ '+ST.slides.length+'-slide carousel · '+_lbl+' · tap any text to edit');
@@ -813,10 +815,10 @@ function renderSlide(){
   var tone2=assetMeta.tone||'neutral';
   var bri=assetMeta.brightness||'medium';
   var tc=getTextColors(tone2,bri,theme);
-  var tok=window.getStyleTokens(layout);
-  var accent2=tok.accent;
-  var pBg=tok.panelBg;
-  var pText=tok.panelText;
+  var tok=window.getStyleTokens ? window.getStyleTokens(layout) : null;
+  var accent2=tok ? tok.accent : (ST.accent||T.accentColor);
+  var pBg=tok ? tok.panelBg : getPanelBg(theme);
+  var pText=tok ? tok.panelText : getPanelText(theme);
 
   var sBgImg=document.getElementById('sBgImg');
   var sVideo=document.getElementById('sBgVideo');
@@ -1377,7 +1379,6 @@ function updateBrand(){ST.brand=document.getElementById('brandInput')?document.g
 function changeLayout(newLayout){
   if(!ST.slides.length) return;
   ST.slides[ST.cur].layout=newLayout;
-  // Step 3 — lock font pair to match the layout's sealed token
   var lockedFont=window.getLayoutDefaultFont ? window.getLayoutDefaultFont(newLayout) : 'cormorant';
   ST.fontPair=lockedFont;
   document.querySelectorAll('.font-btn').forEach(function(b){b.classList.toggle('active',b.dataset.pair===lockedFont);});
@@ -1386,12 +1387,10 @@ function changeLayout(newLayout){
 }
 
 function setFontPair(pair){
-  // Step 3 — check if the current slide's layout locks the font
   if(ST.slides.length && window.getLayoutDefaultFont){
     var curLayout=ST.slides[ST.cur].layout||'FULL_BLEED';
     var lockedFont=window.getLayoutDefaultFont(curLayout);
     if(lockedFont && lockedFont !== pair){
-      // Font is locked by token — snap UI back to locked font, don't override
       document.querySelectorAll('.font-btn').forEach(function(b){b.classList.toggle('active',b.dataset.pair===lockedFont);});
       toast('Font locked to '+lockedFont+' for this style');
       return;
@@ -1415,14 +1414,9 @@ function dzDrop(e){e.preventDefault();document.getElementById('dzone').classList
    14. ACCENT / THEME / FONT
    ───────────────────────────────────────────────────────── */
 function setAccent(c,el){
-  // Step 4 — accent picker demoted to brand metadata only.
-  // ST.themeAccent stores the user's choice for export/metadata.
-  // ST.accent is NOT updated — tok.accent from the token capsule
-  // always wins during rendering. renderSlide() is NOT called here.
   ST.themeAccent=c;
   document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});
   el.classList.add('on');
-  // No renderSlide() — token system locks the accent per layout
 }
 function toggleTheme(){var isDark=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',isDark?'light':'dark');document.querySelector('[onclick="toggleTheme()"]').textContent=isDark?'🌙':'☀️';}
 
