@@ -357,6 +357,11 @@ function showScreen(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add("active");
 
+  // Scroll to top on mobile so user starts at the top of the new screen
+  if (window.innerWidth <= 900) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   // Always clear the generation overlay when switching screens.
   // If we're NOT going to screenBuilder (or going to builder for edit, not generate),
   // the overlay must be hidden so it doesn't block the builder UI.
@@ -418,6 +423,18 @@ async function sbFetch(path, method = "GET", body = null) {
 }
 
 async function loadPortfolios() {
+  // ── Show cached portfolios immediately (avoids empty-state flash on mobile) ──
+  try {
+    const cached = localStorage.getItem('ig_portfolios_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length) {
+        psState.portfolios = parsed;
+        renderDashGrid();
+      }
+    }
+  } catch (_) {}
+
   // Capture this call as the in-flight promise so checkPortfolioAccess()
   // can await it if it fires before the fetch resolves (race condition fix).
   _portfoliosLoadPromise = (async function() {
@@ -430,9 +447,12 @@ async function loadPortfolios() {
         `/portfolios?${filter}&order=created_at.desc&select=*`
       );
       psState.portfolios = data || [];
+      // Cache to localStorage for instant load next visit
+      try { localStorage.setItem('ig_portfolios_cache', JSON.stringify(psState.portfolios)); } catch (_) {}
     } catch (e) {
       console.warn("[Portfolio] Could not load from Supabase:", e.message);
-      psState.portfolios = [];
+      // Keep cached data if live fetch fails (offline / server cold-start)
+      if (!psState.portfolios.length) psState.portfolios = [];
     }
     psState.portfoliosLoaded = true;
     renderDashGrid();
@@ -553,6 +573,19 @@ async function uploadPortfolioAssets(pf) {
 
 async function savePortfolioToDB(pf){
 
+  // Wait up to 5s for nav.js to resolve igUser on slow mobile connections.
+  // Without this, saving immediately after page-load shows "Sign in to save"
+  // even for logged-in users because igUser hasn't been populated yet.
+  if (!window.igUser) {
+    await new Promise(function(resolve) {
+      var done = false;
+      function finish() { if (!done) { done = true; resolve(); } }
+      document.addEventListener('ig-user-ready', finish, { once: true });
+      document.addEventListener('ig-plan-ready', finish, { once: true });
+      setTimeout(finish, 5000);
+    });
+  }
+
   // Require authenticated user — no anonymous saving
   const userId = (window.igUser && window.igUser.id)
     || localStorage.getItem('ig_user_id');
@@ -636,6 +669,8 @@ async function savePortfolioToDB(pf){
       // Refresh the preview pill URL in case slug changed
       const pill = document.getElementById("previewUrlPill");
       if (pill && pf.slug) pill.textContent = `impactgridgroup.com/p.html?slug=${pf.slug}`;
+      // Bust the portfolio cache so the next loadPortfolios() fetches fresh data
+      try { localStorage.removeItem('ig_portfolios_cache'); } catch (_) {}
       return true;
     } else {
       showToast("Save failed: " + (data.error || 'unknown error'));
@@ -686,6 +721,8 @@ async function deletePortfolio(id) {
       showToast('Portfolio deleted');
       // Remove from local state immediately — no need to re-fetch
       psState.portfolios = psState.portfolios.filter(p => p.id !== id);
+      // Bust the portfolio cache
+      try { localStorage.removeItem('ig_portfolios_cache'); } catch (_) {}
       renderDashGrid();
     } else {
       showToast('Delete failed — please try again');
@@ -2536,6 +2573,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ── Nav sync: once igUser is resolved, reload portfolios with real user_id ── */
 document.addEventListener('ig-user-ready', function(e) {
+  // Clear the session-scoped cache so we re-fetch with the real user_id
+  try { localStorage.removeItem('ig_portfolios_cache'); } catch (_) {}
   // Re-load portfolios now that we have a real user_id to filter by
   loadPortfolios();
   // Refresh the plan banner with the now-populated igUser data
