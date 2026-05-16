@@ -664,6 +664,12 @@ async function uploadPortfolioAssets(pf) {
     });
   }
   if (isDataUrl(pf.logo_url))  jobs.push({ type: 'logo' });
+  if (isDataUrl(pf.profile_photo_url)) jobs.push({ type: 'profile_photo' });
+  if (Array.isArray(pf.gallery_media)) {
+    pf.gallery_media.forEach((m, i) => {
+      if (isDataUrl(m.url)) jobs.push({ type: 'gallery_media', index: i });
+    });
+  }
   if (Array.isArray(pf.catalogue)) {
     pf.catalogue.forEach((c, i) => {
       if (isDataUrl(c.image)) jobs.push({ type: 'catalogue', index: i });
@@ -696,6 +702,19 @@ async function uploadPortfolioAssets(pf) {
         pf.logo_url = urls.preview;
         if (window._obLogoDataUrl) window._obLogoDataUrl = urls.preview;
         if (window._beLogoDataUrl) window._beLogoDataUrl = urls.preview;
+      }
+    } else if (job.type === 'profile_photo') {
+      const urls = await uploadToCloudinary(pf.profile_photo_url, 'profile', 'profile');
+      if (urls) {
+        pf.profile_photo_url = urls.preview;
+        window._profilePhotoDataUrl = urls.preview;
+      }
+    } else if (job.type === 'gallery_media') {
+      const urls = await uploadToCloudinary(pf.gallery_media[job.index].url, 'gallery', 'gallery');
+      if (urls) {
+        pf.gallery_media[job.index].url      = urls.preview;
+        pf.gallery_media[job.index].thumb    = urls.thumb;
+        pf.gallery_media[job.index].original = urls.original;
       }
     } else if (job.type === 'catalogue') {
       const urls = await uploadToCloudinary(pf.catalogue[job.index].image, 'catalogue', 'catalogue');
@@ -757,6 +776,8 @@ async function savePortfolioToDB(pf){
     const hasBase64 = (
       (Array.isArray(pf.hero_media) && pf.hero_media.some(m => isDataUrl(m.url))) ||
       isDataUrl(pf.logo_url) ||
+      isDataUrl(pf.profile_photo_url) ||
+      (Array.isArray(pf.gallery_media) && pf.gallery_media.some(m => isDataUrl(m.url))) ||
       (Array.isArray(pf.catalogue) && pf.catalogue.some(c => isDataUrl(c.image))) ||
       (Array.isArray(pf.services)  && pf.services.some(s => isDataUrl(s.image)))
     );
@@ -774,6 +795,12 @@ async function savePortfolioToDB(pf){
         .filter(m => m.url);
     }
     if (isDataUrl(pfClean.logo_url)) pfClean.logo_url = '';
+    if (isDataUrl(pfClean.profile_photo_url)) pfClean.profile_photo_url = '';
+    if (Array.isArray(pfClean.gallery_media)) {
+      pfClean.gallery_media = pfClean.gallery_media
+        .map(m => ({ ...m, url: isDataUrl(m.url) ? '' : (m.url || '') }))
+        .filter(m => m.url);
+    }
     if (Array.isArray(pfClean.catalogue)) {
       pfClean.catalogue = pfClean.catalogue.map(c => ({ ...c, image: isDataUrl(c.image) ? '' : (c.image || '') }));
     }
@@ -1460,7 +1487,9 @@ function collectOnboardData() {
     projects,
     testimonials,
     hero_media:      [],
+    gallery_media:   (psState.activePortfolio && psState.activePortfolio.gallery_media) || [],
     published:       false,
+    profile_photo_url: (window._profilePhotoDataUrl || (psState.activePortfolio && psState.activePortfolio.profile_photo_url) || ''),
     logo_url:        (window._beLogoDataUrl || window._obLogoDataUrl || (psState.activePortfolio && psState.activePortfolio.logo_url) || ''),
     // Reuse existing slug if portfolio already exists — never regenerate
     // a new random slug or the upsert will create a duplicate row instead
@@ -1693,6 +1722,15 @@ function populateBuilder(pf) {
   const pill = document.getElementById("previewUrlPill");
   if (pill) pill.textContent = `impactgridgroup.com/p.html?slug=${pf.slug}`;
   renderHeroMediaStrip(pf.hero_media || []);
+  renderGalleryMediaStrip(pf.gallery_media || []);
+  // Show profile photo preview
+  if (pf.profile_photo_url) {
+    window._profilePhotoDataUrl = pf.profile_photo_url;
+    const ppPrev = document.getElementById('profilePhotoPrev');
+    if (ppPrev) { ppPrev.src = pf.profile_photo_url; ppPrev.style.display = 'block'; }
+    const ppPlaceholder = document.getElementById('profilePhotoPlaceholder');
+    if (ppPlaceholder) ppPlaceholder.style.display = 'none';
+  }
   rebuildServiceRows(pf.services || []);
   rebuildCatalogueRows(pf.catalogue || []);
   checkStripeReturn();
@@ -1752,7 +1790,13 @@ function updatePreviewLive() {
       _isData(m.url) ? { ...m, url: '' } : m
     ).filter(m => m.url); // hide blank slots from slideshow
   }
-  if (_isData(pfPreview.logo_url))  pfPreview.logo_url = '';
+  if (_isData(pfPreview.logo_url))          pfPreview.logo_url = '';
+  if (_isData(pfPreview.profile_photo_url)) pfPreview.profile_photo_url = '';
+  if (Array.isArray(pfPreview.gallery_media)) {
+    pfPreview.gallery_media = pfPreview.gallery_media
+      .map(m => _isData(m.url) ? { ...m, url: '' } : m)
+      .filter(m => m.url);
+  }
   if (Array.isArray(pfPreview.catalogue)) {
     pfPreview.catalogue = pfPreview.catalogue.map(c =>
       _isData(c.image) ? { ...c, image: '' } : c
@@ -1909,8 +1953,17 @@ function renderPreview(pf) {
 function buildPortfolioHTML(pf) {
   const t       = THEMES[pf.theme || 'dark'];
   const accent  = pf.accent_color || t.accent;
-  const heroImgs = (pf.hero_media || []).map(m => m.preview || m.url).filter(Boolean);
-  const galleryThumbImgs = (pf.hero_media || []).map(m => m.thumb || m.preview || m.url).filter(Boolean);
+  const heroImgs = (pf.hero_media || []).map(m => m.preview || m.url).filter(Boolean).slice(0, 4); // max 4 in slideshow
+  const profilePhotoUrl = pf.profile_photo_url || '';
+
+  /* Gallery uses dedicated gallery_media first, then falls back to all hero_media */
+  const galleryRawImgs = (pf.gallery_media && pf.gallery_media.length)
+    ? pf.gallery_media.map(m => m.preview || m.url).filter(Boolean)
+    : (pf.hero_media || []).map(m => m.preview || m.url).filter(Boolean);
+  const galleryThumbImgs = (pf.gallery_media && pf.gallery_media.length)
+    ? pf.gallery_media.map(m => m.thumb || m.preview || m.url).filter(Boolean)
+    : (pf.hero_media || []).map(m => m.thumb || m.preview || m.url).filter(Boolean);
+
   const heroImg0 = heroImgs[0] || '';
   const logoUrl  = pf.logo_url || '';
   const initials = (pf.name || 'CR').split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
@@ -1985,7 +2038,7 @@ function buildPortfolioHTML(pf) {
       ${pf.monthly_views   ? `<div class="stat"><div class="sv">${esc(pf.monthly_views)}</div><div class="sl2">MONTHLY VIEWS</div></div>` : ''}
     </div>` : '';
 
-  /* ── Gallery flip pages — use hero_media, then dijo section assets, then generic fallback ── */
+  /* ── Gallery flip pages — use gallery_media first, then hero_media, then dijo section assets ── */
   const _dijoGalleryUrl = sa.gallery?.url || sa.hero?.url || '';
   const galleryImgs = galleryThumbImgs.length > 0 ? galleryThumbImgs
     : _dijoGalleryUrl ? [_dijoGalleryUrl,
@@ -2153,7 +2206,12 @@ a{color:inherit;text-decoration:none}
 /* ABOUT BODY */
 .about-body{max-width:1100px;margin:0 auto;padding:48px 60px 56px}
 .about-bio-wrap{margin-top:48px}
+.about-two-col{display:grid;grid-template-columns:1fr auto;gap:48px;align-items:start}
+.about-bio-col{min-width:0}
 .about-bio-text{font-size:16px;color:var(--sub);max-width:660px;line-height:1.85;margin-top:16px}
+.about-photo-col{flex-shrink:0}
+.about-photo-frame{width:220px;height:270px;border-radius:16px;overflow:hidden;border:2px solid var(--bd);box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.about-photo{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
 /* STATS */
 .stats-row{display:flex;gap:2px;flex-wrap:wrap}
 .stat{flex:1;min-width:110px;padding:18px 22px;background:var(--sf);border:1px solid var(--bd);text-align:center}
@@ -2214,6 +2272,16 @@ a{color:inherit;text-decoration:none}
 .fp-dot{width:8px;height:8px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0}
 .fp-dot.active{background:var(--ac);transform:scale(1.35)}
 .fp-dot:hover{background:var(--ac);opacity:.7}
+/* GALLERY GRID CARDS */
+.gallery-grid-wrap{max-width:1100px;margin:0 auto;padding:0 60px 64px}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.gallery-card{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;cursor:pointer;border:1.5px solid var(--bd);transition:.2s}
+.gallery-card:hover{border-color:var(--ac);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.gallery-card img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:.3s}
+.gallery-card:hover img{transform:scale(1.04)}
+.gallery-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s}
+.gallery-card:hover .gallery-card-overlay{opacity:1}
+.gallery-card-overlay span{color:#fff;font-family:var(--fh);font-size:13px;font-weight:700;letter-spacing:.5px}
 /* HOME SOCIAL LINKS */
 .home-socials-wrap{max-width:1100px;margin:0 auto;padding:0 60px 48px}
 .social-links{display:flex;flex-direction:column;gap:9px;max-width:560px}
@@ -2263,6 +2331,8 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
   .nav-hamburger{display:flex}
   .hero-c{padding:60px 20px 40px}
   .about-body{padding:32px 20px 40px}
+  .about-two-col{grid-template-columns:1fr;gap:28px}
+  .about-photo-frame{width:100%;height:220px}
   .home-socials-wrap{padding:0 20px 36px}
   .contact-wrap{margin:0 20px 56px;padding:36px 24px}
   .cf-row{grid-template-columns:1fr}
@@ -2272,6 +2342,8 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
   .fp-book-wrap{width:calc(100vw - 24px);max-width:calc(100vw - 24px)}
   .fp-stage{padding:16px 12px 48px}
   .fp-btn{padding:8px 14px;font-size:12px}
+  .gallery-grid-wrap{padding:0 16px 48px}
+  .gallery-grid{grid-template-columns:repeat(2,1fr)}
   .grid{grid-template-columns:1fr}
 }
 @media(max-width:480px){
@@ -2333,9 +2405,19 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
     <div style="position:relative;z-index:1">
     ${statsHTML}
     <div class="about-bio-wrap">
-      <div class="sec-lbl">About</div>
-      <div class="sec-ttl">${esc(pf.name)}</div>
-      <p class="about-bio-text">${esc(pf.ai_bio || pf.bio || '')}</p>
+      <div class="about-two-col">
+        <div class="about-bio-col">
+          <div class="sec-lbl">About</div>
+          <div class="sec-ttl">${esc(pf.name)}</div>
+          <p class="about-bio-text">${esc(pf.ai_bio || pf.bio || '')}</p>
+        </div>
+        ${(profilePhotoUrl || heroImgs[0]) ? `
+        <div class="about-photo-col">
+          <div class="about-photo-frame">
+            <img src="${esc(profilePhotoUrl || heroImgs[0])}" alt="${esc(pf.name)}" class="about-photo"/>
+          </div>
+        </div>` : ''}
+      </div>
     </div>
     </div>
   </div>
@@ -2434,6 +2516,17 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
       </button>
     </div>
   </div>
+  ${galleryImgs.length > 0 ? `
+  <div class="gallery-grid-wrap">
+    <div class="sec-lbl" style="margin-bottom:18px">All Photos</div>
+    <div class="gallery-grid">
+      ${galleryImgs.map((url, i) => `
+      <div class="gallery-card" onclick="document.querySelectorAll('.fp-btn-prev,.fp-btn-next')[0].closest('.fp-stage').scrollIntoView({behavior:'smooth'});fpGoto(${i})">
+        <img src="${esc(url)}" alt="Photo ${i+1}" loading="lazy"/>
+        <div class="gallery-card-overlay"><span>View ↗</span></div>
+      </div>`).join('')}
+    </div>
+  </div>` : ''}
 </section>
 
 <!-- PAGE: SERVICES -->
@@ -2687,6 +2780,108 @@ function dzDrop(e, type) {
   e.currentTarget.classList.remove("over");
   if (e.dataTransfer.files.length && type === "hero")
     handleHeroUpload({ target: { files: e.dataTransfer.files } });
+  if (e.dataTransfer.files.length && type === "gallery")
+    handleGalleryUpload({ target: { files: e.dataTransfer.files } });
+}
+
+/* ── Gallery media strip ── */
+function renderGalleryMediaStrip(media) {
+  const strip = document.getElementById("galleryMediaStrip");
+  if (!strip) return;
+  strip.innerHTML = "";
+  (media || []).forEach((m, i) => {
+    const thumb = document.createElement("div");
+    thumb.className = "hm-thumb";
+    thumb.innerHTML = `
+      <img src="${m.url}" alt="Gallery ${i+1}" loading="lazy"/>
+      <div class="hm-del" onclick="removeGalleryMedia(${i})">✕</div>`;
+    strip.appendChild(thumb);
+  });
+}
+
+function removeGalleryMedia(idx) {
+  if (!psState.activePortfolio) return;
+  psState.activePortfolio.gallery_media = psState.activePortfolio.gallery_media || [];
+  psState.activePortfolio.gallery_media.splice(idx, 1);
+  renderGalleryMediaStrip(psState.activePortfolio.gallery_media);
+  updatePreviewLive();
+}
+
+/* ── Gallery upload handler ── */
+async function handleGalleryUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length || !psState.activePortfolio) return;
+  psState.activePortfolio.gallery_media = psState.activePortfolio.gallery_media || [];
+
+  for (const file of files) {
+    const rawDataUrl = await new Promise(resolve => {
+      const r = new FileReader();
+      r.onload = e => resolve(e.target.result);
+      r.readAsDataURL(file);
+    });
+
+    const tempItem = { type: 'image', url: rawDataUrl, _uploading: true };
+    psState.activePortfolio.gallery_media.push(tempItem);
+    renderGalleryMediaStrip(psState.activePortfolio.gallery_media);
+    updatePreviewLive();
+    showToast('Uploading gallery image…');
+
+    try {
+      const compressed = await compressImageLocally(rawDataUrl);
+      const urls = await uploadToCloudinary(compressed, 'gallery', 'gallery');
+      if (urls) {
+        tempItem.url      = urls.preview;
+        tempItem.thumb    = urls.thumb;
+        tempItem.original = urls.original;
+        delete tempItem._uploading;
+        renderGalleryMediaStrip(psState.activePortfolio.gallery_media);
+        updatePreviewLive();
+        showToast('✓ Gallery image uploaded');
+      } else {
+        showToast('Upload failed — image kept as preview only');
+      }
+    } catch (err) {
+      console.warn('[handleGalleryUpload] Upload error:', err);
+      showToast('Upload failed — image kept as preview only');
+    }
+  }
+}
+
+/* ── Profile photo upload handler ── */
+async function handleProfilePhotoUpload(event) {
+  const file = (event.target.files || [])[0];
+  if (!file || !psState.activePortfolio) return;
+
+  const rawDataUrl = await new Promise(resolve => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.readAsDataURL(file);
+  });
+
+  // Show preview immediately
+  window._profilePhotoDataUrl = rawDataUrl;
+  psState.activePortfolio.profile_photo_url = rawDataUrl;
+  const ppPrev = document.getElementById('profilePhotoPrev');
+  if (ppPrev) { ppPrev.src = rawDataUrl; ppPrev.style.display = 'block'; }
+  const ppPlaceholder = document.getElementById('profilePhotoPlaceholder');
+  if (ppPlaceholder) ppPlaceholder.style.display = 'none';
+  updatePreviewLive();
+  showToast('Uploading profile photo…');
+
+  try {
+    const compressed = await compressImageLocally(rawDataUrl, 800);
+    const urls = await uploadToCloudinary(compressed, 'profile', 'profile');
+    if (urls) {
+      window._profilePhotoDataUrl           = urls.preview;
+      psState.activePortfolio.profile_photo_url = urls.preview;
+      if (ppPrev) ppPrev.src = urls.preview;
+      updatePreviewLive();
+      showToast('✓ Profile photo uploaded');
+    }
+  } catch (err) {
+    console.warn('[handleProfilePhotoUpload] Upload error:', err);
+    showToast('Profile photo kept as local preview only');
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
