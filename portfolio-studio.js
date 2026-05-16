@@ -1731,6 +1731,14 @@ function populateBuilder(pf) {
     const ppPlaceholder = document.getElementById('profilePhotoPlaceholder');
     if (ppPlaceholder) ppPlaceholder.style.display = 'none';
   }
+  // Restore logo preview + global so save/collectOnboardData picks it up
+  if (pf.logo_url) {
+    window._beLogoDataUrl = pf.logo_url;
+    const bePrev = document.getElementById('beLogoPreview');
+    if (bePrev) { bePrev.src = pf.logo_url; bePrev.style.display = 'block'; bePrev.style.opacity = '1'; }
+    const bePlaceholder = document.getElementById('beLogoPlaceholder');
+    if (bePlaceholder) bePlaceholder.style.display = 'none';
+  }
   rebuildServiceRows(pf.services || []);
   rebuildCatalogueRows(pf.catalogue || []);
   checkStripeReturn();
