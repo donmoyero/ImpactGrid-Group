@@ -704,6 +704,7 @@ function nav(id,el){
     eventactivity:'loadEventActivity',
     events:'loadEvents',createevent:'setDefaultExpiry',
     uploadphotos:'loadUploadPhotos',
+    downloadrequests:'loadDownloadRequests',
     reviews:'loadEventReviews'
   };
   if(loaders[id]&&window[loaders[id]]) window[loaders[id]]();
@@ -719,6 +720,9 @@ function toast(icon,msg,sub,persist){
   t.classList.add('show');
   if(!persist) setTimeout(function(){t.classList.remove('show');},3500);
 }
+
+/* ══ ALIAS — events-pages.html calls createEvent(), script exports igCreateEvent ══ */
+window.createEvent = function(){ if(window.igCreateEvent) window.igCreateEvent(); };
 
 /* ══ STATS ══ */
 async function loadStats(){
@@ -1132,41 +1136,53 @@ async function igLogout(){
    Falls back gracefully if table doesn't exist yet.
 ══════════════════════════════════════════════════════ */
 async function loadEventActivity(){
-  var c        = getSupabase();
-  var eventId  = (document.getElementById('activity-event-select')||{}).value || '';
+  var eventId = (document.getElementById('activity-event-select')||{}).value || '';
 
-  /* ── Populate event dropdown if empty ── */
+  /* ── Populate event dropdown from Firebase if empty ── */
   var sel = document.getElementById('activity-event-select');
   if(sel && sel.options.length <= 1){
     try{
-      var { data: evList } = await c.from('events').select('id,name').order('created_at',{ascending:false});
-      (evList||[]).forEach(function(ev){
+      var evSnap = await db.collection('events').orderBy('created_at','desc').get();
+      evSnap.docs.forEach(function(d){
         var o = document.createElement('option');
-        o.value = ev.id; o.textContent = ev.name;
+        o.value = d.id; o.textContent = d.data().name;
         sel.appendChild(o);
       });
       eventId = sel.value;
     }catch(e){}
   }
 
-  /* ── Load visits ── */
+  /* ── Load visits from Firebase ── */
   try{
-    var visitsQ = c.from('event_page_visits').select('*').order('visited_at',{ascending:false}).limit(500);
-    if(eventId) visitsQ = visitsQ.eq('event_id', eventId);
-    var { data: visits, error: vErr } = await visitsQ;
-
-    if(vErr && vErr.code === '42P01'){
-      /* Table doesn't exist yet — show setup prompt */
-      renderActivitySetupPrompt();
-    } else {
-      visits = visits || [];
-      renderActivityStats(visits, eventId);
-      renderDeviceBreakdown(visits);
-      renderLocationBreakdown(visits);
-      renderVisitLog(visits);
+    var visitsSnap;
+    try{
+      /* Try filtered + ordered (requires composite index if filtering by event_id) */
+      var visitsRef = eventId
+        ? db.collection('event_page_visits').where('event_id','==',eventId).orderBy('visited_at','desc').limit(500)
+        : db.collection('event_page_visits').orderBy('visited_at','desc').limit(500);
+      visitsSnap = await visitsRef.get();
+    }catch(idxErr){
+      /* Composite index not ready — fetch all and filter client-side */
+      console.warn('[Activity] index not ready, falling back to full fetch:', idxErr.message);
+      visitsSnap = await db.collection('event_page_visits').limit(500).get();
     }
+    var visits = visitsSnap.docs.map(function(d){
+      var v = Object.assign({ id: d.id }, d.data());
+      if(v.visited_at && v.visited_at.toDate) v.visited_at = v.visited_at.toDate().toISOString();
+      return v;
+    });
+    if(eventId) visits = visits.filter(function(v){ return v.event_id === eventId; });
+    visits.sort(function(a,b){ return (b.visited_at||'') > (a.visited_at||'') ? 1 : -1; });
+    renderActivityStats(visits, eventId);
+    renderDeviceBreakdown(visits);
+    renderLocationBreakdown(visits);
+    renderVisitLog(visits);
   }catch(e){
-    renderActivitySetupPrompt();
+    renderActivityStats([], eventId);
+    renderDeviceBreakdown([]);
+    renderLocationBreakdown([]);
+    renderVisitLog([]);
+    console.warn('[Activity] visits error:', e.message);
   }
 
   /* ── Load downloads log ── */
@@ -1275,22 +1291,27 @@ async function loadDownloadsLog(eventId){
   if(!el) return;
   el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
   try{
-    var q = getSupabase()
-      .from('photo_downloads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-    if(eventId) q = q.eq('event_id', eventId);
-    var { data, error } = await q;
-
-    if(error && error.code === '42P01'){
-      el.innerHTML = '<div class="empty"><div class="empty-ico">⬇</div><div class="empty-txt">photo_downloads table not set up yet. Downloads will appear here automatically once guests start downloading.</div></div>';
-      return;
+    var dlSnap;
+    try{
+      var dlRef = eventId
+        ? db.collection('photo_downloads').where('event_id','==',eventId).orderBy('created_at','desc').limit(200)
+        : db.collection('photo_downloads').orderBy('created_at','desc').limit(200);
+      dlSnap = await dlRef.get();
+    }catch(idxErr){
+      console.warn('[Downloads] index not ready, falling back:', idxErr.message);
+      dlSnap = await db.collection('photo_downloads').limit(200).get();
     }
-    if(error) throw error;
-    renderDownloadsLog(data || []);
+    var data = dlSnap.docs.map(function(d){
+      var r = Object.assign({ id: d.id }, d.data());
+      if(r.created_at && r.created_at.toDate) r.created_at = r.created_at.toDate().toISOString();
+      return r;
+    });
+    if(eventId) data = data.filter(function(r){ return r.event_id === eventId; });
+    data.sort(function(a,b){ return (b.created_at||'') > (a.created_at||'') ? 1 : -1; });
+    renderDownloadsLog(data);
   }catch(e){
     el.innerHTML = '<div class="empty"><div class="empty-txt">Error: ' + esc(e.message) + '</div></div>';
+    console.warn('[Downloads] error:', e.message);
   }
 }
 
