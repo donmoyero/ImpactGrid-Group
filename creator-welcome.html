@@ -89,19 +89,20 @@
 .img-caption {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  padding: 80px 36px 36px;
-  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
+  padding: 100px 36px 36px;
+  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 50%, transparent 100%);
   z-index: 2;
 }
 .img-caption-tag {
   font-family: var(--fm); font-size: 10px; font-weight: 700;
   letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(255,255,255,0.7); margin-bottom: 8px;
+  color: rgba(255,255,255,0.85); margin-bottom: 8px;
 }
 .img-caption-title {
-  font-family: var(--fd); font-size: clamp(22px,2.5vw,34px);
+  font-family: var(--fd); font-size: clamp(20px,2.2vw,32px);
   font-weight: 900; letter-spacing: -0.03em; line-height: 1.1;
   color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
 }
 
 /* ══════════════════════════════════════
@@ -264,6 +265,9 @@
 .dot-pip {
   width: 8px; height: 8px; border-radius: 99px;
   background: var(--border2); transition: width 0.3s, background 0.3s; cursor: pointer;
+  border: none; padding: 0; flex-shrink: 0;
+  /* Button reset */
+  appearance: none; -webkit-appearance: none;
 }
 .dot-pip.on { width: 24px; background: var(--gold); }
 
@@ -286,6 +290,27 @@
 .s2-in .feat-box:nth-child(2)      { animation: enterRight 0.45s 0.17s cubic-bezier(.16,1,.3,1) both; }
 .s2-in .feat-box:nth-child(3)      { animation: enterRight 0.45s 0.24s cubic-bezier(.16,1,.3,1) both; }
 .s2-in .feat-box:nth-child(4)      { animation: enterRight 0.45s 0.31s cubic-bezier(.16,1,.3,1) both; }
+
+/* ══════════════════════════════════════
+   TABLET (861px–1100px) — prevent caption overlap
+══════════════════════════════════════ */
+@media (min-width: 861px) and (max-width: 1100px) {
+  .split {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+  .img-caption {
+    padding: 60px 22px 22px;
+  }
+  .img-caption-title {
+    font-size: clamp(16px, 2vw, 24px);
+  }
+  .split-left {
+    padding: 32px 28px 60px;
+  }
+  .hero-title {
+    font-size: clamp(36px, 4.5vw, 54px);
+  }
+}
 
 /* ══════════════════════════════════════
    MOBILE  (≤ 860px — full-bleed hero)
@@ -324,14 +349,25 @@
     flex: 1;
   }
 
-  /* Strong gradient scrim so text is always readable */
+  /* Strong gradient scrim so text is always readable — WCAG AA ≥4.5:1 */
   #slide1 .split-right::before {
     background: linear-gradient(
       to top,
-      rgba(0,0,0,0.85) 0%,
-      rgba(0,0,0,0.45) 45%,
-      rgba(0,0,0,0.1)  100%
+      rgba(0,0,0,0.92) 0%,
+      rgba(0,0,0,0.72) 40%,
+      rgba(0,0,0,0.40) 70%,
+      rgba(0,0,0,0.10) 100%
     );
+  }
+
+  /* Extra reinforcement scrim behind the text block itself */
+  #slide1 .split-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 65%);
+    z-index: -1;
+    pointer-events: none;
   }
 
   /* Content floats over the image, pinned to bottom */
@@ -349,17 +385,20 @@
 
   /* Force text white so it shows on the dark scrim */
   #slide1 .hero-title  { color: #fff; font-size: clamp(38px, 10vw, 54px); margin-bottom: 12px; }
-  #slide1 .hero-desc   { color: rgba(255,255,255,0.78); margin-bottom: 20px; max-width: 100%; }
   #slide1 .hero-eyebrow { margin-bottom: 14px; }
 
   #slide1 .hero-stats {
-    border-color: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.25);
     gap: 24px;
     margin-bottom: 24px;
     padding: 14px 0;
   }
   #slide1 .hero-stat-n { color: #fff; font-size: 22px; }
-  #slide1 .hero-stat-l { color: rgba(255,255,255,0.55); }
+  #slide1 .hero-stat-l { color: rgba(255,255,255,0.80); }
+
+  /* Eyebrow text — was var(--text3) which fails on dark images */
+  #slide1 .hero-eyebrow span { color: rgba(255,255,255,0.75) !important; }
+  #slide1 .hero-desc { color: rgba(255,255,255,0.85); margin-bottom: 20px; max-width: 100%; }
 
   /* Caption hidden on mobile (content replaces it) */
   .img-caption { display: none; }
@@ -430,6 +469,16 @@
   .feat-thumb { height: 76px; }
   #slide2 .split-left { padding: 14px 14px 80px; }
 }
+
+/* ── Screen-reader only ── */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+/* ── Focus styles — keyboard accessibility ── */
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px;}
+:focus:not(:focus-visible){outline:none;}
+.feat-box:focus-visible{outline:2px solid var(--gold);outline-offset:2px;box-shadow:0 0 0 5px rgba(201,126,8,0.18);}
+.dot-pip:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:99px;}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:4px;}
 </style>
 </head>
 <body>
@@ -454,7 +503,7 @@
             <span style="font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;">Refreshed every 30 min</span>
           </div>
 
-          <div class="hero-title">What's<br/>Trending</div>
+          <h1 class="hero-title">What's<br/>Trending</h1>
 
           <p class="hero-desc">TikTok · YouTube · Google — see what's blowing up before everyone else does. Updated every 30 minutes, all day.</p>
 
@@ -504,8 +553,8 @@
             />
           </div>
           <div class="img-caption" style="grid-column:1/-1;">
-            <div class="img-caption-tag">Trending Intelligence</div>
-            <div class="img-caption-title">Know what's blowing up<br/>before you post</div>
+            <p class="img-caption-tag">Trending Intelligence</p>
+            <h2 class="img-caption-title">Know what's blowing up<br/>before you post</h2>
           </div>
         </div>
 
@@ -519,10 +568,10 @@
         <!-- LEFT: Tools grid -->
         <div class="split-left">
 
-          <button class="back-btn" onclick="goSlide(0)">← Back</button>
+          <button class="back-btn" onclick="goSlide(0)" aria-label="Back to What's Trending">← Back</button>
 
           <div class="tools-header">
-            <div class="tools-title">Your Creator<br/>Tools</div>
+            <h2 class="tools-title">Your Creator<br/>Tools</h2>
             <p class="tools-sub">Everything you need to grow — pick a tool and start right now.</p>
           </div>
 
@@ -537,7 +586,7 @@
                 <span class="chip chip-gold" style="font-size:8px;padding:2px 7px;">📊</span>
               </div>
               <div class="feat-desc">My Overview — your trends at a glance</div>
-              <span class="feat-arrow">→</span>
+              <span class="feat-arrow" aria-hidden="true">→</span>
             </a>
 
             <a href="creator-studio.html?tab=calendar" class="feat-box" style="--ac:var(--green)" onclick="try{sessionStorage.setItem('ig_from_welcome','1');}catch(e){}">
@@ -549,7 +598,7 @@
                 <span class="chip chip-green" style="font-size:8px;padding:2px 7px;">AI</span>
               </div>
               <div class="feat-desc">Auto-filled week, best times + alerts</div>
-              <span class="feat-arrow">→</span>
+              <span class="feat-arrow" aria-hidden="true">→</span>
             </a>
 
             <a href="portfolio-studio.html" class="feat-box" style="--ac:var(--purple)">
@@ -561,7 +610,7 @@
                 <span class="chip chip-purple" style="font-size:8px;padding:2px 7px;">New</span>
               </div>
               <div class="feat-desc">One link. Every brand deal.</div>
-              <span class="feat-arrow">→</span>
+              <span class="feat-arrow" aria-hidden="true">→</span>
             </a>
 
             <a href="carousel-studio.html" class="feat-box" style="--ac:var(--blue)">
@@ -573,7 +622,7 @@
                 <span class="chip chip-blue" style="font-size:8px;padding:2px 7px;">AI</span>
               </div>
               <div class="feat-desc">AI slides, styled and ready to post</div>
-              <span class="feat-arrow">→</span>
+              <span class="feat-arrow" aria-hidden="true">→</span>
             </a>
 
           </div>
@@ -613,16 +662,16 @@
 </div><!-- /slider-root -->
 
 <!-- Dots (desktop only) -->
-<div class="slide-dots">
-  <div class="dot-pip on" onclick="goSlide(0)"></div>
-  <div class="dot-pip"    onclick="goSlide(1)"></div>
-</div>
+<nav class="slide-dots" aria-label="Slide navigation">
+  <button class="dot-pip on" onclick="goSlide(0)" aria-label="Go to slide 1: What's Trending" aria-current="true"></button>
+  <button class="dot-pip"    onclick="goSlide(1)" aria-label="Go to slide 2: Your Creator Tools"></button>
+</nav>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="plan-config.js"></script>
-<script src="supabase-config.js"></script>
-<script src="auth.js"></script>
-<script src="nav.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<script src="plan-config.js" defer></script>
+<script src="supabase-config.js" defer></script>
+<script src="auth.js" defer></script>
+<script src="nav.js" defer></script>
 
 <script>
 // Theme
@@ -630,7 +679,13 @@
   try { var t=localStorage.getItem('ig_theme'); if(t) document.documentElement.setAttribute('data-theme',t); } catch(e){}
 })();
 
-if (typeof renderNav==='function') renderNav('creator-welcome.html');
+if (typeof renderNav==='function') {
+  renderNav('creator-welcome.html');
+} else {
+  document.addEventListener('DOMContentLoaded', function(){
+    if (typeof renderNav==='function') renderNav('creator-welcome.html');
+  });
+}
 
 // ── Mobile detection ──
 function isMobile() { return window.innerWidth <= 860; }
@@ -645,12 +700,14 @@ function goSlide(n) {
   if (n === current) return;
   current = n;
   if (isMobile()) {
-    // Vertical scroll between slides on mobile — use px to avoid browser chrome offset
     track.style.transform = n === 1 ? 'translateY(-' + window.innerHeight + 'px)' : 'translateY(0)';
   } else {
     track.style.transform = n === 1 ? 'translateX(-50%)' : 'translateX(0)';
   }
-  pips.forEach(function(p,i){ p.classList.toggle('on', i===n); });
+  pips.forEach(function(p,i){
+    p.classList.toggle('on', i===n);
+    p.setAttribute('aria-current', i===n ? 'true' : 'false');
+  });
   if (n === 1) {
     slide2.classList.remove('s2-in');
     void slide2.offsetWidth;
