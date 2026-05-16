@@ -1392,8 +1392,12 @@ async function runTrendPrediction() {
       var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
 
       el.innerHTML =
-        '<div style="font-family:\'Syne\',sans-serif;font-size:22px;font-weight:900;line-height:1.2;color:var(--text1)">'
-        +   escH(pick.topic)
+        '<div style="display:flex;flex-direction:column;gap:7px">'
+        + '<div style="font-family:\'Syne\',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text1)">' + escH(pick.topic) + '</div>'
+        + '<div style="display:flex;gap:6px;align-items:center">'
+        +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">' + platIcon + ' ' + escH(pick.platLabel) + '</span>'
+        +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
+        + '</div>'
         + '</div>';
     _aiCacheSet(_predKey, el.innerHTML);
 
@@ -1410,8 +1414,12 @@ async function runTrendPrediction() {
   var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
 
   el.innerHTML =
-    '<div style="font-family:\'Syne\',sans-serif;font-size:22px;font-weight:900;line-height:1.2;color:var(--text1)">'
-    +   escH(pick.topic)
+    '<div style="display:flex;flex-direction:column;gap:7px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text1)">' + escH(pick.topic) + '</div>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">' + platIcon + ' ' + escH(pick.platLabel) + '</span>'
+    +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
+    + '</div>'
     + '</div>';
 }
 
