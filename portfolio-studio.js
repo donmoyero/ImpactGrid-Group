@@ -2634,11 +2634,15 @@ function openPreviewTab() {
 /* ══════════════════════════════════════════════════════════
    UPLOAD
 ══════════════════════════════════════════════════════════ */
-function handleHeroUpload(event) {
-  Array.from(event.target.files || []).forEach(async file => {
-    if (!psState.activePortfolio) return;
-    psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
+async function handleHeroUpload(event) {
+  // Capture files synchronously BEFORE any await — on mobile the browser
+  // garbage-collects event.target almost immediately after the event fires,
+  // so forEach+async drops the file reference before FileReader can read it.
+  const files = Array.from(event.target.files || []);
+  if (!files.length || !psState.activePortfolio) return;
+  psState.activePortfolio.hero_media = psState.activePortfolio.hero_media || [];
 
+  for (const file of files) {
     // 1. Show a raw preview immediately (feels instant to the user)
     const rawDataUrl = await new Promise(resolve => {
       const r = new FileReader();
@@ -2665,7 +2669,7 @@ function handleHeroUpload(event) {
         delete tempItem._uploading;
         renderHeroMediaStrip(psState.activePortfolio.hero_media);
         updatePreviewLive();
-        showToast('✓ Image uploaded and saved');
+        showToast('✓ Image uploaded');
       } else {
         showToast('Upload failed — image kept as preview only');
       }
@@ -2673,7 +2677,7 @@ function handleHeroUpload(event) {
       console.warn('[handleHeroUpload] Upload error:', err);
       showToast('Upload failed — image kept as preview only');
     }
-  });
+  }
 }
 
 function dzOver(e, el)   { e.preventDefault(); el.classList.add("over"); }
