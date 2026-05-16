@@ -543,7 +543,7 @@ body::before{
 .footer-tbtn{background:none;border:1px solid var(--border);color:var(--text2);font-size:12px;padding:6px 14px;border-radius:99px;cursor:pointer;font-family:var(--fb);transition:all .2s;}
 .footer-tbtn:hover{border-color:var(--gold);color:var(--gold);}
 
-/* ── Screen-reader only utility ── */
+/* ── Screen-reader only ── */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
 /* ── UTIL ── */
@@ -552,32 +552,12 @@ body::before{
 /* ══════════════════════════════════════
    FOCUS STYLES — keyboard accessibility
 ══════════════════════════════════════ */
-:focus-visible{
-  outline:2px solid var(--gold);
-  outline-offset:3px;
-  border-radius:4px;
-}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px;}
 :focus:not(:focus-visible){outline:none;}
-.card:focus-visible,
-.bento-card:focus-visible{
-  outline:2px solid var(--gold);
-  outline-offset:2px;
-  box-shadow:0 0 0 5px var(--gold-dim);
-}
-.btn-enter:focus-visible,
-.btn-ghost:focus-visible{
-  outline:2px solid var(--gold);
-  outline-offset:4px;
-  box-shadow:0 0 0 5px var(--gold-dim);
-}
-.newsletter-btn:focus-visible{
-  outline:2px solid #07090f;
-  outline-offset:2px;
-}
-.footer-tbtn:focus-visible{
-  outline:2px solid var(--gold);
-  outline-offset:3px;
-}
+.card:focus-visible,.bento-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px;box-shadow:0 0 0 5px var(--gold-dim);}
+.btn-enter:focus-visible,.btn-ghost:focus-visible{outline:2px solid var(--gold);outline-offset:4px;box-shadow:0 0 0 5px var(--gold-dim);}
+.newsletter-btn:focus-visible{outline:2px solid #07090f;outline-offset:2px;}
+.footer-tbtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 
 /* ══════════════════════════════════════
    ANIMATIONS
@@ -784,7 +764,7 @@ body::before{
         <div class="demo-topbar-title">▶ ImpactGrid — Live Demo</div>
         <div class="demo-live-dot">Live</div>
       </div>
-      <video id="demoVideo" src="https://res.cloudinary.com/dsaym55pt/video/upload/v1777601562/impactgrid-demo.mp4_eyjt6g.mp4" autoplay loop muted playsinline preload="auto"></video>
+      <video id="demoVideo" src="https://res.cloudinary.com/dsaym55pt/video/upload/v1777601562/impactgrid-demo.mp4_eyjt6g.mp4" autoplay loop muted playsinline preload="none" loading="lazy"></video>
     </div>
   </div>
 </div>
@@ -865,11 +845,12 @@ body::before{
 </footer>
 
 <!-- SCRIPTS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="plan-config.js"></script>
-<script src="supabase-config.js"></script>
-<script src="auth.js"></script>
-<script src="nav.js"></script>
+<!-- SCRIPTS — supabase deferred so it never blocks paint -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<script src="plan-config.js" defer></script>
+<script src="supabase-config.js" defer></script>
+<script src="auth.js" defer></script>
+<script src="nav.js" defer></script>
 
 <script>
 // Theme
@@ -886,7 +867,14 @@ function goCreator(e, destination) {
 }
 
 // Nav
-if(typeof renderNav==='function') renderNav('index.html');
+// Nav — deferred, so wait for it
+if(typeof renderNav==='function'){
+  renderNav('index.html');
+} else {
+  document.addEventListener('DOMContentLoaded', function(){
+    if(typeof renderNav==='function') renderNav('index.html');
+  });
+}
 
 /* ── THEME ── */
 var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1002,83 +990,74 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').catch(function(){});
 }
 </script>
-<script src="impactgrid-chat-bubble.js"></script>
+<script src="impactgrid-chat-bubble.js" defer></script>
 <script>
-/* ══════════════════════════════════════
-   CHAT WIDGET — accessible dialog patch
-   Runs after chat bubble script loads.
-   Adds role=dialog, aria-modal, focus trap,
-   aria-label on close/open buttons,
-   and prevents chat covering primary CTAs.
-══════════════════════════════════════ */
-(function patchChatWidget(){
-  function patch(){
-    /* ── Find the chat toggle / launcher button ── */
-    var launchers = document.querySelectorAll(
-      '[class*="chat-btn"],[class*="chat-bubble"],[class*="chat-toggle"],[id*="chat-btn"],[id*="chatBtn"],[id*="chat-toggle"]'
-    );
-    launchers.forEach(function(btn){
-      if(!btn.getAttribute('aria-label')) btn.setAttribute('aria-label','Open chat with Dijo');
-      btn.setAttribute('aria-haspopup','dialog');
-    });
-
-    /* ── Find the chat panel ── */
-    var panels = document.querySelectorAll(
-      '[class*="chat-panel"],[class*="chat-window"],[class*="chat-container"],[id*="chatPanel"],[id*="chat-panel"],[id*="chatWindow"]'
-    );
-    panels.forEach(function(panel){
-      if(panel.getAttribute('role') === 'dialog') return; // already patched
-      panel.setAttribute('role','dialog');
-      panel.setAttribute('aria-modal','true');
-      panel.setAttribute('aria-label','Chat with Dijo AI');
-
-      /* ── Label close buttons inside panel ── */
-      var closeBtns = panel.querySelectorAll(
-        '[class*="close"],[class*="dismiss"],[aria-label*="close"],[id*="close"]'
-      );
-      closeBtns.forEach(function(cb){
-        if(!cb.getAttribute('aria-label')) cb.setAttribute('aria-label','Close chat');
-      });
-
-      /* ── Focus trap ── */
-      function getFocusable(){
-        return Array.from(panel.querySelectorAll(
-          'a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
-        )).filter(function(el){ return !el.closest('[hidden]') && el.offsetParent !== null; });
-      }
-      panel.addEventListener('keydown',function(e){
-        if(e.key !== 'Tab') return;
-        var focusable = getFocusable();
-        if(!focusable.length) return;
-        var first = focusable[0], last = focusable[focusable.length-1];
-        if(e.shiftKey){ if(document.activeElement===first){ e.preventDefault(); last.focus(); } }
-        else { if(document.activeElement===last){ e.preventDefault(); first.focus(); } }
-      });
-    });
-
-    /* ── Observe for dynamically opened panel ── */
-    var observer = new MutationObserver(function(){ patch(); });
-    observer.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['class','style','hidden'] });
-  }
-
-  /* Run once DOM + chat script are ready */
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', patch);
-  } else {
-    setTimeout(patch, 300);
-  }
-})();
-</script>
-<script>
+/* ── VIDEO — only play when scrolled into view ── */
 (function(){
   var v = document.getElementById('demoVideo');
   if(!v) return;
   v.muted = true;
+  v.preload = 'none';
+
   function tryPlay(){ v.play().catch(function(){}); }
-  v.addEventListener('loadeddata', tryPlay);
-  v.addEventListener('ended', function(){ v.currentTime = 0; tryPlay(); });
-  v.addEventListener('pause', function(){ if(!v.ended) tryPlay(); });
-  window.addEventListener('load', tryPlay);
+
+  // Only load + play when the video wrapper is visible
+  if('IntersectionObserver' in window){
+    var vio = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          v.preload = 'auto';
+          v.load();
+          v.addEventListener('loadeddata', tryPlay, {once:true});
+          vio.disconnect();
+        }
+      });
+    },{threshold:0.25});
+    vio.observe(v);
+  } else {
+    // Fallback: load on window load
+    window.addEventListener('load', function(){ v.preload='auto'; v.load(); tryPlay(); });
+  }
+
+  v.addEventListener('ended', function(){ v.currentTime=0; tryPlay(); });
+  v.addEventListener('pause',  function(){ if(!v.ended) tryPlay(); });
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════
+   CHAT WIDGET — accessible dialog patch
+══════════════════════════════════════ */
+(function patchChatWidget(){
+  function patch(){
+    var launchers = document.querySelectorAll('[class*="chat-btn"],[class*="chat-bubble"],[class*="chat-toggle"],[id*="chat-btn"],[id*="chatBtn"],[id*="chat-toggle"]');
+    launchers.forEach(function(btn){
+      if(!btn.getAttribute('aria-label')) btn.setAttribute('aria-label','Open chat with Dijo');
+      btn.setAttribute('aria-haspopup','dialog');
+    });
+    var panels = document.querySelectorAll('[class*="chat-panel"],[class*="chat-window"],[class*="chat-container"],[id*="chatPanel"],[id*="chat-panel"],[id*="chatWindow"]');
+    panels.forEach(function(panel){
+      if(panel.getAttribute('role')==='dialog') return;
+      panel.setAttribute('role','dialog');
+      panel.setAttribute('aria-modal','true');
+      panel.setAttribute('aria-label','Chat with Dijo AI');
+      panel.querySelectorAll('[class*="close"],[class*="dismiss"]').forEach(function(cb){
+        if(!cb.getAttribute('aria-label')) cb.setAttribute('aria-label','Close chat');
+      });
+      function getFocusable(){
+        return Array.from(panel.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+          .filter(function(el){ return el.offsetParent!==null; });
+      }
+      panel.addEventListener('keydown',function(e){
+        if(e.key!=='Tab') return;
+        var f=getFocusable(); if(!f.length) return;
+        if(e.shiftKey){ if(document.activeElement===f[0]){e.preventDefault();f[f.length-1].focus();} }
+        else { if(document.activeElement===f[f.length-1]){e.preventDefault();f[0].focus();} }
+      });
+    });
+  }
+  setTimeout(patch, 400);
+  new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});
 })();
 </script>
 </body>
