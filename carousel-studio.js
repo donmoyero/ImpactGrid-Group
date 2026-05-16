@@ -1016,9 +1016,11 @@ function renderSlide(){
       showLayout('sEditorialCover');
       ecEl.innerHTML='';
       ecEl.style.cssText='position:absolute;inset:0;z-index:4;';
+      /* gradient — stronger at bottom to protect text stack */
       var ecOv=document.createElement('div');
-      ecOv.style.cssText='position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.04) 100%);z-index:1;pointer-events:none;';
+      ecOv.style.cssText='position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.30) 50%,rgba(0,0,0,.04) 100%);z-index:1;pointer-events:none;';
       ecEl.appendChild(ecOv);
+      /* top bar */
       var ecBadge=document.createElement('div');
       ecBadge.textContent='Page '+String(ST.cur+1).padStart(2,'0');
       ecBadge.style.cssText='position:absolute;top:14px;left:14px;z-index:2;font-size:10px;font-family:'+getFont('body')+';font-weight:400;color:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.6);border-radius:40px;padding:4px 14px;letter-spacing:.3px;';
@@ -1027,30 +1029,36 @@ function renderSlide(){
       ecBrand.textContent=ST.brand||'ImpactGrid';
       ecBrand.style.cssText='position:absolute;top:16px;right:16px;z-index:2;font-size:11px;font-family:'+getFont('body')+';font-weight:400;color:rgba(255,255,255,.88);letter-spacing:.4px;';
       ecEl.appendChild(ecBrand);
+      /* bottom content block — single flex column, no overlapping absolutes */
+      var ecBottom=document.createElement('div');
+      ecBottom.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:2;padding:0 18px 14px;display:flex;flex-direction:column;gap:0;';
       var words2=(slide.headline||'3 Ways to Style Your Own Home').split(' ');
       var scriptWordCount=Math.min(2,Math.ceil(words2.length/3));
       var normalWords=words2.slice(0,-scriptWordCount);
       var scriptWords=words2.slice(-scriptWordCount);
-      var titleFontSz=Math.min(62,Math.max(34,Math.round(500/Math.max(slide.headline.length,6))));
-      var ecTitle=document.createElement('div');
-      ecTitle.style.cssText='position:absolute;bottom:50px;left:18px;right:18px;z-index:2;';
-      ecTitle.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(normalWords.join(' '))+'</div>'
-        +'<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(titleFontSz+4)+'px;font-style:italic;font-weight:400;color:#fff;line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.4);">'+esc(scriptWords.join(' '))+'</div>';
-      ecEl.appendChild(ecTitle);
+      var titleFontSz=Math.min(52,Math.max(26,Math.round(440/Math.max(slide.headline.length,6))));
+      var ecTitleWrap=document.createElement('div');
+      ecTitleWrap.style.cssText='margin-bottom:8px;';
+      ecTitleWrap.innerHTML='<div class="s-headline" style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+titleFontSz+'px;font-weight:400;color:#fff;line-height:1.05;text-shadow:0 2px 20px rgba(0,0,0,.5);">'+esc(normalWords.join(' '))+'</div>'
+        +'<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:'+(titleFontSz+4)+'px;font-style:italic;font-weight:400;color:#fff;line-height:1.05;text-shadow:0 2px 20px rgba(0,0,0,.5);">'+esc(scriptWords.join(' '))+'</div>';
+      ecBottom.appendChild(ecTitleWrap);
+      var ecRule=document.createElement('div');
+      ecRule.style.cssText='width:28px;height:1px;background:rgba(255,255,255,.45);margin-bottom:8px;flex-shrink:0;';
+      ecBottom.appendChild(ecRule);
       if(slide.body){
         var ecBody=document.createElement('div');
-        ecBody.style.cssText='position:absolute;bottom:18px;left:18px;right:18px;z-index:2;font-size:11px;font-family:'+getFont('body')+';color:rgba(255,255,255,.75);line-height:1.55;';
+        ecBody.className='s-body';
+        ecBody.style.cssText='font-size:11px;font-family:'+getFont('body')+';color:rgba(255,255,255,.78);line-height:1.55;margin-bottom:10px;';
         ecBody.textContent=slide.body;
-        ecEl.appendChild(ecBody);
+        ecBottom.appendChild(ecBody);
       }
-      var ecHandle=document.createElement('div');
-      ecHandle.textContent='@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup');
-      ecHandle.style.cssText='position:absolute;bottom:16px;left:18px;z-index:2;font-size:10px;font-family:'+getFont('body')+';color:rgba(255,255,255,.65);letter-spacing:.2px;';
-      ecEl.appendChild(ecHandle);
-      var ecStars=document.createElement('div');
-      ecStars.innerHTML='✽ ✽ ✽';
-      ecStars.style.cssText='position:absolute;bottom:14px;right:16px;z-index:2;font-size:13px;color:rgba(255,255,255,.55);letter-spacing:5px;';
-      ecEl.appendChild(ecStars);
+      /* footer row — @handle left, ✽ right — both in same line, no overlap */
+      var ecFoot=document.createElement('div');
+      ecFoot.style.cssText='display:flex;justify-content:space-between;align-items:center;';
+      ecFoot.innerHTML='<span style="font-size:10px;font-family:'+getFont('body')+';color:rgba(255,255,255,.60);letter-spacing:.2px;">@'+(ST.brand?ST.brand.toLowerCase().replace(/\s+/g,''):'impactgridgroup')+'</span>'
+        +'<span style="font-size:13px;color:rgba(255,255,255,.50);letter-spacing:5px;">✽ ✽ ✽</span>';
+      ecBottom.appendChild(ecFoot);
+      ecEl.appendChild(ecBottom);
       break;
     }
 
@@ -1159,10 +1167,16 @@ function renderSlide(){
 
   } /* end switch */
 
-  document.getElementById('sNum').textContent=(ST.cur+1)+' / '+ST.slides.length;
-  var brandEl=document.getElementById('sBrand');
   var editorialLayouts=['EDITORIAL_COVER','EDITORIAL_COLLAGE','EDITORIAL_COLLAGE_3','HABIT_COVER'];
-  brandEl.textContent=editorialLayouts.indexOf(layout)===-1?(ST.brand||''):'';
+  var isEditorial=editorialLayouts.indexOf(layout)!==-1;
+  /* Editorial layouts render their own page badge + footer — hide the global chrome */
+  var sNumEl=document.getElementById('sNum');
+  if(sNumEl){
+    sNumEl.textContent=(ST.cur+1)+' / '+ST.slides.length;
+    sNumEl.style.display=isEditorial?'none':'';
+  }
+  var brandEl=document.getElementById('sBrand');
+  brandEl.textContent=isEditorial?'':(ST.brand||'');
   brandEl.style.color=tc.head;
 
   var badge2=document.getElementById('layoutBadge');
