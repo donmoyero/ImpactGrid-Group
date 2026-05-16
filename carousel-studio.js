@@ -1414,7 +1414,16 @@ function dzDrop(e){e.preventDefault();document.getElementById('dzone').classList
 /* ─────────────────────────────────────────────────────────
    14. ACCENT / THEME / FONT
    ───────────────────────────────────────────────────────── */
-function setAccent(c,el){ST.accent=c;document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});el.classList.add('on');if(ST.slides.length) renderSlide();}
+function setAccent(c,el){
+  // Step 4 — accent picker demoted to brand metadata only.
+  // ST.themeAccent stores the user's choice for export/metadata.
+  // ST.accent is NOT updated — tok.accent from the token capsule
+  // always wins during rendering. renderSlide() is NOT called here.
+  ST.themeAccent=c;
+  document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});
+  el.classList.add('on');
+  // No renderSlide() — token system locks the accent per layout
+}
 function toggleTheme(){var isDark=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',isDark?'light':'dark');document.querySelector('[onclick="toggleTheme()"]').textContent=isDark?'🌙':'☀️';}
 
 /* ─────────────────────────────────────────────────────────
@@ -1448,7 +1457,7 @@ function doExport(){
   } else if(ST.exportType==='json'){
     var j=JSON.stringify({
       slides:ST.slides.map(function(s){return {headline:s.headline,body:s.body,caption:buildCaption(s),hashtags:s.hashtags,layout:s.layout,type:s.type};}),
-      theme:ST.theme,accentColor:ST.accent,fontPair:ST.fontPair,
+      theme:ST.theme,accentColor:window.getLockedAccent?window.getLockedAccent(ST.slides[0]&&ST.slides[0].layout||'FULL_BLEED'):ST.accent,brandAccent:ST.themeAccent||ST.accent,fontPair:ST.fontPair,
       platform:document.getElementById('platSelect').value,
       generatedAt:new Date().toISOString()
     },null,2);
