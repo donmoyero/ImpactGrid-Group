@@ -813,9 +813,10 @@ function renderSlide(){
   var tone2=assetMeta.tone||'neutral';
   var bri=assetMeta.brightness||'medium';
   var tc=getTextColors(tone2,bri,theme);
-  var accent2=ST.accent||T.accentColor;
-  var pBg=getPanelBg(theme);
-  var pText=getPanelText(theme);
+  var tok=window.getStyleTokens(layout);
+  var accent2=tok.accent;
+  var pBg=tok.panelBg;
+  var pText=tok.panelText;
 
   var sBgImg=document.getElementById('sBgImg');
   var sVideo=document.getElementById('sBgVideo');
