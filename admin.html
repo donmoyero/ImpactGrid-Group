@@ -611,9 +611,9 @@ tr:hover td{background:var(--bg2);}
             Approved reviews appear in the <strong>Reviews</strong> section on the homepage automatically.
           </div>
           <div class="hint-box" style="margin-top:10px;">
-            <strong>Supabase table</strong><br><br>
-            Reads from <code style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:4px;">event_reviews</code> — needs columns:<br>
-            <code style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:4px;display:block;margin-top:6px;line-height:1.9;">id, reviewer_name, event_name, rating, message, approved, approved_at, created_at</code>
+            <strong>Firestore collection</strong><br><br>
+            Reads from <code style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:4px;">event_reviews</code> — needs fields:<br>
+            <code style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:4px;display:block;margin-top:6px;line-height:1.9;">id, reviewer_name, event_name, rating, message, status, created_at</code>
           </div>
         </div>
       </div>
@@ -1425,23 +1425,25 @@ async function sendMail(){
   if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
 
   try{
-    /* Send via your existing Render API — same pattern as resendOwnerEmail */
+    /* Send via Render API */
     var res = await fetch(EVENTS_API + '/api/send-mail', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ to, subject, body })
+      body: JSON.stringify({ to: to, subject: subject, body: body })
     });
     var data = await res.json();
     if(!res.ok || !data.success) throw new Error(data.error || 'Send failed');
 
-    /* Save to Supabase sent table */
-    await getEventsSupabase().from('admin_mail_sent').insert({
-      to_email: to, subject: subject, body: body
+    /* Save to Firestore admin_mail_sent */
+    await addDoc(collection(db, 'admin_mail_sent'), {
+      to_email  : to,
+      subject   : subject,
+      body      : body,
+      created_at: serverTimestamp()
     });
 
     toast('✅','Email sent!', 'To: ' + to);
     clearCompose();
-    /* Show status */
     var s = document.getElementById('mail-send-status');
     if(s){ s.style.display='block'; s.innerHTML='<div style="background:var(--green-dim);border:1px solid var(--green);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--green);">✅ Email delivered to '+esc(to)+'</div>'; }
   }catch(e){
@@ -1456,16 +1458,15 @@ async function loadInbox(){
   if(!el) return;
   el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Loading…</div></div>';
   try{
-    var { data, error } = await getEventsSupabase()
-      .from('admin_mail_inbox')
-      .select('*')
-      .order('received_at', { ascending: false })
-      .limit(50);
-    if(error) throw error;
-    if(!data || !data.length){
+    var q    = query(collection(db, 'admin_mail_inbox'), orderBy('received_at', 'desc'));
+    var snap = await getDocs(q);
+    var data = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+
+    if(!data.length){
       el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No messages yet.<br><span style="font-size:11px;color:var(--text3);">Replies from guests will appear here once you set up the Resend webhook.</span></div></div>';
       return;
     }
+
     /* Update badge */
     var unread = data.filter(function(m){ return !m.read; }).length;
     var badge = document.getElementById('mailBadge');
@@ -1473,13 +1474,13 @@ async function loadInbox(){
 
     el.innerHTML = '<div style="display:flex;flex-direction:column;gap:1px;">'
       + data.map(function(m){
-          var dt = new Date(m.received_at);
-          var time = dt.toLocaleDateString('en-GB') + ' ' + dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+          var ts = m.received_at && m.received_at.toDate ? m.received_at.toDate() : new Date(m.received_at || Date.now());
+          var time = ts.toLocaleDateString('en-GB') + ' ' + ts.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
           return '<div onclick="openMail(\''+esc(m.id)+'\')" style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:var(--r);cursor:pointer;background:'+(m.read?'transparent':'var(--blue-dim)')+';border:1px solid '+(m.read?'transparent':'var(--blue-dim)')+';transition:background .15s;" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\''+(m.read?'transparent':'var(--blue-dim)')+'\';">'
             + '<div style="font-size:18px;flex-shrink:0;">'+(m.read?'📧':'📩')+'</div>'
             + '<div style="flex:1;min-width:0;">'
             + '<div style="display:flex;justify-content:space-between;gap:8px;">'
-            + '<span style="font-size:13px;font-weight:'+(m.read?'500':'700')+';">'+esc(m.from_email)+'</span>'
+            + '<span style="font-size:13px;font-weight:'+(m.read?'500':'700')+';">'+esc(m.from_email||'—')+'</span>'
             + '<span style="font-size:10px;color:var(--text3);white-space:nowrap;">'+esc(time)+'</span>'
             + '</div>'
             + '<div style="font-size:12px;font-weight:'+(m.read?'400':'600')+';margin-top:2px;">'+esc(m.subject||'(no subject)')+'</div>'
@@ -1493,18 +1494,21 @@ async function loadInbox(){
 }
 
 async function openMail(id){
-  var { data } = await getEventsSupabase().from('admin_mail_inbox').select('*').eq('id',id).single();
-  if(!data) return;
-  /* Mark as read */
-  await getEventsSupabase().from('admin_mail_inbox').update({ read: true }).eq('id', id);
-  var dt = new Date(data.received_at);
-  document.getElementById('mail-open-subject').textContent = data.subject || '(no subject)';
-  document.getElementById('mail-open-meta').textContent    = 'From: ' + data.from_email + '  ·  ' + dt.toLocaleString('en-GB');
-  document.getElementById('mail-open-body').textContent    = data.body || '';
-  document.getElementById('mail-open-card').style.display  = 'block';
-  document.getElementById('mail-open-card').scrollIntoView({ behavior:'smooth' });
-  /* Refresh to clear unread dot */
-  loadInbox();
+  try{
+    var docRef  = doc(db, 'admin_mail_inbox', id);
+    var docSnap = await getDoc(docRef);
+    if(!docSnap.exists()) return;
+    var data = docSnap.data();
+    /* Mark as read */
+    await updateDoc(docRef, { read: true });
+    var ts = data.received_at && data.received_at.toDate ? data.received_at.toDate() : new Date();
+    document.getElementById('mail-open-subject').textContent = data.subject || '(no subject)';
+    document.getElementById('mail-open-meta').textContent    = 'From: ' + (data.from_email||'—') + '  ·  ' + ts.toLocaleString('en-GB');
+    document.getElementById('mail-open-body').textContent    = data.body || '';
+    document.getElementById('mail-open-card').style.display  = 'block';
+    document.getElementById('mail-open-card').scrollIntoView({ behavior:'smooth' });
+    loadInbox();
+  }catch(e){ toast('⚠️','Error opening email', e.message); }
 }
 
 function replyTo(){
@@ -1521,25 +1525,23 @@ async function loadSent(){
   if(!el) return;
   el.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div></div>';
   try{
-    var { data, error } = await getEventsSupabase()
-      .from('admin_mail_sent')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if(error) throw error;
-    if(!data || !data.length){
+    var q    = query(collection(db, 'admin_mail_sent'), orderBy('created_at', 'desc'));
+    var snap = await getDocs(q);
+    var data = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+
+    if(!data.length){
       el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No sent emails yet.</div></div>';
       return;
     }
     el.innerHTML = '<div style="display:flex;flex-direction:column;gap:1px;">'
       + data.map(function(m){
-          var dt   = new Date(m.created_at);
-          var time = dt.toLocaleDateString('en-GB') + ' ' + dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+          var ts   = m.created_at && m.created_at.toDate ? m.created_at.toDate() : new Date(m.created_at || Date.now());
+          var time = ts.toLocaleDateString('en-GB') + ' ' + ts.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
           return '<div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:var(--r);border:1px solid transparent;">'
             + '<div style="font-size:18px;flex-shrink:0;">📤</div>'
             + '<div style="flex:1;min-width:0;">'
             + '<div style="display:flex;justify-content:space-between;gap:8px;">'
-            + '<span style="font-size:13px;font-weight:500;">To: '+esc(m.to_email)+'</span>'
+            + '<span style="font-size:13px;font-weight:500;">To: '+esc(m.to_email||'—')+'</span>'
             + '<span style="font-size:10px;color:var(--text3);white-space:nowrap;">'+esc(time)+'</span>'
             + '</div>'
             + '<div style="font-size:12px;margin-top:2px;">'+esc(m.subject||'(no subject)')+'</div>'
