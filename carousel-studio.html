@@ -964,13 +964,64 @@
       </div>
     </aside>
 
+    <!-- Generate Panel — visible below left panel, above workspace -->
+    <div id="genPanel" style="
+      position:fixed;bottom:0;left:0;width:280px;
+      background:var(--bg2);border-top:1px solid var(--border);
+      padding:12px 14px 16px;z-index:100;display:flex;flex-direction:column;gap:8px;
+    ">
+
+      <!-- Media mode toggle -->
+      <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:9px;overflow:hidden;">
+        <button id="modePicBtn" onclick="setGenMode('picture')" style="
+          flex:1;padding:8px 6px;font-size:11px;font-weight:700;font-family:var(--fb);
+          display:flex;align-items:center;justify-content:center;gap:5px;
+          border:none;cursor:pointer;transition:all .15s;
+          background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;
+        ">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Picture
+        </button>
+        <button id="modeVidBtn" onclick="setGenMode('video')" style="
+          flex:1;padding:8px 6px;font-size:11px;font-weight:700;font-family:var(--fb);
+          display:flex;align-items:center;justify-content:center;gap:5px;
+          border:none;cursor:pointer;transition:all .15s;
+          background:var(--card);color:var(--text3);
+        ">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Video
+        </button>
+      </div>
+
+      <!-- Mode description line -->
+      <div id="genModeLabel" style="font-size:10px;font-family:var(--fm);color:var(--text3);text-align:center;letter-spacing:.02em;">
+        📷 Cinematic photography for every slide
+      </div>
+
+      <!-- Main generate button (keeps id="genBtn" so carousel-studio.js works) -->
+      <button id="genBtn" onclick="generate()" disabled style="
+        width:100%;padding:13px 18px;border-radius:var(--r);
+        background:linear-gradient(135deg,var(--gold),var(--gold2));
+        color:#07090f;font-family:var(--fd);font-size:14px;font-weight:900;
+        letter-spacing:-.01em;display:flex;align-items:center;
+        justify-content:center;gap:7px;cursor:pointer;
+        transition:all .2s;border:none;
+        box-shadow:0 4px 16px var(--gold-glo);
+      ">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Generate
+      </button>
+    </div>
+
+    <!-- Spacer so left panel content isn't hidden behind the fixed generate panel -->
+    <div style="height:110px;flex-shrink:0;" aria-hidden="true"></div>
+
     <!-- Hidden stubs — carousel-studio.js references these IDs -->
     <div style="display:none">
       <input type="checkbox" id="applyAllToggle" checked/>
       <div id="layoutBadge"></div>
       <div class="cs-dzone" id="dzone" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)"></div>
       <input type="file" id="imgUp" accept="image/*" onchange="handleUpload(event)"/>
-      <button id="genBtn" onclick="generate()"></button>
       <div class="layout-switcher">
         <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
         <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
@@ -1053,6 +1104,8 @@
 <script src="auth.js"></script>
 <script src="nav.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Token system must load before the main studio -->
+<script src="carousel-style-tokens.js"></script>
 <script src="carousel-studio.js"></script>
 
 <script>
@@ -1091,6 +1144,10 @@ window.addEventListener('load', function() {
       shell.style.height     = '100vh';
     }
   });
+
+  // ── Adjust left panel so content isn't hidden behind fixed gen panel ──
+  var csLeft = document.querySelector('.cs-left-body');
+  if (csLeft) csLeft.style.paddingBottom = '120px';
 
   // Default accent + brand in ST
   if (typeof ST !== 'undefined') {
@@ -1269,7 +1326,56 @@ function closeAllPanels() {
   if (ov)    ov.classList.remove('open');
 }
 
-// ── 8. DOWNLOAD ALL with progress bar ───────────────────
+// ── 8. MEDIA MODE TOGGLE (Photo / Video) ────────────────
+window._genMode = 'picture'; // default
+
+window.setGenMode = function(mode) {
+  window._genMode = mode;
+  var picBtn = document.getElementById('modePicBtn');
+  var vidBtn = document.getElementById('modeVidBtn');
+  var lbl    = document.getElementById('genModeLabel');
+  var gold   = 'linear-gradient(135deg,var(--gold),var(--gold2))';
+  var idle   = 'var(--card)';
+  if (mode === 'picture') {
+    if (picBtn) { picBtn.style.background = gold; picBtn.style.color = '#07090f'; }
+    if (vidBtn) { vidBtn.style.background = idle; vidBtn.style.color = 'var(--text3)'; }
+    if (lbl)    lbl.textContent = '📷 Cinematic photography for every slide';
+    // Tell the token system to prefer images
+    if (window.clearMediaPreferences) window.clearMediaPreferences();
+  } else {
+    if (vidBtn) { vidBtn.style.background = gold; vidBtn.style.color = '#07090f'; }
+    if (picBtn) { picBtn.style.background = idle; picBtn.style.color = 'var(--text3)'; }
+    if (lbl)    lbl.textContent = '🎬 Cinematic video backgrounds throughout';
+    // Tell the token system to prefer video on all slides
+    if (window.setSlideMediaMode && window.ST && window.ST.slides) {
+      window.ST.slides.forEach(function(_, i) {
+        window.setSlideMediaMode(i, 'video');
+      });
+    }
+  }
+};
+
+// Wire media mode into generate() so the preference is sent to the server
+window.addEventListener('load', function() {
+  var _origGen = window.generate;
+  if (typeof _origGen !== 'function') return;
+  var _wrapped = window.generate; // may already be wrapped by patch above
+  window.generate = async function() {
+    // Apply media mode preferences to ST before generate fires
+    if (window._genMode === 'video' && window.ST) {
+      var count = window.ST.count || 7;
+      if (window.clearMediaPreferences) window.clearMediaPreferences();
+      for (var i = 0; i < count; i++) {
+        if (window.setSlideMediaMode) window.setSlideMediaMode(i, 'video');
+      }
+    } else if (window._genMode === 'picture') {
+      if (window.clearMediaPreferences) window.clearMediaPreferences();
+    }
+    await _wrapped.apply(this, arguments);
+  };
+});
+
+// ── 9. DOWNLOAD ALL with progress bar ───────────────────
 function isSafariIOS() {
   return /iP(ad|hone|od)/.test(navigator.userAgent) &&
          /WebKit/.test(navigator.userAgent) && !window.MSStream;
