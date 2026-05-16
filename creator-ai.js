@@ -393,7 +393,7 @@ const CreatorAI = (function () {
   ══════════════════════════════════════════════════════════════ */
   async function generateCarousel(prompt, platform, tone, slideCount) {
     try {
-      const response = await fetch(BACKEND_URL + '/chat', {
+      const response = await fetchWithRetry(BACKEND_URL + '/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -401,7 +401,6 @@ const CreatorAI = (function () {
           mode: 'carousel'
         })
       });
-      if (!response.ok) throw new Error('Backend returned ' + response.status);
       const data = await response.json();
       return data.reply || '';
     } catch (err) {
@@ -410,10 +409,36 @@ const CreatorAI = (function () {
     }
   }
 
+  /* ── SERVER WAKE-UP — fires immediately on script load ──────── */
+  // Render free tier sleeps after 15 min. Ping on load so dashboard
+  // data arrives instead of hanging on spinners.
+  (function wakeServer() {
+    fetch(BACKEND_URL + '/ping').catch(function(){});
+  })();
+
+  /* ── FETCH WITH RETRY — waits for Render to wake if needed ──── */
+  async function fetchWithRetry(url, options, retries) {
+    retries = retries || 2;
+    for (var attempt = 0; attempt <= retries; attempt++) {
+      try {
+        var res = await fetch(url, options);
+        if (res.ok) return res;
+        throw new Error('Status ' + res.status);
+      } catch (err) {
+        if (attempt < retries) {
+          // Wait 4s on first retry (Render needs ~3-5s to wake)
+          await new Promise(function(r){ setTimeout(r, attempt === 0 ? 4000 : 2000); });
+        } else {
+          throw err;
+        }
+      }
+    }
+  }
+
   /* ── LEGACY CHAT — now rerouted to Render backend ───────────── */
   async function askDijoAI(userMessage, conversationHistory) {
     try {
-      const response = await fetch(BACKEND_URL + '/chat', {
+      const response = await fetchWithRetry(BACKEND_URL + '/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -421,7 +446,6 @@ const CreatorAI = (function () {
           mode: 'creator'
         })
       });
-      if (!response.ok) throw new Error('Backend error ' + response.status);
       const data = await response.json();
       return data.reply || null;
     } catch (err) {
