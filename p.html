@@ -48,6 +48,7 @@ function getSlug() {
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+function cleanCta(s) { return esc(String(s||'').replace(/\s*\(mailto:[^)]*\)/gi,'').replace(/\s*\[([^\]]*)]\([^)]*\)/g,'$1').trim()); }
 
 function showError(code, title, message) {
   document.getElementById('igLoading').outerHTML =
@@ -301,7 +302,7 @@ function renderPortfolio(pf) {
           '<div class="tagline fu d1">' + esc(pf.ai_tagline || '') + '</div>' +
           '<h1 class="headline fu d2">' + esc(pf.ai_headline || pf.name) + '</h1>' +
           '<div class="hero-btns fu d3">' +
-            '<a class="btn btn-p" href="#home-contact" onclick="document.getElementById(\'home-contact\').scrollIntoView({behavior:\'smooth\'});return false;">' + esc(pf.ai_cta || 'Work With Me') + ' →</a>' +
+            '<a class="btn btn-p" href="#home-contact" onclick="document.getElementById(\'home-contact\').scrollIntoView({behavior:\'smooth\'});return false;">' + cleanCta(pf.ai_cta || 'Work With Me') + ' →</a>' +
             (pf.services && pf.services.length ? '<a class="btn btn-s" href="#" onclick="showPage(\'page-services\');return false;">See My Services</a>' : '') +
           '</div>' +
         '</div>' +
@@ -705,7 +706,7 @@ function renderPortfolio(pf) {
           : esc(pf.name)) +
       '</div>' +
       '<div class="nav-links">' + navLinks + '</div>' +
-      (pf.email ? '<a class="nav-cta" href="mailto:' + esc(pf.email) + '">' + esc((pf.ai_cta || 'Work With Me').replace(/\s*\(mailto:.*\)/i,'').trim()) + '</a>' : '') +
+      (pf.email ? '<a class="nav-cta" href="mailto:' + esc(pf.email) + '">' + cleanCta(pf.ai_cta || 'Work With Me') + '</a>' : '') +
       '<div class="nav-hamburger" onclick="openMnav()" aria-label="Menu">' +
         '<span></span><span></span><span></span>' +
       '</div>' +
@@ -717,7 +718,7 @@ function renderPortfolio(pf) {
       '<div class="mnav-drawer">' +
         '<div class="mnav-close" onclick="closeMnav()">✕</div>' +
         mobileNavLinks +
-        (pf.email ? '<a href="mailto:' + esc(pf.email) + '" class="mnav-cta">' + esc(pf.ai_cta || 'Work With Me') + '</a>' : '') +
+        (pf.email ? '<a href="mailto:' + esc(pf.email) + '" class="mnav-cta">' + cleanCta(pf.ai_cta || 'Work With Me') + '</a>' : '') +
       '</div>' +
     '</div>' +
 
