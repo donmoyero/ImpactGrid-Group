@@ -2429,10 +2429,10 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
           <div class="sec-ttl">${esc(pf.name)}</div>
           <p class="about-bio-text">${esc(pf.ai_bio || pf.bio || '')}</p>
         </div>
-        ${(profilePhotoUrl || heroImgs[0]) ? `
+        ${profilePhotoUrl ? `
         <div class="about-photo-col">
           <div class="about-photo-frame">
-            <img src="${esc(profilePhotoUrl || heroImgs[0])}" alt="${esc(pf.name)}" class="about-photo"/>
+            <img src="${esc(profilePhotoUrl)}" alt="${esc(pf.name)}" class="about-photo"/>
           </div>
         </div>` : ''}
       </div>
