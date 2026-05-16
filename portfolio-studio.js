@@ -2371,7 +2371,7 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
     ${logoUrl ? `<img src="${esc(logoUrl)}" alt="${esc(pf.name)}" class="nav-logo"/>` : esc(pf.name)}
   </div>
   <div class="nav-links">${navLinks}</div>
-  ${pf.email ? `<a class="nav-cta" href="mailto:${esc(pf.email)}">${esc(pf.ai_cta || 'Work With Me')}</a>` : ''}
+  ${pf.email ? `<a class="nav-cta" href="mailto:${esc(pf.email)}">${cleanCta(pf.ai_cta || 'Work With Me')}</a>` : ''}
   <div class="nav-hamburger" onclick="openMnav()" aria-label="Menu">
     <span></span><span></span><span></span>
   </div>
@@ -2383,7 +2383,7 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
   <div class="mnav-drawer">
     <div class="mnav-close" onclick="closeMnav()">✕</div>
     ${mobileNavLinks}
-    ${pf.email ? `<div class="mnav-cta" onclick="closeMnav();document.getElementById('home-contact').scrollIntoView({behavior:'smooth'})">${esc(pf.ai_cta || 'Work With Me')}</div>` : ''}
+    ${pf.email ? `<div class="mnav-cta" onclick="closeMnav();document.getElementById('home-contact').scrollIntoView({behavior:'smooth'})">${cleanCta(pf.ai_cta || 'Work With Me')}</div>` : ''}
   </div>
 </div>
 
@@ -2403,7 +2403,7 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
       <div class="tagline fu d1">${esc(pf.ai_tagline || '')}</div>
       <h1 class="headline fu d2">${esc(pf.ai_headline || pf.name)}</h1>
       <div class="hero-btns fu d3">
-        <a class="btn btn-p" href="#home-contact" onclick="document.getElementById('home-contact').scrollIntoView({behavior:'smooth'});return false;">${esc(pf.ai_cta || 'Work With Me')} →</a>
+        <a class="btn btn-p" href="#home-contact" onclick="document.getElementById('home-contact').scrollIntoView({behavior:'smooth'});return false;">${cleanCta(pf.ai_cta || 'Work With Me')} →</a>
         ${hasServices ? `<a class="btn btn-s" href="#" onclick="showPage('page-services');return false;">See My Services</a>` : ''}
       </div>
     </div>
@@ -2947,6 +2947,7 @@ function spawnConfetti() {
    UTILITIES
 ══════════════════════════════════════════════════════════ */
 function esc(s)        { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+function cleanCta(s)   { return esc(String(s||'').replace(/\s*\(mailto:[^)]*\)/gi,'').replace(/\s*\[([^\]]*)]\([^)]*\)/g,'$1').trim()); }
 function val(id)       { const el = document.getElementById(id); return el ? el.value : ""; }
 function setValue(id,v){ const el = document.getElementById(id); if (el) el.value = v || ""; }
 function sleep(ms)     { return new Promise(r => setTimeout(r, ms)); }
