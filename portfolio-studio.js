@@ -859,6 +859,8 @@ async function savePortfolioToDB(pf){
                 'apikey':        SUPABASE_KEY,
                 'Authorization': 'Bearer ' + SUPABASE_KEY,
                 'Prefer':        'return=minimal',
+                'x-session-id':  SESSION_ID,
+                'x-user-id':     userId,
               },
               body: JSON.stringify(imgPatch),
             }
