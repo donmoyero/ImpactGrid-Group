@@ -6,8 +6,24 @@
 <title>ImpactGrid — Event Gallery</title>
 <link rel="icon" href="favicon.ico"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&family=Italiana&family=Syne:wght@700;800;900&family=Nunito:wght@400;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="ig-supabase.js"></script>
+<!-- Firebase compat SDK (Events DB) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+/* ── Firebase init for event.html ── */
+(function(){
+  var cfg = {
+    apiKey           : 'AIzaSyDzI3fDAM46_Gp96YMnrA-DG7oAprHs4g4',
+    authDomain       : 'impactgrid-events.firebaseapp.com',
+    projectId        : 'impactgrid-events',
+    storageBucket    : 'impactgrid-events.firebasestorage.app',
+    messagingSenderId: '197404801498',
+    appId            : '1:197404801498:web:15675f79edc02e6348a8e3'
+  };
+  if (!firebase.apps.length) firebase.initializeApp(cfg);
+  window._eventsDb = firebase.firestore();
+})();
+</script>
 <style>
 /* ══════════════════════════════════════
    RESET & BASE
@@ -1154,19 +1170,32 @@ document.addEventListener('DOMContentLoaded', async function(){
   if(!slug){ showError('No event specified in the URL.'); return; }
 
   try{
-    var c = getSupabase();
-    var { data: ev, error } = await c
-      .from('events')
-      .select('*, event_settings(*)')
-      .eq('event_slug', slug)
-      .eq('is_active', true)
-      .single();
+    var db = window._eventsDb;
+    /* Query events collection by slug */
+    var snap = await db.collection('events')
+      .where('event_slug', '==', slug)
+      .where('is_active', '==', true)
+      .limit(1)
+      .get();
+
+    if(snap.empty){ showError('This event was not found or has expired.'); return; }
+
+    var evDoc = snap.docs[0];
+    var ev = Object.assign({ id: evDoc.id }, evDoc.data());
+
+    /* Load event settings */
+    var settingsSnap = await db.collection('event_settings')
+      .where('event_id', '==', ev.id)
+      .limit(1)
+      .get();
+    var settings = settingsSnap.empty ? {} : settingsSnap.docs[0].data();
+    ev.event_settings = settings;
+    var error = null;
 
     if(error || !ev){ showError('This event was not found or has expired.'); return; }
 
     eventData = ev;
-    var settings = Array.isArray(ev.event_settings)
-      ? ev.event_settings[0] : (ev.event_settings || {});
+    var settings = ev.event_settings || {};
 
     /* ── VISIT TRACKING ── */
     trackVisit(ev.id, ev.name);
@@ -1250,11 +1279,12 @@ function showSection(id){
 ══════════════════════════════════════ */
 async function loadPhotos(){
   try{
-    var { data } = await getSupabase()
-      .from('photos')
-      .select('*')
-      .eq('event_id', eventData.id)
-      .order('created_at', { ascending: true });
+    var db = window._eventsDb;
+    var snap = await db.collection('photos')
+      .where('event_id', '==', eventData.id)
+      .orderBy('created_at', 'asc')
+      .get();
+    var data = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
 
     allPhotos = data || [];
 
@@ -1307,19 +1337,9 @@ async function loadPhotos(){
 ══════════════════════════════════════ */
 async function loadCelebrantPhoto(){
   try{
-    var settings = Array.isArray(eventData.event_settings)
-      ? eventData.event_settings[0] : (eventData.event_settings || {});
+    var settings = eventData.event_settings || {};
     var celebUrl = settings.celebrant_photo_url || eventData.celebrant_photo_url || null;
-
-    if(!celebUrl){
-      var c = getSupabase();
-      var { data: files } = await c.storage.from('events').list(eventData.id + '/celebrant');
-      if(files && files.length){
-        var { data: urlData } = c.storage.from('events').getPublicUrl(eventData.id + '/celebrant/' + files[0].name);
-        celebUrl = urlData.publicUrl;
-      }
-    }
-
+    /* Celebrant photo URL is stored directly in Firestore (uploaded via Cloudinary in admin) */
     if(celebUrl){
       var wrap = document.getElementById('celebrantPhoto');
       var img  = document.getElementById('celebrantImg');
@@ -2223,16 +2243,17 @@ async function trackVisit(eventId, eventName){
       var r = await fetch('https://ipapi.co/json/');
       if(r.ok) geo = await r.json();
     }catch(e){}
-    await getSupabase().from('event_page_visits').insert({
+    await window._eventsDb.collection('event_page_visits').add({
       event_id:   eventId,
       event_name: eventName,
       user_agent: navigator.userAgent,
       country:    geo.country_name || null,
       city:       geo.city        || null,
-      ip:         geo.ip          || null
+      ip:         geo.ip          || null,
+      visited_at: firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){
-    /* Silently ignore — table may not exist yet */
+    /* Silently ignore — collection may not exist yet */
   }
 }
 
@@ -2270,7 +2291,13 @@ async function trackDownload(photos){
         city:       geo.city        || null
       };
     });
-    await getSupabase().from('photo_downloads').insert(rows);
+    var db = window._eventsDb;
+    var batch = db.batch();
+    rows.forEach(function(row){
+      row.created_at = firebase.firestore.FieldValue.serverTimestamp();
+      batch.set(db.collection('photo_downloads').doc(), row);
+    });
+    await batch.commit();
   }catch(e){ /* silent */ }
 }
 
@@ -2305,13 +2332,14 @@ async function submitContact(e){
 
   try{
     var eventId = new URLSearchParams(window.location.search).get('event') || null;
-    var { error } = await getSupabase().from('admin_mail_inbox').insert({
+    await window._eventsDb.collection('admin_mail_inbox').add({
       from_email:  email,
       subject:     'Message from ' + name + (eventId ? ' (Event: ' + eventId + ')' : ''),
       body:        message,
       read:        false,
       received_at: new Date().toISOString()
     });
+    var error = null;
     if(error) throw error;
     document.getElementById('contact-form').style.display  = 'none';
     document.getElementById('contact-success').style.display = 'block';
