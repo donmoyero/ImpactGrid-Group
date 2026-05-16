@@ -2272,16 +2272,26 @@ a{color:inherit;text-decoration:none}
 .fp-dot{width:8px;height:8px;border-radius:50%;border:none;background:var(--bd);cursor:pointer;transition:.2s;padding:0}
 .fp-dot.active{background:var(--ac);transform:scale(1.35)}
 .fp-dot:hover{background:var(--ac);opacity:.7}
-/* GALLERY GRID CARDS */
-.gallery-grid-wrap{max-width:1100px;margin:0 auto;padding:0 60px 64px}
-.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
-.gallery-card{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;cursor:pointer;border:1.5px solid var(--bd);transition:.2s}
-.gallery-card:hover{border-color:var(--ac);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.gallery-card img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:.3s}
-.gallery-card:hover img{transform:scale(1.04)}
-.gallery-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s}
-.gallery-card:hover .gallery-card-overlay{opacity:1}
-.gallery-card-overlay span{color:#fff;font-family:var(--fh);font-size:13px;font-weight:700;letter-spacing:.5px}
+/* GALLERY PHOTO CARDS — scattered pile style */
+.gallery-grid-wrap{max-width:1100px;margin:0 auto;padding:0 60px 80px}
+.gallery-pile-row{display:flex;flex-wrap:wrap;gap:56px 64px;justify-content:center;padding:16px 0 32px}
+.gallery-pile{position:relative;width:220px;height:165px;cursor:pointer;flex-shrink:0}
+.gp-card{position:absolute;top:0;left:0;width:200px;height:150px;border-radius:6px;overflow:hidden;background:var(--sf);border:4px solid #fff;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .35s}
+.gp-card img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.gp-back{transform:rotate(6deg) translate(14px,-4px);z-index:1;filter:brightness(.75)}
+.gp-mid{transform:rotate(-3.5deg) translate(5px,5px);z-index:2;filter:brightness(.88)}
+.gp-front{transform:rotate(0deg);z-index:3}
+.gallery-pile:hover .gp-back{transform:rotate(14deg) translate(28px,-10px)}
+.gallery-pile:hover .gp-mid{transform:rotate(-9deg) translate(-8px,6px)}
+.gallery-pile:hover .gp-front{transform:rotate(0deg) translateY(-6px)}
+.gallery-pile:hover .gp-card{box-shadow:0 16px 48px rgba(0,0,0,.55)}
+.gp-label{position:absolute;bottom:-26px;left:0;right:0;text-align:center;font-size:11px;font-family:monospace;color:var(--sub);letter-spacing:.5px}
+.gallery-card-solo{position:relative;width:200px;height:150px;border-radius:6px;overflow:hidden;border:4px solid #fff;box-shadow:0 6px 24px rgba(0,0,0,.45);cursor:pointer;transition:.3s;flex-shrink:0}
+.gallery-card-solo:hover{transform:translateY(-5px) rotate(-1deg);box-shadow:0 16px 40px rgba(0,0,0,.55)}
+.gallery-card-solo img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.gallery-card-solo-ov{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s}
+.gallery-card-solo:hover .gallery-card-solo-ov{opacity:1}
+.gallery-card-solo-ov span{color:#fff;font-family:var(--fh);font-size:12px;font-weight:700;letter-spacing:.5px}
 /* HOME SOCIAL LINKS */
 .home-socials-wrap{max-width:1100px;margin:0 auto;padding:0 60px 48px}
 .social-links{display:flex;flex-direction:column;gap:9px;max-width:560px}
@@ -2343,7 +2353,7 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
   .fp-stage{padding:16px 12px 48px}
   .fp-btn{padding:8px 14px;font-size:12px}
   .gallery-grid-wrap{padding:0 16px 48px}
-  .gallery-grid{grid-template-columns:repeat(2,1fr)}
+  .gallery-pile-row{gap:40px 36px}
   .grid{grid-template-columns:1fr}
 }
 @media(max-width:480px){
@@ -2516,17 +2526,44 @@ footer{border-top:1px solid var(--bd);padding:28px 60px;display:flex;align-items
       </button>
     </div>
   </div>
-  ${galleryImgs.length > 0 ? `
+  ${galleryImgs.length > 0 ? (() => {
+    // Group images into piles of 3 (each pile = stacked photo cards)
+    const piles = [];
+    for (let i = 0; i < galleryImgs.length; i += 3) {
+      piles.push(galleryImgs.slice(i, i + 3));
+    }
+    const pilesHTML = piles.map((pile, pi) => {
+      const startIdx = pi * 3;
+      if (pile.length >= 3) {
+        // Full pile — 3 stacked cards, click opens flipbook at first photo of pile
+        return `
+        <div class="gallery-pile" onclick="document.getElementById('fpBook').closest('.fp-stage').scrollIntoView({behavior:'smooth'});fpGoto(${startIdx})" title="View photo ${startIdx+1}">
+          <div class="gp-card gp-back"><img src="${esc(pile[2])}" alt="Photo ${startIdx+3}" loading="lazy"/></div>
+          <div class="gp-card gp-mid"><img src="${esc(pile[1])}" alt="Photo ${startIdx+2}" loading="lazy"/></div>
+          <div class="gp-card gp-front"><img src="${esc(pile[0])}" alt="Photo ${startIdx+1}" loading="lazy"/></div>
+          <div class="gp-label">${startIdx+1}–${startIdx+pile.length} of ${galleryImgs.length}</div>
+        </div>`;
+      } else if (pile.length === 2) {
+        return `
+        <div class="gallery-pile" onclick="document.getElementById('fpBook').closest('.fp-stage').scrollIntoView({behavior:'smooth'});fpGoto(${startIdx})" title="View photo ${startIdx+1}">
+          <div class="gp-card gp-mid" style="transform:rotate(-3.5deg) translate(5px,5px)"><img src="${esc(pile[1])}" alt="Photo ${startIdx+2}" loading="lazy"/></div>
+          <div class="gp-card gp-front"><img src="${esc(pile[0])}" alt="Photo ${startIdx+1}" loading="lazy"/></div>
+          <div class="gp-label">${startIdx+1}–${startIdx+pile.length} of ${galleryImgs.length}</div>
+        </div>`;
+      } else {
+        return `
+        <div class="gallery-card-solo" onclick="document.getElementById('fpBook').closest('.fp-stage').scrollIntoView({behavior:'smooth'});fpGoto(${startIdx})" title="View photo ${startIdx+1}">
+          <img src="${esc(pile[0])}" alt="Photo ${startIdx+1}" loading="lazy"/>
+          <div class="gallery-card-solo-ov"><span>View ↗</span></div>
+        </div>`;
+      }
+    }).join('');
+    return `
   <div class="gallery-grid-wrap">
-    <div class="sec-lbl" style="margin-bottom:18px">All Photos</div>
-    <div class="gallery-grid">
-      ${galleryImgs.map((url, i) => `
-      <div class="gallery-card" onclick="document.querySelectorAll('.fp-btn-prev,.fp-btn-next')[0].closest('.fp-stage').scrollIntoView({behavior:'smooth'});fpGoto(${i})">
-        <img src="${esc(url)}" alt="Photo ${i+1}" loading="lazy"/>
-        <div class="gallery-card-overlay"><span>View ↗</span></div>
-      </div>`).join('')}
-    </div>
-  </div>` : ''}
+    <div class="sec-lbl" style="margin-bottom:24px">All Photos</div>
+    <div class="gallery-pile-row">${pilesHTML}</div>
+  </div>`;
+  })() : ''}
 </section>
 
 <!-- PAGE: SERVICES -->
