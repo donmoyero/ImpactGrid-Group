@@ -255,18 +255,158 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div class="briefing-card">
-          <div class="briefing-head">
-            <div class="briefing-av">📡</div>
-            <div>
-              <div class="briefing-title">What’s Trending Now</div>
-              <div class="briefing-meta" id="briefingDate">Loading…</div>
+        <!-- ── Dijo Briefing Card ── -->
+        <div class="briefing-card" id="dijoBriefingCard" style="overflow:hidden;position:relative">
+
+          <!-- Blurred topic background image -->
+          <div id="briefingBg" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease;border-radius:inherit;pointer-events:none;z-index:0"></div>
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(7,9,15,.93) 55%,rgba(7,9,15,.72));border-radius:inherit;pointer-events:none;z-index:1"></div>
+
+          <div style="position:relative;z-index:2">
+
+            <!-- Head -->
+            <div class="briefing-head" style="align-items:flex-start;gap:12px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
+                <div id="briefingTopicImg" style="width:48px;height:48px;border-radius:10px;background:var(--card);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--border)">📡</div>
+                <span id="briefingPlatformBadge" style="font-family:'DM Mono',monospace;font-size:8px;padding:1px 6px;border-radius:4px;background:rgba(201,126,8,.15);color:var(--gold);border:1px solid rgba(201,126,8,.25)"></span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div class="briefing-title" style="display:flex;align-items:center;gap:7px">
+                  Dijo's Briefing
+                  <span style="width:6px;height:6px;border-radius:50%;background:#0fa876;display:inline-block;animation:meterPulse 1.8s ease-in-out infinite;flex-shrink:0"></span>
+                </div>
+                <div class="briefing-meta" id="briefingDate" style="margin-top:2px">Loading…</div>
+                <div id="briefingTopicLabel" style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--gold);margin-top:5px;line-height:1.2;display:none"></div>
+              </div>
+              <button onclick="loadBriefing(true)" title="Refresh" style="flex-shrink:0;font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:5px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">↻ Refresh</button>
             </div>
-            <button onclick="loadBriefing(true)" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Refresh</button>
+
+            <!-- Briefing text -->
+            <div class="briefing-text" id="briefingText" style="padding:8px 0 4px;font-size:14px;line-height:1.7"><span class="spinner spinner-gold"></span></div>
+
+            <!-- Tags -->
+            <div class="briefing-tags" id="briefingTags" style="display:none"></div>
+
+            <!-- Live topic pills -->
+            <div id="briefingTopicsStrip" style="margin-top:10px;display:none;gap:7px;flex-wrap:wrap"></div>
           </div>
-          <div class="briefing-text" id="briefingText" style="padding:4px 0"><span class="spinner spinner-gold"></span></div>
-          <div class="briefing-tags" id="briefingTags" style="display:none"></div>
         </div>
+
+        <style>
+        .bt-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace;border:1px solid var(--border2);background:var(--card);color:var(--text2);cursor:pointer;transition:border-color .2s,color .2s}
+        .bt-pill:hover{border-color:var(--gold);color:var(--gold)}
+        .bt-pill-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+        .bt-pill .bt-score{font-size:9px;color:var(--text3);margin-left:3px}
+        </style>
+
+        <script>
+        (function(){
+          const RENDER = "https://impactgrid-dijo.onrender.com";
+          const PLAT_COLOR = {tiktok:"#ff6464",youtube:"#FFD700",google:"#78b4ff",cross:"#4FB3A5"};
+          const PLAT_LABEL = {tiktok:"🎵 TikTok",youtube:"▶️ YouTube",google:"🔍 Google",cross:"🚀 Cross"};
+
+          function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ""; }
+
+          function imgUrl(topic){
+            const q = encodeURIComponent((topic||"").replace(/[^a-zA-Z0-9 ]/g," ").trim().split(" ").slice(0,3).join(" "));
+            return "https://source.unsplash.com/200x200/?"+q+","+encodeURIComponent(topic);
+          }
+
+          function renderBriefing(data){
+            const $ = id => document.getElementById(id);
+            const textEl   = $("briefingText");
+            const dateEl   = $("briefingDate");
+            const tagsEl   = $("briefingTags");
+            const bgEl     = $("briefingBg");
+            const imgEl    = $("briefingTopicImg");
+            const topicLbl = $("briefingTopicLabel");
+            const platBdg  = $("briefingPlatformBadge");
+            const strip    = $("briefingTopicsStrip");
+
+            // Text
+            if(textEl) textEl.textContent = data.briefing || "📡 Dijo is refreshing — check back in a moment.";
+
+            // Time
+            if(dateEl){
+              const t = new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+              dateEl.innerHTML = `<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#0fa876;margin-right:4px;vertical-align:middle;animation:meterPulse 1.8s infinite"></span>${t} · live`;
+            }
+
+            // Top topic image
+            const top = data.top_topic;
+            if(top && top.topic){
+              const name = top.topic;
+              if(topicLbl){ topicLbl.textContent = cap(name); topicLbl.style.display="block"; }
+              if(platBdg)  platBdg.textContent = PLAT_LABEL[top.platform_source] || top.platform_source || "";
+
+              // Image — use Pexels img from DB if available, else Unsplash
+              const src = top.image_url || imgUrl(name);
+              if(imgEl) imgEl.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:10px" onerror="this.parentNode.innerHTML='📡'">`;
+              if(bgEl){ bgEl.style.backgroundImage=`url(${src})`; bgEl.style.opacity="0.2"; }
+            }
+
+            // Tags
+            if(tagsEl && data.tags && data.tags.length){
+              tagsEl.innerHTML = data.tags.map(t=>`<span class="briefing-tag">${t}</span>`).join("");
+              tagsEl.style.display="flex";
+            }
+
+            // Topic strip
+            if(strip && data.top_trends && data.top_trends.length){
+              strip.innerHTML = data.top_trends.map(t=>{
+                const color = PLAT_COLOR[t.platform_source]||"var(--gold)";
+                const score = (t.trend_score/10).toFixed(1);
+                const name  = cap(t.topic||"");
+                return `<span class="bt-pill" onclick="if(typeof setGenTopic==='function')setGenTopic('${name.replace(/'/g,"\'")}')">
+                  <span class="bt-pill-dot" style="background:${color}"></span>${name}<span class="bt-score">${score}</span>
+                </span>`;
+              }).join("");
+              strip.style.display="flex";
+            }
+          }
+
+          window.loadBriefing = async function(force){
+            const textEl = document.getElementById("briefingText");
+            const CKEY="dijo_brief_v3", CTS="dijo_brief_ts_v3", TTL=30*60*1000;
+            if(!force){
+              try{
+                const ts=parseInt(localStorage.getItem(CTS)||"0");
+                if(Date.now()-ts<TTL){
+                  const c=JSON.parse(localStorage.getItem(CKEY)||"null");
+                  if(c){renderBriefing(c);return;}
+                }
+              }catch(e){}
+            }
+            if(textEl) textEl.innerHTML='<span class="spinner spinner-gold"></span>';
+
+            try{
+              const [bRes,tRes]=await Promise.allSettled([
+                fetch(RENDER+"/ai/daily-briefing?_="+Date.now()),
+                fetch(RENDER+"/trends/live?limit=6")
+              ]);
+              const brief  = bRes.status==="fulfilled"  ? await bRes.value.json()  : {};
+              const trends = tRes.status==="fulfilled"  ? await tRes.value.json()  : {};
+              const topTrends = (trends.trends||[]).slice(0,3);
+              const payload = {
+                briefing:   brief.briefing||null,
+                tags:       brief.tags||[],
+                top_trends: topTrends,
+                top_topic:  topTrends[0]||null
+              };
+              try{localStorage.setItem(CKEY,JSON.stringify(payload));localStorage.setItem(CTS,String(Date.now()));}catch(e){}
+              renderBriefing(payload);
+            }catch(err){
+              if(textEl) textEl.textContent="📡 Dijo couldn't connect right now — try refreshing.";
+            }
+          };
+
+          if(document.readyState==="loading"){
+            document.addEventListener("DOMContentLoaded",()=>loadBriefing(false));
+          }else{
+            loadBriefing(false);
+          }
+        })();
+        </script>
 
         <div class="two-col">
           <div class="card">
