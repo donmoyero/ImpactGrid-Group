@@ -300,17 +300,20 @@ async function loadUploadPhotos(){
   if(!sel) return;
   sel.innerHTML = '<option value="">— Select an event —</option>';
   try{
-    var q    = query(collection(db, 'events'), where('is_active','==',true), orderBy('created_at','desc'));
+    // Removed where('is_active') + orderBy combo — requires a composite Firestore index
+    // that doesn't exist, causing a silent failure and empty dropdown. Filter in JS instead.
+    var q    = query(collection(db, 'events'), orderBy('created_at','desc'));
     var snap = await getDocs(q);
     snap.docs.forEach(function(d){
       var ev  = d.data();
+      if(!ev.is_active) return;
       var opt = document.createElement('option');
       opt.value       = d.id;
       opt.textContent = ev.name + ' (' + ev.event_code + ')';
       sel.appendChild(opt);
     });
     if(selectedEventId){ sel.value = selectedEventId; onUploadEventChange(); }
-  }catch(e){}
+  }catch(e){ console.error('[loadUploadPhotos] Firestore error:', e.message); }
 }
 
 function onUploadEventChange(){
