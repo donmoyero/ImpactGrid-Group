@@ -1392,27 +1392,8 @@ async function runTrendPrediction() {
       var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
 
       el.innerHTML =
-        '<div style="display:flex;flex-direction:column;gap:8px">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-        +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-        +     escH(pick.topic)
-        +   '</div>'
-        +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-        +     pick.score.toFixed(1)
-        +   '</div>'
-        + '</div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-        +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-        +     platIcon + ' ' + escH(pick.platLabel)
-        +   '</span>'
-        +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-        + '</div>'
-        + (reason
-          ? '<div style="font-size:12px;color:var(--text2);line-height:1.5;border-left:2px solid var(--gold);padding-left:8px">'
-            + escH(reason) + '.'
-            + '</div>'
-          : '')
-        + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · ' + escH(data.date || 'This week') + '</div>'
+        '<div style="font-family:\'Syne\',sans-serif;font-size:22px;font-weight:900;line-height:1.2;color:var(--text1)">'
+        +   escH(pick.topic)
         + '</div>';
     _aiCacheSet(_predKey, el.innerHTML);
 
@@ -1429,25 +1410,8 @@ async function runTrendPrediction() {
   var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
 
   el.innerHTML =
-    '<div style="display:flex;flex-direction:column;gap:8px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-    +     escH(pick.topic)
-    +   '</div>'
-    +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-    +     pick.score.toFixed(1)
-    +   '</div>'
-    + '</div>'
-    + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-    +     platIcon + ' ' + escH(pick.platLabel)
-    +   '</span>'
-    +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-    + '</div>'
-    + '<div style="font-size:12px;color:var(--text2);line-height:1.5">'
-    +   'Highest scored trend across all platforms this week.'
-    + '</div>'
-    + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · local data</div>'
+    '<div style="font-family:\'Syne\',sans-serif;font-size:22px;font-weight:900;line-height:1.2;color:var(--text1)">'
+    +   escH(pick.topic)
     + '</div>';
 }
 
@@ -1907,7 +1871,7 @@ async function loadBriefing(forceRefresh) {
     if (tagsEl) tagsEl.innerHTML = ''; // hide old tags
     if (dateEl) {
       var now = new Date();
-      dateEl.textContent = '📡 ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
+      dateEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '\n· live';
     }
     return true;
   }
@@ -1935,7 +1899,7 @@ async function loadBriefing(forceRefresh) {
       el.textContent = first + '.';
       if (dateEl) {
         var now2 = new Date();
-        dateEl.textContent = '📡 ' + now2.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
+        dateEl.textContent = now2.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '\n· live';
       }
       if (tagsEl) tagsEl.innerHTML = '';
       if (forceRefresh) toast('🧠 Briefing refreshed!');
