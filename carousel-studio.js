@@ -1377,11 +1377,26 @@ function updateBrand(){ST.brand=document.getElementById('brandInput')?document.g
 function changeLayout(newLayout){
   if(!ST.slides.length) return;
   ST.slides[ST.cur].layout=newLayout;
+  // Step 3 — lock font pair to match the layout's sealed token
+  var lockedFont=window.getLayoutDefaultFont ? window.getLayoutDefaultFont(newLayout) : 'cormorant';
+  ST.fontPair=lockedFont;
+  document.querySelectorAll('.font-btn').forEach(function(b){b.classList.toggle('active',b.dataset.pair===lockedFont);});
   renderSlide();fillEdit();
   toast('Layout → '+newLayout.replace(/_/g,' '));
 }
 
 function setFontPair(pair){
+  // Step 3 — check if the current slide's layout locks the font
+  if(ST.slides.length && window.getLayoutDefaultFont){
+    var curLayout=ST.slides[ST.cur].layout||'FULL_BLEED';
+    var lockedFont=window.getLayoutDefaultFont(curLayout);
+    if(lockedFont && lockedFont !== pair){
+      // Font is locked by token — snap UI back to locked font, don't override
+      document.querySelectorAll('.font-btn').forEach(function(b){b.classList.toggle('active',b.dataset.pair===lockedFont);});
+      toast('Font locked to '+lockedFont+' for this style');
+      return;
+    }
+  }
   ST.fontPair=pair;
   document.querySelectorAll('.font-btn').forEach(function(b){b.classList.toggle('active',b.dataset.pair===pair);});
   if(ST.slides.length) renderSlide();
