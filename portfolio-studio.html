@@ -8,26 +8,72 @@
 <link rel="stylesheet" href="portfolio-studio.css"/>
 <style>
 /* ── Mobile scroll fix ──────────────────────────────
-   html/body height:100% + any overflow:hidden on
-   .ps-shell or .ps-screen blocks page scroll on iOS/Android.
-   Force normal document flow on mobile.
+   Aggressive override — targets every possible source
+   of overflow:hidden that can trap scroll on iOS/Android.
+   Uses !important throughout because shared.css and
+   portfolio-studio.css may set conflicting values.
 ──────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  html, body {
+  html {
     height: auto !important;
-    min-height: 100%;
-    overflow-x: hidden;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
   }
-  .ps-shell,
-  .ps-screen,
-  .ps-screen.active {
+  body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    position: relative !important;
+  }
+  /* Shell: full normal document flow */
+  .ps-shell {
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
-    overflow-y: visible !important;
-    position: static !important;
+    position: relative !important;
+    display: block !important;
+  }
+  /* Screens: stack vertically; only .active is shown */
+  .ps-screen {
+    display: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+  .ps-screen.active {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+  /* Builder panels: let them flow naturally */
+  .builder-wrap,
+  .builder-left,
+  .builder-right,
+  .be-panel,
+  .onboard-wrap,
+  .ob-wrap {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: relative !important;
+    max-height: none !important;
+  }
+  /* Preview iframe should stay bounded */
+  .builder-right iframe,
+  #livePreviewFrame {
+    height: 420px !important;
+    max-height: 420px !important;
+    overflow: hidden !important;
+    position: relative !important;
   }
 }
 </style>
@@ -76,6 +122,11 @@
       </div>
 
       <div class="ps-hero-cards">
+        <!-- Mobile-only demo disclaimer — visible only when no portfolios exist -->
+        <div class="ps-demo-notice" id="psDemoNotice" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          These are <strong>example portfolios</strong> — not yours. Tap <em>Build My Portfolio</em> above to create yours.
+        </div>
         <div class="ps-website-card ps-hero-card">
           <div class="ps-website-card-browser">
             <div class="ps-browser-bar">
@@ -181,6 +232,26 @@
     @media (max-width: 700px) {
       .ps-hero-cards { grid-template-columns: 1fr; }
       .ps-hero-card-mid { display: none; }
+    }
+    /* Demo notice — shown on mobile above the sample cards */
+    .ps-demo-notice {
+      display: none; /* shown via JS on mobile */
+      grid-column: 1 / -1;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #a8afc2;
+      background: rgba(201,168,76,.08);
+      border: 1px solid rgba(201,168,76,.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      line-height: 1.5;
+    }
+    .ps-demo-notice svg { flex-shrink: 0; color: #c9a84c; }
+    .ps-demo-notice strong { color: #c9a84c; font-weight: 700; }
+    .ps-demo-notice em { font-style: normal; font-weight: 600; color: #eef0f6; }
+    @media (max-width: 900px) {
+      .ps-demo-notice { display: flex !important; }
     }
     .ps-hero-card { transition: transform .3s ease; }
     .ps-hero-card-mid { transform: translateY(-18px); }
