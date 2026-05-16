@@ -1,2002 +1,824 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<title>Carousel Studio · ImpactGrid</title>
-<meta name="description" content="Create high-performing social media carousels with AI. Dijo writes punchy, platform-native copy with live trend data, captions, and hashtags — exported at 1080px."/>
-<meta property="og:title" content="Carousel Studio · ImpactGrid"/>
-<meta property="og:description" content="AI carousel creator — real copy, live hashtags, 1080px PNG export."/>
-<meta property="og:type" content="website"/>
-<meta name="theme-color" content="#0d1017"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<title>Portfolio Studio · ImpactGrid</title>
 <link rel="stylesheet" href="shared.css"/>
-<link rel="stylesheet" href="carousel-studio.css"/>
-<link rel="stylesheet" href="carousel-studio-additions.css"/>
-<link rel="stylesheet" href="carousel-studio-mobile.css"/>
-
-<style>
-/* ═══════════════════════════════════════════════════════
-   SCREEN SYSTEM — wizard flow
-   screenWizard → screenStudio
-   Only one .ig-screen is .active at a time.
-═══════════════════════════════════════════════════════ */
-.ig-screen {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-}
-.ig-screen.active {
-  display: block;
-}
-
-/* ── WIZARD SCREEN ───────────────────────────────────── */
-:root {
-  --gold-glo: rgba(201,168,76,.35);
-  --nav-h: 64px;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* Wizard step bar */
-.wiz-steps-bar {
-  position: fixed; top: var(--nav-h); left: 0; right: 0; z-index: 90;
-  background: rgba(10,12,18,.95); backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  padding: 8px 24px; gap: 0;
-}
-.wiz-steps { display: flex; align-items: center; gap: 0; }
-.wiz-step-item { display: flex; align-items: center; gap: 8px; }
-.wiz-step-num {
-  width: 26px; height: 26px; border-radius: 50%;
-  border: 1.5px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-family: var(--fd); font-weight: 800;
-  color: var(--text3); transition: all .35s;
-}
-.wiz-step-num.done  { background: var(--gold); border-color: var(--gold); color: #07090f; }
-.wiz-step-num.active { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
-.wiz-step-label {
-  font-size: 10.5px; font-family: var(--fd); font-weight: 700;
-  letter-spacing: .08em; text-transform: uppercase;
-  color: var(--text3); transition: color .35s; white-space: nowrap;
-}
-.wiz-step-item.active .wiz-step-label { color: var(--gold); }
-.wiz-step-item.done  .wiz-step-label  { color: var(--text2); }
-.wiz-step-line {
-  width: 32px; height: 1px; background: var(--border2);
-  margin: 0 6px; flex-shrink: 0; transition: background .35s;
-}
-.wiz-step-line.done { background: var(--gold); }
-
-/* Wizard shell */
-.wiz-shell {
-  padding-top: calc(var(--nav-h) + 48px);
-  height: 100vh;
-  display: flex; flex-direction: column;
-  overflow: hidden; position: relative;
-}
-.wiz-shell::before {
-  content: '';
-  position: fixed; inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 60%, rgba(201,168,76,.04) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 60% at 80% 20%, rgba(201,168,76,.03) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
-}
-.wiz-pages { flex: 1; overflow: hidden; position: relative; }
-.wiz-page {
-  position: absolute; inset: 0;
-  overflow-y: auto;
-  padding: 40px 24px 120px;
-  opacity: 0; transform: translateX(40px);
-  transition: opacity .4s cubic-bezier(.4,0,.2,1), transform .4s cubic-bezier(.4,0,.2,1);
-  pointer-events: none;
-  display: flex; flex-direction: column; align-items: center;
-}
-.wiz-page::-webkit-scrollbar { width: 4px; }
-.wiz-page::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-.wiz-page.active { opacity: 1; transform: translateX(0); pointer-events: all; }
-.wiz-page.exit-left { opacity: 0; transform: translateX(-40px); pointer-events: none; }
-
-.wiz-page-inner { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 28px; }
-.wiz-page-head { text-align: center; }
-.wiz-page-kicker {
-  font-size: 10px; font-family: var(--fd); font-weight: 700;
-  letter-spacing: .16em; text-transform: uppercase;
-  color: var(--gold); margin-bottom: 12px; display: block;
-}
-.wiz-page-title {
-  font-family: var(--fs); font-size: clamp(28px, 5vw, 42px);
-  font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 10px;
-}
-.wiz-page-title em { font-style: italic; color: var(--gold); }
-.wiz-page-sub { font-size: 14px; color: var(--text3); line-height: 1.6; max-width: 480px; margin: 0 auto; }
-
-/* Form elements */
-.field { display: flex; flex-direction: column; gap: 8px; }
-.field-label {
-  font-size: 10px; font-family: var(--fd); font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
-}
-.wiz-textarea {
-  width: 100%; min-height: 110px;
-  background: var(--card); border: 1px solid var(--border2);
-  border-radius: 12px; color: var(--text); font-family: var(--fb);
-  font-size: 15px; line-height: 1.6; padding: 16px;
-  outline: none; resize: none; transition: all .25s;
-}
-.wiz-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
-.wiz-textarea::placeholder { color: var(--text3); }
-.field-hint { font-size: 11px; color: var(--text3); text-align: right; margin-top: -4px; }
-
-/* Pill groups */
-.pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
-.pill {
-  padding: 8px 16px; border-radius: 99px;
-  border: 1px solid var(--border2); background: var(--card);
-  font-size: 12.5px; font-weight: 600; font-family: var(--fb);
-  color: var(--text2); cursor: pointer; transition: all .2s; white-space: nowrap;
-  display: flex; align-items: center; gap: 6px;
-}
-.pill:hover { border-color: var(--gold); color: var(--text); }
-.pill.sel { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
-.pill-icon { font-size: 14px; line-height: 1; }
-
-/* Slide count */
-.slide-count-row {
-  display: flex; align-items: center; gap: 0;
-  background: var(--card); border: 1px solid var(--border2);
-  border-radius: 12px; overflow: hidden; width: fit-content; align-self: flex-start;
-}
-.sc-btn {
-  width: 44px; height: 44px; background: none; border: none;
-  color: var(--text2); font-size: 20px; font-weight: 300;
-  cursor: pointer; transition: all .2s;
-  display: flex; align-items: center; justify-content: center;
-}
-.sc-btn:hover { color: var(--gold); background: var(--gold-dim); }
-.sc-inner {
-  padding: 0 20px; text-align: center;
-  border-left: 1px solid var(--border2); border-right: 1px solid var(--border2); min-width: 80px;
-}
-.sc-val { font-family: var(--fd); font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; display: block; }
-.sc-sub { font-size: 9px; font-family: var(--fd); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); display: block; margin-top: 2px; }
-
-/* Style cards */
-.style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-.style-card { border-radius: 14px; overflow: hidden; border: 2px solid var(--border2); cursor: pointer; transition: all .25s; background: var(--card); position: relative; }
-.style-card:hover { border-color: rgba(201,168,76,.4); transform: translateY(-2px); }
-.style-card.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 8px 32px rgba(201,168,76,.2); }
-.style-preview { width: 100%; aspect-ratio: 1; position: relative; overflow: hidden; background: #0a0c12; }
-.style-check {
-  position: absolute; top: 8px; right: 8px; z-index: 10;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--gold); border: 2px solid #07090f;
-  display: none; align-items: center; justify-content: center;
-}
-.style-card.sel .style-check { display: flex; }
-.style-check svg { width: 10px; height: 10px; }
-.style-name { padding: 10px 12px 12px; font-size: 11px; font-family: var(--fd); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); }
-
-/* Style previews */
-.prev-fullbleed, .prev-botstrip, .prev-topstrip, .prev-band, .prev-dual, .prev-stat, .prev-edcover, .prev-edcollage, .prev-edcol3, .prev-habit { width: 100%; height: 100%; position: relative; overflow: hidden; }
-.prev-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; z-index: 0; }
-.prev-photo-fill { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
-.prev-fullbleed { background: #0a0c12; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px; }
-.prev-fullbleed .prev-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.80) 100%); pointer-events: none; }
-.prev-fullbleed .prev-tag { position: absolute; top: 9px; left: 9px; z-index: 3; font-size: 6.5px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,.8); padding: 2px 6px; border-radius: 3px; background: rgba(201,168,76,.28); border: 1px solid rgba(201,168,76,.45); }
-.prev-fullbleed .prev-slide-num { position: absolute; top: 9px; right: 9px; z-index: 3; font-size: 7.5px; font-weight: 700; color: rgba(255,255,255,.65); background: rgba(0,0,0,.5); padding: 2px 5px; border-radius: 4px; }
-.prev-fullbleed .prev-text { position: relative; z-index: 2; }
-.prev-fullbleed .prev-h1 { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: #fff; line-height: 1.15; margin-bottom: 3px; }
-.prev-fullbleed .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-fullbleed .prev-p { font-size: 8px; color: rgba(255,255,255,.6); line-height: 1.4; }
-.prev-botstrip { background: #0a0c12; display: flex; flex-direction: column; }
-.prev-botstrip .prev-img-area { flex: 0 0 58%; position: relative; overflow: hidden; }
-.prev-botstrip .prev-img-area::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(10,12,18,.75) 100%); z-index: 1; }
-.prev-botstrip .prev-bar { flex: 1; background: #0f1118; padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; border-top: 1px solid rgba(201,168,76,.2); }
-.prev-botstrip .prev-h1 { font-family: 'Playfair Display', serif; font-size: 11.5px; font-weight: 700; color: #fff; margin-bottom: 2px; line-height: 1.2; }
-.prev-botstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-botstrip .prev-p { font-size: 7.5px; color: rgba(255,255,255,.5); }
-.prev-topstrip { background: #0f1118; display: flex; flex-direction: column; }
-.prev-topstrip .prev-bar { flex: 0 0 42%; background: #0f1118; padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid rgba(201,168,76,.2); }
-.prev-topstrip .prev-img-area { flex: 1; overflow: hidden; position: relative; }
-.prev-topstrip .prev-h1 { font-family: 'Playfair Display', serif; font-size: 11.5px; font-weight: 700; color: #fff; margin-bottom: 2px; line-height: 1.2; }
-.prev-topstrip .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-topstrip .prev-p { font-size: 7.5px; color: rgba(255,255,255,.5); }
-.prev-band { background: #0a0c12; display: flex; flex-direction: column; justify-content: center; }
-.prev-band .prev-img-area { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
-.prev-band .prev-img-area::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.42); z-index: 1; }
-.prev-band .prev-bar { position: relative; z-index: 2; background: #c9a84c; padding: 13px 12px; margin: 20px 0; display: flex; flex-direction: column; gap: 3px; }
-.prev-band .prev-h1 { font-family: 'Playfair Display', serif; font-size: 12.5px; font-weight: 800; color: #07090f; line-height: 1.15; }
-.prev-band .prev-p { font-size: 7.5px; color: rgba(0,0,0,.6); }
-.prev-dual { background: #0a0c12; }
-.prev-dual .prev-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
-.prev-dual .prev-bg::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.50); z-index: 1; }
-.prev-dual .prev-thumb { position: absolute; top: 10px; right: 10px; z-index: 3; width: 34%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1.5px solid rgba(255,255,255,.22); box-shadow: 0 4px 16px rgba(0,0,0,.5); }
-.prev-dual .prev-text-bottom { position: absolute; bottom: 0; left: 0; right: 0; z-index: 3; padding: 10px; }
-.prev-dual .prev-h1 { font-family: 'Playfair Display', serif; font-size: 11.5px; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1.2; }
-.prev-dual .prev-h1 em { color: #c9a84c; font-style: normal; }
-.prev-dual .prev-p { font-size: 7.5px; color: rgba(255,255,255,.55); line-height: 1.35; }
-.prev-stat { background: #0f1118; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 12px; }
-.prev-stat .prev-stat-strip { position: absolute; bottom: 0; left: 0; right: 0; height: 26%; overflow: hidden; opacity: .38; z-index: 0; }
-.prev-stat .prev-num { font-family: 'Playfair Display', serif; font-size: 46px; font-weight: 800; color: #c9a84c; line-height: 1; position: relative; z-index: 2; }
-.prev-stat .prev-rule { width: 26px; height: 1px; background: rgba(201,168,76,.5); position: relative; z-index: 2; }
-.prev-stat .prev-label { font-size: 8px; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.5); text-align: center; position: relative; z-index: 2; line-height: 1.4; }
-.prev-edcover { background: #0a0c12; }
-.prev-edcover .prev-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.84) 100%); pointer-events: none; }
-.prev-edcover .prev-badge { position: absolute; top: 10px; left: 10px; z-index: 3; font-size: 7px; color: rgba(255,255,255,.88); border: 1px solid rgba(255,255,255,.5); border-radius: 40px; padding: 2px 7px; letter-spacing: .3px; }
-.prev-edcover .prev-brand-top { position: absolute; top: 11px; right: 10px; z-index: 3; font-size: 7.5px; color: rgba(255,255,255,.75); letter-spacing: .3px; }
-.prev-edcover .prev-text { position: absolute; bottom: 0; left: 0; right: 0; z-index: 3; padding: 0 11px 11px; }
-.prev-edcover .prev-h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: 400; color: #fff; line-height: 1.05; }
-.prev-edcover .prev-h1 em { font-style: italic; }
-.prev-edcover .prev-rule { width: 18px; height: 1.5px; background: rgba(255,255,255,.5); margin: 5px 0; }
-.prev-edcover .prev-p { font-size: 7.5px; color: rgba(255,255,255,.6); line-height: 1.45; }
-.prev-edcover .prev-stars { position: absolute; bottom: 9px; right: 9px; z-index: 3; font-size: 9px; color: rgba(255,255,255,.38); letter-spacing: 3px; }
-.prev-edcollage { background: #f0ebe1; }
-.prev-edcollage .prev-badge { position: absolute; top: 9px; left: 9px; z-index: 6; font-size: 7px; color: #888; border: 1px solid #b0a898; border-radius: 40px; padding: 2px 7px; }
-.prev-edcollage .prev-brand-top { position: absolute; top: 10px; right: 9px; z-index: 6; font-size: 7.5px; color: #888; }
-.prev-edcollage .prev-big-num { position: absolute; top: 22px; right: 8px; z-index: 2; font-family: Georgia, 'Times New Roman', serif; font-size: 76px; font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .88; }
-.prev-edcollage .prev-photo-1 { position: absolute; left: 9px; top: 38px; width: 40%; height: 44%; border-radius: 2px; overflow: hidden; z-index: 3; }
-.prev-edcollage .prev-photo-2 { position: absolute; left: 22%; top: 42%; width: 36%; height: 42%; border-radius: 2px; overflow: hidden; z-index: 4; box-shadow: 0 3px 12px rgba(0,0,0,.18); }
-.prev-edcollage .prev-text-right { position: absolute; left: 52%; right: 0; top: 0; bottom: 0; z-index: 5; background: #f0ebe1; border-left: 1.5px solid rgba(180,160,130,.3); display: flex; flex-direction: column; justify-content: center; padding: 8px 9px; gap: 5px; }
-.prev-edcollage .prev-h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400; color: #1a1814; line-height: 1.2; }
-.prev-edcollage .prev-h1 em { font-style: italic; }
-.prev-edcollage .prev-p { font-size: 7px; color: #666; line-height: 1.5; }
-.prev-edcollage .prev-foot { position: absolute; bottom: 7px; left: 9px; z-index: 6; font-size: 7px; color: #a09888; }
-.prev-edcollage .prev-stars { position: absolute; bottom: 7px; right: 7px; z-index: 6; font-size: 9px; color: #b0a090; letter-spacing: 3px; }
-.prev-edcol3 { background: #f0ebe1; }
-.prev-edcol3 .prev-badge { position: absolute; top: 9px; right: 9px; z-index: 6; font-size: 7px; color: #888; border: 1px solid #b0a898; border-radius: 40px; padding: 2px 7px; }
-.prev-edcol3 .prev-big-num { position: absolute; top: 22px; left: 6px; z-index: 2; font-family: Georgia, 'Times New Roman', serif; font-size: 76px; font-style: italic; font-weight: 700; color: #1a1814; line-height: 1; opacity: .88; }
-.prev-edcol3 .prev-text-left { position: absolute; left: 0; right: 50%; top: 0; bottom: 0; z-index: 5; background: #f0ebe1; border-right: 1.5px solid rgba(180,160,130,.3); display: flex; flex-direction: column; justify-content: center; padding: 8px; }
-.prev-edcol3 .prev-h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 400; color: #1a1814; line-height: 1.2; }
-.prev-edcol3 .prev-h1 em { font-style: italic; }
-.prev-edcol3 .prev-p { font-size: 7px; color: #666; line-height: 1.5; margin-top: 4px; }
-.prev-edcol3 .prev-photos-right { position: absolute; left: 51%; right: 9px; top: 36px; bottom: 26px; z-index: 3; display: flex; flex-direction: column; gap: 4px; }
-.prev-edcol3 .prev-photo-wide { flex: 0 0 46%; overflow: hidden; border-radius: 2px; }
-.prev-edcol3 .prev-photos-bottom { flex: 1; display: flex; gap: 4px; }
-.prev-edcol3 .prev-photo-sm { flex: 1; overflow: hidden; border-radius: 2px; }
-.prev-edcol3 .prev-foot { position: absolute; bottom: 7px; left: 7px; z-index: 6; font-size: 7px; color: #a09888; }
-.prev-edcol3 .prev-stars { position: absolute; bottom: 7px; right: 7px; z-index: 6; font-size: 9px; color: #b0a090; letter-spacing: 3px; }
-.prev-habit { background: #0a0c12; }
-.prev-habit .prev-overlay { position: absolute; inset: 0; z-index: 1; background: rgba(8,8,6,.38); pointer-events: none; }
-.prev-habit .prev-topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 3; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid rgba(255,255,255,.2); }
-.prev-habit .prev-topbar span { font-size: 6px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.8); }
-.prev-habit .prev-title-block { position: absolute; left: 11px; right: 11px; bottom: 28px; z-index: 2; }
-.prev-habit .prev-h1 { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 800; color: #c9a84c; line-height: .9; letter-spacing: -.3px; }
-.prev-habit .prev-sub { font-size: 7px; color: #c9a84c; letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; line-height: 1.4; }
-.prev-habit .prev-botbar { position: absolute; bottom: 0; left: 0; right: 0; z-index: 3; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; }
-.prev-habit .prev-botbar span { font-size: 6px; color: rgba(255,255,255,.42); letter-spacing: .06em; }
-
-/* Image upload */
-.img-upload-zone {
-  border: 2px dashed var(--border2); border-radius: 16px;
-  padding: 48px 24px; text-align: center;
-  background: var(--card); cursor: pointer; transition: all .25s;
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  position: relative; overflow: hidden;
-}
-.img-upload-zone:hover, .img-upload-zone.drag { border-color: var(--gold); background: var(--gold-dim); }
-.img-upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.upload-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(201,168,76,.1); border: 1px solid rgba(201,168,76,.2); display: flex; align-items: center; justify-content: center; }
-.upload-icon svg { width: 22px; height: 22px; color: var(--gold); }
-.upload-title { font-family: var(--fd); font-size: 16px; font-weight: 700; color: var(--text); }
-.upload-sub { font-size: 13px; color: var(--text3); }
-.upload-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
-.upload-thumb { width: 80px; height: 80px; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid var(--border2); }
-.upload-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.upload-thumb-rm { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,.8); border: none; color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; }
-.skip-note { font-size: 12px; color: var(--text3); text-align: center; }
-.skip-note a { color: var(--gold); cursor: pointer; text-decoration: none; }
-.skip-note a:hover { text-decoration: underline; }
-
-/* Wizard footer nav */
-.wiz-foot {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(10,12,18,.95); backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-  padding: 16px 24px calc(16px + env(safe-area-inset-bottom, 0px));
-  display: flex; align-items: center; gap: 12px; z-index: 100;
-}
-.wiz-progress { flex: 1; height: 3px; background: var(--border2); border-radius: 99px; overflow: hidden; }
-.wiz-progress-fill { height: 100%; background: var(--gold); border-radius: 99px; transition: width .5s cubic-bezier(.4,0,.2,1); }
-.wiz-btn-back {
-  padding: 11px 20px; border-radius: 10px;
-  border: 1px solid var(--border2); background: var(--card);
-  font-size: 13px; font-weight: 600; font-family: var(--fd);
-  letter-spacing: .06em; text-transform: uppercase;
-  color: var(--text2); cursor: pointer; transition: all .2s; white-space: nowrap;
-}
-.wiz-btn-back:hover { border-color: var(--gold); color: var(--gold); }
-.wiz-btn-next {
-  padding: 12px 28px; border-radius: 10px;
-  background: var(--gold); border: none;
-  font-size: 13px; font-weight: 700; font-family: var(--fd);
-  letter-spacing: .08em; text-transform: uppercase;
-  color: #07090f; cursor: pointer; transition: all .25s;
-  white-space: nowrap; display: flex; align-items: center; gap: 8px;
-}
-.wiz-btn-next:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(201,168,76,.35); }
-.wiz-btn-next:disabled { opacity: .4; transform: none; box-shadow: none; cursor: not-allowed; }
-.wiz-btn-next svg { width: 14px; height: 14px; }
-
-/* Page 4 — generating animation */
-.gen-shell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; gap: 32px; padding: 40px 24px; }
-.gen-spinner { width: 72px; height: 72px; position: relative; }
-.gen-spinner::before, .gen-spinner::after { content: ''; position: absolute; border-radius: 50%; }
-.gen-spinner::before { inset: 0; border: 2px solid var(--border2); }
-.gen-spinner::after { inset: 4px; border: 2px solid transparent; border-top-color: var(--gold); animation: spin 1s linear infinite; }
-.gen-star { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; animation: pulse-star 2s ease-in-out infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse-star { 0%,100% { opacity: .4; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.05); } }
-.gen-title { font-family: var(--fs); font-size: 28px; font-weight: 700; color: var(--text); text-align: center; }
-.gen-title em { font-style: italic; color: var(--gold); }
-.gen-steps-list { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px; }
-.gen-step { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); transition: all .4s; }
-.gen-step.done { border-color: rgba(201,168,76,.25); background: var(--gold-dim); }
-.gen-step.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-dim); }
-.gen-step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: all .4s; }
-.gen-step.done .gen-step-dot { background: var(--gold); }
-.gen-step.active .gen-step-dot { background: var(--gold); box-shadow: 0 0 8px var(--gold-glo); animation: blink .8s ease-in-out infinite; }
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-.gen-step-text { font-size: 13px; color: var(--text3); transition: color .4s; }
-.gen-step.active .gen-step-text, .gen-step.done .gen-step-text { color: var(--text2); }
-
-/* Page 4 mosaic */
-.page-hero-mosaic { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; border-radius: 16px; overflow: hidden; height: 160px; width: 100%; max-width: 640px; margin: 0 auto 4px; }
-.page-hero-mosaic .moz-cell { overflow: hidden; position: relative; }
-.page-hero-mosaic .moz-cell img { width: 100%; height: 100%; object-fit: cover; object-position: center top; filter: brightness(.7) saturate(1.2); }
-.page-hero-mosaic .moz-cell:first-child { grid-row: span 2; }
-
-/* Split layout for pages 1 & 3 */
-.split-page { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: calc(100vh - var(--nav-h) - 48px - 64px); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2); }
-.split-img-col { position: relative; overflow: hidden; min-height: 480px; }
-.split-img-col img { width: 100%; height: 100%; object-fit: cover; object-position: center top; filter: brightness(.72) saturate(1.15); display: block; transition: transform .7s ease; }
-.split-page:hover .split-img-col img { transform: scale(1.03); }
-.split-img-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(10,12,18,.3) 0%, rgba(201,168,76,.08) 100%); pointer-events: none; }
-.split-img-badge { position: absolute; bottom: 20px; left: 20px; font-size: 9px; font-family: var(--fd); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); background: rgba(10,12,18,.65); backdrop-filter: blur(8px); padding: 5px 12px; border-radius: 99px; border: 1px solid rgba(201,168,76,.35); }
-.split-form-col { background: var(--card); padding: 40px 36px; display: flex; flex-direction: column; gap: 24px; justify-content: center; }
-.split-outer { width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: 0; }
-#wpage1.wiz-page, #wpage3.wiz-page { padding-left: 16px; padding-right: 16px; }
-
-/* Responsive wizard */
-@media (max-width: 700px) {
-  .wiz-step-label { display: none; }
-  .wiz-step-line { width: 16px; }
-  .style-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-  .split-page { grid-template-columns: 1fr; min-height: unset; border-radius: 16px; }
-  .split-img-col { min-height: 220px; max-height: 260px; }
-  .split-form-col { padding: 28px 20px; }
-}
-@media (max-width: 480px) {
-  .wiz-page { padding: 24px 16px 100px; }
-  .wiz-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
-}
-
-/* ── STUDIO SCREEN ───────────────────────────────────── */
-#screenStudio {
-  overflow: hidden;
-}
-
-/* Transition between screens */
-.ig-screen-transition {
-  animation: screenFadeIn .4s cubic-bezier(.4,0,.2,1) both;
-}
-@keyframes screenFadeIn {
-  from { opacity: 0; transform: scale(.98); }
-  to   { opacity: 1; transform: scale(1); }
-}
-</style>
+<link rel="stylesheet" href="portfolio-studio.css"/>
 </head>
 <body>
 
-<!-- SHARED NAV — nav.js injects here (only once, outside screens) -->
+<!-- ══════════════ NAV ══════════════ -->
 <div id="ig-nav"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="ig-supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+<script src="nav.js"></script>
 
-<!-- ══════════════════════════════════════════════════
-     SCREEN: WIZARD
-══════════════════════════════════════════════════ -->
-<div class="ig-screen active" id="screenWizard">
+<!-- ══════════════ SHELL ══════════════ -->
+<div class="ps-shell">
 
-  <!-- Wizard step bar -->
-  <div class="wiz-steps-bar">
-    <div class="wiz-steps" id="wizSteps">
-      <div class="wiz-step-item active" data-step="1">
-        <div class="wiz-step-num active">1</div>
-        <div class="wiz-step-label">Topic</div>
+  <!-- ══ SCREEN 1: DASHBOARD (list of portfolios) ══ -->
+  <div class="ps-screen active" id="screenDash">
+
+    <!-- ── User Plan Banner — populated automatically from window.igUser (ig-supabase) ── -->
+    <div class="ps-user-banner" id="psUserBanner" style="display:none;">
+      <div class="ps-user-banner-left">
+        <div class="ps-welcome" id="psWelcome">Welcome back 👋</div>
+        <div class="ps-plan-row">
+          <span class="ps-plan-badge" id="psPlanBadge">Free</span>
+          <span class="ps-trial-info" id="psTrialInfo"></span>
+        </div>
       </div>
-      <div class="wiz-step-line" id="line12"></div>
-      <div class="wiz-step-item" data-step="2">
-        <div class="wiz-step-num">2</div>
-        <div class="wiz-step-label">Style</div>
+      <a href="pricing.html" class="ps-upgrade-link" id="psUpgradeLink" style="display:none;">Upgrade plan →</a>
+    </div>
+
+    <div class="dash-hero">
+      <div class="dash-hero-text">
+        <div class="dash-eyebrow">✦ Dijo AI</div>
+        <h1 class="dash-headline">Your Portfolio<br/><em>Studio</em></h1>
+        <p class="dash-sub">Dijo picks visuals, writes your copy, builds your brand.<br/>One link. Every brand deal opportunity.</p>
+        <!-- onclick now calls gated psHandleCreate() instead of going directly to onboard -->
+        <button class="dash-create-btn" id="dashCreateBtn" onclick="psHandleCreate()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New Portfolio
+        </button>
       </div>
-      <div class="wiz-step-line" id="line23"></div>
-      <div class="wiz-step-item" data-step="3">
-        <div class="wiz-step-num">3</div>
-        <div class="wiz-step-label">Photos</div>
+      <div class="dash-hero-visual">
+        <div class="dash-orb dash-orb-1"></div>
+        <div class="dash-orb dash-orb-2"></div>
+        <div class="dash-orb dash-orb-3"></div>
+        <div class="dash-card-float">
+          <div class="dcf-dot"></div>
+          <div class="dcf-line"></div>
+          <div class="dcf-line short"></div>
+          <div class="dcf-stat-row">
+            <div class="dcf-stat"></div>
+            <div class="dcf-stat"></div>
+            <div class="dcf-stat"></div>
+          </div>
+        </div>
       </div>
-      <div class="wiz-step-line" id="line34"></div>
-      <div class="wiz-step-item" data-step="4">
-        <div class="wiz-step-num">4</div>
-        <div class="wiz-step-label">Generate</div>
+    </div>
+
+    <!-- Portfolio list -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <span class="dash-section-title">Your Portfolios</span>
+        <span class="dash-section-count" id="dashCount">0 portfolios</span>
+        <a href="creator-studio.html" class="ps-back-to-hub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+          Creator Studio
+        </a>
+      </div>
+      <div class="dash-grid" id="dashGrid">
+        <!-- Populated by JS -->
+        <div class="dash-empty" id="dashEmpty">
+          <div class="dash-empty-icon">✦</div>
+          <div class="dash-empty-title">No portfolios yet</div>
+          <div class="dash-empty-sub">Create your first AI-powered portfolio in minutes</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="wiz-shell">
-    <div class="wiz-pages">
-
-      <!-- PAGE 1: Topic -->
-      <div class="wiz-page active" id="wpage1">
-        <div class="split-outer">
-          <div class="split-page">
-            <div class="split-img-col">
-              <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&q=80&auto=format&fit=crop" alt="Creator at work" loading="eager"/>
-              <div class="split-img-overlay"></div>
-              <span class="split-img-badge">✦ Step 1 — Define your story</span>
-            </div>
-            <div class="split-form-col">
-              <div class="wiz-page-head" style="text-align:left;">
-                <h1 class="wiz-page-title" style="font-size:clamp(22px,3.5vw,34px);">What's your carousel <em>about?</em></h1>
-                <p class="wiz-page-sub" style="margin:0;">Describe your topic in a sentence or two. Dijo handles the narrative, copy, and design.</p>
-              </div>
-              <div class="field">
-                <label class="field-label">Your Topic</label>
-                <textarea class="wiz-textarea" id="wtopicInput" placeholder="e.g. Why most brands fail at content marketing — and how to fix it in 30 days" maxlength="300"></textarea>
-                <div class="field-hint"><span id="wtopicCount">0</span> / 300</div>
-              </div>
-              <div class="field">
-                <label class="field-label">Platform</label>
-                <div class="pill-group" id="wplatformGroup">
-                  <button class="pill sel" data-val="Instagram"><span class="pill-icon">📸</span>Instagram</button>
-                  <button class="pill" data-val="LinkedIn"><span class="pill-icon">💼</span>LinkedIn</button>
-                  <button class="pill" data-val="TikTok"><span class="pill-icon">🎵</span>TikTok</button>
-                  <button class="pill" data-val="Twitter"><span class="pill-icon">𝕏</span>Twitter / X</button>
-                  <button class="pill" data-val="Pinterest"><span class="pill-icon">📌</span>Pinterest</button>
-                </div>
-              </div>
-              <div class="field">
-                <label class="field-label">Tone</label>
-                <div class="pill-group" id="wtoneGroup">
-                  <button class="pill sel" data-val="Bold & Direct">Bold & Direct</button>
-                  <button class="pill" data-val="Conversational">Conversational</button>
-                  <button class="pill" data-val="Professional">Professional</button>
-                  <button class="pill" data-val="Inspirational">Inspirational</button>
-                  <button class="pill" data-val="Educational">Educational</button>
-                  <button class="pill" data-val="Playful">Playful</button>
-                </div>
-              </div>
-              <div class="field">
-                <label class="field-label">Number of Slides</label>
-                <div class="slide-count-row">
-                  <button class="sc-btn" id="wscMinus">−</button>
-                  <div class="sc-inner">
-                    <span class="sc-val" id="wscVal">7</span>
-                    <span class="sc-sub">slides</span>
-                  </div>
-                  <button class="sc-btn" id="wscPlus">+</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PAGE 2: Style -->
-      <div class="wiz-page" id="wpage2">
-        <div class="wiz-page-inner" style="max-width:760px">
-          <div class="wiz-page-head">
-            <h1 class="wiz-page-title">Pick your <em>visual style.</em></h1>
-            <p class="wiz-page-sub">Each preview shows exactly how your slides will look.</p>
-          </div>
-          <div class="style-grid" id="wstyleGrid">
-            <div class="style-card sel" data-style="Full Bleed">
-              <div class="style-preview">
-                <div class="prev-fullbleed">
-                  <img class="prev-photo" src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
-                  <div class="prev-overlay"></div>
-                  <span class="prev-tag">INSIGHT</span>
-                  <span class="prev-slide-num">01 / 07</span>
-                  <div class="prev-text">
-                    <div class="prev-h1">From ideas<br>to <em>impact.</em></div>
-                    <div class="prev-p">We help brands show up with intention.</div>
-                  </div>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Full Bleed</div>
-            </div>
-            <div class="style-card" data-style="Bot Strip">
-              <div class="style-preview">
-                <div class="prev-botstrip">
-                  <div class="prev-img-area"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                  <div class="prev-bar">
-                    <div class="prev-h1">Most brands don't lack <em>talent.</em></div>
-                    <div class="prev-p">They lack structure.</div>
-                  </div>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Bot Strip</div>
-            </div>
-            <div class="style-card" data-style="Top Strip">
-              <div class="style-preview">
-                <div class="prev-topstrip">
-                  <div class="prev-bar">
-                    <div class="prev-h1">Ready to build a brand people <em>remember?</em></div>
-                    <div class="prev-p">Strategy · Content · Growth</div>
-                  </div>
-                  <div class="prev-img-area"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Top Strip</div>
-            </div>
-            <div class="style-card" data-style="Band">
-              <div class="style-preview">
-                <div class="prev-band">
-                  <div class="prev-img-area"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                  <div class="prev-bar">
-                    <div class="prev-h1">That's where we come in.</div>
-                    <div class="prev-p">Strategy & Creative Direction</div>
-                  </div>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Overlap Band</div>
-            </div>
-            <div class="style-card" data-style="Dual Img">
-              <div class="style-preview">
-                <div class="prev-dual">
-                  <div class="prev-bg"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1493666438817-866a91353ca9?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                  <div class="prev-thumb"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1523413555250-4580a8bcd2df?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                  <div class="prev-text-bottom">
-                    <div class="prev-h1">Some people post. Others build <em>presence.</em></div>
-                    <div class="prev-p">Strategy, storytelling, consistency.</div>
-                  </div>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Dual Image</div>
-            </div>
-            <div class="style-card" data-style="Stat">
-              <div class="style-preview">
-                <div class="prev-stat">
-                  <div class="prev-stat-strip"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                  <div class="prev-num">87%</div>
-                  <div class="prev-rule"></div>
-                  <div class="prev-label">of buyers research on<br>social before deciding</div>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Stat Hero</div>
-            </div>
-            <div class="style-card" data-style="Ed. Cover">
-              <div class="style-preview">
-                <div class="prev-edcover">
-                  <img class="prev-photo" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
-                  <div class="prev-overlay"></div>
-                  <span class="prev-badge">Page 01</span>
-                  <span class="prev-brand-top">ImpactGrid</span>
-                  <div class="prev-text">
-                    <div class="prev-h1">From ideas to <em>impact.</em></div>
-                    <div class="prev-rule"></div>
-                    <div class="prev-p">We help brands show up with content that looks intentional.</div>
-                  </div>
-                  <span class="prev-stars">✽ ✽ ✽</span>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Ed. Cover</div>
-            </div>
-            <div class="style-card" data-style="Ed. Collage">
-              <div class="style-preview">
-                <div class="prev-edcollage">
-                  <span class="prev-badge">Page 01</span>
-                  <span class="prev-brand-top">ImpactGrid</span>
-                  <span class="prev-big-num">01</span>
-                  <div class="prev-photo-1"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                  <div class="prev-photo-2"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                  <div class="prev-text-right">
-                    <div class="prev-h1">That's where we <em>come in.</em></div>
-                    <div class="prev-p">Content · Creative · Community</div>
-                  </div>
-                  <span class="prev-foot">@impactgrid</span>
-                  <span class="prev-stars">✽ ✽ ✽</span>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Ed. Collage</div>
-            </div>
-            <div class="style-card" data-style="Ed. Col3">
-              <div class="style-preview">
-                <div class="prev-edcol3">
-                  <span class="prev-badge">Page 01</span>
-                  <span class="prev-big-num">01</span>
-                  <div class="prev-text-left">
-                    <div class="prev-h1">Three things that build a <em>brand.</em></div>
-                    <div class="prev-p">Plan · Create · Grow</div>
-                  </div>
-                  <div class="prev-photos-right">
-                    <div class="prev-photo-wide"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=300&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                    <div class="prev-photos-bottom">
-                      <div class="prev-photo-sm"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1523413555250-4580a8bcd2df?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                      <div class="prev-photo-sm"><img class="prev-photo-fill" src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=200&q=70&auto=format&fit=crop" alt="" loading="lazy"/></div>
-                    </div>
-                  </div>
-                  <span class="prev-foot">@impactgrid</span>
-                  <span class="prev-stars">✽ ✽ ✽</span>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Ed. Col×3</div>
-            </div>
-            <div class="style-card" data-style="Habit Cover">
-              <div class="style-preview">
-                <div class="prev-habit">
-                  <img class="prev-photo" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=70&auto=format&fit=crop" alt="" loading="lazy"/>
-                  <div class="prev-overlay"></div>
-                  <div class="prev-topbar"><span>IMPACTGRID</span><span>@impactgrid</span></div>
-                  <div class="prev-title-block">
-                    <div class="prev-h1">Post<br>With</div>
-                    <div class="prev-sub">Habit 1 of 5 · Brand Growth</div>
-                  </div>
-                  <svg class="prev-swirl" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none" style="position:absolute;right:14px;bottom:68px;z-index:3;width:32px;height:32px;opacity:.8;"><path d="M55 20 C55 20 70 30 62 48 C54 66 30 62 22 46 C14 30 28 14 44 18" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M44 18 L38 10 M44 18 L52 14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <div class="prev-botbar"><span>WWW.IMPACTGRID.COM</span><span>SLIDE 01</span></div>
-                </div>
-                <div class="style-check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#07090f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="style-name">Habit Cover</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PAGE 3: Photos -->
-      <div class="wiz-page" id="wpage3">
-        <div class="split-outer">
-          <div class="split-page">
-            <div class="split-img-col">
-              <img src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=900&q=80&auto=format&fit=crop" alt="Photographer at work" loading="lazy"/>
-              <div class="split-img-overlay"></div>
-              <span class="split-img-badge">✦ Step 3 — Your visuals</span>
-            </div>
-            <div class="split-form-col">
-              <div class="wiz-page-head" style="text-align:left;">
-                <h1 class="wiz-page-title" style="font-size:clamp(22px,3.5vw,34px);">Got photos to <em>include?</em></h1>
-                <p class="wiz-page-sub" style="margin:0;">Upload your own images and Dijo will use them in the carousel. Or skip — the AI selects cinematic photography for you.</p>
-              </div>
-              <div class="img-upload-zone" id="wuploadZone">
-                <input type="file" id="wfileInput" accept="image/*" multiple/>
-                <div class="upload-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <div class="upload-title">Upload images</div>
-                <div class="upload-sub">Drag & drop or click to browse · PNG, JPG, WEBP</div>
-              </div>
-              <div class="upload-preview" id="wuploadPreview"></div>
-              <p class="skip-note">No photos? <a id="wskipPhotos">Skip this step</a> — Dijo picks cinematic editorial photography automatically.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PAGE 4: Generating -->
-      <div class="wiz-page" id="wpage4">
-        <div class="gen-shell" id="wgenShell">
-          <div class="page-hero-mosaic">
-            <div class="moz-cell"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
-            <div class="moz-cell"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
-            <div class="moz-cell"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
-            <div class="moz-cell"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
-            <div class="moz-cell"><img src="https://images.unsplash.com/photo-1614644147798-f8c0fc9da7f6?w=400&q=80&auto=format&fit=crop&crop=face" alt="" loading="lazy"/></div>
-          </div>
-          <div class="gen-spinner"><div class="gen-star">✦</div></div>
-          <div class="gen-title">Dijo is building your<br><em>carousel…</em></div>
-          <div class="gen-steps-list">
-            <div class="gen-step active" id="wgs1"><div class="gen-step-dot"></div><div class="gen-step-text">Analysing topic & narrative structure</div></div>
-            <div class="gen-step" id="wgs2"><div class="gen-step-dot"></div><div class="gen-step-text">Writing slide copy with keyword emphasis</div></div>
-            <div class="gen-step" id="wgs3"><div class="gen-step-dot"></div><div class="gen-step-text">Selecting cinematic photography</div></div>
-            <div class="gen-step" id="wgs4"><div class="gen-step-dot"></div><div class="gen-step-text">Applying layout & overlay system</div></div>
-            <div class="gen-step" id="wgs5"><div class="gen-step-dot"></div><div class="gen-step-text">Finalising your carousel</div></div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /.wiz-pages -->
-
-    <!-- Footer nav -->
-    <div class="wiz-foot" id="wizFoot">
-      <button class="wiz-btn-back" id="wbtnBack" style="display:none">← Back</button>
-      <div class="wiz-progress">
-        <div class="wiz-progress-fill" id="wprogressFill" style="width:25%"></div>
-      </div>
-      <button class="wiz-btn-next" id="wbtnNext">
-        Continue
-        <svg viewBox="0 0 14 14" fill="none" width="14" height="14"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <!-- ══ SCREEN 2: ONBOARDING (AI intake) ══ -->
+  <div class="ps-screen" id="screenOnboard">
+    <div class="onboard-wrap">
+      <button class="ps-back-btn" onclick="showScreen('screenDash')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>Back
       </button>
+
+      <div class="ob-header">
+        <div class="ob-step-track">
+          <div class="ob-step active" id="obStep1">1</div>
+          <div class="ob-step-line"></div>
+          <div class="ob-step" id="obStep2">2</div>
+          <div class="ob-step-line"></div>
+          <div class="ob-step" id="obStep3">3</div>
+          <div class="ob-step-line"></div>
+          <div class="ob-step" id="obStep4">4</div>
+        </div>
+        <div class="ob-title" id="obTitle">Tell Dijo about yourself</div>
+        <div class="ob-sub" id="obSub">The more detail you give, the better Dijo builds.</div>
+      </div>
+
+      <!-- Step 1: Identity -->
+      <div class="ob-step-content active" id="obContent1">
+        <div class="ob-grid">
+          <div class="ob-field">
+            <label class="ob-lbl">Your name *</label>
+            <input class="ob-input" id="obName" placeholder="e.g. Sarah Johnson" oninput="obValidate()"/>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Your niche / title *</label>
+            <input class="ob-input" id="obNiche" placeholder="e.g. Fitness & Lifestyle Creator" oninput="obValidate()"/>
+          </div>
+          <div class="ob-field ob-full">
+            <label class="ob-lbl">What do you do? Tell Dijo everything.</label>
+            <textarea class="ob-textarea" id="obAbout" placeholder="I create fitness content for women over 30, I specialise in home workouts, nutrition tips and mindset. I work with supplement brands and activewear. I've been creating for 3 years and have built a highly engaged community..."></textarea>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Location</label>
+            <input class="ob-input" id="obLocation" placeholder="e.g. Manchester, UK"/>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Contact email * <span style="color:var(--sub,#888);font-weight:400;font-size:11px">— brands use this to reach you</span></label>
+            <input class="ob-input" id="obEmail" type="email" placeholder="hello@yoursite.com" oninput="obValidate()"/>
+            <div id="obEmailError" style="display:none;font-size:11px;color:#f87171;margin-top:4px;font-family:monospace">Please enter a valid email so brands can contact you</div>
+          </div>
+          <div class="ob-field ob-full">
+            <label class="ob-lbl">Logo (optional) <span style="color:var(--sub,#888);font-weight:400">— upload your brand logo</span></label>
+            <div class="ob-logo-upload" id="obLogoUploadArea" onclick="document.getElementById('obLogoFile').click()">
+              <img id="obLogoPreview" src="" alt="" style="display:none;max-height:56px;max-width:180px;object-fit:contain;border-radius:6px;"/>
+              <span id="obLogoPlaceholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Click to upload logo
+              </span>
+              <input type="file" id="obLogoFile" accept="image/*" style="display:none" onchange="obHandleLogoUpload(this)"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Social platforms -->
+      <div class="ob-step-content" id="obContent2">
+        <div class="ob-platforms-grid">
+
+          <!-- YouTube — CONNECTED -->
+          <div class="ob-plat-card connected" id="platCardYT">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon yt">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5 12 5 12 5s-4.8 0-7 .1c-.4 0-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.7 2.2.8C6.8 19 12 19 12 19s4.8 0 7-.2c.4 0 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 9.6 21.8 8 21.8 8zM10 15V9l5.2 3-5.2 3z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">YouTube</div>
+                <div class="ob-plat-status connected-badge">✓ Connected</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obYTUrl" placeholder="Channel URL or @handle" oninput="updatePreviewLive()"/>
+            <input class="ob-input sm" id="obYTSubs" placeholder="Subscriber count (e.g. 45K)" style="margin-top:6px" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- TikTok — CONNECTED -->
+          <div class="ob-plat-card connected" id="platCardTT">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon tt">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">TikTok</div>
+                <div class="ob-plat-status connected-badge">✓ Connected</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obTTUrl" placeholder="TikTok URL or @handle" oninput="updatePreviewLive()"/>
+            <input class="ob-input sm" id="obTTFollowers" placeholder="Follower count (e.g. 120K)" style="margin-top:6px" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- Instagram — COMING SOON -->
+          <div class="ob-plat-card coming-soon">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon ig">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">Instagram</div>
+                <div class="ob-plat-status soon-badge">Coming Soon</div>
+              </div>
+            </div>
+            <div class="ob-coming-msg">Instagram API integration is in progress. Your profile link will still display.</div>
+            <input class="ob-input sm" id="obIGUrl" placeholder="Instagram profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- LinkedIn -->
+          <div class="ob-plat-card optional">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon li">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">LinkedIn</div>
+                <div class="ob-plat-status opt-badge">Optional</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obLIUrl" placeholder="LinkedIn profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- Twitter/X -->
+          <div class="ob-plat-card optional">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon tw">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">Twitter / X</div>
+                <div class="ob-plat-status opt-badge">Optional</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obTWUrl" placeholder="Twitter/X profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+          <!-- Pinterest -->
+          <div class="ob-plat-card optional">
+            <div class="ob-plat-top">
+              <div class="ob-plat-icon pin">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 0C5.4 0 0 5.4 0 12c0 5.1 3.2 9.5 7.7 11.3-.1-.9-.2-2.4 0-3.4.2-.9 1.4-5.9 1.4-5.9s-.4-.7-.4-1.8c0-1.7.9-2.9 2.3-2.9 1.1 0 1.6.8 1.6 1.8 0 1.1-.7 2.7-1 4.2-.3 1.2.6 2.2 1.8 2.2 2.1 0 3.7-2.2 3.7-5.4 0-2.8-2-4.8-4.9-4.8-3.3 0-5.3 2.5-5.3 5.1 0 1 .4 2.1.9 2.7.1.1.1.2 0 .4l-.3 1.4c-.1.3-.3.4-.5.3-2-.9-3.2-3.8-3.2-6.1 0-5 3.6-9.5 10.4-9.5 5.5 0 9.7 3.9 9.7 9.1 0 5.4-3.4 9.8-8.2 9.8-1.6 0-3.1-.8-3.6-1.8l-1 3.7c-.4 1.4-1.3 3.1-1.9 4.2.7.2 1.4.3 2.2.3 6.6 0 12-5.4 12-12S18.6 0 12 0z"/></svg>
+              </div>
+              <div>
+                <div class="ob-plat-name">Pinterest</div>
+                <div class="ob-plat-status opt-badge">Optional</div>
+              </div>
+            </div>
+            <input class="ob-input sm" id="obPINUrl" placeholder="Pinterest profile URL" oninput="updatePreviewLive()"/>
+          </div>
+
+        </div>
+
+        <div class="ob-field ob-full" style="margin-top:20px">
+          <label class="ob-lbl">Total following across all platforms</label>
+          <input class="ob-input" id="obTotalFollowers" placeholder="e.g. 285K" oninput="updatePreviewLive()"/>
+        </div>
+        <div class="ob-two-col" style="margin-top:10px">
+          <div class="ob-field">
+            <label class="ob-lbl">Avg engagement rate</label>
+            <input class="ob-input" id="obEngagement" placeholder="e.g. 4.7%" oninput="updatePreviewLive()"/>
+          </div>
+          <div class="ob-field">
+            <label class="ob-lbl">Monthly views / plays</label>
+            <input class="ob-input" id="obMonthlyViews" placeholder="e.g. 2.1M" oninput="updatePreviewLive()"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Services & rates -->
+      <div class="ob-step-content" id="obContent3">
+        <div class="ob-section-intro">What services do you offer? Dijo will format this into a beautiful rate card and services section.</div>
+
+        <div class="ob-services-list" id="obServicesList">
+          <!-- Rows added by JS -->
+        </div>
+        <button class="ob-add-btn" onclick="addServiceRow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add service
+        </button>
+
+        <div class="ob-divider"></div>
+        <div class="ob-section-intro">Work examples / projects (optional but recommended)</div>
+        <div class="ob-projects-list" id="obProjectsList"></div>
+        <button class="ob-add-btn" onclick="addProjectRow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add project / collaboration
+        </button>
+
+        <div class="ob-divider"></div>
+        <div class="ob-section-intro">Testimonials (optional)</div>
+        <div class="ob-testimonials-list" id="obTestimonialsList"></div>
+        <button class="ob-add-btn" onclick="addTestimonialRow()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add testimonial
+        </button>
+      </div>
+
+      <!-- Step 4: Design & AI generate -->
+      <div class="ob-step-content" id="obContent4">
+        <div class="ob-section-intro">Choose a visual style. Dijo will pick images and videos that match your niche and build your entire portfolio.</div>
+
+        <div class="ob-theme-grid">
+          <div class="ob-theme-opt active" data-theme="dark" onclick="selectTheme(this,'dark')">
+            <div class="ob-theme-preview dark-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Dark Gold</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="navy" onclick="selectTheme(this,'navy')">
+            <div class="ob-theme-preview navy-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Navy Pro</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="clean" onclick="selectTheme(this,'clean')">
+            <div class="ob-theme-preview clean-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Clean Light</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="midnight" onclick="selectTheme(this,'midnight')">
+            <div class="ob-theme-preview midnight-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Midnight</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="rose" onclick="selectTheme(this,'rose')">
+            <div class="ob-theme-preview rose-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Rose Edit</div>
+          </div>
+          <div class="ob-theme-opt" data-theme="forest" onclick="selectTheme(this,'forest')">
+            <div class="ob-theme-preview forest-prev">
+              <div class="ob-tp-bar"></div>
+              <div class="ob-tp-line"></div>
+              <div class="ob-tp-line short"></div>
+            </div>
+            <div class="ob-theme-name">Forest</div>
+          </div>
+        </div>
+
+        <div class="ob-field" style="margin-top:20px">
+          <label class="ob-lbl">Custom accent colour</label>
+          <div class="ob-color-row">
+            <input type="color" class="ob-color-pick" id="obAccentColor" value="#c97e08" oninput="updatePreviewLive()"/>
+            <span class="ob-color-val" id="obColorVal">#c97e08</span>
+          </div>
+        </div>
+
+        <div class="ob-ai-generate-box" id="obAIBox">
+          <div class="ob-ai-icon">✦</div>
+          <div class="ob-ai-text">
+            <div class="ob-ai-title">Dijo is ready to build</div>
+            <div class="ob-ai-sub">AI will write your headline, bio, T&Cs, privacy policy, pick your hero visuals and design every section based on your niche.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav buttons -->
+      <div class="ob-nav">
+        <button class="ob-btn-back" id="obBackBtn" onclick="obBack()" style="display:none">← Back</button>
+        <div style="flex:1"></div>
+        <button class="ob-btn-next" id="obNextBtn" onclick="obNext()" disabled>Continue →</button>
+      </div>
     </div>
-  </div><!-- /.wiz-shell -->
-</div><!-- /#screenWizard -->
+  </div>
 
+  <!-- ══ SCREEN 3: BUILDER / EDITOR ══ -->
+  <div class="ps-screen" id="screenBuilder">
+    <div class="builder-shell">
 
-<!-- ══════════════════════════════════════════════════
-     SCREEN: STUDIO (the full carousel editor)
-══════════════════════════════════════════════════ -->
-<div class="ig-screen" id="screenStudio">
-
-  <!-- Mobile panel overlay -->
-  <div class="cs-panel-overlay" id="csPanelOverlay" onclick="closeAllPanels()"></div>
-
-  <!-- App shell -->
-  <div class="cs-shell">
-
-    <!-- Studio sub-nav / topbar -->
-    <div class="cs-topbar">
-      <button class="cs-btn cs-mob-left-btn" onclick="toggleLeftPanel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Generate
-      </button>
-
-      <!-- Back to wizard -->
-      <button class="cs-btn" onclick="showScreen('screenWizard')" title="Back to wizard" style="color:var(--text3)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
-        Wizard
-      </button>
-      <div class="cs-sep"></div>
-
-      <span class="cs-crumb">carousel-studio</span>
-      <div class="cs-sep"></div>
-
-      <div class="cs-plan-pill" id="csPlanPill" style="display:none">
-        <div class="cs-plan-av" id="csPlanAv">?</div>
-        <span class="cs-plan-name"  id="csPlanName">Creator</span>
-        <span class="cs-plan-badge" id="csPlanBadge">FREE</span>
-        <span class="cs-plan-uses"  id="csPlanUses"></span>
+      <!-- Mobile-only: Edit / Preview tab bar -->
+      <div class="builder-mobile-bar" id="builderMobileBar">
+        <div class="bm-tabs">
+          <button class="bm-tab active" id="bmTabEdit" onclick="mobilePanelShow('edit')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="margin-right:5px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button class="bm-tab" id="bmTabPreview" onclick="mobilePanelShow('preview')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="margin-right:5px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Preview
+          </button>
+        </div>
       </div>
 
-      <div class="cs-sp"></div>
+      <!-- Col 1: Vertical icon rail -->
+      <nav class="bl-rail">
+          <button class="bl-rail-tab active" data-tab="tabContent" onclick="setEditTab(this,'tabContent')" title="Content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span>Content</span>
+          </button>
+          <button class="bl-rail-tab" data-tab="tabDesign" onclick="setEditTab(this,'tabDesign')" title="Design">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 20v-8.5"/><path d="M8 20h8"/></svg>
+            <span>Design</span>
+          </button>
+          <button class="bl-rail-tab" data-tab="tabSocial" onclick="setEditTab(this,'tabSocial')" title="Social">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span>Social</span>
+          </button>
+          <button class="bl-rail-tab" data-tab="tabLegal" onclick="setEditTab(this,'tabLegal')" title="Legal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Legal</span>
+          </button>
+          <button class="bl-rail-tab" data-tab="tabCatalogue" onclick="setEditTab(this,'tabCatalogue')" title="Shop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>Shop</span>
+          </button>
+      </nav>
 
-      <button class="cs-btn" onclick="openDownloadModal()" title="Download slides">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
-        Download
-      </button>
+      <!-- Col 2: Edit panel -->
+      <aside class="builder-left">
 
-      <button class="cs-btn cs-mob-right-btn" onclick="toggleRightPanel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Edit Slide
-      </button>
-    </div>
-
-    <!-- Three-column workspace -->
-    <div class="cs-workspace">
-
-      <!-- LEFT PANEL -->
-      <aside class="cs-left" id="csLeft">
-        <div class="cs-left-head">
-          <div class="cs-left-title">✦ AI Carousel Creator</div>
-          <div class="cs-left-sub">Describe your content. Dijo picks the theme, writes real captions with live trend context &amp; designs every slide.</div>
+        <!-- Mobile-only sticky top bar: back + save/publish -->
+        <div class="mob-panel-topbar">
+          <button class="mob-topbar-back" onclick="mobilePanelShow('preview')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+            Preview
+          </button>
+          <button class="mob-topbar-back" onclick="confirmBackToDash()" style="margin-left:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+            Portfolios
+          </button>
+          <div style="flex:1"></div>
+          <button class="mob-topbar-save" onclick="savePortfolio()">Save</button>
+          <button class="mob-topbar-publish" onclick="publishPortfolio()">Publish ↑</button>
         </div>
-        <div class="cs-left-body">
-          <div>
-            <label class="cs-label">What's your carousel about?</label>
-            <textarea class="cs-textarea" id="topicInput" placeholder="e.g. 5 habits that helped me hit £10K/month as a creator…" oninput="onTopicInput()" style="min-height:88px"></textarea>
+
+        <div class="bl-panel">
+
+
+          <div class="bl-panel-header">
+            <div class="bl-header-row">
+              <button class="ps-back-btn" onclick="confirmBackToDash()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
+                Portfolios
+              </button>
+              <a href="creator-studio.html" class="ps-back-to-hub" style="margin-left:auto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
+                Creator Studio
+              </a>
+            </div>
+            <div class="bl-panel-title" id="blPanelTitle">Content
+              <button class="bl-mob-preview-btn" onclick="mobilePanelShow('preview')" title="View preview">Preview ↗</button>
+            </div>
+            <!-- Mobile-only tab strip inside panel -->
+            <div class="bl-mob-tabs">
+              <button class="bl-mob-tab active" onclick="setEditTab(this,'tabContent')"><span>Content</span></button>
+              <button class="bl-mob-tab" onclick="setEditTab(this,'tabDesign')"><span>Design</span></button>
+              <button class="bl-mob-tab" onclick="setEditTab(this,'tabSocial')"><span>Social</span></button>
+              <button class="bl-mob-tab" onclick="setEditTab(this,'tabLegal')"><span>Legal</span></button>
+              <button class="bl-mob-tab" onclick="setEditTab(this,'tabCatalogue')"><span>Shop</span></button>
+            </div>
           </div>
-          <div>
-            <label class="cs-label">Platform</label>
-            <select class="cs-select" id="platSelect">
-              <option value="Instagram">Instagram</option>
-              <option value="LinkedIn">LinkedIn</option>
-              <option value="TikTok">TikTok</option>
-              <option value="Twitter/X">Twitter / X</option>
-              <option value="Pinterest">Pinterest</option>
-            </select>
-          </div>
-          <div>
-            <label class="cs-label">Tone</label>
-            <select class="cs-select" id="toneSelect">
-              <option value="Bold &amp; Direct">Bold &amp; Direct</option>
-              <option value="Conversational">Conversational</option>
-              <option value="Professional">Professional</option>
-              <option value="Inspirational">Inspirational</option>
-              <option value="Educational">Educational</option>
-              <option value="Playful">Playful</option>
-            </select>
-          </div>
-          <div>
-            <label class="cs-label">Slides</label>
-            <div class="cs-cnt-row">
-              <button class="cs-cnt-btn" onclick="chgCount(-1)">−</button>
-              <div class="cs-cnt-inner">
-                <div class="cs-cnt-val" id="cntVal">7</div>
-                <div class="cs-cnt-sub">slides</div>
+
+          <div class="bl-body">
+
+          <!-- TAB: Content -->
+          <div class="bl-tab-content active" id="tabContent">
+            <div class="content-tab-hint">✏️ Edit your portfolio text and visuals below — changes update the preview live.</div>
+            <div class="be-sec">
+              <div class="be-sec-title">Headline</div>
+              <textarea class="ob-input" id="ePortHeadline" style="min-height:56px" oninput="updatePreviewLive()"></textarea>
+              <button class="ob-ai-mini-btn" onclick="regenSection('headline')">✦ Rewrite with Dijo</button>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Bio / About</div>
+              <textarea class="ob-input" id="ePortBio" style="min-height:90px" oninput="updatePreviewLive()"></textarea>
+              <button class="ob-ai-mini-btn" onclick="regenSection('bio')">✦ Rewrite with Dijo</button>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Tagline</div>
+              <input class="ob-input" id="ePortTagline" oninput="updatePreviewLive()"/>
+              <button class="ob-ai-mini-btn" onclick="regenSection('tagline')">✦ Rewrite with Dijo</button>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Logo <span style="font-weight:400;opacity:.6;font-size:11px">— optional brand logo shown in nav</span></div>
+              <div class="ob-logo-upload" id="beLogoUploadArea" onclick="document.getElementById('beLogoFile').click()" style="min-height:60px">
+                <img id="beLogoPreview" src="" alt="" style="display:none;max-height:48px;max-width:160px;object-fit:contain;border-radius:4px;"/>
+                <span id="beLogoPlaceholder" style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,.4)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  Upload logo
+                </span>
+                <input type="file" id="beLogoFile" accept="image/*" style="display:none" onchange="beHandleLogoUpload(this)"/>
               </div>
-              <button class="cs-cnt-btn" onclick="chgCount(1)">+</button>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Hero Visuals</div>
+              <div class="hero-media-strip" id="heroMediaStrip">
+                <!-- thumbnails populated by JS -->
+              </div>
+              <div class="hero-visual-actions">
+                <div class="dzone-sm" id="dzoneHero" onclick="document.getElementById('heroUpload').click()" ondragover="dzOver(event,this)" ondragleave="dzLeave(this)" ondrop="dzDrop(event,'hero')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:5px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Upload your own photos / videos</span>
+                </div>
+                <button class="ob-ai-mini-btn" onclick="regenSection('media')">✦ Let Dijo repick visuals</button>
+              </div>
+              <input type="file" id="heroUpload" accept="image/*,video/*" multiple style="display:none" onchange="handleHeroUpload(event)"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Services</div>
+              <div id="eServicesEdit"></div>
+              <button class="ob-add-btn sm" onclick="addEditServiceRow()">+ Add service</button>
             </div>
           </div>
-          <div class="cs-intel" id="intelCard">
-            <div class="cs-intel-top">
-              <div class="cs-intel-dot" id="intelDot"></div>
-              <span class="cs-intel-lbl" id="intelLbl">DIJO INTELLIGENCE</span>
-              <span class="cs-intel-val" id="intelVal">Waiting for topic…</span>
+
+          <!-- TAB: Design -->
+          <div class="bl-tab-content" id="tabDesign">
+            <div class="be-sec">
+              <div class="be-sec-title">Theme</div>
+              <div class="ob-theme-grid compact">
+                <div class="ob-theme-opt active" data-theme="dark" onclick="selectEditTheme(this,'dark')">
+                  <div class="ob-theme-preview dark-prev"></div>
+                  <div class="ob-theme-name">Dark Gold</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="navy" onclick="selectEditTheme(this,'navy')">
+                  <div class="ob-theme-preview navy-prev"></div>
+                  <div class="ob-theme-name">Navy Pro</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="clean" onclick="selectEditTheme(this,'clean')">
+                  <div class="ob-theme-preview clean-prev"></div>
+                  <div class="ob-theme-name">Clean</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="midnight" onclick="selectEditTheme(this,'midnight')">
+                  <div class="ob-theme-preview midnight-prev"></div>
+                  <div class="ob-theme-name">Midnight</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="rose" onclick="selectEditTheme(this,'rose')">
+                  <div class="ob-theme-preview rose-prev"></div>
+                  <div class="ob-theme-name">Rose</div>
+                </div>
+                <div class="ob-theme-opt" data-theme="forest" onclick="selectEditTheme(this,'forest')">
+                  <div class="ob-theme-preview forest-prev"></div>
+                  <div class="ob-theme-name">Forest</div>
+                </div>
+              </div>
             </div>
-            <div class="cs-intel-bar">
-              <div class="cs-intel-seg" id="iseg0"></div>
-              <div class="cs-intel-seg" id="iseg1"></div>
-              <div class="cs-intel-seg" id="iseg2"></div>
-              <div class="cs-intel-seg" id="iseg3"></div>
-              <div class="cs-intel-seg" id="iseg4"></div>
+            <div class="be-sec">
+              <div class="be-sec-title">Accent Colour</div>
+              <div class="ob-color-row">
+                <input type="color" class="ob-color-pick" id="eAccentColor" value="#c97e08" oninput="updatePreviewLive()"/>
+                <span class="ob-color-val" id="eColorVal">#c97e08</span>
+              </div>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Font Style</div>
+              <select class="ob-input" id="eFontStyle" onchange="updatePreviewLive()">
+                <option value="syne">Syne — Bold Editorial</option>
+                <option value="playfair">Playfair — Luxury Serif</option>
+                <option value="mono">Space Mono — Tech</option>
+                <option value="dm">DM Sans — Clean Modern</option>
+              </select>
             </div>
           </div>
-          <div id="assetPreviewField" style="display:none">
-            <label class="cs-label">Auto-selected assets</label>
-            <div class="cs-asset-row" id="assetRow"></div>
+
+          <!-- TAB: Social -->
+          <div class="bl-tab-content" id="tabSocial">
+            <div class="be-sec">
+              <div class="be-sec-title">YouTube</div>
+              <input class="ob-input" id="eSocYT" placeholder="Channel URL" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocYTSubs" placeholder="Subscribers" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">TikTok</div>
+              <input class="ob-input" id="eSocTT" placeholder="TikTok URL" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocTTFollowers" placeholder="Followers" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Instagram <span class="soon-pill">Coming Soon</span></div>
+              <input class="ob-input" id="eSocIG" placeholder="Profile URL (display only)" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Other links</div>
+              <input class="ob-input" id="eSocLI" placeholder="LinkedIn URL" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocTW" placeholder="Twitter/X URL" style="margin-top:6px" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocPIN" placeholder="Pinterest URL" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Analytics</div>
+              <input class="ob-input" id="eSocFollowers" placeholder="Total followers" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocEngagement" placeholder="Avg engagement rate" style="margin-top:6px" oninput="updatePreviewLive()"/>
+              <input class="ob-input" id="eSocViews" placeholder="Monthly views" style="margin-top:6px" oninput="updatePreviewLive()"/>
+            </div>
           </div>
-          <div>
-            <label class="cs-label">Canvas Format</label>
-            <div class="cs-fmt-row">
-              <button class="cs-fmt-btn active" id="fmtSquare" onclick="setFmt('square')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                Square
+
+          <!-- TAB: Legal -->
+          <div class="bl-tab-content" id="tabLegal">
+            <div class="be-sec">
+              <div class="be-sec-title">Terms & Conditions</div>
+              <div class="legal-ai-banner">
+                <span>✦ AI-generated based on your niche &amp; services</span>
+                <button onclick="regenSection('terms')">Regenerate</button>
+              </div>
+              <textarea class="ob-input" id="eLegalTerms" style="min-height:160px;font-size:11px;line-height:1.6" oninput="updatePreviewLive()"></textarea>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Privacy Policy</div>
+              <div class="legal-ai-banner">
+                <span>✦ AI-generated based on data you collect</span>
+                <button onclick="regenSection('privacy')">Regenerate</button>
+              </div>
+              <textarea class="ob-input" id="eLegalPrivacy" style="min-height:160px;font-size:11px;line-height:1.6" oninput="updatePreviewLive()"></textarea>
+            </div>
+          </div>
+
+          <!-- TAB: Catalogue -->
+          <div class="bl-tab-content" id="tabCatalogue">
+            <div class="cat-portfolio-link-row">
+              <span class="cat-portfolio-hint">Add bookable services brands can pay for instantly</span>
+              <a id="catViewPortfolioBtn" href="#" target="_blank" class="cat-view-portfolio-btn" onclick="openPreviewTab();return false;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                View Portfolio
+              </a>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Payouts</div>
+              <div class="cat-connect-status" id="catConnectStatus">
+                <div class="cat-connect-badge" id="catConnectBadge">⚡ Bank not connected</div>
+                <p class="cat-connect-note">Connect your bank so brands pay you directly. ImpactGrid takes 5% per booking.</p>
+                <button class="ob-ai-mini-btn" id="catConnectBtn" onclick="stripeOnboard()">Connect Bank Account →</button>
+              </div>
+            </div>
+            <div class="be-sec">
+              <div class="be-sec-title">Bookable Items</div>
+              <div id="catItemsList"></div>
+              <button class="ob-add-btn sm" onclick="addCatalogueItem()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add item
               </button>
-              <button class="cs-fmt-btn" id="fmtPortrait" onclick="setFmt('portrait')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="13"><rect x="3" y="1" width="18" height="22" rx="2"/></svg>
-                Portrait
-              </button>
-              <button class="cs-fmt-btn" id="fmtLandscape" onclick="setFmt('landscape')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="9"><rect x="1" y="5" width="22" height="14" rx="2"/></svg>
-                Wide
-              </button>
             </div>
           </div>
-          <div>
-            <label class="cs-label">Background Image</label>
-            <div class="cs-dzone" id="dzone" onclick="document.getElementById('imgUp').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
-              <div class="cs-dzone-icon">🖼️</div>
-              <p><strong style="color:var(--gold)">Upload image</strong> or drag &amp; drop<br/>
-              <span style="font-size:10px;color:var(--text3)">Replaces AI-selected background</span></p>
-            </div>
-            <input type="file" id="imgUp" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
-          </div>
-          <button class="cs-gen-btn" id="genBtn" onclick="generate()" disabled>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Generate with Dijo
+
+        </div><!-- /bl-body -->
+        </div><!-- /bl-panel -->
+
+        <!-- Bottom actions -->
+        <div class="bl-footer">
+          <button class="bl-save-btn" onclick="savePortfolio()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save
+          </button>
+          <button class="bl-publish-btn" id="blPublishBtn" onclick="publishPortfolio()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Publish &amp; Get Link
           </button>
         </div>
       </aside>
 
-      <!-- CENTER — Canvas -->
-      <main class="cs-center">
-        <div class="cs-toolbar">
-          <div class="cs-tgrp">
-            <button class="cs-tb" onclick="zoom(-10)" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            <span class="cs-tlbl" id="zoomLbl">100%</span>
-            <button class="cs-tb" onclick="zoom(10)" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-          </div>
-          <div class="cs-tgrp">
-            <button class="cs-tb on" id="fmtSquareTb"   onclick="setFmt('square')"    title="Square 1:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
-            <button class="cs-tb"    id="fmtPortraitTb"  onclick="setFmt('portrait')"  title="Portrait 4:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
-            <button class="cs-tb"    id="fmtLandscapeTb" onclick="setFmt('landscape')" title="Landscape 16:9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></button>
-          </div>
-          <div class="cs-tgrp">
-            <button class="cs-tb" title="Shuffle assets"   onclick="shuffleAssets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></button>
-            <button class="cs-tb" title="Regenerate"       onclick="generate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
-            <button class="cs-tb" title="Reset text offsets" onclick="resetTextOffsets && resetTextOffsets()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
-          </div>
-          <div class="cs-tsp"></div>
-          <div class="cs-slide-nav">
-            <button class="cs-snb" onclick="prevSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-            <span class="cs-sctr" id="slideCtr">0 / 0</span>
-            <button class="cs-snb" onclick="nextSlide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
-          </div>
-        </div>
-
-        <div class="cs-canvas-wrap" id="canvasWrap">
-          <div class="cs-empty" id="emptyState">
-            <div class="cs-empty-icon">
-              <img src="logo.png" alt="" style="width:38px;height:38px;object-fit:contain;filter:brightness(0) saturate(100%) invert(91%) sepia(90%) saturate(800%) hue-rotate(5deg) brightness(105%)" onerror="this.outerHTML='✦'"/>
-            </div>
-            <div class="cs-empty-title">Carousel Studio <span style="color:var(--gold)">v4.5</span></div>
-            <div class="cs-empty-sub">Type your topic on the left. Dijo writes punchy copy,<br/>pulls live trends for captions &amp; builds every slide.</div>
-            <div class="cs-quick-prompts">
-              <div class="cs-qp" onclick="prefill('5 habits that helped me hit £10K per month as a creator')">
-                <span class="cs-qp-icon">💰</span>
-                <div class="cs-qp-text"><strong>Creator income tips</strong><span>5 habits that helped me hit £10K/month</span></div>
-              </div>
-              <div class="cs-qp" onclick="prefill('The morning routine that tripled my productivity')">
-                <span class="cs-qp-icon">⚡</span>
-                <div class="cs-qp-text"><strong>Productivity</strong><span>The morning routine that changed everything</span></div>
-              </div>
-              <div class="cs-qp" onclick="prefill('Why most people never grow on Instagram and how to fix it')">
-                <span class="cs-qp-icon">📈</span>
-                <div class="cs-qp-text"><strong>Growth strategy</strong><span>Why most people never grow on Instagram</span></div>
-              </div>
-              <div class="cs-qp" onclick="prefill('How I transformed my home into a cozy sanctuary on a budget')">
-                <span class="cs-qp-icon">🏡</span>
-                <div class="cs-qp-text"><strong>Home &amp; lifestyle</strong><span>Cozy sanctuary transformation on a budget</span></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="slide-wrap" id="slideWrap" style="display:none">
-            <div class="slide-canvas" id="slideCanvas">
-              <div class="loading-ov" id="loadingOv">
-                <div class="loading-inner">
-                  <div class="loading-ring"></div>
-                  <div class="loading-title">Dijo is thinking…</div>
-                  <div class="loading-hint" id="loadingHint">Detecting theme from your topic</div>
-                </div>
-              </div>
-              <div class="s-bg" id="sBg"><div class="s-bg-img" id="sBgImg"></div></div>
-              <div id="sBgVideo" style="display:none;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;"></div>
-              <div class="s-overlay" id="sOverlay" style="position:absolute;inset:0;z-index:3;"></div>
-              <div class="s-texture" id="sTexture" style="position:absolute;inset:0;z-index:4;pointer-events:none;"></div>
-              <div class="s-content layout-bottom hidden" id="sContent" style="z-index:5"></div>
-              <div class="s-split-wrap hidden" id="sSplit" style="z-index:5"></div>
-              <div class="s-corner-float hidden" id="sCorner" style="z-index:5"></div>
-              <div class="s-dual-wrap hidden" id="sDual" style="z-index:5">
-                <div class="s-dual-main" id="sDualMain"></div>
-                <div class="s-dual-overlay"></div>
-                <div class="s-dual-thumb" id="sDualThumb"></div>
-                <div class="s-dual-text" id="sDualText"></div>
-              </div>
-              <div class="s-band-wrap hidden" id="sBand" style="z-index:5"><div id="sBandInner"></div></div>
-              <div class="s-editorial hidden" id="sEditorial" style="z-index:5"><div class="s-editorial-bg-num" id="sEditorialBgNum"></div></div>
-              <div class="s-quote-wrap hidden" id="sQuote" style="z-index:5"></div>
-              <div class="s-stat-wrap hidden"  id="sStat"  style="z-index:5"><div class="s-stat-strip" id="sStatStrip" style="display:none"></div></div>
-              <div class="s-grid-wrap hidden"  id="sGrid"  style="z-index:5"></div>
-              <div class="hidden" id="sTopStrip"         style="z-index:5"></div>
-              <div class="hidden" id="sBottomStrip"       style="z-index:5"></div>
-              <div class="hidden" id="sEditorialCover"    style="z-index:5"></div>
-              <div class="hidden" id="sEditorialCollage"  style="z-index:5"></div>
-              <div class="hidden" id="sEditorialCollage3" style="z-index:5"></div>
-              <div class="hidden" id="sHabitCover"        style="z-index:5"></div>
-              <div class="hidden" id="sHabitSlide"        style="z-index:5"></div>
-              <div class="hidden" id="sCleanEditorial"    style="z-index:5"></div>
-              <div class="hidden" id="sSerifMinimal"      style="z-index:5"></div>
-              <div class="hidden" id="sMagazineCover"     style="z-index:5"></div>
-              <div class="hidden" id="sGridMosaic"        style="z-index:5"></div>
-              <div class="hidden" id="sPolaroidCard"      style="z-index:5"></div>
-              <div class="hidden" id="sRisograph"         style="z-index:5"></div>
-              <div class="s-slide-num" id="sNum" style="z-index:10">1 / 7</div>
-              <div class="s-brand"     id="sBrand" style="z-index:10"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="cs-strip" id="strip"></div>
-      </main>
-
-      <!-- RIGHT PANEL — Edit Slide -->
-      <aside class="cs-right" id="csRight">
-        <div class="cs-right-head">
-          <span class="cs-rh-title">✦ Edit Slide</span>
-          <div class="cs-rh-actions">
-            <button class="cs-icon-btn" onclick="prevSlide()" title="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-            <span style="font-size:11px;font-family:var(--fm);color:var(--text3);padding:0 4px" id="editNum">—</span>
-            <button class="cs-icon-btn" onclick="nextSlide()" title="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
-            <button class="cs-icon-btn" onclick="openDownloadModal()" title="Download all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg></button>
-          </div>
-        </div>
-        <div class="cs-right-body">
-          <div style="padding:8px 10px;background:var(--gold-dim);border-radius:8px;border:1px solid var(--gold-glo);font-size:10px;color:var(--gold);font-family:var(--fm);line-height:1.6;letter-spacing:.2px;margin-bottom:12px;">
-            💡 <strong>Click any text or number</strong> on the slide to edit it directly.
-          </div>
-          <div class="cs-esec">
-            <div class="cs-esec-title">Layout</div>
-            <div class="cs-apply-row">
-              <input type="checkbox" class="cs-apply-toggle" id="applyAllToggle" checked/>
-              <label for="applyAllToggle">Apply layout change to ALL slides</label>
-            </div>
-            <div class="layout-badge" id="layoutBadge">—</div>
-            <div class="layout-switcher">
-              <button class="layout-btn" onclick="changeLayout('FULL_BLEED')">Full Bleed</button>
-              <button class="layout-btn" onclick="changeLayout('BOTTOM_STRIP')">Bot Strip</button>
-              <button class="layout-btn" onclick="changeLayout('TOP_STRIP')">Top Strip</button>
-              <button class="layout-btn" onclick="changeLayout('OVERLAP_BAND')">Band</button>
-              <button class="layout-btn" onclick="changeLayout('DUAL_IMAGE')">Dual Img</button>
-              <button class="layout-btn" onclick="changeLayout('STAT_HERO')">Stat</button>
-              <button class="layout-btn" onclick="changeLayout('EDITORIAL_COVER')">Ed. Cover</button>
-              <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE')">Ed. Collage</button>
-              <button class="layout-btn" onclick="changeLayout('EDITORIAL_COLLAGE_3')">Ed. Col×3</button>
-              <button class="layout-btn" onclick="changeLayout('HABIT_COVER')">Habit Cover</button>
-              <button class="layout-btn" onclick="changeLayout('CLEAN_EDITORIAL')">Clean Ed.</button>
-              <button class="layout-btn" onclick="changeLayout('SERIF_MINIMAL')">Serif Min.</button>
-              <button class="layout-btn" onclick="changeLayout('MAGAZINE_COVER')">Magazine</button>
-              <button class="layout-btn" onclick="changeLayout('GRID_MOSAIC')">Grid Mosaic</button>
-              <button class="layout-btn" onclick="changeLayout('POLAROID_CARD')">Polaroid</button>
-              <button class="layout-btn" onclick="changeLayout('RISOGRAPH')">Risograph</button>
-            </div>
-          </div>
-          <div class="cs-esec">
-            <div class="cs-esec-title">Headline</div>
-            <textarea class="cs-textarea" id="eHead" style="min-height:60px" oninput="liveEdit()"></textarea>
-          </div>
-          <div class="cs-esec">
-            <div class="cs-esec-title">Body Copy</div>
-            <textarea class="cs-textarea" id="eBody" style="min-height:72px" oninput="liveEdit()"></textarea>
-          </div>
-          <div class="cs-esec" id="eStatSection" style="display:none">
-            <div class="cs-esec-title">Stat / Number</div>
-            <input type="text" class="cs-input" id="eStat" placeholder="e.g. 87% or £10K" oninput="liveEditStat()"/>
-          </div>
-          <div class="cs-esec" id="eQuoteSection" style="display:none">
-            <div class="cs-esec-title">Quote / Pull Quote</div>
-            <textarea class="cs-textarea" id="eQuote" style="min-height:72px" oninput="liveEditQuote()"></textarea>
-          </div>
-          <div class="cs-esec">
-            <div class="cs-esec-title">
-              Caption
-              <span id="capAiLabel" style="margin-left:6px;font-size:9px;color:var(--gold);font-family:var(--fm)">AI-written</span>
-            </div>
-            <textarea class="cs-textarea" id="eCap" style="min-height:72px" oninput="updateCap()"></textarea>
-            <button class="cs-copy-btn" onclick="copyCaption()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy Caption
+      <!-- Center: Live preview -->
+      <div class="builder-center">
+        <div class="preview-toolbar">
+          <div class="preview-device-btns">
+            <button class="pdb active" id="pdbDesktop" onclick="setPreviewDevice('desktop')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Desktop
+            </button>
+            <button class="pdb" id="pdbMobile" onclick="setPreviewDevice('mobile')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>Mobile
             </button>
           </div>
-          <div class="cs-esec" id="hashtagSection" style="display:none">
-            <div class="cs-esec-title">Trending Hashtags</div>
-            <div class="cs-hashtag-chips" id="hashtagChips"></div>
-            <button class="cs-copy-btn" id="hashtagCopyBtn" onclick="copyHashtags()" style="display:none;margin-top:8px">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy All 5 Hashtags
+          <div style="flex:1"></div>
+          <div class="preview-url-pill" id="previewUrlPill" onclick="copyPreviewUrl()" title="Click to copy link" style="cursor:pointer;user-select:none">impactgrid.app/p.html?slug=—</div>
+          <button class="preview-open-btn" onclick="openPreviewTab()">Open Preview ↗</button>
+        </div>
+
+        <!-- Loading overlay during AI generation -->
+        <div class="gen-overlay" id="genOverlay">
+          <div class="gen-inner">
+            <div class="gen-ring"></div>
+            <div class="gen-title" id="genTitle">Dijo is building your portfolio…</div>
+            <div class="gen-steps" id="genSteps">
+              <div class="gen-step active" id="gs1">✦ Analysing your niche</div>
+              <div class="gen-step" id="gs2">✦ Selecting hero visuals</div>
+              <div class="gen-step" id="gs3">✦ Writing your headline & bio</div>
+              <div class="gen-step" id="gs4">✦ Generating T&Cs & Privacy Policy</div>
+              <div class="gen-step" id="gs5">✦ Building your portfolio</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-wrap" id="previewWrap">
+          <div class="preview-frame desktop" id="previewFrame">
+            <iframe id="previewIframe" title="Portfolio Preview" sandbox="allow-scripts allow-same-origin"></iframe>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 4: PUBLISH SUCCESS ══ -->
+  <div class="ps-screen" id="screenPublished">
+    <div class="pub-success-wrap">
+      <div class="pub-confetti" id="pubConfetti"></div>
+      <div class="pub-card">
+        <div class="pub-icon">🚀</div>
+        <div class="pub-title">You're Live!</div>
+        <div class="pub-sub">Your portfolio is published and ready to share.</div>
+
+        <div class="pub-link-box">
+          <span class="pub-link-icon">🔗</span>
+          <span class="pub-link-text" id="pubLinkText">impactgrid.app/p.html?slug=—</span>
+          <button class="pub-copy-btn" onclick="copyPublishedLink()">Copy</button>
+        </div>
+
+        <div class="pub-share-row">
+          <div class="pub-share-label">Share to</div>
+          <div class="pub-share-btns">
+            <button class="pub-share-btn yt" onclick="shareToYouTube()">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5 12 5 12 5s-4.8 0-7 .1c-.4 0-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.7 2.2.8C6.8 19 12 19 12 19s4.8 0 7-.2c.4 0 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 9.6 21.8 8 21.8 8zM10 15V9l5.2 3-5.2 3z"/></svg>
+              YouTube
+            </button>
+            <button class="pub-share-btn tt" onclick="shareToTikTok()">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg>
+              TikTok
+            </button>
+            <button class="pub-share-btn ig" onclick="shareToInstagram()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+              Instagram <span class="soon-pill mini">Copy link</span>
+            </button>
+            <button class="pub-share-btn li" onclick="shareToLinkedIn()">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
             </button>
           </div>
-          <div class="cs-esec">
-            <div class="cs-esec-title">Accent Colour</div>
-            <div class="cs-cdots" id="cdots">
-              <div class="cdot on"  style="background:#f5e400" onclick="setAccent('#f5e400',this)" title="Impact Grid Yellow"></div>
-              <div class="cdot"     style="background:#2563eb" onclick="setAccent('#2563eb',this)"></div>
-              <div class="cdot"     style="background:#c9a84c" onclick="setAccent('#c9a84c',this)"></div>
-              <div class="cdot"     style="background:#ef4444" onclick="setAccent('#ef4444',this)"></div>
-              <div class="cdot"     style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
-              <div class="cdot"     style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
-              <div class="cdot"     style="background:#0891b2" onclick="setAccent('#0891b2',this)"></div>
-              <div class="cdot"     style="background:#ea580c" onclick="setAccent('#ea580c',this)"></div>
-              <div class="cdot"     style="background:#fff;border-color:rgba(255,255,255,.2)" onclick="setAccent('#ffffff',this)"></div>
-            </div>
+        </div>
+
+        <div class="pub-stats-row">
+          <div class="pub-stat">
+            <div class="pub-stat-val" id="pubViewCount">0</div>
+            <div class="pub-stat-lbl">Views</div>
           </div>
-          <div class="cs-esec">
-            <div class="cs-esec-title">Font Style</div>
-            <div class="font-switcher">
-              <button class="font-btn active" data-pair="syne"      onclick="setFontPair('syne')">Syne</button>
-              <button class="font-btn"        data-pair="cormorant" onclick="setFontPair('cormorant')">Serif</button>
-              <button class="font-btn"        data-pair="playfair"  onclick="setFontPair('playfair')">Playfair</button>
-              <button class="font-btn"        data-pair="inter"     onclick="setFontPair('inter')">Inter</button>
-            </div>
+          <div class="pub-stat">
+            <div class="pub-stat-val" id="pubEnqCount">0</div>
+            <div class="pub-stat-lbl">Enquiries</div>
+          </div>
+          <div class="pub-stat">
+            <div class="pub-stat-val" id="pubDaysLive">0</div>
+            <div class="pub-stat-lbl">Days live</div>
           </div>
         </div>
-      </aside>
 
-    </div><!-- /cs-workspace -->
-  </div><!-- /cs-shell -->
-
-  <!-- Export modal -->
-  <div class="modal-bg" id="exportModal">
-    <div class="modal">
-      <div class="mh">
-        <span class="mh-title" style="color:var(--gold)">Export Carousel</span>
-        <button onclick="closeExport()" style="width:26px;height:26px;border-radius:7px;background:rgba(128,128,128,.1);color:var(--text3)">✕</button>
-      </div>
-      <div class="mc">
-        <div class="exp-opt sel" id="eoPng" onclick="selExport('png')">
-          <span class="exp-icon">🖼️</span>
-          <div><div class="exp-title">PNG Images</div><div class="exp-sub">Download all slides as PNG (1080px)</div></div>
-          <div class="exp-radio"></div>
+        <div class="pub-actions">
+          <button class="pub-edit-btn" onclick="showScreen('screenBuilder')">Edit Portfolio</button>
+          <button class="pub-new-btn" onclick="showScreen('screenDash')">← All Portfolios</button>
         </div>
-        <div class="exp-opt" id="eoCopy" onclick="selExport('copy')">
-          <span class="exp-icon">📋</span>
-          <div><div class="exp-title">Copy All Copy &amp; Captions</div><div class="exp-sub">All headlines, bodies + AI captions + hashtags</div></div>
-          <div class="exp-radio"></div>
-        </div>
-        <div class="exp-opt" id="eoJson" onclick="selExport('json')">
-          <span class="exp-icon">{ }</span>
-          <div><div class="exp-title">JSON Data</div><div class="exp-sub">Full structured data — import into other tools</div></div>
-          <div class="exp-radio"></div>
-        </div>
-        <div class="exp-opt" id="eoVideo" onclick="selExport('video')">
-          <span class="exp-icon">🎬</span>
-          <div><div class="exp-title">Animated Video</div><div class="exp-sub">MP4 export — coming soon</div></div>
-          <div class="exp-radio"></div>
-        </div>
-      </div>
-      <div class="mf">
-        <button class="btn-sec" onclick="closeExport()">Cancel</button>
-        <button class="btn-pri" onclick="doExport()">Export</button>
       </div>
     </div>
   </div>
 
-  <!-- Toast shelf -->
-  <div class="toast-shelf" id="toastShelf"></div>
+</div><!-- /ps-shell -->
 
-  <!-- iOS batch download modal -->
-  <div class="ios-dl-backdrop hidden" id="iosDlModal">
-    <div class="ios-dl-sheet" id="iosDlSheet">
-      <div class="ios-dl-handle-wrap"><div class="ios-dl-handle"></div></div>
-      <div class="ios-dl-header">
-        <div class="ios-dl-title"><div class="ios-dl-title-icon">📲</div><span id="iosDlTitle">Save Slides</span></div>
-        <div class="ios-dl-subtitle" id="iosDlSubtitle">Saving in batches — tap the button after each share sheet</div>
-      </div>
-      <div class="ios-dl-progress-area">
-        <div class="ios-dl-ring-wrap">
-          <svg class="ios-dl-ring-svg" width="72" height="72" viewBox="0 0 72 72">
-            <circle class="ios-dl-ring-bg" cx="36" cy="36" r="30"/>
-            <circle class="ios-dl-ring-fill" id="iosDlRingFill" cx="36" cy="36" r="30"/>
-          </svg>
-          <div class="ios-dl-ring-text">
-            <div class="ios-dl-ring-num" id="iosDlRingNum">0</div>
-            <div class="ios-dl-ring-label">saved</div>
-          </div>
-        </div>
-        <div class="ios-dl-progress-text">
-          <div class="ios-dl-batch-label" id="iosDlBatchLabel">Ready to start</div>
-          <div class="ios-dl-batch-sub"   id="iosDlBatchSub">Tap the button below to begin</div>
-        </div>
-      </div>
-      <div class="ios-dl-instruction" id="iosDlInstruction">
-        <div class="ios-dl-instruction-icon">👆</div>
-        <div class="ios-dl-instruction-text" id="iosDlInstructionText">Tap <strong>"Save to Device"</strong> — your Share Sheet opens. Tap <strong>"Save Image"</strong> to save all slides in this batch to your Camera Roll.</div>
-      </div>
-      <div class="ios-dl-thumbs" id="iosDlThumbs"></div>
-      <div class="ios-dl-btn-area" id="iosDlBtnArea">
-        <button class="ios-dl-save-btn" id="iosDlSaveBtn" onclick="iosDlTriggerShare()">
-          <span id="iosDlSaveBtnIcon">📲</span>
-          <span id="iosDlSaveBtnText">Save to Device</span>
-        </button>
-        <button class="ios-dl-next-btn hidden" id="iosDlNextBtn" onclick="iosDlNextBatch()">
-          Next Batch → <span id="iosDlNextLabel"></span>
-        </button>
-        <button class="ios-dl-cancel-btn" onclick="iosDlClose()">Cancel</button>
-      </div>
-      <div class="ios-dl-done hidden" id="iosDlDone">
-        <span class="ios-dl-done-icon">🎉</span>
-        <div class="ios-dl-done-title" id="iosDlDoneTitle">All Slides Saved!</div>
-        <div class="ios-dl-done-sub"   id="iosDlDoneSub">Check your Camera Roll — all your slides are there.</div>
-        <button class="ios-dl-done-btn" onclick="iosDlClose()">Done ✓</button>
-      </div>
-    </div>
+<!-- Toast shelf -->
+<div class="ps-toast-shelf" id="psToastShelf"></div>
+
+<!-- Contact Modal -->
+<div id="contactModal" class="contact-modal" style="display:none;" onclick="if(event.target===this)closeContactForm()">
+  <div class="contact-box">
+    <h3>Work With Me</h3>
+    <input id="cName" placeholder="Your Name" />
+    <input id="cEmail" type="email" placeholder="Your Email" />
+    <textarea id="cMsg" placeholder="Tell me about your project"></textarea>
+    <div id="cStatus" style="font-size:12px;min-height:16px;margin-bottom:4px;font-family:monospace"></div>
+    <button onclick="sendInquiry()">Send</button>
+    <button onclick="closeContactForm()">Cancel</button>
   </div>
-
-  <!-- iOS fallback modal -->
-  <div class="ios-modal-backdrop hidden" id="iosModal" onclick="if(event.target===this)closeIosModal()">
-    <div class="ios-modal-box">
-      <div class="ios-modal-handle"></div>
-      <div class="ios-modal-title" id="iosModalTitle">📱 Save Your Slides</div>
-      <div class="ios-modal-sub"   id="iosModalSub">Here's how to save slides on your device</div>
-      <div class="ios-fb-step"><div class="ios-fb-step-num">1</div><div class="ios-fb-step-text">Tap each slide thumbnail below — it opens in a new tab</div></div>
-      <div class="ios-fb-step"><div class="ios-fb-step-num">2</div><div class="ios-fb-step-text" id="iosStep2Text"><strong>Long-press</strong> the image until a menu appears</div></div>
-      <div class="ios-fb-step"><div class="ios-fb-step-num">3</div><div class="ios-fb-step-text" id="iosStep3Text">Tap <strong>"Save to Photos"</strong> — saves to Camera Roll 📷</div></div>
-      <div class="ios-photos-grid" id="iosPhotosGrid" style="margin-top:16px;"></div>
-      <button class="ios-open-all-btn" id="iosOpenAllBtn" onclick="iosOpenAll()" style="margin-top:16px;">📂 Open All Slides</button>
-      <button class="ios-cancel-btn" onclick="closeIosModal()">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Download progress bar -->
-  <div id="dlProgressBar">
-    <div class="dl-bar-top">
-      <span class="dl-bar-label" id="dlBarLabel">Preparing…</span>
-      <div style="display:flex;align-items:center;gap:0">
-        <span class="dl-bar-pct" id="dlBarPct">0%</span>
-        <span class="dl-bar-cancel" onclick="cancelDl()">Cancel</span>
-      </div>
-    </div>
-    <div class="dl-bar-track"><div class="dl-bar-fill" id="dlBarFill" style="width:0%"></div></div>
-  </div>
-
-  <!-- Mobile dock -->
-  <nav class="cs-mob-dock" id="csMobDock" aria-label="Studio controls">
-    <button class="cs-dock-tab cs-dock-generate active" id="dockGenerate" onclick="csDockOpen('left')" aria-label="Generate carousel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      Generate
-    </button>
-    <div class="cs-dock-divider"></div>
-    <button class="cs-dock-tab" id="dockEdit" onclick="csDockOpen('right')" aria-label="Edit slide">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      Edit
-    </button>
-    <div class="cs-dock-divider"></div>
-    <button class="cs-dock-tab cs-dock-action" onclick="openDownloadModal()" aria-label="Download all slides">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
-      Download
-    </button>
-  </nav>
-
-  <!-- Download type modal -->
-  <div class="modal-bg" id="dlTypeModal" style="display:none" onclick="if(event.target===this)closeDlTypeModal()">
-    <div class="modal" style="max-width:380px">
-      <div class="mh">
-        <span class="mh-title" style="color:var(--gold)">Download Carousel</span>
-        <button onclick="closeDlTypeModal()" style="width:26px;height:26px;border-radius:7px;background:rgba(128,128,128,.1);color:var(--text3)">✕</button>
-      </div>
-      <div class="mc" style="gap:10px">
-        <p style="font-size:12px;color:var(--text3);font-family:var(--fm);margin-bottom:4px;letter-spacing:.02em">Choose your download format:</p>
-        <button class="dl-type-btn" id="dlTypePng" onclick="selectDlType('png')">
-          <span style="font-size:28px">🖼️</span>
-          <div><div class="dl-type-title">Picture (PNG)</div><div class="dl-type-sub">All slides as 1080px PNG images</div></div>
-          <div class="dl-type-check" id="dlCheckPng">✓</div>
-        </button>
-        <button class="dl-type-btn" id="dlTypeVideo" onclick="selectDlType('video')">
-          <span style="font-size:28px">🎬</span>
-          <div><div class="dl-type-title">Video (MP4)</div><div class="dl-type-sub">Animated slideshow, 2 sec per slide</div></div>
-          <div class="dl-type-check" id="dlCheckVideo" style="opacity:0">✓</div>
-        </button>
-      </div>
-      <div class="mf">
-        <button class="btn-sec" onclick="closeDlTypeModal()">Cancel</button>
-        <button class="btn-pri" id="dlTypeConfirmBtn" onclick="confirmDlType()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
-          Download
-        </button>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /#screenStudio -->
-
-<div id="ig-footer"></div>
-
-
-<!-- ══════════════════════════════════════════════════
-     SCRIPTS — correct load order (no ig-supabase.js)
-     1. supabase SDK
-     2. plan-config.js
-     3. supabase-config.js   ← single auth/content client
-     4. plan-gate.js
-     5. auth.js
-     6. nav.js
-     7. html2canvas
-     8. carousel-studio.js
-══════════════════════════════════════════════════ -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="plan-config.js"></script>
-<script src="supabase-config.js"></script>
-<script src="plan-gate.js"></script>
-<script src="auth.js"></script>
-<script src="nav.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="carousel-studio.js"></script>
-
-<script>
-/* ══════════════════════════════════════════════════════════
-   SCREEN SYSTEM
-══════════════════════════════════════════════════════════ */
-function showScreen(id) {
-  document.querySelectorAll('.ig-screen').forEach(function(el) {
-    el.classList.remove('active', 'ig-screen-transition');
-  });
-  var target = document.getElementById(id);
-  if (target) {
-    target.classList.add('active', 'ig-screen-transition');
-    // Fix studio shell height when switching to it
-    if (id === 'screenStudio') {
-      requestAnimationFrame(function() {
-        var nav   = document.querySelector('.nav');
-        var shell = document.querySelector('.cs-shell');
-        if (nav && shell) {
-          shell.style.paddingTop = nav.getBoundingClientRect().height + 'px';
-          shell.style.height = '100vh';
-        }
-      });
-    }
-  }
-}
-
-/* ══════════════════════════════════════════════════════════
-   WIZARD LOGIC
-══════════════════════════════════════════════════════════ */
-const WIZ = {
-  page: 1,
-  topic: '',
-  platform: 'Instagram',
-  tone: 'Bold & Direct',
-  slides: 7,
-  style: 'Full Bleed',
-  photos: []
-};
-
-function wizGoTo(n) {
-  var cur  = document.getElementById('wpage' + WIZ.page);
-  var next = document.getElementById('wpage' + n);
-  if (!next) return;
-  cur.classList.remove('active');
-  cur.classList.add('exit-left');
-  setTimeout(function() { cur.classList.remove('exit-left'); }, 400);
-  next.classList.add('active');
-  WIZ.page = n;
-  wizUpdateNav();
-  wizUpdateSteps();
-}
-
-function wizUpdateNav() {
-  var p = WIZ.page;
-  var backBtn = document.getElementById('wbtnBack');
-  var nextBtn = document.getElementById('wbtnNext');
-  var foot    = document.getElementById('wizFoot');
-
-  backBtn.style.display = p === 1 ? 'none' : '';
-
-  if (p === 4) {
-    foot.style.display = 'none';
-  } else {
-    foot.style.display = 'flex';
-    if (p === 3) {
-      nextBtn.innerHTML = '✦ Generate Carousel';
-    } else {
-      nextBtn.innerHTML = 'Continue <svg viewBox="0 0 14 14" fill="none" width="14" height="14"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    }
-  }
-
-  var pcts = { 1: 25, 2: 50, 3: 75, 4: 100 };
-  document.getElementById('wprogressFill').style.width = (pcts[p] || 25) + '%';
-}
-
-function wizUpdateSteps() {
-  var p = WIZ.page;
-  document.querySelectorAll('.wiz-step-item').forEach(function(el) {
-    var s = parseInt(el.dataset.step);
-    el.classList.toggle('active', s === p);
-    el.classList.toggle('done', s < p);
-    var num = el.querySelector('.wiz-step-num');
-    num.classList.toggle('active', s === p);
-    num.classList.toggle('done', s < p);
-  });
-  ['line12','line23','line34'].forEach(function(id, i) {
-    document.getElementById(id).classList.toggle('done', p > i + 1);
-  });
-}
-
-document.getElementById('wbtnBack').addEventListener('click', function() {
-  if (WIZ.page > 1) wizGoTo(WIZ.page - 1);
-});
-
-document.getElementById('wbtnNext').addEventListener('click', function() {
-  if (WIZ.page === 1) {
-    WIZ.topic = document.getElementById('wtopicInput').value.trim();
-    if (!WIZ.topic) {
-      var el = document.getElementById('wtopicInput');
-      el.focus();
-      el.style.borderColor = '#e05555';
-      return;
-    }
-    document.getElementById('wtopicInput').style.borderColor = '';
-    wizGoTo(2);
-  } else if (WIZ.page === 2) {
-    wizGoTo(3);
-  } else if (WIZ.page === 3) {
-    launchFromWizard();
-  }
-});
-
-/* ── Page 1 interactions ── */
-var wtopicEl = document.getElementById('wtopicInput');
-wtopicEl.addEventListener('input', function() {
-  WIZ.topic = wtopicEl.value;
-  document.getElementById('wtopicCount').textContent = wtopicEl.value.length;
-});
-
-function wizSingleSelect(groupId, stateKey) {
-  document.getElementById(groupId).addEventListener('click', function(e) {
-    var pill = e.target.closest('.pill');
-    if (!pill) return;
-    document.querySelectorAll('#' + groupId + ' .pill').forEach(function(p) { p.classList.remove('sel'); });
-    pill.classList.add('sel');
-    WIZ[stateKey] = pill.dataset.val;
-  });
-}
-wizSingleSelect('wplatformGroup', 'platform');
-wizSingleSelect('wtoneGroup', 'tone');
-
-var wslideCount = 7;
-document.getElementById('wscMinus').addEventListener('click', function() {
-  if (wslideCount > 3) { wslideCount--; WIZ.slides = wslideCount; document.getElementById('wscVal').textContent = wslideCount; }
-});
-document.getElementById('wscPlus').addEventListener('click', function() {
-  if (wslideCount < 15) { wslideCount++; WIZ.slides = wslideCount; document.getElementById('wscVal').textContent = wslideCount; }
-});
-
-/* ── Page 2 style select ── */
-document.getElementById('wstyleGrid').addEventListener('click', function(e) {
-  var card = e.target.closest('.style-card');
-  if (!card) return;
-  document.querySelectorAll('.style-card').forEach(function(c) { c.classList.remove('sel'); });
-  card.classList.add('sel');
-  WIZ.style = card.dataset.style;
-});
-
-/* ── Page 3 photo upload ── */
-var wfileInput   = document.getElementById('wfileInput');
-var wuploadZone  = document.getElementById('wuploadZone');
-var wuploadPreview = document.getElementById('wuploadPreview');
-
-wfileInput.addEventListener('change', wizHandleFiles);
-wuploadZone.addEventListener('dragover',  function(e) { e.preventDefault(); wuploadZone.classList.add('drag'); });
-wuploadZone.addEventListener('dragleave', function()  { wuploadZone.classList.remove('drag'); });
-wuploadZone.addEventListener('drop', function(e) {
-  e.preventDefault(); wuploadZone.classList.remove('drag');
-  wizHandleFiles({ target: { files: e.dataTransfer.files } });
-});
-
-function wizHandleFiles(e) {
-  Array.from(e.target.files).forEach(function(file) {
-    if (!file.type.startsWith('image/')) return;
-    var reader = new FileReader();
-    reader.onload = function(ev) { WIZ.photos.push(ev.target.result); wizRenderThumbs(); };
-    reader.readAsDataURL(file);
-  });
-}
-
-function wizRenderThumbs() {
-  wuploadPreview.innerHTML = WIZ.photos.map(function(src, i) {
-    return '<div class="upload-thumb"><img src="' + src + '" alt="Photo ' + (i+1) + '"/><button class="upload-thumb-rm" data-i="' + i + '">×</button></div>';
-  }).join('');
-  wuploadPreview.querySelectorAll('.upload-thumb-rm').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      WIZ.photos.splice(parseInt(btn.dataset.i), 1);
-      wizRenderThumbs();
-    });
-  });
-}
-
-document.getElementById('wskipPhotos').addEventListener('click', function() {
-  launchFromWizard();
-});
-
-/* ── Page 4 gen step animation ── */
-var WGS = ['wgs1','wgs2','wgs3','wgs4','wgs5'];
-var wgenIdx = 0;
-var wgenInterval;
-
-function wizAdvanceGenStep() {
-  if (wgenIdx < WGS.length) {
-    var prev = WGS[wgenIdx - 1];
-    if (prev) {
-      document.getElementById(prev).classList.remove('active');
-      document.getElementById(prev).classList.add('done');
-    }
-    document.getElementById(WGS[wgenIdx]).classList.add('active');
-    wgenIdx++;
-  }
-}
-
-/* ── Launch: transfer wizard state → studio → generate ── */
-function launchFromWizard() {
-  // Collect final state from wizard UI
-  WIZ.topic    = document.getElementById('wtopicInput').value.trim();
-  WIZ.platform = (document.querySelector('#wplatformGroup .pill.sel') || {}).dataset?.val || WIZ.platform;
-  WIZ.tone     = (document.querySelector('#wtoneGroup .pill.sel')     || {}).dataset?.val || WIZ.tone;
-  WIZ.style    = (document.querySelector('.style-card.sel')           || {}).dataset?.style || WIZ.style;
-
-  // Move to page 4 (generating animation)
-  wizGoTo(4);
-  wgenIdx = 0;
-  WGS.forEach(function(id) { document.getElementById(id).classList.remove('active','done'); });
-  wizAdvanceGenStep();
-  wgenInterval = setInterval(wizAdvanceGenStep, 1800);
-
-  // Populate studio left panel from wizard state
-  var topicEl = document.getElementById('topicInput');
-  var platEl  = document.getElementById('platSelect');
-  var toneEl  = document.getElementById('toneSelect');
-  var cntEl   = document.getElementById('cntVal');
-  if (topicEl) topicEl.value = WIZ.topic;
-  if (platEl)  platEl.value  = WIZ.platform;
-  if (toneEl)  toneEl.value  = WIZ.tone;
-  if (cntEl)   cntEl.textContent = WIZ.slides;
-
-  // Switch to studio screen and trigger generation
-  setTimeout(function() {
-    clearInterval(wgenInterval);
-    WGS.forEach(function(id) {
-      document.getElementById(id).classList.remove('active');
-      document.getElementById(id).classList.add('done');
-    });
-
-    // Switch screen
-    showScreen('screenStudio');
-
-    // Trigger generation after the screen transition
-    setTimeout(function() {
-      // Sync the count state in carousel-studio.js
-      if (typeof window.ST !== 'undefined') {
-        // chgCount resets to current val — set via the input UI instead
-      }
-      // Fire onTopicInput to enable the generate button
-      if (typeof onTopicInput === 'function') onTopicInput();
-
-      // Trigger generate
-      if (typeof generate === 'function') {
-        generate();
-      } else {
-        document.getElementById('genBtn') && document.getElementById('genBtn').click();
-      }
-    }, 350);
-
-  }, 2800);
-}
-
-/* ══════════════════════════════════════════════════════════
-   STUDIO INTEGRATION LAYER
-   (Same as original carousel-studio.html integration block)
-══════════════════════════════════════════════════════════ */
-
-window.addEventListener('load', function() {
-  // Render shared nav and footer
-  if (typeof renderNav === 'function') renderNav('carousel-studio.html');
-  if (typeof renderFooter === 'function') renderFooter();
-  if (typeof window.checkAuth === 'function') window.checkAuth();
-
-  // Inject breadcrumb into nav
-  requestAnimationFrame(function() {
-    var navIn = document.querySelector('.nav-in');
-    if (navIn) {
-      var sep   = document.createElement('div');
-      sep.style.cssText = 'width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 8px;';
-      var crumb = document.createElement('span');
-      crumb.style.cssText = 'font-size:11px;color:var(--text3);font-family:var(--fm);letter-spacing:.3px;white-space:nowrap;';
-      crumb.textContent = 'Carousel Studio';
-      var sp = navIn.querySelector('.nav-links') || navIn.querySelector('.nav-right');
-      if (sp) { navIn.insertBefore(sep, sp); navIn.insertBefore(crumb, sp); }
-    }
-
-    // Fix studio shell height
-    var nav   = document.querySelector('.nav');
-    var shell = document.querySelector('.cs-shell');
-    if (nav && shell) {
-      var h = nav.getBoundingClientRect().height;
-      shell.style.paddingTop = h + 'px';
-      shell.style.height = '100vh';
-    }
-
-    // Wizard shell — adjust for nav height
-    var wizShell = document.querySelector('.wiz-shell');
-    if (nav && wizShell) {
-      var navH = nav.getBoundingClientRect().height;
-      wizShell.style.paddingTop = 'calc(' + navH + 'px + 48px)';
-    }
-  });
-
-  // Default accent
-  if (typeof ST !== 'undefined') ST.accent = '#f5e400';
-
-  // Restore saved platform/tone
-  try {
-    var lp = localStorage.getItem('ig_cs_platform');
-    var lt = localStorage.getItem('ig_cs_tone');
-    if (lp && document.getElementById('platSelect')) document.getElementById('platSelect').value = lp;
-    if (lt && document.getElementById('toneSelect')) document.getElementById('toneSelect').value = lt;
-  } catch(e) {}
-
-  // Keep-alive ping
-  setInterval(function() {
-    fetch('https://impactgrid-dijo.onrender.com/ping').catch(function() {});
-  }, 600000);
-});
-
-// Plan pill
-function updatePlanPill() {
-  var user  = window.igUser || {};
-  var plan  = user.plan || (function(){ try { return localStorage.getItem('ig_plan') || 'free'; } catch(e){ return 'free'; } })();
-  var uses  = (function(){ try { return parseInt(localStorage.getItem('ig_carousel_uses') || '0'); } catch(e){ return 0; } })();
-  var cfg   = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) || { label: 'Free', carousels: 3, ai_uses: 3 };
-  var limit = (cfg.carousels !== undefined) ? cfg.carousels : cfg.ai_uses;
-  var name  = user.firstName || user.name || (function(){ try { return localStorage.getItem('ig_name') || ''; } catch(e){ return ''; } })();
-
-  var pill    = document.getElementById('csPlanPill');
-  var avEl    = document.getElementById('csPlanAv');
-  var nameEl  = document.getElementById('csPlanName');
-  var badgeEl = document.getElementById('csPlanBadge');
-  var usesEl  = document.getElementById('csPlanUses');
-  if (!pill) return;
-
-  pill.style.display = 'inline-flex';
-  var avatar = '', animal = '';
-  try { avatar = localStorage.getItem('ig_avatar') || ''; } catch(e) {}
-  try { animal = localStorage.getItem('ig_animal') || ''; } catch(e) {}
-  if (avatar)       { avEl.innerHTML = '<img src="' + avatar + '" alt=""/>'; }
-  else if (animal)  { avEl.style.background = 'linear-gradient(135deg,#f0f4ff,#e8f0fe)'; avEl.style.fontSize = '12px'; avEl.textContent = animal; }
-  else if (name)    { avEl.textContent = name.charAt(0).toUpperCase(); }
-  else              { avEl.textContent = '?'; }
-
-  if (nameEl && name) nameEl.textContent = name.split(' ')[0];
-  if (badgeEl) {
-    badgeEl.textContent = cfg.label ? cfg.label.toUpperCase() : plan.toUpperCase();
-    badgeEl.style.color = plan === 'enterprise' || plan === 'admin' ? 'var(--purple)' : plan === 'professional' ? 'var(--gold)' : 'var(--text3)';
-  }
-  if (usesEl) {
-    if (!isFinite(limit)) { usesEl.textContent = '∞ uses'; usesEl.className = 'cs-plan-uses'; }
-    else {
-      var remaining = Math.max(0, limit - uses);
-      usesEl.textContent = remaining + ' left';
-      usesEl.className = 'cs-plan-uses' + (remaining === 0 ? ' danger' : remaining <= 1 ? ' warn' : '');
-    }
-  }
-}
-document.addEventListener('ig-user-ready', updatePlanPill);
-document.addEventListener('ig-plan-ready', updatePlanPill);
-
-// Brand patch
-(function patchBrand() {
-  function applyBrand(name) {
-    var brand = name || 'ImpactGrid';
-    if (typeof ST !== 'undefined') ST.brand = brand;
-    var bi = document.getElementById('brandInput');
-    if (bi) bi.value = brand;
-  }
-  window.addEventListener('load', function() {
-    var n = '';
-    try { n = localStorage.getItem('ig_name') || ''; } catch(e) {}
-    if (!n && window.igUser) n = window.igUser.firstName || window.igUser.name || '';
-    applyBrand(n);
-  });
-  document.addEventListener('ig-user-ready', function() {
-    var user = window.igUser || {};
-    var name = user.firstName || user.name || '';
-    if (name) applyBrand(name);
-  });
-  window.updateBrand = function() {
-    var bi = document.getElementById('brandInput');
-    if (bi && typeof ST !== 'undefined') {
-      ST.brand = bi.value;
-      if (ST.slides.length && typeof renderSlide === 'function') renderSlide();
-    }
-  };
-  window.getIGBrand = function() {
-    return (typeof ST !== 'undefined' && ST.brand) ? ST.brand : 'ImpactGrid';
-  };
-})();
-
-// Apply-all layout patch
-window.addEventListener('load', function() {
-  var _origChangeLayout = window.changeLayout;
-  if (typeof _origChangeLayout !== 'function') return;
-  window.changeLayout = function(newLayout) {
-    if (!window.ST || !window.ST.slides.length) return;
-    var blocked = ['SPLIT_LEFT','SPLIT_RIGHT','CORNER_FLOAT','GRID_POINTS','MAGAZINE_SPLIT','HABIT_SLIDE'];
-    if (blocked.indexOf(newLayout) !== -1) { toast('Layout unavailable in this version'); return; }
-    var applyAll = document.getElementById('applyAllToggle');
-    if (applyAll && applyAll.checked) {
-      ST.slides.forEach(function(s) { s.layout = newLayout; });
-      if (typeof buildStrip  === 'function') buildStrip();
-      if (typeof renderSlide === 'function') renderSlide();
-      if (typeof fillEdit    === 'function') fillEdit();
-      toast('Layout → ' + newLayout.replace(/_/g, ' ') + ' · all slides');
-    } else {
-      _origChangeLayout(newLayout);
-    }
-  };
-});
-
-// Guide tooltip
-var _guideShown = false;
-function showGuide() {
-  if (_guideShown) return; _guideShown = true;
-  var wrap = document.getElementById('canvasWrap');
-  if (!wrap) return;
-  var tip = document.createElement('div');
-  tip.className   = 'user-guide';
-  tip.textContent = '✦ Click any text or number on the slide to edit it directly';
-  wrap.appendChild(tip);
-  setTimeout(function() { if (tip.parentNode) tip.remove(); }, 4500);
-}
-
-window.addEventListener('load', function() {
-  var _genOrig = window.generate;
-  if (typeof _genOrig !== 'function') return;
-  window.generate = async function() {
-    try {
-      var platEl = document.getElementById('platSelect');
-      var toneEl = document.getElementById('toneSelect');
-      if (platEl) localStorage.setItem('ig_cs_platform', platEl.value);
-      if (toneEl) localStorage.setItem('ig_cs_tone', toneEl.value);
-    } catch(e) {}
-    await _genOrig.apply(this, arguments);
-    setTimeout(showGuide, 1400);
-    var capEl  = document.getElementById('eCap');
-    var capLbl = document.getElementById('capAiLabel');
-    if (capEl)  capEl.classList.add('cap-ai-loading');
-    if (capLbl) capLbl.textContent = '✦ Writing…';
-    setTimeout(function() {
-      if (capEl)  capEl.classList.remove('cap-ai-loading');
-      if (capLbl) capLbl.textContent = 'AI-written';
-      if (typeof fillEdit === 'function') fillEdit();
-    }, window.ST && ST.slides ? ST.slides.length * 1800 + 2000 : 15000);
-  };
-});
-
-// Video layer fix
-window.addEventListener('load', function() {
-  var vid = document.getElementById('sBgVideo');
-  if (vid) { vid.style.position = 'absolute'; vid.style.inset = '0'; vid.style.zIndex = '2'; vid.style.overflow = 'hidden'; vid.style.pointerEvents = 'none'; }
-});
-
-// Mobile panel helpers
-function toggleLeftPanel() {
-  var el = document.getElementById('csLeft');
-  var ov = document.getElementById('csPanelOverlay');
-  var isOpen = el.classList.contains('open');
-  closeAllPanels();
-  if (!isOpen) { el.classList.add('open'); ov.classList.add('open'); }
-}
-function toggleRightPanel() {
-  var el = document.getElementById('csRight');
-  var ov = document.getElementById('csPanelOverlay');
-  var isOpen = el.classList.contains('open');
-  closeAllPanels();
-  if (!isOpen) { el.classList.add('open'); ov.classList.add('open'); }
-}
-function closeAllPanels() {
-  var left  = document.getElementById('csLeft');
-  var right = document.getElementById('csRight');
-  var ov    = document.getElementById('csPanelOverlay');
-  if (left)  left.classList.remove('open');
-  if (right) right.classList.remove('open');
-  if (ov)    ov.classList.remove('open');
-  var genTab  = document.getElementById('dockGenerate');
-  var editTab = document.getElementById('dockEdit');
-  if (genTab)  genTab.classList.add('active');
-  if (editTab) editTab.classList.remove('active');
-}
-
-// Swipe close
-(function addSwipeClose() {
-  var _touchStartY = 0;
-  function initSwipe(panelId) {
-    var el = document.getElementById(panelId);
-    if (!el) return;
-    el.addEventListener('touchstart', function(e) { _touchStartY = e.touches[0].clientY; }, { passive: true });
-    el.addEventListener('touchend', function(e) { if (e.changedTouches[0].clientY - _touchStartY > 60) closeAllPanels(); }, { passive: true });
-  }
-  window.addEventListener('load', function() { initSwipe('csLeft'); initSwipe('csRight'); });
-})();
-
-// Platform detection
-function isSafariIOS() {
-  var ua = navigator.userAgent;
-  var isiOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-  var isSafari = /AppleWebKit/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/OPiOS/.test(ua) && !/EdgiOS/.test(ua);
-  return isiOS && isSafari;
-}
-
-var _dlCancelled = false;
-
-function showDlProgress(label, pct) {
-  var bar = document.getElementById('dlProgressBar');
-  if (bar) bar.classList.add('show');
-  updateDlProgress(label, pct || 0);
-}
-function updateDlProgress(label, pct) {
-  var lbl = document.getElementById('dlBarLabel');
-  var p   = document.getElementById('dlBarPct');
-  var fill = document.getElementById('dlBarFill');
-  if (lbl) lbl.textContent = label;
-  if (p) p.textContent = pct + '%';
-  if (fill) fill.style.width = pct + '%';
-}
-function hideDlProgress() {
-  var bar = document.getElementById('dlProgressBar');
-  if (bar) bar.classList.remove('show');
-}
-function cancelDl() { _dlCancelled = true; hideDlProgress(); }
-
-async function swapBgImagesToBlobs(container) {
-  var restores = [];
-  var els = container.querySelectorAll('[style*="background-image"]');
-  await Promise.all(Array.from(els).map(async function(el) {
-    var m = el.style.backgroundImage.match(/url\(["']?(https?[^"')]+)["']?\)/);
-    if (!m) return;
-    var url = m[1];
-    try {
-      var resp = await fetch(url, { mode: 'cors' });
-      var blob = await resp.blob();
-      var objUrl = URL.createObjectURL(blob);
-      var orig = el.style.backgroundImage;
-      el.style.backgroundImage = 'url(' + objUrl + ')';
-      restores.push({ el: el, orig: orig, objUrl: objUrl });
-    } catch(e) {}
-  }));
-  return function() {
-    restores.forEach(function(r) { r.el.style.backgroundImage = r.orig; URL.revokeObjectURL(r.objUrl); });
-  };
-}
-
-// iOS download modal
-function showIosDlModal(blobItems) {
-  var modal = document.getElementById('iosDlModal');
-  if (!modal) return;
-  // Basic batch: show all at once for now
-  var iosDl = { blobItems: blobItems, batchIdx: 0, batches: [blobItems], blobs: blobItems, saved: 0, cancelled: false };
-  window.iosDl = iosDl;
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-window.iosDlTriggerShare = async function() {
-  if (!window.iosDl || !window.iosDl.blobs) return;
-  var btn = document.getElementById('iosDlSaveBtn');
-  btn.disabled = true;
-  try {
-    var files = await Promise.all(window.iosDl.blobs.map(function(item, i) {
-      return new File([item.blob], item.name || ('slide-' + (i+1) + '.png'), { type: 'image/png' });
-    }));
-    await navigator.share({ files: files });
-    window.iosDl.saved = files.length;
-    iosDlShowDone();
-  } catch(e) {
-    btn.disabled = false;
-  }
-};
-function iosDlShowDone() {
-  document.getElementById('iosDlBtnArea').classList.add('hidden');
-  document.getElementById('iosDlInstruction').style.display = 'none';
-  document.getElementById('iosDlDone').classList.remove('hidden');
-  document.getElementById('iosDlDoneTitle').textContent = '🎉 All ' + (window.iosDl && window.iosDl.saved || '') + ' Slides Saved!';
-  document.getElementById('iosDlDoneSub').textContent = 'Check your Camera Roll — all your slides are there.';
-}
-window.iosDlClose = function() {
-  document.getElementById('iosDlModal').classList.add('hidden');
-  document.body.style.overflow = '';
-};
-window.iosOpenAll = function() {
-  iosPendingPhotos.forEach(function(item) { window.open(URL.createObjectURL(item.blob), '_blank'); });
-  if (typeof toast === 'function') toast('📱 Slides opened — long-press each → "Save to Photos"');
-  closeIosModal();
-};
-window.closeIosModal = function() {
-  document.getElementById('iosModal').classList.add('hidden');
-  document.body.style.overflow = '';
-};
-var iosPendingPhotos = [];
-
-// Download all
-window.downloadAll = async function() {
-  if (!window.ST || !ST.slides.length) { if (typeof toast === 'function') toast('Generate a carousel first'); return; }
-  if (typeof html2canvas === 'undefined') { if (typeof toast === 'function') toast('html2canvas not loaded'); return; }
-  _dlCancelled = false;
-  var total = ST.slides.length, blobItems = [];
-  showDlProgress('Preparing slides…', 0);
-  var origCur  = ST.cur;
-  var canvas   = document.getElementById('slideCanvas');
-  var displayW = canvas.offsetWidth || 480;
-  var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  var rawScale = 1080 / displayW;
-  var exportScale = isMobile ? Math.min(rawScale, 2) : Math.round(rawScale * 10) / 10;
-
-  for (var i = 0; i < total; i++) {
-    if (_dlCancelled) break;
-    ST.cur = i;
-    if (typeof renderSlide   === 'function') renderSlide();
-    if (typeof updateCounter === 'function') updateCounter();
-    await new Promise(function(r) { setTimeout(r, 600); });
-    var imgs = canvas.querySelectorAll('img');
-    await Promise.all(Array.from(imgs).map(function(img) {
-      if (img.complete) return Promise.resolve();
-      return new Promise(function(res) { img.onload = res; img.onerror = res; setTimeout(res, 2000); });
-    }));
-    await new Promise(function(r) { setTimeout(r, 200); });
-    updateDlProgress('Capturing slide ' + (i + 1) + ' of ' + total + '…', Math.round((i / total) * 80));
-    var restoreBgs = await swapBgImagesToBlobs(canvas);
-    try {
-      var c = await html2canvas(canvas, {
-        useCORS: true, allowTaint: false,
-        scale: exportScale, backgroundColor: '#111111',
-        imageTimeout: isMobile ? 12000 : 8000, logging: false
-      });
-      var previewUrl = null;
-      try { previewUrl = c.toDataURL('image/jpeg', 0.4); } catch(e) {}
-      await new Promise(function(res) {
-        c.toBlob(function(blob) {
-          if (blob) blobItems.push({ blob: blob, name: 'ImpactGrid-slide-' + String(i + 1).padStart(2, '0') + '.png', previewUrl: previewUrl });
-          res();
-        }, 'image/png');
-      });
-    } catch(e) { console.warn('[downloadAll] slide ' + (i+1), e); } finally { restoreBgs(); }
-  }
-
-  ST.cur = origCur;
-  if (typeof renderSlide   === 'function') renderSlide();
-  if (typeof updateCounter === 'function') updateCounter();
-  if (typeof fillEdit      === 'function') fillEdit();
-  hideDlProgress();
-
-  if (_dlCancelled || !blobItems.length) {
-    if (!_dlCancelled && typeof toast === 'function') toast('⚠️ Capture failed — try refreshing');
-    return;
-  }
-
-  if (isSafariIOS()) { showIosDlModal(blobItems); return; }
-
-  for (var j = 0; j < blobItems.length; j++) {
-    if (_dlCancelled) break;
-    try {
-      var url = URL.createObjectURL(blobItems[j].blob);
-      var a = document.createElement('a');
-      a.href = url; a.download = blobItems[j].name;
-      a.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;';
-      document.body.appendChild(a); a.click();
-      await new Promise(function(r) { setTimeout(r, 400); });
-      document.body.removeChild(a); URL.revokeObjectURL(url);
-    } catch(e) {}
-  }
-  if (typeof toast === 'function') toast('✦ ' + blobItems.length + ' slides saved at 1080px');
-};
-
-// Download type modal
-var _dlType = 'png';
-window.openDownloadModal = function() {
-  if (!window.ST || !ST.slides || !ST.slides.length) {
-    if (typeof toast === 'function') toast('Generate a carousel first');
-    return;
-  }
-  _dlType = 'png';
-  document.getElementById('dlTypePng').classList.add('selected');
-  document.getElementById('dlTypeVideo').classList.remove('selected');
-  document.getElementById('dlCheckPng').style.opacity = '1';
-  document.getElementById('dlCheckVideo').style.opacity = '0';
-  document.getElementById('dlTypeModal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-};
-window.closeDlTypeModal = function() {
-  document.getElementById('dlTypeModal').style.display = 'none';
-  document.body.style.overflow = '';
-};
-window.selectDlType = function(type) {
-  _dlType = type;
-  document.getElementById('dlTypePng').classList.toggle('selected', type === 'png');
-  document.getElementById('dlTypeVideo').classList.toggle('selected', type === 'video');
-  document.getElementById('dlCheckPng').style.opacity  = type === 'png'   ? '1' : '0';
-  document.getElementById('dlCheckVideo').style.opacity = type === 'video' ? '1' : '0';
-};
-window.confirmDlType = function() {
-  closeDlTypeModal();
-  if (_dlType === 'png') { downloadAll(); } else { if (typeof downloadAsVideo === 'function') downloadAsVideo(); }
-};
-
-// Mobile dock
-window.csDockOpen = function(panel) {
-  var leftEl  = document.getElementById('csLeft');
-  var rightEl = document.getElementById('csRight');
-  var ov      = document.getElementById('csPanelOverlay');
-  var genTab  = document.getElementById('dockGenerate');
-  var editTab = document.getElementById('dockEdit');
-  if (panel === 'left') {
-    var isOpen = leftEl && leftEl.classList.contains('open');
-    closeAllPanels();
-    if (!isOpen) { leftEl.classList.add('open'); ov.classList.add('open'); if (genTab) genTab.classList.add('active'); if (editTab) editTab.classList.remove('active'); }
-  } else {
-    var isOpen = rightEl && rightEl.classList.contains('open');
-    closeAllPanels();
-    if (!isOpen) { rightEl.classList.add('open'); ov.classList.add('open'); if (editTab) editTab.classList.add('active'); if (genTab) genTab.classList.remove('active'); }
-  }
-};
-
-// Sync format buttons
-window.addEventListener('load', function() {
-  var _origSetFmt = window.setFmt;
-  if (typeof _origSetFmt !== 'function') return;
-  window.setFmt = function(f) {
-    _origSetFmt(f);
-    document.querySelectorAll('.cs-fmt-btn').forEach(function(btn) {
-      var id = btn.id || '';
-      btn.classList.toggle('active', id === 'fmt' + f.charAt(0).toUpperCase() + f.slice(1));
-    });
-  };
-});
-
-/* dl-type button styles */
-</script>
+</div>
 
 <style>
-.dl-type-btn { width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:var(--card);border:1.5px solid var(--border2);cursor:pointer;transition:all .18s;text-align:left; }
-.dl-type-btn:hover,.dl-type-btn.selected { border-color:var(--gold);background:var(--gold-dim); }
-.dl-type-title { font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;font-family:var(--fd); }
-.dl-type-sub   { font-size:11px;color:var(--text3);font-family:var(--fm); }
-.dl-type-check { margin-left:auto;flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#000;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;transition:opacity .18s; }
+.ob-logo-upload{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  border:1.5px dashed rgba(255,255,255,.18);border-radius:10px;
+  padding:18px 20px;cursor:pointer;transition:.2s;min-height:72px;
+  background:rgba(255,255,255,.03);
+}
+.ob-logo-upload:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.06)}
+#obLogoPlaceholder{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.45)}
+#previewUrlPill:hover{background:rgba(255,255,255,.12);opacity:1}
+#previewUrlPill.copied{background:rgba(74,222,128,.18);color:#4ade80;transition:background .15s,color .15s}
 </style>
 
+<script>
+window._obLogoDataUrl = null;
+function obHandleLogoUpload(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    window._obLogoDataUrl = e.target.result;
+    var preview = document.getElementById('obLogoPreview');
+    var placeholder = document.getElementById('obLogoPlaceholder');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    placeholder.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+window._beLogoDataUrl = null;
+function beHandleLogoUpload(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    window._beLogoDataUrl = e.target.result;
+    var preview = document.getElementById('beLogoPreview');
+    var placeholder = document.getElementById('beLogoPlaceholder');
+    if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+    if (placeholder) placeholder.style.display = 'none';
+    // Trigger live preview update if available
+    if (typeof updatePreviewLive === 'function') updatePreviewLive();
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', async function() {
+    if (typeof renderNav === 'function') renderNav('portfolio-studio.html');
+    if (typeof initAuth === 'function') await initAuth();
+    if (typeof window.checkAuth === 'function') window.checkAuth();
+  });
+</script>
+<script src="plan-config.js"></script>
+<script src="plan-gate.js"></script>
+<script src="portfolio-studio.js"></script>
 </body>
 </html>
