@@ -842,6 +842,37 @@ async function savePortfolioToDB(pf){
     }
 
     if (data.success) {
+      // ── Patch logo_url + profile_photo_url directly to Supabase ──
+      // The Render server may not write these columns; patch them directly
+      // from the client so they always land on the live site.
+      try {
+        const imgPatch = {};
+        if (pfClean.logo_url         && !pfClean.logo_url.startsWith('data:'))         imgPatch.logo_url         = pfClean.logo_url;
+        if (pfClean.profile_photo_url && !pfClean.profile_photo_url.startsWith('data:')) imgPatch.profile_photo_url = pfClean.profile_photo_url;
+        if (Object.keys(imgPatch).length && pfClean.slug) {
+          const patchRes = await fetch(
+            SUPABASE_URL + '/rest/v1/portfolios?slug=eq.' + encodeURIComponent(pfClean.slug),
+            {
+              method: 'PATCH',
+              headers: {
+                'Content-Type':  'application/json',
+                'apikey':        SUPABASE_KEY,
+                'Authorization': 'Bearer ' + SUPABASE_KEY,
+                'Prefer':        'return=minimal',
+              },
+              body: JSON.stringify(imgPatch),
+            }
+          );
+          if (patchRes.ok) {
+            console.log('[Save] ✓ Image URLs patched to Supabase:', imgPatch);
+          } else {
+            const patchErr = await patchRes.text();
+            console.warn('[Save] Image patch HTTP', patchRes.status, patchErr);
+          }
+        }
+      } catch (patchErr) {
+        console.warn('[Save] Image patch failed (non-critical):', patchErr.message);
+      }
       showToast("Portfolio saved ✓");
       // Refresh the preview pill URL in case slug changed
       const pill = document.getElementById("previewUrlPill");
