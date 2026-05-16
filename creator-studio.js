@@ -45,6 +45,16 @@ function _showGeoStatus(text) {
   // If the element doesn't exist yet, this is a silent no-op.
   var el = document.getElementById('geoStatus');
   if (el) el.textContent = text;
+
+  // Also update ticker geo labels when country is confirmed (not "Detecting…")
+  if (_geoDetected || text.indexOf('Detecting') === -1) {
+    var countryName = _userCountryName || text.replace('📍 ', '');
+    var tickerLabel = document.getElementById('tickerGeoLabel');
+    if (tickerLabel) tickerLabel.textContent = countryName;
+    document.querySelectorAll('.tickerGeoLabel2').forEach(function(el2) {
+      el2.textContent = countryName;
+    });
+  }
 }
 
 /* ── AI CALL THROTTLE ────────────────────────────────────────────────
@@ -1447,7 +1457,8 @@ function renderOpportunities(data) {
 
 async function loadOpportunities() {
   try {
-    var res = await fetch(DIJO + '/trends/dijo');
+    var geo = _userCountry || 'GB';
+    var res = await fetch(DIJO + '/trends/dijo?geo=' + geo);
     var data = await res.json();
     // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
     // fall back to local rather than showing "No opportunities"
@@ -1688,9 +1699,10 @@ async function renderDijoTopPick() {
     return;
   }
   try {
+    var locationCtx = _userCountryName ? ' in ' + _userCountryName : '';
     var prompt = 'In ONE sentence (max 25 words), explain why "' + best.topic
       + '" is the best content opportunity right now on ' + best.platLabel
-      + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
+      + locationCtx + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
     var res = await fetch(DIJO + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1826,8 +1838,9 @@ async function loadBriefing(forceRefresh) {
     var insightEl = document.getElementById('dijoInsightText');
     if (!insightEl) return;
     try {
-      var prompt = '"' + topicName + '" is ' + heat + ' on ' + platName + ' right now. '
-        + 'Why is it blowing up and what should a UK content creator do about it today?';
+      var locationLabel = _userCountryName || 'your country';
+      var prompt = '"' + topicName + '" is ' + heat + ' on ' + platName + ' right now in ' + locationLabel + '. '
+        + 'Why is it blowing up and what should a content creator in ' + locationLabel + ' do about it today?';
       var text = await callDijo(prompt, 'creator');
       if (text && insightEl) insightEl.textContent = text;
     } catch(e) {
