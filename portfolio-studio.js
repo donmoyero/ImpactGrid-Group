@@ -1909,7 +1909,8 @@ function renderPreview(pf) {
 function buildPortfolioHTML(pf) {
   const t       = THEMES[pf.theme || 'dark'];
   const accent  = pf.accent_color || t.accent;
-  const heroImgs = (pf.hero_media || []).map(m => m.url).filter(Boolean);
+  const heroImgs = (pf.hero_media || []).map(m => m.preview || m.url).filter(Boolean);
+  const galleryThumbImgs = (pf.hero_media || []).map(m => m.thumb || m.preview || m.url).filter(Boolean);
   const heroImg0 = heroImgs[0] || '';
   const logoUrl  = pf.logo_url || '';
   const initials = (pf.name || 'CR').split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
@@ -1986,7 +1987,7 @@ function buildPortfolioHTML(pf) {
 
   /* ── Gallery flip pages — use hero_media, then dijo section assets, then generic fallback ── */
   const _dijoGalleryUrl = sa.gallery?.url || sa.hero?.url || '';
-  const galleryImgs = heroImgs.length > 0 ? heroImgs
+  const galleryImgs = galleryThumbImgs.length > 0 ? galleryThumbImgs
     : _dijoGalleryUrl ? [_dijoGalleryUrl,
         sa.about?.url, sa.services?.url, sa.contact?.url
       ].filter(Boolean)
@@ -2003,7 +2004,7 @@ function buildPortfolioHTML(pf) {
   const flipPagesHTML = galleryImgs.map((url, i) => `
     <div class="fp-page" id="fpPage${i}" style="z-index:${totalFlipPages - i}">
       <div class="fp-front">
-        <img src="${esc(url)}" alt="Gallery image ${i+1}" loading="lazy"/>
+        <img src="${esc(url)}" alt="Gallery image ${i+1}" ${i===0?'fetchpriority="high"':'loading="lazy"'}/>
         <div class="fp-page-num">${i+1} / ${totalFlipPages}</div>
         <div class="fp-crease"></div>
       </div>
@@ -2197,7 +2198,7 @@ a{color:inherit;text-decoration:none}
 .fp-page.flipped{transform:rotateY(-180deg)}
 .fp-front,.fp-back{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:4px 16px 16px 4px}
 .fp-back{transform:rotateY(180deg);-webkit-transform:rotateY(180deg);border-radius:16px 4px 4px 14px}
-.fp-front img,.fp-back img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;background:var(--bg)}
+.fp-front img,.fp-back img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:var(--bg)}
 .fp-crease{position:absolute;left:0;top:0;bottom:0;width:40px;background:linear-gradient(to right,rgba(0,0,0,.5),rgba(0,0,0,.08) 70%,transparent);pointer-events:none;z-index:2}
 .fp-crease.back-crease{left:auto;right:0;background:linear-gradient(to left,rgba(0,0,0,.5),rgba(0,0,0,.08) 70%,transparent)}
 .fp-page-num{position:absolute;bottom:14px;right:18px;font-size:11px;font-family:monospace;color:rgba(255,255,255,.9);background:rgba(0,0,0,.55);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px);letter-spacing:.5px}
