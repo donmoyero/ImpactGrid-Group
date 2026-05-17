@@ -478,15 +478,22 @@ async function callDijo(message, mode) {
     return d0.reply || '';
   }
 
-  // Smart path — memory + mood + trends + personalisation
+  // Smart path — memory + mood + live trends + personalisation.
+  // Pass top 5 from _allTrends so Dijo server sees exactly the same
+  // real data the user sees — no separate DB query needed server-side.
+  var _trendContext = (_allTrends || []).slice(0, 5).map(function(t) {
+    return { topic: t.topic, score: t.score, platform: t.platLabel,
+             views: t.totalViews, status: t.status };
+  });
   var res = await fetch(DIJO + '/chat/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      user_id:  user ? user.id : null,
-      message:  message,
-      history:  _dijoHistory.slice(-10),
-      geo:      _userCountry || 'GB'
+      user_id:     user ? user.id : null,
+      message:     message,
+      history:     _dijoHistory.slice(-10),
+      geo:         _userCountry || 'GB',
+      live_trends: _trendContext
     })
   });
   if (!res.ok) {
@@ -519,36 +526,15 @@ function fmtN(n) { return n ? Number(n).toLocaleString() : '—'; }
 function toScore(s) { return Math.min(9.9, parseFloat((s / 10).toFixed(1))); }
 
 /* ─────────────────────────────────────────────
-   VIRAL INTELLIGENCE SCORING 🧠🔥
-   TikTok = velocity engine ⚡
-   YouTube = validation engine 🎯
-   Google  = demand engine 🔍
+   TREND SCORE — real DB value, no recalculation.
+   Ingestion writes the actual score from YouTube
+   view velocity + Google search volume to Supabase.
+   We display it directly. DB score is 0-100,
+   displayed as 0.0–9.9 here.
 ───────────────────────────────────────────── */
-function runTrendScoring(rawScore, platforms) {
-  // Derive sub-scores from raw score (0-100 scale internally)
-  var base = rawScore; // already 0-100
-  var velocityScore   = base * 0.9;
-  var engagementScore = base * 0.8;
-  var commentsScore   = base * 0.7;
-  var recencyScore    = base * 0.85;
-
-  var platformWeight = 1;
-
-  // 🔥 PLATFORM INTELLIGENCE
-  if (platforms.includes('tiktok'))  platformWeight += 0.3;  // velocity king ⚡
-  if (platforms.includes('youtube')) platformWeight += 0.2;  // validation 🎯
-  if (platforms.includes('google'))  platformWeight += 0.1;  // demand 🔍
-
-  var finalScore = Math.min(100,
-    (
-      velocityScore   * 0.45 +
-      engagementScore * 0.25 +
-      commentsScore   * 0.15 +
-      recencyScore    * 0.15
-    ) * platformWeight
-  );
-
-  return Math.min(9.9, parseFloat((finalScore / 10).toFixed(1)));
+function runTrendScoring(rawScore) {
+  var score = Math.min(100, Math.max(0, parseFloat(rawScore) || 50));
+  return Math.min(9.9, parseFloat((score / 10).toFixed(1)));
 }
 
 /* ─────────────────────────────────────────────
@@ -740,19 +726,21 @@ function updateChart() {
 }
 
 /* renderAll — unified re-render called after any trend fetch */
+/* renderAll — single render pass called ONLY by fetchTrends() on success.
+   Never called directly from the load init or setInterval.
+   Order matters: briefing and dash first (above the fold), then chart/radar/pick. */
 function renderAll() {
-  updateBriefing();
-  loadBriefing();        // refresh pulse strip now that _allTrends is populated
+  updateBriefing();           // pulse strip topic text
+  loadBriefing();             // briefing panel — reads _allTrends, no extra fetch
   runTrendPrediction();
-  renderDashTrends();
-  renderDashOpps();
+  renderDashTrends();         // overview top trends
+  renderDashOpps();           // opportunities panel
   updateTopTrends();
-  // Chart + radar gauges + Dijo pick: always update so data is ready when user switches tab
-  renderTrendChart();
-  renderRadarGauges();
-  renderDijoTopPick();
-  // Combined cross-platform chart + winner box (trends panel summary row)
-  updateChart();
+  renderTrendChart();         // chart tab
+  renderRadarGauges();        // radar gauges
+  renderDijoTopPick();        // Dijo top pick box
+  updateChart();              // winner box
+  if (typeof notifyCalendar === 'function') notifyCalendar(); // calendar reads _allTrends
 }
 
 async function fetchTrends() {
@@ -773,7 +761,7 @@ async function fetchTrends() {
       : ['google'];
     return {
       topic:        t.topic,
-      score:        runTrendScoring(t.trend_score || t.avg_score || 50, platforms),
+      score:        runTrendScoring(t.trend_score || t.avg_score || 50),
       plat:         plat,
       platLabel:    platLbl,
       rank:         i + 1,
@@ -1889,39 +1877,19 @@ async function loadBriefing(forceRefresh) {
     }
   }
 
+  // Briefing reads ONLY from _allTrends — the single source of truth.
+  // fetchTrends() → renderAll() → loadBriefing() guarantees data is
+  // available before this runs. No separate API call needed.
   var top = getTopTrend();
-  if (top) {
-    var info = renderShell(top);
-    _aiCacheSet('briefing_done', true);
-    if (forceRefresh) toast('🧠 Briefing refreshed!');
-    fetchInsight(info.cap, info.platName, info.heat);
+  if (!top) {
+    el.innerHTML = '<span style="color:var(--text3);font-size:13px">📡 Loading live trends…</span>';
     return;
   }
 
-  el.innerHTML = '<span class="spinner spinner-gold"></span>';
-  try {
-    var res  = await fetch(DIJO + '/ai/daily-briefing');
-    var data = await res.json();
-    top = getTopTrend();
-    if (top) {
-      var info2 = renderShell(top);
-      _aiCacheSet('briefing_done', true);
-      fetchInsight(info2.cap, info2.platName, info2.heat);
-      return;
-    }
-    var apiTop = (data.top_trends && data.top_trends[0]) || null;
-    if (apiTop) {
-      var fakeTrend = { topic: apiTop.topic, plat: 'cross', score: apiTop.score || 7 };
-      var info3 = renderShell(fakeTrend);
-      _aiCacheSet('briefing_done', true);
-      fetchInsight(info3.cap, info3.platName, info3.heat);
-    } else if (data.briefing) {
-      el.textContent = data.briefing;
-      setTimestamp();
-    }
-  } catch(e) {
-    if (el) el.textContent = 'Trends unavailable — check back shortly.';
-  }
+  var info = renderShell(top);
+  _aiCacheSet('briefing_done', true);
+  if (forceRefresh) toast('🧠 Briefing refreshed!');
+  fetchInsight(info.cap, info.platName, info.heat);
 }
 
 async function quickGenerate() {
@@ -2762,21 +2730,41 @@ window._pageLoadStart = Date.now();
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('load', async function() {
-  // Auth is handled by auth.js → initAuth() → loadUser().
-  // nav.js runs its own checkAuth() for the nav bar.
-  // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
-  renderSkeletons(); // show instant skeleton UI before any network requests
-  initYouTube();
-  initTikTok();
-  loadCalendar();
-  loadPlatformStatus();
-  // Detect country first so fetchTrends() has geo ready — detectUserCountry()
-  // is fast (cached after first call) and shows a "Detecting…" status in the UI.
+  // ── INIT SEQUENCE — strict order, no duplicate renders ──────────────────
+  //
+  //  1. Skeletons   — instant placeholder UI, above-the-fold
+  //  2. Wake server — ping Render before trend fetch (avoids cold-start delay)
+  //  3. Geo         — detect country once, cached for the whole session
+  //  4. fetchTrends — THE ONE FETCH. Populates _allTrends, then calls
+  //                   renderAll() internally on success. renderAll() distributes
+  //                   real data to: briefing, overview, opportunities, chart,
+  //                   radar, Dijo top pick, winner box, and calendar.
+  //                   Nothing else fetches trends. Nothing else calls renderAll().
+  //  5. Platform    — YouTube / TikTok connection status dots
+  //  6. Session     — memory / personalisation (fire-and-forget, non-critical)
+  //  7. GA timing   — performance tracking
+  //  8. 30-min loop — silent background refresh matching ingestion cadence
+  //  9. Keepalive   — ping Render every 10 min (free tier sleeps at 15 min)
+  // ────────────────────────────────────────────────────────────────────────
+
+  // 1. Skeletons
+  renderSkeletons();
+
+  // 2. Wake Render before the trend fetch
+  fetch(DIJO + '/ping').catch(function() {});
+
+  // 3. Geo — must complete before fetchTrends
   await detectUserCountry();
+
+  // 4. THE ONE FETCH — populates _allTrends, renderAll() fires inside on success
   await fetchTrends();
 
-  // ── Record session for memory/personalisation (fire-and-forget) ──
-  // Waits briefly so ig-user-ready has time to fire and set window.igUser.
+  // 5. Platform status (YouTube / TikTok connection dots)
+  initYouTube();
+  initTikTok();
+  loadPlatformStatus();
+
+  // 6. Session memory — fire-and-forget, waits for auth to settle
   setTimeout(function() {
     var user = getCurrentUser();
     if (user && user.id) {
@@ -2789,42 +2777,36 @@ window.addEventListener('load', async function() {
       })
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        // If churn risk is high, surface a personalised greeting in the briefing
         if (d.churn_risk === 'high' || d.session_count === 1) {
           var greetEl = document.getElementById('dijoGreeting');
           if (greetEl && d.greeting) greetEl.textContent = d.greeting;
         }
       })
-      .catch(function() {}); // silent — non-critical
+      .catch(function() {});
     }
   }, 1500);
-  // GA: track time-to-content so we can measure skeleton improvement
+
+  // 7. GA timing
   if (typeof gtag === 'function') {
     gtag('event', 'trends_loaded', {
       ms_to_load: Date.now() - (window._pageLoadStart || Date.now()),
       country: _userCountryName || 'unknown'
     });
   }
-  renderDashTrends();
-  loadOpportunities();
-  renderRadarGauges();
-  renderDijoTopPick();
-  loadBriefing();
-  // Wake Render immediately on load — prevents cold-start spinners
-  fetch(DIJO + '/ping').catch(function() {});
-  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 
-  // Auto-refresh trends every 60 seconds
-  // fetchTrends() → renderAll() already updates everything on success.
-  // renderRadarGauges + renderDijoTopPick are included so gauges and
-  // the winner box don't go stale between full page loads.
+  // 8. Silent 30-min background refresh — matches ingestion cadence exactly.
+  //    fetchTrends() calls renderAll() on success so every panel auto-updates.
+  //    Users always see data ≤30 min old with no loading spinner after first load.
   setInterval(async function() {
     try {
       var scrollY = window.scrollY;
-      await fetchTrends(); // calls renderAll() internally on success
+      await fetchTrends();
       window.scrollTo(0, scrollY);
     } catch(e) {
-      console.warn('[Trends] Auto-refresh failed:', e.message);
+      console.warn('[Trends] Background refresh failed:', e.message);
     }
-  }, 5 * 60 * 1000); // 5 min — ingestion runs every 30 min, no need to poll faster
+  }, 30 * 60 * 1000); // 30 min — matches server ingestion cycle
+
+  // 9. Keep Render warm (free tier sleeps after 15 min inactivity)
+  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 10 * 60 * 1000);
 });
