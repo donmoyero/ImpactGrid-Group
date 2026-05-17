@@ -8,6 +8,25 @@
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
 
+/* ── PLATFORM SVG LOGOS ──────────────────────────────────────────────────────
+   Returns an inline SVG for each social platform.
+   Usage: platSVG('tt')  platSVG('yt')  platSVG('gt')  platSVG('cross')
+   size — pixel dimension (default 18). Wraps in a <span> so it flows inline.
+────────────────────────────────────────────────────────────────────────────── */
+var _PLAT_SVG = {
+  tt: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>',
+  yt: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z"/></svg>',
+  gt: '<svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>',
+  cross: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>'
+};
+
+function platSVG(plat, size) {
+  var s = size || 18;
+  var svg = _PLAT_SVG[plat] || _PLAT_SVG.gt;
+  // Wrap in a span; colour inherits from parent so coloured containers work
+  return '<span style="display:inline-flex;align-items:center;vertical-align:middle;width:' + s + 'px;height:' + s + 'px;flex-shrink:0">' + svg + '</span>';
+}
+
 /* ── GEO DETECTION ───────────────────────────────────────────────────────────
    Detects the user's country via a free IP lookup (no API key needed).
    Result is cached in _userCountry and passed to all trend endpoints so each
@@ -563,7 +582,7 @@ function updateWinnerBox() {
 
   var level     = winner.score > 8 ? 'HIGH 📈'   : winner.score > 5 ? 'MEDIUM ⚖️' : 'LOW 📉';
   var clsColor  = winner.score > 8 ? 'var(--green)' : winner.score > 5 ? 'var(--gold)' : 'var(--text3)';
-  var platIcon  = winner.plat === 'tt' ? '🎵' : winner.plat === 'yt' ? '▶️' : winner.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon  = platSVG(winner.plat);
   var platColor = winner.plat === 'tt' ? '#ff6464' : winner.plat === 'yt' ? '#FFD700' : winner.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(winner);
   var clsLbl    = cls === 'blowup' ? '🔥 Likely to blow up' : cls === 'rising_fast' ? '⚡ Rising fast' : cls === 'early' ? '🟢 Early signal' : '📊 Stable';
@@ -613,7 +632,7 @@ function updateChart() {
 
   var datasets = [];
   if (tt.length) datasets.push({
-    label: '🎵 TikTok',
+    label: 'TikTok',
     data: alignScores(tt),
     borderColor: '#ff6464',
     backgroundColor: 'rgba(255,100,100,0.08)',
@@ -622,7 +641,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (yt.length) datasets.push({
-    label: '▶️ YouTube',
+    label: 'YouTube',
     data: alignScores(yt),
     borderColor: '#FFD700',
     backgroundColor: 'rgba(255,215,0,0.08)',
@@ -631,7 +650,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (gt.length) datasets.push({
-    label: '🔍 Google',
+    label: 'Google',
     data: alignScores(gt),
     borderColor: '#78b4ff',
     backgroundColor: 'rgba(120,180,255,0.08)',
@@ -818,10 +837,10 @@ function trendItemHTML(t) {
 
   // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
   var badge =
-    t.plat === 'tt'    ? '⚡ TikTok Viral'
+    t.plat === 'tt'    ? 'TikTok Viral'
     : t.plat === 'yt'  ? '🎯 YouTube Validated'
-    : t.plat === 'cross' ? '🚀 Cross-Platform'
-    : '🔍 Search Demand';
+    : t.plat === 'cross' ? 'Cross-Platform'
+    : 'Search Demand';
 
   // Confidence indicator
   var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
@@ -998,9 +1017,9 @@ function renderPlatformMeters() {
   var gt = platBest('gt');
 
   var platConfigs = [
-    { key: 'tt', icon: '🎵', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
-    { key: 'yt', icon: '▶️',  label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
-    { key: 'gt', icon: '🔍', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
+    { key: 'tt', icon: platSVG('tt'), label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
+    { key: 'yt', icon: platSVG('yt'), label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
+    { key: 'gt', icon: platSVG('gt'), label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
   ];
 
   // Inject keyframes once
@@ -1387,7 +1406,7 @@ async function runTrendPrediction() {
           : '';
       }
 
-      var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
+      var platIcon = platSVG(pick.plat);
       var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
       var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
 
@@ -1409,7 +1428,7 @@ async function runTrendPrediction() {
 
   // ── Local fallback — use best scored trend without AI text ────────────────
   var pick = topLocal;
-  var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon = platSVG(pick.plat);
   var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
   var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
 
@@ -1469,10 +1488,10 @@ function renderOpportunities(data) {
   var items = ordered.slice(0, 3);
 
   var platMeta = {
-    youtube: { icon: '▶️', color: '#FFD700', hint: '5–10 min explainer' },
-    tiktok:  { icon: '⚡', color: '#ff6464', hint: '30–60s hook video' },
-    google:  { icon: '🔍', color: '#78b4ff', hint: 'SEO article or Short' },
-    cross:   { icon: '🚀', color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
+    youtube: { icon: platSVG('yt'), color: '#FFD700', hint: '5–10 min explainer' },
+    tiktok:  { icon: platSVG('tt'), color: '#ff6464', hint: '30–60s hook video' },
+    google:  { icon: platSVG('gt'), color: '#78b4ff', hint: 'SEO article or Short' },
+    cross:   { icon: platSVG('cross'), color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
   };
 
   var rankLabels = ['#1 Best Pick', '#2 Strong Play', '#3 Worth Watching'];
@@ -1618,9 +1637,9 @@ function renderRadarGauges() {
   }
 
   var cfgs = [
-    { plat:'tt', icon:'🎵', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
-    { plat:'yt', icon:'▶️',  label:'YouTube', color:'#FFD700', trend: platBest('yt') },
-    { plat:'gt', icon:'🔍', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
+    { plat:'tt', icon:platSVG('tt'), label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
+    { plat:'yt', icon:platSVG('yt'), label:'YouTube', color:'#FFD700', trend: platBest('yt') },
+    { plat:'gt', icon:platSVG('gt'), label:'Google',  color:'#78b4ff', trend: platBest('gt') }
   ];
 
   function gaugeArc(pct, color) {
@@ -1720,7 +1739,7 @@ async function renderDijoTopPick() {
 
   // Pick best trend by score
   var best = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  var platIcon  = best.plat === 'tt' ? '🎵' : best.plat === 'yt' ? '▶️' : best.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon  = platSVG(best.plat);
   var platColor = best.plat === 'tt' ? '#ff6464' : best.plat === 'yt' ? '#FFD700' : best.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(best);
   var clsLbl    = cls === 'blowup' ? '🔥 Peak now — post immediately' : cls === 'rising_fast' ? '⚡ Rising fast — get ahead of it' : cls === 'early' ? '🟢 Early stage — first mover advantage' : '📊 Stable trend';
@@ -1890,9 +1909,9 @@ async function loadBriefing(forceRefresh) {
   if (_allTrends && _allTrends.length) {
     var best = getBest3(_allTrends);
     var parts = [];
-    if (best.youtube) parts.push('▶️ ' + best.youtube.topic + ' is trending on YouTube');
-    if (best.tiktok)  parts.push('🎵 ' + best.tiktok.topic  + ' is blowing up on TikTok');
-    if (best.google)  parts.push('🔍 ' + best.google.topic  + ' is spiking on Google');
+    if (best.youtube) parts.push(platSVG('yt') + ' ' + best.youtube.topic + ' is trending on YouTube');
+    if (best.tiktok)  parts.push(platSVG('tt') + ' ' + best.tiktok.topic  + ' is blowing up on TikTok');
+    if (best.google)  parts.push(platSVG('gt') + ' ' + best.google.topic  + ' is spiking on Google');
     if (parts.length) {
       el.textContent = parts.join(' · ') + '.';
       setTimestamp();
@@ -2212,7 +2231,7 @@ async function loadYtVideos(token) {
         var sn = v.snippet || {}; var st = v.statistics || {};
         var thumb = sn.thumbnails && sn.thumbnails.medium ? sn.thumbnails.medium.url : '';
         return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">▶️</div>')
+          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:#FFD700">' + platSVG('yt', 32) + '</div>')
           + '<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sn.title || 'Untitled') + '</div>'
           + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 ' + fmtN(st.viewCount) + ' · ❤️ ' + fmtN(st.likeCount) + ' · 💬 ' + fmtN(st.commentCount) + '</div></div></div>';
       }).join('') + '</div>';
@@ -2302,7 +2321,7 @@ async function loadTtVideos(token) {
     var videos = (data && data.data && data.data.videos) ? data.data.videos : [];
     if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
     el.innerHTML = '<div class="video-grid">' + videos.map(function(v) {
-      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '🎵') + '</div>'
+      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : platSVG('tt',28)) + '</div>'
         + '<div class="video-info"><div class="video-title">' + escH(v.title || v.video_description || 'Untitled') + '</div>'
         + '<div class="video-stats">👁 ' + fmtN(v.view_count) + ' · ❤️ ' + fmtN(v.like_count) + ' · 💬 ' + fmtN(v.comment_count) + '</div></div></div>';
     }).join('') + '</div>';
