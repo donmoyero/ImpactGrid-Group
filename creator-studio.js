@@ -2198,7 +2198,7 @@ async function loadYtVideos(token) {
         var sn = v.snippet || {}; var st = v.statistics || {};
         var thumb = sn.thumbnails && sn.thumbnails.medium ? sn.thumbnails.medium.url : '';
         return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">▶️</div>')
+          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:rgba(255,64,64,.08);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="#ff4040" width="36" height="36" opacity="0.7"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>')
           + '<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sn.title || 'Untitled') + '</div>'
           + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 ' + fmtN(st.viewCount) + ' · ❤️ ' + fmtN(st.likeCount) + ' · 💬 ' + fmtN(st.commentCount) + '</div></div></div>';
       }).join('') + '</div>';
@@ -2288,7 +2288,7 @@ async function loadTtVideos(token) {
     var videos = (data && data.data && data.data.videos) ? data.data.videos : [];
     if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
     el.innerHTML = '<div class="video-grid">' + videos.map(function(v) {
-      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '🎵') + '</div>'
+      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '<div style="width:100%;height:100%;background:rgba(255,45,85,.08);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="#ff2d55" width="32" height="32" opacity="0.7"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg></div>') + '</div>'
         + '<div class="video-info"><div class="video-title">' + escH(v.title || v.video_description || 'Untitled') + '</div>'
         + '<div class="video-stats">👁 ' + fmtN(v.view_count) + ' · ❤️ ' + fmtN(v.like_count) + ' · 💬 ' + fmtN(v.comment_count) + '</div></div></div>';
     }).join('') + '</div>';
