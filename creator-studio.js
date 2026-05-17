@@ -2042,7 +2042,10 @@ async function fullGenerate() {
   errEl.classList.remove('visible');
   document.getElementById('genLoadingMsg').textContent = 'Dijo is building your content package for "' + topic + '"…';
 
-  var score = calcScore(topic);
+  // Use real trend score when this topic is in _allTrends — calcScore() is a
+  // keyword-matching fallback only used for topics not in the live trend list.
+  var _liveTrend = _allTrends.find(function(t) { return t.topic.toLowerCase() === topic.toLowerCase(); });
+  var score = _liveTrend ? _liveTrend.score : calcScore(topic);
   updateHint(score);
   var scColor = score >= 9 ? 'var(--green)' : score >= 8 ? 'var(--gold)' : score >= 7 ? 'var(--blue2)' : 'var(--text2)';
   var verdict = score >= 9 ? '🔥 Exceptional' : score >= 8 ? '⚡ Strong opportunity' : score >= 7 ? '📈 Good momentum' : '💡 Emerging';
@@ -2061,7 +2064,7 @@ async function fullGenerate() {
     var nicheCtx = niche ? '\nNiche: ' + niche + '.' : '';
 
     // Inject real trend data if available for this topic
-    var trend = _allTrends.find(function(t) { return t.topic.toLowerCase() === topic.toLowerCase(); });
+    var trend = _liveTrend;
     var trendExtra = '';
     if (trend) {
       trendExtra = '\n\nReal trend data:'
