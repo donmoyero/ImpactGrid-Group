@@ -3,7 +3,7 @@
    v2 — Network-first strategy (always fresh content)
    IMPORTANT: Bump CACHE_NAME on every deploy!
 ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'impactgrid-v10'; // bumped — 7-day book calendar + cookie banner
+const CACHE_NAME = 'impactgrid-v11'; // bumped — stale-while-revalidate for DIJO trends
 
 const CORE_FILES = [
   '/',
@@ -86,10 +86,10 @@ self.addEventListener('activate', function(event) {
 });
 
 /* ── Fetch: NETWORK FIRST, cache fallback for offline ──
-   This is the key fix. Previous version was cache-first
-   which caused stale content. Now we always try the
-   network first so users always get fresh files.
-   Cache is only used when offline.
+   Same-origin assets: network-first (always fresh).
+   DIJO /trends/* endpoints: stale-while-revalidate so
+   returning users see instant cached trends while a
+   fresh fetch runs in the background.
 ── */
 self.addEventListener('fetch', function(event) {
   /* Only handle GET requests */
@@ -98,7 +98,32 @@ self.addEventListener('fetch', function(event) {
   /* Skip non http/https schemes — fixes chrome-extension:// cache error */
   if (!event.request.url.startsWith('http')) return;
 
-  /* Skip all cross-origin requests — only cache same-origin */
+  /* ── DIJO trends endpoints: stale-while-revalidate ──────────────────
+     /trends/cross, /trends/live, /trends/cache, /trends/google
+     Serve cached trends instantly, then update cache in background.
+     Keeps "What's Trending" fast on repeat visits without going stale. */
+  var isDijoTrends = event.request.url.includes('/trends/');
+  if (isDijoTrends) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          /* Always kick off a background network refresh */
+          var networkFetch = fetch(event.request).then(function(response) {
+            if (response && response.status === 200) {
+              cache.put(event.request, response.clone());
+            }
+            return response;
+          }).catch(function() { return null; });
+
+          /* Return cached instantly if available, otherwise wait for network */
+          return cached || networkFetch;
+        });
+      })
+    );
+    return;
+  }
+
+  /* Skip all other cross-origin requests — only cache same-origin */
   try {
     var reqUrl = new URL(event.request.url);
     if (reqUrl.origin !== self.location.origin) return;
