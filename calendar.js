@@ -1366,21 +1366,36 @@
 
     renderGrid();
 
-    /* Poll for trends, then auto-fill all 7 days */
-    var attempts = 0;
-    var poll = setInterval(function () {
-      attempts++;
+    /* ── Wait for trends then auto-fill all 7 days ──────────────────
+       If creator-studio.js has already exposed window.trendsReady,
+       await it directly — no polling needed, zero wasted ticks.
+       Fall back to the old 300 ms poll only when running standalone
+       (e.g. in tests or pages that don't include creator-studio.js). */
+    function _doAutoFill() {
+      if (_autoFilled) return;
       var trends = getTrends();
-      if (trends.length || attempts > 40) {
-        clearInterval(poll);
-        if (trends.length && !_autoFilled) {
-          _autoFilled = true;
-          var filled = autoFillAllDays(false);
-          if (filled) scheduleAllNotifications();
-          renderGrid();
+      if (!trends.length) return;
+      _autoFilled = true;
+      var filled = autoFillAllDays(false);
+      if (filled) scheduleAllNotifications();
+      renderGrid();
+    }
+
+    if (window.trendsReady && typeof window.trendsReady.then === 'function') {
+      // Fast path — piggyback on the Promise creator-studio.js already resolved
+      window.trendsReady.then(function() { _doAutoFill(); });
+    } else {
+      // Fallback poll (standalone use / legacy callers)
+      var attempts = 0;
+      var poll = setInterval(function () {
+        attempts++;
+        var trends = getTrends();
+        if (trends.length || attempts > 40) {
+          clearInterval(poll);
+          _doAutoFill();
         }
-      }
-    }, 300);
+      }, 300);
+    }
   };
 
   /* ─── KEYBOARD ───────────────────────────────────────────────── */
