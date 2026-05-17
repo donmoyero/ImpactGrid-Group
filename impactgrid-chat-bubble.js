@@ -192,7 +192,7 @@
       '<div class="ig-messages" id="ig-messages"></div>' +
       '<div class="ig-typing" id="ig-typing" style="display:none;"><div class="ig-typing-av">AI</div><div class="ig-typing-dots"><span></span><span></span><span></span></div></div>' +
       '<div class="ig-input-row">' +
-        '<input id="ig-input" class="ig-input" placeholder="Ask me anything&hellip;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();igSend();}">' +
+        '<input id="ig-input" class="ig-input" placeholder="Ask me anything&hellip;" maxlength="500" onkeydown="if(event.key===\'Enter\'){event.preventDefault();igSend();}">' +
         '<button class="ig-send" id="ig-send-btn" onclick="igSend()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>' +
       '</div>' +
       '<div class="ig-powered">Powered by <a href="https://impactgridgroup.com" target="_blank">ImpactGrid</a></div>' +
@@ -257,8 +257,17 @@
     igAsk(msg);
   };
 
+  var MAX_INPUT_CHARS = 500;
+
   window.igAsk = async function (message) {
     if (!message || TYPING) return;
+
+    // ── Input length guard ────────────────────────────────────
+    if (message.length > MAX_INPUT_CHARS) {
+      igAppendMsg('ai', igFormat('Keep it to ' + MAX_INPUT_CHARS + ' characters or less and I\'ll get right on it! 👍'));
+      return;
+    }
+
     igAppendMsg('user', igEsc(message));
     HISTORY.push({ role: 'user', content: message });
     TYPING = true;
@@ -268,23 +277,33 @@
     if (sendBtn)  sendBtn.disabled = true;
     igScrollBottom();
 
-    /* Include page context so the server prompt knows where the visitor is */
-    var prompt = '[Page: ' + PAGE_CTX + ']\n';
-    if (HISTORY.length > 1) {
-      prompt += 'Conversation so far:\n';
-      HISTORY.slice(-8, -1).forEach(function (m) {
-        prompt += (m.role === 'user' ? 'Visitor: ' : 'Dijo: ') + m.content + '\n';
-      });
-      prompt += '\n';
-    }
-    prompt += 'Visitor: ' + message;
+    // ── Page context prepended to message ────────────────────
+    var contextMsg = '[Page: ' + PAGE_CTX + '] ' + message;
+
+    // ── Send history as a proper array, not baked into the string
+    var historyPayload = HISTORY.slice(-9, -1).map(function (m) {
+      return { role: m.role, content: String(m.content).slice(0, 800) };
+    });
 
     try {
       var res = await fetch(AI_URL + '/chat', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ message: prompt, mode: 'site' })
+        body:    JSON.stringify({
+          message: contextMsg,
+          history: historyPayload,
+          mode:    'site'
+        })
       });
+
+      // ── 429 rate limit ────────────────────────────────────
+      if (res.status === 429) {
+        var errData = await res.json().catch(function () { return {}; });
+        var wait    = errData.retry_after || 'a few minutes';
+        igAppendMsg('ai', igFormat('Dijo is at capacity right now — try again in ' + wait + '. 🙏'));
+        return;
+      }
+
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var data  = await res.json();
       var reply = data.reply || 'Sorry, something went wrong. Try again in a moment.';
@@ -306,7 +325,7 @@
     if (!msgs) return;
     var div = document.createElement('div');
     div.className = 'ig-msg ' + role;
-    div.innerHTML = '<div class="ig-msg-av">' + (role === 'ai' ? 'AI' : 'You') + '</div><div class="ig-msg-text">' + html + '</div>';
+    div.innerHTML = '<div class="ig-msg-av">' + (role === 'ai' ? 'DJ' : 'You') + '</div><div class="ig-msg-text">' + html + '</div>';
     msgs.appendChild(div);
     igScrollBottom();
   }
@@ -321,13 +340,23 @@
   }
 
   function igFormat(text) {
-    return text
+    // Convert markdown bold/italic
+    var out = text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^[-*] (.+)$/gm, '<li style="margin-bottom:3px;">$1</li>')
-      .replace(/(<li[^>]*>[\s\S]*?<\/li>\n?)+/g, '<ul style="padding-left:16px;margin:6px 0;">$&</ul>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Convert list items then wrap ALL consecutive <li> runs into one <ul>
+    out = out.replace(/^[-*] (.+)$/gm, '<li style="margin-bottom:3px;">$1</li>');
+    out = out.replace(/(<li[^>]*>.*<\/li>\n?)+/g, function (match) {
+      return '<ul style="padding-left:16px;margin:6px 0;">' + match + '</ul>';
+    });
+
+    // Paragraphs and line breaks
+    out = out
       .replace(/\n{2,}/g, '<br><br>')
       .replace(/\n/g, '<br>');
+
+    return out;
   }
 
 })();
