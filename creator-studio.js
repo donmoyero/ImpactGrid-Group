@@ -220,17 +220,6 @@ function switchTab(name, sidebarItem) {
   if (name === 'calendar') {
     if (typeof loadCalendar === 'function') loadCalendar();
   }
-  if (name === 'instagram') {
-    if (typeof InstagramAuth !== 'undefined') {
-      var igS = InstagramAuth.getSession();
-      if (igS && igS.access_token) {
-        loadIgProfile(igS.access_token, igS.user_id);
-        loadIgPosts(igS.access_token, igS.user_id);
-        document.getElementById('igDisconnected').style.display = 'none';
-        document.getElementById('igConnected').style.display = 'block';
-      }
-    }
-  }
 }
 
 /* ─────────────────────────────────────────────
@@ -457,69 +446,21 @@ async function checkCarouselAccess() {
 }
 
 /* ─────────────────────────────────────────────
-   DIJO API — smart endpoint with memory + trends
-   Routes to /chat/message for creator/adviser
-   calls so memory, mood detection, trend context
-   and personalisation are all active.
-   Falls back to /chat for carousel/site modes
-   which don't need memory overhead.
+   DIJO API — 3-sentence max enforced
 ───────────────────────────────────────────── */
-var _dijoHistory = [];   // in-session conversation history (last 10 turns)
-
 async function callDijo(message, mode) {
-  var user = getCurrentUser();
-
-  // carousel and site modes use the lightweight /chat endpoint —
-  // they need exact format output, not personalised conversation.
-  var useSmartEndpoint = (mode === 'creator' || mode === 'adviser' || !mode);
-
-  if (!useSmartEndpoint) {
-    // Lightweight path — carousel/site/dashboard modes
-    var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
-    var res0 = await fetch(DIJO + '/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: shortPrefix + message, mode: mode || 'creator' })
-    });
-    if (!res0.ok) {
-      var e0 = await res0.json().catch(function() { return {}; });
-      throw new Error(e0.error || 'Dijo error ' + res0.status);
-    }
-    var d0 = await res0.json();
-    return d0.reply || '';
-  }
-
-  // Smart path — memory + mood + live trends + personalisation.
-  // Pass top 5 from _allTrends so Dijo server sees exactly the same
-  // real data the user sees — no separate DB query needed server-side.
-  var _trendContext = (_allTrends || []).slice(0, 5).map(function(t) {
-    return { topic: t.topic, score: t.score, platform: t.platLabel,
-             views: t.totalViews, status: t.status };
-  });
-  var res = await fetch(DIJO + '/chat/message', {
+  var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
+  var res = await fetch(DIJO + '/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      user_id:     user ? user.id : null,
-      message:     message,
-      history:     _dijoHistory.slice(-10),
-      geo:         _userCountry || 'GB',
-      live_trends: _trendContext
-    })
+    body: JSON.stringify({ message: shortPrefix + message, mode: mode || 'creator' })
   });
   if (!res.ok) {
     var e = await res.json().catch(function() { return {}; });
     throw new Error(e.error || 'Dijo error ' + res.status);
   }
   var data = await res.json();
-  var reply = data.reply || '';
-
-  // Keep conversation history for multi-turn context
-  _dijoHistory.push({ role: 'user', content: message });
-  _dijoHistory.push({ role: 'assistant', content: reply });
-  if (_dijoHistory.length > 20) _dijoHistory = _dijoHistory.slice(-20);
-
-  return reply;
+  return data.reply || '';
 }
 
 /* ─────────────────────────────────────────────
@@ -537,15 +478,36 @@ function fmtN(n) { return n ? Number(n).toLocaleString() : '—'; }
 function toScore(s) { return Math.min(9.9, parseFloat((s / 10).toFixed(1))); }
 
 /* ─────────────────────────────────────────────
-   TREND SCORE — real DB value, no recalculation.
-   Ingestion writes the actual score from YouTube
-   view velocity + Google search volume to Supabase.
-   We display it directly. DB score is 0-100,
-   displayed as 0.0–9.9 here.
+   VIRAL INTELLIGENCE SCORING 🧠🔥
+   TikTok = velocity engine ⚡
+   YouTube = validation engine 🎯
+   Google  = demand engine 🔍
 ───────────────────────────────────────────── */
-function runTrendScoring(rawScore) {
-  var score = Math.min(100, Math.max(0, parseFloat(rawScore) || 50));
-  return Math.min(9.9, parseFloat((score / 10).toFixed(1)));
+function runTrendScoring(rawScore, platforms) {
+  // Derive sub-scores from raw score (0-100 scale internally)
+  var base = rawScore; // already 0-100
+  var velocityScore   = base * 0.9;
+  var engagementScore = base * 0.8;
+  var commentsScore   = base * 0.7;
+  var recencyScore    = base * 0.85;
+
+  var platformWeight = 1;
+
+  // 🔥 PLATFORM INTELLIGENCE
+  if (platforms.includes('tiktok'))  platformWeight += 0.3;  // velocity king ⚡
+  if (platforms.includes('youtube')) platformWeight += 0.2;  // validation 🎯
+  if (platforms.includes('google'))  platformWeight += 0.1;  // demand 🔍
+
+  var finalScore = Math.min(100,
+    (
+      velocityScore   * 0.45 +
+      engagementScore * 0.25 +
+      commentsScore   * 0.15 +
+      recencyScore    * 0.15
+    ) * platformWeight
+  );
+
+  return Math.min(9.9, parseFloat((finalScore / 10).toFixed(1)));
 }
 
 /* ─────────────────────────────────────────────
@@ -611,7 +573,7 @@ function updateWinnerBox() {
 
   var level     = winner.score > 8 ? 'HIGH 📈'   : winner.score > 5 ? 'MEDIUM ⚖️' : 'LOW 📉';
   var clsColor  = winner.score > 8 ? 'var(--green)' : winner.score > 5 ? 'var(--gold)' : 'var(--text3)';
-  var platIcon  = winner.plat === 'tt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>' : winner.plat === 'yt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>' : winner.plat === 'cross' ? '🚀' : '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>';
+  var platIcon  = winner.plat === 'tt' ? '🎵' : winner.plat === 'yt' ? '▶️' : winner.plat === 'cross' ? '🚀' : '🔍';
   var platColor = winner.plat === 'tt' ? '#ff6464' : winner.plat === 'yt' ? '#FFD700' : winner.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(winner);
   var clsLbl    = cls === 'blowup' ? '🔥 Likely to blow up' : cls === 'rising_fast' ? '⚡ Rising fast' : cls === 'early' ? '🟢 Early signal' : '📊 Stable';
@@ -661,7 +623,7 @@ function updateChart() {
 
   var datasets = [];
   if (tt.length) datasets.push({
-    label: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg> TikTok',
+    label: '🎵 TikTok',
     data: alignScores(tt),
     borderColor: '#ff6464',
     backgroundColor: 'rgba(255,100,100,0.08)',
@@ -670,7 +632,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (yt.length) datasets.push({
-    label: '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg> YouTube',
+    label: '▶️ YouTube',
     data: alignScores(yt),
     borderColor: '#FFD700',
     backgroundColor: 'rgba(255,215,0,0.08)',
@@ -679,7 +641,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (gt.length) datasets.push({
-    label: '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg> Google',
+    label: '🔍 Google',
     data: alignScores(gt),
     borderColor: '#78b4ff',
     backgroundColor: 'rgba(120,180,255,0.08)',
@@ -737,21 +699,19 @@ function updateChart() {
 }
 
 /* renderAll — unified re-render called after any trend fetch */
-/* renderAll — single render pass called ONLY by fetchTrends() on success.
-   Never called directly from the load init or setInterval.
-   Order matters: briefing and dash first (above the fold), then chart/radar/pick. */
 function renderAll() {
-  updateBriefing();           // pulse strip topic text
-  loadBriefing();             // briefing panel — reads _allTrends, no extra fetch
+  updateBriefing();
+  loadBriefing();        // refresh pulse strip now that _allTrends is populated
   runTrendPrediction();
-  renderDashTrends();         // overview top trends
-  renderDashOpps();           // opportunities panel
+  renderDashTrends();
+  renderDashOpps();
   updateTopTrends();
-  renderTrendChart();         // chart tab
-  renderRadarGauges();        // radar gauges
-  renderDijoTopPick();        // Dijo top pick box
-  updateChart();              // winner box
-  if (typeof notifyCalendar === 'function') notifyCalendar(); // calendar reads _allTrends
+  // Chart + radar gauges + Dijo pick: always update so data is ready when user switches tab
+  renderTrendChart();
+  renderRadarGauges();
+  renderDijoTopPick();
+  // Combined cross-platform chart + winner box (trends panel summary row)
+  updateChart();
 }
 
 async function fetchTrends() {
@@ -761,11 +721,9 @@ async function fetchTrends() {
     var src = t.platform_source || t.source || 'google';
     var plat = src === 'youtube' ? 'yt'
       : src === 'tiktok'  ? 'tt'
-      : src === 'instagram' ? 'ig'
       : src === 'cross'   ? 'cross' : 'gt';
     var platLbl = src === 'youtube' ? 'YouTube'
       : src === 'tiktok'  ? 'TikTok'
-      : src === 'instagram' ? 'Instagram'
       : src === 'cross'   ? 'Cross' : 'Google';
     var platforms = src === 'cross'
       ? ['tiktok', 'youtube', 'google']
@@ -774,7 +732,7 @@ async function fetchTrends() {
       : ['google'];
     return {
       topic:        t.topic,
-      score:        runTrendScoring(t.trend_score || t.avg_score || 50),
+      score:        runTrendScoring(t.trend_score || t.avg_score || 50, platforms),
       plat:         plat,
       platLabel:    platLbl,
       rank:         i + 1,
@@ -873,7 +831,7 @@ function trendItemHTML(t) {
     t.plat === 'tt'    ? '⚡ TikTok Viral'
     : t.plat === 'yt'  ? '🎯 YouTube Validated'
     : t.plat === 'cross' ? '🚀 Cross-Platform'
-    : '<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" style=\"vertical-align:middle\"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg> Search Demand';
+    : '🔍 Search Demand';
 
   // Confidence indicator
   var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
@@ -1050,9 +1008,9 @@ function renderPlatformMeters() {
   var gt = platBest('gt');
 
   var platConfigs = [
-    { key: 'tt', icon: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
-    { key: 'yt', icon: '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
-    { key: 'gt', icon: '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
+    { key: 'tt', icon: '🎵', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
+    { key: 'yt', icon: '▶️',  label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
+    { key: 'gt', icon: '🔍', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
   ];
 
   // Inject keyframes once
@@ -1453,9 +1411,9 @@ function renderOpportunities(data) {
   var items = ordered.slice(0, 3);
 
   var platMeta = {
-    youtube: { icon: '<svg viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"15\" height=\"15\" style=\"vertical-align:middle;margin-right:4px;color:#FFD700\"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', color: '#FFD700', hint: '5–10 min explainer' },
+    youtube: { icon: '▶️', color: '#FFD700', hint: '5–10 min explainer' },
     tiktok:  { icon: '⚡', color: '#ff6464', hint: '30–60s hook video' },
-    google:  { icon: '<svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" style=\"vertical-align:middle;margin-right:4px\"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', color: '#78b4ff', hint: 'SEO article or Short' },
+    google:  { icon: '🔍', color: '#78b4ff', hint: 'SEO article or Short' },
     cross:   { icon: '🚀', color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
   };
 
@@ -1603,9 +1561,9 @@ function renderRadarGauges() {
   }
 
   var cfgs = [
-    { plat:'tt', icon:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
-    { plat:'yt', icon:'<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', label:'YouTube', color:'#FFD700', trend: platBest('yt') },
-    { plat:'gt', icon:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
+    { plat:'tt', icon:'🎵', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
+    { plat:'yt', icon:'▶️',  label:'YouTube', color:'#FFD700', trend: platBest('yt') },
+    { plat:'gt', icon:'🔍', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
   ];
 
   function gaugeArc(pct, color) {
@@ -1705,7 +1663,7 @@ async function renderDijoTopPick() {
 
   // Pick best trend by score
   var best = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  var platIcon  = best.plat === 'tt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>' : best.plat === 'yt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>' : best.plat === 'cross' ? '🚀' : '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>';
+  var platIcon  = best.plat === 'tt' ? '🎵' : best.plat === 'yt' ? '▶️' : best.plat === 'cross' ? '🚀' : '🔍';
   var platColor = best.plat === 'tt' ? '#ff6464' : best.plat === 'yt' ? '#FFD700' : best.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(best);
   var clsLbl    = cls === 'blowup' ? '🔥 Peak now — post immediately' : cls === 'rising_fast' ? '⚡ Rising fast — get ahead of it' : cls === 'early' ? '🟢 Early stage — first mover advantage' : '📊 Stable trend';
@@ -1836,8 +1794,8 @@ async function loadBriefing(forceRefresh) {
   if (!el) return;
 
   var PLAT_COLOR = { tt:'#ff6464', yt:'#FFD700', gt:'#78b4ff', cross:'#4FB3A5' };
-  var PLAT_ICON  = { tt:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', yt:'<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', gt:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', cross:'🚀' };
-  var PLAT_NAME  = { tt:'TikTok', yt:'YouTube', gt:'Google', ig:'Instagram', cross:'Trending' };
+  var PLAT_ICON  = { tt:'🎵', yt:'▶️', gt:'🔍', cross:'🚀' };
+  var PLAT_NAME  = { tt:'TikTok', yt:'YouTube', gt:'Google', cross:'Trending' };
 
   function setTimestamp() {
     if (dateEl) {
@@ -1890,19 +1848,39 @@ async function loadBriefing(forceRefresh) {
     }
   }
 
-  // Briefing reads ONLY from _allTrends — the single source of truth.
-  // fetchTrends() → renderAll() → loadBriefing() guarantees data is
-  // available before this runs. No separate API call needed.
   var top = getTopTrend();
-  if (!top) {
-    el.innerHTML = '<span style="color:var(--text3);font-size:13px">📡 Loading live trends…</span>';
+  if (top) {
+    var info = renderShell(top);
+    _aiCacheSet('briefing_done', true);
+    if (forceRefresh) toast('🧠 Briefing refreshed!');
+    fetchInsight(info.cap, info.platName, info.heat);
     return;
   }
 
-  var info = renderShell(top);
-  _aiCacheSet('briefing_done', true);
-  if (forceRefresh) toast('🧠 Briefing refreshed!');
-  fetchInsight(info.cap, info.platName, info.heat);
+  el.innerHTML = '<span class="spinner spinner-gold"></span>';
+  try {
+    var res  = await fetch(DIJO + '/ai/daily-briefing');
+    var data = await res.json();
+    top = getTopTrend();
+    if (top) {
+      var info2 = renderShell(top);
+      _aiCacheSet('briefing_done', true);
+      fetchInsight(info2.cap, info2.platName, info2.heat);
+      return;
+    }
+    var apiTop = (data.top_trends && data.top_trends[0]) || null;
+    if (apiTop) {
+      var fakeTrend = { topic: apiTop.topic, plat: 'cross', score: apiTop.score || 7 };
+      var info3 = renderShell(fakeTrend);
+      _aiCacheSet('briefing_done', true);
+      fetchInsight(info3.cap, info3.platName, info3.heat);
+    } else if (data.briefing) {
+      el.textContent = data.briefing;
+      setTimestamp();
+    }
+  } catch(e) {
+    if (el) el.textContent = 'Trends unavailable — check back shortly.';
+  }
 }
 
 async function quickGenerate() {
@@ -2211,7 +2189,7 @@ async function loadYtVideos(token) {
         var sn = v.snippet || {}; var st = v.statistics || {};
         var thumb = sn.thumbnails && sn.thumbnails.medium ? sn.thumbnails.medium.url : '';
         return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:rgba(255,64,64,.08);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="#ff4040" width="36" height="36" opacity="0.7"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>')
+          + (thumb ? '<img src="' + thumb + '" style="width:100%;height:110px;object-fit:cover" alt=""/>' : '<div style="width:100%;height:110px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">▶️</div>')
           + '<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sn.title || 'Untitled') + '</div>'
           + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 ' + fmtN(st.viewCount) + ' · ❤️ ' + fmtN(st.likeCount) + ' · 💬 ' + fmtN(st.commentCount) + '</div></div></div>';
       }).join('') + '</div>';
@@ -2301,105 +2279,13 @@ async function loadTtVideos(token) {
     var videos = (data && data.data && data.data.videos) ? data.data.videos : [];
     if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
     el.innerHTML = '<div class="video-grid">' + videos.map(function(v) {
-      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '<div style="width:100%;height:100%;background:rgba(255,45,85,.08);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="#ff2d55" width="32" height="32" opacity="0.7"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg></div>') + '</div>'
+      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '🎵') + '</div>'
         + '<div class="video-info"><div class="video-title">' + escH(v.title || v.video_description || 'Untitled') + '</div>'
         + '<div class="video-stats">👁 ' + fmtN(v.view_count) + ' · ❤️ ' + fmtN(v.like_count) + ' · 💬 ' + fmtN(v.comment_count) + '</div></div></div>';
     }).join('') + '</div>';
   } catch(e) {
     el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
   }
-}
-
-/* ─────────────────────────────────────────────
-   INSTAGRAM CONNECT / DISCONNECT / LOAD
-───────────────────────────────────────────── */
-async function loadIgProfile(token, userId) {
-  try {
-    var uid = userId || 'me';
-    var res = await fetch(DIJO + '/instagram/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: token, user_id: uid })
-    });
-    var user = await res.json();
-    if (user.error) { console.warn('[Instagram] Profile error:', user.error); return; }
-
-    var nameEl = document.getElementById('igDisplayName');
-    var userEl = document.getElementById('igUsername');
-    var avEl   = document.getElementById('igAv');
-    if (nameEl) nameEl.textContent = user.name || user.username || 'Instagram';
-    if (userEl) userEl.textContent = '@' + (user.username || '');
-    if (avEl && user.profile_picture_url) {
-      avEl.innerHTML = '<img src="' + user.profile_picture_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""/>';
-    }
-
-    var fEl = document.getElementById('igFollowers');
-    var foEl = document.getElementById('igFollowing');
-    var pEl  = document.getElementById('igPostCount');
-    if (fEl)  fEl.textContent  = fmtN(user.followers_count || 0);
-    if (foEl) foEl.textContent = fmtN(user.follows_count   || 0);
-    if (pEl)  pEl.textContent  = fmtN(user.media_count     || 0);
-
-    try { localStorage.setItem('ig_profile', JSON.stringify(user)); } catch(e) {}
-  } catch(e) { console.warn('[Instagram] Profile fetch failed:', e.message); }
-}
-
-async function loadIgPosts(token, userId) {
-  var el = document.getElementById('igPostsList');
-  if (!el) return;
-  try {
-    var uid = userId || 'me';
-    var res  = await fetch(DIJO + '/instagram/media', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: token, user_id: uid })
-    });
-    var data  = await res.json();
-    var posts = (data && data.data) ? data.data : [];
-    if (!posts.length) {
-      el.innerHTML = '<div style="padding:20px;color:var(--text3)">No posts found.</div>';
-      return;
-    }
-    el.innerHTML = '<div class="video-grid">' + posts.map(function(p) {
-      var thumb = p.thumbnail_url || p.media_url || '';
-      var cap   = (p.caption || 'Untitled').slice(0, 80);
-      return '<div class="video-card">'
-        + '<div class="video-thumb">'
-        + (thumb ? '<img src="' + escH(thumb) + '" alt="" style="width:100%;height:100%;object-fit:cover"/>'
-                 : '<div style="width:100%;height:100%;background:rgba(188,24,136,.08);display:flex;align-items:center;justify-content:center;font-size:28px">📸</div>')
-        + '</div>'
-        + '<div class="video-info">'
-        + '<div class="video-title">' + escH(cap) + '</div>'
-        + '<div class="video-stats">❤️ ' + fmtN(p.like_count) + ' · 💬 ' + fmtN(p.comments_count) + '</div>'
-        + '</div></div>';
-    }).join('') + '</div>';
-  } catch(e) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load posts.</div>';
-  }
-}
-
-function disconnectInstagram() {
-  try { InstagramAuth.clearSession(); } catch(e) {}
-  document.getElementById('igDisconnected').style.display = 'block';
-  document.getElementById('igConnected').style.display = 'none';
-  var dot = document.getElementById('igSpDot'); if (dot) dot.className = 'sp-dot off';
-  var badge = document.getElementById('igSidebarBadge'); if (badge) badge.style.display = 'none';
-  var pill = document.getElementById('igTopbarPill'); if (pill) pill.style.display = 'none';
-  toast('👋 Instagram disconnected — connect a new account');
-}
-
-function initInstagram() {
-  try {
-    if (typeof InstagramAuth === 'undefined') return;
-    var s = InstagramAuth.getSession();
-    if (!s || !s.access_token) return;
-    document.getElementById('igDisconnected').style.display = 'none';
-    document.getElementById('igConnected').style.display = 'block';
-    var dot = document.getElementById('igSpDot'); if (dot) dot.className = 'sp-dot on';
-    var badge = document.getElementById('igSidebarBadge'); if (badge) badge.style.display = 'inline-block';
-    loadIgProfile(s.access_token, s.user_id);
-    loadIgPosts(s.access_token, s.user_id);
-  } catch(e) { console.warn('[Instagram] Init error:', e.message); }
 }
 
 function disconnectTikTok() {
@@ -2835,84 +2721,45 @@ window._pageLoadStart = Date.now();
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('load', async function() {
-  // ── INIT SEQUENCE — strict order, no duplicate renders ──────────────────
-  //
-  //  1. Skeletons   — instant placeholder UI, above-the-fold
-  //  2. Wake server — ping Render before trend fetch (avoids cold-start delay)
-  //  3. Geo         — detect country once, cached for the whole session
-  //  4. fetchTrends — THE ONE FETCH. Populates _allTrends, then calls
-  //                   renderAll() internally on success. renderAll() distributes
-  //                   real data to: briefing, overview, opportunities, chart,
-  //                   radar, Dijo top pick, winner box, and calendar.
-  //                   Nothing else fetches trends. Nothing else calls renderAll().
-  //  5. Platform    — YouTube / TikTok connection status dots
-  //  6. Session     — memory / personalisation (fire-and-forget, non-critical)
-  //  7. GA timing   — performance tracking
-  //  8. 30-min loop — silent background refresh matching ingestion cadence
-  //  9. Keepalive   — ping Render every 10 min (free tier sleeps at 15 min)
-  // ────────────────────────────────────────────────────────────────────────
-
-  // 1. Skeletons
-  renderSkeletons();
-
-  // 2. Wake Render before the trend fetch
-  fetch(DIJO + '/ping').catch(function() {});
-
-  // 3. Geo — must complete before fetchTrends
-  await detectUserCountry();
-
-  // 4. THE ONE FETCH — populates _allTrends, renderAll() fires inside on success
-  await fetchTrends();
-
-  // 5. Platform status (YouTube / TikTok / Instagram connection dots)
+  // Auth is handled by auth.js → initAuth() → loadUser().
+  // nav.js runs its own checkAuth() for the nav bar.
+  // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
+  renderSkeletons(); // show instant skeleton UI before any network requests
   initYouTube();
   initTikTok();
-  initInstagram();
+  loadCalendar();
   loadPlatformStatus();
-
-  // 6. Session memory — fire-and-forget, waits for auth to settle
-  setTimeout(function() {
-    var user = getCurrentUser();
-    if (user && user.id) {
-      var hour = new Date().getHours();
-      var preferredTime = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-      fetch(DIJO + '/chat/session/start', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ user_id: user.id, preferred_time: preferredTime })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.churn_risk === 'high' || d.session_count === 1) {
-          var greetEl = document.getElementById('dijoGreeting');
-          if (greetEl && d.greeting) greetEl.textContent = d.greeting;
-        }
-      })
-      .catch(function() {});
-    }
-  }, 1500);
-
-  // 7. GA timing
+  // Detect country first so fetchTrends() has geo ready — detectUserCountry()
+  // is fast (cached after first call) and shows a "Detecting…" status in the UI.
+  await detectUserCountry();
+  await fetchTrends();
+  // GA: track time-to-content so we can measure skeleton improvement
   if (typeof gtag === 'function') {
     gtag('event', 'trends_loaded', {
       ms_to_load: Date.now() - (window._pageLoadStart || Date.now()),
       country: _userCountryName || 'unknown'
     });
   }
+  renderDashTrends();
+  loadOpportunities();
+  renderRadarGauges();
+  renderDijoTopPick();
+  loadBriefing();
+  // Wake Render immediately on load — prevents cold-start spinners
+  fetch(DIJO + '/ping').catch(function() {});
+  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 
-  // 8. Silent 30-min background refresh — matches ingestion cadence exactly.
-  //    fetchTrends() calls renderAll() on success so every panel auto-updates.
-  //    Users always see data ≤30 min old with no loading spinner after first load.
+  // Auto-refresh trends every 60 seconds
+  // fetchTrends() → renderAll() already updates everything on success.
+  // renderRadarGauges + renderDijoTopPick are included so gauges and
+  // the winner box don't go stale between full page loads.
   setInterval(async function() {
     try {
       var scrollY = window.scrollY;
-      await fetchTrends();
+      await fetchTrends(); // calls renderAll() internally on success
       window.scrollTo(0, scrollY);
     } catch(e) {
-      console.warn('[Trends] Background refresh failed:', e.message);
+      console.warn('[Trends] Auto-refresh failed:', e.message);
     }
-  }, 30 * 60 * 1000); // 30 min — matches server ingestion cycle
-
-  // 9. Keep Render warm (free tier sleeps after 15 min inactivity)
-  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 10 * 60 * 1000);
+  }, 5 * 60 * 1000); // 5 min — ingestion runs every 30 min, no need to poll faster
 });
