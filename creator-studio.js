@@ -446,21 +446,62 @@ async function checkCarouselAccess() {
 }
 
 /* ─────────────────────────────────────────────
-   DIJO API — 3-sentence max enforced
+   DIJO API — smart endpoint with memory + trends
+   Routes to /chat/message for creator/adviser
+   calls so memory, mood detection, trend context
+   and personalisation are all active.
+   Falls back to /chat for carousel/site modes
+   which don't need memory overhead.
 ───────────────────────────────────────────── */
+var _dijoHistory = [];   // in-session conversation history (last 10 turns)
+
 async function callDijo(message, mode) {
-  var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
-  var res = await fetch(DIJO + '/chat', {
+  var user = getCurrentUser();
+
+  // carousel and site modes use the lightweight /chat endpoint —
+  // they need exact format output, not personalised conversation.
+  var useSmartEndpoint = (mode === 'creator' || mode === 'adviser' || !mode);
+
+  if (!useSmartEndpoint) {
+    // Lightweight path — carousel/site/dashboard modes
+    var shortPrefix = 'Reply in 3 sentences max. Be direct and specific. No filler words. ';
+    var res0 = await fetch(DIJO + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: shortPrefix + message, mode: mode || 'creator' })
+    });
+    if (!res0.ok) {
+      var e0 = await res0.json().catch(function() { return {}; });
+      throw new Error(e0.error || 'Dijo error ' + res0.status);
+    }
+    var d0 = await res0.json();
+    return d0.reply || '';
+  }
+
+  // Smart path — memory + mood + trends + personalisation
+  var res = await fetch(DIJO + '/chat/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: shortPrefix + message, mode: mode || 'creator' })
+    body: JSON.stringify({
+      user_id:  user ? user.id : null,
+      message:  message,
+      history:  _dijoHistory.slice(-10),
+      geo:      _userCountry || 'GB'
+    })
   });
   if (!res.ok) {
     var e = await res.json().catch(function() { return {}; });
     throw new Error(e.error || 'Dijo error ' + res.status);
   }
   var data = await res.json();
-  return data.reply || '';
+  var reply = data.reply || '';
+
+  // Keep conversation history for multi-turn context
+  _dijoHistory.push({ role: 'user', content: message });
+  _dijoHistory.push({ role: 'assistant', content: reply });
+  if (_dijoHistory.length > 20) _dijoHistory = _dijoHistory.slice(-20);
+
+  return reply;
 }
 
 /* ─────────────────────────────────────────────
@@ -2724,30 +2765,39 @@ window.addEventListener('load', async function() {
   // Auth is handled by auth.js → initAuth() → loadUser().
   // nav.js runs its own checkAuth() for the nav bar.
   // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
-
-  // ── Wake Render IMMEDIATELY — fires before any await so the cold-start
-  //    clock starts ticking while geo detection and skeleton rendering run.
-  fetch(DIJO + '/ping').catch(function() {});
-  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
-
   renderSkeletons(); // show instant skeleton UI before any network requests
   initYouTube();
   initTikTok();
+  loadCalendar();
   loadPlatformStatus();
+  // Detect country first so fetchTrends() has geo ready — detectUserCountry()
+  // is fast (cached after first call) and shows a "Detecting…" status in the UI.
+  await detectUserCountry();
+  await fetchTrends();
 
-  // ── Expose a Promise that resolves once _allTrends is populated.
-  //    calendar.js awaits this instead of polling — no more 300 ms tick loop.
-  var _trendsResolve;
-  window.trendsReady = new Promise(function(resolve) { _trendsResolve = resolve; });
-
-  // ── Run geo detection and trend fetch in parallel.
-  //    fetchTrends() calls detectUserCountry() internally (cached), so both
-  //    paths share the same geo result without double-fetching ipapi.co.
-  //    We kick off geo here only to show the "Detecting…" status badge fast.
-  detectUserCountry(); // fire-and-forget for UI badge — fetchTrends awaits it too
-  await fetchTrends(); // internally awaits geo, then fetches trends
-  _trendsResolve(_allTrends); // signal calendar.js that data is ready
-
+  // ── Record session for memory/personalisation (fire-and-forget) ──
+  // Waits briefly so ig-user-ready has time to fire and set window.igUser.
+  setTimeout(function() {
+    var user = getCurrentUser();
+    if (user && user.id) {
+      var hour = new Date().getHours();
+      var preferredTime = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+      fetch(DIJO + '/chat/session/start', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ user_id: user.id, preferred_time: preferredTime })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        // If churn risk is high, surface a personalised greeting in the briefing
+        if (d.churn_risk === 'high' || d.session_count === 1) {
+          var greetEl = document.getElementById('dijoGreeting');
+          if (greetEl && d.greeting) greetEl.textContent = d.greeting;
+        }
+      })
+      .catch(function() {}); // silent — non-critical
+    }
+  }, 1500);
   // GA: track time-to-content so we can measure skeleton improvement
   if (typeof gtag === 'function') {
     gtag('event', 'trends_loaded', {
@@ -2760,10 +2810,9 @@ window.addEventListener('load', async function() {
   renderRadarGauges();
   renderDijoTopPick();
   loadBriefing();
-
-  // ── Load calendar AFTER trends are ready so auto-fill runs immediately
-  //    without needing to wait for the poll loop.
-  loadCalendar();
+  // Wake Render immediately on load — prevents cold-start spinners
+  fetch(DIJO + '/ping').catch(function() {});
+  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 
   // Auto-refresh trends every 60 seconds
   // fetchTrends() → renderAll() already updates everything on success.
