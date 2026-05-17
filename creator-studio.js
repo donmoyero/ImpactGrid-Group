@@ -600,7 +600,7 @@ function updateWinnerBox() {
 
   var level     = winner.score > 8 ? 'HIGH 📈'   : winner.score > 5 ? 'MEDIUM ⚖️' : 'LOW 📉';
   var clsColor  = winner.score > 8 ? 'var(--green)' : winner.score > 5 ? 'var(--gold)' : 'var(--text3)';
-  var platIcon  = winner.plat === 'tt' ? '🎵' : winner.plat === 'yt' ? '▶️' : winner.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon  = winner.plat === 'tt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>' : winner.plat === 'yt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>' : winner.plat === 'cross' ? '🚀' : '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>';
   var platColor = winner.plat === 'tt' ? '#ff6464' : winner.plat === 'yt' ? '#FFD700' : winner.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(winner);
   var clsLbl    = cls === 'blowup' ? '🔥 Likely to blow up' : cls === 'rising_fast' ? '⚡ Rising fast' : cls === 'early' ? '🟢 Early signal' : '📊 Stable';
@@ -650,7 +650,7 @@ function updateChart() {
 
   var datasets = [];
   if (tt.length) datasets.push({
-    label: '🎵 TikTok',
+    label: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg> TikTok',
     data: alignScores(tt),
     borderColor: '#ff6464',
     backgroundColor: 'rgba(255,100,100,0.08)',
@@ -659,7 +659,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (yt.length) datasets.push({
-    label: '▶️ YouTube',
+    label: '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg> YouTube',
     data: alignScores(yt),
     borderColor: '#FFD700',
     backgroundColor: 'rgba(255,215,0,0.08)',
@@ -668,7 +668,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (gt.length) datasets.push({
-    label: '🔍 Google',
+    label: '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg> Google',
     data: alignScores(gt),
     borderColor: '#78b4ff',
     backgroundColor: 'rgba(120,180,255,0.08)',
@@ -860,7 +860,7 @@ function trendItemHTML(t) {
     t.plat === 'tt'    ? '⚡ TikTok Viral'
     : t.plat === 'yt'  ? '🎯 YouTube Validated'
     : t.plat === 'cross' ? '🚀 Cross-Platform'
-    : '🔍 Search Demand';
+    : '<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" style=\"vertical-align:middle\"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg> Search Demand';
 
   // Confidence indicator
   var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
@@ -1037,9 +1037,9 @@ function renderPlatformMeters() {
   var gt = platBest('gt');
 
   var platConfigs = [
-    { key: 'tt', icon: '🎵', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
-    { key: 'yt', icon: '▶️',  label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
-    { key: 'gt', icon: '🔍', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
+    { key: 'tt', icon: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
+    { key: 'yt', icon: '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
+    { key: 'gt', icon: '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
   ];
 
   // Inject keyframes once
@@ -1440,9 +1440,9 @@ function renderOpportunities(data) {
   var items = ordered.slice(0, 3);
 
   var platMeta = {
-    youtube: { icon: '▶️', color: '#FFD700', hint: '5–10 min explainer' },
+    youtube: { icon: '<svg viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"15\" height=\"15\" style=\"vertical-align:middle;margin-right:4px;color:#FFD700\"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', color: '#FFD700', hint: '5–10 min explainer' },
     tiktok:  { icon: '⚡', color: '#ff6464', hint: '30–60s hook video' },
-    google:  { icon: '🔍', color: '#78b4ff', hint: 'SEO article or Short' },
+    google:  { icon: '<svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" style=\"vertical-align:middle;margin-right:4px\"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', color: '#78b4ff', hint: 'SEO article or Short' },
     cross:   { icon: '🚀', color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
   };
 
@@ -1590,9 +1590,9 @@ function renderRadarGauges() {
   }
 
   var cfgs = [
-    { plat:'tt', icon:'🎵', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
-    { plat:'yt', icon:'▶️',  label:'YouTube', color:'#FFD700', trend: platBest('yt') },
-    { plat:'gt', icon:'🔍', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
+    { plat:'tt', icon:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
+    { plat:'yt', icon:'<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', label:'YouTube', color:'#FFD700', trend: platBest('yt') },
+    { plat:'gt', icon:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
   ];
 
   function gaugeArc(pct, color) {
@@ -1692,7 +1692,7 @@ async function renderDijoTopPick() {
 
   // Pick best trend by score
   var best = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  var platIcon  = best.plat === 'tt' ? '🎵' : best.plat === 'yt' ? '▶️' : best.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon  = best.plat === 'tt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>' : best.plat === 'yt' ? '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>' : best.plat === 'cross' ? '🚀' : '<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>';
   var platColor = best.plat === 'tt' ? '#ff6464' : best.plat === 'yt' ? '#FFD700' : best.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(best);
   var clsLbl    = cls === 'blowup' ? '🔥 Peak now — post immediately' : cls === 'rising_fast' ? '⚡ Rising fast — get ahead of it' : cls === 'early' ? '🟢 Early stage — first mover advantage' : '📊 Stable trend';
@@ -1823,7 +1823,7 @@ async function loadBriefing(forceRefresh) {
   if (!el) return;
 
   var PLAT_COLOR = { tt:'#ff6464', yt:'#FFD700', gt:'#78b4ff', cross:'#4FB3A5' };
-  var PLAT_ICON  = { tt:'🎵', yt:'▶️', gt:'🔍', cross:'🚀' };
+  var PLAT_ICON  = { tt:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', yt:'<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', gt:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', cross:'🚀' };
   var PLAT_NAME  = { tt:'TikTok', yt:'YouTube', gt:'Google', cross:'Trending' };
 
   function setTimestamp() {
