@@ -2618,113 +2618,12 @@ function updateTopTrends() {
 }
 
 /* ─────────────────────────────────────────────
-   SKELETON SCREENS
-   Renders instant placeholder UI into the three
-   above-the-fold sections (Briefing, Top Trends,
-   Top Opportunities) so users see structured
-   content immediately on load — before any network
-   request completes. Real data replaces these
-   automatically when the normal render functions
-   (renderDashTrends, renderOpportunities,
-   loadBriefing) run and overwrite innerHTML.
-───────────────────────────────────────────── */
-(function injectSkeletonStyles() {
-  if (document.getElementById('_skeletonStyles')) return;
-  var s = document.createElement('style');
-  s.id = '_skeletonStyles';
-  s.textContent = [
-    '@keyframes skShimmer {',
-    '  0%   { background-position: -400px 0; }',
-    '  100% { background-position:  400px 0; }',
-    '}',
-    '.sk {',
-    '  background: linear-gradient(90deg, var(--bg2,#1a1d26) 25%, var(--bg3,#22263a) 50%, var(--bg2,#1a1d26) 75%);',
-    '  background-size: 800px 100%;',
-    '  animation: skShimmer 1.4s ease-in-out infinite;',
-    '  border-radius: 6px;',
-    '}',
-    '[data-theme="light"] .sk {',
-    '  background: linear-gradient(90deg, #e8eaf0 25%, #f4f5f8 50%, #e8eaf0 75%);',
-    '  background-size: 800px 100%;',
-    '  animation: skShimmer 1.4s ease-in-out infinite;',
-    '}',
-    '.sk-line  { height:12px; margin-bottom:8px; border-radius:4px; }',
-    '.sk-title { height:18px; width:60%; margin-bottom:10px; border-radius:4px; }',
-    '.sk-badge { height:10px; width:40%; border-radius:10px; margin-bottom:6px; }',
-    '.sk-trend-item { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border,rgba(255,255,255,.06)); }',
-    '.sk-rank  { width:32px; height:32px; border-radius:8px; flex-shrink:0; }',
-    '.sk-info  { flex:1; }',
-    '.sk-bar   { height:4px; border-radius:99px; margin-top:8px; }',
-    '.sk-pill  { width:52px; height:20px; border-radius:10px; flex-shrink:0; }',
-    '.sk-opp-card { background:var(--card,#12151f); border:1px solid var(--border,rgba(255,255,255,.07)); border-radius:12px; padding:14px; margin-bottom:10px; }'
-  ].join("\n");
-  document.head.appendChild(s);
-})();
-
-function renderSkeletons() {
-  // 1. Top Trends list
-  var trendsEl = document.getElementById('dashTrendList');
-  if (trendsEl && !trendsEl.dataset.realData) {
-    var trendSkel = '';
-    var tColors = ['#ff6464','#FFD700','#78b4ff'];
-    var tWidths = [[70,45,80],[55,38,60],[65,50,72]];
-    tWidths.forEach(function(w, i) {
-      trendSkel +=
-        '<div class="sk-trend-item">'
-        + '<div class="sk sk-rank"></div>'
-        + '<div class="sk-info">'
-        +   '<div class="sk sk-title" style="width:' + w[0] + '%"></div>'
-        +   '<div class="sk sk-badge" style="width:' + w[1] + '%"></div>'
-        +   '<div class="sk sk-bar" style="width:' + w[2] + '%;background:' + tColors[i] + '30"></div>'
-        + '</div>'
-        + '<div class="sk sk-pill"></div>'
-        + '</div>';
-    });
-    trendsEl.innerHTML = trendSkel;
-  }
-
-  // 2. Top Opportunities
-  var oppEl = document.getElementById('topOppBox');
-  if (oppEl && !oppEl.dataset.realData) {
-    var oppSkel = '';
-    [80,62,55].forEach(function(w) {
-      oppSkel +=
-        '<div class="sk-opp-card">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
-        +   '<div class="sk sk-badge" style="width:35%"></div>'
-        +   '<div class="sk sk-badge" style="width:18%"></div>'
-        + '</div>'
-        + '<div class="sk sk-line" style="width:' + w + '%"></div>'
-        + '<div class="sk sk-line" style="width:' + (w - 15) + '%;height:8px"></div>'
-        + '<div class="sk sk-line" style="height:3px;width:' + w + '%"></div>'
-        + '</div>';
-    });
-    oppEl.innerHTML = oppSkel;
-  }
-
-  // 3. Dijo Briefing
-  var briefEl = document.getElementById('briefingText');
-  if (briefEl && !briefEl.dataset.realData) {
-    briefEl.innerHTML =
-      '<div class="sk sk-badge" style="width:55%;margin-bottom:10px"></div>'
-      + '<div class="sk sk-title" style="width:80%;height:20px;margin-bottom:10px"></div>'
-      + '<div class="sk sk-line" style="width:95%"></div>'
-      + '<div class="sk sk-line" style="width:80%"></div>'
-      + '<div class="sk sk-line" style="width:60%"></div>';
-  }
-}
-
-// Track page load start for GA timing
-window._pageLoadStart = Date.now();
-
-/* ─────────────────────────────────────────────
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('load', async function() {
   // Auth is handled by auth.js → initAuth() → loadUser().
   // nav.js runs its own checkAuth() for the nav bar.
   // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
-  renderSkeletons(); // show instant skeleton UI before any network requests
   initYouTube();
   initTikTok();
   loadCalendar();
@@ -2733,13 +2632,6 @@ window.addEventListener('load', async function() {
   // is fast (cached after first call) and shows a "Detecting…" status in the UI.
   await detectUserCountry();
   await fetchTrends();
-  // GA: track time-to-content so we can measure skeleton improvement
-  if (typeof gtag === 'function') {
-    gtag('event', 'trends_loaded', {
-      ms_to_load: Date.now() - (window._pageLoadStart || Date.now()),
-      country: _userCountryName || 'unknown'
-    });
-  }
   renderDashTrends();
   loadOpportunities();
   renderRadarGauges();
