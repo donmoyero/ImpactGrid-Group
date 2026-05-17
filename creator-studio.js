@@ -1868,8 +1868,10 @@ async function loadBriefing(forceRefresh) {
     if (!insightEl) return;
     try {
       var locationLabel = _userCountryName || 'your country';
-      var prompt = '"' + topicName + '" is ' + heat + ' on ' + platName + ' right now in ' + locationLabel + '. '
-        + 'Why is it blowing up and what should a content creator in ' + locationLabel + ' do about it today?';
+      var prompt = 'STRICT FORMAT — reply in exactly 2 short sentences, no more.\n'
+        + 'Sentence 1: why "' + topicName + '" is ' + heat + ' on ' + platName + ' RIGHT NOW (1 reason, plain English).\n'
+        + 'Sentence 2: the ONE content move a UK creator should make TODAY — include format + platform.\n'
+        + 'No intros. No lists. No advice paragraphs. Max 40 words total.';
       var text = await callDijo(prompt, 'creator');
       if (text && insightEl) insightEl.textContent = text;
     } catch(e) {
