@@ -634,6 +634,7 @@ function updateChart() {
   var tt = topN('tt', 5);
   var yt = topN('yt', 5);
   var gt = topN('gt', 5);
+  var xt = topN('xtwitter', 5);
 
   // Build a unified label set — topic names from whichever platform has most data
   var primary = tt.length >= yt.length && tt.length >= gt.length ? tt
@@ -676,6 +677,15 @@ function updateChart() {
     pointBackgroundColor: '#78b4ff', pointBorderColor: '#fff', pointBorderWidth: 1.5,
     borderWidth: 2, fill: false, spanGaps: true
   });
+  if (xt.length) datasets.push({
+    label: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#e7e9ea"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> X / Twitter',
+    data: alignScores(xt),
+    borderColor: '#e7e9ea',
+    backgroundColor: 'rgba(231,233,234,0.06)',
+    tension: 0.4, pointRadius: 4, pointHoverRadius: 7,
+    pointBackgroundColor: '#e7e9ea', pointBorderColor: '#fff', pointBorderWidth: 1.5,
+    borderWidth: 2, fill: false, spanGaps: true
+  });
 
   if (!datasets.length) return;
 
@@ -707,7 +717,8 @@ function updateChart() {
               if (ctx.raw === null) return ctx.dataset.label + ': no data';
               // Map back to original topic name from the correct platform array
               var src = ctx.dataset.label.includes('TikTok') ? tt
-                      : ctx.dataset.label.includes('YouTube') ? yt : gt;
+                      : ctx.dataset.label.includes('YouTube') ? yt
+                      : ctx.dataset.label.includes('X / Twitter') ? (topN('xtwitter', 5)) : gt;
               var t = src[ctx.dataIndex];
               return t ? t.topic + ' · ' + ctx.raw.toFixed(1) + '/10' : ctx.raw.toFixed(1) + '/10';
             }
@@ -725,6 +736,61 @@ function updateChart() {
   updateWinnerBox();
 }
 
+/* ─────────────────────────────────────────────
+   INSTAGRAM PREDICTION PANEL
+   Reads igPrediction (0–100) from every trend in
+   _allTrends (populated by mapTrend from the
+   instagram_prediction DB column). Shows the top 5
+   topics most likely to cross to Instagram.
+   Renders into #igPredBox — add this element to the
+   Trends tab HTML to make the panel visible.
+───────────────────────────────────────────── */
+function renderInstagramPredictions() {
+  var el = document.getElementById('igPredBox');
+  if (!el) return;
+
+  var igTrends = _allTrends
+    .filter(function(t) { return t.igPrediction >= 40; })
+    .slice().sort(function(a, b) { return b.igPrediction - a.igPrediction; })
+    .slice(0, 5);
+
+  if (!igTrends.length) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:13px;padding:12px 0">No Instagram predictions yet — check back after the next data refresh.</p>';
+    return;
+  }
+
+  // Inject styles once
+  if (!document.getElementById('_igPredStyles')) {
+    var s = document.createElement('style');
+    s.id = '_igPredStyles';
+    s.textContent = [
+      '.ig-pred-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:border-color .2s; }',
+      '.ig-pred-card:hover { border-color:#E1306C66; }',
+      '.ig-pred-topic { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; }',
+      '.ig-pred-score { font-family:"DM Mono",monospace; font-size:11px; font-weight:900; color:#E1306C; margin-bottom:5px; }',
+      '.ig-pred-bar { height:4px; background:var(--bg2); border-radius:99px; overflow:hidden; margin-bottom:5px; }',
+      '.ig-pred-bar > div { height:100%; border-radius:99px; transition:width .6s ease; }',
+      '.ig-pred-reason { font-size:10px; color:var(--text3); font-style:italic; }'
+    ].join('\n');
+    document.head.appendChild(s);
+  }
+
+  el.innerHTML = igTrends.map(function(t) {
+    var pct = Math.round(t.igPrediction);
+    var reason = t.igReason
+      || (t.plat === 'tt'
+        ? 'TikTok velocity detected — likely to cross to Instagram within 24–48h'
+        : 'Cross-platform signals suggest Instagram traction incoming');
+    var srcLabel = t.platLabel;
+    return '<div class="ig-pred-card" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
+      + '<div class="ig-pred-topic">' + escH(t.topic) + '</div>'
+      + '<div class="ig-pred-score">' + pct + '% IG likelihood</div>'
+      + '<div class="ig-pred-bar"><div style="width:' + pct + '%;background:#E1306C"></div></div>'
+      + '<div class="ig-pred-reason">' + escH(reason) + ' · Currently trending on ' + escH(srcLabel) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
 /* renderAll — unified re-render called after any trend fetch */
 /* renderAll — single render pass called ONLY by fetchTrends() on success.
    Never called directly from the load init or setInterval.
@@ -738,6 +804,7 @@ function renderAll() {
   updateTopTrends();
   renderTrendChart();         // chart tab
   renderRadarGauges();        // radar gauges
+  renderInstagramPredictions(); // IG prediction panel
   renderDijoTopPick();        // Dijo top pick box
   updateChart();              // winner box
   if (typeof notifyCalendar === 'function') notifyCalendar(); // calendar reads _allTrends
@@ -1193,9 +1260,9 @@ const pointLabelsPlugin = {
    scores update every 60s. Clicking a topic label
    opens the generator pre-filled with that topic.
 ───────────────────────────────────────────── */
-var _chartTT = null, _chartYT = null, _chartGT = null;
+var _chartTT = null, _chartYT = null, _chartGT = null, _chartXT = null;
 // Store historical score snapshots so lines actually move
-var _chartHistory = { tt: {}, yt: {}, gt: {} };
+var _chartHistory = { tt: {}, yt: {}, gt: {}, xtwitter: {} };
 var _chartHistoryMax = 8; // keep last 8 snapshots per topic
 
 function _recordSnapshot(plat, trends) {
@@ -1344,6 +1411,7 @@ function _buildPlatChart(canvasId, emptyId, topicsId, plat, color, label) {
 
   if (plat === 'tt') _chartTT = newChart;
   else if (plat === 'yt') _chartYT = newChart;
+  else if (plat === 'xtwitter') _chartXT = newChart;
   else _chartGT = newChart;
 
   // Render topic labels below chart — rank, topic name, score bar
@@ -1373,9 +1441,10 @@ function renderTrendChart() {
   _buildPlatChart('chartTT', 'chartTTEmpty', 'chartTTTopics', 'tt', '#ff6464', 'TikTok');
   _buildPlatChart('chartYT', 'chartYTEmpty', 'chartYTTopics', 'yt', '#FFD700', 'YouTube');
   _buildPlatChart('chartGT', 'chartGTEmpty', 'chartGTTopics', 'gt', '#78b4ff', 'Google');
+  _buildPlatChart('chartXT', 'chartXTEmpty', 'chartXTTopics', 'xtwitter', '#e7e9ea', 'X / Twitter');
 
   // Pulse live dots
-  ['ttLiveDot','ytLiveDot','gtLiveDot','chartLiveDot'].forEach(function(id) {
+  ['ttLiveDot','ytLiveDot','gtLiveDot','xtLiveDot','chartLiveDot'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.style.animation = 'none';
@@ -1559,8 +1628,9 @@ function renderRadarGauges() {
     var s = document.createElement('style');
     s.id = '_radarGaugeStyles';
     s.textContent = `
-      .rg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-      @media(max-width:640px){ .rg-grid { grid-template-columns:1fr; } }
+      .rg-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+      @media(max-width:900px){ .rg-grid { grid-template-columns:repeat(2,1fr); } }
+      @media(max-width:480px){ .rg-grid { grid-template-columns:1fr; } }
       .rg-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 16px 14px; display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; overflow:hidden; }
       .rg-stripe { position:absolute; top:0; left:0; right:0; height:3px; border-radius:3px 3px 0 0; }
       .rg-label { font-size:11px; font-weight:700; color:var(--text2); letter-spacing:.06em; text-transform:uppercase; font-family:'DM Mono',monospace; }
@@ -1596,7 +1666,8 @@ function renderRadarGauges() {
   var cfgs = [
     { plat:'tt', icon:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
     { plat:'yt', icon:'<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', label:'YouTube', color:'#FFD700', trend: platBest('yt') },
-    { plat:'gt', icon:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
+    { plat:'gt', icon:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', label:'Google',  color:'#78b4ff', trend: platBest('gt') },
+    { plat:'xtwitter', icon:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#e7e9ea"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>', label:'X / Twitter', color:'#e7e9ea', trend: platBest('xtwitter') }
   ];
 
   function gaugeArc(pct, color) {
@@ -1826,9 +1897,9 @@ async function loadBriefing(forceRefresh) {
   var dateEl = document.getElementById('briefingDate');
   if (!el) return;
 
-  var PLAT_COLOR = { tt:'#ff6464', yt:'#FFD700', gt:'#78b4ff', cross:'#4FB3A5' };
-  var PLAT_ICON  = { tt:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', yt:'<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', gt:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', cross:'🚀' };
-  var PLAT_NAME  = { tt:'TikTok', yt:'YouTube', gt:'Google', cross:'Trending' };
+  var PLAT_COLOR = { tt:'#ff6464', yt:'#FFD700', gt:'#78b4ff', cross:'#4FB3A5', xtwitter:'#e7e9ea' };
+  var PLAT_ICON  = { tt:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#ff6464"><path d=\"M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z\"/></svg>', yt:'<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="vertical-align:middle;margin-right:4px;color:#FFD700"><path d=\"M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\"/></svg>', gt:'<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"/><path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"/><path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z\"/><path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"/></svg>', cross:'🚀', xtwitter:'<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:middle;margin-right:4px;color:#e7e9ea"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>' };
+  var PLAT_NAME  = { tt:'TikTok', yt:'YouTube', gt:'Google', cross:'Trending', xtwitter:'X / Twitter' };
 
   function setTimestamp() {
     if (dateEl) {
