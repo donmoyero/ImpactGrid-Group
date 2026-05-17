@@ -2724,15 +2724,30 @@ window.addEventListener('load', async function() {
   // Auth is handled by auth.js → initAuth() → loadUser().
   // nav.js runs its own checkAuth() for the nav bar.
   // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
+
+  // ── Wake Render IMMEDIATELY — fires before any await so the cold-start
+  //    clock starts ticking while geo detection and skeleton rendering run.
+  fetch(DIJO + '/ping').catch(function() {});
+  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
+
   renderSkeletons(); // show instant skeleton UI before any network requests
   initYouTube();
   initTikTok();
-  loadCalendar();
   loadPlatformStatus();
-  // Detect country first so fetchTrends() has geo ready — detectUserCountry()
-  // is fast (cached after first call) and shows a "Detecting…" status in the UI.
-  await detectUserCountry();
-  await fetchTrends();
+
+  // ── Expose a Promise that resolves once _allTrends is populated.
+  //    calendar.js awaits this instead of polling — no more 300 ms tick loop.
+  var _trendsResolve;
+  window.trendsReady = new Promise(function(resolve) { _trendsResolve = resolve; });
+
+  // ── Run geo detection and trend fetch in parallel.
+  //    fetchTrends() calls detectUserCountry() internally (cached), so both
+  //    paths share the same geo result without double-fetching ipapi.co.
+  //    We kick off geo here only to show the "Detecting…" status badge fast.
+  detectUserCountry(); // fire-and-forget for UI badge — fetchTrends awaits it too
+  await fetchTrends(); // internally awaits geo, then fetches trends
+  _trendsResolve(_allTrends); // signal calendar.js that data is ready
+
   // GA: track time-to-content so we can measure skeleton improvement
   if (typeof gtag === 'function') {
     gtag('event', 'trends_loaded', {
@@ -2745,9 +2760,10 @@ window.addEventListener('load', async function() {
   renderRadarGauges();
   renderDijoTopPick();
   loadBriefing();
-  // Wake Render immediately on load — prevents cold-start spinners
-  fetch(DIJO + '/ping').catch(function() {});
-  setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
+
+  // ── Load calendar AFTER trends are ready so auto-fill runs immediately
+  //    without needing to wait for the poll loop.
+  loadCalendar();
 
   // Auto-refresh trends every 60 seconds
   // fetchTrends() → renderAll() already updates everything on success.
