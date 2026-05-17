@@ -45,16 +45,6 @@ function _showGeoStatus(text) {
   // If the element doesn't exist yet, this is a silent no-op.
   var el = document.getElementById('geoStatus');
   if (el) el.textContent = text;
-
-  // Also update ticker geo labels when country is confirmed (not "Detecting…")
-  if (_geoDetected || text.indexOf('Detecting') === -1) {
-    var countryName = _userCountryName || text.replace('📍 ', '');
-    var tickerLabel = document.getElementById('tickerGeoLabel');
-    if (tickerLabel) tickerLabel.textContent = countryName;
-    document.querySelectorAll('.tickerGeoLabel2').forEach(function(el2) {
-      el2.textContent = countryName;
-    });
-  }
 }
 
 /* ── AI CALL THROTTLE ────────────────────────────────────────────────
@@ -1354,15 +1344,83 @@ function renderTrendChart() {
 async function runTrendPrediction() {
   const el = document.getElementById('weeklyPrediction');
   if (!el || !_allTrends || !_allTrends.length) return;
+
+  // Build insights first — used by other panels too
   window._trendInsights = buildTrendInsights();
-  var cached = _aiCacheGet('weekly_prediction');
-  if (cached) { el.innerHTML = cached; return; }
-  var top = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  if (!top) return;
-  var cap = top.topic.charAt(0).toUpperCase() + top.topic.slice(1);
-  var html = '<div style="font-family:\'Syne\',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text1)">' + escH(cap) + '</div>';
-  el.innerHTML = html;
-  _aiCacheSet('weekly_prediction', html);
+  console.log('[TrendInsights] 🔥 Blowup:', window._trendInsights.blowup.length,
+    '| ⚡ Rising fast:', window._trendInsights.rising_fast.length,
+    '| 💡 Early:', window._trendInsights.early.length);
+
+  // Show loading state immediately — don't leave "Analyzing trends..."
+  const topLocal = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
+  el.innerHTML = '<span class="spinner spinner-gold"></span>'
+    + '<span style="font-size:12px;color:var(--text3);margin-left:8px">Dijo is picking this week\'s best opportunity…</span>';
+
+  // ── Try Dijo AI briefing — cached 30 min so auto-refresh doesn't burn tokens ──
+  var _predKey    = 'weekly_prediction';
+  var _predCached = _aiCacheGet(_predKey);
+  if (_predCached) {
+    el.innerHTML = _predCached;
+    return;
+  }
+  try {
+    var res = await fetch(DIJO + '/ai/daily-briefing');
+    var data = await res.json();
+
+    if (data && data.briefing) {
+      // Match the top trend from briefing data to our local scored list
+      var aiTop = null;
+      if (data.top_trends && data.top_trends.length) {
+        var aiTopicName = data.top_trends[0].topic;
+        aiTop = _allTrends.find(function(t) {
+          return t.topic.toLowerCase() === aiTopicName.toLowerCase();
+        }) || null;
+      }
+      var pick = aiTop || topLocal;
+
+      // Extract a short reason from Dijo's briefing (first sentence only)
+      var reason = '';
+      if (data.briefing) {
+        var firstSentence = data.briefing.split(/[.!?]/)[0];
+        reason = firstSentence.length > 10 && firstSentence.length < 160
+          ? firstSentence.trim()
+          : '';
+      }
+
+      var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
+      var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
+      var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
+
+      el.innerHTML =
+        '<div style="display:flex;flex-direction:column;gap:7px">'
+        + '<div style="font-family:\'Syne\',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text1)">' + escH(pick.topic) + '</div>'
+        + '<div style="display:flex;gap:6px;align-items:center">'
+        +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">' + platIcon + ' ' + escH(pick.platLabel) + '</span>'
+        +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
+        + '</div>'
+        + '</div>';
+    _aiCacheSet(_predKey, el.innerHTML);
+
+      return;
+    }
+  } catch(e) {
+    console.warn('[WeeklyPrediction] AI briefing failed, using local fallback:', e.message);
+  }
+
+  // ── Local fallback — use best scored trend without AI text ────────────────
+  var pick = topLocal;
+  var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
+  var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
+  var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
+
+  el.innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:7px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text1)">' + escH(pick.topic) + '</div>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">' + platIcon + ' ' + escH(pick.platLabel) + '</span>'
+    +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
+    + '</div>'
+    + '</div>';
 }
 
 function filterTrends(btn, plat) {
@@ -1457,8 +1515,7 @@ function renderOpportunities(data) {
 
 async function loadOpportunities() {
   try {
-    var geo = _userCountry || 'GB';
-    var res = await fetch(DIJO + '/trends/dijo?geo=' + geo);
+    var res = await fetch(DIJO + '/trends/dijo');
     var data = await res.json();
     // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
     // fall back to local rather than showing "No opportunities"
@@ -1699,10 +1756,9 @@ async function renderDijoTopPick() {
     return;
   }
   try {
-    var locationCtx = _userCountryName ? ' in ' + _userCountryName : '';
     var prompt = 'In ONE sentence (max 25 words), explain why "' + best.topic
       + '" is the best content opportunity right now on ' + best.platLabel
-      + locationCtx + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
+      + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
     var res = await fetch(DIJO + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1787,102 +1843,69 @@ async function loadPlatformStatus() {
 ───────────────────────────────────────────── */
 async function loadBriefing(forceRefresh) {
   if (!forceRefresh && _aiCacheGet('briefing_done')) return;
-
   var el     = document.getElementById('briefingText');
   var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
   if (!el) return;
 
-  var PLAT_COLOR = { tt:'#ff6464', yt:'#FFD700', gt:'#78b4ff', cross:'#4FB3A5' };
-  var PLAT_ICON  = { tt:'🎵', yt:'▶️', gt:'🔍', cross:'🚀' };
-  var PLAT_NAME  = { tt:'TikTok', yt:'YouTube', gt:'Google', cross:'Trending' };
-
   function setTimestamp() {
     if (dateEl) {
       var now = new Date();
-      dateEl.innerHTML = '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#0fa876;margin-right:4px;vertical-align:middle"></span>'
-        + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '\n· live';
+      dateEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '\n· live';
     }
-  }
-
-  function getTopTrend() {
-    if (!_allTrends || !_allTrends.length) return null;
-    return _allTrends.slice().sort(function(a, b) { return b.score - a.score; })[0];
-  }
-
-  function renderShell(top) {
-    var cap       = (top.topic || '').charAt(0).toUpperCase() + (top.topic || '').slice(1);
-    var platColor = PLAT_COLOR[top.plat] || '#4FB3A5';
-    var platIcon  = PLAT_ICON[top.plat]  || '📡';
-    var platName  = PLAT_NAME[top.plat]  || 'Trending';
-    var cls       = classifyTrend(top);
-    var heat      = cls === 'blowup'      ? '🔥 Blowing up'
-                  : cls === 'rising_fast' ? '⚡ Rising fast'
-                  : cls === 'early'       ? '🟢 Early signal'
-                  : '📊 Trending';
-    el.innerHTML =
-      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + platColor + ';letter-spacing:.08em;margin-bottom:6px;text-transform:uppercase">'
-      + platIcon + ' ' + platName + ' &nbsp;·&nbsp; ' + heat
-      + '</div>'
-      + '<div style="font-family:\'Syne\',sans-serif;font-size:19px;font-weight:900;line-height:1.2;color:var(--text1);margin-bottom:10px">'
-      + escH(cap)
-      + '</div>'
-      + '<div id="dijoInsightText" style="font-size:12px;color:var(--text2);line-height:1.6">'
-      + '<span class="spinner spinner-gold"></span>'
-      + '</div>';
-    setTimestamp();
-    return { cap: cap, platName: platName, heat: heat };
-  }
-
-  async function fetchInsight(topicName, platName, heat) {
-    var insightEl = document.getElementById('dijoInsightText');
-    if (!insightEl) return;
-    try {
-      var locationLabel = _userCountryName || 'your country';
-      var prompt = '"' + topicName + '" is ' + heat + ' on ' + platName + ' right now in ' + locationLabel + '. '
-        + 'Why is it blowing up and what should a content creator in ' + locationLabel + ' do about it today?';
-      var text = await callDijo(prompt, 'creator');
-      if (text && insightEl) insightEl.textContent = text;
-    } catch(e) {
-      if (insightEl) insightEl.textContent = '';
-    }
-  }
-
-  var top = getTopTrend();
-  if (top) {
-    var info = renderShell(top);
-    _aiCacheSet('briefing_done', true);
-    if (forceRefresh) toast('🧠 Briefing refreshed!');
-    fetchInsight(info.cap, info.platName, info.heat);
-    return;
   }
 
   el.innerHTML = '<span class="spinner spinner-gold"></span>';
+
   try {
     var res  = await fetch(DIJO + '/ai/daily-briefing');
     var data = await res.json();
-    top = getTopTrend();
-    if (top) {
-      var info2 = renderShell(top);
+
+    if (data && data.briefing) {
+      // Show the full AI write-up as a paragraph — no truncation
+      el.style.fontStyle = 'normal';
+      el.textContent = data.briefing;
+
+      // Show topic tags if API returns them
+      if (tagsEl && data.tags && data.tags.length) {
+        tagsEl.innerHTML = data.tags.map(function(t) {
+          return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-family:\'DM Mono\',monospace;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);margin:2px">' + escH(t) + '</span>';
+        }).join('');
+        tagsEl.style.display = 'flex';
+        tagsEl.style.flexWrap = 'wrap';
+        tagsEl.style.gap = '4px';
+        tagsEl.style.marginTop = '8px';
+      }
+
       _aiCacheSet('briefing_done', true);
-      fetchInsight(info2.cap, info2.platName, info2.heat);
+      setTimestamp();
+      if (forceRefresh) toast('🧠 Briefing refreshed!');
       return;
     }
-    var apiTop = (data.top_trends && data.top_trends[0]) || null;
-    if (apiTop) {
-      var fakeTrend = { topic: apiTop.topic, plat: 'cross', score: apiTop.score || 7 };
-      var info3 = renderShell(fakeTrend);
-      _aiCacheSet('briefing_done', true);
-      fetchInsight(info3.cap, info3.platName, info3.heat);
-    } else if (data.briefing) {
-      el.textContent = data.briefing;
-      setTimestamp();
-    }
   } catch(e) {
-    if (el) el.textContent = 'Trends unavailable — check back shortly.';
+    console.warn('[Briefing] API unavailable, using local fallback');
   }
+
+  // ── Local fallback: write a sentence from live trend data ────────────────
+  if (_allTrends && _allTrends.length) {
+    var best = getBest3(_allTrends);
+    var parts = [];
+    if (best.youtube) parts.push('▶️ ' + best.youtube.topic + ' is trending on YouTube');
+    if (best.tiktok)  parts.push('🎵 ' + best.tiktok.topic  + ' is blowing up on TikTok');
+    if (best.google)  parts.push('🔍 ' + best.google.topic  + ' is spiking on Google');
+    if (parts.length) {
+      el.textContent = parts.join(' · ') + '.';
+      setTimestamp();
+      return;
+    }
+  }
+
+  el.textContent = 'Trends unavailable — check back shortly.';
 }
 
+/* ─────────────────────────────────────────────
+   QUICK GENERATE (dashboard widget)
+───────────────────────────────────────────── */
 async function quickGenerate() {
   if (!checkAccess()) return;
   var topicEl = document.getElementById('quickTopic');
