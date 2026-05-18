@@ -977,6 +977,10 @@ img { display:block; max-width:100%; }
 ═══════════════════════════════════════════════ */
 @media (max-width:860px) {
 
+  /* ── Fix mobile scrolling — desktop shell uses overflow:hidden but mobile needs touch scroll ── */
+  html, body { overflow: visible; height: auto; }
+  body { height: 100dvh; overflow: hidden; }
+
   /* ── Sidebar: off-screen by default, slides in ── */
   :root { --sidebar-w:280px; }
 
@@ -2247,4 +2251,34 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE FIXES — scrolling, arrow button removal, More button
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Remove left-arrow/scroll-prev buttons on mobile ── */
+@media (max-width: 860px) {
+  .scroll-prev, .prev-btn, .briefing-prev, .brief-prev,
+  [data-dir="prev"], [aria-label*="prev"],
+  /* target any standalone single-character button that looks like an arrow */
+  button.arrow-btn, .arrow-left, .panel-arrow,
+  .dash-prev, .scroll-left-btn {
+    display: none !important;
+  }
+
+  /* ── Ensure content area scrolls on mobile ── */
+  .content-area {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
+  }
+
+  /* ── Sidebar: when open, show close-btn header ── */
+  .sidebar.open .sb-close-btn { display: flex !important; }
+
+  /* ── More button in bottom nav: pointer-events always on ── */
+  #ig-bottom-nav .bn-item:last-child {
+    cursor: pointer;
+  }
 }
