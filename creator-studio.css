@@ -2014,22 +2014,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   /* Top tab-bar completely hidden — replaced by bottom nav */
   .tabs-bar { display: none !important; }
 
-  /* Shell + main: must not clip the scrollable content-area on mobile */
-  .shell { overflow: visible !important; }
-  .main  { overflow: visible !important; }
+  /* Shell + main: overflow:hidden so content-area gets a real bounded height */
+  .shell { overflow: hidden !important; }
+  .main  { overflow: hidden !important; }
 
-  /* Content area: scrolls above the bottom nav */
+  /* Content area: flex:1 + overflow-y:auto — same proven pattern as desktop,
+     just with bottom padding to clear the fixed bottom nav */
   .content-area {
-    flex: 1;
-    /* height: 0 + min-height: 0 forces iOS to honour the flex constraint so
-       touch-scroll works — without this the element has no bounded height and
-       overflow:hidden on the parent silently swallows all scroll attempts */
-    height: 0;
-    min-height: 0;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
     padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
   }
 
   /* Panels */
