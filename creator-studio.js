@@ -20,7 +20,7 @@ var _geoDetected = false;
 
 async function detectUserCountry() {
   if (_geoDetected) return _userCountry;
-  _showGeoStatus('📍 Detecting your location…');
+  _showGeoStatus('Detecting your location…');
   try {
     var controller = new AbortController();
     var timer = setTimeout(function() { controller.abort(); }, 4000); // 4 s timeout
@@ -36,7 +36,7 @@ async function detectUserCountry() {
     console.warn('[Geo] Detection failed — defaulting to GB:', e.message);
   }
   _geoDetected = true;
-  _showGeoStatus('📍 ' + _userCountryName);
+  _showGeoStatus(_userCountryName);
   return _userCountry;
 }
 
@@ -175,7 +175,7 @@ function updateBriefing(trends) {
   }
 
   const best = getBest3(src);
-  briefEl.textContent = `📡 ${safeTopic(best.tiktok)} · ${safeTopic(best.youtube)} · ${safeTopic(best.google)}`;
+  briefEl.textContent = `${safeTopic(best.tiktok)} · ${safeTopic(best.youtube)} · ${safeTopic(best.google)}`;
 }
 
 /* ─────────────────────────────────────────────
@@ -561,12 +561,12 @@ function updateWinnerBox() {
     return;
   }
 
-  var level     = winner.score > 8 ? 'HIGH 📈'   : winner.score > 5 ? 'MEDIUM ⚖️' : 'LOW 📉';
+  var level     = winner.score > 8 ? 'HIGH'   : winner.score > 5 ? 'MEDIUM' : 'LOW';
   var clsColor  = winner.score > 8 ? 'var(--green)' : winner.score > 5 ? 'var(--gold)' : 'var(--text3)';
-  var platIcon  = winner.plat === 'tt' ? '🎵' : winner.plat === 'yt' ? '▶️' : winner.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon  = winner.plat === 'tt' ? '' : winner.plat === 'yt' ? '' : winner.plat === 'cross' ? '' : '';
   var platColor = winner.plat === 'tt' ? '#ff6464' : winner.plat === 'yt' ? '#FFD700' : winner.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(winner);
-  var clsLbl    = cls === 'blowup' ? '🔥 Likely to blow up' : cls === 'rising_fast' ? '⚡ Rising fast' : cls === 'early' ? '🟢 Early signal' : '📊 Stable';
+  var clsLbl    = cls === 'blowup' ? 'Likely to blow up' : cls === 'rising_fast' ? 'Rising fast' : cls === 'early' ? 'Early signal' : 'Stable';
 
   el.innerHTML =
     '<div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:18px 16px">'
@@ -576,7 +576,7 @@ function updateWinnerBox() {
     +   '<span style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:900;color:' + clsColor + '">' + winner.score.toFixed(1) + '</span>'
     +   '<span style="font-size:10px;font-weight:700;color:' + clsColor + '">' + level + '</span>'
     + '</div>'
-    + '<div style="font-size:11px;color:' + platColor + ';font-weight:700">' + platIcon + ' ' + escH(winner.platLabel) + '</div>'
+    + '<div style="font-size:11px;color:' + platColor + ';font-weight:700">' + escH(winner.platLabel) + '</div>'
     + '<div style="font-size:11px;color:var(--text3)">' + clsLbl + '</div>'
     + '<button onclick="loadTopic(\'' + escJ(winner.topic) + '\')" style="margin-top:4px;padding:8px 14px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:\'Syne\',sans-serif;align-self:flex-start">⚡ Generate</button>'
     + '</div>';
@@ -613,7 +613,7 @@ function updateChart() {
 
   var datasets = [];
   if (tt.length) datasets.push({
-    label: '🎵 TikTok',
+    label: 'TikTok',
     data: alignScores(tt),
     borderColor: '#ff6464',
     backgroundColor: 'rgba(255,100,100,0.08)',
@@ -622,7 +622,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (yt.length) datasets.push({
-    label: '▶️ YouTube',
+    label: 'YouTube',
     data: alignScores(yt),
     borderColor: '#FFD700',
     backgroundColor: 'rgba(255,215,0,0.08)',
@@ -631,7 +631,7 @@ function updateChart() {
     borderWidth: 2, fill: false, spanGaps: true
   });
   if (gt.length) datasets.push({
-    label: '🔍 Google',
+    label: 'Google',
     data: alignScores(gt),
     borderColor: '#78b4ff',
     backgroundColor: 'rgba(120,180,255,0.08)',
@@ -925,7 +925,7 @@ function renderDashTrends() {
     var color     = platColors[t.plat] || 'var(--gold)';
     var pct       = Math.round((t.score / 10) * 100);
     var cls       = classifyTrend(t);
-    var clsLabel  = cls === 'blowup'      ? '🔥 Likely to blow up'
+    var clsLabel  = cls === 'blowup'      ? 'Likely to blow up'
                   : cls === 'rising_fast' ? '⚡ Getting popular fast'
                   : cls === 'early'       ? '🟢 Early — get in now'
                   : '📊 Stable trend';
@@ -998,9 +998,9 @@ function renderPlatformMeters() {
   var gt = platBest('gt');
 
   var platConfigs = [
-    { key: 'tt', icon: '🎵', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
-    { key: 'yt', icon: '▶️',  label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
-    { key: 'gt', icon: '🔍', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
+    { key: 'tt', icon: '', label: 'TikTok',  color: '#ff6464', trend: tt, emptyMsg: 'No TikTok data yet' },
+    { key: 'yt', icon: '',  label: 'YouTube', color: '#FFD700', trend: yt, emptyMsg: 'No YouTube data yet' },
+    { key: 'gt', icon: '', label: 'Google',  color: '#78b4ff', trend: gt, emptyMsg: 'No Google data yet'  }
   ];
 
   // Inject keyframes once
@@ -1046,7 +1046,7 @@ function renderPlatformMeters() {
     var t      = cfg.trend;
     var pct    = Math.round((t.score / 10) * 100);
     var cls    = classifyTrend(t);
-    var clsLbl = cls === 'blowup' ? '🔥 Blowup' : cls === 'rising_fast' ? '⚡ Rising' : cls === 'early' ? '🟢 Early' : '📊 Stable';
+    var clsLbl = cls === 'blowup' ? 'Blowup' : cls === 'rising_fast' ? 'Rising' : cls === 'early' ? '🟢 Early' : 'Stable';
     var clsClr = cls === 'blowup' ? 'var(--green)' : cls === 'rising_fast' ? 'var(--gold)' : cls === 'early' ? '#4FB3A5' : 'var(--text3)';
     var vidMeta = t.videoCount > 0
       ? fmtN(t.videoCount) + ' videos'
@@ -1388,9 +1388,9 @@ async function runTrendPrediction() {
           : '';
       }
 
-      var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
+      var platIcon = pick.plat === 'tt' ? '' : pick.plat === 'yt' ? '' : pick.plat === 'cross' ? '' : '';
       var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-      var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
+      var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? 'Rising fast' : '💡 Early stage';
 
       el.innerHTML =
         '<div style="display:flex;flex-direction:column;gap:7px">'
@@ -1410,9 +1410,9 @@ async function runTrendPrediction() {
 
   // ── Local fallback — use best scored trend without AI text ────────────────
   var pick = topLocal;
-  var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon = pick.plat === 'tt' ? '' : pick.plat === 'yt' ? '' : pick.plat === 'cross' ? '' : '';
   var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-  var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
+  var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? 'Rising fast' : '💡 Early stage';
 
   el.innerHTML =
     '<div style="display:flex;flex-direction:column;gap:7px">'
@@ -1470,10 +1470,10 @@ function renderOpportunities(data) {
   var items = ordered.slice(0, 3);
 
   var platMeta = {
-    youtube: { icon: '▶️', color: '#FFD700', hint: '5–10 min explainer' },
+    youtube: { icon: '', color: '#FFD700', hint: '5–10 min explainer' },
     tiktok:  { icon: '⚡', color: '#ff6464', hint: '30–60s hook video' },
-    google:  { icon: '🔍', color: '#78b4ff', hint: 'SEO article or Short' },
-    cross:   { icon: '🚀', color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
+    google:  { icon: '', color: '#78b4ff', hint: 'SEO article or Short' },
+    cross:   { icon: '', color: '#4FB3A5', hint: 'Post on TikTok + YouTube' }
   };
 
   var rankLabels = ['#1 Best Pick', '#2 Strong Play', '#3 Worth Watching'];
@@ -1620,9 +1620,9 @@ function renderRadarGauges() {
   }
 
   var cfgs = [
-    { plat:'tt', icon:'🎵', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
-    { plat:'yt', icon:'▶️',  label:'YouTube', color:'#FFD700', trend: platBest('yt') },
-    { plat:'gt', icon:'🔍', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
+    { plat:'tt', icon:'', label:'TikTok',  color:'#ff6464', trend: platBest('tt') },
+    { plat:'yt', icon:'',  label:'YouTube', color:'#FFD700', trend: platBest('yt') },
+    { plat:'gt', icon:'', label:'Google',  color:'#78b4ff', trend: platBest('gt') }
   ];
 
   function gaugeArc(pct, color) {
@@ -1680,7 +1680,7 @@ function renderRadarGauges() {
     var t   = cfg.trend;
     var pct = Math.round((t.score / 10) * 100);
     var cls = classifyTrend(t);
-    var clsLbl   = cls === 'blowup' ? '🔥 Peak'     : cls === 'rising_fast' ? '⚡ Rising' : cls === 'early' ? '🟢 Early' : '📊 Stable';
+    var clsLbl   = cls === 'blowup' ? '🔥 Peak'     : cls === 'rising_fast' ? 'Rising' : cls === 'early' ? '🟢 Early' : 'Stable';
     var clsColor = cls === 'blowup' ? 'var(--green)' : cls === 'rising_fast' ? 'var(--gold)' : cls === 'early' ? '#4FB3A5' : 'var(--text3)';
     var meta = t.videoCount > 0
       ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
@@ -1722,7 +1722,7 @@ async function renderDijoTopPick() {
 
   // Pick best trend by score
   var best = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  var platIcon  = best.plat === 'tt' ? '🎵' : best.plat === 'yt' ? '▶️' : best.plat === 'cross' ? '🚀' : '🔍';
+  var platIcon  = best.plat === 'tt' ? '' : best.plat === 'yt' ? '' : best.plat === 'cross' ? '' : '';
   var platColor = best.plat === 'tt' ? '#ff6464' : best.plat === 'yt' ? '#FFD700' : best.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(best);
   var clsLbl    = cls === 'blowup' ? '🔥 Peak now — post immediately' : cls === 'rising_fast' ? '⚡ Rising fast — get ahead of it' : cls === 'early' ? '🟢 Early stage — first mover advantage' : '📊 Stable trend';
@@ -2305,7 +2305,7 @@ async function loadTtVideos(token) {
     var videos = (data && data.data && data.data.videos) ? data.data.videos : [];
     if (!videos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3)">No videos found.</div>'; return; }
     el.innerHTML = '<div class="video-grid">' + videos.map(function(v) {
-      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '🎵') + '</div>'
+      return '<div class="video-card"><div class="video-thumb">' + (v.cover_image_url ? '<img src="' + escH(v.cover_image_url) + '" alt=""/>' : '') + '</div>'
         + '<div class="video-info"><div class="video-title">' + escH(v.title || v.video_description || 'Untitled') + '</div>'
         + '<div class="video-stats">👁 ' + fmtN(v.view_count) + ' · ❤️ ' + fmtN(v.like_count) + ' · 💬 ' + fmtN(v.comment_count) + '</div></div></div>';
     }).join('') + '</div>';
