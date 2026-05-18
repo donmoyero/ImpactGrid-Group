@@ -2681,17 +2681,3 @@ window.addEventListener('load', async function() {
     }
   }, 5 * 60 * 1000); // 5 min — ingestion runs every 30 min, no need to poll faster
 });
-
-
-/* ── More button: open sidebar ── */
-document.addEventListener('DOMContentLoaded', function() {
-  var moreBtn = document.querySelector('.bn-item[data-bn-action="more"]');
-  if (moreBtn) {
-    moreBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (typeof studioOpenSidebar === 'function') studioOpenSidebar();
-      else if (typeof openSidebar === 'function') openSidebar();
-    }, true);
-  }
-});
