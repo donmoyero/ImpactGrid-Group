@@ -216,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
   .content-area {
     flex: 1 !important;
     min-height: 0 !important;
+    height: 0 !important;       /* forces flex to give a real bounded height — iOS needs this */
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
@@ -1406,6 +1407,47 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+<script id="studio-sidebar-fix">
+/*
+  Single source of truth for sidebar open/close.
+  nav.js (loaded without defer) sets window.openSidebar to open #mobSidebar.
+  We override it here — immediately, on DOMContentLoaded, and on load —
+  so no matter when nav.js fires, the More button always opens #sidebar.
+*/
+(function() {
+  function openStudioSidebar() {
+    var sb = document.getElementById('sidebar');
+    var ov = document.getElementById('studioOverlay');
+    if (sb) sb.classList.add('open');
+    if (ov) ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeStudioSidebar() {
+    var sb = document.getElementById('sidebar');
+    var ov = document.getElementById('studioOverlay');
+    if (sb) sb.classList.remove('open');
+    if (ov) ov.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  window.openSidebar        = openStudioSidebar;
+  window.closeSidebar       = closeStudioSidebar;
+  window.studioOpenSidebar  = openStudioSidebar;
+  window.studioCloseSidebar = closeStudioSidebar;
+
+  window.addEventListener('DOMContentLoaded', function() {
+    window.openSidebar  = openStudioSidebar;
+    window.closeSidebar = closeStudioSidebar;
+    var ov = document.getElementById('studioOverlay');
+    if (ov) ov.addEventListener('click', closeStudioSidebar);
+  });
+
+  window.addEventListener('load', function() {
+    window.openSidebar  = openStudioSidebar;
+    window.closeSidebar = closeStudioSidebar;
+  });
+})();
+</script>
 
 </body>
 </html>
