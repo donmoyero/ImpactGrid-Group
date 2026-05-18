@@ -146,60 +146,88 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style id="mobile-overhaul">
 /* ═══════════════════════════════════════════════════════
-   IMPACTGRID — MOBILE OVERHAUL
-   Converts desktop tab-bar to native-feel bottom nav.
-   Applied only at ≤ 768 px.
+   IMPACTGRID CREATOR STUDIO — MOBILE LAYOUT
+   This block wins over shared.css AND creator-studio.css.
+   Every rule uses !important to beat those files.
 ═══════════════════════════════════════════════════════ */
 
-/* ── 1. ROOT LAYOUT ─────────────────────────────── */
 @media (max-width: 768px) {
 
-  /* Lock html+body — content-area is the ONLY scroll container */
-  html, body {
-    overflow: hidden !important;
+  /* ── ROOT: viewport locked, body is the flex column ── */
+  html {
     height: 100dvh !important;
+    overflow: hidden !important;
   }
   body {
+    height: 100dvh !important;
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    /* shared.css sets padding-top via page-wrap — reset it */
+    padding-top: 0 !important;
   }
 
-  /* Hide the desktop .app-sidebar wrapper — #sidebar is a fixed drawer on mobile */
-  .app-sidebar { display: none !important; }
+  /* #ig-nav holds position:fixed .nav, so zero flow height */
+  #ig-nav { flex-shrink: 0 !important; height: 0 !important; overflow: visible !important; }
 
-  /* app-layout: flex ROW (sidebar + main), fills remaining height */
+  /* Ticker: fixed height, never shrinks */
+  .ticker { flex-shrink: 0 !important; }
+
+  /* ── APP-LAYOUT: flex row, fills ALL remaining height ──
+     shared.css sets height:calc(100vh - var(--nav-h)) which is wrong.
+     We replace it with flex:1 so it takes whatever body has left. */
   .app-layout {
-    display: flex !important;
-    flex-direction: row !important;
     flex: 1 !important;
     min-height: 0 !important;
+    height: auto !important;          /* kill shared.css fixed height */
+    display: flex !important;
+    flex-direction: row !important;
     overflow: hidden !important;
   }
 
-  /* app-main fills full width (sidebar hidden) */
+  /* Hide desktop sidebar wrapper — drawer handled separately */
+  .app-sidebar { display: none !important; }
+
+  /* ── APP-MAIN: fills full width, NO overflow (content-area scrolls) ── */
   .app-main {
     flex: 1 !important;
     min-height: 0 !important;
     min-width: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: hidden !important;
-    margin: 0 !important;
+    overflow: hidden !important;      /* shared.css sets overflow-y:auto — kill it */
     padding: 0 !important;
+    background: var(--bg) !important;
   }
 
-  /* main fills app-main */
+  /* ── MAIN: fills app-main ── */
   .main {
     flex: 1 !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
-    padding: 0 !important;
-    margin: 0 !important;
   }
 
-  /* ── SIDEBAR DRAWER — slides in from left over content ── */
+  /* Hide desktop tab-bar */
+  .tabs-bar { display: none !important; }
+
+  /* ── CONTENT-AREA: the ONE and ONLY scroll container ── */
+  .content-area {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    /* Bottom padding = bottom nav height + safe area */
+    padding: 12px 14px calc(72px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Panels: no extra padding (content-area handles it) */
+  .panel { padding: 0 !important; }
+
+  /* ── SIDEBAR DRAWER ── */
   #sidebar {
     position: fixed !important;
     top: 0 !important;
@@ -212,132 +240,58 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    /* ensure it paints above everything */
     will-change: transform;
   }
   #sidebar.open {
     transform: translateX(0) !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.3) !important;
   }
-  /* Show the close button row inside the drawer */
-  .sb-close-btn {
-    display: flex !important;
-  }
+  .sb-close-btn { display: flex !important; }
 
-  /* Overlay behind the open drawer */
+  /* Overlay behind open drawer */
   #studioOverlay {
-    display: none;
     position: fixed !important;
     inset: 0 !important;
     z-index: 1090 !important;
-    background: rgba(0,0,0,0.48) !important;
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+    background: rgba(0,0,0,0.5) !important;
+    display: none !important;
   }
   #studioOverlay.open { display: block !important; }
 
-  /* ── 2. HIDE TOP TAB-BAR — replaced by bottom nav ── */
-  .tabs-bar {
-    display: none !important;
-  }
-
-  /* ── 3. TICKER — slimmer on mobile ── */
-  .ticker {
-    height: 36px !important;
-    font-size: 11px !important;
-  }
-  .ticker-badge {
-    font-size: 9px !important;
-    padding: 0 10px !important;
-    gap: 5px !important;
-  }
-
-  /* ── 4. CONTENT AREA — leave room for bottom nav ── */
-  .content-area {
-    flex: 1;
-    min-height: 0;          /* critical: allows flex child to shrink below content size */
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: contain;
-    padding: 12px 14px calc(80px + env(safe-area-inset-bottom)) 14px !important;
-  }
-
-  /* ── 5. PANEL spacing ── */
-  .panel { padding: 0 !important; }
-
-  /* ── 6. STAT GRID → single column ── */
-  .stat-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-  }
-  @media (max-width: 400px) {
-    .stat-grid { grid-template-columns: 1fr !important; }
-  }
-
-  /* ── 7. TWO-COL → single column ── */
-  .two-col {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  /* ── 8. STUDIO INPUT ROW ── */
+  /* ── RESPONSIVE GRID RESETS ── */
+  .stat-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-bottom: 16px !important; }
+  @media (max-width: 400px) { .stat-grid { grid-template-columns: 1fr !important; } }
+  .two-col { grid-template-columns: 1fr !important; gap: 12px !important; }
   .studio-header { flex-direction: column !important; gap: 12px !important; }
   .studio-output-grid { grid-template-columns: 1fr !important; }
   .sout-pair { grid-template-columns: 1fr !important; }
   .studio-controls-row { flex-direction: column !important; gap: 10px !important; }
-  .studio-input-row { gap: 10px !important; }
-  .studio-topic-wrap { gap: 8px !important; }
-
-  /* ── 9. EVALUATOR ── */
   .eval-layout { grid-template-columns: 1fr !important; }
-
-  /* ── 10. CARDS ── */
-  .card { border-radius: 14px !important; }
-  .quick-launch-grid { grid-template-columns: 1fr !important; }
-
-  /* ── 11. PLATFORM CHARTS ── */
   #platformChartsGrid { grid-template-columns: 1fr !important; gap: 12px !important; }
-
-  /* ── 12. FEAT GRID (connect cards) ── */
   .feat-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
-
-  /* ── 13. CONNECT WRAP ── */
   .connect-wrap { padding: 24px 16px !important; }
-
-  /* ── 14. SCROLL HORIZONTAL within card-body for charts ── */
+  .quick-launch-grid { grid-template-columns: 1fr !important; }
   .card-body canvas { max-width: 100% !important; }
 
-  /* ── 15. DIJO BRIEFING card ── */
-  #panel-dashboard > div:nth-child(2) {
-    flex-direction: column !important;
-  }
+  /* Ticker slimmer */
+  .ticker { height: 36px !important; font-size: 11px !important; }
+  .ticker-badge { font-size: 9px !important; padding: 0 10px !important; }
 
-  /* ── 16. DOWNLOAD BAR — above bottom nav ── */
-  .download-bar {
-    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
-  }
-
-  /* ── 17. TOAST SHELF ── */
-  .toast-shelf {
-    bottom: calc(72px + env(safe-area-inset-bottom)) !important;
-  }
+  /* Download bar and toast above bottom nav */
+  .download-bar { bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
+  .toast-shelf { bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
 }
 
 /* ══════════════════════════════════════════════════════
-   BOTTOM NAVIGATION BAR
-   Fixed, glassmorphism, safe-area aware.
-   Uses the existing .tab-btn [data-tab] click mechanism.
+   BOTTOM NAVIGATION BAR — fixed, glass, safe-area aware
 ══════════════════════════════════════════════════════ */
-#ig-bottom-nav {
-  display: none; /* hidden on desktop */
-}
+#ig-bottom-nav { display: none; }
 
 @media (max-width: 768px) {
   #ig-bottom-nav {
     display: flex;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     z-index: 1000;
     height: calc(60px + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
@@ -349,136 +303,61 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: stretch;
     justify-content: space-around;
   }
-
-  /* Light theme */
   [data-theme="light"] #ig-bottom-nav {
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255,255,255,0.94);
     border-top: 1px solid rgba(0,0,0,0.08);
     box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
   }
-
   .bn-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    cursor: pointer;
-    padding: 8px 4px 4px;
-    border: none;
-    background: transparent;
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    cursor: pointer; padding: 8px 4px 4px;
+    border: none; background: transparent;
     color: var(--text3, #888);
     font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.01em;
     transition: color 0.18s ease;
     -webkit-tap-highlight-color: transparent;
-    position: relative;
+    position: relative; min-height: 44px;
   }
-
-  .bn-item svg {
-    width: 22px;
-    height: 22px;
-    stroke-width: 1.8;
-    transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), color 0.18s ease;
-  }
-
-  .bn-item:active svg {
-    transform: scale(0.88);
-  }
-
-  .bn-item.active {
-    color: var(--gold, #c97e08);
-  }
-
-  .bn-item.active svg {
-    transform: translateY(-1px);
-  }
-
-  /* Active pill indicator above icon */
+  .bn-item svg { width: 22px; height: 22px; stroke-width: 1.8; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+  .bn-item:active svg { transform: scale(0.88); }
+  .bn-item.active { color: var(--gold, #c97e08); }
+  .bn-item.active svg { transform: translateY(-1px); }
   .bn-item.active::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 24px;
-    height: 3px;
-    background: var(--gold, #c97e08);
-    border-radius: 0 0 3px 3px;
+    content: ''; position: absolute; top: 0; left: 50%;
+    transform: translateX(-50%); width: 24px; height: 3px;
+    background: var(--gold, #c97e08); border-radius: 0 0 3px 3px;
   }
-
-  /* "More" tab — opens sidebar */
-  .bn-item.bn-more {
-    /* same as others */
-  }
-
-  /* Live badge on Trends item */
   .bn-live-dot {
-    position: absolute;
-    top: 6px;
-    right: calc(50% - 14px);
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #ff4444;
-    animation: bnPulse 2s ease-in-out infinite;
+    position: absolute; top: 6px; right: calc(50% - 14px);
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #ff4444; animation: bnPulse 2s ease-in-out infinite;
   }
-
-  @keyframes bnPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.7); }
-  }
-
-  /* Hamburger/menu button in top bar — show on mobile */
-  .hamburger, .mob-menu-btn, [class*="hamburger"], [class*="mob-ham"] {
-    display: flex !important;
-  }
-
-  /* Nav bar on mobile — ensure it doesn't overlap content */
-  #ig-nav {
-    position: sticky;
-    top: 0;
-    z-index: 900;
-  }
+  @keyframes bnPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+}
+@media (max-width: 360px) {
+  .bn-item span:not(.bn-live-dot) { display: none; }
+  .bn-item { padding: 10px 2px; }
+  #ig-bottom-nav { height: calc(52px + env(safe-area-inset-bottom)); }
+  .content-area { padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important; }
 }
 </style>
 
-<style id="kill-arrow-btn">
-/* Remove any left-arrow/scroll-prev button visible on mobile near Dijo briefing */
+<style id="studio-overrides">
+/* Remove arrow scroll buttons on mobile */
 @media (max-width: 860px) {
-  /* Target the specific positioned element that shows as ‹ */
-  .briefing-scroll-prev,
-  .card-prev, .card-next,
+  .briefing-scroll-prev, .card-prev, .card-next,
   [class*="scroll-prev"], [class*="scroll-next"],
   [class*="swipe-prev"], [class*="swipe-next"],
   .ig-scroll-btn, .dash-scroll-btn,
-  /* Nuclear option: any tiny absolute/fixed positioned button with < or ‹ */
   button:not(.bn-item):not(.tab-btn):not(.sb-item):not(.sb-x):not(.cal-nav-btn):not(#dlBtn):not(#dlDismiss)[style*="position:absolute"],
   button:not(.bn-item):not(.tab-btn):not(.sb-item):not(.sb-x):not(.cal-nav-btn)[style*="position: absolute"] {
     display: none !important;
   }
 }
-</style>
-
-<style id="studio-nav-overrides">
-/* On creator-studio, hide the nav hamburger — the bottom nav More button handles the drawer */
-@media (max-width: 860px) {
-  #hamburger { display: none !important; }
-  /* Also hide the nav's mobSidebar/mobOverlay — studio uses #sidebar instead */
-  #mobSidebar { display: none !important; }
-  #mobOverlay { display: none !important; }
-}
-</style>
-<style id="studio-fixes">
-/* CREATOR STUDIO — misc overrides (layout handled by mobile-overhaul above) */
-
-/* Hide nav hamburger — More button handles mobile nav */
-#hamburger { display: none !important; }
-
-/* Hide nav's marketing sidebar — studio uses #sidebar drawer */
+/* Hide nav hamburger and marketing sidebar — studio handles its own mobile nav */
+#hamburger   { display: none !important; }
 #mobSidebar  { display: none !important; }
 #mobOverlay  { display: none !important; }
 </style>
@@ -510,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="app-layout">
 
   <!-- SIDEBAR -->
-  <!-- SIDEBAR — fixed drawer on mobile, inline on desktop -->
+  <!-- SIDEBAR — fixed drawer on mobile via CSS, inline on desktop -->
   <div class="app-sidebar">
   <aside class="sidebar" id="sidebar">
     <div class="sb-close-btn">
