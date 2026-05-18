@@ -155,25 +155,34 @@ document.addEventListener('DOMContentLoaded', function() {
 /* ── 1. ROOT LAYOUT ─────────────────────────────── */
 @media (max-width: 768px) {
 
-  /* Fix scrolling — desktop shell locks overflow but mobile needs touch scroll */
-  html { overflow: auto !important; height: 100dvh !important; }
+  /* Fix scrolling — html+body locked, content-area is the ONLY scroll container */
+  html { overflow: hidden !important; height: 100dvh !important; }
   body { overflow: hidden !important; height: 100dvh !important; }
 
-  /* Hide the desktop sidebar entirely on mobile */
+  /* Hide the desktop sidebar wrapper — sidebar itself is now fixed-positioned */
   .app-sidebar { display: none !important; }
 
-  /* Full-width main area */
+  /* Full-width main area — flex column so content-area can scroll */
   .app-layout {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     min-height: 100dvh;
   }
   .app-main {
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
   }
   .main {
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
     padding: 0 !important;
     margin: 0 !important;
   }
@@ -196,12 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* ── 4. CONTENT AREA — leave room for bottom nav ── */
   .content-area {
-    padding: 12px 14px 100px !important;
+    flex: 1;
+    min-height: 0;          /* critical: allows flex child to shrink below content size */
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain;
-    height: auto !important;
-    max-height: none !important;
+    padding: 12px 14px calc(80px + env(safe-area-inset-bottom)) 14px !important;
   }
 
   /* ── 5. PANEL spacing ── */
@@ -438,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* The shell stacks full height */
   .app-layout {
-    height: calc(100dvh - var(--nav-h, 64px));
+    height: calc(100dvh - var(--nav-h, 64px) - var(--tick-h, 34px));
     overflow: hidden !important;
     display: flex;
     flex-direction: column;
@@ -446,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   .app-main {
     flex: 1;
+    min-height: 0;    /* allows flex child to shrink — critical for scroll chain */
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -454,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
   /* content-area is the ONLY scrollable element on mobile */
   .content-area {
     flex: 1;
+    min-height: 0;    /* same as above — must be set on every flex child in chain */
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain;
@@ -495,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="app-layout">
 
   <!-- SIDEBAR -->
-  <div class="app-sidebar">
+  <!-- SIDEBAR — lives outside .app-sidebar so position:fixed works on mobile -->
   <aside class="sidebar" id="sidebar">
     <div class="sb-close-btn">
       <div class="sb-close-inner">
@@ -534,7 +545,6 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
   </aside>
-  </div><!-- /.app-sidebar -->
 
   <!-- MAIN -->
   <div class="app-main">
@@ -1216,6 +1226,7 @@ document.addEventListener('DOMContentLoaded', function() {
      5. auth.js          — initialises session
      6. nav.js           — reads window.SUPABASE_URL/ANON_KEY, renders nav, runs checkAuth -->
 <script src="plan-config.js"></script>
+<script src="plan-gate.js"></script>
 <script src="supabase-config.js"></script>
 <script src="ig-supabase.js"></script>
 <script src="auth.js"></script>
