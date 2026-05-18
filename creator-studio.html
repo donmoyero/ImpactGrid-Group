@@ -114,17 +114,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @media (max-width: 768px) {
 
-  /* ── ROOT: full height but NOT overflow:hidden ──
-     Locking html/body overflow was breaking iOS scroll
-     because it trapped scroll context at the root level. */
+  /* ── ROOT: matches html,body { height:100%; overflow:hidden } from creator-studio.css ── */
   html {
     height: 100% !important;
-    /* NO overflow:hidden here — that's what was killing scroll */
+    overflow: hidden !important;
   }
   body {
     height: 100% !important;
-    min-height: 100dvh !important;
-    overflow: hidden !important; /* body hides but content-area scrolls inside */
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
     padding-top: 0 !important;
@@ -139,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
   /* ── APP-LAYOUT: flex row filling remaining body height ── */
   .app-layout {
     flex: 1 !important;
-    min-height: 0 !important;   /* critical: allows flex children to shrink below content size */
+    min-height: 0 !important;
     height: auto !important;
     display: flex !important;
     flex-direction: row !important;
@@ -149,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
   /* Hide desktop sidebar wrapper — mobile uses #sidebar fixed drawer */
   .app-sidebar { display: none !important; }
 
-  /* ── APP-MAIN: full width column, does NOT scroll itself ── */
+  /* ── APP-MAIN: full width column ── */
   .app-main {
     flex: 1 !important;
     min-height: 0 !important;
@@ -161,10 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
     background: var(--bg) !important;
   }
 
-  /* ── MAIN: fills app-main, passes height to content-area ── */
+  /* ── MAIN: passes height down to content-area ── */
   .main {
     flex: 1 !important;
-    min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -173,18 +169,15 @@ document.addEventListener('DOMContentLoaded', function() {
   /* Hide desktop tab-bar on mobile */
   .tabs-bar { display: none !important; }
 
-  /* ── CONTENT-AREA: THE scroll container — fills all remaining height ──
-     flex:1 + min-height:0 gives it a real bounded box.
-     overflow-y:auto makes it the scroll root (not body/html).
-     -webkit-overflow-scrolling:touch enables momentum scroll on iOS. */
+  /* ── CONTENT-AREA: the scroll container ──
+     Mirrors exactly what the old working CSS does at base level:
+     flex:1 + overflow-y:auto. The overflow:hidden chain above gives
+     it a real bounded height without any height:0 tricks. */
   .content-area {
     flex: 1 !important;
-    min-height: 0 !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: contain !important;
-    /* Padding clears the fixed bottom nav + iOS safe area */
     padding: 12px 14px calc(72px + env(safe-area-inset-bottom)) !important;
   }
 
