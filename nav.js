@@ -279,25 +279,45 @@
   /* ─────────────────────────────────────────
      SIDEBAR
   ───────────────────────────────────────── */
+  /* ── Page-aware sidebar: studio pages use #sidebar, all others use #mobSidebar ── */
+  function _isStudioPage() {
+    return !!document.getElementById('sidebar');
+  }
   window.openSidebar = function() {
-    var s = document.getElementById('mobSidebar');
-    var o = document.getElementById('mobOverlay');
-    var h = document.getElementById('hamburger');
-    if (s) { s.classList.add('open'); }
-    if (o) o.classList.add('open');
-    if (h) h.setAttribute('aria-expanded', 'true');
-    document.body.style.overflow = 'hidden';
-    /* Move focus into sidebar for keyboard users */
-    if (s) { var first = s.querySelector('button,a,[tabindex]'); if (first) first.focus(); }
+    if (_isStudioPage()) {
+      var sb = document.getElementById('sidebar');
+      var ov = document.getElementById('studioOverlay');
+      if (sb) sb.classList.add('open');
+      if (ov) ov.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (sb) { var f = sb.querySelector('button,a,[tabindex]'); if (f) f.focus(); }
+    } else {
+      var s = document.getElementById('mobSidebar');
+      var o = document.getElementById('mobOverlay');
+      var h = document.getElementById('hamburger');
+      if (s) { s.classList.add('open'); }
+      if (o) o.classList.add('open');
+      if (h) h.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+      if (s) { var first = s.querySelector('button,a,[tabindex]'); if (first) first.focus(); }
+    }
   };
   window.closeSidebar = function() {
-    var s = document.getElementById('mobSidebar');
-    var o = document.getElementById('mobOverlay');
-    var h = document.getElementById('hamburger');
-    if (s) s.classList.remove('open');
-    if (o) o.classList.remove('open');
-    if (h) { h.setAttribute('aria-expanded', 'false'); h.focus(); }
-    document.body.style.overflow = '';
+    if (_isStudioPage()) {
+      var sb = document.getElementById('sidebar');
+      var ov = document.getElementById('studioOverlay');
+      if (sb) sb.classList.remove('open');
+      if (ov) ov.classList.remove('open');
+      document.body.style.overflow = '';
+    } else {
+      var s = document.getElementById('mobSidebar');
+      var o = document.getElementById('mobOverlay');
+      var h = document.getElementById('hamburger');
+      if (s) s.classList.remove('open');
+      if (o) o.classList.remove('open');
+      if (h) { h.setAttribute('aria-expanded', 'false'); h.focus(); }
+      document.body.style.overflow = '';
+    }
   };
 
   /* ─────────────────────────────────────────
