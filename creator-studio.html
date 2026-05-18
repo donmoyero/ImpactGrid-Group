@@ -405,6 +405,16 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 }
 </style>
+
+<style id="studio-nav-overrides">
+/* On creator-studio, hide the nav hamburger — the bottom nav More button handles the drawer */
+@media (max-width: 860px) {
+  #hamburger { display: none !important; }
+  /* Also hide the nav's mobSidebar/mobOverlay — studio uses #sidebar instead */
+  #mobSidebar { display: none !important; }
+  #mobOverlay { display: none !important; }
+}
+</style>
 </head>
 <body>
 
@@ -1447,6 +1457,32 @@ document.addEventListener('DOMContentLoaded', function() {
     setActiveBn(initTab);
   } catch(e) {}
 })();
+</script>
+
+
+<script>
+/* After nav.js runs, re-patch openSidebar so the More button opens the studio sidebar */
+document.addEventListener('DOMContentLoaded', function() {
+  // Override nav.js's openSidebar with studio's sidebar
+  window.openSidebar = function() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    var ham = document.querySelector('.hamburger');
+    if (sb)  sb.classList.add('open');
+    if (ov)  ov.classList.add('open');
+    if (ham) ham.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeSidebar = function() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    var ham = document.querySelector('.hamburger');
+    if (sb)  sb.classList.remove('open');
+    if (ov)  ov.classList.remove('open');
+    if (ham) ham.classList.remove('is-open');
+    document.body.style.overflow = '';
+  };
+});
 </script>
 
 </body>
