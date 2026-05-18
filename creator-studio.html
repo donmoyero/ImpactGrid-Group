@@ -1415,5 +1415,170 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+
+<script id="sidebar-upgrade">
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR UPGRADE — Claude-style collapse + mobile gestures
+   ─────────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+  var STORAGE_KEY = 'ig_sidebar_collapsed';
+
+  function isMobile() { return window.innerWidth <= 768; }
+
+  /* 1. Wrap sidebar item text in .sb-item-label so CSS can hide labels */
+  function wrapLabels() {
+    document.querySelectorAll('.sb-item').forEach(function (item) {
+      if (item.querySelector('.sb-item-label')) return;
+      var nodes = Array.from(item.childNodes);
+      var targets = nodes.filter(function (n) {
+        if (n.nodeType === 3 && n.textContent.trim()) return true;
+        if (n.nodeType === 1 &&
+            !n.classList.contains('sb-icon') &&
+            !n.classList.contains('sb-icon-svg') &&
+            !n.classList.contains('sb-badge')) return true;
+        return false;
+      });
+      if (!targets.length) return;
+      var label = document.createElement('span');
+      label.className = 'sb-item-label';
+      item.insertBefore(label, targets[0]);
+      targets.forEach(function (n) { label.appendChild(n); });
+      item.setAttribute('data-label', label.textContent.trim());
+    });
+  }
+
+  /* 2. Inject the toggle button into .app-sidebar */
+  function injectToggle() {
+    var appSidebar = document.querySelector('.app-sidebar');
+    if (!appSidebar || document.getElementById('sb-toggle')) return;
+    var btn = document.createElement('button');
+    btn.id = 'sb-toggle';
+    btn.setAttribute('aria-label', 'Toggle sidebar');
+    btn.setAttribute('title', 'Collapse sidebar');
+    btn.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<polyline points="15 18 9 12 15 6"/></svg>';
+    btn.addEventListener('click', toggleDesktop);
+    appSidebar.appendChild(btn);
+  }
+
+  /* 3. Desktop collapse/expand */
+  function toggleDesktop() {
+    var appSidebar = document.querySelector('.app-sidebar');
+    if (!appSidebar) return;
+    var collapsed = appSidebar.classList.toggle('sidebar-collapsed');
+    var btn = document.getElementById('sb-toggle');
+    if (btn) btn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    try { localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0'); } catch (e) {}
+    setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 300);
+  }
+
+  function restoreDesktopState() {
+    if (isMobile()) return;
+    try {
+      if (localStorage.getItem(STORAGE_KEY) === '1') {
+        var appSidebar = document.querySelector('.app-sidebar');
+        if (appSidebar) {
+          appSidebar.classList.add('sidebar-collapsed');
+          var btn = document.getElementById('sb-toggle');
+          if (btn) btn.setAttribute('title', 'Expand sidebar');
+        }
+      }
+    } catch (e) {}
+  }
+
+  /* 4. Safe close helper (reuses existing window.closeSidebar) */
+  function closeSafe() {
+    if (typeof window.closeSidebar === 'function') { window.closeSidebar(); return; }
+    var sb = document.getElementById('sidebar');
+    var ov = document.getElementById('studioOverlay');
+    if (sb) sb.classList.remove('open');
+    if (ov) ov.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  /* 5. Mobile: logo tap → close */
+  function bindLogoTap() {
+    var inner = document.querySelector('.sb-close-inner');
+    if (!inner) return;
+    inner.addEventListener('click', function () {
+      if (isMobile()) closeSafe();
+    });
+  }
+
+  /* 6. Mobile: backdrop tap → close (belt-and-braces alongside existing handler) */
+  function bindBackdrop() {
+    var ov = document.getElementById('studioOverlay');
+    if (ov) ov.addEventListener('click', closeSafe);
+  }
+
+  /* 7. Mobile: swipe left on drawer → close */
+  function bindSwipe() {
+    var sb = document.getElementById('sidebar');
+    if (!sb) return;
+    var startX, startY, curX, dragging;
+    var THRESHOLD = 72, ANGLE = 35;
+
+    sb.addEventListener('touchstart', function (e) {
+      if (!isMobile()) return;
+      var t = e.touches[0];
+      startX = t.clientX; startY = t.clientY;
+      curX = 0; dragging = false;
+    }, { passive: true });
+
+    sb.addEventListener('touchmove', function (e) {
+      if (!isMobile()) return;
+      var t = e.touches[0];
+      var dx = t.clientX - startX, dy = t.clientY - startY;
+      if (!dragging) {
+        var ang = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+        if (dx < -5 && ang < ANGLE) { dragging = true; }
+        else if (Math.abs(dy) > 10) { return; }
+      }
+      if (!dragging) return;
+      curX = Math.min(0, dx);
+      sb.classList.add('is-dragging');
+      sb.style.transform = 'translateX(' + curX + 'px)';
+    }, { passive: true });
+
+    sb.addEventListener('touchend', function () {
+      if (!isMobile()) return;
+      sb.classList.remove('is-dragging');
+      sb.style.transform = '';
+      if (dragging && curX < -THRESHOLD) closeSafe();
+      dragging = false; curX = 0;
+    }, { passive: true });
+
+    sb.addEventListener('touchcancel', function () {
+      sb.classList.remove('is-dragging');
+      sb.style.transform = '';
+      dragging = false;
+    }, { passive: true });
+  }
+
+  /* 8. Init */
+  function init() {
+    wrapLabels();
+    injectToggle();
+    restoreDesktopState();
+    bindLogoTap();
+    bindBackdrop();
+    bindSwipe();
+    /* Watch for dynamically added sidebar items */
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { if (m.addedNodes.length) wrapLabels(); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
 </body>
 </html>
