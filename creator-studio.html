@@ -415,6 +415,58 @@ document.addEventListener('DOMContentLoaded', function() {
   #mobOverlay { display: none !important; }
 }
 </style>
+<style id="studio-fixes">
+/*
+  CREATOR STUDIO — layout & mobile fixes
+  Overrides shared.css and creator-studio.css conflicts.
+*/
+
+/* ── Hide nav hamburger on studio page — More button handles mobile nav ── */
+#hamburger { display: none !important; }
+
+/* ── Hide nav's marketing sidebar — studio uses #sidebar instead ── */
+#mobSidebar  { display: none !important; }
+#mobOverlay  { display: none !important; }
+
+/* ── Fix app-layout height so content-area can scroll on mobile ──
+   shared.css sets overflow:hidden on .app-layout which blocks touch scroll  */
+@media (max-width: 860px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* The shell stacks full height */
+  .app-layout {
+    height: calc(100dvh - var(--nav-h, 64px));
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-main {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* content-area is the ONLY scrollable element on mobile */
+  .content-area {
+    flex: 1;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Ticker stays fixed height */
+  .ticker { flex-shrink: 0; }
+
+  /* Tabs bar hidden — replaced by bottom nav */
+  .tabs-bar { display: none !important; }
+}
+</style>
 </head>
 <body>
 
@@ -1483,6 +1535,58 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.style.overflow = '';
   };
 });
+</script>
+
+<script id="studio-sidebar-fix">
+/*
+  Re-wires openSidebar/closeSidebar AFTER nav.js has run.
+  nav.js overwrites these globals to open #mobSidebar (marketing nav).
+  On creator-studio, we redirect them to open #sidebar (studio drawer).
+*/
+(function patchSidebar() {
+  function open() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    if (sb)  sb.classList.add('open');
+    if (ov)  ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    if (sb)  sb.classList.remove('open');
+    if (ov)  ov.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Override immediately and again after DOM ready (nav.js may run late)
+  window.openSidebar  = open;
+  window.closeSidebar = close;
+  window.studioOpenSidebar  = open;
+  window.studioCloseSidebar = close;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    window.openSidebar  = open;
+    window.closeSidebar = close;
+
+    // Wire the More button
+    var moreBtn = document.querySelector('.bn-item[data-bn-action="more"]');
+    if (moreBtn) {
+      // Clone to strip any existing listeners
+      var fresh = moreBtn.cloneNode(true);
+      moreBtn.parentNode.replaceChild(fresh, moreBtn);
+      fresh.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        open();
+      });
+    }
+
+    // Studio overlay closes sidebar
+    var ov = document.getElementById('studioOverlay');
+    if (ov) ov.addEventListener('click', close);
+  });
+})();
 </script>
 
 </body>
