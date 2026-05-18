@@ -106,88 +106,92 @@ document.addEventListener('DOMContentLoaded', function() {
 <style id="mobile-overhaul">
 /* ═══════════════════════════════════════════════════════
    IMPACTGRID CREATOR STUDIO — MOBILE LAYOUT
-   This block wins over shared.css AND creator-studio.css.
-   Every rule uses !important to beat those files.
+   Aligned with creator-studio.css flex chain.
+   Key principle: html/body are NOT overflow:hidden.
+   Only .content-area scrolls. The flex chain above it
+   passes height down correctly without locking the root.
 ═══════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
 
-  /* ── ROOT: viewport locked, body is the flex column ── */
+  /* ── ROOT: full height but NOT overflow:hidden ──
+     Locking html/body overflow was breaking iOS scroll
+     because it trapped scroll context at the root level. */
   html {
-    height: 100dvh !important;
-    overflow: hidden !important;
+    height: 100% !important;
+    /* NO overflow:hidden here — that's what was killing scroll */
   }
   body {
-    height: 100dvh !important;
-    overflow: hidden !important;
+    height: 100% !important;
+    min-height: 100dvh !important;
+    overflow: hidden !important; /* body hides but content-area scrolls inside */
     display: flex !important;
     flex-direction: column !important;
-    /* shared.css sets padding-top via page-wrap — reset it */
     padding-top: 0 !important;
   }
 
-  /* #ig-nav holds position:fixed .nav, so zero flow height */
+  /* #ig-nav is position:fixed so it takes no flow space */
   #ig-nav { flex-shrink: 0 !important; height: 0 !important; overflow: visible !important; }
 
-  /* Ticker: fixed height, never shrinks */
+  /* Ticker: fixed height row, never shrinks */
   .ticker { flex-shrink: 0 !important; }
 
-  /* ── APP-LAYOUT: flex row, fills ALL remaining height ──
-     shared.css sets height:calc(100vh - var(--nav-h)) which is wrong.
-     We replace it with flex:1 so it takes whatever body has left. */
+  /* ── APP-LAYOUT: flex row filling remaining body height ── */
   .app-layout {
     flex: 1 !important;
-    min-height: 0 !important;
-    height: auto !important;          /* kill shared.css fixed height */
+    min-height: 0 !important;   /* critical: allows flex children to shrink below content size */
+    height: auto !important;
     display: flex !important;
     flex-direction: row !important;
-    overflow: visible !important;     /* must not clip the scrollable content-area */
+    overflow: hidden !important;
   }
 
-  /* Hide desktop sidebar wrapper — drawer handled separately */
+  /* Hide desktop sidebar wrapper — mobile uses #sidebar fixed drawer */
   .app-sidebar { display: none !important; }
 
-  /* ── APP-MAIN: fills full width, NO overflow (content-area scrolls) ── */
+  /* ── APP-MAIN: full width column, does NOT scroll itself ── */
   .app-main {
     flex: 1 !important;
     min-height: 0 !important;
     min-width: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: visible !important;     /* must not clip the scrollable content-area */
+    overflow: hidden !important;
     padding: 0 !important;
     background: var(--bg) !important;
   }
 
-  /* ── MAIN: fills app-main ── */
+  /* ── MAIN: fills app-main, passes height to content-area ── */
   .main {
     flex: 1 !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: visible !important;     /* must not clip the scrollable content-area */
+    overflow: hidden !important;
   }
 
-  /* Hide desktop tab-bar */
+  /* Hide desktop tab-bar on mobile */
   .tabs-bar { display: none !important; }
 
-  /* ── CONTENT-AREA: the ONE and ONLY scroll container ── */
+  /* ── CONTENT-AREA: THE scroll container — fills all remaining height ──
+     flex:1 + min-height:0 gives it a real bounded box.
+     overflow-y:auto makes it the scroll root (not body/html).
+     -webkit-overflow-scrolling:touch enables momentum scroll on iOS. */
   .content-area {
     flex: 1 !important;
     min-height: 0 !important;
-    height: 0 !important;       /* forces flex to give a real bounded height — iOS needs this */
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
-    /* Bottom padding = bottom nav height + safe area */
+    /* Padding clears the fixed bottom nav + iOS safe area */
     padding: 12px 14px calc(72px + env(safe-area-inset-bottom)) !important;
   }
 
-  /* Panels: no extra padding (content-area handles it) */
+  /* Panels sit inside content-area, no extra padding needed */
   .panel { padding: 0 !important; }
 
-  /* ── SIDEBAR DRAWER ── */
+  /* ── SIDEBAR DRAWER (fixed, slides in from left) ── */
   #sidebar {
     position: fixed !important;
     top: 0 !important;
@@ -208,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   .sb-close-btn { display: flex !important; }
 
-  /* Overlay behind open drawer */
+  /* Backdrop overlay behind open drawer */
   #studioOverlay {
     position: fixed !important;
     inset: 0 !important;
@@ -233,11 +237,11 @@ document.addEventListener('DOMContentLoaded', function() {
   .quick-launch-grid { grid-template-columns: 1fr !important; }
   .card-body canvas { max-width: 100% !important; }
 
-  /* Ticker slimmer */
+  /* Ticker slimmer on mobile */
   .ticker { height: 36px !important; font-size: 11px !important; }
   .ticker-badge { font-size: 9px !important; padding: 0 10px !important; }
 
-  /* Download bar and toast above bottom nav */
+  /* Download bar and toast float above bottom nav */
   .download-bar { bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
   .toast-shelf { bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
 }
