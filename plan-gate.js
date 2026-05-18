@@ -305,7 +305,7 @@
         <div class="pg-usage" id="pgUsage"></div>
         <div class="pg-plans" id="pgPlans"></div>
         <div class="pg-footer">
-          <button class="pg-dismiss" onclick="window.hidePlanGate()">Maybe later — I'll stay on my current plan</button>
+          <button class="pg-dismiss" onclick="window.hidePlanGate()">Continue on free plan</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -402,7 +402,7 @@
         } else if (c.stripe_link) {
           ctaHtml = '<a href="' + esc(c.stripe_link) + '" target="_blank" class="pg-plan-cta">Upgrade →</a>';
         } else {
-          ctaHtml = '<a href="pricing.html" class="pg-plan-cta">See plans →</a>';
+          ctaHtml = '<a href="pricing.html" class="pg-plan-cta">See all plans →</a>';
         }
 
         var row = document.createElement('div');
@@ -457,7 +457,7 @@
 
     var buttons = '';
     if (isLoggedIn === true) {
-      /* Hit plan limit */
+      /* Hit plan limit — logged in */
       var plan = getPlan();
       var next = nextPlan(plan);
       var cfg  = next ? planCfg(next) : null;
@@ -467,11 +467,16 @@
     } else if (isLoggedIn === false) {
       /* Not logged in */
       buttons = '<a href="login.html" class="igub-btn secondary">Sign in</a>'
-              + '<a href="join.html" class="igub-btn primary">Create account</a>';
+              + '<a href="join.html" class="igub-btn primary">Create account — it\'s free</a>';
     } else {
-      /* Legacy call — single Upgrade button */
-      buttons = '<a href="pricing.html" class="igub-btn primary">Upgrade</a>'
-              + '<a href="login.html" class="igub-btn secondary">Login</a>';
+      /* Legacy call without isLoggedIn flag — default to the logged-in limit path
+         so we never show a hostile "Sign in + Upgrade" wall to existing users */
+      var plan2 = getPlan();
+      var next2 = nextPlan(plan2);
+      var cfg2  = next2 ? planCfg(next2) : null;
+      var href2 = (cfg2 && cfg2.stripe_link) ? cfg2.stripe_link : 'pricing.html';
+      buttons   = '<a href="' + esc(href2) + '" target="_blank" class="igub-btn primary">Upgrade plan →</a>'
+                + '<button class="igub-expand" onclick="window.showPlanGate({title:\'Upgrade your plan\'})">See details</button>';
     }
 
     bar.innerHTML = `
