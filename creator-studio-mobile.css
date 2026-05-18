@@ -117,6 +117,7 @@
   /* ── MAIN: passes height down to content-area ── */
   .main {
     flex: 1 !important;
+    min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -128,9 +129,12 @@
   /* ── CONTENT-AREA: the ONLY scroll container ── */
   .content-area {
     flex: 1 !important;
-    overflow-y: auto !important;
+    min-height: 0 !important;
+    overflow-y: scroll !important;             /* forces composited scroll layer on iOS */
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;            /* vertical swipe = scroll, not browser gesture */
+    overscroll-behavior-y: contain !important; /* stops bounce chaining to locked body */
     padding: 12px 14px calc(72px + env(safe-area-inset-bottom)) !important;
   }
 
