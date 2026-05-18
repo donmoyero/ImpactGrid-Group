@@ -570,7 +570,7 @@ function updateWinnerBox() {
 
   el.innerHTML =
     '<div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:18px 16px">'
-    + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Winning Trend</div>'
+    + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">🏆 Winning Trend</div>'
     + '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.25;color:var(--text)">' + escH(winner.topic) + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
     +   '<span style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:900;color:' + clsColor + '">' + winner.score.toFixed(1) + '</span>'
@@ -816,7 +816,7 @@ function trendItemHTML(t) {
     ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
     : t.platLabel + ' · click to generate';
 
-  // Platform power badge
+  // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
   var badge =
     t.plat === 'tt'    ? 'TikTok Viral'
     : t.plat === 'yt'  ? 'YouTube Validated'
@@ -1308,7 +1308,7 @@ function _buildPlatChart(canvasId, emptyId, topicsId, plat, color, label) {
     topicsEl.innerHTML = trends.map(function(t, idx) {
       var pct = Math.round((t.score / 10) * 100);
       var cls = classifyTrend(t);
-      var clsIcon = cls === 'blowup' ? '' : cls === 'rising_fast' ? '' : cls === 'early' ? '' : '';
+      var clsIcon = '';
       var dashes = ['solid', 'dashed', 'dotted'];
       return '<div onclick="loadTopic(\'' + escJ(t.topic) + '\')" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)">'
         + '<div style="width:14px;height:3px;background:' + color + ';border-radius:2px;flex-shrink:0;opacity:' + (idx===0?1:idx===1?0.7:0.45) + ';border-style:' + dashes[idx] + '"></div>'
@@ -2682,54 +2682,16 @@ window.addEventListener('load', async function() {
   }, 5 * 60 * 1000); // 5 min — ingestion runs every 30 min, no need to poll faster
 });
 
-/* ── "More" bottom nav button → opens studio sidebar ──────────────────────
-   Patches on DOMContentLoaded so it always runs after the nav renders.     */
-(function() {
-  function patchMoreButton() {
-    var nav = document.getElementById('ig-bottom-nav');
-    if (!nav) return;
-    nav.querySelectorAll('.bn-item').forEach(function(item) {
-      var label = item.querySelector('span:not(.bn-live-dot)');
-      if (label && label.textContent.trim().toLowerCase() === 'more') {
-        item.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          studioOpenSidebar();
-        }, true);
-      }
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', patchMoreButton);
-  } else {
-    patchMoreButton();
-  }
-})();
 
-/* ── Remove left-arrow scroll button (mobile only) ───────────────────────
-   The left chevron/arrow button next to the briefing card is a desktop-only
-   horizontal scroll control — on mobile the content stacks so it's redundant
-   and confusing. Hide it via CSS; if it has an onclick, neutralise it too.  */
-(function() {
-  function removeBriefingArrow() {
-    // Target any button that is purely a left-arrow/scroll-prev control
-    // Common selectors: .scroll-prev, .briefing-prev, [data-dir="prev"], etc.
-    var selectors = [
-      '.scroll-prev', '.prev-btn', '.briefing-prev', '.brief-prev',
-      '[data-dir="prev"]', '[aria-label*="prev"]', '[aria-label*="back"]',
-      'button[onclick*="scrollLeft"]', 'button[onclick*="scroll(-"]'
-    ];
-    selectors.forEach(function(sel) {
-      try {
-        document.querySelectorAll(sel).forEach(function(el) {
-          el.style.display = 'none';
-        });
-      } catch(e) {}
-    });
+/* ── More button: open sidebar ── */
+document.addEventListener('DOMContentLoaded', function() {
+  var moreBtn = document.querySelector('.bn-item[data-bn-action="more"]');
+  if (moreBtn) {
+    moreBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof studioOpenSidebar === 'function') studioOpenSidebar();
+      else if (typeof openSidebar === 'function') openSidebar();
+    }, true);
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', removeBriefingArrow);
-  } else {
-    removeBriefingArrow();
-  }
-})();
+});
