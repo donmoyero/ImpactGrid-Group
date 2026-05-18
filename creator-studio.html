@@ -13,25 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="ImpactGrid"/>
 <link rel="apple-touch-icon" href="logo.png"/>
-<script>
-  // Redirect to welcome page unless coming from it
-  (function(){
-    try {
-      var ref = document.referrer;
-      var fromWelcome = ref && (ref.indexOf('creator-welcome.html') !== -1 || ref.indexOf('impactgridgroup.com/creator-welcome') !== -1);
-      var hasFlag = sessionStorage.getItem('ig_from_welcome');
-      if (!fromWelcome && !hasFlag) {
-        // Save the intended destination so welcome page can redirect back
-        var dest = window.location.href;
-        try { sessionStorage.setItem('ig_post_welcome_dest', dest); } catch(e){}
-        window.location.replace('creator-welcome.html');
-      } else {
-        // Clear the flag so it's consumed (referrer handles same-session navigation)
-        try { sessionStorage.removeItem('ig_from_welcome'); } catch(e){}
-      }
-    } catch(e){}
-  })();
-</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="shared.css"/>
@@ -103,30 +85,7 @@
     gtag('js', new Date());
     gtag('config', 'G-KVJC5DE2WT');
   </script>
-<script>
-// ── Welcome page redirect for new/returning visitors ──
-(function() {
-  try {
-    var skip = localStorage.getItem('ig_skip_welcome');
-    var seen = localStorage.getItem('ig_seen_welcome');
-    var params = new URLSearchParams(window.location.search);
-    var directTab = params.get('tab'); // arriving from a direct link
 
-    // If they came via a direct ?tab= link, don't redirect
-    if (directTab) {
-      sessionStorage.setItem('ig_welcome_tab', directTab);
-      return;
-    }
-    // If skip flag set, go straight to dashboard
-    if (skip) return;
-    // First time OR not recently seen — redirect to welcome
-    if (!seen) {
-      localStorage.setItem('ig_seen_welcome', '1');
-      window.location.replace('creator-welcome.html');
-    }
-  } catch(e) {}
-})();
-</script>
 <script>
 // ── Apply tab from welcome page selection ──
 document.addEventListener('DOMContentLoaded', function() {
@@ -413,7 +372,14 @@ document.addEventListener('DOMContentLoaded', function() {
         <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
         Content Calendar
       </div>
-
+      <a class="sb-item" href="carousel-studio.html">
+        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="2" y="7" width="6" height="10" rx="1"/><rect x="9" y="4" width="6" height="16" rx="1"/><rect x="16" y="7" width="6" height="10" rx="1"/></svg></span>
+        Carousel Studio<span class="sb-badge" style="background:rgba(201,126,8,.12);color:var(--gold);border:1px solid rgba(201,126,8,.25)">New</span>
+      </a>
+      <a class="sb-item" href="portfolio-studio.html">
+        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+        Portfolio Studio
+      </a>
     </div>
 
     <div class="sb-sec">
