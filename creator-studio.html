@@ -1331,23 +1331,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // "More" opens the sidebar drawer.
-  // Defer binding to DOMContentLoaded so studio-sidebar-fix has already run
-  // and window.openSidebar is guaranteed to point to the correct #sidebar version.
+  // "More" opens the sidebar drawer
   if (moreBtn) {
-    function bindMoreBtn() {
-      moreBtn.addEventListener('click', function() {
-        // Read window.openSidebar at click-time (not bind-time) so any later
-        // override is always respected.
-        if (typeof window.openSidebar === 'function') window.openSidebar();
-        else if (typeof window.studioOpenSidebar === 'function') window.studioOpenSidebar();
-      });
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', bindMoreBtn);
-    } else {
-      bindMoreBtn();
-    }
+    moreBtn.addEventListener('click', function() {
+      if (typeof openSidebar === 'function') openSidebar();
+      else if (typeof studioOpenSidebar === 'function') studioOpenSidebar();
+    });
   }
 
   // Keep bottom nav in sync when existing .tab-btn / .sb-item is clicked
@@ -1387,8 +1376,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script id="studio-sidebar-fix">
 /*
   Single source of truth for sidebar open/close.
-  Uses Object.defineProperty to lock window.openSidebar so nav.js cannot
-  overwrite it after this script runs — no matter what order scripts load.
+  nav.js (loaded without defer) sets window.openSidebar to open #mobSidebar.
+  We override it here — immediately, on DOMContentLoaded, and on load —
+  so no matter when nav.js fires, the More button always opens #sidebar.
 */
 (function() {
   function openStudioSidebar() {
@@ -1406,31 +1396,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.style.overflow = '';
   }
 
-  // Lock these so nav.js assignment (window.openSidebar = ...) is silently ignored
-  function lockFn(name, fn) {
-    try {
-      Object.defineProperty(window, name, {
-        get: function() { return fn; },
-        set: function() {},   // swallow any overwrite attempt
-        configurable: false
-      });
-    } catch(e) {
-      window[name] = fn;      // fallback if already defined non-configurable
-    }
-  }
+  window.openSidebar        = openStudioSidebar;
+  window.closeSidebar       = closeStudioSidebar;
+  window.studioOpenSidebar  = openStudioSidebar;
+  window.studioCloseSidebar = closeStudioSidebar;
 
-  lockFn('openSidebar',        openStudioSidebar);
-  lockFn('closeSidebar',       closeStudioSidebar);
-  lockFn('studioOpenSidebar',  openStudioSidebar);
-  lockFn('studioCloseSidebar', closeStudioSidebar);
-
-  // Bind overlay backdrop close
   window.addEventListener('DOMContentLoaded', function() {
+    window.openSidebar  = openStudioSidebar;
+    window.closeSidebar = closeStudioSidebar;
     var ov = document.getElementById('studioOverlay');
     if (ov) ov.addEventListener('click', closeStudioSidebar);
   });
+
+  window.addEventListener('load', function() {
+    window.openSidebar  = openStudioSidebar;
+    window.closeSidebar = closeStudioSidebar;
+  });
 })();
 </script>
+
 
 <script id="sidebar-upgrade">
 /* ═══════════════════════════════════════════════════════════════
@@ -1505,16 +1489,32 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (e) {}
   }
 
-  /* 4. Mobile: logo tap → close */
+  /* 4. Safe close helper (reuses existing window.closeSidebar) */
+  function closeSafe() {
+    if (typeof window.closeSidebar === 'function') { window.closeSidebar(); return; }
+    var sb = document.getElementById('sidebar');
+    var ov = document.getElementById('studioOverlay');
+    if (sb) sb.classList.remove('open');
+    if (ov) ov.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  /* 5. Mobile: logo tap → close */
   function bindLogoTap() {
     var inner = document.querySelector('.sb-close-inner');
     if (!inner) return;
     inner.addEventListener('click', function () {
-      if (isMobile() && typeof window.closeSidebar === 'function') window.closeSidebar();
+      if (isMobile()) closeSafe();
     });
   }
 
-  /* 5. Mobile: swipe left on drawer → close */
+  /* 6. Mobile: backdrop tap → close (belt-and-braces alongside existing handler) */
+  function bindBackdrop() {
+    var ov = document.getElementById('studioOverlay');
+    if (ov) ov.addEventListener('click', closeSafe);
+  }
+
+  /* 7. Mobile: swipe left on drawer → close */
   function bindSwipe() {
     var sb = document.getElementById('sidebar');
     if (!sb) return;
@@ -1547,9 +1547,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!isMobile()) return;
       sb.classList.remove('is-dragging');
       sb.style.transform = '';
-      if (dragging && curX < -THRESHOLD && typeof window.closeSidebar === 'function') {
-        window.closeSidebar();
-      }
+      if (dragging && curX < -THRESHOLD) closeSafe();
       dragging = false; curX = 0;
     }, { passive: true });
 
@@ -1560,13 +1558,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }, { passive: true });
   }
 
-  /* 6. Init */
+  /* 8. Init */
   function init() {
     wrapLabels();
     injectToggle();
     restoreDesktopState();
     bindLogoTap();
+    bindBackdrop();
     bindSwipe();
+    /* Watch for dynamically added sidebar items */
     new MutationObserver(function (ms) {
       ms.forEach(function (m) { if (m.addedNodes.length) wrapLabels(); });
     }).observe(document.body, { childList: true, subtree: true });
