@@ -2257,3 +2257,164 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   flex-direction: column;
   overflow: hidden;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR UPGRADE — Claude-style collapse/expand + mobile gestures
+   ─────────────────────────────────────────────────────────────── */
+
+:root {
+  --sb-full:  240px;
+  --sb-mini:   56px;
+  --sb-dur:   0.26s;
+  --sb-ease:  cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Toggle pill button ──────────────────────────────────────── */
+#sb-toggle {
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 200;
+  color: var(--text2);
+  transition: background var(--sb-dur), border-color var(--sb-dur),
+              box-shadow var(--sb-dur);
+}
+#sb-toggle:hover {
+  background: var(--gold-dim);
+  border-color: var(--gold-glo);
+  color: var(--gold);
+  box-shadow: 0 2px 12px rgba(201,126,8,0.2);
+}
+#sb-toggle svg {
+  transition: transform var(--sb-dur) var(--sb-ease);
+  flex-shrink: 0;
+}
+.sidebar-collapsed #sb-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* Hide toggle on mobile — drawer has its own close controls */
+@media (max-width: 768px) {
+  #sb-toggle { display: none !important; }
+}
+
+/* ── Label wrapper (JS injects .sb-item-label spans) ────────── */
+.sb-item-label {
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  transition: opacity var(--sb-dur), max-width var(--sb-dur);
+}
+
+/* ── Desktop: position parent + animated collapse ───────────── */
+@media (min-width: 769px) {
+
+  .app-sidebar {
+    position: relative;          /* anchor for #sb-toggle pill   */
+    overflow: visible !important; /* pill sticks out to the right */
+    transition: width var(--sb-dur) var(--sb-ease);
+  }
+
+  .sidebar {
+    transition: width var(--sb-dur) var(--sb-ease);
+    overflow: hidden;
+  }
+
+  /* ── COLLAPSED STATE ── */
+  .app-sidebar.sidebar-collapsed {
+    width: var(--sb-mini);
+  }
+  .app-sidebar.sidebar-collapsed .sidebar {
+    width: var(--sb-mini);
+  }
+
+  /* Hide text content when collapsed */
+  .app-sidebar.sidebar-collapsed .sb-item-label,
+  .app-sidebar.sidebar-collapsed .sb-badge,
+  .app-sidebar.sidebar-collapsed .sb-close-inner,
+  .app-sidebar.sidebar-collapsed .sb-platforms,
+  .app-sidebar.sidebar-collapsed .sb-x {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* Section title → thin divider line when collapsed */
+  .app-sidebar.sidebar-collapsed .sb-sec-title {
+    font-size: 0;
+    height: 1px;
+    background: var(--border);
+    margin: 4px 8px;
+    padding: 0;
+    letter-spacing: 0;
+  }
+
+  /* Center icons */
+  .app-sidebar.sidebar-collapsed .sb-item {
+    justify-content: center;
+    padding: 10px 0;
+  }
+  .app-sidebar.sidebar-collapsed .sb-sec {
+    padding: 10px 6px 4px;
+  }
+
+  /* Tooltip on hover when collapsed */
+  .app-sidebar.sidebar-collapsed .sb-item {
+    position: relative;
+  }
+  .app-sidebar.sidebar-collapsed .sb-item::after {
+    content: attr(data-label);
+    position: absolute;
+    left: calc(var(--sb-mini) + 2px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 500;
+  }
+  .app-sidebar.sidebar-collapsed .sb-item:hover::after {
+    opacity: 1;
+  }
+}
+
+/* ── Mobile: logo tap closes drawer ─────────────────────────── */
+@media (max-width: 768px) {
+  .sb-close-inner {
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(201,126,8,0.08);
+    border-radius: 8px;
+    padding: 4px 6px;
+    transition: background 0.18s;
+  }
+  .sb-close-inner:active {
+    background: var(--gold-dim);
+  }
+
+  /* Disable CSS transition during JS drag so it follows finger instantly */
+  #sidebar.is-dragging {
+    transition: none !important;
+  }
+}
