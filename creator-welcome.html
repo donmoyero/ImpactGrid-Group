@@ -1,777 +1,1595 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes">
 <title>Creator Studio — ImpactGrid</title>
-<meta name="description" content="AI-powered creator intelligence. Trend tracking, content generation, portfolio builder and more."/>
-<link rel="stylesheet" href="shared.css"/>
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-KVJC5DE2WT"></script>
+<meta name="description" content="ImpactGrid Creator Studio — intelligence dashboard, trend feed, AI generator, YouTube & TikTok analytics."/>
+<link rel="icon" href="logo.png">
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#c97e08"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="ImpactGrid"/>
+<link rel="apple-touch-icon" href="logo.png"/>
 <script>
-  window.dataLayer=window.dataLayer||[];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js',new Date());gtag('config','G-KVJC5DE2WT');
+  // Redirect to welcome page unless coming from it
+  (function(){
+    try {
+      var ref = document.referrer;
+      var fromWelcome = ref && (ref.indexOf('creator-welcome.html') !== -1 || ref.indexOf('impactgridgroup.com/creator-welcome') !== -1);
+      var hasFlag = sessionStorage.getItem('ig_from_welcome');
+      if (!fromWelcome && !hasFlag) {
+        // Save the intended destination so welcome page can redirect back
+        var dest = window.location.href;
+        try { sessionStorage.setItem('ig_post_welcome_dest', dest); } catch(e){}
+        window.location.replace('creator-welcome.html');
+      } else {
+        // Clear the flag so it's consumed (referrer handles same-session navigation)
+        try { sessionStorage.removeItem('ig_from_welcome'); } catch(e){}
+      }
+    } catch(e){}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
+<link rel="stylesheet" href="creator-studio.css"/>
+<style>
+/* ═══════════════════════════════════════
+   CONTENT CALENDAR — inline styles
+   (keeps calendar self-contained so it
+   works even if creator-studio.css changes)
+═══════════════════════════════════════ */
+
+/* Header */
+.cal-header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.cal-header-left{display:flex;align-items:center;gap:10px}
+.cal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:900;letter-spacing:-.02em}
+.cal-ai-badge{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);background:rgba(201,126,8,.08);border:1px solid rgba(201,126,8,.2);border-radius:20px;padding:3px 10px}
+.cal-header-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.cal-nav-btn{width:30px;height:30px;border-radius:8px;background:var(--card);border:1px solid var(--border2);font-size:16px;font-weight:700;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cal-nav-btn:hover{border-color:var(--gold);color:var(--gold)}
+.cal-week-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);min-width:160px;text-align:center}
+.cal-today-btn{padding:6px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border2);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer}
+.cal-today-btn:hover{border-color:var(--gold);color:var(--gold)}
+.cal-autofill-btn{padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:12px;font-weight:700;cursor:pointer;border:none}
+[data-theme="dark"] .cal-autofill-btn{color:#07090f}
+.cal-autofill-btn:disabled{opacity:.6;cursor:not-allowed}
+
+/* Explainer */
+.cal-explainer{background:var(--blue-dim,rgba(45,110,219,.07));border:1px solid rgba(45,110,219,.18);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.6}
+.cal-explainer-inner{display:flex;align-items:flex-start;gap:10px}
+.cal-explainer-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.cal-explainer-close{margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 0 0 8px;flex-shrink:0}
+
+/* Loading state (used by calendar.js) */
+.cal-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px;color:var(--text3);font-size:13px}
+
+/* ── Platform Velocity Meters ── */
+.pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:860px){.pm-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.pm-grid{grid-template-columns:1fr}}
+.pm-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.pm-head{display:flex;align-items:center;gap:6px}
+.pm-icon{font-size:15px;flex-shrink:0}
+.pm-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;flex:1}
+.pm-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0}
+.pm-bar-wrap{height:5px;background:var(--bg2);border-radius:99px;overflow:hidden}
+.pm-bar-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.pm-stats{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.pm-avg{font-size:11px;color:var(--text2)}
+.pm-best{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.pm-best:hover{color:var(--gold)}
+.pm-empty{font-size:11px;color:var(--text3);font-style:italic}
+
+/* ── FIX 2: Platform power badges — defined in creator-studio.css ── */
+
+/* ── FIX 3: Bubble chart legend ───────────────── */
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-top:6px;padding:0 4px}
+.chart-legend-item{display:flex;align-items:center;gap:5px}
+.chart-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.chart-legend-dot.tt{background:#ff6464}
+.chart-legend-dot.yt{background:#FFD700}
+.chart-legend-dot.cross{background:#4FB3A5}
+.chart-legend-dot.gt{background:#78b4ff}
+</style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KVJC5DE2WT"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KVJC5DE2WT');
+  </script>
+<script>
+// ── Welcome page redirect for new/returning visitors ──
+(function() {
+  try {
+    var skip = localStorage.getItem('ig_skip_welcome');
+    var seen = localStorage.getItem('ig_seen_welcome');
+    var params = new URLSearchParams(window.location.search);
+    var directTab = params.get('tab'); // arriving from a direct link
+
+    // If they came via a direct ?tab= link, don't redirect
+    if (directTab) {
+      sessionStorage.setItem('ig_welcome_tab', directTab);
+      return;
+    }
+    // If skip flag set, go straight to dashboard
+    if (skip) return;
+    // First time OR not recently seen — redirect to welcome
+    if (!seen) {
+      localStorage.setItem('ig_seen_welcome', '1');
+      window.location.replace('creator-welcome.html');
+    }
+  } catch(e) {}
+})();
+</script>
+<script>
+// ── Apply tab from welcome page selection ──
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var tab = sessionStorage.getItem('ig_welcome_tab');
+    if (tab) {
+      sessionStorage.removeItem('ig_welcome_tab');
+      setTimeout(function() {
+        var btn = document.querySelector('[data-tab="' + tab + '"].tab-btn') ||
+                  document.querySelector('[data-tab="' + tab + '"].sb-item');
+        if (btn) btn.click();
+      }, 600);
+    }
+  } catch(e) {}
+});
 </script>
 
-<style>
+<style id="mobile-overhaul">
+/* ═══════════════════════════════════════════════════════
+   IMPACTGRID — MOBILE OVERHAUL
+   Converts desktop tab-bar to native-feel bottom nav.
+   Matches iOS/Android app conventions (Klarna, Revolut).
+   Applied only at ≤ 768 px.
+═══════════════════════════════════════════════════════ */
 
-/* ══════════════════════════════════════
-   SLIDER ROOT
-══════════════════════════════════════ */
-.slider-root {
-  padding-top: var(--nav-h);
-  height: 100vh;
-  overflow: hidden;
-  position: relative;
-}
-.slider-track {
-  display: flex;
-  width: 200%;
-  height: 100%;
-  transition: transform 0.58s cubic-bezier(.77,0,.18,1);
-}
-.slide {
-  width: 50%;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-}
+/* ── 1. ROOT LAYOUT ─────────────────────────────── */
+@media (max-width: 768px) {
 
-/* ══════════════════════════════════════
-   DESKTOP SPLIT LAYOUT
-   Left = content  |  Right = image
-══════════════════════════════════════ */
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 100%;
-}
+  /* Fix scrolling — html+body locked, content-area is the ONLY scroll container */
+  html { overflow: hidden !important; height: 100dvh !important; }
+  body { overflow: hidden !important; height: 100dvh !important; }
 
-.split-left {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 48px 44px 80px;
-  overflow-y: auto;
-  position: relative;
-  z-index: 2;
-}
+  /* Hide the desktop sidebar entirely on mobile */
+  .app-sidebar { display: none !important; }
 
-.split-right {
-  position: relative;
-  overflow: hidden;
-}
-
-/* Full bleed image */
-.split-right img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  filter: brightness(0.78) saturate(1.1);
-  transition: transform 8s ease;
-}
-.split-right img.loaded { transform: scale(1.04); }
-
-/* Gradient fade from left so content bleeds into image slightly */
-.split-right::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, var(--bg) 0%, transparent 18%);
-  z-index: 1;
-  pointer-events: none;
-  grid-column: 1 / -1;
-}
-
-/* Image caption overlay at bottom */
-.img-caption {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  padding: 100px 36px 36px;
-  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 50%, transparent 100%);
-  z-index: 2;
-}
-.img-caption-tag {
-  font-family: var(--fm); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(255,255,255,0.85); margin-bottom: 8px;
-}
-.img-caption-title {
-  font-family: var(--fd); font-size: clamp(20px,2.2vw,32px);
-  font-weight: 900; letter-spacing: -0.03em; line-height: 1.1;
-  color: #fff;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
-}
-
-/* ══════════════════════════════════════
-   SLIDE 1 CONTENT
-══════════════════════════════════════ */
-.hero-eyebrow {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 20px;
-}
-
-.hero-title {
-  font-family: var(--fd);
-  font-size: clamp(42px, 5vw, 68px);
-  font-weight: 900; letter-spacing: -0.04em; line-height: 0.92;
-  color: var(--text); margin-bottom: 18px;
-}
-
-.hero-desc {
-  font-size: 15px; color: var(--text2);
-  line-height: 1.7; max-width: 360px; margin-bottom: 32px;
-}
-
-.hero-stats {
-  display: flex; gap: 28px; margin-bottom: 36px;
-  padding: 18px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-}
-.hero-stat { display: flex; flex-direction: column; }
-.hero-stat-n {
-  font-family: var(--fd); font-size: 26px; font-weight: 900;
-  letter-spacing: -0.03em; color: var(--text);
-}
-.hero-stat-l {
-  font-size: 11px; color: var(--text3); font-family: var(--fm);
-  text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px;
-}
-
-.live-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--red);
-  animation: blink 1.8s ease-in-out infinite; flex-shrink: 0;
-}
-
-.slide1-btns {
-  display: flex; align-items: center; gap: 12px;
-}
-
-/* ══════════════════════════════════════
-   SLIDE 2 CONTENT
-══════════════════════════════════════ */
-.tools-header {
-  margin-bottom: 20px;
-}
-.tools-title {
-  font-family: var(--fd); font-size: clamp(28px,3.5vw,44px);
-  font-weight: 900; letter-spacing: -0.035em; line-height: 1.0;
-  color: var(--text); margin-bottom: 8px;
-}
-.tools-sub { font-size: 14px; color: var(--text2); line-height: 1.6; }
-
-.feat-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-}
-.feat-box {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 18px; padding: 20px 18px 16px;
-  text-decoration: none; display: flex; flex-direction: column; gap: 5px;
-  position: relative; overflow: hidden;
-  transition: transform 0.25s cubic-bezier(.22,1,.36,1), border-color 0.2s, box-shadow 0.25s;
-  box-shadow: var(--sh);
-}
-/* Coloured top bar */
-.feat-box::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0;
-  height: 3px; border-radius: 18px 18px 0 0;
-  background: var(--ac, var(--gold)); opacity: 0.7;
-  transition: opacity 0.2s, height 0.2s;
-}
-.feat-box:hover::before { opacity: 1; height: 4px; }
-/* Glow wash */
-.feat-box::after {
-  content: ''; position: absolute; inset: 0; border-radius: 18px;
-  background: radial-gradient(ellipse at 20% 0%, var(--ac, var(--gold)) 0%, transparent 60%);
-  opacity: 0; transition: opacity 0.3s; pointer-events: none;
-}
-.feat-box:hover::after { opacity: 0.06; }
-.feat-box:hover { transform: translateY(-4px); border-color: var(--ac, var(--gold-glo)); box-shadow: var(--sh2); }
-
-/* Thumbnail image inside box */
-.feat-thumb {
-  width: 100%; height: 100px; border-radius: 12px;
-  overflow: hidden; margin-bottom: 10px; flex-shrink: 0;
-  position: relative; z-index: 1;
-}
-.feat-thumb img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  filter: brightness(0.85) saturate(1.1);
-  transition: transform 0.4s ease, filter 0.3s;
-}
-.feat-box:hover .feat-thumb img { transform: scale(1.06); filter: brightness(0.95) saturate(1.2); }
-
-.feat-top {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 8px; position: relative; z-index: 1;
-}
-.feat-title {
-  font-family: var(--fd); font-size: 14px; font-weight: 900;
-  letter-spacing: -0.02em; color: var(--text); line-height: 1.1; flex: 1;
-}
-.feat-desc { font-size: 11px; color: var(--text2); line-height: 1.5; position: relative; z-index: 1; }
-.feat-arrow {
-  font-size: 15px; color: var(--text3); margin-top: auto; padding-top: 8px;
-  display: block; position: relative; z-index: 1;
-  transition: color 0.2s, transform 0.2s;
-}
-.feat-box:hover .feat-arrow { color: var(--ac, var(--gold)); transform: translateX(4px); }
-
-/* Back button */
-.back-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--fm); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--text3); background: none; border: none;
-  cursor: pointer; padding: 0; transition: color 0.2s;
-  margin-bottom: 18px;
-}
-.back-btn:hover { color: var(--text2); }
-
-/* ══════════════════════════════════════
-   SLIDE 2 RIGHT — 4-image mosaic
-══════════════════════════════════════ */
-.mosaic {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 4px;
-  height: 100%;
-}
-.mosaic-cell {
-  overflow: hidden; position: relative;
-}
-.mosaic-cell img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  filter: brightness(0.72) saturate(1.1);
-  transition: transform 6s ease;
-}
-.mosaic-cell img.loaded { transform: scale(1.05); }
-.mosaic-cell-label {
-  position: absolute; bottom: 10px; left: 12px;
-  font-family: var(--fd); font-size: 11px; font-weight: 800;
-  color: rgba(255,255,255,0.85); letter-spacing: -0.01em;
-  pointer-events: none;
-}
-
-/* ══════════════════════════════════════
-   SLIDE DOTS
-══════════════════════════════════════ */
-.slide-dots {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 8px; z-index: 300;
-}
-.dot-pip {
-  width: 8px; height: 8px; border-radius: 99px;
-  background: var(--border2); transition: width 0.3s, background 0.3s; cursor: pointer;
-  border: none; padding: 0; flex-shrink: 0;
-  /* Button reset */
-  appearance: none; -webkit-appearance: none;
-}
-.dot-pip.on { width: 24px; background: var(--gold); }
-
-/* ══════════════════════════════════════
-   ANIMATIONS
-══════════════════════════════════════ */
-@keyframes enterLeft  { from { opacity:0; transform:translateX(-28px); } to { opacity:1; transform:none; } }
-@keyframes enterRight { from { opacity:0; transform:translateX(28px);  } to { opacity:1; transform:none; } }
-@keyframes fadeUp     { from { opacity:0; transform:translateY(20px);  } to { opacity:1; transform:none; } }
-
-.s1-in .hero-eyebrow  { animation: enterLeft 0.5s 0.04s cubic-bezier(.16,1,.3,1) both; }
-.s1-in .hero-title    { animation: enterLeft 0.5s 0.10s cubic-bezier(.16,1,.3,1) both; }
-.s1-in .hero-desc     { animation: enterLeft 0.5s 0.17s cubic-bezier(.16,1,.3,1) both; }
-.s1-in .hero-stats    { animation: enterLeft 0.5s 0.23s cubic-bezier(.16,1,.3,1) both; }
-.s1-in .slide1-btns   { animation: enterLeft 0.5s 0.30s cubic-bezier(.16,1,.3,1) both; }
-
-.s2-in .back-btn                   { animation: enterRight 0.4s 0.00s cubic-bezier(.16,1,.3,1) both; }
-.s2-in .tools-header               { animation: enterRight 0.45s 0.06s cubic-bezier(.16,1,.3,1) both; }
-.s2-in .feat-box:nth-child(1)      { animation: enterRight 0.45s 0.10s cubic-bezier(.16,1,.3,1) both; }
-.s2-in .feat-box:nth-child(2)      { animation: enterRight 0.45s 0.17s cubic-bezier(.16,1,.3,1) both; }
-.s2-in .feat-box:nth-child(3)      { animation: enterRight 0.45s 0.24s cubic-bezier(.16,1,.3,1) both; }
-.s2-in .feat-box:nth-child(4)      { animation: enterRight 0.45s 0.31s cubic-bezier(.16,1,.3,1) both; }
-
-/* ══════════════════════════════════════
-   TABLET (861px–1100px) — prevent caption overlap
-══════════════════════════════════════ */
-@media (min-width: 861px) and (max-width: 1100px) {
-  .split {
-    grid-template-columns: 1.1fr 0.9fr;
+  /* Full-width main area */
+  .app-layout {
+    display: block !important;
+    min-height: 100dvh;
   }
-  .img-caption {
-    padding: 60px 22px 22px;
+  .app-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  .img-caption-title {
-    font-size: clamp(16px, 2vw, 24px);
-  }
-  .split-left {
-    padding: 32px 28px 60px;
-  }
-  .hero-title {
-    font-size: clamp(36px, 4.5vw, 54px);
-  }
-}
-
-/* ══════════════════════════════════════
-   MOBILE  (≤ 860px — full-bleed hero)
-══════════════════════════════════════ */
-@media (max-width: 860px) {
-
-  /* ── Pager shell ── */
-  .slider-root  { height: 100dvh; overflow: hidden; }
-  .slider-track {
-    flex-direction: column; width: 100%; height: 200dvh;
-    transition: transform 0.55s cubic-bezier(.77,0,.18,1);
-  }
-  .slide { width: 100%; height: 100dvh; overflow: hidden; flex-shrink: 0; position: relative; }
-
-  /* ── SLIDE 1: full-bleed image behind content ── */
-  #slide1 .split {
-    display: block;
-    position: relative;
-    height: 100dvh;
+  .main {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
-  /* Image fills the whole slide behind everything */
-  #slide1 .split-right {
-    position: absolute;
-    inset: 0;
-    height: 100dvh;
-    max-height: none;
-    z-index: 0;
+  /* ── 2. HIDE TOP TAB-BAR — replaced by bottom nav ── */
+  .tabs-bar {
+    display: none !important;
   }
 
-  /* Make the dual-image panel fill properly on mobile */
-  #slide1 .split-right[style*="grid-template-columns"] {
-    display: flex !important;
+  /* ── 3. TICKER — slimmer on mobile ── */
+  .ticker {
+    height: 36px !important;
+    font-size: 11px !important;
   }
-  #slide1 .split-right[style*="grid-template-columns"] > div {
+  .ticker-badge {
+    font-size: 9px !important;
+    padding: 0 10px !important;
+    gap: 5px !important;
+  }
+
+  /* ── 4. CONTENT AREA — leave room for bottom nav ── */
+  .content-area {
     flex: 1;
+    min-height: 0;          /* critical: allows flex child to shrink below content size */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
+    padding: 12px 14px calc(80px + env(safe-area-inset-bottom)) 14px !important;
   }
 
-  /* Strong gradient scrim so text is always readable — WCAG AA ≥4.5:1 */
-  #slide1 .split-right::before {
-    background: linear-gradient(
-      to top,
-      rgba(0,0,0,0.92) 0%,
-      rgba(0,0,0,0.72) 40%,
-      rgba(0,0,0,0.40) 70%,
-      rgba(0,0,0,0.10) 100%
-    );
+  /* ── 5. PANEL spacing ── */
+  .panel { padding: 0 !important; }
+
+  /* ── 6. STAT GRID → single column ── */
+  .stat-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  @media (max-width: 400px) {
+    .stat-grid { grid-template-columns: 1fr !important; }
   }
 
-  /* Extra reinforcement scrim behind the text block itself */
-  #slide1 .split-left::before {
+  /* ── 7. TWO-COL → single column ── */
+  .two-col {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* ── 8. STUDIO INPUT ROW ── */
+  .studio-header { flex-direction: column !important; gap: 12px !important; }
+  .studio-output-grid { grid-template-columns: 1fr !important; }
+  .sout-pair { grid-template-columns: 1fr !important; }
+  .studio-controls-row { flex-direction: column !important; gap: 10px !important; }
+  .studio-input-row { gap: 10px !important; }
+  .studio-topic-wrap { gap: 8px !important; }
+
+  /* ── 9. EVALUATOR ── */
+  .eval-layout { grid-template-columns: 1fr !important; }
+
+  /* ── 10. CARDS ── */
+  .card { border-radius: 14px !important; }
+  .quick-launch-grid { grid-template-columns: 1fr !important; }
+
+  /* ── 11. PLATFORM CHARTS ── */
+  #platformChartsGrid { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+  /* ── 12. FEAT GRID (connect cards) ── */
+  .feat-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+
+  /* ── 13. CONNECT WRAP ── */
+  .connect-wrap { padding: 24px 16px !important; }
+
+  /* ── 14. SCROLL HORIZONTAL within card-body for charts ── */
+  .card-body canvas { max-width: 100% !important; }
+
+  /* ── 15. DIJO BRIEFING card ── */
+  #panel-dashboard > div:nth-child(2) {
+    flex-direction: column !important;
+  }
+
+  /* ── 16. DOWNLOAD BAR — above bottom nav ── */
+  .download-bar {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* ── 17. TOAST SHELF ── */
+  .toast-shelf {
+    bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   BOTTOM NAVIGATION BAR
+   Fixed, glassmorphism, safe-area aware.
+   Uses the existing .tab-btn [data-tab] click mechanism.
+══════════════════════════════════════════════════════ */
+#ig-bottom-nav {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 768px) {
+  #ig-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: calc(60px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: rgba(10, 8, 20, 0.92);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
+    align-items: stretch;
+    justify-content: space-around;
+  }
+
+  /* Light theme */
+  [data-theme="light"] #ig-bottom-nav {
+    background: rgba(255, 255, 255, 0.94);
+    border-top: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  }
+
+  .bn-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 8px 4px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text3, #888);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: color 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+  }
+
+  .bn-item svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.8;
+    transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), color 0.18s ease;
+  }
+
+  .bn-item:active svg {
+    transform: scale(0.88);
+  }
+
+  .bn-item.active {
+    color: var(--gold, #c97e08);
+  }
+
+  .bn-item.active svg {
+    transform: translateY(-1px);
+  }
+
+  /* Active pill indicator above icon */
+  .bn-item.active::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 65%);
-    z-index: -1;
-    pointer-events: none;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    background: var(--gold, #c97e08);
+    border-radius: 0 0 3px 3px;
   }
 
-  /* Content floats over the image, pinned to bottom */
-  #slide1 .split-left {
+  /* "More" tab — opens sidebar */
+  .bn-item.bn-more {
+    /* same as others */
+  }
+
+  /* Live badge on Trends item */
+  .bn-live-dot {
     position: absolute;
-    inset: 0;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 0 22px 80px;
-    overflow: visible;
-    background: none;
+    top: 6px;
+    right: calc(50% - 14px);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff4444;
+    animation: bnPulse 2s ease-in-out infinite;
   }
 
-  /* Force text white so it shows on the dark scrim */
-  #slide1 .hero-title  { color: #fff; font-size: clamp(38px, 10vw, 54px); margin-bottom: 12px; }
-  #slide1 .hero-eyebrow { margin-bottom: 14px; }
-
-  #slide1 .hero-stats {
-    border-color: rgba(255,255,255,0.25);
-    gap: 24px;
-    margin-bottom: 24px;
-    padding: 14px 0;
+  @keyframes bnPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
   }
-  #slide1 .hero-stat-n { color: #fff; font-size: 22px; }
-  #slide1 .hero-stat-l { color: rgba(255,255,255,0.80); }
 
-  /* Eyebrow text — was var(--text3) which fails on dark images */
-  #slide1 .hero-eyebrow span { color: rgba(255,255,255,0.75) !important; }
-  #slide1 .hero-desc { color: rgba(255,255,255,0.85); margin-bottom: 20px; max-width: 100%; }
+  /* Hamburger/menu button in top bar — show on mobile */
+  .hamburger, .mob-menu-btn, [class*="hamburger"], [class*="mob-ham"] {
+    display: flex !important;
+  }
 
-  /* Caption hidden on mobile (content replaces it) */
-  .img-caption { display: none; }
+  /* Nav bar on mobile — ensure it doesn't overlap content */
+  #ig-nav {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+  }
+}
+</style>
 
-  /* ── SLIDE 2: scrollable tools card list ── */
-  #slide2 .split {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
+<style id="kill-arrow-btn">
+/* Remove any left-arrow/scroll-prev button visible on mobile near Dijo briefing */
+@media (max-width: 860px) {
+  /* Target the specific positioned element that shows as ‹ */
+  .briefing-scroll-prev,
+  .card-prev, .card-next,
+  [class*="scroll-prev"], [class*="scroll-next"],
+  [class*="swipe-prev"], [class*="swipe-next"],
+  .ig-scroll-btn, .dash-scroll-btn,
+  /* Nuclear option: any tiny absolute/fixed positioned button with < or ‹ */
+  button:not(.bn-item):not(.tab-btn):not(.sb-item):not(.sb-x):not(.cal-nav-btn):not(#dlBtn):not(#dlDismiss)[style*="position:absolute"],
+  button:not(.bn-item):not(.tab-btn):not(.sb-item):not(.sb-x):not(.cal-nav-btn)[style*="position: absolute"] {
+    display: none !important;
+  }
+}
+</style>
+
+<style id="studio-nav-overrides">
+/* On creator-studio, hide the nav hamburger — the bottom nav More button handles the drawer */
+@media (max-width: 860px) {
+  #hamburger { display: none !important; }
+  /* Also hide the nav's mobSidebar/mobOverlay — studio uses #sidebar instead */
+  #mobSidebar { display: none !important; }
+  #mobOverlay { display: none !important; }
+}
+</style>
+<style id="studio-fixes">
+/*
+  CREATOR STUDIO — layout & mobile fixes
+  Overrides shared.css and creator-studio.css conflicts.
+*/
+
+/* ── Hide nav hamburger on studio page — More button handles mobile nav ── */
+#hamburger { display: none !important; }
+
+/* ── Hide nav's marketing sidebar — studio uses #sidebar instead ── */
+#mobSidebar  { display: none !important; }
+#mobOverlay  { display: none !important; }
+
+/* ── Fix app-layout height so content-area can scroll on mobile ──
+   shared.css sets overflow:hidden on .app-layout which blocks touch scroll  */
+@media (max-width: 860px) {
+  html, body {
+    height: 100%;
     overflow: hidden;
   }
 
-  /* Hide the desktop mosaic panel entirely on mobile */
-  #slide2 .split-right { display: none !important; }
+  /* The shell stacks full height */
+  .app-layout {
+    height: calc(100dvh - var(--nav-h, 64px) - var(--tick-h, 34px));
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+  }
 
-  /* Tools panel takes full width, scrollable */
-  #slide2 .split-left {
+  .app-main {
     flex: 1;
-    width: 100%;
-    padding: 16px 18px 90px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    justify-content: flex-start;
+    min-height: 0;    /* allows flex child to shrink — critical for scroll chain */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
-  .tools-title { font-size: clamp(26px, 7vw, 36px); margin-bottom: 4px; }
-  .tools-sub   { font-size: 13px; margin-bottom: 0; }
-  .tools-header { margin-bottom: 16px; }
-
-  /* 2-column grid for tools — full-width cards with bigger thumbs */
-  .feat-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  /* content-area is the ONLY scrollable element on mobile */
+  .content-area {
+    flex: 1;
+    min-height: 0;    /* same as above — must be set on every flex child in chain */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
 
-  .feat-box {
-    padding: 14px 12px 12px;
-    border-radius: 16px;
-  }
+  /* Ticker stays fixed height */
+  .ticker { flex-shrink: 0; }
 
-  .feat-thumb {
-    height: 90px;
-    border-radius: 10px;
-    margin-bottom: 8px;
-  }
-
-  .feat-title { font-size: 13px; }
-  .feat-desc  { font-size: 10.5px; }
-  .feat-arrow { font-size: 13px; padding-top: 6px; }
-
-  /* Back button */
-  .back-btn { margin-bottom: 14px; }
-
-  /* Show the Creator Tools button on mobile */
-  #toolsBtn { display: inline-flex !important; }
-
-  /* Dots — page indicators */
-  .slide-dots { display: flex; }
-
-  .slide2-mobile-sep { display: none; }
+  /* Tabs bar hidden — replaced by bottom nav */
+  .tabs-bar { display: none !important; }
 }
-
-@media (max-width: 480px) {
-  #slide1 .split-left { padding: 0 18px 72px; }
-  #slide1 .hero-title { font-size: 34px; }
-
-  .feat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .feat-thumb { height: 76px; }
-  #slide2 .split-left { padding: 14px 14px 80px; }
-}
-
-/* ── Screen-reader only ── */
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
-
-/* ── Focus styles — keyboard accessibility ── */
-:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px;}
-:focus:not(:focus-visible){outline:none;}
-.feat-box:focus-visible{outline:2px solid var(--gold);outline-offset:2px;box-shadow:0 0 0 5px rgba(201,126,8,0.18);}
-.dot-pip:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:99px;}
-.btn:focus-visible{outline:2px solid var(--gold);outline-offset:4px;}
 </style>
 </head>
 <body>
 
 <div id="ig-nav"></div>
 
-<div class="slider-root" id="sliderRoot">
-  <div class="slider-track" id="sliderTrack">
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
+  <div class="ticker-track">
+    <div class="ticker-scroll" id="tickerScroll">
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
+      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
+      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
+      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
+      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
+    </div>
+  </div>
+</div>
 
-    <!-- ══════════════ SLIDE 1 ══════════════ -->
-    <div class="slide s1-in" id="slide1">
-      <div class="split">
 
-        <!-- LEFT: Content -->
-        <div class="split-left">
+<div class="app-layout">
 
-          <div class="hero-eyebrow">
-            <div class="chip chip-live">
-              <span class="live-dot"></span>
-              Live Now
+  <!-- SIDEBAR -->
+  <div class="app-sidebar">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-close-btn">
+      <div class="sb-close-inner">
+        <img src="logo.png" alt="ImpactGrid" onerror="this.style.display='none'"/>
+        ImpactGrid
+      </div>
+      <button class="sb-x" onclick="closeSidebar()" aria-label="Close menu">✕</button>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-title">Intelligence</div>
+      <div class="sb-item active" data-tab="dashboard"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>My Overview<span class="sb-badge live">Live</span></div>
+      <div class="sb-item" data-tab="trends"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>What's Trending</div>
+      <div class="sb-item" data-tab="generator"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>Write My Content</div>
+      <div class="sb-item" data-tab="evaluator"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>Analyse My Channel<span class="sb-badge live">AI</span></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-title">Create</div>
+      <div class="sb-item" data-tab="calendar">
+        
+        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        Content Calendar
+      </div>
+
+    </div>
+
+    <div class="sb-sec">
+      <div class="sb-sec-title">System</div>
+
+      <a class="sb-item" href="settings.html">
+        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
+        Settings
+      </a>
+      <div class="sb-item" id="installSideBtn" style="display:none;cursor:pointer" onclick="document.getElementById('installSideBtn').onclick && document.getElementById('installSideBtn').onclick()">
+        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+        Install App
+      </div>
+    </div>
+  </aside>
+  </div><!-- /.app-sidebar -->
+
+  <!-- MAIN -->
+  <div class="app-main">
+  <div class="main">
+    <div class="tabs-bar">
+      <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><span class="tab-label">My Overview</span></button>
+      <button class="tab-btn" id="tab-trends" data-tab="trends"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span><span class="tab-label">What's Trending</span></button>
+      <button class="tab-btn" id="tab-generator" data-tab="generator"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="tab-label">Write My Content</span></button>
+      <button class="tab-btn" id="tab-evaluator" data-tab="evaluator"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="tab-label">Analyse My Channel</span></button>
+      <button class="tab-btn" id="tab-calendar" data-tab="calendar"><span class="tab-icon"></span><span class="tab-label">Content Calendar</span></button>
+    </div>
+
+    <div class="content-area" id="contentArea">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stat-grid" style="align-items:start">
+          <div class="card" style="padding:10px 14px">
+            <div class="card-header" style="margin-bottom:6px">
+              <div class="card-title" style="font-size:10px">Weekly Trend</div>
             </div>
-            <span style="font-family:var(--fm);font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;">Refreshed every 30 min</span>
+            <div id="weeklyPrediction" style="font-family:'Syne',sans-serif;font-size:17px;font-weight:900;color:var(--text1);line-height:1.2">
+              <span class="spinner spinner-gold"></span>
+            </div>
+          </div>
+          <div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 14px">
+            <div data-ig-avatar class="u-av" style="width:32px;height:32px;font-size:14px"></div>
+            <div>
+              <div id="dijoGreeting" data-ig-greeting style="font-size:11px;color:var(--text2)"></div>
+              <div id="dijoBrief" style="font-size:11px;color:var(--text3)"></div>
+            </div>
+          </div>
+          <div class="stat-card" style="padding:10px 14px">
+            <div class="sc-label" style="font-size:9px">YouTube</div>
+            <div class="sc-val-sm" id="dashYtVal" style="color:var(--text2);font-size:11px">Not connected</div>
+            <div class="sc-delta" style="font-size:10px"><span class="sc-link" data-tab="youtube">Connect →</span></div>
+          </div>
+          <div class="stat-card" style="padding:10px 14px">
+            <div class="sc-label" style="font-size:9px">TikTok</div>
+            <div class="sc-val-sm" id="dashTtVal" style="color:var(--text2);font-size:11px">Not connected</div>
+            <div class="sc-delta" id="dashTtSub" style="font-size:10px"><span class="sc-link" data-tab="tiktok">Connect →</span></div>
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:16px 18px;display:flex;align-items:flex-start;gap:14px">
+          <!-- Dijo mascot -->
+          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <img src="dijo-mascot.png" alt="Dijo" style="width:62px;height:62px;object-fit:contain;border-radius:50%;background:var(--bg);filter:drop-shadow(0 2px 12px rgba(79,179,165,.45))">
+            <span style="font-family:'DM Mono',monospace;font-size:8px;font-weight:700;color:#4FB3A5;letter-spacing:.06em">DIJO</span>
+            <div id="briefingDate" style="font-family:'DM Mono',monospace;font-size:7px;color:var(--text3);text-align:center;line-height:1.5;white-space:pre-line">Loading…</div>
+          </div>
+          <!-- Chat bubble pointing left toward Dijo -->
+          <div style="flex:1;min-width:0;position:relative">
+            
+            <div style="background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:14px;padding:12px 14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span style="font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:#4FB3A5;letter-spacing:.05em">Dijo’s Briefing</span>
+                <button onclick="loadBriefing(true)" style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:4px;background:transparent;border:1px solid var(--border2);color:var(--text3);cursor:pointer">Refresh</button>
+              </div>
+              <div id="briefingText" style="font-size:12px;color:var(--text2);line-height:1.6"><span class="spinner spinner-gold"></span></div>
+              <div id="briefingTags" style="display:none;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Top Trends</span>
+              <span class="card-tag tag-green" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.3">Live · Multi-Platform Intelligence</span>
+            </div>
+            <div class="card-body">
+              <div class="trend-list" id="dashTrendList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner spinner-gold"></span> Fetching trends…</div></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Top Opportunities</span><span class="card-tag tag-gold">Highest Scored</span></div>
+              <div class="card-body" id="topOppBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Quick launch cards -->
+        <div class="quick-launch-grid">
+          <div class="quick-launch-card" data-tab="evaluator" style="background:linear-gradient(135deg,#0a0f0a,#1a3a1a);border:1px solid rgba(15,168,118,.2)">
+            
+            <div class="qlc-title">Analyse My Channel</div>
+            <div class="qlc-desc">Score your channel with AI</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE TREND -->
+      <div class="panel" id="panel-trends">
+
+        <!-- ── THREE PLATFORM CHARTS ── -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px" id="platformChartsGrid">
+
+          <!-- TikTok chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:#ff6464"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg> TikTok
+                <span id="ttLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6464;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+              </div>
+              <div class="card-tag" style="background:rgba(255,100,100,.1);color:#ff6464;border:1px solid rgba(255,100,100,.2)">Top 3 topics</div>
+            </div>
+            <div class="card-body">
+              <div style="height:200px;position:relative;">
+                <canvas id="chartTT"></canvas>
+              </div>
+              <div id="chartTTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No TikTok data yet · ingestion runs every 30 min</div>
+              <div id="chartTTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+            </div>
           </div>
 
-          <h1 class="hero-title">What's<br/>Trending</h1>
-
-          <p class="hero-desc">TikTok · YouTube · Google — see what's blowing up before everyone else does. Updated every 30 minutes, all day.</p>
-
-          <div class="hero-stats">
-            <div class="hero-stat">
-              <span class="hero-stat-n">3</span>
-              <span class="hero-stat-l">Platforms</span>
+          <!-- YouTube chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:#FFD700"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg> YouTube
+                <span id="ytLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#FFD700;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
+              </div>
+              <div class="card-tag" style="background:rgba(255,215,0,.1);color:#c9a800;border:1px solid rgba(255,215,0,.2)">Top 3 topics</div>
             </div>
-            <div class="hero-stat">
-              <span class="hero-stat-n">30m</span>
-              <span class="hero-stat-l">Refresh</span>
-            </div>
-            <div class="hero-stat">
-              <span class="hero-stat-n">Live</span>
-              <span class="hero-stat-l">Right now</span>
+            <div class="card-body">
+              <div style="height:200px;position:relative;">
+                <canvas id="chartYT"></canvas>
+              </div>
+              <div id="chartYTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No YouTube data yet · ingestion runs every 30 min</div>
+              <div id="chartYTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
             </div>
           </div>
 
-          <div class="slide1-btns">
-            <button class="btn btn-primary" onclick="goSlide(1)" id="toolsBtn">
-              Creator Tools →
+          <!-- Google chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:#78b4ff"><svg viewBox='0 0 24 24' style='width:1em;height:1em;vertical-align:middle'><path d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z' fill='#4285F4'/><path d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z' fill='#34A853'/><path d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z' fill='#FBBC05'/><path d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z' fill='#EA4335'/></svg> Google
+                <span id="gtLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#78b4ff;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.6s"></span>
+              </div>
+              <div class="card-tag" style="background:rgba(120,180,255,.1);color:#78b4ff;border:1px solid rgba(120,180,255,.2)">Top 3 topics</div>
+            </div>
+            <div class="card-body">
+              <div style="height:200px;position:relative;">
+                <canvas id="chartGT"></canvas>
+              </div>
+              <div id="chartGTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No Google data yet · ingestion runs every 30 min</div>
+              <div id="chartGTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Mobile: stack charts vertically -->
+        <style>
+          @media(max-width:768px){ #platformChartsGrid{ grid-template-columns:1fr !important; } }
+        </style>
+
+        <!-- Cross-platform trend chart -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">Cross-Platform Score Chart
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+            </div>
+            <div class="card-tag tag-gold">All platforms · top topics by score</div>
+          </div>
+          <div class="card-body">
+            <div style="height:180px;position:relative;">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fuel gauges — rendered by renderRadarGauges() -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">Platform Momentum
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4FB3A5;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
+            </div>
+            <div class="card-tag tag-green">Live gauge · needle moves as topics rise &amp; fall · click to generate</div>
+          </div>
+          <div class="card-body">
+            <div id="radarGaugesBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
+          </div>
+        </div>
+
+        <!-- Dijo Top Pick -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Dijo's Top Pick
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+            </div>
+            <div class="card-tag tag-gold">Best topic across all platforms · AI explains why</div>
+          </div>
+          <div class="card-body">
+            <div id="dijoTopPickBox"><div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- GENERATOR (unified with audience) -->
+      <div class="panel" id="panel-generator">
+
+        <!-- ── Studio Header ── -->
+        <div class="studio-header">
+          <div class="studio-header-left">
+            <div class="studio-title-badge">
+              <span class="studio-badge-dot"></span>
+              <span>Dijo AI</span>
+            </div>
+            <h2 class="studio-title">Content Studio</h2>
+            <p class="studio-subtitle">Enter a topic. Dijo writes your content <em>and</em> maps your audience — all in one shot.</p>
+          </div>
+          <div class="studio-score-pill" id="scorePill">
+            <span class="ssp-label">Trend Score™</span>
+            <span class="ssp-val" id="previewScore">—</span>
+            <span class="ssp-verdict" id="previewVerdict">awaiting topic</span>
+          </div>
+        </div>
+
+        <!-- ── Input Row ── -->
+        <div class="studio-input-row">
+          <div class="studio-topic-wrap">
+            
+            <input type="text" class="studio-topic-input" id="genTopic"
+              placeholder="What do you want to create content about?"
+              onkeydown="if(event.key==='Enter')fullGenerate()"/>
+            <button class="studio-generate-btn" onclick="fullGenerate()" id="fullGenBtn">
+              
+              <span class="sgb-text">Generate</span>
             </button>
           </div>
-
+          <div class="studio-controls-row">
+            <div class="studio-control-group">
+              <label class="sc-label">Platform</label>
+              <select class="sc-select" id="genPlatform">
+                <option>TikTok</option>
+                <option>YouTube</option>
+                <option>Instagram</option>
+                <option>All Platforms</option>
+              </select>
+            </div>
+            <div class="studio-control-group">
+              <label class="sc-label">Niche</label>
+              <input type="text" class="sc-input" id="genNiche" placeholder="e.g. finance, fitness…"/>
+            </div>
+            <div class="studio-control-group">
+              <label class="sc-label">Style</label>
+              <div class="sc-chips">
+                <button class="sc-chip active" onclick="selectStyle(this)">Educational</button>
+                <button class="sc-chip" onclick="selectStyle(this)">Entertaining</button>
+                <button class="sc-chip" onclick="selectStyle(this)">Motivational</button>
+                <button class="sc-chip" onclick="selectStyle(this)">Hot Take</button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- RIGHT: Dual image panel -->
-        <div class="split-right" style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-          <!-- Black woman happy on phone -->
-          <div style="position:relative;overflow:hidden;height:100%;">
-            <img
-              src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=700&h=1000&fit=crop&crop=faces,top"
-              alt="Stylish woman smiling at her phone"
-              loading="eager"
-              onload="this.classList.add('loaded')"
-              style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.82) saturate(1.1);transition:transform 8s ease;"
-            />
+        <div id="genLoading" class="gen-loading"><span class="spinner spinner-gold"></span><span id="genLoadingMsg">Dijo is building your content package…</span></div>
+        <div id="genError" class="gen-error"></div>
+
+        <!-- ── Output Grid ── -->
+        <div class="studio-output-grid" id="studioOutputGrid">
+
+          <!-- LEFT: Content outputs -->
+          <div class="studio-outputs">
+
+            <!-- Hook card -->
+            <div class="sout-card sout-hero">
+              <div class="sout-card-header">
+                <div class="sout-label-row">
+                  
+                  <span class="sout-label">Video Hook</span>
+                  <span class="sout-hint">First 1.5s — make or break</span>
+                </div>
+                <button class="sout-copy-btn" onclick="copyEl('outHook')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+              <div class="sout-body sout-hook-body" id="outHook">Your hook will appear here after you hit Generate…</div>
+            </div>
+
+            <!-- Caption + Outline side by side -->
+            <div class="sout-pair">
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-label">Caption</span></div>
+                  <button class="sout-copy-btn" onclick="copyEl('outCaption')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>
+                </div>
+                <div class="sout-body" id="outCaption">Caption appears here…</div>
+              </div>
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-label">Content Outline</span></div>
+                  <button class="sout-copy-btn" onclick="copyEl('outOutline')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>
+                </div>
+                <div class="sout-body" id="outOutline">Outline appears here…</div>
+              </div>
+            </div>
+
+            <!-- Hashtags + Timing -->
+            <div class="sout-pair">
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-icon" style="font-style:normal;font-weight:700">#</span><span class="sout-label">Hashtags</span></div>
+                  <button class="sout-copy-btn" onclick="copyTags('outHashtags')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy all</button>
+                </div>
+                <div class="sout-tags" id="outHashtags">
+                  <span class="sout-tags-placeholder">Hashtags appear after generating…</span>
+                </div>
+                <div class="hashtag-bar-list" id="hashtagBar" style="display:none"></div>
+              </div>
+              <div class="sout-card">
+                <div class="sout-card-header">
+                  <div class="sout-label-row"><span class="sout-label">Best Time to Post</span></div>
+                </div>
+                <div class="timing-grid" id="outTiming">
+                  <div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div>
+                </div>
+              </div>
+            </div>
+
           </div>
-          <!-- Happy African man smiling -->
-          <div style="position:relative;overflow:hidden;height:100%;">
-            <img
-              src="https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=700&h=1000&fit=crop&crop=faces,top"
-              alt="Happy African man smiling"
-              loading="eager"
-              onload="this.classList.add('loaded')"
-              style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.82) saturate(1.1);transition:transform 8s ease;"
-            />
+
+          <!-- RIGHT: Audience intel (auto-generated) -->
+          <div class="studio-audience-panel" id="studioAudiencePanel">
+            <div class="saud-header">
+              <div class="saud-title-row">
+                
+                <span class="saud-title">Audience Intel</span>
+                <span class="saud-badge">Auto-generated</span>
+              </div>
+              <p class="saud-desc">Generated alongside your content — know exactly who you're writing for.</p>
+            </div>
+            <div id="audOutput" class="saud-output">
+              <div class="saud-empty">
+                
+                <div class="saud-empty-text">Your audience breakdown appears here once you generate content above.</div>
+              </div>
+            </div>
           </div>
-          <div class="img-caption" style="grid-column:1/-1;">
-            <p class="img-caption-tag">Trending Intelligence</p>
-            <h2 class="img-caption-title">Know what's blowing up<br/>before you post</h2>
+
+        </div>
+      </div>
+
+      <!-- AUDIENCE panel kept as hidden redirect target for legacy links -->
+      <div class="panel" id="panel-audience" style="display:none"></div>
+
+      <!-- CALENDAR -->
+      <div class="panel" id="panel-calendar">
+
+        <!-- Header row -->
+        <div class="cal-header-row">
+          <div class="cal-header-left">
+            <h2 class="cal-title">Content Calendar</h2>
+            <span class="cal-ai-badge"><span class="live-dot"></span>Dijo AI · Auto-filled</span>
+          </div>
+          <div class="cal-header-right">
+            <button class="cal-autofill-btn" id="calAutoBtn" onclick="calAutoFill()">Auto-Fill</button>
+          </div>
+        </div>
+
+        <!-- How it works explanation (dismissable) -->
+        <div class="cal-explainer" id="calExplainer">
+          <div class="cal-explainer-inner">
+            
+            <div>
+              <strong>How this works:</strong> Dijo scans live trends every week and scores each topic. The highest-scoring topics are automatically dropped into your calendar with the best time to post. You'll get a notification when it's time. Add your own ideas in the note box under each day — Dijo will remind you about those too.
+            </div>
+            <button class="cal-explainer-close" onclick="document.getElementById('calExplainer').style.display='none'">✕</button>
+          </div>
+        </div>
+
+        <!-- 7-day book grid — calendar.js renders into this -->
+        <div id="calWeekGrid" style="display:block">
+          <div class="cal-loading">
+            <span class="spinner spinner-gold"></span>
+            <span>Dijo is scanning this week's top trends…</span>
+          </div>
+        </div>
+
+        <!-- Modal overlay for add/edit post -->
+        <div class="cal-modal-overlay" id="calModalOverlay" onclick="if(event.target===this)closeModal()">
+          <div class="cal-modal">
+            <div class="cal-modal-header">
+              <span class="cal-modal-title" id="calModalTitle">Add Post</span>
+              <button class="cal-modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="cal-modal-body">
+              <label class="cal-modal-label">Topic</label>
+              <input class="cal-modal-input" id="calModalInput" type="text" placeholder="What's the content about?"/>
+              <button class="cal-dijo-suggest-btn" id="calDijoSuggestBtn" onclick="calSuggestIdea()">Suggest with Dijo</button>
+              <label class="cal-modal-label" style="margin-top:12px">Platform</label>
+              <div class="cal-modal-plats">
+                <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg> TikTok</button>
+                <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg> YouTube</button>
+                <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')">Instagram</button>
+                <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')">LinkedIn</button>
+              </div>
+              <label class="cal-modal-label" style="margin-top:12px">Status</label>
+              <select class="cal-modal-status" id="calModalStatus">
+                <option value="draft">Draft</option>
+                <option value="scheduled">Scheduled </option>
+                <option value="published">Published </option>
+              </select>
+              <label class="cal-modal-label" style="margin-top:12px">Notes</label>
+              <textarea class="cal-modal-notes" id="calModalNotes" placeholder="Add any notes, angles, or ideas…"></textarea>
+            </div>
+            <div class="cal-modal-footer">
+              <button class="cal-modal-save" onclick="savePost()">Save Post</button>
+              <button class="cal-modal-cancel" onclick="closeModal()">Cancel</button>
+            </div>
           </div>
         </div>
 
       </div>
-    </div>
 
-    <!-- ══════════════ SLIDE 2 ══════════════ -->
-    <div class="slide" id="slide2">
-      <div class="split">
 
-        <!-- LEFT: Tools grid -->
-        <div class="split-left">
-
-          <button class="back-btn" onclick="goSlide(0)" aria-label="Back to What's Trending">← Back</button>
-
-          <div class="tools-header">
-            <h2 class="tools-title">Your Creator<br/>Tools</h2>
-            <p class="tools-sub">Everything you need to grow — pick a tool and start right now.</p>
-          </div>
-
-          <div class="feat-grid">
-
-            <a href="creator-studio.html?tab=overview" class="feat-box" style="--ac:var(--gold)" onclick="try{sessionStorage.setItem('ig_from_welcome','1');}catch(e){}">
-              <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1596815064285-45ed8a9c0463?w=400&h=200&fit=crop&crop=top" alt="" loading="lazy"/>
-              </div>
-              <div class="feat-top">
-                <div class="feat-title">See What's Trending</div>
-                <span class="chip chip-gold" style="font-size:8px;padding:2px 7px;">📊</span>
-              </div>
-              <div class="feat-desc">My Overview — your trends at a glance</div>
-              <span class="feat-arrow" aria-hidden="true">→</span>
-            </a>
-
-            <a href="creator-studio.html?tab=calendar" class="feat-box" style="--ac:var(--green)" onclick="try{sessionStorage.setItem('ig_from_welcome','1');}catch(e){}">
-              <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=400&h=200&fit=crop&crop=top" alt="Lady with content creator tools" loading="lazy"/>
-              </div>
-              <div class="feat-top">
-                <div class="feat-title">Content Calendar</div>
-                <span class="chip chip-green" style="font-size:8px;padding:2px 7px;">AI</span>
-              </div>
-              <div class="feat-desc">Auto-filled week, best times + alerts</div>
-              <span class="feat-arrow" aria-hidden="true">→</span>
-            </a>
-
-            <a href="portfolio-studio.html" class="feat-box" style="--ac:var(--purple)">
-              <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1523264939339-c89f9dadde2e?w=400&h=200&fit=crop&crop=bottom" alt="" loading="lazy"/>
-              </div>
-              <div class="feat-top">
-                <div class="feat-title">Portfolio Studio</div>
-                <span class="chip chip-purple" style="font-size:8px;padding:2px 7px;">New</span>
-              </div>
-              <div class="feat-desc">One link. Every brand deal.</div>
-              <span class="feat-arrow" aria-hidden="true">→</span>
-            </a>
-
-            <a href="carousel-studio.html" class="feat-box" style="--ac:var(--blue)">
-              <div class="feat-thumb">
-                <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=200&fit=crop&crop=top" alt="" loading="lazy"/>
-              </div>
-              <div class="feat-top">
-                <div class="feat-title">Carousel Studio</div>
-                <span class="chip chip-blue" style="font-size:8px;padding:2px 7px;">AI</span>
-              </div>
-              <div class="feat-desc">AI slides, styled and ready to post</div>
-              <span class="feat-arrow" aria-hidden="true">→</span>
-            </a>
-
-          </div>
-
+      <!-- EVALUATOR -->
+      <div class="panel" id="panel-evaluator">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <h2 style="font-size:20px">Analyse My Channel</h2>
+          <span class="card-tag tag-gold">AI · Real Data</span>
         </div>
+        <div id="evalNoAccount">
+          <div style="margin-bottom:20px">
+            <p style="font-size:14px;color:var(--text2);line-height:1.7">Connect your social accounts so Dijo can analyse your real data and give you actionable growth advice.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
 
-        <!-- RIGHT: 4-image mosaic — diverse young women creators -->
-        <div class="split-right">
-          <div class="mosaic">
-            <!-- UK/tribe lady — close crop, bold fashion -->
-            <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1596815064285-45ed8a9c0463?w=600&h=700&fit=crop&crop=top" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
-              <span class="mosaic-cell-label">Write Content</span>
+            <!-- YouTube card -->
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;transition:box-shadow .2s,border-color .2s" onmouseover="this.style.borderColor='#ff4040';this.style.boxShadow='0 4px 24px rgba(255,64,64,.12)'" onmouseout="this.style.borderColor='';this.style.boxShadow=''">
+              <div style="display:flex;align-items:center;gap:12px">
+                <!-- Real YouTube logo SVG -->
+                <div style="width:44px;height:44px;border-radius:12px;background:#ff0000;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg viewBox="0 0 24 24" fill="#fff" width="24" height="24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </div>
+                <div>
+                  <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)">YouTube</div>
+                  <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Channel analytics</div>
+                </div>
+                <span id="ytEvalBadge" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:99px;background:rgba(15,168,118,.12);color:var(--green);display:none">Connected</span>
+              </div>
+              <p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Subscribers, views, video performance and AI growth scoring — all from your real channel data.</p>
+              <button data-tab="youtube" style="width:100%;padding:11px;border-radius:10px;background:#ff0000;color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                <svg viewBox="0 0 24 24" fill="#fff" width="16" height="16"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                Connect YouTube
+              </button>
             </div>
-            <!-- Lady with content creator tools -->
-            <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=600&h=700&fit=crop&crop=top" alt="Lady with content creator tools" loading="lazy" onload="this.classList.add('loaded')"/>
-              <span class="mosaic-cell-label">Calendar</span>
+
+            <!-- TikTok card -->
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;transition:box-shadow .2s,border-color .2s" onmouseover="this.style.borderColor='#ff2d55';this.style.boxShadow='0 4px 24px rgba(255,45,85,.12)'" onmouseout="this.style.borderColor='';this.style.boxShadow=''">
+              <div style="display:flex;align-items:center;gap:12px">
+                <!-- Real TikTok logo SVG -->
+                <div style="width:44px;height:44px;border-radius:12px;background:#010101;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg viewBox="0 0 24 24" fill="#fff" width="22" height="22"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg>
+                </div>
+                <div>
+                  <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)">TikTok</div>
+                  <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Profile analytics</div>
+                </div>
+                <span id="ttEvalBadge" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:99px;background:rgba(15,168,118,.12);color:var(--green);display:none">Connected</span>
+              </div>
+              <p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Followers, likes, video views and AI-powered advice — straight from your TikTok account.</p>
+              <button id="ttEvalConnectBtn" data-tab="tiktok" style="width:100%;padding:11px;border-radius:10px;background:linear-gradient(135deg,#010101 0%,#ff2d55 100%);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                <svg viewBox="0 0 24 24" fill="#fff" width="16" height="16"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg>
+                Connect TikTok
+              </button>
             </div>
-            <!-- Chinese lady — partial crop, shoe/outfit detail -->
-            <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1523264939339-c89f9dadde2e?w=600&h=700&fit=crop&crop=bottom" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
-              <span class="mosaic-cell-label">Portfolio</span>
+
+            <!-- Instagram card -->
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;opacity:.6">
+              <div style="display:flex;align-items:center;gap:12px">
+                <!-- Real Instagram logo SVG -->
+                <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg viewBox="0 0 24 24" fill="#fff" width="22" height="22"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                </div>
+                <div>
+                  <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)">Instagram</div>
+                  <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Profile analytics</div>
+                </div>
+                <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:99px;background:rgba(100,100,255,.1);color:var(--blue2)">Soon</span>
+              </div>
+              <p style="font-size:12px;color:var(--text2);line-height:1.6;margin:0">Follower growth, post reach, engagement rate and AI recommendations — pending Meta approval.</p>
+              <button disabled style="width:100%;padding:11px;border-radius:10px;background:linear-gradient(135deg,#f09433,#dc2743,#bc1888);color:#fff;font-weight:700;font-size:13px;border:none;cursor:not-allowed;opacity:.5;display:flex;align-items:center;justify-content:center;gap:8px">
+                <svg viewBox="0 0 24 24" fill="#fff" width="16" height="16"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                Coming Soon
+              </button>
             </div>
-            <!-- Asian lady — on phone, lifestyle creator vibe -->
-            <div class="mosaic-cell">
-              <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=700&fit=crop&crop=top" alt="" loading="lazy" onload="this.classList.add('loaded')"/>
-              <span class="mosaic-cell-label">Carousel</span>
-            </div>
+
           </div>
         </div>
-
+        <div id="evalLoading" style="display:none;text-align:center;padding:48px"><span class="spinner spinner-gold" style="width:22px;height:22px;border-width:3px"></span><p style="margin-top:14px;font-size:14px;color:var(--text3)" id="evalLoadingMsg">Analysing your channel…</p></div>
+        <div id="evalMain" style="display:none">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+            <div id="evalAv" style="width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:#FF0000"><svg viewBox='0 0 24 24' fill='currentColor' style='width:20px;height:20px'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg></div>
+            <div style="flex:1;min-width:0"><div id="evalChannelName" style="font-weight:700;font-size:14px;margin-bottom:1px">—</div><div id="evalChannelHandle" style="font-size:11px;color:var(--text3)">—</div></div>
+            <button onclick="runEvaluation()" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0">Re-evaluate</button>
+          </div>
+          <div class="eval-layout">
+            <div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:12px;text-align:center">
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Creator Score</div>
+                <div style="position:relative;width:120px;height:120px;margin:0 auto 14px">
+                  <svg viewBox="0 0 120 120" style="width:120px;height:120px;transform:rotate(-90deg)">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                    <circle id="evalRing" cx="60" cy="60" r="50" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .4s"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <div id="evalScoreNum" style="font-family:'Syne',sans-serif;font-size:30px;font-weight:900;letter-spacing:-.04em;color:var(--gold)">—</div>
+                    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:1px">/100</div>
+                  </div>
+                </div>
+                <div id="evalVerdict" style="font-size:14px;font-weight:700;margin-bottom:3px">—</div>
+                <div id="evalTier" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">—</div>
+              </div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px">
+                <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Score Breakdown</div>
+                <div style="padding:14px 18px;display:flex;flex-direction:column;gap:12px" id="evalBars"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Subscribers</div><div class="sc-val" style="font-size:16px;color:var(--yt)" id="evalSubs">—</div></div>
+                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Total Views</div><div class="sc-val" style="font-size:16px" id="evalViews">—</div></div>
+                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Videos</div><div class="sc-val" style="font-size:16px;color:var(--green)" id="evalVcount">—</div></div>
+              </div>
+            </div>
+            <div class="eval-chat">
+              <div class="eval-chat-head">
+                <div class="eval-av">DJ</div>
+                <div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">Dijo Adviser</div><div style="font-size:10px;color:var(--green);font-family:'DM Mono',monospace">Always On</div></div>
+                <button onclick="clearEvalChat()" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Clear</button>
+              </div>
+              <div class="eval-msgs" id="evalMsgs">
+                <div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Connect YouTube or TikTok then hit <strong>Evaluate</strong> — I'll score your channel and tell you exactly what to do next.</div></div>
+              </div>
+              <div class="eval-chips" id="evalChips">
+                <button class="eval-chip" onclick="evalAsk('How do I grow faster?')">Grow faster?</button>
+                <button class="eval-chip" onclick="evalAsk('What content should I make next?')">Content ideas?</button>
+                <button class="eval-chip" onclick="evalAsk('Give me a 30-day action plan.')">30-day plan</button>
+              </div>
+              <div class="eval-input-row">
+                <input type="text" class="eval-input" id="evalInput" placeholder="Ask Dijo about your channel…" onkeydown="if(event.key==='Enter')evalSend()"/>
+                <button class="eval-send" onclick="evalSend()">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- YOUTUBE -->
+      <div class="panel" id="panel-youtube">
+        <div id="ytDisconnected">
+          <div class="connect-wrap">
+            <div style="margin-bottom:16px;color:#FF0000"><svg viewBox='0 0 24 24' fill='currentColor' style='width:48px;height:48px'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg></div>
+            <h2 style="font-size:22px;margin-bottom:10px">Connect Your YouTube Channel</h2>
+            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real channel stats, video performance, and subscriber data — live from YouTube Data API.</p>
+            <div id="ytErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+            <button class="connect-btn yt" onclick="YouTubeAuth.connect(this)">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              Connect YouTube
+            </button>
+            <div class="feat-grid">
+              <div class="feat-card"><h4>Channel Stats</h4><p>Real subscriber count, views, and video count.</p></div>
+              <div class="feat-card"><h4>Video Performance</h4><p>Views, likes, and comments per video.</p></div>
+              <div class="feat-card"><h4>Analyse My Channel</h4><p>AI score and actionable growth advice.</p></div>
+            </div>
+          </div>
+        </div>
+        <div id="ytConnected" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header">
+              <span class="card-title">YouTube Connected</span>
+              <div class="connected-header">
+                <span class="card-tag tag-green">Live Data</span>
+                <button class="disconnect-btn" onclick="if(confirm('Disconnect YouTube?'))disconnectYouTube()">✕ Disconnect</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div id="ytAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,96,96,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:#FF0000"><svg viewBox='0 0 24 24' fill='currentColor' style='width:20px;height:20px'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg></div>
+                <div><div id="ytChannelName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ytChannelHandle" style="font-size:12px;color:var(--text3)">—</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Subscribers</div><div id="ytSubs" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--yt)">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Views</div><div id="ytViews" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ytVcount" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--green)">—</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span class="card-title">Recent Videos</span><span class="card-tag tag-green">Live</span></div><div class="card-body" id="ytVideosList"><div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div></div></div>
+        </div>
+      </div>
+
+      <!-- TIKTOK -->
+      <div class="panel" id="panel-tiktok">
+        <div id="ttDisconnected">
+          <div class="connect-wrap">
+            <div style="margin-bottom:16px;color:#010101"><svg viewBox='0 0 24 24' fill='currentColor' style='width:48px;height:48px'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg></div>
+            <h2 style="font-size:22px;margin-bottom:10px">Connect Your TikTok Account</h2>
+            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real profile stats, video performance, and audience data — via the official TikTok API.</p>
+            <div id="ttErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+            <button class="connect-btn tt" id="ttConnectBtn" onclick="TikTokAuth.connect(this)">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg>
+              Connect with TikTok
+            </button>
+            <div class="feat-grid">
+              <div class="feat-card"><h4>Profile Stats</h4><p>Real follower count, likes, and video count.</p></div>
+              <div class="feat-card"><h4>Video Performance</h4><p>Views, likes, comments, and shares per video.</p></div>
+              <div class="feat-card"><h4>Analyse My Channel</h4><p>AI score and growth advice for your account.</p></div>
+            </div>
+          </div>
+        </div>
+        <div id="ttConnected" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header">
+              <span class="card-title">TikTok Connected</span>
+              <div class="connected-header">
+                <span class="card-tag tag-tt">Live Data</span>
+                <button class="disconnect-btn" onclick="if(confirm('Disconnect TikTok? This will clear the session so a new account can connect.'))disconnectTikTok()">✕ Disconnect</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div id="ttAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,45,85,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:#010101"><svg viewBox='0 0 24 24' fill='currentColor' style='width:20px;height:20px'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg></div>
+                <div><div id="ttDisplayName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ttUsername" style="font-size:12px;color:var(--text3)">—</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Followers</div><div id="ttFollowers" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--tt)">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Following</div><div id="ttFollowing" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Likes</div><div id="ttLikes" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--gold)">—</div></div>
+                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ttVcount" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--green)">—</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span class="card-title">Recent TikToks</span><span class="card-tag tag-tt">Live</span></div><div class="card-body" id="ttVideosList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(255,45,85,.2);border-top-color:var(--tt)"></span> Loading…</div></div></div>
+        </div>
+      </div>
+
     </div>
+  </div>
+</div>
 
-  </div><!-- /slider-track -->
-</div><!-- /slider-root -->
+  </div><!-- /.main -->
+  </div><!-- /.app-main -->
+</div><!-- /.app-layout -->
 
-<!-- Dots (desktop only) -->
-<nav class="slide-dots" aria-label="Slide navigation">
-  <button class="dot-pip on" onclick="goSlide(0)" aria-label="Go to slide 1: What's Trending" aria-current="true"></button>
-  <button class="dot-pip"    onclick="goSlide(1)" aria-label="Go to slide 2: Your Creator Tools"></button>
-</nav>
+<div class="studio-overlay" id="studioOverlay" onclick="closeSidebar()" id="mobOverlay"></div>
+<div class="toast-shelf" id="toastShelf"></div>
 
-<script src="impactgrid-chat-bubble.js" defer></script>
+<!-- ═══ DOWNLOAD BAR (bottom, app-store style) ═══ -->
+<div class="download-bar" id="downloadBar">
+  <img src="logo.png" class="dl-icon" alt="ImpactGrid"
+       onerror="this.style.display='none'"/>
+  <div class="dl-text">
+    <div class="dl-title">ImpactGrid</div>
+    <div class="dl-sub" id="dlSub">Add to your home screen — free</div>
+  </div>
+  <!-- Android / Desktop -->
+  <button class="dl-btn" id="dlBtn">
+    Download App
+  </button>
+  <!-- iOS hint shown instead -->
+  <div class="dl-ios-hint" id="dlIOSHint">
+    Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>
+  </div>
+  <button class="dl-dismiss" id="dlDismiss" title="Dismiss">✕</button>
+</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-<script src="plan-config.js" defer></script>
-<script src="supabase-config.js" defer></script>
-<script src="auth.js" defer></script>
-<script src="nav.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- ✅ CORRECT LOAD ORDER (per nav.js requirements):
+     1. supabase.min.js  — SDK
+     2. plan-config.js   — plan constants (needed by ig-supabase + nav)
+     3. supabase-config.js — project URL / anon key constants
+     4. ig-supabase.js   — sets window.SUPABASE_URL + SUPABASE_ANON_KEY, creates client
+     5. auth.js          — initialises session
+     6. nav.js           — reads window.SUPABASE_URL/ANON_KEY, renders nav, runs checkAuth -->
+<script src="plan-config.js"></script>
+<script src="supabase-config.js"></script>
+<script src="ig-supabase.js"></script>
+<script src="auth.js"></script>
+<script src="nav.js"></script>
+<script src="tiktok-auth.js" defer></script>
+<script src="youtube-auth.js" defer></script>
+<script src="instagram-auth.js" defer></script>
+<script src="creator-ai.js" defer></script>
+<script src="creator-studio.js" defer></script>
 
 <script>
-// Theme
-(function(){
-  try { var t=localStorage.getItem('ig_theme'); if(t) document.documentElement.setAttribute('data-theme',t); } catch(e){}
+/* ══════════════════════════════════════════
+   IMPACTGRID — DOWNLOAD / INSTALL LOGIC
+   Works on: Android Chrome, desktop Chrome/Edge, iOS Safari
+══════════════════════════════════════════ */
+(function() {
+  var deferredPrompt  = null;
+  var bar    = document.getElementById('downloadBar');
+  var dlBtn  = document.getElementById('dlBtn');
+  var dlDismiss = document.getElementById('dlDismiss');
+  var dlSub  = document.getElementById('dlSub');
+  var dlIOSHint = document.getElementById('dlIOSHint');
+  var installSideBtn = document.getElementById('installSideBtn');
+
+  /* Already installed as PWA — hide everything silently */
+  if (
+    window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches
+  ) {
+    if (installSideBtn) installSideBtn.style.display = 'none';
+    return;
+  }
+
+  /* Don't show again this session if user dismissed */
+  try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
+
+  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+  function isSafari() { return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
+
+  function showBar() {
+    try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
+    if (!bar) return;
+
+    if (isIOS() && isSafari()) {
+      /* iOS: hide the button, show the share hint instead */
+      if (dlBtn) dlBtn.style.display = 'none';
+      if (dlIOSHint) dlIOSHint.style.display = 'block';
+      if (dlSub) dlSub.textContent = 'Install on your iPhone — takes 3 taps';
+    } else {
+      if (dlBtn) dlBtn.style.display = 'inline-flex';
+      if (dlIOSHint) dlIOSHint.style.display = 'none';
+    }
+
+    bar.classList.add('visible');
+    if (installSideBtn) installSideBtn.style.display = 'flex';
+  }
+
+  function hideBar() {
+    if (bar) bar.classList.remove('visible');
+    if (installSideBtn) installSideBtn.style.display = 'none';
+    try { sessionStorage.setItem('ig-dl-dismissed', '1'); } catch(e) {}
+  }
+
+  /* Expose so sidebar button can call it */
+  window.dismissPWABanner = hideBar;
+
+  /* Dismiss button */
+  if (dlDismiss) dlDismiss.onclick = hideBar;
+
+  /* ── Android / Desktop: capture install prompt ── */
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    /* Show after 5s — feels natural not desperate */
+    setTimeout(showBar, 5000);
+  });
+
+  /* ── iOS Safari: show after 5s ── */
+  if (isIOS() && isSafari()) {
+    setTimeout(showBar, 5000);
+  }
+
+  /* ── Install button click ── */
+  async function triggerInstall() {
+    if (!deferredPrompt) return; /* iOS path handled by hint, no prompt needed */
+    deferredPrompt.prompt();
+    var result = await deferredPrompt.userChoice;
+    /* Hide bar whether accepted OR dismissed — no zombie banner */
+    hideBar();
+    deferredPrompt = null;
+  }
+
+  if (dlBtn) dlBtn.onclick = triggerInstall;
+  if (installSideBtn) installSideBtn.onclick = triggerInstall;
+
+  /* ── Post-install celebration ── */
+  window.addEventListener('appinstalled', function() {
+    hideBar();
+    if (typeof toast === 'function') {
+      toast('ImpactGrid installed — you\'re ready to grow');
+    }
+  });
+
 })();
-
-if (typeof renderNav==='function') {
-  renderNav('creator-welcome.html');
-} else {
-  document.addEventListener('DOMContentLoaded', function(){
-    if (typeof renderNav==='function') renderNav('creator-welcome.html');
+</script>
+<script src="calendar.js" defer></script>
+<script>
+  // ✅ nav.js, ig-supabase.js and auth.js are all loaded above (no defer).
+  // By the time DOMContentLoaded fires, all three are fully parsed and executed.
+  // Order: renderNav → initAuth (awaited) → checkAuth
+  // renderNav injects the nav HTML + fires 'ig-nav-ready' so checkAuth's
+  // _whenNavReady() resolves immediately rather than waiting on the event.
+  document.addEventListener('DOMContentLoaded', async function() {
+    if (typeof renderNav === 'function') renderNav('creator-studio.html');
+    if (typeof initAuth === 'function') await initAuth();
+    if (typeof window.checkAuth === 'function') window.checkAuth();
   });
-}
+</script>
 
-// ── Mobile detection ──
-function isMobile() { return window.innerWidth <= 860; }
-
-// ── Slider — works on both desktop (horizontal) and mobile (vertical) ──
-var current = 0;
-var track   = document.getElementById('sliderTrack');
-var slide2  = document.getElementById('slide2');
-var pips    = document.querySelectorAll('.dot-pip');
-
-function goSlide(n) {
-  if (n === current) return;
-  current = n;
-  if (isMobile()) {
-    track.style.transform = n === 1 ? 'translateY(-' + window.innerHeight + 'px)' : 'translateY(0)';
-  } else {
-    track.style.transform = n === 1 ? 'translateX(-50%)' : 'translateX(0)';
+<script>
+/* ═══════════════════════════════════════
+   CONFIDENCE → VIRAL LABEL
+   Reformats any .confidence element from
+   "Confidence: 82%" → "THIS WILL GO VIRAL (82%)"
+   Runs on load + watches for dynamic content.
+═══════════════════════════════════════ */
+(function() {
+  function formatConfidence(el) {
+    var text = el.textContent || '';
+    // Match "Confidence: 82%" or "Confidence 82%" or just "82%"
+    var match = text.match(/(\d+)\s*%/);
+    if (!match) return;
+    var pct = parseInt(match[1], 10);
+    var label;
+    if (pct >= 80)      label = 'THIS WILL GO VIRAL';
+    else if (pct >= 65) label = 'HIGH POTENTIAL';
+    else if (pct >= 50) label = 'WORTH POSTING';
+    else                label = 'NICHE PLAY';
+    el.textContent = label + ' (' + pct + '%)';
+    el.setAttribute('data-viral-label', 'true');
+    el.style.fontWeight = '700';
+    el.style.letterSpacing = '.03em';
+    // Colour by confidence tier
+    if (pct >= 80) el.style.color = 'var(--gold, #c97e08)';
+    else if (pct >= 65) el.style.color = 'var(--green, #0fa876)';
   }
-  pips.forEach(function(p,i){
-    p.classList.toggle('on', i===n);
-    p.setAttribute('aria-current', i===n ? 'true' : 'false');
+
+  function scanAll() {
+    document.querySelectorAll('.confidence').forEach(function(el) {
+      if (!el.getAttribute('data-viral-label')) formatConfidence(el);
+    });
+  }
+
+  // Run once DOM is ready
+  scanAll();
+
+  // Watch for dynamically injected trend cards
+  var observer = new MutationObserver(function() { scanAll(); });
+  observer.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
+
+<!-- ═══ MOBILE BOTTOM NAVIGATION ═══ -->
+<nav id="ig-bottom-nav" aria-label="Main navigation">
+
+  <!-- Home / Dashboard -->
+  <button class="bn-item active" data-bn-tab="dashboard" aria-label="My Overview">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    <span>Overview</span>
+  </button>
+
+  <!-- Trends -->
+  <button class="bn-item" data-bn-tab="trends" aria-label="What's Trending">
+    <span class="bn-live-dot"></span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+      <polyline points="16 7 22 7 22 13"/>
+    </svg>
+    <span>Trending</span>
+  </button>
+
+  <!-- Write Content -->
+  <button class="bn-item" data-bn-tab="generator" aria-label="Write My Content">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9"/>
+      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+    <span>Create</span>
+  </button>
+
+  <!-- Calendar -->
+  <button class="bn-item" data-bn-tab="calendar" aria-label="Content Calendar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <span>Calendar</span>
+  </button>
+
+  <!-- More (opens sidebar drawer) -->
+  <button class="bn-item bn-more" data-bn-action="more" aria-label="More">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/>
+      <circle cx="12" cy="19" r="1" fill="currentColor"/>
+    </svg>
+    <span>More</span>
+  </button>
+
+</nav>
+
+<script>
+/* ── Bottom Nav Controller ─────────────────────────────────
+   Mirrors the existing .tab-btn click mechanism so all the
+   existing switchTab() logic fires correctly.
+   Also keeps bottom nav in sync when tabs switch by other means
+   (sidebar, direct links, welcome-page redirect).
+──────────────────────────────────────────────────────────── */
+(function() {
+  var bnItems = document.querySelectorAll('.bn-item[data-bn-tab]');
+  var moreBtn = document.querySelector('.bn-item[data-bn-action="more"]');
+
+  function setActiveBn(tab) {
+    bnItems.forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-bn-tab') === tab);
+    });
+    if (moreBtn) {
+      // "More" stays active when non-bottom-nav tab is visible (evaluator, yt, tt etc.)
+      var bottomTabs = ['dashboard','trends','generator','calendar'];
+      moreBtn.classList.toggle('active', bottomTabs.indexOf(tab) === -1);
+    }
+  }
+
+  // Wire up each bottom nav button
+  bnItems.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tab = btn.getAttribute('data-bn-tab');
+      setActiveBn(tab);
+
+      // Trigger the existing tab-btn so switchTab() fires
+      var existing = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+      if (existing) {
+        existing.click();
+      } else if (typeof switchTab === 'function') {
+        switchTab(tab, null);
+      }
+    });
   });
-  if (n === 1) {
-    slide2.classList.remove('s2-in');
-    void slide2.offsetWidth;
-    slide2.classList.add('s2-in');
-  }
-}
-window.goSlide = goSlide;
 
-// ── Reset track direction on resize ──
-function applyLayout() {
-  // Reset transform when switching breakpoints
-  if (isMobile()) {
-    var vh = window.innerHeight + 'px';
-    track.style.transform = current === 1 ? 'translateY(-' + vh + ')' : 'translateY(0)';
-    track.style.flexDirection = 'column';
-    track.style.height = (window.innerHeight * 2) + 'px';
-    track.style.width = '100%';
-    document.getElementById('toolsBtn').style.display = '';
+  // "More" opens the sidebar drawer
+  if (moreBtn) {
+    moreBtn.addEventListener('click', function() {
+      if (typeof openSidebar === 'function') openSidebar();
+      else if (typeof studioOpenSidebar === 'function') studioOpenSidebar();
+    });
+  }
+
+  // Keep bottom nav in sync when existing .tab-btn / .sb-item is clicked
+  document.addEventListener('click', function(e) {
+    var tabEl = e.target.closest('[data-tab]');
+    if (!tabEl) return;
+    var tab = tabEl.getAttribute('data-tab');
+    if (tab) setActiveBn(tab);
+  });
+
+  // Also sync on sc-link "Connect →" taps (they use data-tab too)
+  // and on programmatic switchTab calls — patch switchTab to notify us
+  var _origSwitchTab = window.switchTab;
+  if (typeof _origSwitchTab === 'function') {
+    window.switchTab = function(name, sidebarItem) {
+      setActiveBn(name);
+      return _origSwitchTab.apply(this, arguments);
+    };
   } else {
-    track.style.transform = current === 1 ? 'translateX(-50%)' : 'translateX(0)';
-    track.style.flexDirection = '';
-    track.style.height = '';
-    track.style.width = '';
+    // switchTab not yet defined — patch after DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', function() {
+      var _st = window.switchTab;
+      if (typeof _st === 'function') {
+        window.switchTab = function(name, si) { setActiveBn(name); return _st.apply(this, arguments); };
+      }
+    });
   }
-}
 
-// ── Swipe support (both axes) ──
-var sx = 0, sy = 0;
-var root = document.getElementById('sliderRoot');
-root.addEventListener('touchstart', function(e){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; }, {passive:true});
-root.addEventListener('touchend', function(e){
-  var dx = sx - e.changedTouches[0].clientX;
-  var dy = sy - e.changedTouches[0].clientY;
-  if (isMobile()) {
-    if (Math.abs(dy) > 48) goSlide(dy > 0 ? 1 : 0);
-  } else {
-    if (Math.abs(dx) > 48) goSlide(dx > 0 ? 1 : 0);
-  }
-}, {passive:true});
-
-// ── Keyboard arrows ──
-document.addEventListener('keydown', function(e){
-  if (e.key==='ArrowRight' || e.key==='ArrowDown') goSlide(1);
-  if (e.key==='ArrowLeft'  || e.key==='ArrowUp')   goSlide(0);
-});
-
-// ── Init ──
-applyLayout();
-window.addEventListener('resize', applyLayout);
-
-function skip(){ try{ localStorage.setItem('ig_skip_welcome','1'); }catch(e){} }
-window.skip = skip;
-
-// After welcome, redirect to the originally intended destination if set
-(function(){
+  // Honour welcome-page tab redirect on mobile too
   try {
-    var dest = sessionStorage.getItem('ig_post_welcome_dest');
-    if (dest) sessionStorage.removeItem('ig_post_welcome_dest');
-    // Store it so feat-box links can use it if needed
-    window._postWelcomeDest = dest || null;
+    var initTab = sessionStorage.getItem('ig_welcome_tab') || 'dashboard';
+    setActiveBn(initTab);
   } catch(e) {}
 })();
 </script>
+
+
+<script>
+/* After nav.js runs, re-patch openSidebar so the More button opens the studio sidebar */
+document.addEventListener('DOMContentLoaded', function() {
+  // Override nav.js's openSidebar with studio's sidebar
+  window.openSidebar = function() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    var ham = document.querySelector('.hamburger');
+    if (sb)  sb.classList.add('open');
+    if (ov)  ov.classList.add('open');
+    if (ham) ham.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeSidebar = function() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    var ham = document.querySelector('.hamburger');
+    if (sb)  sb.classList.remove('open');
+    if (ov)  ov.classList.remove('open');
+    if (ham) ham.classList.remove('is-open');
+    document.body.style.overflow = '';
+  };
+});
+</script>
+
+<script id="studio-sidebar-fix">
+/*
+  Re-wires openSidebar/closeSidebar AFTER nav.js has run.
+  nav.js overwrites these globals to open #mobSidebar (marketing nav).
+  On creator-studio, we redirect them to open #sidebar (studio drawer).
+*/
+(function patchSidebar() {
+  function open() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    if (sb)  sb.classList.add('open');
+    if (ov)  ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('studioOverlay');
+    if (sb)  sb.classList.remove('open');
+    if (ov)  ov.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Override immediately and again after DOM ready (nav.js may run late)
+  window.openSidebar  = open;
+  window.closeSidebar = close;
+  window.studioOpenSidebar  = open;
+  window.studioCloseSidebar = close;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    window.openSidebar  = open;
+    window.closeSidebar = close;
+
+    // Wire the More button
+    var moreBtn = document.querySelector('.bn-item[data-bn-action="more"]');
+    if (moreBtn) {
+      // Clone to strip any existing listeners
+      var fresh = moreBtn.cloneNode(true);
+      moreBtn.parentNode.replaceChild(fresh, moreBtn);
+      fresh.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        open();
+      });
+    }
+
+    // Studio overlay closes sidebar
+    var ov = document.getElementById('studioOverlay');
+    if (ov) ov.addEventListener('click', close);
+  });
+})();
+</script>
+
 </body>
 </html>
