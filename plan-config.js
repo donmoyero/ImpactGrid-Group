@@ -46,7 +46,7 @@ window.IG_PLAN_CONFIG = {
   enterprise: {
     label:               'Enterprise',
     ai_uses:             Infinity,
-    portfolios:          3,       // up to 3 live portfolios
+    portfolios:          Infinity, // unlimited live portfolios
     carousels:           Infinity,
     adviser:             Infinity,
     evaluator:           Infinity,
