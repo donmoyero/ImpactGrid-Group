@@ -7,6 +7,7 @@
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
+var _selectedGeo = 'GB'; // Default to UK; updated by the location selector
 
 /* ── AI CALL THROTTLE ────────────────────────────────────────────────
    Prevents the auto-refresh loop from hammering /chat and /ai/*
@@ -684,13 +685,13 @@ async function fetchTrends() {
   // NOTE: /trends/cross returns { trends: [...] } NOT a bare array
   try {
     var ts = Date.now();
-    var res = await fetch(DIJO + '/trends/cross?ts=' + ts);
+    var res = await fetch(DIJO + '/trends/cross?ts=' + ts + '&geo=' + _selectedGeo);
     var data = await res.json();
     // Unwrap either shape: bare array OR { trends: [...] }
     var crossList = Array.isArray(data) ? data : (data && Array.isArray(data.trends) ? data.trends : null);
     if (crossList && crossList.length) {
       _allTrends = crossList.map(mapTrend); window._allTrends = _allTrends;
-      console.log('[fetchTrends] ✅ /trends/cross loaded', _allTrends.length, 'trends —',
+      console.log('[fetchTrends] ✅ /trends/cross loaded', _allTrends.length, 'trends (' + _selectedGeo + ') —',
         _allTrends.filter(function(t){return t.plat==='tt';}).length, 'TikTok,',
         _allTrends.filter(function(t){return t.plat==='yt';}).length, 'YouTube,',
         _allTrends.filter(function(t){return t.plat==='gt';}).length, 'Google,',
@@ -703,12 +704,12 @@ async function fetchTrends() {
 
   // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
   try {
-    var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now());
+    var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now() + '&geo=' + _selectedGeo);
     var data2 = await res2.json();
     var liveList = Array.isArray(data2) ? data2 : (data2 && Array.isArray(data2.trends) ? data2.trends : null);
     if (liveList && liveList.length) {
       _allTrends = liveList.map(mapTrend); window._allTrends = _allTrends;
-      console.log('[fetchTrends] ✅ /trends/live loaded', _allTrends.length, 'trends');
+      console.log('[fetchTrends] ✅ /trends/live loaded', _allTrends.length, 'trends (' + _selectedGeo + ')');
       renderAll();
       return;
     }
@@ -719,7 +720,7 @@ async function fetchTrends() {
   // Richer than RSS (has platform diversity + video stats); use when cross/live
   // both return empty (e.g. Supabase ingestion lag or cold start).
   try {
-    var res3 = await fetch(DIJO + '/trends/cache?ts=' + Date.now());
+    var res3 = await fetch(DIJO + '/trends/cache?ts=' + Date.now() + '&geo=' + _selectedGeo);
     var data3 = await res3.json();
     var cacheList = Array.isArray(data3) ? data3 : (data3 && Array.isArray(data3.trends) ? data3.trends : null);
     if (cacheList && cacheList.length) {
@@ -736,7 +737,7 @@ async function fetchTrends() {
   // If you see this regularly, check /ingestion/debug on Dijo.
   try {
     console.warn('[fetchTrends] 🔴 Falling back to Google RSS — all endpoints returned no data');
-    var rss = await fetch(DIJO + '/trends/google?geo=GB');
+    var rss = await fetch(DIJO + '/trends/google?geo=' + _selectedGeo);
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
@@ -746,6 +747,20 @@ async function fetchTrends() {
       renderAll();
     }
   } catch(e) { console.error('[fetchTrends] 🔴 All endpoints failed:', e.message); }
+}
+
+/* ── LOCATION SELECTOR ────────────────────────────────────────────────────── */
+function changeGeo(selectEl) {
+  var newGeo = selectEl.value;
+  if (newGeo === _selectedGeo) return;
+  _selectedGeo = newGeo;
+  // Show loading state
+  var indicator = document.getElementById('geoLoadingIndicator');
+  if (indicator) { indicator.style.display = 'inline-block'; }
+  _allTrends = []; window._allTrends = [];
+  fetchTrends().finally(function() {
+    if (indicator) { indicator.style.display = 'none'; }
+  });
 }
 
 function trendItemHTML(t) {
