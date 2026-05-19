@@ -229,7 +229,8 @@ function studioOpenSidebar() {
   if (sb)  sb.classList.add('open');
   if (ov)  ov.classList.add('open');
   if (ham) ham.classList.add('is-open');
-  document.body.style.overflow = 'hidden';
+  // DO NOT touch document.body.style.overflow — mobile CSS owns this.
+  // Setting it inline would break the content-area scroll lock on mobile.
 }
 function studioCloseSidebar() {
   var sb  = document.getElementById('sidebar');
@@ -241,7 +242,8 @@ function studioCloseSidebar() {
   // Also close nav's mobile drawer if it snuck open
   var mobSb = document.getElementById('mobSidebar');
   if (mobSb) mobSb.classList.remove('open');
-  document.body.style.overflow = '';
+  // DO NOT touch document.body.style.overflow — mobile CSS owns this.
+  // Resetting it inline (to '' or 'auto') would break scroll on mobile.
 }
 /* Keep bare names working for HTML onclick="openSidebar()" attributes
    on the studio page — these shadow nav.js's globals only on this page,
