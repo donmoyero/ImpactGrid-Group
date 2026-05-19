@@ -963,6 +963,74 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 <script src="calendar.js" defer></script>
+
+<script>
+/* ═══════════════════════════════════════
+   MOBILE SCROLL GUARD
+   Some dynamic scripts (auth, nav, data loaders) may set
+   document.body.style.overflow = '' or 'auto', which breaks
+   the CSS-only scroll model on mobile.
+   This guard catches those writes and restores the lock.
+═══════════════════════════════════════ */
+(function() {
+  function isMobile() { return window.innerWidth <= 768; }
+
+  function enforceMobileScroll() {
+    if (!isMobile()) return;
+    // Re-lock html + body, let only .content-area scroll
+    document.documentElement.style.setProperty('overflow', 'hidden', 'important');
+    document.documentElement.style.setProperty('height', '100%', 'important');
+    document.body.style.setProperty('overflow', 'hidden', 'important');
+    document.body.style.setProperty('height', '100%', 'important');
+    // Make sure .content-area is still scrollable
+    var ca = document.getElementById('contentArea');
+    if (ca) {
+      ca.style.setProperty('overflow-y', 'scroll', 'important');
+      ca.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+    }
+  }
+
+  // Run after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enforceMobileScroll);
+  } else {
+    enforceMobileScroll();
+  }
+
+  if (isMobile()) {
+    // Watch for late scripts that unlock body overflow via inline style
+    try {
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          if (m.type === 'attributes' && m.attributeName === 'style') {
+            var el = m.target;
+            if (el === document.body || el === document.documentElement) {
+              var ov = el.style.overflow;
+              if (ov && ov !== 'hidden') {
+                setTimeout(enforceMobileScroll, 0);
+              }
+            }
+          }
+        });
+      });
+      observer.observe(document.documentElement, { attributes: true });
+      observer.observe(document.body, { attributes: true });
+    } catch(e) {}
+
+    // Re-enforce after common ImpactGrid data-load events
+    ['ig-data-loaded','ig-auth-ready','ig-nav-ready','ig-trends-loaded'].forEach(function(evName) {
+      document.addEventListener(evName, function() { setTimeout(enforceMobileScroll, 100); });
+    });
+
+    // Fallback: enforce every 500ms for first 8 seconds (covers async data loads)
+    var guardCount = 0;
+    var guardInterval = setInterval(function() {
+      enforceMobileScroll();
+      if (++guardCount >= 16) clearInterval(guardInterval);
+    }, 500);
+  }
+})();
+</script>
 <script>
   // ✅ nav.js, ig-supabase.js and auth.js are all loaded above (no defer).
   // By the time DOMContentLoaded fires, all three are fully parsed and executed.
@@ -1061,14 +1129,14 @@ document.addEventListener('DOMContentLoaded', function() {
     <span>Calendar</span>
   </button>
 
-  <!-- More (opens sidebar drawer) -->
-  <button class="bn-item bn-more" data-bn-action="more" aria-label="More">
+  <!-- More (navigates to Settings on mobile) -->
+  <a class="bn-item bn-more" data-bn-action="more" aria-label="Settings" href="settings.html" style="text-decoration:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/>
-      <circle cx="12" cy="19" r="1" fill="currentColor"/>
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
     </svg>
-    <span>More</span>
-  </button>
+    <span>Settings</span>
+  </a>
 
 </nav>
 
@@ -1110,14 +1178,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // "More" opens the sidebar drawer.
-  // Defer binding to DOMContentLoaded so studio-sidebar-fix has already run
-  // and window.openSidebar is guaranteed to point to the correct #sidebar version.
+  // "More" → Settings on mobile (<a href> handles it natively).
+  // On desktop (>768px) open the sidebar drawer instead.
   if (moreBtn) {
     function bindMoreBtn() {
-      moreBtn.addEventListener('click', function() {
-        // Read window.openSidebar at click-time (not bind-time) so any later
-        // override is always respected.
+      moreBtn.addEventListener('click', function(e) {
+        // Mobile: the <a href="settings.html"> navigates naturally — do nothing extra
+        if (window.innerWidth <= 768) return;
+        // Desktop: prevent navigation, open sidebar instead
+        e.preventDefault();
         if (typeof window.openSidebar === 'function') window.openSidebar();
         else if (typeof window.studioOpenSidebar === 'function') window.studioOpenSidebar();
       });
