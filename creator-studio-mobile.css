@@ -136,6 +136,19 @@
     touch-action: pan-y !important;            /* vertical swipe = scroll, not browser gesture */
     overscroll-behavior-y: contain !important; /* stops bounce chaining to locked body */
     padding: 12px 14px calc(72px + env(safe-area-inset-bottom)) !important;
+    /* Ensure scroll persists after dynamic content loads */
+    height: auto !important;
+    max-height: none !important;
+    position: relative !important;
+  }
+
+  /* Re-lock html/body after any dynamic JS might try to restore overflow */
+  html, body {
+    overflow: hidden !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    /* Prevent position:fixed children from making body scrollable */
+    position: relative !important;
   }
 
   /* Panels sit inside content-area */
