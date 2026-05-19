@@ -140,6 +140,9 @@
     height: auto !important;
     max-height: none !important;
     position: relative !important;
+    will-change: scroll-position !important;   /* promotes to GPU composited layer — keeps
+                                                  iOS scroll alive after dynamic repaints */
+    transform: translateZ(0) !important;       /* belt-and-braces GPU layer promotion */
   }
 
   /* Re-lock html/body after any dynamic JS might try to restore overflow */
@@ -147,8 +150,9 @@
     overflow: hidden !important;
     height: 100% !important;
     max-height: 100% !important;
-    /* Prevent position:fixed children from making body scrollable */
-    position: relative !important;
+    /* NOTE: position:relative removed — it interferes with the iOS flex
+       scroll chain and can cause content-area to stop scrolling after
+       dynamic content loads. */
   }
 
   /* Panels sit inside content-area */
