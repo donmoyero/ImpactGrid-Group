@@ -8,45 +8,6 @@
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
 
-/* ── GEO DETECTION ───────────────────────────────────────────────────────────
-   Detects the user's country via a free IP lookup (no API key needed).
-   Result is cached in _userCountry and passed to all trend endpoints so each
-   user gets trends relevant to their country, not just the UK.
-   Falls back to 'GB' if the lookup fails or times out.
-────────────────────────────────────────────────────────────────────────────── */
-var _userCountry = 'GB';            // default — overwritten on load
-var _userCountryName = 'United Kingdom';
-var _geoDetected = false;
-
-async function detectUserCountry() {
-  if (_geoDetected) return _userCountry;
-  _showGeoStatus('📍 Detecting your location…');
-  try {
-    var controller = new AbortController();
-    var timer = setTimeout(function() { controller.abort(); }, 4000); // 4 s timeout
-    var res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
-    clearTimeout(timer);
-    var data = await res.json();
-    if (data && data.country_code) {
-      _userCountry     = data.country_code;            // e.g. 'US', 'NG', 'DE'
-      _userCountryName = data.country_name || data.country_code;
-      console.log('[Geo] Detected country:', _userCountry, '(' + _userCountryName + ')');
-    }
-  } catch(e) {
-    console.warn('[Geo] Detection failed — defaulting to GB:', e.message);
-  }
-  _geoDetected = true;
-  _showGeoStatus('📍 ' + _userCountryName);
-  return _userCountry;
-}
-
-function _showGeoStatus(text) {
-  // Updates any element with id="geoStatus" in the HTML.
-  // If the element doesn't exist yet, this is a silent no-op.
-  var el = document.getElementById('geoStatus');
-  if (el) el.textContent = text;
-}
-
 /* ── AI CALL THROTTLE ────────────────────────────────────────────────
    Prevents the auto-refresh loop from hammering /chat and /ai/*
    Each AI function caches its result for 30 minutes.
@@ -335,30 +296,13 @@ function checkAccess() {
 
   // Not logged in
   if (!getUser()) {
-    if (typeof window.showUpgradeBar_gate === 'function') {
-      window.showUpgradeBar_gate('Create an account to save and unlock more', false);
-    } else {
-      showUpgrade('Create an account to save and unlock more');
-    }
+    showUpgrade("Create an account to save and unlock more");
     return false;
   }
 
-  // AI use limit — uses canUse() from auth.js (covers all plans, not just free)
-  if (!canUse('ai_uses')) {
-    var _plan = getPlan();
-    var _planLabel = _plan.charAt(0).toUpperCase() + _plan.slice(1);
-    var _limit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) ? window.IG_PLAN_CONFIG[_plan].ai_uses : 3;
-    if (typeof window.showPlanGate === 'function') {
-      window.showPlanGate({
-        icon:     '⚡',
-        title:    'Monthly AI limit reached',
-        subtitle: "You've used all " + _limit + " AI generations on the " + _planLabel + " plan. Upgrade to keep creating."
-      });
-    } else if (typeof window.showUpgradeBar_gate === 'function') {
-      window.showUpgradeBar_gate(_planLabel + ' plan: ' + _limit + ' AI uses/mo reached — upgrade for more', true);
-    } else {
-      showUpgrade("You've hit your plan limit — upgrade to continue");
-    }
+  // Free plan limit
+  if (getPlan() === 'free' && getUses() >= 3) {
+    showUpgrade("You've hit your free limit — upgrade to continue");
     return false;
   }
 
@@ -736,15 +680,11 @@ async function fetchTrends() {
     };
   }
 
-  // Ensure geo is detected before fetching — if already done this is instant
-  var geo = await detectUserCountry();
-  console.log('[fetchTrends] Using geo:', geo);
-
   // ── PRIMARY: cross-platform endpoint ─────────────────────────────────────
   // NOTE: /trends/cross returns { trends: [...] } NOT a bare array
   try {
     var ts = Date.now();
-    var res = await fetch(DIJO + '/trends/cross?geo=' + geo + '&ts=' + ts);
+    var res = await fetch(DIJO + '/trends/cross?ts=' + ts);
     var data = await res.json();
     // Unwrap either shape: bare array OR { trends: [...] }
     var crossList = Array.isArray(data) ? data : (data && Array.isArray(data.trends) ? data.trends : null);
@@ -763,7 +703,7 @@ async function fetchTrends() {
 
   // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
   try {
-    var res2 = await fetch(DIJO + '/trends/live?limit=20&geo=' + geo + '&ts=' + Date.now());
+    var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now());
     var data2 = await res2.json();
     var liveList = Array.isArray(data2) ? data2 : (data2 && Array.isArray(data2.trends) ? data2.trends : null);
     if (liveList && liveList.length) {
@@ -779,7 +719,7 @@ async function fetchTrends() {
   // Richer than RSS (has platform diversity + video stats); use when cross/live
   // both return empty (e.g. Supabase ingestion lag or cold start).
   try {
-    var res3 = await fetch(DIJO + '/trends/cache?geo=' + geo + '&ts=' + Date.now());
+    var res3 = await fetch(DIJO + '/trends/cache?ts=' + Date.now());
     var data3 = await res3.json();
     var cacheList = Array.isArray(data3) ? data3 : (data3 && Array.isArray(data3.trends) ? data3.trends : null);
     if (cacheList && cacheList.length) {
@@ -793,17 +733,16 @@ async function fetchTrends() {
 
   // ── LAST RESORT: Google RSS ───────────────────────────────────────────────
   // No platform diversity or video stats — only reached if all above fail.
-  // This endpoint is already fully geo-aware on the backend — just pass the
-  // detected country code instead of the old hardcoded 'GB'.
+  // If you see this regularly, check /ingestion/debug on Dijo.
   try {
     console.warn('[fetchTrends] 🔴 Falling back to Google RSS — all endpoints returned no data');
-    var rss = await fetch(DIJO + '/trends/google?geo=' + geo);
+    var rss = await fetch(DIJO + '/trends/google?geo=GB');
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
     }); window._allTrends = _allTrends;
     if (_allTrends.length) {
-      console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics for', geo);
+      console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics');
       renderAll();
     }
   } catch(e) { console.error('[fetchTrends] 🔴 All endpoints failed:', e.message); }
@@ -2693,9 +2632,6 @@ window.addEventListener('load', async function() {
   initTikTok();
   loadCalendar();
   loadPlatformStatus();
-  // Detect country first so fetchTrends() has geo ready — detectUserCountry()
-  // is fast (cached after first call) and shows a "Detecting…" status in the UI.
-  await detectUserCountry();
   await fetchTrends();
   renderDashTrends();
   loadOpportunities();
