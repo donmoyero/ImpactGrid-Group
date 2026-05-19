@@ -750,10 +750,29 @@ async function fetchTrends() {
 }
 
 /* ── LOCATION SELECTOR ────────────────────────────────────────────────────── */
+var _GEO_LABELS = {
+  GB:'🇬🇧 UK', US:'🇺🇸 US', AU:'🇦🇺 Australia', CA:'🇨🇦 Canada',
+  IE:'🇮🇪 Ireland', ZA:'🇿🇦 South Africa', NG:'🇳🇬 Nigeria', IN:'🇮🇳 India',
+  DE:'🇩🇪 Germany', FR:'🇫🇷 France', ES:'🇪🇸 Spain', IT:'🇮🇹 Italy',
+  NL:'🇳🇱 Netherlands', BR:'🇧🇷 Brazil', MX:'🇲🇽 Mexico',
+  JP:'🇯🇵 Japan', KR:'🇰🇷 South Korea', SG:'🇸🇬 Singapore'
+};
+
+function _updateGeoBadge(geo) {
+  var badge = document.getElementById('geoStatusBadge');
+  if (badge) badge.textContent = '📍 ' + (_GEO_LABELS[geo] || geo);
+  // Show warning if not GB — backend may not filter by geo yet
+  var warn = document.getElementById('geoDataWarning');
+  if (warn) warn.style.display = (geo !== 'GB') ? 'block' : 'none';
+}
+
 function changeGeo(selectEl) {
   var newGeo = selectEl.value;
   if (newGeo === _selectedGeo) return;
   _selectedGeo = newGeo;
+  _updateGeoBadge(newGeo);
+  // Clear AI cache so briefing re-fetches for new location
+  if (typeof _aiCache !== 'undefined') { for (var k in _aiCache) delete _aiCache[k]; }
   // Show loading state
   var indicator = document.getElementById('geoLoadingIndicator');
   if (indicator) { indicator.style.display = 'inline-block'; }
@@ -1318,7 +1337,7 @@ async function runTrendPrediction() {
     return;
   }
   try {
-    var res = await fetch(DIJO + '/ai/daily-briefing');
+    var res = await fetch(DIJO + '/ai/daily-briefing?geo=' + _selectedGeo);
     var data = await res.json();
 
     if (data && data.briefing) {
@@ -1497,7 +1516,7 @@ function renderOpportunities(data) {
 
 async function loadOpportunities() {
   try {
-    var res = await fetch(DIJO + '/trends/dijo');
+    var res = await fetch(DIJO + '/trends/dijo?geo=' + _selectedGeo);
     var data = await res.json();
     // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
     // fall back to local rather than showing "No opportunities"
@@ -1875,7 +1894,7 @@ async function loadBriefing(forceRefresh) {
   // Still loading — wait for trends then retry
   el.innerHTML = '<span class="spinner spinner-gold"></span>';
   try {
-    var res = await fetch(DIJO + '/ai/daily-briefing');
+    var res = await fetch(DIJO + '/ai/daily-briefing?geo=' + _selectedGeo);
     var data = await res.json();
     // Even if API has data, prefer the compact pulse strip if trends are now loaded
     if (_allTrends.length && renderPulseStrip()) {
