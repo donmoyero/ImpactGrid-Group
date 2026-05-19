@@ -977,6 +977,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function enforceMobileScroll() {
     if (!isMobile()) return;
+    // Clear any rogue inline styles first so setProperty wins
+    document.documentElement.style.removeProperty('overflow');
+    document.body.style.removeProperty('overflow');
     // Re-lock html + body, let only .content-area scroll
     document.documentElement.style.setProperty('overflow', 'hidden', 'important');
     document.documentElement.style.setProperty('height', '100%', 'important');
@@ -987,6 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (ca) {
       ca.style.setProperty('overflow-y', 'scroll', 'important');
       ca.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+      ca.style.setProperty('transform', 'translateZ(0)', 'important');
     }
   }
 
@@ -1005,10 +1009,8 @@ document.addEventListener('DOMContentLoaded', function() {
           if (m.type === 'attributes' && m.attributeName === 'style') {
             var el = m.target;
             if (el === document.body || el === document.documentElement) {
-              var ov = el.style.overflow;
-              if (ov && ov !== 'hidden') {
-                setTimeout(enforceMobileScroll, 0);
-              }
+              // Any inline style change on html/body could reset overflow — re-enforce
+              setTimeout(enforceMobileScroll, 0);
             }
           }
         });
