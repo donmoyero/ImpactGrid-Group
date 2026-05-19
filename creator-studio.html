@@ -13,12 +13,29 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="ImpactGrid"/>
 <link rel="apple-touch-icon" href="logo.png"/>
-
+<script>
+  // Redirect to welcome page unless coming from it
+  (function(){
+    try {
+      var ref = document.referrer;
+      var fromWelcome = ref && (ref.indexOf('creator-welcome.html') !== -1 || ref.indexOf('impactgridgroup.com/creator-welcome') !== -1);
+      var hasFlag = sessionStorage.getItem('ig_from_welcome');
+      if (!fromWelcome && !hasFlag) {
+        // Save the intended destination so welcome page can redirect back
+        var dest = window.location.href;
+        try { sessionStorage.setItem('ig_post_welcome_dest', dest); } catch(e){}
+        window.location.replace('creator-welcome.html');
+      } else {
+        // Clear the flag so it's consumed (referrer handles same-session navigation)
+        try { sessionStorage.removeItem('ig_from_welcome'); } catch(e){}
+      }
+    } catch(e){}
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="creator-studio.css"/>
-<link rel="stylesheet" href="creator-studio-mobile.css"/>
 <style>
 /* ═══════════════════════════════════════
    CONTENT CALENDAR — inline styles
@@ -86,7 +103,30 @@
     gtag('js', new Date());
     gtag('config', 'G-KVJC5DE2WT');
   </script>
+<script>
+// ── Welcome page redirect for new/returning visitors ──
+(function() {
+  try {
+    var skip = localStorage.getItem('ig_skip_welcome');
+    var seen = localStorage.getItem('ig_seen_welcome');
+    var params = new URLSearchParams(window.location.search);
+    var directTab = params.get('tab'); // arriving from a direct link
 
+    // If they came via a direct ?tab= link, don't redirect
+    if (directTab) {
+      sessionStorage.setItem('ig_welcome_tab', directTab);
+      return;
+    }
+    // If skip flag set, go straight to dashboard
+    if (skip) return;
+    // First time OR not recently seen — redirect to welcome
+    if (!seen) {
+      localStorage.setItem('ig_seen_welcome', '1');
+      window.location.replace('creator-welcome.html');
+    }
+  } catch(e) {}
+})();
+</script>
 <script>
 // ── Apply tab from welcome page selection ──
 document.addEventListener('DOMContentLoaded', function() {
@@ -103,7 +143,6 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch(e) {}
 });
 </script>
-
 </head>
 <body>
 
@@ -132,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="app-layout">
 
   <!-- SIDEBAR -->
-  <!-- SIDEBAR — fixed drawer on mobile via CSS, inline on desktop -->
   <div class="app-sidebar">
   <aside class="sidebar" id="sidebar">
     <div class="sb-close-btn">
@@ -144,37 +182,30 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="sb-sec">
       <div class="sb-sec-title">Intelligence</div>
-      <div class="sb-item active" data-tab="dashboard"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>My Overview<span class="sb-badge live">Live</span></div>
-      <div class="sb-item" data-tab="trends"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>What's Trending</div>
-      <div class="sb-item" data-tab="generator"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>Write My Content</div>
-      <div class="sb-item" data-tab="evaluator"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>Analyse My Channel<span class="sb-badge live">AI</span></div>
+      <div class="sb-item active" data-tab="dashboard"><span class="sb-icon">📊</span>My Overview<span class="sb-badge live">Live</span></div>
+      <div class="sb-item" data-tab="trends"><span class="sb-icon">🔥</span>What's Trending</div>
+      <div class="sb-item" data-tab="generator"><span class="sb-icon">✍️</span>Write My Content</div>
+      <div class="sb-item" data-tab="audience"><span class="sb-icon">👥</span>Post Audience</div>
+      <div class="sb-item" data-tab="evaluator"><span class="sb-icon">⚡</span>Analyse My Channel<span class="sb-badge live">AI</span></div>
     </div>
     <div class="sb-sec">
       <div class="sb-sec-title">Create</div>
       <div class="sb-item" data-tab="calendar">
-        
-        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <span class="sb-icon">📅</span>
         Content Calendar
       </div>
-      <a class="sb-item" href="carousel-studio.html">
-        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="2" y="7" width="6" height="10" rx="1"/><rect x="9" y="4" width="6" height="16" rx="1"/><rect x="16" y="7" width="6" height="10" rx="1"/></svg></span>
-        Carousel Studio<span class="sb-badge" style="background:rgba(201,126,8,.12);color:var(--gold);border:1px solid rgba(201,126,8,.25)">New</span>
-      </a>
-      <a class="sb-item" href="portfolio-studio.html">
-        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
-        Portfolio Studio
-      </a>
+
     </div>
 
     <div class="sb-sec">
       <div class="sb-sec-title">System</div>
 
       <a class="sb-item" href="settings.html">
-        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
+        <span class="sb-icon">⚙️</span>
         Settings
       </a>
       <div class="sb-item" id="installSideBtn" style="display:none;cursor:pointer" onclick="document.getElementById('installSideBtn').onclick && document.getElementById('installSideBtn').onclick()">
-        <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+        <span class="sb-icon">📲</span>
         Install App
       </div>
     </div>
@@ -185,70 +216,64 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="app-main">
   <div class="main">
     <div class="tabs-bar">
-      <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><span class="tab-label">My Overview</span></button>
-      <button class="tab-btn" id="tab-trends" data-tab="trends"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span><span class="tab-label">What's Trending</span></button>
-      <button class="tab-btn" id="tab-generator" data-tab="generator"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="tab-label">Write My Content</span></button>
-      <button class="tab-btn" id="tab-evaluator" data-tab="evaluator"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="tab-label">Analyse My Channel</span></button>
-      <button class="tab-btn" id="tab-calendar" data-tab="calendar"><span class="tab-icon"></span><span class="tab-label">Content Calendar</span></button>
+      <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard">📊 My Overview</button>
+      <button class="tab-btn" id="tab-trends" data-tab="trends">🔥 What's Trending</button>
+      <button class="tab-btn" id="tab-generator" data-tab="generator">✍️ Write My Content</button>
+      <button class="tab-btn" id="tab-audience" data-tab="audience">👥 Post Audience</button>
+      <button class="tab-btn" id="tab-evaluator" data-tab="evaluator">🎯 Analyse My Channel</button>
+      <button class="tab-btn" id="tab-calendar" data-tab="calendar">📅 Calendar</button>
     </div>
 
     <div class="content-area" id="contentArea">
 
       <!-- DASHBOARD -->
       <div class="panel active" id="panel-dashboard">
-        <div class="stat-grid" style="align-items:start">
-          <div class="card" style="padding:10px 14px">
-            <div class="card-header" style="margin-bottom:6px">
-              <div class="card-title" style="font-size:10px">Weekly Trend</div>
+        <div class="stat-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📊 Weekly Trend Prediction</div>
+              <div class="card-tag tag-gold">AI</div>
             </div>
-            <div id="weeklyPrediction" style="font-family:'Syne',sans-serif;font-size:17px;font-weight:900;color:var(--text1);line-height:1.2">
-              <span class="spinner spinner-gold"></span>
+            <div class="card-body" id="weeklyPrediction">
+              <div class="text-sm">Analyzing trends...</div>
             </div>
           </div>
-          <div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 14px">
-            <div data-ig-avatar class="u-av" style="width:32px;height:32px;font-size:14px"></div>
+          <div class="card" style="display:flex;align-items:center;gap:12px;">
+            <div data-ig-avatar class="u-av"></div>
             <div>
-              <div id="dijoGreeting" data-ig-greeting style="font-size:11px;color:var(--text2)"></div>
-              <div id="dijoBrief" style="font-size:11px;color:var(--text3)"></div>
+              <div id="dijoGreeting" data-ig-greeting class="text-sm"></div>
+              <div id="dijoBrief" class="text-sm"></div>
             </div>
           </div>
-          <div class="stat-card" style="padding:10px 14px">
-            <div class="sc-label" style="font-size:9px">YouTube</div>
-            <div class="sc-val-sm" id="dashYtVal" style="color:var(--text2);font-size:11px">Not connected</div>
-            <div class="sc-delta" style="font-size:10px"><span class="sc-link" data-tab="youtube">Connect →</span></div>
+          <div class="stat-card">
+            <div class="sc-label">YouTube</div>
+            <div class="sc-val-sm" id="dashYtVal" style="color:var(--text2)">Not connected</div>
+            <div class="sc-delta"><span class="sc-link" data-tab="youtube">Connect →</span></div>
           </div>
-          <div class="stat-card" style="padding:10px 14px">
-            <div class="sc-label" style="font-size:9px">TikTok</div>
-            <div class="sc-val-sm" id="dashTtVal" style="color:var(--text2);font-size:11px">Not connected</div>
-            <div class="sc-delta" id="dashTtSub" style="font-size:10px"><span class="sc-link" data-tab="tiktok">Connect →</span></div>
+          <div class="stat-card">
+            <div class="sc-label">TikTok</div>
+            <div class="sc-val-sm" id="dashTtVal" style="color:var(--text2)">Not connected</div>
+            <div class="sc-delta" id="dashTtSub"><span class="sc-link" data-tab="tiktok">Connect →</span></div>
           </div>
         </div>
 
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:16px 18px;display:flex;align-items:flex-start;gap:14px">
-          <!-- Dijo mascot -->
-          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px">
-            <img src="dijo-mascot.png" alt="Dijo" style="width:62px;height:62px;object-fit:contain;border-radius:50%;background:var(--bg);filter:drop-shadow(0 2px 12px rgba(79,179,165,.45))">
-            <span style="font-family:'DM Mono',monospace;font-size:8px;font-weight:700;color:#4FB3A5;letter-spacing:.06em">DIJO</span>
-            <div id="briefingDate" style="font-family:'DM Mono',monospace;font-size:7px;color:var(--text3);text-align:center;line-height:1.5;white-space:pre-line">Loading…</div>
-          </div>
-          <!-- Chat bubble pointing left toward Dijo -->
-          <div style="flex:1;min-width:0;position:relative">
-            
-            <div style="background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:14px;padding:12px 14px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <span style="font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:#4FB3A5;letter-spacing:.05em">Dijo’s Briefing</span>
-                <button onclick="loadBriefing(true)" style="font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:4px;background:transparent;border:1px solid var(--border2);color:var(--text3);cursor:pointer">Refresh</button>
-              </div>
-              <div id="briefingText" style="font-size:12px;color:var(--text2);line-height:1.6"><span class="spinner spinner-gold"></span></div>
-              <div id="briefingTags" style="display:none;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
+        <div class="briefing-card">
+          <div class="briefing-head">
+            <div class="briefing-av">📡</div>
+            <div>
+              <div class="briefing-title">What’s Trending Now</div>
+              <div class="briefing-meta" id="briefingDate">Loading…</div>
             </div>
+            <button onclick="loadBriefing(true)" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Refresh</button>
           </div>
+          <div class="briefing-text" id="briefingText" style="padding:4px 0"><span class="spinner spinner-gold"></span></div>
+          <div class="briefing-tags" id="briefingTags" style="display:none"></div>
         </div>
 
         <div class="two-col">
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Top Trends</span>
+              <span class="card-title">📡 Top Trends</span>
               <span class="card-tag tag-green" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.3">Live · Multi-Platform Intelligence</span>
             </div>
             <div class="card-body">
@@ -257,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div style="display:flex;flex-direction:column;gap:14px">
             <div class="card">
-              <div class="card-header"><span class="card-title">Top Opportunities</span><span class="card-tag tag-gold">Highest Scored</span></div>
+              <div class="card-header"><span class="card-title">⚡ Top Opportunities</span><span class="card-tag tag-gold">Highest Scored</span></div>
               <div class="card-body" id="topOppBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
             </div>
 
@@ -267,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Quick launch cards -->
         <div class="quick-launch-grid">
           <div class="quick-launch-card" data-tab="evaluator" style="background:linear-gradient(135deg,#0a0f0a,#1a3a1a);border:1px solid rgba(15,168,118,.2)">
-            
+            <div class="qlc-icon">🎯</div>
             <div class="qlc-title">Analyse My Channel</div>
             <div class="qlc-desc">Score your channel with AI</div>
           </div>
@@ -283,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- TikTok chart -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title" style="color:#ff6464"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg> TikTok
+              <div class="card-title" style="color:#ff6464">🎵 TikTok
                 <span id="ttLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6464;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
               </div>
               <div class="card-tag" style="background:rgba(255,100,100,.1);color:#ff6464;border:1px solid rgba(255,100,100,.2)">Top 3 topics</div>
@@ -300,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- YouTube chart -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title" style="color:#FFD700"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg> YouTube
+              <div class="card-title" style="color:#FFD700">▶️ YouTube
                 <span id="ytLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#FFD700;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
               </div>
               <div class="card-tag" style="background:rgba(255,215,0,.1);color:#c9a800;border:1px solid rgba(255,215,0,.2)">Top 3 topics</div>
@@ -317,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- Google chart -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title" style="color:#78b4ff"><svg viewBox='0 0 24 24' style='width:1em;height:1em;vertical-align:middle'><path d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z' fill='#4285F4'/><path d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z' fill='#34A853'/><path d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z' fill='#FBBC05'/><path d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z' fill='#EA4335'/></svg> Google
+              <div class="card-title" style="color:#78b4ff">🔍 Google
                 <span id="gtLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#78b4ff;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.6s"></span>
               </div>
               <div class="card-tag" style="background:rgba(120,180,255,.1);color:#78b4ff;border:1px solid rgba(120,180,255,.2)">Top 3 topics</div>
@@ -333,10 +358,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         </div>
 
+        <!-- Mobile: stack charts vertically -->
+        <style>
+          @media(max-width:768px){ #platformChartsGrid{ grid-template-columns:1fr !important; } }
+        </style>
+
         <!-- Cross-platform trend chart -->
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
-            <div class="card-title">Cross-Platform Score Chart
+            <div class="card-title">📊 Cross-Platform Score Chart
               <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
             </div>
             <div class="card-tag tag-gold">All platforms · top topics by score</div>
@@ -351,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Fuel gauges — rendered by renderRadarGauges() -->
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
-            <div class="card-title">Platform Momentum
+            <div class="card-title">🎯 Platform Momentum
               <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4FB3A5;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
             </div>
             <div class="card-tag tag-green">Live gauge · needle moves as topics rise &amp; fall · click to generate</div>
@@ -364,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Dijo Top Pick -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Dijo's Top Pick
+            <div class="card-title">🧠 Dijo's Top Pick
               <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
             </div>
             <div class="card-tag tag-gold">Best topic across all platforms · AI explains why</div>
@@ -376,154 +406,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </div>
 
-      <!-- GENERATOR (unified with audience) -->
+      <!-- GENERATOR -->
       <div class="panel" id="panel-generator">
-
-        <!-- ── Studio Header ── -->
-        <div class="studio-header">
-          <div class="studio-header-left">
-            <div class="studio-title-badge">
-              <span class="studio-badge-dot"></span>
-              <span>Dijo AI</span>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <h2 style="font-size:20px">AI Content Generator</h2>
+          <span class="card-tag tag-gold">Dijo AI</span>
+        </div>
+        <div id="genLoading" class="gen-loading"><span class="spinner"></span><span id="genLoadingMsg">Generating…</span></div>
+        <div class="ai-hint" id="aiHint">💡 Enter a topic — Dijo will generate high-performing content based on trends.</div>
+        <div class="gen-layout">
+          <div class="gen-input-area">
+            <div class="input-group"><label class="input-label">Topic</label><input type="text" class="form-input" id="genTopic" placeholder="e.g. AI productivity tools, UK street style…" onkeydown="if(event.key==='Enter')fullGenerate()"/></div>
+            <div class="input-group"><label class="input-label">Platform</label><select class="form-select" id="genPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option><option>All Platforms</option></select></div>
+            <div class="input-group"><label class="input-label">Style</label><div class="style-chips"><button class="style-chip active" onclick="selectStyle(this)">Educational</button><button class="style-chip" onclick="selectStyle(this)">Entertaining</button><button class="style-chip" onclick="selectStyle(this)">Motivational</button><button class="style-chip" onclick="selectStyle(this)">Hot Take</button></div></div>
+            <div class="input-group"><label class="input-label">Niche (optional)</label><input type="text" class="form-input" id="genNiche" placeholder="e.g. finance, fitness, fashion…"/></div>
+            <button class="gen-btn" onclick="fullGenerate()" id="fullGenBtn">⚡ Generate Full Package</button>
+            <div id="genError" class="gen-error"></div>
+            <div class="score-card">
+              <div class="score-label">Trend Score™</div>
+              <div class="score-num" id="previewScore">—</div>
+              <div class="score-verdict" id="previewVerdict">Enter a topic to score</div>
             </div>
-            <h2 class="studio-title">Content Studio</h2>
-            <p class="studio-subtitle">Enter a topic. Dijo writes your content <em>and</em> maps your audience — all in one shot.</p>
           </div>
-          <div class="studio-score-pill" id="scorePill">
-            <span class="ssp-label">Trend Score™</span>
-            <span class="ssp-val" id="previewScore">—</span>
-            <span class="ssp-verdict" id="previewVerdict">awaiting topic</span>
+          <div class="gen-output">
+            <div class="output-block"><div class="ob-header"><span>Video Hook</span><button class="copy-btn" onclick="copyEl('outHook')">Copy</button></div><div class="ob-body ob-placeholder" id="outHook">Your hook appears here…</div></div>
+            <div class="output-block"><div class="ob-header"><span>Caption</span><button class="copy-btn" onclick="copyEl('outCaption')">Copy</button></div><div class="ob-body ob-placeholder" id="outCaption">Your caption appears here…</div></div>
+            <div class="hashtag-bar">
+              <div class="hashtag-bar-title">Suggested Hashtags</div>
+              <div class="hashtag-bar-list" id="hashtagBar"></div>
+            </div>
+            <div class="output-block"><div class="ob-header"><span>Content Outline</span><button class="copy-btn" onclick="copyEl('outOutline')">Copy</button></div><div class="ob-body ob-placeholder" id="outOutline">Your outline appears here…</div></div>
+            <div class="output-block"><div class="ob-header"><span>Hashtags</span><button class="copy-btn" onclick="copyTags('outHashtags')">Copy</button></div><div class="ob-tags" id="outHashtags"><span style="color:var(--text3);font-style:italic;font-size:12px">Hashtags appear here…</span></div></div>
+            <div class="output-block"><div class="ob-header"><span>Best Posting Time</span></div><div class="timing-grid" id="outTiming"><div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div></div></div>
           </div>
         </div>
 
-        <!-- ── Input Row ── -->
-        <div class="studio-input-row">
-          <div class="studio-topic-wrap">
-            
-            <input type="text" class="studio-topic-input" id="genTopic"
-              placeholder="What do you want to create content about?"
-              onkeydown="if(event.key==='Enter')fullGenerate()"/>
-            <button class="studio-generate-btn" onclick="fullGenerate()" id="fullGenBtn">
-              
-              <span class="sgb-text">Generate</span>
-            </button>
-          </div>
-          <div class="studio-controls-row">
-            <div class="studio-control-group">
-              <label class="sc-label">Platform</label>
-              <select class="sc-select" id="genPlatform">
-                <option>TikTok</option>
-                <option>YouTube</option>
-                <option>Instagram</option>
-                <option>All Platforms</option>
-              </select>
-            </div>
-            <div class="studio-control-group">
-              <label class="sc-label">Niche</label>
-              <input type="text" class="sc-input" id="genNiche" placeholder="e.g. finance, fitness…"/>
-            </div>
-            <div class="studio-control-group">
-              <label class="sc-label">Style</label>
-              <div class="sc-chips">
-                <button class="sc-chip active" onclick="selectStyle(this)">Educational</button>
-                <button class="sc-chip" onclick="selectStyle(this)">Entertaining</button>
-                <button class="sc-chip" onclick="selectStyle(this)">Motivational</button>
-                <button class="sc-chip" onclick="selectStyle(this)">Hot Take</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="genLoading" class="gen-loading"><span class="spinner spinner-gold"></span><span id="genLoadingMsg">Dijo is building your content package…</span></div>
-        <div id="genError" class="gen-error"></div>
-
-        <!-- ── Output Grid ── -->
-        <div class="studio-output-grid" id="studioOutputGrid">
-
-          <!-- LEFT: Content outputs -->
-          <div class="studio-outputs">
-
-            <!-- Hook card -->
-            <div class="sout-card sout-hero">
-              <div class="sout-card-header">
-                <div class="sout-label-row">
-                  
-                  <span class="sout-label">Video Hook</span>
-                  <span class="sout-hint">First 1.5s — make or break</span>
-                </div>
-                <button class="sout-copy-btn" onclick="copyEl('outHook')">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                  Copy
-                </button>
-              </div>
-              <div class="sout-body sout-hook-body" id="outHook">Your hook will appear here after you hit Generate…</div>
-            </div>
-
-            <!-- Caption + Outline side by side -->
-            <div class="sout-pair">
-              <div class="sout-card">
-                <div class="sout-card-header">
-                  <div class="sout-label-row"><span class="sout-label">Caption</span></div>
-                  <button class="sout-copy-btn" onclick="copyEl('outCaption')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>
-                </div>
-                <div class="sout-body" id="outCaption">Caption appears here…</div>
-              </div>
-              <div class="sout-card">
-                <div class="sout-card-header">
-                  <div class="sout-label-row"><span class="sout-label">Content Outline</span></div>
-                  <button class="sout-copy-btn" onclick="copyEl('outOutline')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>
-                </div>
-                <div class="sout-body" id="outOutline">Outline appears here…</div>
-              </div>
-            </div>
-
-            <!-- Hashtags + Timing -->
-            <div class="sout-pair">
-              <div class="sout-card">
-                <div class="sout-card-header">
-                  <div class="sout-label-row"><span class="sout-icon" style="font-style:normal;font-weight:700">#</span><span class="sout-label">Hashtags</span></div>
-                  <button class="sout-copy-btn" onclick="copyTags('outHashtags')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy all</button>
-                </div>
-                <div class="sout-tags" id="outHashtags">
-                  <span class="sout-tags-placeholder">Hashtags appear after generating…</span>
-                </div>
-                <div class="hashtag-bar-list" id="hashtagBar" style="display:none"></div>
-              </div>
-              <div class="sout-card">
-                <div class="sout-card-header">
-                  <div class="sout-label-row"><span class="sout-label">Best Time to Post</span></div>
-                </div>
-                <div class="timing-grid" id="outTiming">
-                  <div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- RIGHT: Audience intel (auto-generated) -->
-          <div class="studio-audience-panel" id="studioAudiencePanel">
-            <div class="saud-header">
-              <div class="saud-title-row">
-                
-                <span class="saud-title">Audience Intel</span>
-                <span class="saud-badge">Auto-generated</span>
-              </div>
-              <p class="saud-desc">Generated alongside your content — know exactly who you're writing for.</p>
-            </div>
-            <div id="audOutput" class="saud-output">
-              <div class="saud-empty">
-                
-                <div class="saud-empty-text">Your audience breakdown appears here once you generate content above.</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
       </div>
-
-      <!-- AUDIENCE panel kept as hidden redirect target for legacy links -->
-      <div class="panel" id="panel-audience" style="display:none"></div>
 
       <!-- CALENDAR -->
       <div class="panel" id="panel-calendar">
@@ -531,18 +449,18 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Header row -->
         <div class="cal-header-row">
           <div class="cal-header-left">
-            <h2 class="cal-title">Content Calendar</h2>
+            <h2 class="cal-title">📅 Content Calendar</h2>
             <span class="cal-ai-badge"><span class="live-dot"></span>Dijo AI · Auto-filled</span>
           </div>
           <div class="cal-header-right">
-            <button class="cal-autofill-btn" id="calAutoBtn" onclick="calAutoFill()">Auto-Fill</button>
+            <button class="cal-autofill-btn" id="calAutoBtn" onclick="calAutoFill()">✨ Auto-Fill</button>
           </div>
         </div>
 
         <!-- How it works explanation (dismissable) -->
         <div class="cal-explainer" id="calExplainer">
           <div class="cal-explainer-inner">
-            
+            <span class="cal-explainer-icon">🧠</span>
             <div>
               <strong>How this works:</strong> Dijo scans live trends every week and scores each topic. The highest-scoring topics are automatically dropped into your calendar with the best time to post. You'll get a notification when it's time. Add your own ideas in the note box under each day — Dijo will remind you about those too.
             </div>
@@ -568,19 +486,19 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="cal-modal-body">
               <label class="cal-modal-label">Topic</label>
               <input class="cal-modal-input" id="calModalInput" type="text" placeholder="What's the content about?"/>
-              <button class="cal-dijo-suggest-btn" id="calDijoSuggestBtn" onclick="calSuggestIdea()">Suggest with Dijo</button>
+              <button class="cal-dijo-suggest-btn" id="calDijoSuggestBtn" onclick="calSuggestIdea()">✨ Suggest with Dijo</button>
               <label class="cal-modal-label" style="margin-top:12px">Platform</label>
               <div class="cal-modal-plats">
-                <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg> TikTok</button>
-                <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')"><svg viewBox='0 0 24 24' fill='currentColor' style='width:1em;height:1em;vertical-align:middle'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg> YouTube</button>
-                <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')">Instagram</button>
-                <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')">LinkedIn</button>
+                <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')">🎵 TikTok</button>
+                <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')">▶️ YouTube</button>
+                <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')">📸 Instagram</button>
+                <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')">💼 LinkedIn</button>
               </div>
               <label class="cal-modal-label" style="margin-top:12px">Status</label>
               <select class="cal-modal-status" id="calModalStatus">
                 <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled </option>
-                <option value="published">Published </option>
+                <option value="scheduled">Scheduled ⏰</option>
+                <option value="published">Published ✓</option>
               </select>
               <label class="cal-modal-label" style="margin-top:12px">Notes</label>
               <textarea class="cal-modal-notes" id="calModalNotes" placeholder="Add any notes, angles, or ideas…"></textarea>
@@ -594,6 +512,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </div>
 
+      <!-- AUDIENCE -->
+      <div class="panel" id="panel-audience">
+        <h2 style="font-size:20px;margin-bottom:6px">Post Audience</h2>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
+          <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
+        </div>
+        <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
+      </div>
 
       <!-- EVALUATOR -->
       <div class="panel" id="panel-evaluator">
@@ -672,9 +600,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="evalLoading" style="display:none;text-align:center;padding:48px"><span class="spinner spinner-gold" style="width:22px;height:22px;border-width:3px"></span><p style="margin-top:14px;font-size:14px;color:var(--text3)" id="evalLoadingMsg">Analysing your channel…</p></div>
         <div id="evalMain" style="display:none">
           <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-            <div id="evalAv" style="width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:#FF0000"><svg viewBox='0 0 24 24' fill='currentColor' style='width:20px;height:20px'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg></div>
+            <div id="evalAv" style="width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">▶️</div>
             <div style="flex:1;min-width:0"><div id="evalChannelName" style="font-weight:700;font-size:14px;margin-bottom:1px">—</div><div id="evalChannelHandle" style="font-size:11px;color:var(--text3)">—</div></div>
-            <button onclick="runEvaluation()" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0">Re-evaluate</button>
+            <button onclick="runEvaluation()" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0">⚡ Re-evaluate</button>
           </div>
           <div class="eval-layout">
             <div>
@@ -730,7 +658,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="panel" id="panel-youtube">
         <div id="ytDisconnected">
           <div class="connect-wrap">
-            <div style="margin-bottom:16px;color:#FF0000"><svg viewBox='0 0 24 24' fill='currentColor' style='width:48px;height:48px'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg></div>
+            <div style="font-size:48px;margin-bottom:16px">▶️</div>
             <h2 style="font-size:22px;margin-bottom:10px">Connect Your YouTube Channel</h2>
             <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real channel stats, video performance, and subscriber data — live from YouTube Data API.</p>
             <div id="ytErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
@@ -739,16 +667,16 @@ document.addEventListener('DOMContentLoaded', function() {
               Connect YouTube
             </button>
             <div class="feat-grid">
-              <div class="feat-card"><h4>Channel Stats</h4><p>Real subscriber count, views, and video count.</p></div>
-              <div class="feat-card"><h4>Video Performance</h4><p>Views, likes, and comments per video.</p></div>
-              <div class="feat-card"><h4>Analyse My Channel</h4><p>AI score and actionable growth advice.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Channel Stats</h4><p>Real subscriber count, views, and video count.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, and comments per video.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Analyse My Channel</h4><p>AI score and actionable growth advice.</p></div>
             </div>
           </div>
         </div>
         <div id="ytConnected" style="display:none">
           <div class="card" style="margin-bottom:14px">
             <div class="card-header">
-              <span class="card-title">YouTube Connected</span>
+              <span class="card-title">✅ YouTube Connected</span>
               <div class="connected-header">
                 <span class="card-tag tag-green">Live Data</span>
                 <button class="disconnect-btn" onclick="if(confirm('Disconnect YouTube?'))disconnectYouTube()">✕ Disconnect</button>
@@ -756,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="card-body">
               <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <div id="ytAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,96,96,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:#FF0000"><svg viewBox='0 0 24 24' fill='currentColor' style='width:20px;height:20px'><path d='M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.83 12l-6.08 3.52z'/></svg></div>
+                <div id="ytAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,96,96,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">▶️</div>
                 <div><div id="ytChannelName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ytChannelHandle" style="font-size:12px;color:var(--text3)">—</div></div>
               </div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
@@ -766,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
           </div>
-          <div class="card"><div class="card-header"><span class="card-title">Recent Videos</span><span class="card-tag tag-green">Live</span></div><div class="card-body" id="ytVideosList"><div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div></div></div>
+          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent Videos</span><span class="card-tag tag-green">Live</span></div><div class="card-body" id="ytVideosList"><div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div></div></div>
         </div>
       </div>
 
@@ -774,7 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="panel" id="panel-tiktok">
         <div id="ttDisconnected">
           <div class="connect-wrap">
-            <div style="margin-bottom:16px;color:#010101"><svg viewBox='0 0 24 24' fill='currentColor' style='width:48px;height:48px'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg></div>
+            <div style="font-size:48px;margin-bottom:16px">🎵</div>
             <h2 style="font-size:22px;margin-bottom:10px">Connect Your TikTok Account</h2>
             <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real profile stats, video performance, and audience data — via the official TikTok API.</p>
             <div id="ttErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
@@ -783,16 +711,16 @@ document.addEventListener('DOMContentLoaded', function() {
               Connect with TikTok
             </button>
             <div class="feat-grid">
-              <div class="feat-card"><h4>Profile Stats</h4><p>Real follower count, likes, and video count.</p></div>
-              <div class="feat-card"><h4>Video Performance</h4><p>Views, likes, comments, and shares per video.</p></div>
-              <div class="feat-card"><h4>Analyse My Channel</h4><p>AI score and growth advice for your account.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Profile Stats</h4><p>Real follower count, likes, and video count.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, comments, and shares per video.</p></div>
+              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Analyse My Channel</h4><p>AI score and growth advice for your account.</p></div>
             </div>
           </div>
         </div>
         <div id="ttConnected" style="display:none">
           <div class="card" style="margin-bottom:14px">
             <div class="card-header">
-              <span class="card-title">TikTok Connected</span>
+              <span class="card-title">✅ TikTok Connected</span>
               <div class="connected-header">
                 <span class="card-tag tag-tt">Live Data</span>
                 <button class="disconnect-btn" onclick="if(confirm('Disconnect TikTok? This will clear the session so a new account can connect.'))disconnectTikTok()">✕ Disconnect</button>
@@ -800,7 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="card-body">
               <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <div id="ttAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,45,85,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:#010101"><svg viewBox='0 0 24 24' fill='currentColor' style='width:20px;height:20px'><path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z'/></svg></div>
+                <div id="ttAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,45,85,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">🎵</div>
                 <div><div id="ttDisplayName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ttUsername" style="font-size:12px;color:var(--text3)">—</div></div>
               </div>
               <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
@@ -811,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
           </div>
-          <div class="card"><div class="card-header"><span class="card-title">Recent TikToks</span><span class="card-tag tag-tt">Live</span></div><div class="card-body" id="ttVideosList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(255,45,85,.2);border-top-color:var(--tt)"></span> Loading…</div></div></div>
+          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent TikToks</span><span class="card-tag tag-tt">Live</span></div><div class="card-body" id="ttVideosList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(255,45,85,.2);border-top-color:var(--tt)"></span> Loading…</div></div></div>
         </div>
       </div>
 
@@ -836,11 +764,11 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
   <!-- Android / Desktop -->
   <button class="dl-btn" id="dlBtn">
-    Download App
+    ⬇ Download App
   </button>
   <!-- iOS hint shown instead -->
   <div class="dl-ios-hint" id="dlIOSHint">
-    Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>
+    Tap <strong>Share ⬆️</strong> then <strong>"Add to Home Screen"</strong>
   </div>
   <button class="dl-dismiss" id="dlDismiss" title="Dismiss">✕</button>
 </div>
@@ -856,7 +784,6 @@ document.addEventListener('DOMContentLoaded', function() {
      5. auth.js          — initialises session
      6. nav.js           — reads window.SUPABASE_URL/ANON_KEY, renders nav, runs checkAuth -->
 <script src="plan-config.js"></script>
-<script src="plan-gate.js"></script>
 <script src="supabase-config.js"></script>
 <script src="ig-supabase.js"></script>
 <script src="auth.js"></script>
@@ -956,83 +883,13 @@ document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('appinstalled', function() {
     hideBar();
     if (typeof toast === 'function') {
-      toast('ImpactGrid installed — you\'re ready to grow');
+      toast('🔥 ImpactGrid installed — you\'re ready to grow');
     }
   });
 
 })();
 </script>
 <script src="calendar.js" defer></script>
-
-<script>
-/* ═══════════════════════════════════════
-   MOBILE SCROLL GUARD
-   Some dynamic scripts (auth, nav, data loaders) may set
-   document.body.style.overflow = '' or 'auto', which breaks
-   the CSS-only scroll model on mobile.
-   This guard catches those writes and restores the lock.
-═══════════════════════════════════════ */
-(function() {
-  function isMobile() { return window.innerWidth <= 768; }
-
-  function enforceMobileScroll() {
-    if (!isMobile()) return;
-    // Clear any rogue inline styles first so setProperty wins
-    document.documentElement.style.removeProperty('overflow');
-    document.body.style.removeProperty('overflow');
-    // Re-lock html + body, let only .content-area scroll
-    document.documentElement.style.setProperty('overflow', 'hidden', 'important');
-    document.documentElement.style.setProperty('height', '100%', 'important');
-    document.body.style.setProperty('overflow', 'hidden', 'important');
-    document.body.style.setProperty('height', '100%', 'important');
-    // Make sure .content-area is still scrollable
-    var ca = document.getElementById('contentArea');
-    if (ca) {
-      ca.style.setProperty('overflow-y', 'scroll', 'important');
-      ca.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
-      ca.style.setProperty('transform', 'translateZ(0)', 'important');
-    }
-  }
-
-  // Run after DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', enforceMobileScroll);
-  } else {
-    enforceMobileScroll();
-  }
-
-  if (isMobile()) {
-    // Watch for late scripts that unlock body overflow via inline style
-    try {
-      var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(m) {
-          if (m.type === 'attributes' && m.attributeName === 'style') {
-            var el = m.target;
-            if (el === document.body || el === document.documentElement) {
-              // Any inline style change on html/body could reset overflow — re-enforce
-              setTimeout(enforceMobileScroll, 0);
-            }
-          }
-        });
-      });
-      observer.observe(document.documentElement, { attributes: true });
-      observer.observe(document.body, { attributes: true });
-    } catch(e) {}
-
-    // Re-enforce after common ImpactGrid data-load events
-    ['ig-data-loaded','ig-auth-ready','ig-nav-ready','ig-trends-loaded'].forEach(function(evName) {
-      document.addEventListener(evName, function() { setTimeout(enforceMobileScroll, 100); });
-    });
-
-    // Fallback: enforce every 500ms for first 8 seconds (covers async data loads)
-    var guardCount = 0;
-    var guardInterval = setInterval(function() {
-      enforceMobileScroll();
-      if (++guardCount >= 16) clearInterval(guardInterval);
-    }, 500);
-  }
-})();
-</script>
 <script>
   // ✅ nav.js, ig-supabase.js and auth.js are all loaded above (no defer).
   // By the time DOMContentLoaded fires, all three are fully parsed and executed.
@@ -1079,357 +936,3 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!el.getAttribute('data-viral-label')) formatConfidence(el);
     });
   }
-
-  // Run once DOM is ready
-  scanAll();
-
-  // Watch for dynamically injected trend cards
-  var observer = new MutationObserver(function() { scanAll(); });
-  observer.observe(document.body, { childList: true, subtree: true });
-})();
-</script>
-
-
-<!-- ═══ MOBILE BOTTOM NAVIGATION ═══ -->
-<nav id="ig-bottom-nav" aria-label="Main navigation">
-
-  <!-- Home / Dashboard -->
-  <button class="bn-item active" data-bn-tab="dashboard" aria-label="My Overview">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-    </svg>
-    <span>Overview</span>
-  </button>
-
-  <!-- Trends -->
-  <button class="bn-item" data-bn-tab="trends" aria-label="What's Trending">
-    <span class="bn-live-dot"></span>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-      <polyline points="16 7 22 7 22 13"/>
-    </svg>
-    <span>Trending</span>
-  </button>
-
-  <!-- Write Content -->
-  <button class="bn-item" data-bn-tab="generator" aria-label="Write My Content">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 20h9"/>
-      <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-    </svg>
-    <span>Create</span>
-  </button>
-
-  <!-- Calendar -->
-  <button class="bn-item" data-bn-tab="calendar" aria-label="Content Calendar">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-    <span>Calendar</span>
-  </button>
-
-  <!-- More (navigates to Settings on mobile) -->
-  <a class="bn-item bn-more" data-bn-action="more" aria-label="Settings" href="settings.html" style="text-decoration:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-    </svg>
-    <span>Settings</span>
-  </a>
-
-</nav>
-
-<script>
-/* ── Bottom Nav Controller ─────────────────────────────────
-   Mirrors the existing .tab-btn click mechanism so all the
-   existing switchTab() logic fires correctly.
-   Also keeps bottom nav in sync when tabs switch by other means
-   (sidebar, direct links, welcome-page redirect).
-──────────────────────────────────────────────────────────── */
-(function() {
-  var bnItems = document.querySelectorAll('.bn-item[data-bn-tab]');
-  var moreBtn = document.querySelector('.bn-item[data-bn-action="more"]');
-
-  function setActiveBn(tab) {
-    bnItems.forEach(function(btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-bn-tab') === tab);
-    });
-    if (moreBtn) {
-      // "More" stays active when non-bottom-nav tab is visible (evaluator, yt, tt etc.)
-      var bottomTabs = ['dashboard','trends','generator','calendar'];
-      moreBtn.classList.toggle('active', bottomTabs.indexOf(tab) === -1);
-    }
-  }
-
-  // Wire up each bottom nav button
-  bnItems.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var tab = btn.getAttribute('data-bn-tab');
-      setActiveBn(tab);
-
-      // Trigger the existing tab-btn so switchTab() fires
-      var existing = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
-      if (existing) {
-        existing.click();
-      } else if (typeof switchTab === 'function') {
-        switchTab(tab, null);
-      }
-    });
-  });
-
-  // "More" → Settings on mobile (<a href> handles it natively).
-  // On desktop (>768px) open the sidebar drawer instead.
-  if (moreBtn) {
-    function bindMoreBtn() {
-      moreBtn.addEventListener('click', function(e) {
-        // Mobile: the <a href="settings.html"> navigates naturally — do nothing extra
-        if (window.innerWidth <= 768) return;
-        // Desktop: prevent navigation, open sidebar instead
-        e.preventDefault();
-        if (typeof window.openSidebar === 'function') window.openSidebar();
-        else if (typeof window.studioOpenSidebar === 'function') window.studioOpenSidebar();
-      });
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', bindMoreBtn);
-    } else {
-      bindMoreBtn();
-    }
-  }
-
-  // Keep bottom nav in sync when existing .tab-btn / .sb-item is clicked
-  document.addEventListener('click', function(e) {
-    var tabEl = e.target.closest('[data-tab]');
-    if (!tabEl) return;
-    var tab = tabEl.getAttribute('data-tab');
-    if (tab) setActiveBn(tab);
-  });
-
-  // Also sync on sc-link "Connect →" taps (they use data-tab too)
-  // and on programmatic switchTab calls — patch switchTab to notify us
-  var _origSwitchTab = window.switchTab;
-  if (typeof _origSwitchTab === 'function') {
-    window.switchTab = function(name, sidebarItem) {
-      setActiveBn(name);
-      return _origSwitchTab.apply(this, arguments);
-    };
-  } else {
-    // switchTab not yet defined — patch after DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', function() {
-      var _st = window.switchTab;
-      if (typeof _st === 'function') {
-        window.switchTab = function(name, si) { setActiveBn(name); return _st.apply(this, arguments); };
-      }
-    });
-  }
-
-  // Honour welcome-page tab redirect on mobile too
-  try {
-    var initTab = sessionStorage.getItem('ig_welcome_tab') || 'dashboard';
-    setActiveBn(initTab);
-  } catch(e) {}
-})();
-</script>
-
-<script id="studio-sidebar-fix">
-/*
-  Single source of truth for sidebar open/close.
-  Uses Object.defineProperty to lock window.openSidebar so nav.js cannot
-  overwrite it after this script runs — no matter what order scripts load.
-*/
-(function() {
-  function openStudioSidebar() {
-    var sb = document.getElementById('sidebar');
-    var ov = document.getElementById('studioOverlay');
-    if (sb) sb.classList.add('open');
-    if (ov) ov.classList.add('open');
-    // Do NOT touch document.body.style.overflow — mobile CSS already sets
-    // overflow:hidden on body via @media. Overriding it inline breaks scroll.
-  }
-  function closeStudioSidebar() {
-    var sb = document.getElementById('sidebar');
-    var ov = document.getElementById('studioOverlay');
-    if (sb) sb.classList.remove('open');
-    if (ov) ov.classList.remove('open');
-    // Do NOT restore document.body.style.overflow — leave CSS in control.
-  }
-
-  // Lock these so nav.js assignment (window.openSidebar = ...) is silently ignored
-  function lockFn(name, fn) {
-    try {
-      Object.defineProperty(window, name, {
-        get: function() { return fn; },
-        set: function() {},   // swallow any overwrite attempt
-        configurable: false
-      });
-    } catch(e) {
-      window[name] = fn;      // fallback if already defined non-configurable
-    }
-  }
-
-  lockFn('openSidebar',        openStudioSidebar);
-  lockFn('closeSidebar',       closeStudioSidebar);
-  lockFn('studioOpenSidebar',  openStudioSidebar);
-  lockFn('studioCloseSidebar', closeStudioSidebar);
-
-  // Bind overlay backdrop close
-  window.addEventListener('DOMContentLoaded', function() {
-    var ov = document.getElementById('studioOverlay');
-    if (ov) ov.addEventListener('click', closeStudioSidebar);
-  });
-})();
-</script>
-
-<script id="sidebar-upgrade">
-/* ═══════════════════════════════════════════════════════════════
-   SIDEBAR UPGRADE — Claude-style collapse + mobile gestures
-   ─────────────────────────────────────────────────────────────── */
-(function () {
-  'use strict';
-  var STORAGE_KEY = 'ig_sidebar_collapsed';
-
-  function isMobile() { return window.innerWidth <= 768; }
-
-  /* 1. Wrap sidebar item text in .sb-item-label so CSS can hide labels */
-  function wrapLabels() {
-    document.querySelectorAll('.sb-item').forEach(function (item) {
-      if (item.querySelector('.sb-item-label')) return;
-      var nodes = Array.from(item.childNodes);
-      var targets = nodes.filter(function (n) {
-        if (n.nodeType === 3 && n.textContent.trim()) return true;
-        if (n.nodeType === 1 &&
-            !n.classList.contains('sb-icon') &&
-            !n.classList.contains('sb-icon-svg') &&
-            !n.classList.contains('sb-badge')) return true;
-        return false;
-      });
-      if (!targets.length) return;
-      var label = document.createElement('span');
-      label.className = 'sb-item-label';
-      item.insertBefore(label, targets[0]);
-      targets.forEach(function (n) { label.appendChild(n); });
-      item.setAttribute('data-label', label.textContent.trim());
-    });
-  }
-
-  /* 2. Inject the toggle button into .app-sidebar */
-  function injectToggle() {
-    var appSidebar = document.querySelector('.app-sidebar');
-    if (!appSidebar || document.getElementById('sb-toggle')) return;
-    var btn = document.createElement('button');
-    btn.id = 'sb-toggle';
-    btn.setAttribute('aria-label', 'Toggle sidebar');
-    btn.setAttribute('title', 'Collapse sidebar');
-    btn.innerHTML =
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-      '<polyline points="15 18 9 12 15 6"/></svg>';
-    btn.addEventListener('click', toggleDesktop);
-    appSidebar.appendChild(btn);
-  }
-
-  /* 3. Desktop collapse/expand */
-  function toggleDesktop() {
-    var appSidebar = document.querySelector('.app-sidebar');
-    if (!appSidebar) return;
-    var collapsed = appSidebar.classList.toggle('sidebar-collapsed');
-    var btn = document.getElementById('sb-toggle');
-    if (btn) btn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
-    try { localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0'); } catch (e) {}
-    setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 300);
-  }
-
-  function restoreDesktopState() {
-    if (isMobile()) return;
-    try {
-      if (localStorage.getItem(STORAGE_KEY) === '1') {
-        var appSidebar = document.querySelector('.app-sidebar');
-        if (appSidebar) {
-          appSidebar.classList.add('sidebar-collapsed');
-          var btn = document.getElementById('sb-toggle');
-          if (btn) btn.setAttribute('title', 'Expand sidebar');
-        }
-      }
-    } catch (e) {}
-  }
-
-  /* 4. Mobile: logo tap → close */
-  function bindLogoTap() {
-    var inner = document.querySelector('.sb-close-inner');
-    if (!inner) return;
-    inner.addEventListener('click', function () {
-      if (isMobile() && typeof window.closeSidebar === 'function') window.closeSidebar();
-    });
-  }
-
-  /* 5. Mobile: swipe left on drawer → close */
-  function bindSwipe() {
-    var sb = document.getElementById('sidebar');
-    if (!sb) return;
-    var startX, startY, curX, dragging;
-    var THRESHOLD = 72, ANGLE = 35;
-
-    sb.addEventListener('touchstart', function (e) {
-      if (!isMobile()) return;
-      var t = e.touches[0];
-      startX = t.clientX; startY = t.clientY;
-      curX = 0; dragging = false;
-    }, { passive: true });
-
-    sb.addEventListener('touchmove', function (e) {
-      if (!isMobile()) return;
-      var t = e.touches[0];
-      var dx = t.clientX - startX, dy = t.clientY - startY;
-      if (!dragging) {
-        var ang = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-        if (dx < -5 && ang < ANGLE) { dragging = true; }
-        else if (Math.abs(dy) > 10) { return; }
-      }
-      if (!dragging) return;
-      curX = Math.min(0, dx);
-      sb.classList.add('is-dragging');
-      sb.style.transform = 'translateX(' + curX + 'px)';
-    }, { passive: true });
-
-    sb.addEventListener('touchend', function () {
-      if (!isMobile()) return;
-      sb.classList.remove('is-dragging');
-      sb.style.transform = '';
-      if (dragging && curX < -THRESHOLD && typeof window.closeSidebar === 'function') {
-        window.closeSidebar();
-      }
-      dragging = false; curX = 0;
-    }, { passive: true });
-
-    sb.addEventListener('touchcancel', function () {
-      sb.classList.remove('is-dragging');
-      sb.style.transform = '';
-      dragging = false;
-    }, { passive: true });
-  }
-
-  /* 6. Init */
-  function init() {
-    wrapLabels();
-    injectToggle();
-    restoreDesktopState();
-    bindLogoTap();
-    bindSwipe();
-    new MutationObserver(function (ms) {
-      ms.forEach(function (m) { if (m.addedNodes.length) wrapLabels(); });
-    }).observe(document.body, { childList: true, subtree: true });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-</script>
-
-</body>
-</html>
