@@ -41,19 +41,11 @@
   --shadow-lg:0 12px 40px rgba(0,0,0,0.50);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SHARED NAV — hidden on desktop (creator studio has its own nav)
-   Mobile: creator-studio-mobile.css sets height:0 + overflow:visible
-═══════════════════════════════════════════════════════════════ */
-#ig-nav { display: none !important; }
-
 /* ═══════════════════════════
    RESET & BASE
 ═══════════════════════════ */
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html, body { height:100%; }
-html { overflow:hidden; }
-body { overflow:hidden; }
+html, body { height:100%; overflow:hidden; }
 body {
   background:var(--bg); color:var(--text);
   font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.5;
@@ -412,93 +404,30 @@ img { display:block; max-width:100%; }
 .card-body { padding:20px; }
 
 /* ═══════════════════════════
-   STAT CARDS — Premium uniform
+   STAT CARDS
 ═══════════════════════════ */
 .stat-grid {
   display:grid; grid-template-columns:repeat(4,1fr);
   gap:14px; margin-bottom:22px;
-  align-items:stretch;
 }
-
-/* All four top cards — including .card used in slots 1 & 2 — match exactly */
-.stat-grid > .card,
-.stat-grid > .stat-card {
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:18px 20px;
-  min-height:90px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:6px;
-  transition:transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-  overflow:visible;
+.stat-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; padding:18px 20px;
+  transition:transform var(--transition), border-color var(--transition);
 }
-.stat-grid > .card:hover,
-.stat-grid > .stat-card:hover {
-  border-color:var(--gold-glo);
-  transform:translateY(-2px);
-  box-shadow:0 6px 24px rgba(201,126,8,0.10);
-}
-
-/* Override any inline padding on stat-grid children */
-.stat-grid > .card[style],
-.stat-grid > .stat-card[style] {
-  padding:18px 20px !important;
-}
-
-/* Card header inside stat-grid card — remove border/padding used by full cards */
-.stat-grid > .card .card-header {
-  padding:0;
-  border-bottom:none;
-  margin-bottom:4px;
-}
-.stat-grid > .card .card-title {
-  font-family:'DM Mono',monospace;
-  font-size:9px;
-  font-weight:600;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:var(--text3);
-}
-
-/* Weekly trend value */
-.stat-grid #weeklyPrediction {
-  font-family:'Syne',sans-serif;
-  font-size:17px;
-  font-weight:900;
-  color:var(--text);
-  line-height:1.2;
-}
-
-/* Greeting card (slot 2) — flex row */
-.stat-grid > .card[style*="flex"] {
-  flex-direction:row !important;
-  align-items:center !important;
-  gap:12px;
-}
-
-/* Labels */
+.stat-card:hover { border-color:var(--border2); transform:translateY(-1px); }
 .sc-label {
   font-family:'DM Mono',monospace; font-size:9px;
   letter-spacing:.12em; text-transform:uppercase;
-  color:var(--text3); margin-bottom:4px;
+  color:var(--text3); margin-bottom:8px;
 }
 .sc-val {
   font-family:'Syne',sans-serif; font-size:24px;
   font-weight:900; letter-spacing:-.03em; line-height:1;
 }
-.sc-val-sm { font-size:13px; font-weight:700; line-height:1.4; color:var(--text2); }
-.sc-delta { font-size:11px; margin-top:2px; color:var(--text3); }
-.sc-link {
-  color:var(--blue2);
-  text-decoration:underline;
-  cursor:pointer;
-  font-weight:600;
-  transition:color var(--transition);
-}
-.sc-link:hover { color:var(--gold); }
+.sc-val-sm { font-size:14px; font-weight:700; line-height:1.4; }
+.sc-delta { font-size:12px; margin-top:5px; color:var(--text3); }
+.sc-link { color:var(--blue2); text-decoration:underline; cursor:pointer; }
 
 /* ═══════════════════════════
    TWO-COLUMN LAYOUT
@@ -968,18 +897,131 @@ img { display:block; max-width:100%; }
 /* ═══════════════════════════════════════════════
    RESPONSIVE — TABLET  ≤1100px
 ═══════════════════════════════════════════════ */
-
+@media (max-width:1100px) {
+  .two-col { grid-template-columns:1fr; }
+  .gen-layout { grid-template-columns:1fr; }
+  .eval-layout { grid-template-columns:1fr; }
+  .aud-grid { grid-template-columns:1fr; }
+  .stat-grid { grid-template-columns:repeat(2,1fr); }
+  .quick-launch-grid { grid-template-columns:repeat(3,1fr); }
+}
 
 /* ═══════════════════════════════════════════════
    RESPONSIVE — MOBILE  ≤860px
    Sidebar becomes full-height fixed drawer
 ═══════════════════════════════════════════════ */
+@media (max-width:860px) {
 
+  /* ── Sidebar: off-screen by default, slides in ── */
+  :root { --sidebar-w:280px; }
+
+  .sidebar {
+    position:fixed;
+    top:0; bottom:0; left:0;
+    height:100dvh; height:100vh;
+    z-index:200;
+    transform:translateX(-100%);
+    box-shadow:8px 0 40px rgba(0,0,0,.22);
+    width:var(--sidebar-w);
+    /* Fix scroll: let the sidebar itself scroll, give room for safe area */
+    overflow-y:auto;
+    overflow-x:hidden;
+    /* Critical: padding-bottom so last item clears safe area + some breathing room */
+    padding-bottom:calc(env(safe-area-inset-bottom) + 32px);
+    /* Remove any flex height constraints that clip content */
+    display:block;
+  }
+  [data-theme="dark"] .sidebar { box-shadow:8px 0 40px rgba(0,0,0,.6); }
+  .sidebar.open { transform:translateX(0); }
+
+  /* Show close button inside sidebar on mobile */
+  .sb-close-btn { display:flex; }
+
+  /* ── Hamburger: show it ── */
+  .hamburger { display:flex; }
+
+  /* ── Topbar: hide non-essential items to prevent overflow ── */
+  .tb-crumb    { display:none; }
+  .tb-div      { display:none; }
+  .tb-back     { display:none; }
+  /* Hide status pills — sidebar shows platform status */
+  .tb-pill     { display:none !important; }
+  /* Hide Login button — keep Join only */
+  .tb-login    { display:none; }
+  /* Shrink user name in user-btn to just avatar */
+  .user-name   { display:none; }
+  .user-btn    { padding:4px; }
+
+  /* ── Layouts ── */
+  .eval-chat   { height:420px; }
+  .eval-layout { grid-template-columns:1fr; }
+  .feat-grid   { grid-template-columns:1fr; }
+  .quick-launch-grid { grid-template-columns:1fr; gap:10px; }
+
+  .panel     { padding:16px; }
+  .card-body { padding:14px; }
+
+  /* Tabs: all 5 in one row, no scroll */
+  .tabs-bar {
+    padding:8px 8px 0;
+    gap:1px;
+    mask-image:none;
+    -webkit-mask-image:none;
+  }
+  .tab-btn { font-size:11px; padding:7px 4px; gap:3px; }
+
+  /* Toast: center at bottom on mobile */
+  .toast-shelf { bottom:16px; right:16px; left:16px; align-items:center; }
+  .toast { text-align:center; }
+
+  /* Remove hover transforms on touch devices */
+  .trend-item:hover  { transform:none; }
+  .stat-card:hover   { transform:none; }
+  .video-card:hover  { transform:none; }
+  .opp-card:hover    { background:var(--bg2); }
+
+  /* Minimum tap targets */
+  .sb-item, .tab-btn, .connect-btn, .gen-btn, .eval-send, .tb-theme { min-height:44px; }
+}
 
 /* ═══════════════════════════════════════════════
    RESPONSIVE — SMALL MOBILE  ≤560px
 ═══════════════════════════════════════════════ */
+@media (max-width:560px) {
+  .panel      { padding:12px; }
+  .stat-grid  { grid-template-columns:1fr; gap:10px; }
+  .stat-card  { padding:14px 16px; }
+  .sc-val     { font-size:20px; }
+  .tabs-bar   { padding:6px 6px 0; gap:1px; }
+  .tab-btn    { padding:6px 3px; font-size:10px; gap:2px; }
+  /* On very small screens, hide text labels — show emoji only */
+  .tab-label  { display:none; }
+  .tab-icon   { font-size:16px; }
 
+  /* Trend items: tighter layout */
+  .trend-item {
+    grid-template-columns:24px 1fr auto;
+    grid-template-rows:auto auto;
+    gap:6px 10px;
+  }
+  .ti-plat { display:none; }
+
+  .gen-layout    { grid-template-columns:1fr; }
+  .timing-grid   { grid-template-columns:repeat(2,1fr); }
+  .connect-wrap  { padding:32px 16px; }
+  .feat-grid     { grid-template-columns:1fr; }
+  .quick-launch-grid { grid-template-columns:1fr; }
+  .quick-launch-card { padding:16px; }
+  .qlc-icon      { font-size:22px; margin-bottom:6px; }
+  .eval-chat     { height:380px; }
+  .eval-bubble   { max-width:95%; font-size:12px; }
+  .video-grid    { grid-template-columns:repeat(2,1fr); }
+
+  /* TikTok stats: 2-col on tiny screens */
+  #ttConnected .card-body > div:last-child {
+    grid-template-columns:repeat(2,1fr) !important;
+  }
+}
 
 /* ═══════════════════════════
    DOWNLOAD / INSTALL BAR
@@ -1044,6 +1086,11 @@ img { display:block; max-width:100%; }
 }
 .dl-ios-hint strong { color:var(--text); }
 
+@media(max-width:440px) {
+  .download-bar { gap:10px; padding:12px 14px calc(12px + env(safe-area-inset-bottom)); }
+  .dl-title { font-size:13px; }
+  .dl-btn { padding:9px 14px; font-size:12px; }
+}
 
 /* ── end download bar ── */
 html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
@@ -1087,12 +1134,23 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   color: var(--gold);
 }
 
-/* Scrollbars — refined */
-.content-area::-webkit-scrollbar { width: 4px; }
-.content-area::-webkit-scrollbar-track { background: transparent; }
-.content-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-.sidebar::-webkit-scrollbar { width: 3px; }
-.sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+/* 🔥 Better scrollbar */
+.content-area::-webkit-scrollbar {
+  width: 10px;
+}
+
+.content-area::-webkit-scrollbar-thumb {
+  background: var(--gold);
+  border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--border2);
+}
 
 /* ═══════════════════════════
    SECTION-FULL OVERRIDE
@@ -1342,7 +1400,9 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   gap: 16px;
   align-items: start;
 }
-
+@media (max-width: 900px) {
+  .studio-output-grid { grid-template-columns: 1fr; }
+}
 
 /* ── Output Cards (left) ── */
 .studio-outputs { display: flex; flex-direction: column; gap: 14px; }
@@ -1422,7 +1482,7 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-
+@media (max-width: 640px) { .sout-pair { grid-template-columns: 1fr; } }
 
 .sout-tags {
   display: flex;
@@ -1492,579 +1552,4 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   text-align: center;
 }
 .saud-empty-icon { font-size: 32px; opacity: .4; }
-.saud-empty-text { font-size: 13px; color: var(--text3); line-height: 1.5; }
-
-/* ═══════════════════════════════════════════════
-   UI UPGRADE v3.0 — Real logos · IG · X · Alive
-   Adds: platform logo icons, coming-soon panels,
-   sidebar glow, tab polish, card depth, animations
-═══════════════════════════════════════════════ */
-
-/* ── Sidebar icon sizing fix for SVG logos ── */
-.sb-icon svg {
-  display: block;
-  flex-shrink: 0;
-}
-.sb-item .sb-icon {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* ── Active sidebar item — platform-aware glow ── */
-.sb-item[data-tab="tiktok"].active {
-  background: rgba(255,45,85,.08);
-  color: #ff2d55;
-  border-color: rgba(255,45,85,.2);
-}
-.sb-item[data-tab="youtube"].active {
-  background: rgba(255,64,64,.08);
-  color: #ff4040;
-  border-color: rgba(255,64,64,.2);
-}
-.sb-item[data-tab="instagram"].active {
-  background: rgba(220,39,67,.08);
-  color: #dc2743;
-  border-color: rgba(220,39,67,.2);
-}
-.sb-item[data-tab="x"].active {
-  background: rgba(var(--text-rgb, 13,16,23),.06);
-  color: var(--text);
-  border-color: var(--border2);
-}
-
-/* ── Tab bar: real logo tab icons ── */
-.tab-icon svg { display: block; }
-
-/* ── Tab bar upgrade: sharper active state ── */
-.tab-btn.active {
-  background: var(--card);
-  font-weight: 700;
-  box-shadow: 0 -2px 0 inset var(--gold);
-}
-.tab-btn[data-tab="tiktok"].active { box-shadow: 0 -2px 0 inset #ff2d55; }
-.tab-btn[data-tab="youtube"].active { box-shadow: 0 -2px 0 inset #ff4040; }
-.tab-btn[data-tab="instagram"].active { box-shadow: 0 -2px 0 inset #dc2743; }
-.tab-btn[data-tab="x"].active { box-shadow: 0 -2px 0 inset var(--text); }
-
-/* ── Sidebar: living left border accent ── */
-.sidebar {
-  border-right: 1px solid var(--border);
-  background: var(--card);
-  position: relative;
-}
-.sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, var(--gold), transparent 60%);
-  opacity: .5;
-  pointer-events: none;
-}
-
-/* ── Card depth improvements ── */
-.card {
-  transition: box-shadow .2s, border-color .2s, transform .15s;
-}
-.card:hover {
-  box-shadow: 0 6px 28px rgba(0,0,0,.08);
-}
-[data-theme="dark"] .card:hover {
-  box-shadow: 0 6px 28px rgba(0,0,0,.35);
-}
-
-/* ── Dashboard stat cards: platform color accents ── */
-.stat-card:has(#dashYtVal) { border-top: 2px solid #ff4040; }
-.stat-card:has(#dashTtVal) { border-top: 2px solid #ff2d55; }
-
-/* ── Platform Velocity bar colors ── */
-.pm-card[data-platform="tiktok"] .pm-bar-fill { background: linear-gradient(90deg,#ff2d55,#ff6688); }
-.pm-card[data-platform="youtube"] .pm-bar-fill { background: linear-gradient(90deg,#ff4040,#ff7070); }
-.pm-card[data-platform="instagram"] .pm-bar-fill { background: linear-gradient(90deg,#f09433,#dc2743,#bc1888); }
-.pm-card[data-platform="google"] .pm-bar-fill { background: linear-gradient(90deg,#4285f4,#74aaf9); }
-
-/* ── Sidebar platform status dots: use real colors ── */
-.sp-dot.ig { background: linear-gradient(135deg,#f09433,#bc1888); animation: livePulse 2s infinite; }
-.sp-dot.x { background: var(--text2); }
-
-/* ══════════════════════════════════════════
-   PLATFORM COMING-SOON PANELS
-   Full-screen premium holding pages for
-   Instagram and X before they go live
-══════════════════════════════════════════ */
-.platform-coming-soon {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 56px 32px 48px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  animation: panelFade .35s ease both;
-}
-
-/* Logo wrap — glowing circle */
-.pcs-logo-wrap {
-  width: 88px; height: 88px;
-  border-radius: 24px;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-  margin-bottom: 4px;
-  flex-shrink: 0;
-}
-.pcs-logo-wrap::before {
-  content: '';
-  position: absolute;
-  inset: -10px;
-  border-radius: 32px;
-  opacity: .18;
-  filter: blur(18px);
-  z-index: 0;
-  animation: glowPulse 3s ease-in-out infinite;
-}
-.pcs-logo-wrap svg { position: relative; z-index: 1; }
-
-@keyframes glowPulse {
-  0%,100%{ opacity: .15; transform: scale(1); }
-  50%{ opacity: .32; transform: scale(1.06); }
-}
-
-/* Instagram logo wrap */
-.ig-logo-wrap {
-  background: linear-gradient(135deg,#f09433 0%,#e6683c 20%,#dc2743 45%,#cc2366 70%,#bc1888 100%);
-  box-shadow: 0 8px 32px rgba(220,39,67,.35);
-}
-.ig-logo-wrap::before {
-  background: linear-gradient(135deg,#f09433,#bc1888);
-}
-
-/* X logo wrap */
-.x-logo-wrap {
-  background: #000;
-  box-shadow: 0 8px 32px rgba(0,0,0,.4);
-}
-[data-theme="dark"] .x-logo-wrap {
-  background: #fff;
-  box-shadow: 0 8px 32px rgba(255,255,255,.15);
-}
-[data-theme="dark"] .x-logo-wrap svg { color: #000 !important; }
-.x-logo-wrap::before {
-  background: #555;
-}
-
-/* Titles & copy */
-.pcs-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 26px;
-  font-weight: 900;
-  letter-spacing: -.03em;
-  color: var(--text);
-  margin: 0;
-  line-height: 1.1;
-}
-.pcs-subtitle {
-  font-size: 14px;
-  color: var(--text2);
-  line-height: 1.75;
-  max-width: 440px;
-  margin: 0;
-}
-
-/* Status badge */
-.pcs-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 16px;
-  border-radius: 99px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .05em;
-}
-.pcs-status-badge.ig {
-  background: linear-gradient(135deg,rgba(240,148,51,.12),rgba(188,24,136,.12));
-  border: 1px solid rgba(220,39,67,.25);
-  color: #dc2743;
-}
-.pcs-status-badge.x {
-  background: rgba(0,0,0,.06);
-  border: 1px solid rgba(0,0,0,.14);
-  color: var(--text2);
-}
-[data-theme="dark"] .pcs-status-badge.x {
-  background: rgba(255,255,255,.06);
-  border-color: rgba(255,255,255,.12);
-}
-
-/* Feature cards grid */
-.pcs-features {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 12px;
-  width: 100%;
-  margin-top: 4px;
-  text-align: left;
-}
-
-
-.pcs-feat {
-  background: var(--card2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  transition: border-color .2s, transform .15s;
-}
-.pcs-feat:hover {
-  border-color: var(--border2);
-  transform: translateY(-2px);
-}
-.pcs-feat-icon {
-  font-size: 22px;
-  margin-bottom: 8px;
-}
-.pcs-feat h4 {
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 5px;
-}
-.pcs-feat p {
-  font-size: 12px;
-  color: var(--text2);
-  line-height: 1.6;
-  margin: 0;
-}
-
-/* Notify button */
-.pcs-notify-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 28px;
-  border-radius: 12px;
-  font-family: 'Syne', sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  transition: opacity .2s, transform .15s, box-shadow .2s;
-  min-height: 48px;
-  letter-spacing: -.01em;
-}
-.pcs-notify-btn:hover:not(:disabled) {
-  opacity: .9;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 32px rgba(0,0,0,.2);
-}
-.pcs-notify-btn:disabled { cursor: default; transform: none; }
-
-.ig-btn {
-  background: linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 60%,#bc1888 100%);
-  box-shadow: 0 6px 24px rgba(220,39,67,.3);
-}
-.x-btn {
-  background: #000;
-  box-shadow: 0 6px 24px rgba(0,0,0,.25);
-}
-[data-theme="dark"] .x-btn {
-  background: #fff;
-  color: #000;
-  box-shadow: 0 6px 24px rgba(255,255,255,.1);
-}
-
-/* ══════════════════════════════════════════
-   GLOBAL UI POLISH
-══════════════════════════════════════════ */
-
-/* Ticker tag for X */
-.tag-x {
-  background: rgba(0,0,0,.06);
-  color: var(--text2);
-  border: 1px solid rgba(0,0,0,.1);
-}
-[data-theme="dark"] .tag-x {
-  background: rgba(255,255,255,.06);
-  border-color: rgba(255,255,255,.1);
-}
-
-/* Platform connection cards in evaluator: hover glow */
-.ig-eval-card:hover {
-  border-color: #dc2743 !important;
-  box-shadow: 0 4px 24px rgba(220,39,67,.12) !important;
-}
-.x-eval-card:hover {
-  border-color: var(--text2) !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,.10) !important;
-}
-
-/* Smooth card entrance on panel switch */
-.panel.active .card {
-  animation: cardSlide .22s ease both;
-}
-.panel.active .card:nth-child(2) { animation-delay: .04s; }
-.panel.active .card:nth-child(3) { animation-delay: .08s; }
-.panel.active .card:nth-child(4) { animation-delay: .12s; }
-
-@keyframes cardSlide {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Calendar modal platform buttons with real logos */
-.cal-modal-plat[data-plat="ig"] {
-  background: linear-gradient(135deg,rgba(240,148,51,.08),rgba(188,24,136,.08));
-  border-color: rgba(220,39,67,.2);
-}
-.cal-modal-plat[data-plat="ig"].sel-ig {
-  background: linear-gradient(135deg,#f09433,#dc2743,#bc1888);
-  color: #fff;
-  border-color: transparent;
-}
-
-/* Sidebar pulse badge for soon items */
-.sb-badge.soon {
-  animation: fadePulse 3s ease-in-out infinite;
-}
-@keyframes fadePulse {
-  0%,100%{ opacity: .7; }
-  50%{ opacity: 1; }
-}
-
-/* ── Quick launch grid: 1 card full-width fix ── */
-.quick-launch-grid:has(.quick-launch-card:only-child) {
-  grid-template-columns: 1fr;
-  max-width: 320px;
-}
-
-/* ── Scrollbar polish ── */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border2) transparent;
-}
-*::-webkit-scrollbar { width: 4px; height: 4px; }
-*::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-/* ── Focus ring for accessibility ── */
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
-}
-
-/* ── Platform status in sidebar footer: IG + X ── */
-.sb-plat-item .sp-ig { color: #dc2743; }
-.sb-plat-item .sp-x { color: var(--text3); }
-
-
-/* ═══════════════════════════════════════════════════════════════════
-   MOBILE BOTTOM NAVIGATION — replaces tab-bar on ≤ 768 px
-   Follows iOS/Android native conventions:
-   • Fixed to bottom with safe-area support
-   • Glassmorphism background (blur + tint)
-   • Icon + short label per tab
-   • Gold pill indicator on active item
-   • "More" button opens the sidebar drawer
-═══════════════════════════════════════════════════════════════════ */
-
-/* ── App shell: accommodate bottom nav ── */
-
-
-/* ── Very small phones (≤ 360px) — icon-only mode ── */
-
-
-/* ── Icon SVGs replacing emoji (sb + tab) ── */
-.sb-icon-svg {
-  width: 16px; height: 16px;
-  flex-shrink: 0; margin-right: 10px;
-  opacity: 0.65;
-  vertical-align: middle;
-  display: inline-block;
-  transition: opacity 0.15s;
-}
-.sb-item.active .sb-icon-svg,
-.sb-item:hover .sb-icon-svg { opacity: 1; color: var(--gold); }
-
-.tab-icon-svg {
-  width: 15px; height: 15px;
-  flex-shrink: 0; display: inline-block;
-  vertical-align: middle; margin-right: 6px;
-  opacity: 0.6;
-  transition: opacity 0.15s;
-}
-.tab-btn.active .tab-icon-svg,
-.tab-btn:hover .tab-icon-svg { opacity: 1; }
-.tab-yt { color: #FF0000; }
-.tab-tt { color: #010101; }
-[data-theme="dark"] .tab-tt { color: #ffffff; }
-
-/* ── App layout: sidebar alongside main on desktop ── */
-.app-layout {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-}
-.app-sidebar {
-  flex-shrink: 0;
-  width: var(--sidebar-w);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.app-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   SIDEBAR UPGRADE — Claude-style collapse/expand + mobile gestures
-   ─────────────────────────────────────────────────────────────── */
-
-:root {
-  --sb-full:  240px;
-  --sb-mini:   56px;
-  --sb-dur:   0.26s;
-  --sb-ease:  cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ── Toggle pill button ──────────────────────────────────────── */
-#sb-toggle {
-  position: absolute;
-  top: 50%;
-  right: -14px;
-  transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--card);
-  border: 1px solid var(--border2);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 200;
-  color: var(--text2);
-  transition: background var(--sb-dur), border-color var(--sb-dur),
-              box-shadow var(--sb-dur);
-}
-#sb-toggle:hover {
-  background: var(--gold-dim);
-  border-color: var(--gold-glo);
-  color: var(--gold);
-  box-shadow: 0 2px 12px rgba(201,126,8,0.2);
-}
-#sb-toggle svg {
-  transition: transform var(--sb-dur) var(--sb-ease);
-  flex-shrink: 0;
-}
-.sidebar-collapsed #sb-toggle svg {
-  transform: rotate(180deg);
-}
-
-/* Hide toggle on mobile — drawer has its own close controls */
-
-
-/* ── Label wrapper (JS injects .sb-item-label spans) ────────── */
-.sb-item-label {
-  overflow: hidden;
-  white-space: nowrap;
-  flex: 1;
-  transition: opacity var(--sb-dur), max-width var(--sb-dur);
-}
-
-/* ── Desktop: position parent + animated collapse ───────────── */
-@media (min-width: 769px) {
-
-  .app-sidebar {
-    position: relative;          /* anchor for #sb-toggle pill   */
-    overflow: visible !important; /* pill sticks out to the right */
-    transition: width var(--sb-dur) var(--sb-ease);
-  }
-
-  .sidebar {
-    transition: width var(--sb-dur) var(--sb-ease);
-    overflow: hidden;
-  }
-
-  /* ── COLLAPSED STATE ── */
-  .app-sidebar.sidebar-collapsed {
-    width: var(--sb-mini);
-  }
-  .app-sidebar.sidebar-collapsed .sidebar {
-    width: var(--sb-mini);
-  }
-
-  /* Hide text content when collapsed */
-  .app-sidebar.sidebar-collapsed .sb-item-label,
-  .app-sidebar.sidebar-collapsed .sb-badge,
-  .app-sidebar.sidebar-collapsed .sb-close-inner,
-  .app-sidebar.sidebar-collapsed .sb-platforms,
-  .app-sidebar.sidebar-collapsed .sb-x {
-    opacity: 0;
-    max-width: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  /* Section title → thin divider line when collapsed */
-  .app-sidebar.sidebar-collapsed .sb-sec-title {
-    font-size: 0;
-    height: 1px;
-    background: var(--border);
-    margin: 4px 8px;
-    padding: 0;
-    letter-spacing: 0;
-  }
-
-  /* Center icons */
-  .app-sidebar.sidebar-collapsed .sb-item {
-    justify-content: center;
-    padding: 10px 0;
-  }
-  .app-sidebar.sidebar-collapsed .sb-sec {
-    padding: 10px 6px 4px;
-  }
-
-  /* Tooltip on hover when collapsed */
-  .app-sidebar.sidebar-collapsed .sb-item {
-    position: relative;
-  }
-  .app-sidebar.sidebar-collapsed .sb-item::after {
-    content: attr(data-label);
-    position: absolute;
-    left: calc(var(--sb-mini) + 2px);
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--card);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text);
-    white-space: nowrap;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s;
-    z-index: 500;
-  }
-  .app-sidebar.sidebar-collapsed .sb-item:hover::after {
-    opacity: 1;
-  }
-}
-
-/* ── Mobile: logo tap closes drawer ─────────────────────────── */
+.saud-empty-text { font-size: 13px; color: var(--text3); line-height: 1.5; 
