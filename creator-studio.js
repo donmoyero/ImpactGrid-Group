@@ -224,7 +224,7 @@ function switchTab(name, sidebarItem) {
 ───────────────────────────────────────────── */
 function studioOpenSidebar() {
   var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('studioOverlay');
+  var ov  = document.getElementById('mobOverlay');
   var ham = document.querySelector('.hamburger');
   if (sb)  sb.classList.add('open');
   if (ov)  ov.classList.add('open');
@@ -233,7 +233,7 @@ function studioOpenSidebar() {
 }
 function studioCloseSidebar() {
   var sb  = document.getElementById('sidebar');
-  var ov  = document.getElementById('studioOverlay');
+  var ov  = document.getElementById('mobOverlay');
   var ham = document.querySelector('.hamburger');
   if (sb)  sb.classList.remove('open');
   if (ov)  ov.classList.remove('open');
@@ -243,10 +243,12 @@ function studioCloseSidebar() {
   if (mobSb) mobSb.classList.remove('open');
   document.body.style.overflow = '';
 }
-/* Do NOT overwrite window.openSidebar / window.closeSidebar —
-   nav.js owns those and they power the mobile hamburger menu.
-   The sb-x close button on the PC sidebar calls closeSidebar()
-   which correctly closes nav's mobile drawer if open. */
+/* Keep bare names working for HTML onclick="openSidebar()" attributes
+   on the studio page — these shadow nav.js's globals only on this page,
+   but nav.js's #mobSidebar is not used on creator-studio.html so there
+   is no conflict: the studio uses #sidebar, not #mobSidebar. */
+window.openSidebar  = studioOpenSidebar;
+window.closeSidebar = studioCloseSidebar;
 
 /* ─────────────────────────────────────────────
    USER MENU
@@ -2129,8 +2131,6 @@ async function fullGenerate() {
       incrementUses();
     }
     toast('✅ Package generated!');
-    // Auto-generate audience intel in the right panel
-    loadAudience(topic);
   } catch(e) {
     errEl.classList.add('visible');
     errEl.textContent = '⚠ ' + (e.message || 'Request failed');
@@ -2144,17 +2144,16 @@ async function fullGenerate() {
 /* ─────────────────────────────────────────────
    AUDIENCE
 ───────────────────────────────────────────── */
-async function loadAudience(topicOverride) {
-  var topicEl = document.getElementById("genTopic") || document.getElementById("audTopic");
-  var topic = topicOverride || (topicEl ? topicEl.value.trim() : "");
-  if (!topic) { toast("⚠️ Enter a topic first"); return; }
-  var audEl = document.getElementById("audOutput");
-  if (!audEl) return;
-  audEl.innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing audience…</div>';
+async function loadAudience() {
+  var topic = document.getElementById('audTopic').value.trim();
+  if (!topic) { toast('⚠️ Enter a topic'); return; }
+  var btn = document.getElementById('audBtn');
+  btn.disabled = true; btn.textContent = 'Analysing…';
+  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
   try {
-    var prompt = "Audience breakdown for topic: \"" + topic + "\"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.";
-    var reply = await callDijo(prompt, "creator");
-    var ages = extractAges(reply) || [{ label: "18–24", pct: 30 }, { label: "25–34", pct: 40 }, { label: "35–44", pct: 20 }, { label: "45+", pct: 10 }];
+    var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
+    var reply = await callDijo(prompt, 'creator');
+    var ages = extractAges(reply) || [{ label: '18–24', pct: 30 }, { label: '25–34', pct: 40 }, { label: '35–44', pct: 20 }, { label: '45+', pct: 10 }];
     var pa = extractPA(reply) || { YouTube: 72, TikTok: 65, Instagram: 58, Google: 78 };
     var html = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px">'
       + '<h3 style="font-size:15px;font-weight:800;margin-bottom:8px">👥 ' + escH(topic) + ' — Audience</h3>'
@@ -2166,18 +2165,19 @@ async function loadAudience(topicOverride) {
         + '<span class="demo-pct">' + ag.pct + '%</span></div>';
     });
     html += '</div></div><div class="aud-card"><div class="aud-head">Platform Affinity</div><div class="aud-body">';
-    [{ k: "YouTube", cls: "pa-yt" }, { k: "TikTok", cls: "pa-tt" }, { k: "Instagram", cls: "pa-ig" }, { k: "Google", cls: "pa-gt" }].forEach(function(p) {
+    [{ k: 'YouTube', cls: 'pa-yt' }, { k: 'TikTok', cls: 'pa-tt' }, { k: 'Instagram', cls: 'pa-ig' }, { k: 'Google', cls: 'pa-gt' }].forEach(function(p) {
       html += '<div class="pa-item"><span class="pa-label">' + p.k + '</span>'
         + '<div class="pa-track"><div class="pa-fill ' + p.cls + '" style="width:' + (pa[p.k] || 0) + '%"></div></div>'
         + '<span class="pa-pct">' + (pa[p.k] || 0) + '%</span></div>';
     });
     html += '</div></div></div>';
-    audEl.innerHTML = html;
-    toast("✅ Audience analysed!");
+    document.getElementById('audOutput').innerHTML = html;
+    toast('✅ Analysis done!');
   } catch(e) {
-    audEl.innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
-    toast("⚠️ Error — try again");
+    document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
+    toast('⚠️ Error — try again');
   }
+  btn.disabled = false; btn.textContent = 'Analyse';
 }
 
 function extractAges(text) {
