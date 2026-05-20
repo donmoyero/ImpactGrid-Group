@@ -10,19 +10,14 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
-/* ── Firebase init for event.html ── */
-(function(){
-  var cfg = {
-    apiKey           : 'YOUR_NEW_API_KEY_HERE',
-    authDomain       : 'impactgrid-events.firebaseapp.com',
-    projectId        : 'impactgrid-events',
-    storageBucket    : 'impactgrid-events.firebasestorage.app',
-    messagingSenderId: '197404801498',
-    appId            : '1:197404801498:web:15675f79edc02e6348a8e3'
-  };
-  if (!firebase.apps.length) firebase.initializeApp(cfg);
-  window._eventsDb = firebase.firestore();
-})();
+/* ── Firebase init for event.html — config fetched securely from backend ── */
+fetch('https://impactgrid-events-api.onrender.com/api/firebase-config')
+  .then(function(r){ return r.json(); })
+  .then(function(cfg){
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    window._eventsDb = firebase.firestore();
+  })
+  .catch(function(err){ console.error('Failed to load Firebase config:', err); });
 </script>
 <style>
 /* ══════════════════════════════════════
@@ -2546,4 +2541,3 @@ async function submitReview() {
 
 </body>
 </html>
-
