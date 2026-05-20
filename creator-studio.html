@@ -352,20 +352,14 @@
  if (atBottom) feed.scrollTop = feed.scrollHeight;
  }
 
- // Get or create the Supabase client using globals set by ig-supabase.js
+ // Get the Supabase client — ig-supabase.js exposes getSupabase() and supabaseClient
  function getSB() {
- // ig-supabase.js may export the client under various names — try all
- if (window._igSupa && typeof window._igSupa.from === 'function') return window._igSupa;
- if (window.igSupa && typeof window.igSupa.from === 'function') return window.igSupa;
- if (window._supabaseClient && typeof window._supabaseClient.from === 'function') return window._supabaseClient;
- // If SUPABASE_URL + SUPABASE_ANON_KEY exist, create a fresh client
- if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
- var lib = window.supabase; // the SDK namespace (not a client)
- if (lib && lib.createClient) {
- var client = lib.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
- window._igSupa = client; // cache it
- return client;
- }
+ if (typeof window.getSupabase === 'function') return window.getSupabase();
+ if (window.supabaseClient && typeof window.supabaseClient.from === 'function') return window.supabaseClient;
+ // Last resort: create from _SUPABASE_URL / _SUPABASE_KEY
+ if (window._SUPABASE_URL && window._SUPABASE_KEY && window.supabase && window.supabase.createClient) {
+ window.supabaseClient = window.supabase.createClient(window._SUPABASE_URL, window._SUPABASE_KEY);
+ return window.supabaseClient;
  }
  return null;
  }
