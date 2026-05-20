@@ -2935,24 +2935,7 @@ function renderSkeletons() {
  trendsEl.innerHTML = trendSkel;
  }
 
- // 2. Top Opportunities
- var oppEl = document.getElementById('topOppBox');
- if (oppEl && !oppEl.dataset.realData) {
- var oppSkel = '';
- [80,62,55].forEach(function(w) {
- oppSkel +=
- '<div class="sk-opp-card">'
- + '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
- + '<div class="sk sk-badge" style="width:35%"></div>'
- + '<div class="sk sk-badge" style="width:18%"></div>'
- + '</div>'
- + '<div class="sk sk-line" style="width:' + w + '%"></div>'
- + '<div class="sk sk-line" style="width:' + (w - 15) + '%;height:8px"></div>'
- + '<div class="sk sk-line" style="height:3px;width:' + w + '%"></div>'
- + '</div>';
- });
- oppEl.innerHTML = oppSkel;
- }
+ // 2. Top Opportunities removed — replaced by Creator Chat widget
 
  // 3. Dijo Briefing
  var briefEl = document.getElementById('briefingText');
@@ -2993,7 +2976,6 @@ window.addEventListener('load', async function() {
  });
  }
  renderDashTrends();
- loadOpportunities();
  renderRadarGauges();
  renderDijoTopPick();
  loadBriefing();
