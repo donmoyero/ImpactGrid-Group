@@ -1854,33 +1854,54 @@ async function loadBriefing(forceRefresh) {
   function renderPulseStrip() {
     if (!_allTrends.length) return false;
     var best = getBest3(_allTrends);
-    var rows = [
-      { icon: '▶️', label: 'YouTube', trend: best.youtube, color: '#FFD700' },
-      { icon: '⚡', label: 'TikTok',  trend: best.tiktok,  color: '#ff6464' },
-      { icon: '🔍', label: 'Google',  trend: best.google,  color: '#78b4ff' }
+
+    var topTrends = [best.youtube, best.tiktok, best.google].filter(Boolean);
+    if (!topTrends.length) return false;
+
+    var hotTrend = topTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
+    var cls = classifyTrend(hotTrend);
+    var momentum = cls === 'blowup'      ? 'blowing up right now'
+                 : cls === 'rising_fast' ? 'rising fast across platforms'
+                 : cls === 'early'       ? 'showing early signals — jump on it'
+                 : 'stable and worth watching';
+
+    var platName = hotTrend.platLabel || 'multi-platform';
+    var igHtml = hotTrend.igPrediction >= 50
+      ? ' — <span style="color:var(--ig);font-weight:600">IG potential: ' + Math.round(hotTrend.igPrediction) + '%</span>'
+      : '';
+
+    el.innerHTML = '“' + escH(hotTrend.topic) + '” is <strong>' + momentum + '</strong>'
+      + '. Score: <strong style="color:var(--gold)">' + hotTrend.score.toFixed(1) + '/10</strong>'
+      + igHtml
+      + '. Post on <strong>' + escH(platName) + '</strong> today.';
+
+    var pillRows = [
+      { trend: best.youtube, color: 'var(--yt)', platLabel: 'YouTube', icon: '▶' },
+      { trend: best.tiktok,  color: 'var(--tt)', platLabel: 'TikTok',  icon: '⚡' },
+      { trend: best.google,  color: 'var(--gt)', platLabel: 'Google',  icon: '🔍' }
     ].filter(function(r) { return r.trend; });
-    if (!rows.length) return false;
 
-    el.innerHTML = rows.map(function(r) {
-      var t = r.trend;
-      var cls = classifyTrend(t);
-      var badge = cls === 'blowup'      ? '🔥 Blowing up'
-                : cls === 'rising_fast' ? '⚡ Rising fast'
-                : cls === 'early'       ? '🟢 Early signal'
-                : '📊 Stable';
-      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)">'
-        + '<span style="font-size:14px">' + r.icon + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + r.color + ';min-width:46px;letter-spacing:.06em">' + r.label + '</span>'
-        + '<span style="font-size:12px;color:var(--text1);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.topic) + '</span>'
-        + '<span style="font-size:9px;color:var(--text3);white-space:nowrap">' + badge + '</span>'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:800;color:' + r.color + ';min-width:24px;text-align:right">' + t.score.toFixed(1) + '</span>'
-        + '</div>';
-    }).join('') + '<div style="border-bottom:none"></div>';
+    if (tagsEl && pillRows.length) {
+      tagsEl.style.display = 'flex';
+      tagsEl.innerHTML = pillRows.map(function(r) {
+        var t = r.trend;
+        var tCls = classifyTrend(t);
+        var badge = tCls === 'blowup'      ? '🔥 Hot'
+                  : tCls === 'rising_fast' ? '⚡ Rising'
+                  : tCls === 'early'       ? '🟢 Early'
+                  : '📊 Stable';
+        return '<div class="dijo-pill">'
+          + '<span class="dijo-pill-plat" style="color:' + r.color + '">' + r.icon + ' ' + r.platLabel + '</span>'
+          + '<span class="dijo-pill-topic">' + escH(t.topic) + '</span>'
+          + '<span class="dijo-pill-score">' + t.score.toFixed(1) + '</span>'
+          + '<span class="dijo-pill-badge">' + badge + '</span>'
+          + '</div>';
+      }).join('');
+    }
 
-    if (tagsEl) tagsEl.innerHTML = ''; // hide old tags
     if (dateEl) {
       var now = new Date();
-      dateEl.textContent = '📡 ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
+      dateEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
     }
     return true;
   }
