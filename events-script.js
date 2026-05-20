@@ -8,20 +8,15 @@
 /* Firebase is loaded via CDN <script> tags in admin.html before this file.
    The globals used here: firebase, firebase.initializeApp, firebase.firestore  */
 
-var firebaseConfig = {
-  apiKey           : 'YOUR_NEW_API_KEY_HERE',
-  authDomain       : 'impactgrid-events.firebaseapp.com',
-  projectId        : 'impactgrid-events',
-  storageBucket    : 'impactgrid-events.firebasestorage.app',
-  messagingSenderId: '197404801498',
-  appId            : '1:197404801498:web:15675f79edc02e6348a8e3'
-};
-
-/* Initialise only once (guard for hot-reload) */
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-var db = firebase.firestore();
+/* Firebase config is fetched securely from the backend — API key never exposed in frontend code */
+var db;
+fetch('https://impactgrid-events-api.onrender.com/api/firebase-config')
+  .then(function(r){ return r.json(); })
+  .then(function(firebaseConfig){
+    if(!firebase.apps.length){ firebase.initializeApp(firebaseConfig); }
+    db = firebase.firestore();
+  })
+  .catch(function(err){ console.error('Failed to load Firebase config:', err); });
 
 /* Firestore helpers to replace the ES-module named imports */
 var collection      = function(db, col)       { return db.collection(col); };
