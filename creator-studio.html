@@ -138,7 +138,6 @@
  <div class="sb-item active" data-tab="dashboard"><span class="sb-icon"></span>My Overview<span class="sb-badge live">Live</span></div>
  <div class="sb-item" data-tab="trends"><span class="sb-icon"></span>What's Trending</div>
  <div class="sb-item" data-tab="generator"><span class="sb-icon"></span>Write My Content</div>
- <div class="sb-item" data-tab="audience"><span class="sb-icon"></span>Post Audience</div>
  <div class="sb-item" data-tab="evaluator"><span class="sb-icon"></span>Analyse My Channel<span class="sb-badge live">AI</span></div>
  </div>
  <div class="sb-sec">
@@ -186,7 +185,6 @@
  <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard"> My Overview</button>
  <button class="tab-btn" id="tab-trends" data-tab="trends"> What's Trending</button>
  <button class="tab-btn" id="tab-generator" data-tab="generator"> Write My Content</button>
- <button class="tab-btn" id="tab-audience" data-tab="audience"> Post Audience</button>
  <button class="tab-btn" id="tab-evaluator" data-tab="evaluator"> Evaluator</button>
  <button class="tab-btn" id="tab-calendar" data-tab="calendar"> Calendar</button>
  <button class="tab-btn" id="tab-youtube" data-tab="youtube"> YouTube</button>
@@ -387,54 +385,6 @@
  @media(max-width:768px){ #platformChartsGrid{ grid-template-columns:1fr !important; } }
  </style>
 
- <!-- FULL TREND LIST -->
- <div class="card" style="margin-bottom:16px">
- <div class="card-header">
- <div class="card-title"> All Trends
- <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
- </div>
- <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
- <div class="card-tag tag-gold">Ranked by score · click any topic to generate</div>
- <div style="display:flex;gap:5px">
- <button class="filter-chip active" data-plat="all" onclick="filterTrends(this,'all')">All</button>
- <button class="filter-chip" data-plat="tt" onclick="filterTrends(this,'tt')"> TikTok</button>
- <button class="filter-chip" data-plat="yt" onclick="filterTrends(this,'yt')"> YouTube</button>
- <button class="filter-chip" data-plat="gt" onclick="filterTrends(this,'gt')"> Google</button>
- <button class="filter-chip" data-plat="cross" onclick="filterTrends(this,'cross')"> Cross</button>
- </div>
- </div>
- </div>
- <div class="card-body">
- <div id="fullTrendList">
- <div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner spinner-gold"></span> Loading trends…</div>
- </div>
- </div>
- </div>
-
- <!-- INSTAGRAM PREDICTED TRENDS -->
- <div class="card" style="margin-bottom:16px;border-color:rgba(193,53,132,.25)">
- <div class="card-header">
- <div class="card-title" style="color:#c13584"> Instagram Predicted Trends
- <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#c13584;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
- </div>
- <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
- <div class="card-tag" style="background:rgba(193,53,132,.1);color:#c13584;border:1px solid rgba(193,53,132,.2)">AI-predicted · based on TikTok + YouTube velocity</div>
- <!-- Prediction accuracy badge — populated by loadPredictionAccuracy() -->
- <div id="predAccuracyBadge"></div>
- </div>
- </div>
- <div class="card-body">
- <p style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6">
- These topics are trending on TikTok and YouTube right now. Based on historical cross-platform migration patterns, they are predicted to appear on Instagram Reels within the next 18–96 hours.
- </p>
- <!-- Active predictions list — populated by loadPredictionAccuracy() -->
- <div id="activePredictionsList" style="margin-bottom:16px"></div>
- <!-- IG prediction trend cards — populated by creator-studio.js -->
- <div id="igPredictionList">
- <div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(193,53,132,.15);border-top-color:#c13584"></span></div>
- </div>
- </div>
- </div>
 
  <!-- CROSS-PLATFORM SCORE CHART -->
  <div class="card" style="margin-bottom:16px">
@@ -523,6 +473,20 @@
  </div>
  </div>
 
+ <!-- AUDIENCE BREAKDOWN — merged below generator -->
+ <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--border)">
+ <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+ <h3 style="font-size:17px;font-weight:800;font-family:'Syne',sans-serif"> Post Audience</h3>
+ <span class="card-tag tag-gold">Dijo AI</span>
+ </div>
+ <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
+ <div style="display:flex;gap:10px;margin-bottom:20px">
+ <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
+ <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
+ </div>
+ <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
+ </div>
+
  </div>
 
  <!-- CALENDAR -->
@@ -594,16 +558,138 @@
 
  </div>
 
- <!-- AUDIENCE -->
+ <!-- COMMUNITY COMMENTS -->
  <div class="panel" id="panel-audience">
- <h2 style="font-size:20px;margin-bottom:6px">Post Audience</h2>
- <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
- <div style="display:flex;gap:10px;margin-bottom:20px">
- <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
- <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
+<style>
+/* Community Comments */
+.comm-wrap{display:flex;flex-direction:column;height:100%}
+.comm-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.comm-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:900}
+.comm-feed{flex:1;overflow-y:auto;max-height:480px;display:flex;flex-direction:column;gap:12px;padding-right:4px;scroll-behavior:smooth}
+.comm-feed::-webkit-scrollbar{width:5px}
+.comm-feed::-webkit-scrollbar-track{background:var(--bg2);border-radius:99px}
+.comm-feed::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+.comm-feed::-webkit-scrollbar-thumb:hover{background:var(--gold)}
+.comm-empty{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px}
+.comm-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;transition:border-color .2s}
+.comm-item:hover{border-color:rgba(201,126,8,.3)}
+.comm-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;font-family:'Syne',sans-serif;color:#fff;flex-shrink:0;text-transform:uppercase}
+[data-theme="dark"] .comm-av{color:#07090f}
+.comm-body{flex:1;min-width:0}
+.comm-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.comm-username{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--text1)}
+.comm-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.comm-text{font-size:13px;color:var(--text2);line-height:1.6;word-break:break-word}
+.comm-input-area{margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.comm-input-row{display:flex;gap:8px;align-items:flex-end}
+.comm-username-input{font-family:'DM Mono',monospace;font-size:12px;padding:8px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--text1);outline:none;width:140px;flex-shrink:0}
+.comm-username-input:focus{border-color:var(--gold)}
+.comm-text-input{flex:1;font-size:13px;padding:9px 13px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--text1);outline:none;resize:none;min-height:40px;max-height:120px;font-family:'DM Sans',sans-serif;line-height:1.5}
+.comm-text-input:focus{border-color:var(--gold)}
+.comm-post-btn{padding:10px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0;white-space:nowrap}
+[data-theme="dark"] .comm-post-btn{color:#07090f}
+.comm-post-btn:hover{opacity:.9}
+.comm-count-bar{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:10px}
+</style>
+ <div class="comm-wrap">
+ <div class="comm-header">
+ <h2 class="comm-title"> Community</h2>
+ <span class="card-tag tag-gold">Creator Chat</span>
  </div>
- <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
+ <div class="comm-count-bar" id="commCount">0 comments</div>
+ <div class="comm-feed" id="commFeed">
+ <div class="comm-empty" id="commEmpty"> Be the first to drop a comment — share tips, trends, or ideas with the community.</div>
  </div>
+ <div class="comm-input-area">
+ <div class="comm-input-row">
+ <input type="text" class="comm-username-input" id="commUsernameInput" placeholder="@username" maxlength="32"/>
+ <textarea class="comm-text-input" id="commTextInput" placeholder="Share a tip, trend, or idea with creators…" rows="1" maxlength="500" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();postComment()}"></textarea>
+ <button class="comm-post-btn" onclick="postComment()"> Post</button>
+ </div>
+ </div>
+ </div>
+ <script>
+ (function() {
+ var STORAGE_KEY = 'ig_community_comments';
+
+ function getComments() {
+ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; }
+ }
+ function saveComments(arr) {
+ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(e) {}
+ }
+ function timeAgo(ts) {
+ var diff = Math.floor((Date.now() - ts) / 1000);
+ if (diff < 60) return 'just now';
+ if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+ if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+ return Math.floor(diff/86400) + 'd ago';
+ }
+ function initials(name) {
+ name = name.replace(/^@/,'');
+ if (!name) return '?';
+ var parts = name.trim().split(/\s+/);
+ if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+ return name.slice(0,2).toUpperCase();
+ }
+ function avatarColor(name) {
+ var colors = ['#c97e08','#0fa876','#4f8ef7','#ff6464','#c13584','#4FB3A5'];
+ var h = 0; for (var i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) & 0xffff;
+ return colors[h % colors.length];
+ }
+ function renderComments() {
+ var feed = document.getElementById('commFeed');
+ var empty = document.getElementById('commEmpty');
+ var count = document.getElementById('commCount');
+ if (!feed) return;
+ var arr = getComments();
+ count.textContent = arr.length + ' comment' + (arr.length !== 1 ? 's' : '');
+ if (!arr.length) {
+ if (!empty) feed.innerHTML = '<div class="comm-empty" id="commEmpty"> Be the first to drop a comment.</div>';
+ else if (!feed.contains(empty)) feed.appendChild(empty);
+ return;
+ }
+ if (empty && feed.contains(empty)) feed.removeChild(empty);
+ feed.innerHTML = arr.map(function(c) {
+ var col = avatarColor(c.username);
+ return '<div class="comm-item">'
+ + '<div class="comm-av" style="background:' + col + '">' + initials(c.username) + '</div>'
+ + '<div class="comm-body">'
+ + '<div class="comm-meta"><span class="comm-username">@' + c.username.replace(/^@/,'').replace(/</g,'&lt;') + '</span><span class="comm-time">' + timeAgo(c.ts) + '</span></div>'
+ + '<div class="comm-text">' + c.text.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>'
+ + '</div></div>';
+ }).join('');
+ feed.scrollTop = feed.scrollHeight;
+ }
+ window.postComment = function() {
+ var uEl = document.getElementById('commUsernameInput');
+ var tEl = document.getElementById('commTextInput');
+ var username = (uEl ? uEl.value.trim() : '') || 'Anonymous';
+ var text = tEl ? tEl.value.trim() : '';
+ if (!text) { if(tEl) { tEl.style.borderColor='var(--red,#e05)'; setTimeout(function(){tEl.style.borderColor='';},1000); } return; }
+ var arr = getComments();
+ arr.push({ username: username, text: text, ts: Date.now() });
+ saveComments(arr);
+ if (tEl) tEl.value = '';
+ renderComments();
+ };
+ // Auto-resize textarea
+ document.addEventListener('DOMContentLoaded', function() {
+ var tEl = document.getElementById('commTextInput');
+ if (tEl) tEl.addEventListener('input', function() {
+ this.style.height = 'auto';
+ this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+ });
+ renderComments();
+ // Refresh timestamps every minute
+ setInterval(renderComments, 60000);
+ });
+ // Render immediately too (in case DOMContentLoaded already fired)
+ if (document.readyState !== 'loading') renderComments();
+ })();
+ </script>
+ </div>
+
 
  <!-- EVALUATOR -->
  <div class="panel" id="panel-evaluator">
