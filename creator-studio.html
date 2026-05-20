@@ -266,7 +266,10 @@
  </div>
  <div style="display:flex;flex-direction:column;gap:14px">
  <div class="card" style="display:flex;flex-direction:column;">
- <div class="card-header"><span class="card-title"> Creator Chat</span><span class="card-tag tag-gold">Community</span></div>
+ <div class="card-header">
+ <span class="card-title"> Creator Chat</span>
+ <span class="card-tag tag-gold">Community</span>
+ </div>
  <div class="card-body" style="display:flex;flex-direction:column;gap:0;padding-bottom:0">
 
  <!-- feed -->
@@ -292,45 +295,151 @@
 
  <script>
  (function(){
- var SK='ig_dash_chat';
- function get(){try{return JSON.parse(localStorage.getItem(SK)||'[]');}catch(e){return[];}}
- function save(a){try{localStorage.setItem(SK,JSON.stringify(a));}catch(e){}}
- function ago(ts){var d=Math.floor((Date.now()-ts)/1000);if(d<60)return'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago';}
- function color(n){var c=['#c97e08','#0fa876','#4f8ef7','#ff6464','#c13584','#4FB3A5'],h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))&0xffff;return c[h%c.length];}
- function initials(n){n=n.replace(/^@/,'').trim();if(!n)return'?';var p=n.split(/\s+/);return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():n.slice(0,2).toUpperCase();}
- function render(){
- var feed=document.getElementById('dashCommFeed');
- var empty=document.getElementById('dashCommEmpty');
- if(!feed)return;
- var arr=get();
- if(!arr.length){if(empty&&!feed.contains(empty))feed.appendChild(empty);return;}
- if(empty&&feed.contains(empty))feed.removeChild(empty);
- feed.innerHTML=arr.map(function(c){
- var col=color(c.n);
- return '<div style="display:flex;gap:9px;align-items:flex-start">'
- +'<div style="width:30px;height:30px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:Syne,sans-serif;color:#fff;flex-shrink:0">'+initials(c.n)+'</div>'
- +'<div style="flex:1;min-width:0">'
- +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
- +'<span style="font-family:Syne,sans-serif;font-size:12px;font-weight:800;color:var(--text1)">'+c.n.replace(/</g,'&lt;')+'</span>'
- +'<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">'+ago(c.ts)+'</span>'
- +'</div>'
- +'<div style="font-size:12px;color:var(--text2);line-height:1.55;word-break:break-word">'+c.t.replace(/</g,'&lt;')+'</div>'
- +'</div></div>';
- }).join('');
- feed.scrollTop=feed.scrollHeight;
+ var ADMIN_EMAIL = 'admin@impactgridgroup.com';
+ var _chatComments = [];
+
+ function isAdmin() {
+ var u = window.igUser;
+ return u && u.email === ADMIN_EMAIL;
  }
- window.dashCommPost=function(){
- var nEl=document.getElementById('dashCommName');
- var tEl=document.getElementById('dashCommText');
- var name=(nEl&&nEl.value.trim())||'Anonymous';
- var text=tEl&&tEl.value.trim();
- if(!text){if(tEl){tEl.style.borderColor='#e05';setTimeout(function(){tEl.style.borderColor='';},800);}return;}
- var arr=get();arr.push({n:name,t:text,ts:Date.now()});save(arr);
- if(tEl)tEl.value='';
- render();
+
+ function ago(ts) {
+ var d = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+ if (d < 60) return 'just now';
+ if (d < 3600) return Math.floor(d/60) + 'm ago';
+ if (d < 86400) return Math.floor(d/3600) + 'h ago';
+ return Math.floor(d/86400) + 'd ago';
+ }
+ function color(n) {
+ var c = ['#c97e08','#0fa876','#4f8ef7','#ff6464','#c13584','#4FB3A5'], h = 0;
+ for (var i = 0; i < n.length; i++) h = (h*31 + n.charCodeAt(i)) & 0xffff;
+ return c[h % c.length];
+ }
+ function initials(n) {
+ n = n.replace(/^@/,'').trim();
+ if (!n) return '?';
+ var p = n.split(/\s+/);
+ return p.length >= 2 ? (p[0][0]+p[1][0]).toUpperCase() : n.slice(0,2).toUpperCase();
+ }
+
+ function render(arr) {
+ _chatComments = arr || _chatComments;
+ var feed = document.getElementById('dashCommFeed');
+ var empty = document.getElementById('dashCommEmpty');
+ if (!feed) return;
+ var admin = isAdmin();
+ if (!_chatComments.length) {
+ feed.innerHTML = '<div id="dashCommEmpty" style="text-align:center;padding:28px 12px;color:var(--text3);font-size:12px;line-height:1.6"> No messages yet.<br>Say something to the community!</div>';
+ return;
+ }
+ var atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
+ feed.innerHTML = _chatComments.map(function(c) {
+ var col = color(c.name);
+ var deleteBtn = admin
+ ? '<button onclick="dashCommDelete(\''+c.id+'\')" title="Delete" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0 2px;line-height:1;opacity:.6" onmouseover="this.style.color=\'#e05\';this.style.opacity=1" onmouseout="this.style.color=\'var(--text3)\';this.style.opacity=.6">🗑</button>'
+ : '';
+ return '<div style="display:flex;gap:9px;align-items:flex-start">'
+ + '<div style="width:30px;height:30px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:Syne,sans-serif;color:#fff;flex-shrink:0">'+initials(c.name)+'</div>'
+ + '<div style="flex:1;min-width:0">'
+ + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+ + '<span style="font-family:Syne,sans-serif;font-size:12px;font-weight:800;color:var(--text1)">'+c.name.replace(/</g,'&lt;')+'</span>'
+ + '<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">'+ago(c.created_at)+'</span>'
+ + deleteBtn
+ + '</div>'
+ + '<div style="font-size:12px;color:var(--text2);line-height:1.55;word-break:break-word">'+c.message.replace(/</g,'&lt;')+'</div>'
+ + '</div></div>';
+ }).join('');
+ if (atBottom) feed.scrollTop = feed.scrollHeight;
+ }
+
+ async function loadComments() {
+ try {
+ var sb = window.supabase || (window._sb);
+ if (!sb) { setTimeout(loadComments, 800); return; }
+ var res = await sb.from('community_comments').select('*').order('created_at', { ascending: true }).limit(100);
+ if (res.error) throw res.error;
+ render(res.data || []);
+ } catch(e) {
+ console.warn('[Chat] Load failed:', e.message);
+ }
+ }
+
+ window.dashCommPost = async function() {
+ var nEl = document.getElementById('dashCommName');
+ var tEl = document.getElementById('dashCommText');
+ var name = (nEl && nEl.value.trim()) || 'Anonymous';
+ var text = tEl && tEl.value.trim();
+ if (!text) {
+ if (tEl) { tEl.style.borderColor='#e05'; setTimeout(function(){ tEl.style.borderColor=''; }, 800); }
+ return;
+ }
+ var btn = document.querySelector('#dashCommFeed ~ div button');
+ if (btn) { btn.disabled = true; btn.textContent = '…'; }
+ try {
+ var sb = window.supabase || window._sb;
+ if (!sb) throw new Error('Supabase not ready');
+ var res = await sb.from('community_comments').insert([{ name: name, message: text }]).select();
+ if (res.error) throw res.error;
+ if (tEl) tEl.value = '';
+ await loadComments();
+ var feed = document.getElementById('dashCommFeed');
+ if (feed) feed.scrollTop = feed.scrollHeight;
+ } catch(e) {
+ console.error('[Chat] Post failed:', e.message);
+ if (typeof toast === 'function') toast(' Could not send — try again');
+ } finally {
+ if (btn) { btn.disabled = false; btn.textContent = 'Post'; }
+ }
  };
- if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',render);}else{render();}
- setInterval(render,60000);
+
+ window.dashCommDelete = async function(id) {
+ if (!isAdmin()) return;
+ if (!confirm('Delete this comment?')) return;
+ try {
+ var sb = window.supabase || window._sb;
+ var res = await sb.from('community_comments').delete().eq('id', id);
+ if (res.error) throw res.error;
+ await loadComments();
+ if (typeof toast === 'function') toast(' Comment deleted');
+ } catch(e) {
+ console.error('[Chat] Delete failed:', e.message);
+ if (typeof toast === 'function') toast(' Delete failed — try again');
+ }
+ };
+
+ // Subscribe to real-time inserts & deletes
+ function subscribeRealtime() {
+ try {
+ var sb = window.supabase || window._sb;
+ if (!sb || !sb.channel) return;
+ sb.channel('community_comments_changes')
+ .on('postgres_changes', { event: '*', schema: 'public', table: 'community_comments' }, function() {
+ loadComments();
+ })
+ .subscribe();
+ } catch(e) {
+ console.warn('[Chat] Realtime subscription failed:', e.message);
+ }
+ }
+
+ // Init — wait for Supabase to be ready
+ function init() {
+ if (window.supabase || window._sb) {
+ loadComments();
+ subscribeRealtime();
+ } else {
+ setTimeout(init, 500);
+ }
+ }
+
+ if (document.readyState === 'loading') {
+ document.addEventListener('DOMContentLoaded', init);
+ } else {
+ init();
+ }
+
+ // Refresh timestamps every minute
+ setInterval(function() { render(); }, 60000);
  })();
  </script>
  </div>
