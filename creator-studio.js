@@ -730,7 +730,7 @@ async function fetchTrends() {
  : src === 'cross' ? 'cross' : 'gt';
  var platLbl = src === 'youtube' ? 'YouTube'
  : src === 'tiktok' ? 'TikTok'
- : src === 'tiktok_signal' ? 'TikTok Signal' // honest: not real TikTok data
+ : src === 'tiktok_signal' ? 'TikTok Buzz'  // Reddit-sourced TikTok culture signal
  : src === 'cross' ? 'Cross' : 'Google';
  var platforms = src === 'cross'
  ? ['tiktok', 'youtube', 'google']
@@ -844,7 +844,7 @@ function _dataSourceLabel(t) {
  default:
  // Infer from platform type when data_source field is absent
  if (t.plat === 'tt') return { text: ' Live TikTok Data', color: '#4caf50' };
- if (t.plat === 'tt_proxy') return { text: ' YouTube Proxy', color: '#e67e22' };
+ if (t.plat === 'tt_proxy') return { text: ' TikTok Buzz', color: '#ff6464' };
  if (t.plat === 'cross') return { text: ' Cross-Platform', color: '#4caf50' };
  if (t.plat === 'yt') return { text: ' YouTube Trending', color: '#4caf50' };
  return { text: ' Search Demand', color: '#78b4ff' };
@@ -880,7 +880,7 @@ function trendItemHTML(t) {
 
  var badge =
  t.plat === 'tt' ? ' TikTok Viral'
- : t.plat === 'tt_proxy' ? ' TikTok Signal'
+ : t.plat === 'tt_proxy' ? ' TikTok Buzz'
  : t.plat === 'yt' ? ' YouTube Validated'
  : t.plat === 'cross' ? ' Cross-Platform'
  : ' Search Demand';
