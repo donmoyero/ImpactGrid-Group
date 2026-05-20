@@ -573,8 +573,8 @@ function updateWinnerBox() {
 
   var level     = winner.score > 8 ? 'HIGH 📈'   : winner.score > 5 ? 'MEDIUM ⚖️' : 'LOW 📉';
   var clsColor  = winner.score > 8 ? 'var(--green)' : winner.score > 5 ? 'var(--gold)' : 'var(--text3)';
-  var platIcon  = winner.plat === 'tt' ? '🎵' : winner.plat === 'yt' ? '▶️' : winner.plat === 'cross' ? '🚀' : '🔍';
-  var platColor = winner.plat === 'tt' ? '#ff6464' : winner.plat === 'yt' ? '#FFD700' : winner.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
+  var platIcon  = winner.plat === 'tt' ? '🎵' : winner.plat === 'tt_proxy' ? '📡' : winner.plat === 'yt' ? '▶️' : winner.plat === 'cross' ? '🚀' : '🔍';
+  var platColor = winner.plat === 'tt' ? '#ff6464' : winner.plat === 'tt_proxy' ? '#ff9090' : winner.plat === 'yt' ? '#FFD700' : winner.plat === 'cross' ? '#4FB3A5' : '#78b4ff';
   var cls       = classifyTrend(winner);
   var clsLbl    = cls === 'blowup' ? '🔥 Likely to blow up' : cls === 'rising_fast' ? '⚡ Rising fast' : cls === 'early' ? '🟢 Early signal' : '📊 Stable';
 
@@ -596,10 +596,13 @@ function updateChart() {
   var canvas = document.getElementById('trendChart');
   if (!canvas || !_allTrends.length) return;
 
-  // Top 5 per platform by score — uses t.plat ('tt','yt','gt'), NOT t.platform
+  // Top 5 per platform by score — uses t.plat ('tt','tt_proxy','yt','gt'), NOT t.platform
   function topN(plat, n) {
     return _allTrends
-      .filter(function(t) { return t.plat === plat; })
+      .filter(function(t) {
+        // tt_proxy counts as TikTok data for chart purposes (it's the best signal we have)
+        return t.plat === plat || (plat === 'tt' && t.plat === 'tt_proxy');
+      })
       .slice().sort(function(a, b) { return b.score - a.score; })
       .slice(0, n);
   }
@@ -719,16 +722,19 @@ async function fetchTrends() {
   function mapTrend(t, i) {
     // /trends/cross (v_cross_platform_trends view) may use 'source' instead of 'platform_source'
     var src = t.platform_source || t.source || 'google';
-    var plat = src === 'youtube' ? 'yt'
-      : src === 'tiktok'  ? 'tt'
-      : src === 'cross'   ? 'cross' : 'gt';
-    var platLbl = src === 'youtube' ? 'YouTube'
-      : src === 'tiktok'  ? 'TikTok'
-      : src === 'cross'   ? 'Cross' : 'Google';
+    var plat = src === 'youtube'       ? 'yt'
+      : src === 'tiktok'              ? 'tt'
+      : src === 'tiktok_signal'       ? 'tt_proxy'   // YouTube-proxied TikTok estimate
+      : src === 'cross'               ? 'cross' : 'gt';
+    var platLbl = src === 'youtube'       ? 'YouTube'
+      : src === 'tiktok'              ? 'TikTok'
+      : src === 'tiktok_signal'       ? 'TikTok Signal'  // honest: not real TikTok data
+      : src === 'cross'               ? 'Cross' : 'Google';
     var platforms = src === 'cross'
       ? ['tiktok', 'youtube', 'google']
-      : src === 'youtube' ? ['youtube']
-      : src === 'tiktok'  ? ['tiktok']
+      : src === 'youtube'        ? ['youtube']
+      : src === 'tiktok'         ? ['tiktok']
+      : src === 'tiktok_signal'  ? ['tiktok']   // still counts for scoring weight
       : ['google'];
     return {
       topic:        t.topic,
@@ -742,7 +748,7 @@ async function fetchTrends() {
       status:       t.status       || 'rising',
       igPrediction: t.instagram_prediction || 0,
       confidence:   t.confidence_score || t.velocity_score ||
-                    (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'youtube' ? 70 : 60)
+                    (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'tiktok_signal' ? 55 : src === 'youtube' ? 70 : 60)
     };
   }
 
@@ -828,9 +834,10 @@ function trendItemHTML(t) {
 
   // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
   var badge =
-    t.plat === 'tt'    ? '⚡ TikTok Viral'
-    : t.plat === 'yt'  ? '🎯 YouTube Validated'
-    : t.plat === 'cross' ? '🚀 Cross-Platform'
+    t.plat === 'tt'       ? '⚡ TikTok Viral'
+    : t.plat === 'tt_proxy' ? '📡 TikTok Signal'   // YouTube-proxied — honest label
+    : t.plat === 'yt'     ? '🎯 YouTube Validated'
+    : t.plat === 'cross'  ? '🚀 Cross-Platform'
     : '🔍 Search Demand';
 
   // Confidence indicator
@@ -862,7 +869,12 @@ function getBest3(trends) {
   // and the extras fill-in loop ends up grabbing duplicates (e.g. 3 YouTube).
   function top(plat) {
     return trends
-      .filter(function(t) { return t.plat === plat || t.plat === 'cross'; })
+      .filter(function(t) {
+        // tt_proxy counts as tiktok for the TikTok slot; cross counts for all
+        var isMatch = t.plat === plat || t.plat === 'cross';
+        if (plat === 'tt') isMatch = isMatch || t.plat === 'tt_proxy';
+        return isMatch;
+      })
       .sort(function(a, b) { return b.score - a.score; })[0] || null;
   }
   var tt = top('tt');
@@ -928,7 +940,7 @@ function renderDashTrends() {
     while (picks.length < 3 && extras.length) picks.push(extras.shift());
   }
 
-  var platColors = { tt: '#ff6464', yt: '#FFD700', gt: '#78b4ff', cross: '#4FB3A5' };
+  var platColors = { tt: '#ff6464', tt_proxy: '#ff9090', yt: '#FFD700', gt: '#78b4ff', cross: '#4FB3A5' };
   var insightLabels = ['🥇 Top Signal', '🥈 Strong Pick', '🥉 Worth Watching'];
 
   el.innerHTML = picks.map(function(t, idx) {
@@ -2193,8 +2205,86 @@ async function loadYtVideos(token) {
           + '<div style="padding:10px"><div style="font-size:12px;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(sn.title || 'Untitled') + '</div>'
           + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">👁 ' + fmtN(st.viewCount) + ' · ❤️ ' + fmtN(st.likeCount) + ' · 💬 ' + fmtN(st.commentCount) + '</div></div></div>';
       }).join('') + '</div>';
+    // Also attempt to load 28-day analytics now that we have a token
+    loadYtAnalytics(token);
   } catch(e) {
     el.innerHTML = '<div style="padding:20px;color:var(--text3)">Could not load videos.</div>';
+  }
+}
+
+/* ── YouTube Analytics (28-day) ─────────────────────────────────────────────
+   Calls /youtube/analytics. If the token was granted without the
+   yt-analytics.readonly scope (old connection), shows a one-click
+   reconnect prompt instead of silently showing nothing.
+──────────────────────────────────────────────────────────────────────────── */
+async function loadYtAnalytics(token) {
+  var el = document.getElementById('ytAnalyticsArea'); // optional element — safe no-op if absent
+  try {
+    var res = await fetch(DIJO + '/youtube/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: token })
+    });
+    var data = await res.json();
+
+    // Scope missing — token was issued before analytics permission was added
+    if (res.status === 403 && data.error === 'scope_missing') {
+      console.warn('[YouTube Analytics] Missing yt-analytics.readonly scope — showing reconnect prompt');
+      // Show reconnect banner in the YouTube panel if the element exists
+      var banner = document.getElementById('ytScopeBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'ytScopeBanner';
+        banner.style.cssText = 'margin:12px 0;padding:12px 16px;background:rgba(201,126,8,.1);border:1px solid rgba(201,126,8,.35);border-radius:10px;font-size:13px;color:var(--text2);display:flex;align-items:center;gap:12px;flex-wrap:wrap';
+        banner.innerHTML = '<span>📊 <strong>Analytics upgrade needed.</strong> Reconnect to unlock 28-day views, watch time &amp; subscriber data.</span>'
+          + '<button onclick="reconnectYouTubeWithAnalytics()" style="padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07090f;font-size:12px;font-weight:800;border:none;cursor:pointer;white-space:nowrap">Reconnect →</button>';
+        var ytConnected = document.getElementById('ytConnected');
+        if (ytConnected) ytConnected.insertBefore(banner, ytConnected.firstChild);
+      }
+      return;
+    }
+
+    if (!res.ok || data.error) {
+      console.warn('[YouTube Analytics] Error:', data.error || res.status);
+      return;
+    }
+
+    // Render into #ytAnalyticsArea if it exists
+    if (el && data.rows && data.rows.length) {
+      var totalViews = data.rows.reduce(function(s, r) { return s + (r[1] || 0); }, 0);
+      var totalMins  = data.rows.reduce(function(s, r) { return s + (r[2] || 0); }, 0);
+      var totalSubs  = data.rows.reduce(function(s, r) { return s + (r[4] || 0) - (r[5] || 0); }, 0);
+      el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">'
+        + _ytStatCard('👁 Views (28d)', fmtN(totalViews))
+        + _ytStatCard('⏱ Watch time', Math.round(totalMins / 60).toLocaleString() + 'h')
+        + _ytStatCard('📈 Net subs', (totalSubs >= 0 ? '+' : '') + fmtN(totalSubs))
+        + '</div>';
+    }
+  } catch(e) {
+    console.warn('[YouTube Analytics] Fetch failed:', e.message);
+  }
+}
+
+function _ytStatCard(label, value) {
+  return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-size:18px;font-weight:900;color:var(--text)">' + value + '</div>'
+    + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:4px">' + label + '</div>'
+    + '</div>';
+}
+
+/* Reconnect flow — fetches the server-built OAuth URL (which includes both
+   youtube.readonly AND yt-analytics.readonly) then redirects the user. */
+async function reconnectYouTubeWithAnalytics() {
+  try {
+    var res  = await fetch(DIJO + '/youtube/auth-url');
+    var data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      toast('⚠️ Could not generate reconnect link — contact support');
+    }
+  } catch(e) {
+    toast('⚠️ Reconnect failed — try again');
   }
 }
 
