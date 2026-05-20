@@ -18,11 +18,11 @@
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="creator-studio.css"/>
 <style>
-/* ═══════════════════════════════════════
-   CONTENT CALENDAR — inline styles
-   (keeps calendar self-contained so it
-   works even if creator-studio.css changes)
-═══════════════════════════════════════ */
+/* 
+ CONTENT CALENDAR — inline styles
+ (keeps calendar self-contained so it
+ works even if creator-studio.css changes)
+ */
 
 /* Header */
 .cal-header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
@@ -48,7 +48,7 @@
 /* Loading state (used by calendar.js) */
 .cal-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px;color:var(--text3);font-size:13px}
 
-/* ── Platform Velocity Meters ── */
+/* Platform Velocity Meters */
 .pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:860px){.pm-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.pm-grid{grid-template-columns:1fr}}
@@ -65,9 +65,9 @@
 .pm-best:hover{color:var(--gold)}
 .pm-empty{font-size:11px;color:var(--text3);font-style:italic}
 
-/* ── FIX 2: Platform power badges — defined in creator-studio.css ── */
+/* FIX 2: Platform power badges — defined in creator-studio.css */
 
-/* ── FIX 3: Bubble chart legend ───────────────── */
+/* FIX 3: Bubble chart legend */
 .chart-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-top:6px;padding:0 4px}
 .chart-legend-item{display:flex;align-items:center;gap:5px}
 .chart-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
@@ -75,6 +75,26 @@
 .chart-legend-dot.yt{background:#FFD700}
 .chart-legend-dot.cross{background:#4FB3A5}
 .chart-legend-dot.gt{background:#78b4ff}
+
+/* Trend filter chips */
+.filter-chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--card);color:var(--text2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;white-space:nowrap;transition:all .15s}
+.filter-chip:hover{border-color:var(--gold);color:var(--gold)}
+.filter-chip.active{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:700}
+[data-theme="dark"] .filter-chip.active{color:#07090f}
+
+/* Instagram prediction cards */
+.ig-pred-card{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.ig-pred-card:last-child{border-bottom:none;padding-bottom:0}
+.ig-pred-card:hover .ig-pred-topic{color:var(--gold)}
+.ig-pred-icon{width:36px;height:36px;border-radius:10px;background:rgba(193,53,132,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ig-pred-body{flex:1;min-width:0}
+.ig-pred-topic{font-size:13px;font-weight:700;color:var(--text1);margin-bottom:3px;transition:color .15s}
+.ig-pred-reason{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:5px}
+.ig-pred-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ig-pred-score{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:#c13584}
+.ig-pred-window{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.ig-pred-bar{height:3px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:6px}
+.ig-pred-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#c13584,#e1306c);transition:width .6s ease}
 </style>
 </head>
 <body>
@@ -83,640 +103,797 @@
 
 <!-- TICKER -->
 <div class="ticker">
-  <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
-  <div class="ticker-track">
-    <div class="ticker-scroll" id="tickerScroll">
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
-      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
-      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
-      <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
-      <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
-      <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
-    </div>
-  </div>
+ <div class="ticker-badge"><span class="t-dot"></span>ImpactGrid Live</div>
+ <div class="ticker-track">
+ <div class="ticker-scroll" id="tickerScroll">
+ <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
+ <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
+ <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
+ <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
+ <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
+ <span class="t-item"><span class="t-tag tag-live">Live</span>Intelligence Dashboard — Real Google Trends · Dijo AI · YouTube · TikTok</span>
+ <span class="t-item"><span class="t-tag tag-live">Live</span>Dijo AI — Your creator intelligence engine. Short. Sharp. Actionable.</span>
+ <span class="t-item"><span class="t-tag tag-live">Live</span>Google Trends UK — refreshed every 30 minutes</span>
+ <span class="t-item"><span class="t-tag tag-live">New</span>Carousel Studio v3.0 — AI-designed slides with real trend data</span>
+ <span class="t-item"><span class="t-tag tag-soon">Soon</span>Instagram — Pending Meta app approval</span>
+ </div>
+ </div>
 </div>
 
 
 <div class="app-layout">
 
-  <!-- SIDEBAR -->
-  <div class="app-sidebar">
-  <aside class="sidebar" id="sidebar">
-    <div class="sb-close-btn">
-      <div class="sb-close-inner">
-        <img src="logo.png" alt="ImpactGrid" onerror="this.style.display='none'"/>
-        ImpactGrid
-      </div>
-      <button class="sb-x" onclick="closeSidebar()" aria-label="Close menu">✕</button>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">Intelligence</div>
-      <div class="sb-item active" data-tab="dashboard"><span class="sb-icon">📊</span>My Overview<span class="sb-badge live">Live</span></div>
-      <div class="sb-item" data-tab="trends"><span class="sb-icon">🔥</span>What's Trending</div>
-      <div class="sb-item" data-tab="generator"><span class="sb-icon">✍️</span>Write My Content</div>
-      <div class="sb-item" data-tab="audience"><span class="sb-icon">👥</span>Post Audience</div>
-      <div class="sb-item" data-tab="evaluator"><span class="sb-icon">⚡</span>Analyse My Channel<span class="sb-badge live">AI</span></div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">Create</div>
-      <div class="sb-item" data-tab="calendar">
-        <span class="sb-icon">📅</span>
-        Content Calendar
-      </div>
-      <a class="sb-item" href="carousel-studio.html"><span class="sb-icon">🎨</span>Carousel Studio</a>
-      <a class="sb-item" href="portfolio-studio.html"><span class="sb-icon">🌐</span>Portfolio Studio</a>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">Platforms</div>
-      <div class="sb-item" data-tab="youtube"><span class="sb-icon">▶️</span>YouTube<span class="sb-badge live" id="ytSidebarBadge" style="display:none">Live</span></div>
-      <div class="sb-item" data-tab="tiktok"><span class="sb-icon">🎵</span>TikTok<span class="sb-badge tt" id="ttSidebarBadge" style="display:none">Live</span></div>
-      <div class="sb-item" style="opacity:.45;cursor:not-allowed"><span class="sb-icon">📸</span>Instagram<span class="sb-badge soon">Soon</span></div>
-    </div>
-    <div class="sb-platforms">
-      <div class="sb-plat-title">Platform Status</div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Dijo AI</span><span style="font-size:11px;color:var(--green)">Active</span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Google Trends</span><span style="font-size:11px;color:var(--green)">Live</span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ytSpDot"></span>YouTube</span><span style="font-size:11px" id="ytSpLabel"><span class="connect-link" data-tab="youtube">Connect</span></span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ttSpDot"></span>TikTok</span><span style="font-size:11px" id="ttSpLabel"><span class="connect-link" data-tab="tiktok">Connect</span></span></div>
-      <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot soon"></span>Instagram</span><span style="font-size:11px;color:var(--blue2)">Coming Soon</span></div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-sec-title">System</div>
+ <!-- SIDEBAR -->
+ <div class="app-sidebar">
+ <aside class="sidebar" id="sidebar">
+ <div class="sb-close-btn">
+ <div class="sb-close-inner">
+ <img src="logo.png" alt="ImpactGrid" onerror="this.style.display='none'"/>
+ ImpactGrid
+ </div>
+ <button class="sb-x" onclick="closeSidebar()" aria-label="Close menu"></button>
+ </div>
+ <div class="sb-sec">
+ <div class="sb-sec-title">Intelligence</div>
+ <div class="sb-item active" data-tab="dashboard"><span class="sb-icon"></span>My Overview<span class="sb-badge live">Live</span></div>
+ <div class="sb-item" data-tab="trends"><span class="sb-icon"></span>What's Trending</div>
+ <div class="sb-item" data-tab="generator"><span class="sb-icon"></span>Write My Content</div>
+ <div class="sb-item" data-tab="audience"><span class="sb-icon"></span>Post Audience</div>
+ <div class="sb-item" data-tab="evaluator"><span class="sb-icon"></span>Analyse My Channel<span class="sb-badge live">AI</span></div>
+ </div>
+ <div class="sb-sec">
+ <div class="sb-sec-title">Create</div>
+ <div class="sb-item" data-tab="calendar">
+ <span class="sb-icon"></span>
+ Content Calendar
+ </div>
+ <a class="sb-item" href="carousel-studio.html"><span class="sb-icon"></span>Carousel Studio</a>
+ <a class="sb-item" href="portfolio-studio.html"><span class="sb-icon"></span>Portfolio Studio</a>
+ </div>
+ <div class="sb-sec">
+ <div class="sb-sec-title">Platforms</div>
+ <div class="sb-item" data-tab="youtube"><span class="sb-icon"></span>YouTube<span class="sb-badge live" id="ytSidebarBadge" style="display:none">Live</span></div>
+ <div class="sb-item" data-tab="tiktok"><span class="sb-icon"></span>TikTok<span class="sb-badge tt" id="ttSidebarBadge" style="display:none">Live</span></div>
+ <div class="sb-item" data-tab="trends"><span class="sb-icon"></span>Instagram Trends<span class="sb-badge" style="background:rgba(193,53,132,.15);color:#c13584;border:1px solid rgba(193,53,132,.3)">Predicted</span></div>
+ </div>
+ <div class="sb-platforms">
+ <div class="sb-plat-title">Platform Status</div>
+ <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Dijo AI</span><span style="font-size:11px;color:var(--green)">Active</span></div>
+ <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot live"></span>Google Trends</span><span style="font-size:11px;color:var(--green)">Live</span></div>
+ <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ytSpDot"></span>YouTube</span><span style="font-size:11px" id="ytSpLabel"><span class="connect-link" data-tab="youtube">Connect</span></span></div>
+ <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot off" id="ttSpDot"></span>TikTok</span><span style="font-size:11px" id="ttSpLabel"><span class="connect-link" data-tab="tiktok">Connect</span></span></div>
+ <div class="sb-plat-item"><span class="sp-name"><span class="sp-dot" style="background:#c13584"></span>Instagram</span><span style="font-size:11px;color:#c13584">Predicted</span></div>
+ </div>
+ <div class="sb-sec">
+ <div class="sb-sec-title">System</div>
 
-      <a class="sb-item" href="settings.html">
-        <span class="sb-icon">⚙️</span>
-        Settings
-      </a>
-      <div class="sb-item" id="installSideBtn" style="display:none;cursor:pointer" onclick="document.getElementById('installSideBtn').onclick && document.getElementById('installSideBtn').onclick()">
-        <span class="sb-icon">📲</span>
-        Install App
-      </div>
-    </div>
-  </aside>
-  </div><!-- /.app-sidebar -->
+ <a class="sb-item" href="settings.html">
+ <span class="sb-icon"></span>
+ Settings
+ </a>
+ <div class="sb-item" id="installSideBtn" style="display:none;cursor:pointer" onclick="document.getElementById('installSideBtn').onclick && document.getElementById('installSideBtn').onclick()">
+ <span class="sb-icon"></span>
+ Install App
+ </div>
+ </div>
+ </aside>
+ </div><!-- /.app-sidebar -->
 
-  <!-- MAIN -->
-  <div class="app-main">
-  <div class="main">
-    <div class="tabs-bar">
-      <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard">📊 My Overview</button>
-      <button class="tab-btn" id="tab-trends" data-tab="trends">🔥 What's Trending</button>
-      <button class="tab-btn" id="tab-generator" data-tab="generator">✍️ Write My Content</button>
-      <button class="tab-btn" id="tab-audience" data-tab="audience">👥 Post Audience</button>
-      <button class="tab-btn" id="tab-evaluator" data-tab="evaluator">🎯 Evaluator</button>
-      <button class="tab-btn" id="tab-calendar" data-tab="calendar">📅 Calendar</button>
-      <button class="tab-btn" id="tab-youtube" data-tab="youtube">▶️ YouTube</button>
-      <button class="tab-btn" id="tab-tiktok" data-tab="tiktok">🎵 TikTok</button>
-      <button class="tab-btn tab-soon">📸 Instagram<span class="soon-badge">Soon</span></button>
-    </div>
+ <!-- MAIN -->
+ <div class="app-main">
+ <div class="main">
+ <div class="tabs-bar">
+ <button class="tab-btn active" id="tab-dashboard" data-tab="dashboard"> My Overview</button>
+ <button class="tab-btn" id="tab-trends" data-tab="trends"> What's Trending</button>
+ <button class="tab-btn" id="tab-generator" data-tab="generator"> Write My Content</button>
+ <button class="tab-btn" id="tab-audience" data-tab="audience"> Post Audience</button>
+ <button class="tab-btn" id="tab-evaluator" data-tab="evaluator"> Evaluator</button>
+ <button class="tab-btn" id="tab-calendar" data-tab="calendar"> Calendar</button>
+ <button class="tab-btn" id="tab-youtube" data-tab="youtube"> YouTube</button>
+ <button class="tab-btn" id="tab-tiktok" data-tab="tiktok"> TikTok</button>
+ <button class="tab-btn" id="tab-instagram" data-tab="trends"> Instagram</button>
+ </div>
 
-    <div class="content-area" id="contentArea">
+ <div class="content-area" id="contentArea">
 
-      <!-- DASHBOARD -->
-      <div class="panel active" id="panel-dashboard">
-        <div class="stat-grid">
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">📊 Weekly Trend Prediction</div>
-              <div class="card-tag tag-gold">AI</div>
-            </div>
-            <div class="card-body" id="weeklyPrediction">
-              <div class="text-sm">Analyzing trends...</div>
-            </div>
-          </div>
-          <div class="card" style="display:flex;align-items:center;gap:12px;">
-            <div data-ig-avatar class="u-av"></div>
-            <div>
-              <div id="dijoGreeting" data-ig-greeting class="text-sm"></div>
-              <div id="dijoBrief" class="text-sm"></div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="sc-label">YouTube</div>
-            <div class="sc-val-sm" id="dashYtVal" style="color:var(--text2)">Not connected</div>
-            <div class="sc-delta"><span class="sc-link" data-tab="youtube">Connect →</span></div>
-          </div>
-          <div class="stat-card">
-            <div class="sc-label">TikTok</div>
-            <div class="sc-val-sm" id="dashTtVal" style="color:var(--text2)">Not connected</div>
-            <div class="sc-delta" id="dashTtSub"><span class="sc-link" data-tab="tiktok">Connect →</span></div>
-          </div>
-        </div>
+ <!-- DASHBOARD -->
+ <div class="panel active" id="panel-dashboard">
+ <div class="stat-grid">
+ <div class="card">
+ <div class="card-header">
+ <div class="card-title"> Weekly Trend Prediction</div>
+ <div class="card-tag tag-gold">AI</div>
+ </div>
+ <div class="card-body" id="weeklyPrediction">
+ <div class="text-sm">Analyzing trends...</div>
+ </div>
+ </div>
+ <div class="card" style="display:flex;align-items:center;gap:12px;">
+ <div data-ig-avatar class="u-av"></div>
+ <div>
+ <div id="dijoGreeting" data-ig-greeting class="text-sm"></div>
+ <div id="dijoBrief" class="text-sm"></div>
+ </div>
+ </div>
+ <div class="stat-card">
+ <div class="sc-label">YouTube</div>
+ <div class="sc-val-sm" id="dashYtVal" style="color:var(--text2)">Not connected</div>
+ <div class="sc-delta"><span class="sc-link" data-tab="youtube">Connect →</span></div>
+ </div>
+ <div class="stat-card">
+ <div class="sc-label">TikTok</div>
+ <div class="sc-val-sm" id="dashTtVal" style="color:var(--text2)">Not connected</div>
+ <div class="sc-delta" id="dashTtSub"><span class="sc-link" data-tab="tiktok">Connect →</span></div>
+ </div>
+ </div>
 
-        <!-- ── DIJO BRIEFING CHAT CARD ── -->
-        <div class="dijo-briefing-card">
-          <div class="dijo-briefing-header">
-            <div class="dijo-briefing-label">
-              <span class="dijo-live-dot"></span>
-              <span class="dijo-briefing-title-text">Dijo Intelligence</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="dijo-briefing-time" id="briefingDate">Live</span>
-              <button onclick="loadBriefing(true)" class="dijo-refresh-btn" title="Refresh">&#8635;</button>
-            </div>
-          </div>
-          <div class="dijo-chat-body">
-            <div class="dijo-chat-row">
-              <div class="dijo-avatar-wrap">
-                <img src="dijo-mascot.png" alt="Dijo" class="dijo-avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                <div class="dijo-avatar-fallback" style="display:none">DJ</div>
-              </div>
-              <div class="dijo-msg-col">
-                <span class="dijo-name-tag">Dijo <span class="dijo-ai-badge">AI</span></span>
-                <div class="dijo-bubble" id="briefingText">
-                  <span class="spinner spinner-gold" style="width:12px;height:12px;border-width:2px;"></span>
-                </div>
-                <div class="dijo-trend-pills" id="briefingTags" style="display:none"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+ <!-- DIJO BRIEFING CHAT CARD -->
+ <div class="dijo-briefing-card">
+ <div class="dijo-briefing-header">
+ <div class="dijo-briefing-label">
+ <span class="dijo-live-dot"></span>
+ <span class="dijo-briefing-title-text">Dijo Intelligence</span>
+ </div>
+ <div style="display:flex;align-items:center;gap:8px;">
+ <span class="dijo-briefing-time" id="briefingDate">Live</span>
+ <button onclick="loadBriefing(true)" class="dijo-refresh-btn" title="Refresh">&#8635;</button>
+ </div>
+ </div>
+ <div class="dijo-chat-body">
+ <div class="dijo-chat-row">
+ <div class="dijo-avatar-wrap">
+ <img src="dijo-mascot.png" alt="Dijo" class="dijo-avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+ <div class="dijo-avatar-fallback" style="display:none">DJ</div>
+ </div>
+ <div class="dijo-msg-col">
+ <span class="dijo-name-tag">Dijo <span class="dijo-ai-badge">AI</span></span>
+ <div class="dijo-bubble" id="briefingText">
+ <span class="spinner spinner-gold" style="width:12px;height:12px;border-width:2px;"></span>
+ </div>
+ <div class="dijo-trend-pills" id="briefingTags" style="display:none"></div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-        <div class="two-col">
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">📡 Top Trends</span>
-              <span class="card-tag tag-green" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.3">Live · Multi-Platform Intelligence</span>
-            </div>
-            <div class="card-body">
-              <div class="trend-list" id="dashTrendList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner spinner-gold"></span> Fetching trends…</div></div>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div class="card">
-              <div class="card-header"><span class="card-title">⚡ Top Opportunities</span><span class="card-tag tag-gold">Highest Scored</span></div>
-              <div class="card-body" id="topOppBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
-            </div>
+ <div class="two-col">
+ <div class="card">
+ <div class="card-header">
+ <span class="card-title"> Top Trends</span>
+ <span class="card-tag tag-green" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.3">Live · Multi-Platform Intelligence</span>
+ </div>
+ <div class="card-body">
+ <div class="trend-list" id="dashTrendList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner spinner-gold"></span> Fetching trends…</div></div>
+ </div>
+ </div>
+ <div style="display:flex;flex-direction:column;gap:14px">
+ <div class="card">
+ <div class="card-header"><span class="card-title"> Top Opportunities</span><span class="card-tag tag-gold">Highest Scored</span></div>
+ <div class="card-body" id="topOppBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
+ </div>
 
-          </div>
-        </div>
+ </div>
+ </div>
 
-        <!-- Quick launch cards -->
-        <div class="quick-launch-grid">
-          <a class="quick-launch-card" href="carousel-studio.html" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);text-decoration:none;display:block">
-            <div class="qlc-icon">🎨</div>
-            <div class="qlc-title">Carousel Studio</div>
-            <div class="qlc-desc">AI-designed carousel slides</div>
-          </a>
-          <a class="quick-launch-card" href="portfolio-studio.html" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border:1px solid rgba(79,142,247,.2);text-decoration:none;display:block">
-            <div class="qlc-icon">🌐</div>
-            <div class="qlc-title">Portfolio Studio</div>
-            <div class="qlc-desc">Your creator link-in-bio</div>
-          </a>
-          <div class="quick-launch-card" data-tab="evaluator" style="background:linear-gradient(135deg,#0a0f0a,#1a3a1a);border:1px solid rgba(15,168,118,.2)">
-            <div class="qlc-icon">🎯</div>
-            <div class="qlc-title">Analyse My Channel</div>
-            <div class="qlc-desc">Score your channel with AI</div>
-          </div>
-        </div>
-      </div>
+ <!-- Quick launch cards -->
+ <div class="quick-launch-grid">
+ <a class="quick-launch-card" href="carousel-studio.html" style="background:linear-gradient(135deg,#1a1814,#2a2318);border:1px solid rgba(201,126,8,.3);text-decoration:none;display:block">
+ <div class="qlc-icon"></div>
+ <div class="qlc-title">Carousel Studio</div>
+ <div class="qlc-desc">AI-designed carousel slides</div>
+ </a>
+ <a class="quick-launch-card" href="portfolio-studio.html" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border:1px solid rgba(79,142,247,.2);text-decoration:none;display:block">
+ <div class="qlc-icon"></div>
+ <div class="qlc-title">Portfolio Studio</div>
+ <div class="qlc-desc">Your creator link-in-bio</div>
+ </a>
+ <div class="quick-launch-card" data-tab="evaluator" style="background:linear-gradient(135deg,#0a0f0a,#1a3a1a);border:1px solid rgba(15,168,118,.2)">
+ <div class="qlc-icon"></div>
+ <div class="qlc-title">Analyse My Channel</div>
+ <div class="qlc-desc">Score your channel with AI</div>
+ </div>
+ </div>
+ </div>
 
-      <!-- LIVE TREND -->
-      <div class="panel" id="panel-trends">
+ <!-- LIVE TREND -->
+ <div class="panel" id="panel-trends">
 
-        <!-- ── LOCATION SELECTOR ── -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-          <label style="font-size:12px;font-weight:600;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;">📍 Location</label>
-          <select id="geoSelector" onchange="changeGeo(this)" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text1);font-size:13px;padding:6px 10px;cursor:pointer;font-family:'Syne',sans-serif;">
-            <option value="GB">🇬🇧 United Kingdom</option>
-            <option value="US">🇺🇸 United States</option>
-            <option value="AU">🇦🇺 Australia</option>
-            <option value="CA">🇨🇦 Canada</option>
-            <option value="IE">🇮🇪 Ireland</option>
-            <option value="ZA">🇿🇦 South Africa</option>
-            <option value="NG">🇳🇬 Nigeria</option>
-            <option value="IN">🇮🇳 India</option>
-            <option value="DE">🇩🇪 Germany</option>
-            <option value="FR">🇫🇷 France</option>
-            <option value="ES">🇪🇸 Spain</option>
-            <option value="IT">🇮🇹 Italy</option>
-            <option value="NL">🇳🇱 Netherlands</option>
-            <option value="BR">🇧🇷 Brazil</option>
-            <option value="MX">🇲🇽 Mexico</option>
-            <option value="JP">🇯🇵 Japan</option>
-            <option value="KR">🇰🇷 South Korea</option>
-            <option value="SG">🇸🇬 Singapore</option>
-          </select>
-          <span id="geoLoadingIndicator" style="display:none;font-size:12px;color:var(--gold);font-family:'DM Mono',monospace;">
-            <span class="spinner spinner-gold" style="width:12px;height:12px;border-width:2px;"></span> Loading trends…
-          </span>
-        </div>
+ <!-- LOCATION SELECTOR -->
+ <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+ <label style="font-size:12px;font-weight:600;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;"> Location</label>
+ <select id="geoSelector" onchange="changeGeo(this)" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text1);font-size:13px;padding:6px 10px;cursor:pointer;font-family:'Syne',sans-serif;">
+ <option value="GB"> United Kingdom</option>
+ <option value="US"> United States</option>
+ <option value="AU"> Australia</option>
+ <option value="CA"> Canada</option>
+ <option value="IE"> Ireland</option>
+ <option value="ZA"> South Africa</option>
+ <option value="NG"> Nigeria</option>
+ <option value="IN"> India</option>
+ <option value="DE"> Germany</option>
+ <option value="FR"> France</option>
+ <option value="ES"> Spain</option>
+ <option value="IT"> Italy</option>
+ <option value="NL"> Netherlands</option>
+ <option value="BR"> Brazil</option>
+ <option value="MX"> Mexico</option>
+ <option value="JP"> Japan</option>
+ <option value="KR"> South Korea</option>
+ <option value="SG"> Singapore</option>
+ </select>
+ <span id="geoLoadingIndicator" style="display:none;font-size:12px;color:var(--gold);font-family:'DM Mono',monospace;">
+ <span class="spinner spinner-gold" style="width:12px;height:12px;border-width:2px;"></span> Loading trends…
+ </span>
+ </div>
 
-        <!-- ── THREE PLATFORM CHARTS ── -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px" id="platformChartsGrid">
+ <!-- THREE PLATFORM CHARTS -->
+ <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px" id="platformChartsGrid">
 
-          <!-- TikTok chart -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title" style="color:#ff6464">🎵 TikTok
-                <span id="ttLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6464;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
-              </div>
-              <div class="card-tag" style="background:rgba(255,100,100,.1);color:#ff6464;border:1px solid rgba(255,100,100,.2)">Top 3 topics</div>
-            </div>
-            <div class="card-body">
-              <div style="height:200px;position:relative;">
-                <canvas id="chartTT"></canvas>
-              </div>
-              <div id="chartTTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No TikTok data yet · ingestion runs every 30 min</div>
-              <div id="chartTTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
-            </div>
-          </div>
+ <!-- TikTok chart -->
+ <div class="card">
+ <div class="card-header">
+ <div class="card-title" style="color:#ff6464"> TikTok
+ <span id="ttLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6464;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+ </div>
+ <div class="card-tag" style="background:rgba(255,100,100,.1);color:#ff6464;border:1px solid rgba(255,100,100,.2)">Top 3 topics</div>
+ </div>
+ <div class="card-body">
+ <div style="height:200px;position:relative;">
+ <canvas id="chartTT"></canvas>
+ </div>
+ <div id="chartTTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No TikTok data yet · ingestion runs every 30 min</div>
+ <div id="chartTTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+ </div>
+ </div>
 
-          <!-- YouTube chart -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title" style="color:#FFD700">▶️ YouTube
-                <span id="ytLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#FFD700;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
-              </div>
-              <div class="card-tag" style="background:rgba(255,215,0,.1);color:#c9a800;border:1px solid rgba(255,215,0,.2)">Top 3 topics</div>
-            </div>
-            <div class="card-body">
-              <div style="height:200px;position:relative;">
-                <canvas id="chartYT"></canvas>
-              </div>
-              <div id="chartYTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No YouTube data yet · ingestion runs every 30 min</div>
-              <div id="chartYTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
-            </div>
-          </div>
+ <!-- YouTube chart -->
+ <div class="card">
+ <div class="card-header">
+ <div class="card-title" style="color:#FFD700"> YouTube
+ <span id="ytLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#FFD700;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
+ </div>
+ <div class="card-tag" style="background:rgba(255,215,0,.1);color:#c9a800;border:1px solid rgba(255,215,0,.2)">Top 3 topics</div>
+ </div>
+ <div class="card-body">
+ <div style="height:200px;position:relative;">
+ <canvas id="chartYT"></canvas>
+ </div>
+ <div id="chartYTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No YouTube data yet · ingestion runs every 30 min</div>
+ <div id="chartYTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+ </div>
+ </div>
 
-          <!-- Google chart -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title" style="color:#78b4ff">🔍 Google
-                <span id="gtLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#78b4ff;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.6s"></span>
-              </div>
-              <div class="card-tag" style="background:rgba(120,180,255,.1);color:#78b4ff;border:1px solid rgba(120,180,255,.2)">Top 3 topics</div>
-            </div>
-            <div class="card-body">
-              <div style="height:200px;position:relative;">
-                <canvas id="chartGT"></canvas>
-              </div>
-              <div id="chartGTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No Google data yet · ingestion runs every 30 min</div>
-              <div id="chartGTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
-            </div>
-          </div>
+ <!-- Google chart -->
+ <div class="card">
+ <div class="card-header">
+ <div class="card-title" style="color:#78b4ff"> Google
+ <span id="gtLiveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#78b4ff;margin-left:6px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.6s"></span>
+ </div>
+ <div class="card-tag" style="background:rgba(120,180,255,.1);color:#78b4ff;border:1px solid rgba(120,180,255,.2)">Top 3 topics</div>
+ </div>
+ <div class="card-body">
+ <div style="height:200px;position:relative;">
+ <canvas id="chartGT"></canvas>
+ </div>
+ <div id="chartGTEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px">No Google data yet · ingestion runs every 30 min</div>
+ <div id="chartGTTopics" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+ </div>
+ </div>
 
-        </div>
+ </div>
 
-        <!-- Mobile: stack charts vertically -->
-        <style>
-          @media(max-width:768px){ #platformChartsGrid{ grid-template-columns:1fr !important; } }
-        </style>
+ <!-- Mobile: stack charts vertically -->
+ <style>
+ @media(max-width:768px){ #platformChartsGrid{ grid-template-columns:1fr !important; } }
+ </style>
 
-        <!-- Cross-platform trend chart -->\n        <div class=\"card\" style=\"margin-bottom:16px\">\n          <div class=\"card-header\">\n            <div class=\"card-title\">📊 Cross-Platform Score Chart\n              <span style=\"display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite\"></span>\n            </div>\n            <div style=\"display:flex;gap:6px;align-items:center;flex-wrap:wrap\">\n              <div class=\"card-tag tag-gold\">All platforms · top topics by score</div>\n              <div id=\"geoStatusBadge\" class=\"card-tag\" style=\"background:rgba(78,179,165,.12);color:#4FB3A5;border:1px solid rgba(78,179,165,.25)\">📍 🇬🇧 UK</div>\n            </div>\n          </div>\n          <div class=\"card-body\">\n            <div id=\"geoDataWarning\" style=\"display:none;font-size:11px;color:#e8a22a;background:rgba(232,162,42,.1);border:1px solid rgba(232,162,42,.2);border-radius:6px;padding:7px 10px;margin-bottom:8px\">\n              ⚠️ Your backend may not yet filter by location — trends shown may still reflect UK data. To enable per-country trends, ensure your Dijo endpoints read the <code>geo</code> query param.\n            </div>\n            <div style=\"height:180px;position:relative;\">\n              <canvas id=\"trendChart\"></canvas>\n            </div>\n          </div>\n        </div>
+ <!-- FULL TREND LIST -->
+ <div class="card" style="margin-bottom:16px">
+ <div class="card-header">
+ <div class="card-title"> All Trends
+ <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+ </div>
+ <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+ <div class="card-tag tag-gold">Ranked by score · click any topic to generate</div>
+ <div style="display:flex;gap:5px">
+ <button class="filter-chip active" data-plat="all" onclick="filterTrends(this,'all')">All</button>
+ <button class="filter-chip" data-plat="tt" onclick="filterTrends(this,'tt')"> TikTok</button>
+ <button class="filter-chip" data-plat="yt" onclick="filterTrends(this,'yt')"> YouTube</button>
+ <button class="filter-chip" data-plat="gt" onclick="filterTrends(this,'gt')"> Google</button>
+ <button class="filter-chip" data-plat="cross" onclick="filterTrends(this,'cross')"> Cross</button>
+ </div>
+ </div>
+ </div>
+ <div class="card-body">
+ <div id="fullTrendList">
+ <div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner spinner-gold"></span> Loading trends…</div>
+ </div>
+ </div>
+ </div>
 
-        <!-- Fuel gauges — rendered by renderRadarGauges() -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header">
-            <div class="card-title">🎯 Platform Momentum
-              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4FB3A5;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
-            </div>
-            <div class="card-tag tag-green">Live gauge · needle moves as topics rise &amp; fall · click to generate</div>
-          </div>
-          <div class="card-body">
-            <div id="radarGaugesBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
-          </div>
-        </div>
+ <!-- INSTAGRAM PREDICTED TRENDS -->
+ <div class="card" style="margin-bottom:16px;border-color:rgba(193,53,132,.25)">
+ <div class="card-header">
+ <div class="card-title" style="color:#c13584"> Instagram Predicted Trends
+ <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#c13584;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+ </div>
+ <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+ <div class="card-tag" style="background:rgba(193,53,132,.1);color:#c13584;border:1px solid rgba(193,53,132,.2)">AI-predicted · based on TikTok + YouTube velocity</div>
+ <!-- Prediction accuracy badge — populated by loadPredictionAccuracy() -->
+ <div id="predAccuracyBadge"></div>
+ </div>
+ </div>
+ <div class="card-body">
+ <p style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6">
+ These topics are trending on TikTok and YouTube right now. Based on historical cross-platform migration patterns, they are predicted to appear on Instagram Reels within the next 18–96 hours.
+ </p>
+ <!-- Active predictions list — populated by loadPredictionAccuracy() -->
+ <div id="activePredictionsList" style="margin-bottom:16px"></div>
+ <!-- IG prediction trend cards — populated by creator-studio.js -->
+ <div id="igPredictionList">
+ <div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(193,53,132,.15);border-top-color:#c13584"></span></div>
+ </div>
+ </div>
+ </div>
 
-        <!-- Dijo Top Pick -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🧠 Dijo's Top Pick
-              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
-            </div>
-            <div class="card-tag tag-gold">Best topic across all platforms · AI explains why</div>
-          </div>
-          <div class="card-body">
-            <div id="dijoTopPickBox"><div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
-          </div>
-        </div>
+ <!-- CROSS-PLATFORM SCORE CHART -->
+ <div class="card" style="margin-bottom:16px">
+ <div class="card-header">
+ <div class="card-title"> Cross-Platform Score Chart
+ <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+ </div>
+ <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+ <div class="card-tag tag-gold">All platforms · top topics by score</div>
+ <div id="geoStatusBadge" class="card-tag" style="background:rgba(78,179,165,.12);color:#4FB3A5;border:1px solid rgba(78,179,165,.25)" id="geoStatus"></div>
+ </div>
+ </div>
+ <div class="card-body">
+ <div style="height:180px;position:relative;">
+ <canvas id="trendChart"></canvas>
+ </div>
+ <div class="chart-legend" style="margin-top:8px">
+ <div class="chart-legend-item"><div class="chart-legend-dot tt"></div>TikTok</div>
+ <div class="chart-legend-item"><div class="chart-legend-dot yt"></div>YouTube</div>
+ <div class="chart-legend-item"><div class="chart-legend-dot cross"></div>Cross-Platform</div>
+ <div class="chart-legend-item"><div class="chart-legend-dot gt"></div>Google</div>
+ </div>
+ </div>
+ </div>
 
-      </div>
+ <!-- Fuel gauges — rendered by renderRadarGauges() -->
+ <div class="card" style="margin-bottom:16px">
+ <div class="card-header">
+ <div class="card-title"> Platform Momentum
+ <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4FB3A5;margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite 0.3s"></span>
+ </div>
+ <div class="card-tag tag-green">Live gauge · needle moves as topics rise &amp; fall · click to generate</div>
+ </div>
+ <div class="card-body">
+ <div id="radarGaugesBox"><div style="text-align:center;padding:16px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
+ </div>
+ </div>
 
-      <!-- GENERATOR -->
-      <div class="panel" id="panel-generator">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <h2 style="font-size:20px">AI Content Generator</h2>
-          <span class="card-tag tag-gold">Dijo AI</span>
-        </div>
-        <div id="genLoading" class="gen-loading"><span class="spinner"></span><span id="genLoadingMsg">Generating…</span></div>
-        <div class="ai-hint" id="aiHint">💡 Enter a topic — Dijo will generate high-performing content based on trends.</div>
-        <div class="gen-layout">
-          <div class="gen-input-area">
-            <div class="input-group"><label class="input-label">Topic</label><input type="text" class="form-input" id="genTopic" placeholder="e.g. AI productivity tools, UK street style…" onkeydown="if(event.key==='Enter')fullGenerate()"/></div>
-            <div class="input-group"><label class="input-label">Platform</label><select class="form-select" id="genPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option><option>All Platforms</option></select></div>
-            <div class="input-group"><label class="input-label">Style</label><div class="style-chips"><button class="style-chip active" onclick="selectStyle(this)">Educational</button><button class="style-chip" onclick="selectStyle(this)">Entertaining</button><button class="style-chip" onclick="selectStyle(this)">Motivational</button><button class="style-chip" onclick="selectStyle(this)">Hot Take</button></div></div>
-            <div class="input-group"><label class="input-label">Niche (optional)</label><input type="text" class="form-input" id="genNiche" placeholder="e.g. finance, fitness, fashion…"/></div>
-            <button class="gen-btn" onclick="fullGenerate()" id="fullGenBtn">⚡ Generate Full Package</button>
-            <div id="genError" class="gen-error"></div>
-            <div class="score-card">
-              <div class="score-label">Trend Score™</div>
-              <div class="score-num" id="previewScore">—</div>
-              <div class="score-verdict" id="previewVerdict">Enter a topic to score</div>
-            </div>
-          </div>
-          <div class="gen-output">
-            <div class="output-block"><div class="ob-header"><span>Video Hook</span><button class="copy-btn" onclick="copyEl('outHook')">Copy</button></div><div class="ob-body ob-placeholder" id="outHook">Your hook appears here…</div></div>
-            <div class="output-block"><div class="ob-header"><span>Caption</span><button class="copy-btn" onclick="copyEl('outCaption')">Copy</button></div><div class="ob-body ob-placeholder" id="outCaption">Your caption appears here…</div></div>
-            <div class="hashtag-bar">
-              <div class="hashtag-bar-title">Suggested Hashtags</div>
-              <div class="hashtag-bar-list" id="hashtagBar"></div>
-            </div>
-            <div class="output-block"><div class="ob-header"><span>Content Outline</span><button class="copy-btn" onclick="copyEl('outOutline')">Copy</button></div><div class="ob-body ob-placeholder" id="outOutline">Your outline appears here…</div></div>
-            <div class="output-block"><div class="ob-header"><span>Hashtags</span><button class="copy-btn" onclick="copyTags('outHashtags')">Copy</button></div><div class="ob-tags" id="outHashtags"><span style="color:var(--text3);font-style:italic;font-size:12px">Hashtags appear here…</span></div></div>
-            <div class="output-block"><div class="ob-header"><span>Best Posting Time</span></div><div class="timing-grid" id="outTiming"><div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div></div></div>
-          </div>
-        </div>
+ <!-- Dijo Top Pick -->
+ <div class="card">
+ <div class="card-header">
+ <div class="card-title"> Dijo's Top Pick
+ <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:8px;vertical-align:middle;animation:meterPulse 1.8s ease-in-out infinite"></span>
+ </div>
+ <div class="card-tag tag-gold">Best topic across all platforms · AI explains why</div>
+ </div>
+ <div class="card-body">
+ <div id="dijoTopPickBox"><div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner spinner-gold"></span></div></div>
+ </div>
+ </div>
 
-      </div>
+ </div>
 
-      <!-- CALENDAR -->
-      <div class="panel" id="panel-calendar">
+ <!-- GENERATOR -->
+ <div class="panel" id="panel-generator">
+ <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+ <h2 style="font-size:20px">AI Content Generator</h2>
+ <span class="card-tag tag-gold">Dijo AI</span>
+ </div>
+ <div id="genLoading" class="gen-loading"><span class="spinner"></span><span id="genLoadingMsg">Generating…</span></div>
+ <div class="ai-hint" id="aiHint"> Enter a topic — Dijo will generate high-performing content based on trends.</div>
+ <div class="gen-layout">
+ <div class="gen-input-area">
+ <div class="input-group"><label class="input-label">Topic</label><input type="text" class="form-input" id="genTopic" placeholder="e.g. AI productivity tools, UK street style…" onkeydown="if(event.key==='Enter')fullGenerate()"/></div>
+ <div class="input-group"><label class="input-label">Platform</label><select class="form-select" id="genPlatform"><option>TikTok</option><option>YouTube</option><option>Instagram</option><option>All Platforms</option></select></div>
+ <div class="input-group"><label class="input-label">Style</label><div class="style-chips"><button class="style-chip active" onclick="selectStyle(this)">Educational</button><button class="style-chip" onclick="selectStyle(this)">Entertaining</button><button class="style-chip" onclick="selectStyle(this)">Motivational</button><button class="style-chip" onclick="selectStyle(this)">Hot Take</button></div></div>
+ <div class="input-group"><label class="input-label">Niche (optional)</label><input type="text" class="form-input" id="genNiche" placeholder="e.g. finance, fitness, fashion…"/></div>
+ <button class="gen-btn" onclick="fullGenerate()" id="fullGenBtn"> Generate Full Package</button>
+ <div id="genError" class="gen-error"></div>
+ <div class="score-card">
+ <div class="score-label">Trend Score™</div>
+ <div class="score-num" id="previewScore">—</div>
+ <div class="score-verdict" id="previewVerdict">Enter a topic to score</div>
+ </div>
+ </div>
+ <div class="gen-output">
+ <div class="output-block"><div class="ob-header"><span>Video Hook</span><button class="copy-btn" onclick="copyEl('outHook')">Copy</button></div><div class="ob-body ob-placeholder" id="outHook">Your hook appears here…</div></div>
+ <div class="output-block"><div class="ob-header"><span>Caption</span><button class="copy-btn" onclick="copyEl('outCaption')">Copy</button></div><div class="ob-body ob-placeholder" id="outCaption">Your caption appears here…</div></div>
+ <div class="hashtag-bar">
+ <div class="hashtag-bar-title">Suggested Hashtags</div>
+ <div class="hashtag-bar-list" id="hashtagBar"></div>
+ </div>
+ <div class="output-block"><div class="ob-header"><span>Content Outline</span><button class="copy-btn" onclick="copyEl('outOutline')">Copy</button></div><div class="ob-body ob-placeholder" id="outOutline">Your outline appears here…</div></div>
+ <div class="output-block"><div class="ob-header"><span>Hashtags</span><button class="copy-btn" onclick="copyTags('outHashtags')">Copy</button></div><div class="ob-tags" id="outHashtags"><span style="color:var(--text3);font-style:italic;font-size:12px">Hashtags appear here…</span></div></div>
+ <div class="output-block"><div class="ob-header"><span>Best Posting Time</span></div><div class="timing-grid" id="outTiming"><div class="timing-slot"><div class="timing-day">Day</div><div class="timing-time">—</div></div></div></div>
+ </div>
+ </div>
 
-        <!-- Header row -->
-        <div class="cal-header-row">
-          <div class="cal-header-left">
-            <h2 class="cal-title">📅 Content Calendar</h2>
-            <span class="cal-ai-badge"><span class="live-dot"></span>Dijo AI · Auto-filled</span>
-          </div>
-          <div class="cal-header-right">
-            <button class="cal-autofill-btn" id="calAutoBtn" onclick="calAutoFill()">✨ Auto-Fill</button>
-          </div>
-        </div>
+ </div>
 
-        <!-- How it works explanation (dismissable) -->
-        <div class="cal-explainer" id="calExplainer">
-          <div class="cal-explainer-inner">
-            <span class="cal-explainer-icon">🧠</span>
-            <div>
-              <strong>How this works:</strong> Dijo scans live trends every week and scores each topic. The highest-scoring topics are automatically dropped into your calendar with the best time to post. You'll get a notification when it's time. Add your own ideas in the note box under each day — Dijo will remind you about those too.
-            </div>
-            <button class="cal-explainer-close" onclick="document.getElementById('calExplainer').style.display='none'">✕</button>
-          </div>
-        </div>
+ <!-- CALENDAR -->
+ <div class="panel" id="panel-calendar">
 
-        <!-- 7-day book grid — calendar.js renders into this -->
-        <div id="calWeekGrid" style="display:block">
-          <div class="cal-loading">
-            <span class="spinner spinner-gold"></span>
-            <span>Dijo is scanning this week's top trends…</span>
-          </div>
-        </div>
+ <!-- Header row -->
+ <div class="cal-header-row">
+ <div class="cal-header-left">
+ <h2 class="cal-title"> Content Calendar</h2>
+ <span class="cal-ai-badge"><span class="live-dot"></span>Dijo AI · Auto-filled</span>
+ </div>
+ <div class="cal-header-right">
+ <button class="cal-autofill-btn" id="calAutoBtn" onclick="calAutoFill()"> Auto-Fill</button>
+ </div>
+ </div>
 
-        <!-- Modal overlay for add/edit post -->
-        <div class="cal-modal-overlay" id="calModalOverlay" onclick="if(event.target===this)closeModal()">
-          <div class="cal-modal">
-            <div class="cal-modal-header">
-              <span class="cal-modal-title" id="calModalTitle">Add Post</span>
-              <button class="cal-modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div class="cal-modal-body">
-              <label class="cal-modal-label">Topic</label>
-              <input class="cal-modal-input" id="calModalInput" type="text" placeholder="What's the content about?"/>
-              <button class="cal-dijo-suggest-btn" id="calDijoSuggestBtn" onclick="calSuggestIdea()">✨ Suggest with Dijo</button>
-              <label class="cal-modal-label" style="margin-top:12px">Platform</label>
-              <div class="cal-modal-plats">
-                <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')">🎵 TikTok</button>
-                <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')">▶️ YouTube</button>
-                <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')">📸 Instagram</button>
-                <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')">💼 LinkedIn</button>
-              </div>
-              <label class="cal-modal-label" style="margin-top:12px">Status</label>
-              <select class="cal-modal-status" id="calModalStatus">
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled ⏰</option>
-                <option value="published">Published ✓</option>
-              </select>
-              <label class="cal-modal-label" style="margin-top:12px">Notes</label>
-              <textarea class="cal-modal-notes" id="calModalNotes" placeholder="Add any notes, angles, or ideas…"></textarea>
-            </div>
-            <div class="cal-modal-footer">
-              <button class="cal-modal-save" onclick="savePost()">Save Post</button>
-              <button class="cal-modal-cancel" onclick="closeModal()">Cancel</button>
-            </div>
-          </div>
-        </div>
+ <!-- How it works explanation (dismissable) -->
+ <div class="cal-explainer" id="calExplainer">
+ <div class="cal-explainer-inner">
+ <span class="cal-explainer-icon"></span>
+ <div>
+ <strong>How this works:</strong> Dijo scans live trends every week and scores each topic. The highest-scoring topics are automatically dropped into your calendar with the best time to post. You'll get a notification when it's time. Add your own ideas in the note box under each day — Dijo will remind you about those too.
+ </div>
+ <button class="cal-explainer-close" onclick="document.getElementById('calExplainer').style.display='none'"></button>
+ </div>
+ </div>
 
-      </div>
+ <!-- 7-day book grid — calendar.js renders into this -->
+ <div id="calWeekGrid" style="display:block">
+ <div class="cal-loading">
+ <span class="spinner spinner-gold"></span>
+ <span>Dijo is scanning this week's top trends…</span>
+ </div>
+ </div>
 
-      <!-- AUDIENCE -->
-      <div class="panel" id="panel-audience">
-        <h2 style="font-size:20px;margin-bottom:6px">Post Audience</h2>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
-        <div style="display:flex;gap:10px;margin-bottom:20px">
-          <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
-          <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
-        </div>
-        <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
-      </div>
+ <!-- Modal overlay for add/edit post -->
+ <div class="cal-modal-overlay" id="calModalOverlay" onclick="if(event.target===this)closeModal()">
+ <div class="cal-modal">
+ <div class="cal-modal-header">
+ <span class="cal-modal-title" id="calModalTitle">Add Post</span>
+ <button class="cal-modal-close" onclick="closeModal()"></button>
+ </div>
+ <div class="cal-modal-body">
+ <label class="cal-modal-label">Topic</label>
+ <input class="cal-modal-input" id="calModalInput" type="text" placeholder="What's the content about?"/>
+ <button class="cal-dijo-suggest-btn" id="calDijoSuggestBtn" onclick="calSuggestIdea()"> Suggest with Dijo</button>
+ <label class="cal-modal-label" style="margin-top:12px">Platform</label>
+ <div class="cal-modal-plats">
+ <button class="cal-modal-plat sel-tt" data-plat="tt" onclick="calModalSelectPlat(this,'tt')"> TikTok</button>
+ <button class="cal-modal-plat" data-plat="yt" onclick="calModalSelectPlat(this,'yt')"> YouTube</button>
+ <button class="cal-modal-plat" data-plat="ig" onclick="calModalSelectPlat(this,'ig')"> Instagram</button>
+ <button class="cal-modal-plat" data-plat="li" onclick="calModalSelectPlat(this,'li')"> LinkedIn</button>
+ </div>
+ <label class="cal-modal-label" style="margin-top:12px">Status</label>
+ <select class="cal-modal-status" id="calModalStatus">
+ <option value="draft">Draft</option>
+ <option value="scheduled">Scheduled </option>
+ <option value="published">Published </option>
+ </select>
+ <label class="cal-modal-label" style="margin-top:12px">Notes</label>
+ <textarea class="cal-modal-notes" id="calModalNotes" placeholder="Add any notes, angles, or ideas…"></textarea>
+ </div>
+ <div class="cal-modal-footer">
+ <button class="cal-modal-save" onclick="savePost()">Save Post</button>
+ <button class="cal-modal-cancel" onclick="closeModal()">Cancel</button>
+ </div>
+ </div>
+ </div>
 
-      <!-- EVALUATOR -->
-      <div class="panel" id="panel-evaluator">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <h2 style="font-size:20px">Analyse My Channel</h2>
-          <span class="card-tag tag-gold">AI · Real Data</span>
-        </div>
-        <div id="evalNoAccount">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:40px;text-align:center">
-            <div style="font-size:44px;margin-bottom:14px">🔌</div>
-            <h3 style="font-size:18px;margin-bottom:8px">Connect an Account First</h3>
-            <p style="font-size:14px;color:var(--text2);max-width:380px;margin:0 auto 20px">Dijo needs your real channel data to evaluate and advise you.</p>
-            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-              <button data-tab="youtube" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff4040,#ff6060);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect YouTube →</button>
-              <button data-tab="tiktok" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff2d55,#ff6688);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect TikTok →</button>
-            </div>
-          </div>
-        </div>
-        <div id="evalLoading" style="display:none;text-align:center;padding:48px"><span class="spinner spinner-gold" style="width:22px;height:22px;border-width:3px"></span><p style="margin-top:14px;font-size:14px;color:var(--text3)" id="evalLoadingMsg">Analysing your channel…</p></div>
-        <div id="evalMain" style="display:none">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-            <div id="evalAv" style="width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">▶️</div>
-            <div style="flex:1;min-width:0"><div id="evalChannelName" style="font-weight:700;font-size:14px;margin-bottom:1px">—</div><div id="evalChannelHandle" style="font-size:11px;color:var(--text3)">—</div></div>
-            <button onclick="runEvaluation()" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0">⚡ Re-evaluate</button>
-          </div>
-          <div class="eval-layout">
-            <div>
-              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:12px;text-align:center">
-                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Creator Score</div>
-                <div style="position:relative;width:120px;height:120px;margin:0 auto 14px">
-                  <svg viewBox="0 0 120 120" style="width:120px;height:120px;transform:rotate(-90deg)">
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
-                    <circle id="evalRing" cx="60" cy="60" r="50" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .4s"/>
-                  </svg>
-                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-                    <div id="evalScoreNum" style="font-family:'Syne',sans-serif;font-size:30px;font-weight:900;letter-spacing:-.04em;color:var(--gold)">—</div>
-                    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:1px">/100</div>
-                  </div>
-                </div>
-                <div id="evalVerdict" style="font-size:14px;font-weight:700;margin-bottom:3px">—</div>
-                <div id="evalTier" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">—</div>
-              </div>
-              <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px">
-                <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Score Breakdown</div>
-                <div style="padding:14px 18px;display:flex;flex-direction:column;gap:12px" id="evalBars"></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Subscribers</div><div class="sc-val" style="font-size:16px;color:var(--yt)" id="evalSubs">—</div></div>
-                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Total Views</div><div class="sc-val" style="font-size:16px" id="evalViews">—</div></div>
-                <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Videos</div><div class="sc-val" style="font-size:16px;color:var(--green)" id="evalVcount">—</div></div>
-              </div>
-            </div>
-            <div class="eval-chat">
-              <div class="eval-chat-head">
-                <div class="eval-av">DJ</div>
-                <div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">Dijo Adviser</div><div style="font-size:10px;color:var(--green);font-family:'DM Mono',monospace">Always On</div></div>
-                <button onclick="clearEvalChat()" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Clear</button>
-              </div>
-              <div class="eval-msgs" id="evalMsgs">
-                <div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Connect YouTube or TikTok then hit <strong>Evaluate</strong> — I'll score your channel and tell you exactly what to do next.</div></div>
-              </div>
-              <div class="eval-chips" id="evalChips">
-                <button class="eval-chip" onclick="evalAsk('How do I grow faster?')">Grow faster?</button>
-                <button class="eval-chip" onclick="evalAsk('What content should I make next?')">Content ideas?</button>
-                <button class="eval-chip" onclick="evalAsk('Give me a 30-day action plan.')">30-day plan</button>
-              </div>
-              <div class="eval-input-row">
-                <input type="text" class="eval-input" id="evalInput" placeholder="Ask Dijo about your channel…" onkeydown="if(event.key==='Enter')evalSend()"/>
-                <button class="eval-send" onclick="evalSend()">➤</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+ </div>
 
-      <!-- YOUTUBE -->
-      <div class="panel" id="panel-youtube">
-        <div id="ytDisconnected">
-          <div class="connect-wrap">
-            <div style="font-size:48px;margin-bottom:16px">▶️</div>
-            <h2 style="font-size:22px;margin-bottom:10px">Connect Your YouTube Channel</h2>
-            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real channel stats, video performance, and subscriber data — live from YouTube Data API.</p>
-            <div id="ytErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
-            <button class="connect-btn yt" onclick="YouTubeAuth.connect(this)">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-              Connect YouTube
-            </button>
-            <div class="feat-grid">
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Channel Stats</h4><p>Real subscriber count, views, and video count.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, and comments per video.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Analyse My Channel</h4><p>AI score and actionable growth advice.</p></div>
-            </div>
-          </div>
-        </div>
-        <div id="ytConnected" style="display:none">
-          <div class="card" style="margin-bottom:14px">
-            <div class="card-header">
-              <span class="card-title">✅ YouTube Connected</span>
-              <div class="connected-header">
-                <span class="card-tag tag-green">Live Data</span>
-                <button class="disconnect-btn" onclick="if(confirm('Disconnect YouTube?'))disconnectYouTube()">✕ Disconnect</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <div id="ytAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,96,96,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">▶️</div>
-                <div><div id="ytChannelName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ytChannelHandle" style="font-size:12px;color:var(--text3)">—</div></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Subscribers</div><div id="ytSubs" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--yt)">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Views</div><div id="ytViews" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ytVcount" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--green)">—</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent Videos</span><span class="card-tag tag-green">Live</span></div><div class="card-body" id="ytVideosList"><div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div></div></div>
-        </div>
-      </div>
+ <!-- AUDIENCE -->
+ <div class="panel" id="panel-audience">
+ <h2 style="font-size:20px;margin-bottom:6px">Post Audience</h2>
+ <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Enter a topic to get a full audience breakdown powered by Dijo.</p>
+ <div style="display:flex;gap:10px;margin-bottom:20px">
+ <input type="text" class="form-input" id="audTopic" placeholder="e.g. AI tools, personal finance, fitness…" style="flex:1" onkeydown="if(event.key==='Enter')loadAudience()"/>
+ <button onclick="loadAudience()" id="audBtn" style="padding:10px 22px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">Analyse</button>
+ </div>
+ <div id="audOutput"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">Enter a topic above to generate a full audience breakdown.</div></div>
+ </div>
 
-      <!-- TIKTOK -->
-      <div class="panel" id="panel-tiktok">
-        <div id="ttDisconnected">
-          <div class="connect-wrap">
-            <div style="font-size:48px;margin-bottom:16px">🎵</div>
-            <h2 style="font-size:22px;margin-bottom:10px">Connect Your TikTok Account</h2>
-            <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real profile stats, video performance, and audience data — via the official TikTok API.</p>
-            <div id="ttErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
-            <button class="connect-btn tt" id="ttConnectBtn" onclick="TikTokAuth.connect(this)">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg>
-              Connect with TikTok
-            </button>
-            <div class="feat-grid">
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">📊</div><h4>Profile Stats</h4><p>Real follower count, likes, and video count.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎬</div><h4>Video Performance</h4><p>Views, likes, comments, and shares per video.</p></div>
-              <div class="feat-card"><div style="font-size:18px;margin-bottom:6px">🎯</div><h4>Analyse My Channel</h4><p>AI score and growth advice for your account.</p></div>
-            </div>
-          </div>
-        </div>
-        <div id="ttConnected" style="display:none">
-          <div class="card" style="margin-bottom:14px">
-            <div class="card-header">
-              <span class="card-title">✅ TikTok Connected</span>
-              <div class="connected-header">
-                <span class="card-tag tag-tt">Live Data</span>
-                <button class="disconnect-btn" onclick="if(confirm('Disconnect TikTok? This will clear the session so a new account can connect.'))disconnectTikTok()">✕ Disconnect</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <div id="ttAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,45,85,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">🎵</div>
-                <div><div id="ttDisplayName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ttUsername" style="font-size:12px;color:var(--text3)">—</div></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Followers</div><div id="ttFollowers" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--tt)">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Following</div><div id="ttFollowing" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Likes</div><div id="ttLikes" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--gold)">—</div></div>
-                <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ttVcount" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--green)">—</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="card"><div class="card-header"><span class="card-title">🎬 Recent TikToks</span><span class="card-tag tag-tt">Live</span></div><div class="card-body" id="ttVideosList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(255,45,85,.2);border-top-color:var(--tt)"></span> Loading…</div></div></div>
-        </div>
-      </div>
+ <!-- EVALUATOR -->
+ <div class="panel" id="panel-evaluator">
+ <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+ <h2 style="font-size:20px">Analyse My Channel</h2>
+ <span class="card-tag tag-gold">AI · Real Data</span>
+ </div>
+ <div id="evalNoAccount">
+ <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:40px;text-align:center">
+ <div style="font-size:44px;margin-bottom:14px"></div>
+ <h3 style="font-size:18px;margin-bottom:8px">Connect an Account First</h3>
+ <p style="font-size:14px;color:var(--text2);max-width:380px;margin:0 auto 20px">Dijo needs your real channel data to evaluate and advise you.</p>
+ <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+ <button data-tab="youtube" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff4040,#ff6060);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect YouTube →</button>
+ <button data-tab="tiktok" style="padding:11px 22px;border-radius:9px;background:linear-gradient(135deg,#ff2d55,#ff6688);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Connect TikTok →</button>
+ </div>
+ </div>
+ </div>
+ <div id="evalLoading" style="display:none;text-align:center;padding:48px"><span class="spinner spinner-gold" style="width:22px;height:22px;border-width:3px"></span><p style="margin-top:14px;font-size:14px;color:var(--text3)" id="evalLoadingMsg">Analysing your channel…</p></div>
+ <div id="evalMain" style="display:none">
+ <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+ <div id="evalAv" style="width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0"></div>
+ <div style="flex:1;min-width:0"><div id="evalChannelName" style="font-weight:700;font-size:14px;margin-bottom:1px">—</div><div id="evalChannelHandle" style="font-size:11px;color:var(--text3)">—</div></div>
+ <button onclick="runEvaluation()" style="padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;flex-shrink:0"> Re-evaluate</button>
+ </div>
+ <div class="eval-layout">
+ <div>
+ <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:12px;text-align:center">
+ <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Creator Score</div>
+ <div style="position:relative;width:120px;height:120px;margin:0 auto 14px">
+ <svg viewBox="0 0 120 120" style="width:120px;height:120px;transform:rotate(-90deg)">
+ <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+ <circle id="evalRing" cx="60" cy="60" r="50" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .4s"/>
+ </svg>
+ <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+ <div id="evalScoreNum" style="font-family:'Syne',sans-serif;font-size:30px;font-weight:900;letter-spacing:-.04em;color:var(--gold)">—</div>
+ <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:1px">/100</div>
+ </div>
+ </div>
+ <div id="evalVerdict" style="font-size:14px;font-weight:700;margin-bottom:3px">—</div>
+ <div id="evalTier" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">—</div>
+ </div>
+ <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px">
+ <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Score Breakdown</div>
+ <div style="padding:14px 18px;display:flex;flex-direction:column;gap:12px" id="evalBars"></div>
+ </div>
+ <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+ <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Subscribers</div><div class="sc-val" style="font-size:16px;color:var(--yt)" id="evalSubs">—</div></div>
+ <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Total Views</div><div class="sc-val" style="font-size:16px" id="evalViews">—</div></div>
+ <div class="stat-card" style="padding:12px;text-align:center"><div class="sc-label">Videos</div><div class="sc-val" style="font-size:16px;color:var(--green)" id="evalVcount">—</div></div>
+ </div>
+ </div>
+ <div class="eval-chat">
+ <div class="eval-chat-head">
+ <div class="eval-av">DJ</div>
+ <div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">Dijo Adviser</div><div style="font-size:10px;color:var(--green);font-family:'DM Mono',monospace">Always On</div></div>
+ <button onclick="clearEvalChat()" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--card);border:1px solid var(--border2);color:var(--text3);cursor:pointer">Clear</button>
+ </div>
+ <div class="eval-msgs" id="evalMsgs">
+ <div class="eval-msg"><div class="eval-av">DJ</div><div class="eval-bubble dijo">Connect YouTube or TikTok then hit <strong>Evaluate</strong> — I'll score your channel and tell you exactly what to do next.</div></div>
+ </div>
+ <div class="eval-chips" id="evalChips">
+ <button class="eval-chip" onclick="evalAsk('How do I grow faster?')">Grow faster?</button>
+ <button class="eval-chip" onclick="evalAsk('What content should I make next?')">Content ideas?</button>
+ <button class="eval-chip" onclick="evalAsk('Give me a 30-day action plan.')">30-day plan</button>
+ </div>
+ <div class="eval-input-row">
+ <input type="text" class="eval-input" id="evalInput" placeholder="Ask Dijo about your channel…" onkeydown="if(event.key==='Enter')evalSend()"/>
+ <button class="eval-send" onclick="evalSend()"></button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-    </div>
-  </div>
+ <!-- YOUTUBE -->
+ <div class="panel" id="panel-youtube">
+ <div id="ytDisconnected">
+ <div class="connect-wrap">
+ <div style="font-size:48px;margin-bottom:16px"></div>
+ <h2 style="font-size:22px;margin-bottom:10px">Connect Your YouTube Channel</h2>
+ <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real channel stats, video performance, and subscriber data — live from YouTube Data API.</p>
+ <div id="ytErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+ <button class="connect-btn yt" onclick="YouTubeAuth.connect(this)">
+ <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+ Connect YouTube
+ </button>
+ <div class="feat-grid">
+ <div class="feat-card"><div style="font-size:18px;margin-bottom:6px"></div><h4>Channel Stats</h4><p>Real subscriber count, views, and video count.</p></div>
+ <div class="feat-card"><div style="font-size:18px;margin-bottom:6px"></div><h4>Video Performance</h4><p>Views, likes, and comments per video.</p></div>
+ <div class="feat-card"><div style="font-size:18px;margin-bottom:6px"></div><h4>Analyse My Channel</h4><p>AI score and actionable growth advice.</p></div>
+ </div>
+ </div>
+ </div>
+ <div id="ytConnected" style="display:none">
+ <div class="card" style="margin-bottom:14px">
+ <div class="card-header">
+ <span class="card-title"> YouTube Connected</span>
+ <div class="connected-header">
+ <span class="card-tag tag-green">Live Data</span>
+ <button class="disconnect-btn" onclick="if(confirm('Disconnect YouTube?'))disconnectYouTube()"> Disconnect</button>
+ </div>
+ </div>
+ <div class="card-body">
+ <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+ <div id="ytAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,96,96,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0"></div>
+ <div><div id="ytChannelName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ytChannelHandle" style="font-size:12px;color:var(--text3)">—</div></div>
+ </div>
+ <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+ <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Subscribers</div><div id="ytSubs" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--yt)">—</div></div>
+ <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Views</div><div id="ytViews" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900">—</div></div>
+ <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ytVcount" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:var(--green)">—</div></div>
+ </div>
+ </div>
+ </div>
+ <div class="card"><div class="card-header"><span class="card-title"> Recent Videos</span><span class="card-tag tag-green">Live</span></div><div class="card-body" id="ytVideosList"><div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div></div></div>
+ </div>
+ </div>
+
+ <!-- TIKTOK -->
+ <div class="panel" id="panel-tiktok">
+ <div id="ttDisconnected">
+ <div class="connect-wrap">
+ <div style="font-size:48px;margin-bottom:16px"></div>
+ <h2 style="font-size:22px;margin-bottom:10px">Connect Your TikTok Account</h2>
+ <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:24px">Real profile stats, video performance, and audience data — via the official TikTok API.</p>
+ <div id="ttErrorMsg" style="display:none;background:rgba(217,79,59,.1);border:1px solid rgba(217,79,59,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+ <button class="connect-btn tt" id="ttConnectBtn" onclick="TikTokAuth.connect(this)">
+ <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.8a4.85 4.85 0 01-1.07-.11z"/></svg>
+ Connect with TikTok
+ </button>
+ <div class="feat-grid">
+ <div class="feat-card"><div style="font-size:18px;margin-bottom:6px"></div><h4>Profile Stats</h4><p>Real follower count, likes, and video count.</p></div>
+ <div class="feat-card"><div style="font-size:18px;margin-bottom:6px"></div><h4>Video Performance</h4><p>Views, likes, comments, and shares per video.</p></div>
+ <div class="feat-card"><div style="font-size:18px;margin-bottom:6px"></div><h4>Analyse My Channel</h4><p>AI score and growth advice for your account.</p></div>
+ </div>
+ </div>
+ </div>
+ <div id="ttConnected" style="display:none">
+ <div class="card" style="margin-bottom:14px">
+ <div class="card-header">
+ <span class="card-title"> TikTok Connected</span>
+ <div class="connected-header">
+ <span class="card-tag tag-tt">Live Data</span>
+ <button class="disconnect-btn" onclick="if(confirm('Disconnect TikTok? This will clear the session so a new account can connect.'))disconnectTikTok()"> Disconnect</button>
+ </div>
+ </div>
+ <div class="card-body">
+ <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+ <div id="ttAv" style="width:46px;height:46px;border-radius:50%;background:rgba(255,45,85,.15);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0"></div>
+ <div><div id="ttDisplayName" style="font-weight:700;font-size:15px;margin-bottom:2px">—</div><div id="ttUsername" style="font-size:12px;color:var(--text3)">—</div></div>
+ </div>
+ <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+ <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Followers</div><div id="ttFollowers" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--tt)">—</div></div>
+ <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Following</div><div id="ttFollowing" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900">—</div></div>
+ <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Likes</div><div id="ttLikes" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--gold)">—</div></div>
+ <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Videos</div><div id="ttVcount" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--green)">—</div></div>
+ </div>
+ </div>
+ </div>
+ <div class="card"><div class="card-header"><span class="card-title"> Recent TikToks</span><span class="card-tag tag-tt">Live</span></div><div class="card-body" id="ttVideosList"><div style="text-align:center;padding:20px;color:var(--text3)"><span class="spinner" style="border-color:rgba(255,45,85,.2);border-top-color:var(--tt)"></span> Loading…</div></div></div>
+ </div>
+ </div>
+
+ </div>
+ </div>
 </div>
 
-  </div><!-- /.main -->
-  </div><!-- /.app-main -->
+ </div><!-- /.main -->
+ </div><!-- /.app-main -->
 </div><!-- /.app-layout -->
 
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 <div class="toast-shelf" id="toastShelf"></div>
 
-<!-- ═══ DOWNLOAD BAR (bottom, app-store style) ═══ -->
+<!-- DOWNLOAD BAR (bottom, app-store style) -->
 <div class="download-bar" id="downloadBar">
-  <img src="logo.png" class="dl-icon" alt="ImpactGrid"
-       onerror="this.style.display='none'"/>
-  <div class="dl-text">
-    <div class="dl-title">ImpactGrid</div>
-    <div class="dl-sub" id="dlSub">Add to your home screen — free</div>
-  </div>
-  <!-- Android / Desktop -->
-  <button class="dl-btn" id="dlBtn">
-    ⬇ Download App
-  </button>
-  <!-- iOS hint shown instead -->
-  <div class="dl-ios-hint" id="dlIOSHint">
-    Tap <strong>Share ⬆️</strong> then <strong>"Add to Home Screen"</strong>
-  </div>
-  <button class="dl-dismiss" id="dlDismiss" title="Dismiss">✕</button>
+ <img src="logo.png" class="dl-icon" alt="ImpactGrid"
+ onerror="this.style.display='none'"/>
+ <div class="dl-text">
+ <div class="dl-title">ImpactGrid</div>
+ <div class="dl-sub" id="dlSub">Add to your home screen — free</div>
+ </div>
+ <!-- Android / Desktop -->
+ <button class="dl-btn" id="dlBtn">
+ Download App
+ </button>
+ <!-- iOS hint shown instead -->
+ <div class="dl-ios-hint" id="dlIOSHint">
+ Tap <strong>Share </strong> then <strong>"Add to Home Screen"</strong>
+ </div>
+ <button class="dl-dismiss" id="dlDismiss" title="Dismiss"></button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- ✅ FIX: Pinned to exact version — avoids silent breakage from @2 latest drift -->
+<script>
+/* Instagram Predicted Trends renderer 
+ Fetches /trends/instagram-predictions and renders cards into
+ #igPredictionList inside the What's Trending panel.
+ Falls back to rendering from _allTrends if the endpoint returns nothing.
+ */
+async function loadIGPredictions() {
+ var el = document.getElementById('igPredictionList');
+ if (!el) return;
+
+ var geo = (typeof _userCountry !== 'undefined' ? _userCountry : null) || 'GB';
+
+ try {
+ var res = await fetch((typeof DIJO !== 'undefined' ? DIJO : 'https://impactgrid-dijo.onrender.com') + '/trends/instagram-predictions?geo=' + geo);
+ var data = await res.json();
+ var preds = (data.predictions || []).slice(0, 8);
+
+ if (preds.length) {
+ el.innerHTML = preds.map(function(p) {
+ var score = Math.round(p.instagram_prediction || 0);
+ var source = p.platform_source || 'cross';
+ var icon = source === 'tiktok' || source === 'tiktok_signal' ? '' : source === 'cross' ? '' : '';
+ var reason = p.instagram_reason || 'Cross-platform signals detected';
+ var pct = score;
+ return '<div class="ig-pred-card" onclick="if(typeof loadTopic==='function')loadTopic('' + p.topic.replace(/'/g,"\'") + '')">'
+ + '<div class="ig-pred-icon">' + icon + '</div>'
+ + '<div class="ig-pred-body">'
+ + '<div class="ig-pred-topic">' + (p.topic || '').replace(/</g,'&lt;') + '</div>'
+ + '<div class="ig-pred-reason">' + reason.replace(/</g,'&lt;') + '</div>'
+ + '<div class="ig-pred-meta">'
+ + '<span class="ig-pred-score"> ' + score + '% IG match</span>'
+ + '<span class="ig-pred-window">· post within 48h</span>'
+ + '</div>'
+ + '<div class="ig-pred-bar"><div class="ig-pred-bar-fill" style="width:' + pct + '%"></div></div>'
+ + '</div>'
+ + '</div>';
+ }).join('');
+ return;
+ }
+ } catch(e) {
+ console.warn('[IGPredictions] API failed:', e.message);
+ }
+
+ // Fallback: pull from _allTrends sorted by igPrediction
+ var allT = (typeof window._allTrends !== 'undefined' ? window._allTrends : []);
+ var fallback = allT
+ .filter(function(t) { return t.igPrediction >= 40; })
+ .sort(function(a,b) { return b.igPrediction - a.igPrediction; })
+ .slice(0, 8);
+
+ if (!fallback.length) {
+ el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">No Instagram predictions yet — check back in 30 minutes as trends are ingested.</div>';
+ return;
+ }
+
+ el.innerHTML = fallback.map(function(t) {
+ var score = Math.round(t.igPrediction || 0);
+ var icon = t.plat === 'tt' || t.plat === 'tt_proxy' ? '' : t.plat === 'cross' ? '' : '';
+ var reason = t.igReason || 'Cross-platform signals detected';
+ return '<div class="ig-pred-card" onclick="if(typeof loadTopic==='function')loadTopic('' + (t.topic||'').replace(/'/g,"\'") + '')">'
+ + '<div class="ig-pred-icon">' + icon + '</div>'
+ + '<div class="ig-pred-body">'
+ + '<div class="ig-pred-topic">' + (t.topic||'').replace(/</g,'&lt;') + '</div>'
+ + '<div class="ig-pred-reason">' + reason.replace(/</g,'&lt;') + '</div>'
+ + '<div class="ig-pred-meta">'
+ + '<span class="ig-pred-score"> ' + score + '% IG match</span>'
+ + '<span class="ig-pred-window">· post within 48h</span>'
+ + '</div>'
+ + '<div class="ig-pred-bar"><div class="ig-pred-bar-fill" style="width:' + score + '%"></div></div>'
+ + '</div>'
+ + '</div>';
+ }).join('');
+}
+
+// Hook into tab switch — load IG predictions when Trending tab opens
+document.addEventListener('DOMContentLoaded', function() {
+ // Also run once immediately if trends tab is already active
+ setTimeout(loadIGPredictions, 2000);
+
+ // Re-run when trends tab is clicked
+ document.addEventListener('click', function(e) {
+ var btn = e.target.closest('[data-tab="trends"]');
+ if (btn) setTimeout(loadIGPredictions, 400);
+ });
+});
+</script>
+<!-- FIX: Pinned to exact version — avoids silent breakage from @2 latest drift -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- ✅ CORRECT LOAD ORDER (per nav.js requirements):
-     1. supabase.min.js  — SDK
-     2. plan-config.js   — plan constants (needed by ig-supabase + nav)
-     3. supabase-config.js — project URL / anon key constants
-     4. ig-supabase.js   — sets window.SUPABASE_URL + SUPABASE_ANON_KEY, creates client
-     5. auth.js          — initialises session
-     6. nav.js           — reads window.SUPABASE_URL/ANON_KEY, renders nav, runs checkAuth -->
+<!-- CORRECT LOAD ORDER (per nav.js requirements):
+ 1. supabase.min.js — SDK
+ 2. plan-config.js — plan constants (needed by ig-supabase + nav)
+ 3. supabase-config.js — project URL / anon key constants
+ 4. ig-supabase.js — sets window.SUPABASE_URL + SUPABASE_ANON_KEY, creates client
+ 5. auth.js — initialises session
+ 6. nav.js — reads window.SUPABASE_URL/ANON_KEY, renders nav, runs checkAuth -->
 <script src="plan-config.js"></script>
 <script src="supabase-config.js"></script>
 <script src="ig-supabase.js"></script>
@@ -729,154 +906,154 @@
 <script src="creator-studio.js" defer></script>
 
 <script>
-/* ══════════════════════════════════════════
-   IMPACTGRID — DOWNLOAD / INSTALL LOGIC
-   Works on: Android Chrome, desktop Chrome/Edge, iOS Safari
-══════════════════════════════════════════ */
+/* 
+ IMPACTGRID — DOWNLOAD / INSTALL LOGIC
+ Works on: Android Chrome, desktop Chrome/Edge, iOS Safari
+ */
 (function() {
-  var deferredPrompt  = null;
-  var bar    = document.getElementById('downloadBar');
-  var dlBtn  = document.getElementById('dlBtn');
-  var dlDismiss = document.getElementById('dlDismiss');
-  var dlSub  = document.getElementById('dlSub');
-  var dlIOSHint = document.getElementById('dlIOSHint');
-  var installSideBtn = document.getElementById('installSideBtn');
+ var deferredPrompt = null;
+ var bar = document.getElementById('downloadBar');
+ var dlBtn = document.getElementById('dlBtn');
+ var dlDismiss = document.getElementById('dlDismiss');
+ var dlSub = document.getElementById('dlSub');
+ var dlIOSHint = document.getElementById('dlIOSHint');
+ var installSideBtn = document.getElementById('installSideBtn');
 
-  /* Already installed as PWA — hide everything silently */
-  if (
-    window.navigator.standalone === true ||
-    window.matchMedia('(display-mode: standalone)').matches
-  ) {
-    if (installSideBtn) installSideBtn.style.display = 'none';
-    return;
-  }
+ /* Already installed as PWA — hide everything silently */
+ if (
+ window.navigator.standalone === true ||
+ window.matchMedia('(display-mode: standalone)').matches
+ ) {
+ if (installSideBtn) installSideBtn.style.display = 'none';
+ return;
+ }
 
-  /* Don't show again this session if user dismissed */
-  try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
+ /* Don't show again this session if user dismissed */
+ try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
 
-  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
-  function isSafari() { return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
+ function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+ function isSafari() { return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
 
-  function showBar() {
-    try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
-    if (!bar) return;
+ function showBar() {
+ try { if (sessionStorage.getItem('ig-dl-dismissed')) return; } catch(e) {}
+ if (!bar) return;
 
-    if (isIOS() && isSafari()) {
-      /* iOS: hide the button, show the share hint instead */
-      if (dlBtn) dlBtn.style.display = 'none';
-      if (dlIOSHint) dlIOSHint.style.display = 'block';
-      if (dlSub) dlSub.textContent = 'Install on your iPhone — takes 3 taps';
-    } else {
-      if (dlBtn) dlBtn.style.display = 'inline-flex';
-      if (dlIOSHint) dlIOSHint.style.display = 'none';
-    }
+ if (isIOS() && isSafari()) {
+ /* iOS: hide the button, show the share hint instead */
+ if (dlBtn) dlBtn.style.display = 'none';
+ if (dlIOSHint) dlIOSHint.style.display = 'block';
+ if (dlSub) dlSub.textContent = 'Install on your iPhone — takes 3 taps';
+ } else {
+ if (dlBtn) dlBtn.style.display = 'inline-flex';
+ if (dlIOSHint) dlIOSHint.style.display = 'none';
+ }
 
-    bar.classList.add('visible');
-    if (installSideBtn) installSideBtn.style.display = 'flex';
-  }
+ bar.classList.add('visible');
+ if (installSideBtn) installSideBtn.style.display = 'flex';
+ }
 
-  function hideBar() {
-    if (bar) bar.classList.remove('visible');
-    if (installSideBtn) installSideBtn.style.display = 'none';
-    try { sessionStorage.setItem('ig-dl-dismissed', '1'); } catch(e) {}
-  }
+ function hideBar() {
+ if (bar) bar.classList.remove('visible');
+ if (installSideBtn) installSideBtn.style.display = 'none';
+ try { sessionStorage.setItem('ig-dl-dismissed', '1'); } catch(e) {}
+ }
 
-  /* Expose so sidebar button can call it */
-  window.dismissPWABanner = hideBar;
+ /* Expose so sidebar button can call it */
+ window.dismissPWABanner = hideBar;
 
-  /* Dismiss button */
-  if (dlDismiss) dlDismiss.onclick = hideBar;
+ /* Dismiss button */
+ if (dlDismiss) dlDismiss.onclick = hideBar;
 
-  /* ── Android / Desktop: capture install prompt ── */
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    /* Show after 5s — feels natural not desperate */
-    setTimeout(showBar, 5000);
-  });
+ /* Android / Desktop: capture install prompt */
+ window.addEventListener('beforeinstallprompt', function(e) {
+ e.preventDefault();
+ deferredPrompt = e;
+ /* Show after 5s — feels natural not desperate */
+ setTimeout(showBar, 5000);
+ });
 
-  /* ── iOS Safari: show after 5s ── */
-  if (isIOS() && isSafari()) {
-    setTimeout(showBar, 5000);
-  }
+ /* iOS Safari: show after 5s */
+ if (isIOS() && isSafari()) {
+ setTimeout(showBar, 5000);
+ }
 
-  /* ── Install button click ── */
-  async function triggerInstall() {
-    if (!deferredPrompt) return; /* iOS path handled by hint, no prompt needed */
-    deferredPrompt.prompt();
-    var result = await deferredPrompt.userChoice;
-    /* Hide bar whether accepted OR dismissed — no zombie banner */
-    hideBar();
-    deferredPrompt = null;
-  }
+ /* Install button click */
+ async function triggerInstall() {
+ if (!deferredPrompt) return; /* iOS path handled by hint, no prompt needed */
+ deferredPrompt.prompt();
+ var result = await deferredPrompt.userChoice;
+ /* Hide bar whether accepted OR dismissed — no zombie banner */
+ hideBar();
+ deferredPrompt = null;
+ }
 
-  if (dlBtn) dlBtn.onclick = triggerInstall;
-  if (installSideBtn) installSideBtn.onclick = triggerInstall;
+ if (dlBtn) dlBtn.onclick = triggerInstall;
+ if (installSideBtn) installSideBtn.onclick = triggerInstall;
 
-  /* ── Post-install celebration ── */
-  window.addEventListener('appinstalled', function() {
-    hideBar();
-    if (typeof toast === 'function') {
-      toast('🔥 ImpactGrid installed — you\'re ready to grow');
-    }
-  });
+ /* Post-install celebration */
+ window.addEventListener('appinstalled', function() {
+ hideBar();
+ if (typeof toast === 'function') {
+ toast(' ImpactGrid installed — you\'re ready to grow');
+ }
+ });
 
 })();
 </script>
 <script src="calendar.js" defer></script>
 <script>
-  // ✅ nav.js, ig-supabase.js and auth.js are all loaded above (no defer).
-  // By the time DOMContentLoaded fires, all three are fully parsed and executed.
-  // Order: renderNav → initAuth (awaited) → checkAuth
-  // renderNav injects the nav HTML + fires 'ig-nav-ready' so checkAuth's
-  // _whenNavReady() resolves immediately rather than waiting on the event.
-  document.addEventListener('DOMContentLoaded', async function() {
-    if (typeof renderNav === 'function') renderNav('creator-studio.html');
-    if (typeof initAuth === 'function') await initAuth();
-    if (typeof window.checkAuth === 'function') window.checkAuth();
-  });
+ // nav.js, ig-supabase.js and auth.js are all loaded above (no defer).
+ // By the time DOMContentLoaded fires, all three are fully parsed and executed.
+ // Order: renderNav → initAuth (awaited) → checkAuth
+ // renderNav injects the nav HTML + fires 'ig-nav-ready' so checkAuth's
+ // _whenNavReady() resolves immediately rather than waiting on the event.
+ document.addEventListener('DOMContentLoaded', async function() {
+ if (typeof renderNav === 'function') renderNav('creator-studio.html');
+ if (typeof initAuth === 'function') await initAuth();
+ if (typeof window.checkAuth === 'function') window.checkAuth();
+ });
 </script>
 
 <script>
-/* ═══════════════════════════════════════
-   CONFIDENCE → VIRAL LABEL
-   Reformats any .confidence element from
-   "Confidence: 82%" → "THIS WILL GO VIRAL (82%)"
-   Runs on load + watches for dynamic content.
-═══════════════════════════════════════ */
+/* 
+ CONFIDENCE → VIRAL LABEL
+ Reformats any .confidence element from
+ "Confidence: 82%" → "THIS WILL GO VIRAL (82%)"
+ Runs on load + watches for dynamic content.
+ */
 (function() {
-  function formatConfidence(el) {
-    var text = el.textContent || '';
-    // Match "Confidence: 82%" or "Confidence 82%" or just "82%"
-    var match = text.match(/(\d+)\s*%/);
-    if (!match) return;
-    var pct = parseInt(match[1], 10);
-    var label;
-    if (pct >= 80)      label = 'THIS WILL GO VIRAL';
-    else if (pct >= 65) label = 'HIGH POTENTIAL';
-    else if (pct >= 50) label = 'WORTH POSTING';
-    else                label = 'NICHE PLAY';
-    el.textContent = label + ' (' + pct + '%)';
-    el.setAttribute('data-viral-label', 'true');
-    el.style.fontWeight = '700';
-    el.style.letterSpacing = '.03em';
-    // Colour by confidence tier
-    if (pct >= 80) el.style.color = 'var(--gold, #c97e08)';
-    else if (pct >= 65) el.style.color = 'var(--green, #0fa876)';
-  }
+ function formatConfidence(el) {
+ var text = el.textContent || '';
+ // Match "Confidence: 82%" or "Confidence 82%" or just "82%"
+ var match = text.match(/(\d+)\s*%/);
+ if (!match) return;
+ var pct = parseInt(match[1], 10);
+ var label;
+ if (pct >= 80) label = 'THIS WILL GO VIRAL';
+ else if (pct >= 65) label = 'HIGH POTENTIAL';
+ else if (pct >= 50) label = 'WORTH POSTING';
+ else label = 'NICHE PLAY';
+ el.textContent = label + ' (' + pct + '%)';
+ el.setAttribute('data-viral-label', 'true');
+ el.style.fontWeight = '700';
+ el.style.letterSpacing = '.03em';
+ // Colour by confidence tier
+ if (pct >= 80) el.style.color = 'var(--gold, #c97e08)';
+ else if (pct >= 65) el.style.color = 'var(--green, #0fa876)';
+ }
 
-  function scanAll() {
-    document.querySelectorAll('.confidence').forEach(function(el) {
-      if (!el.getAttribute('data-viral-label')) formatConfidence(el);
-    });
-  }
+ function scanAll() {
+ document.querySelectorAll('.confidence').forEach(function(el) {
+ if (!el.getAttribute('data-viral-label')) formatConfidence(el);
+ });
+ }
 
-  // Run once DOM is ready
-  scanAll();
+ // Run once DOM is ready
+ scanAll();
 
-  // Watch for dynamically injected trend cards
-  var observer = new MutationObserver(function() { scanAll(); });
-  observer.observe(document.body, { childList: true, subtree: true });
+ // Watch for dynamically injected trend cards
+ var observer = new MutationObserver(function() { scanAll(); });
+ observer.observe(document.body, { childList: true, subtree: true });
 })();
 </script>
 
