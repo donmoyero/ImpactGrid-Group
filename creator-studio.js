@@ -7,7 +7,55 @@
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
 var _allTrends = [];
-var _selectedGeo = 'GB'; // Default to UK; updated by the location selector
+
+/* ── GEO DETECTION ───────────────────────────────────────────────────────────
+   Detects the user's country via a free IP lookup (no API key needed).
+   Result is cached in _userCountry and passed to all trend endpoints so each
+   user gets trends relevant to their country, not just the UK.
+   Falls back to 'GB' if the lookup fails or times out.
+────────────────────────────────────────────────────────────────────────────── */
+var _userCountry = 'GB';            // default — overwritten on load
+var _userCountryName = 'United Kingdom';
+var _geoDetected = false;
+
+async function detectUserCountry() {
+  if (_geoDetected) return _userCountry;
+  _showGeoStatus('📍 Detecting your location…');
+  try {
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, 4000); // 4 s timeout
+    var res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+    clearTimeout(timer);
+    var data = await res.json();
+    if (data && data.country_code) {
+      _userCountry     = data.country_code;            // e.g. 'US', 'NG', 'DE'
+      _userCountryName = data.country_name || data.country_code;
+      console.log('[Geo] Detected country:', _userCountry, '(' + _userCountryName + ')');
+    }
+  } catch(e) {
+    console.warn('[Geo] Detection failed — defaulting to GB:', e.message);
+  }
+  _geoDetected = true;
+  _showGeoStatus('📍 ' + _userCountryName);
+  return _userCountry;
+}
+
+function _showGeoStatus(text) {
+  // Updates any element with id="geoStatus" in the HTML.
+  // If the element doesn't exist yet, this is a silent no-op.
+  var el = document.getElementById('geoStatus');
+  if (el) el.textContent = text;
+
+  // Also update ticker geo labels when country is confirmed (not "Detecting…")
+  if (_geoDetected || text.indexOf('Detecting') === -1) {
+    var countryName = _userCountryName || text.replace('📍 ', '');
+    var tickerLabel = document.getElementById('tickerGeoLabel');
+    if (tickerLabel) tickerLabel.textContent = countryName;
+    document.querySelectorAll('.tickerGeoLabel2').forEach(function(el2) {
+      el2.textContent = countryName;
+    });
+  }
+}
 
 /* ── AI CALL THROTTLE ────────────────────────────────────────────────
    Prevents the auto-refresh loop from hammering /chat and /ai/*
@@ -297,13 +345,30 @@ function checkAccess() {
 
   // Not logged in
   if (!getUser()) {
-    showUpgrade("Create an account to save and unlock more");
+    if (typeof window.showUpgradeBar_gate === 'function') {
+      window.showUpgradeBar_gate('Create an account to save and unlock more', false);
+    } else {
+      showUpgrade('Create an account to save and unlock more');
+    }
     return false;
   }
 
-  // Free plan limit
-  if (getPlan() === 'free' && getUses() >= 3) {
-    showUpgrade("You've hit your free limit — upgrade to continue");
+  // AI use limit — uses canUse() from auth.js (covers all plans, not just free)
+  if (!canUse('ai_uses')) {
+    var _plan = getPlan();
+    var _planLabel = _plan.charAt(0).toUpperCase() + _plan.slice(1);
+    var _limit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) ? window.IG_PLAN_CONFIG[_plan].ai_uses : 3;
+    if (typeof window.showPlanGate === 'function') {
+      window.showPlanGate({
+        icon:     '⚡',
+        title:    'Monthly AI limit reached',
+        subtitle: "You've used all " + _limit + " AI generations on the " + _planLabel + " plan. Upgrade to keep creating."
+      });
+    } else if (typeof window.showUpgradeBar_gate === 'function') {
+      window.showUpgradeBar_gate(_planLabel + ' plan: ' + _limit + ' AI uses/mo reached — upgrade for more', true);
+    } else {
+      showUpgrade("You've hit your plan limit — upgrade to continue");
+    }
     return false;
   }
 
@@ -681,17 +746,21 @@ async function fetchTrends() {
     };
   }
 
+  // Ensure geo is detected before fetching — if already done this is instant
+  var geo = await detectUserCountry();
+  console.log('[fetchTrends] Using geo:', geo);
+
   // ── PRIMARY: cross-platform endpoint ─────────────────────────────────────
   // NOTE: /trends/cross returns { trends: [...] } NOT a bare array
   try {
     var ts = Date.now();
-    var res = await fetch(DIJO + '/trends/cross?ts=' + ts + '&geo=' + _selectedGeo);
+    var res = await fetch(DIJO + '/trends/cross?geo=' + geo + '&ts=' + ts);
     var data = await res.json();
     // Unwrap either shape: bare array OR { trends: [...] }
     var crossList = Array.isArray(data) ? data : (data && Array.isArray(data.trends) ? data.trends : null);
     if (crossList && crossList.length) {
       _allTrends = crossList.map(mapTrend); window._allTrends = _allTrends;
-      console.log('[fetchTrends] ✅ /trends/cross loaded', _allTrends.length, 'trends (' + _selectedGeo + ') —',
+      console.log('[fetchTrends] ✅ /trends/cross loaded', _allTrends.length, 'trends —',
         _allTrends.filter(function(t){return t.plat==='tt';}).length, 'TikTok,',
         _allTrends.filter(function(t){return t.plat==='yt';}).length, 'YouTube,',
         _allTrends.filter(function(t){return t.plat==='gt';}).length, 'Google,',
@@ -704,12 +773,12 @@ async function fetchTrends() {
 
   // ── SECONDARY: live endpoint (all platforms) ──────────────────────────────
   try {
-    var res2 = await fetch(DIJO + '/trends/live?limit=20&ts=' + Date.now() + '&geo=' + _selectedGeo);
+    var res2 = await fetch(DIJO + '/trends/live?limit=20&geo=' + geo + '&ts=' + Date.now());
     var data2 = await res2.json();
     var liveList = Array.isArray(data2) ? data2 : (data2 && Array.isArray(data2.trends) ? data2.trends : null);
     if (liveList && liveList.length) {
       _allTrends = liveList.map(mapTrend); window._allTrends = _allTrends;
-      console.log('[fetchTrends] ✅ /trends/live loaded', _allTrends.length, 'trends (' + _selectedGeo + ')');
+      console.log('[fetchTrends] ✅ /trends/live loaded', _allTrends.length, 'trends');
       renderAll();
       return;
     }
@@ -720,7 +789,7 @@ async function fetchTrends() {
   // Richer than RSS (has platform diversity + video stats); use when cross/live
   // both return empty (e.g. Supabase ingestion lag or cold start).
   try {
-    var res3 = await fetch(DIJO + '/trends/cache?ts=' + Date.now() + '&geo=' + _selectedGeo);
+    var res3 = await fetch(DIJO + '/trends/cache?geo=' + geo + '&ts=' + Date.now());
     var data3 = await res3.json();
     var cacheList = Array.isArray(data3) ? data3 : (data3 && Array.isArray(data3.trends) ? data3.trends : null);
     if (cacheList && cacheList.length) {
@@ -734,52 +803,20 @@ async function fetchTrends() {
 
   // ── LAST RESORT: Google RSS ───────────────────────────────────────────────
   // No platform diversity or video stats — only reached if all above fail.
-  // If you see this regularly, check /ingestion/debug on Dijo.
+  // This endpoint is already fully geo-aware on the backend — just pass the
+  // detected country code instead of the old hardcoded 'GB'.
   try {
     console.warn('[fetchTrends] 🔴 Falling back to Google RSS — all endpoints returned no data');
-    var rss = await fetch(DIJO + '/trends/google?geo=' + _selectedGeo);
+    var rss = await fetch(DIJO + '/trends/google?geo=' + geo);
     var rd = await rss.json();
     _allTrends = (rd.trends || []).slice(0, 20).map(function(topic, i) {
       return { topic: topic, score: 5.5, plat: 'gt', platLabel: 'Google', rank: i + 1, hashtags: [], videoCount: 0, totalViews: 0, status: 'rising', igPrediction: 0, confidence: 60 };
     }); window._allTrends = _allTrends;
     if (_allTrends.length) {
-      console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics');
+      console.log('[fetchTrends] ✅ Google RSS loaded', _allTrends.length, 'topics for', geo);
       renderAll();
     }
   } catch(e) { console.error('[fetchTrends] 🔴 All endpoints failed:', e.message); }
-}
-
-/* ── LOCATION SELECTOR ────────────────────────────────────────────────────── */
-var _GEO_LABELS = {
-  GB:'🇬🇧 UK', US:'🇺🇸 US', AU:'🇦🇺 Australia', CA:'🇨🇦 Canada',
-  IE:'🇮🇪 Ireland', ZA:'🇿🇦 South Africa', NG:'🇳🇬 Nigeria', IN:'🇮🇳 India',
-  DE:'🇩🇪 Germany', FR:'🇫🇷 France', ES:'🇪🇸 Spain', IT:'🇮🇹 Italy',
-  NL:'🇳🇱 Netherlands', BR:'🇧🇷 Brazil', MX:'🇲🇽 Mexico',
-  JP:'🇯🇵 Japan', KR:'🇰🇷 South Korea', SG:'🇸🇬 Singapore'
-};
-
-function _updateGeoBadge(geo) {
-  var badge = document.getElementById('geoStatusBadge');
-  if (badge) badge.textContent = '📍 ' + (_GEO_LABELS[geo] || geo);
-  // Show warning if not GB — backend may not filter by geo yet
-  var warn = document.getElementById('geoDataWarning');
-  if (warn) warn.style.display = (geo !== 'GB') ? 'block' : 'none';
-}
-
-function changeGeo(selectEl) {
-  var newGeo = selectEl.value;
-  if (newGeo === _selectedGeo) return;
-  _selectedGeo = newGeo;
-  _updateGeoBadge(newGeo);
-  // Clear AI cache so briefing re-fetches for new location
-  if (typeof _aiCache !== 'undefined') { for (var k in _aiCache) delete _aiCache[k]; }
-  // Show loading state
-  var indicator = document.getElementById('geoLoadingIndicator');
-  if (indicator) { indicator.style.display = 'inline-block'; }
-  _allTrends = []; window._allTrends = [];
-  fetchTrends().finally(function() {
-    if (indicator) { indicator.style.display = 'none'; }
-  });
 }
 
 function trendItemHTML(t) {
@@ -1317,111 +1354,15 @@ function renderTrendChart() {
 async function runTrendPrediction() {
   const el = document.getElementById('weeklyPrediction');
   if (!el || !_allTrends || !_allTrends.length) return;
-
-  // Build insights first — used by other panels too
   window._trendInsights = buildTrendInsights();
-  console.log('[TrendInsights] 🔥 Blowup:', window._trendInsights.blowup.length,
-    '| ⚡ Rising fast:', window._trendInsights.rising_fast.length,
-    '| 💡 Early:', window._trendInsights.early.length);
-
-  // Show loading state immediately — don't leave "Analyzing trends..."
-  const topLocal = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-  el.innerHTML = '<span class="spinner spinner-gold"></span>'
-    + '<span style="font-size:12px;color:var(--text3);margin-left:8px">Dijo is picking this week\'s best opportunity…</span>';
-
-  // ── Try Dijo AI briefing — cached 30 min so auto-refresh doesn't burn tokens ──
-  var _predKey    = 'weekly_prediction';
-  var _predCached = _aiCacheGet(_predKey);
-  if (_predCached) {
-    el.innerHTML = _predCached;
-    return;
-  }
-  try {
-    var res = await fetch(DIJO + '/ai/daily-briefing?geo=' + _selectedGeo);
-    var data = await res.json();
-
-    if (data && data.briefing) {
-      // Match the top trend from briefing data to our local scored list
-      var aiTop = null;
-      if (data.top_trends && data.top_trends.length) {
-        var aiTopicName = data.top_trends[0].topic;
-        aiTop = _allTrends.find(function(t) {
-          return t.topic.toLowerCase() === aiTopicName.toLowerCase();
-        }) || null;
-      }
-      var pick = aiTop || topLocal;
-
-      // Extract a short reason from Dijo's briefing (first sentence only)
-      var reason = '';
-      if (data.briefing) {
-        var firstSentence = data.briefing.split(/[.!?]/)[0];
-        reason = firstSentence.length > 10 && firstSentence.length < 160
-          ? firstSentence.trim()
-          : '';
-      }
-
-      var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
-      var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-      var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
-
-      el.innerHTML =
-        '<div style="display:flex;flex-direction:column;gap:8px">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-        +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-        +     escH(pick.topic)
-        +   '</div>'
-        +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-        +     pick.score.toFixed(1)
-        +   '</div>'
-        + '</div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-        +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-        +     platIcon + ' ' + escH(pick.platLabel)
-        +   '</span>'
-        +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-        + '</div>'
-        + (reason
-          ? '<div style="font-size:12px;color:var(--text2);line-height:1.5;border-left:2px solid var(--gold);padding-left:8px">'
-            + escH(reason) + '.'
-            + '</div>'
-          : '')
-        + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · ' + escH(data.date || 'This week') + '</div>'
-        + '</div>';
-    _aiCacheSet(_predKey, el.innerHTML);
-
-      return;
-    }
-  } catch(e) {
-    console.warn('[WeeklyPrediction] AI briefing failed, using local fallback:', e.message);
-  }
-
-  // ── Local fallback — use best scored trend without AI text ────────────────
-  var pick = topLocal;
-  var platIcon = pick.plat === 'tt' ? '🎵' : pick.plat === 'yt' ? '▶️' : pick.plat === 'cross' ? '🚀' : '🔍';
-  var statusColor = pick.score >= 8.5 ? 'var(--green)' : pick.score >= 7 ? 'var(--gold)' : 'var(--blue2)';
-  var statusLabel = pick.score >= 8.5 ? '🔥 Peak now' : pick.score >= 7 ? '⚡ Rising fast' : '💡 Early stage';
-
-  el.innerHTML =
-    '<div style="display:flex;flex-direction:column;gap:8px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    +   '<div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:900;line-height:1.2">'
-    +     escH(pick.topic)
-    +   '</div>'
-    +   '<div style="font-family:\'DM Mono\',monospace;font-size:18px;font-weight:900;color:' + statusColor + ';flex-shrink:0">'
-    +     pick.score.toFixed(1)
-    +   '</div>'
-    + '</div>'
-    + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-    +   '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-glo);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace">'
-    +     platIcon + ' ' + escH(pick.platLabel)
-    +   '</span>'
-    +   '<span style="font-size:11px;color:' + statusColor + ';font-weight:700">' + statusLabel + '</span>'
-    + '</div>'
-    + '<div style="font-size:12px;color:var(--text2);line-height:1.5">'
-    +   'Highest scored trend across all platforms this week.'
-    + '</div>'
-    + '<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">Dijo\'s pick · local data</div>'
-    + '</div>';
+  var cached = _aiCacheGet('weekly_prediction');
+  if (cached) { el.innerHTML = cached; return; }
+  var top = _allTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
+  if (!top) return;
+  var cap = top.topic.charAt(0).toUpperCase() + top.topic.slice(1);
+  var html = '<div style="font-family:\'Syne\',sans-serif;font-size:20px;font-weight:900;line-height:1.2;color:var(--text1)">' + escH(cap) + '</div>';
+  el.innerHTML = html;
+  _aiCacheSet('weekly_prediction', html);
 }
 
 function filterTrends(btn, plat) {
@@ -1516,7 +1457,8 @@ function renderOpportunities(data) {
 
 async function loadOpportunities() {
   try {
-    var res = await fetch(DIJO + '/trends/dijo?geo=' + _selectedGeo);
+    var geo = _userCountry || 'GB';
+    var res = await fetch(DIJO + '/trends/dijo?geo=' + geo);
     var data = await res.json();
     // If /trends/dijo returns empty array (no velocity_score data in Supabase yet),
     // fall back to local rather than showing "No opportunities"
@@ -1757,9 +1699,10 @@ async function renderDijoTopPick() {
     return;
   }
   try {
+    var locationCtx = _userCountryName ? ' in ' + _userCountryName : '';
     var prompt = 'In ONE sentence (max 25 words), explain why "' + best.topic
       + '" is the best content opportunity right now on ' + best.platLabel
-      + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
+      + locationCtx + ' with a score of ' + best.score.toFixed(1) + '/10. Be specific and direct.';
     var res = await fetch(DIJO + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1843,105 +1786,103 @@ async function loadPlatformStatus() {
    DAILY BRIEFING
 ───────────────────────────────────────────── */
 async function loadBriefing(forceRefresh) {
-  // Skip AI fetch on auto-refresh if we already have a cached result
   if (!forceRefresh && _aiCacheGet('briefing_done')) return;
-  var el = document.getElementById('briefingText');
+
+  var el     = document.getElementById('briefingText');
   var tagsEl = document.getElementById('briefingTags');
   var dateEl = document.getElementById('briefingDate');
   if (!el) return;
 
-  // ── Build compact pulse strip from local trend data ──────────────────────
-  function renderPulseStrip() {
-    if (!_allTrends.length) return false;
-    var best = getBest3(_allTrends);
+  var PLAT_COLOR = { tt:'#ff6464', yt:'#FFD700', gt:'#78b4ff', cross:'#4FB3A5' };
+  var PLAT_ICON  = { tt:'🎵', yt:'▶️', gt:'🔍', cross:'🚀' };
+  var PLAT_NAME  = { tt:'TikTok', yt:'YouTube', gt:'Google', cross:'Trending' };
 
-    var topTrends = [best.youtube, best.tiktok, best.google].filter(Boolean);
-    if (!topTrends.length) return false;
-
-    var hotTrend = topTrends.slice().sort(function(a,b){ return b.score - a.score; })[0];
-    var cls = classifyTrend(hotTrend);
-    var momentum = cls === 'blowup'      ? 'blowing up right now'
-                 : cls === 'rising_fast' ? 'rising fast across platforms'
-                 : cls === 'early'       ? 'showing early signals — jump on it'
-                 : 'stable and worth watching';
-
-    var platName = hotTrend.platLabel || 'multi-platform';
-    var igHtml = hotTrend.igPrediction >= 50
-      ? ' — <span style="color:var(--ig);font-weight:600">IG potential: ' + Math.round(hotTrend.igPrediction) + '%</span>'
-      : '';
-
-    el.innerHTML = '“' + escH(hotTrend.topic) + '” is <strong>' + momentum + '</strong>'
-      + '. Score: <strong style="color:var(--gold)">' + hotTrend.score.toFixed(1) + '/10</strong>'
-      + igHtml
-      + '. Post on <strong>' + escH(platName) + '</strong> today.';
-
-    var pillRows = [
-      { trend: best.youtube, color: 'var(--yt)', platLabel: 'YouTube', icon: '▶' },
-      { trend: best.tiktok,  color: 'var(--tt)', platLabel: 'TikTok',  icon: '⚡' },
-      { trend: best.google,  color: 'var(--gt)', platLabel: 'Google',  icon: '🔍' }
-    ].filter(function(r) { return r.trend; });
-
-    if (tagsEl && pillRows.length) {
-      tagsEl.style.display = 'flex';
-      tagsEl.innerHTML = pillRows.map(function(r) {
-        var t = r.trend;
-        var tCls = classifyTrend(t);
-        var badge = tCls === 'blowup'      ? '🔥 Hot'
-                  : tCls === 'rising_fast' ? '⚡ Rising'
-                  : tCls === 'early'       ? '🟢 Early'
-                  : '📊 Stable';
-        return '<div class="dijo-pill">'
-          + '<span class="dijo-pill-plat" style="color:' + r.color + '">' + r.icon + ' ' + r.platLabel + '</span>'
-          + '<span class="dijo-pill-topic">' + escH(t.topic) + '</span>'
-          + '<span class="dijo-pill-score">' + t.score.toFixed(1) + '</span>'
-          + '<span class="dijo-pill-badge">' + badge + '</span>'
-          + '</div>';
-      }).join('');
-    }
-
+  function setTimestamp() {
     if (dateEl) {
       var now = new Date();
-      dateEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
+      dateEl.innerHTML = '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#0fa876;margin-right:4px;vertical-align:middle"></span>'
+        + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '\n· live';
     }
-    return true;
   }
 
-  // Try local data first (instant), then fall back to API
-  if (renderPulseStrip()) {
-    if (forceRefresh) toast('🧠 Trends refreshed!');
+  function getTopTrend() {
+    if (!_allTrends || !_allTrends.length) return null;
+    return _allTrends.slice().sort(function(a, b) { return b.score - a.score; })[0];
+  }
+
+  function renderShell(top) {
+    var cap       = (top.topic || '').charAt(0).toUpperCase() + (top.topic || '').slice(1);
+    var platColor = PLAT_COLOR[top.plat] || '#4FB3A5';
+    var platIcon  = PLAT_ICON[top.plat]  || '📡';
+    var platName  = PLAT_NAME[top.plat]  || 'Trending';
+    var cls       = classifyTrend(top);
+    var heat      = cls === 'blowup'      ? '🔥 Blowing up'
+                  : cls === 'rising_fast' ? '⚡ Rising fast'
+                  : cls === 'early'       ? '🟢 Early signal'
+                  : '📊 Trending';
+    el.innerHTML =
+      '<div style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:700;color:' + platColor + ';letter-spacing:.08em;margin-bottom:6px;text-transform:uppercase">'
+      + platIcon + ' ' + platName + ' &nbsp;·&nbsp; ' + heat
+      + '</div>'
+      + '<div style="font-family:\'Syne\',sans-serif;font-size:19px;font-weight:900;line-height:1.2;color:var(--text1);margin-bottom:10px">'
+      + escH(cap)
+      + '</div>'
+      + '<div id="dijoInsightText" style="font-size:12px;color:var(--text2);line-height:1.6">'
+      + '<span class="spinner spinner-gold"></span>'
+      + '</div>';
+    setTimestamp();
+    return { cap: cap, platName: platName, heat: heat };
+  }
+
+  async function fetchInsight(topicName, platName, heat) {
+    var insightEl = document.getElementById('dijoInsightText');
+    if (!insightEl) return;
+    try {
+      var locationLabel = _userCountryName || 'your country';
+      var prompt = '"' + topicName + '" is ' + heat + ' on ' + platName + ' right now in ' + locationLabel + '. '
+        + 'Why is it blowing up and what should a content creator in ' + locationLabel + ' do about it today?';
+      var text = await callDijo(prompt, 'creator');
+      if (text && insightEl) insightEl.textContent = text;
+    } catch(e) {
+      if (insightEl) insightEl.textContent = '';
+    }
+  }
+
+  var top = getTopTrend();
+  if (top) {
+    var info = renderShell(top);
+    _aiCacheSet('briefing_done', true);
+    if (forceRefresh) toast('🧠 Briefing refreshed!');
+    fetchInsight(info.cap, info.platName, info.heat);
     return;
   }
 
-  // Still loading — wait for trends then retry
   el.innerHTML = '<span class="spinner spinner-gold"></span>';
   try {
-    var res = await fetch(DIJO + '/ai/daily-briefing?geo=' + _selectedGeo);
+    var res  = await fetch(DIJO + '/ai/daily-briefing');
     var data = await res.json();
-    // Even if API has data, prefer the compact pulse strip if trends are now loaded
-    if (_allTrends.length && renderPulseStrip()) {
-      if (forceRefresh) toast('🧠 Trends refreshed!');
+    top = getTopTrend();
+    if (top) {
+      var info2 = renderShell(top);
+      _aiCacheSet('briefing_done', true);
+      fetchInsight(info2.cap, info2.platName, info2.heat);
       return;
     }
-    // Fallback: show just the first sentence of the AI briefing (compact)
-    _aiCacheSet('briefing_done', true);
-    if (data.briefing) {
-      var first = data.briefing.split(/[.!?]/)[0].trim();
-      el.textContent = first + '.';
-      if (dateEl) {
-        var now2 = new Date();
-        dateEl.textContent = '📡 ' + now2.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · live';
-      }
-      if (tagsEl) tagsEl.innerHTML = '';
-      if (forceRefresh) toast('🧠 Briefing refreshed!');
+    var apiTop = (data.top_trends && data.top_trends[0]) || null;
+    if (apiTop) {
+      var fakeTrend = { topic: apiTop.topic, plat: 'cross', score: apiTop.score || 7 };
+      var info3 = renderShell(fakeTrend);
+      _aiCacheSet('briefing_done', true);
+      fetchInsight(info3.cap, info3.platName, info3.heat);
+    } else if (data.briefing) {
+      el.textContent = data.briefing;
+      setTimestamp();
     }
   } catch(e) {
     if (el) el.textContent = 'Trends unavailable — check back shortly.';
   }
 }
 
-/* ─────────────────────────────────────────────
-   QUICK GENERATE (dashboard widget)
-───────────────────────────────────────────── */
 async function quickGenerate() {
   if (!checkAccess()) return;
   var topicEl = document.getElementById('quickTopic');
@@ -2677,22 +2618,135 @@ function updateTopTrends() {
 }
 
 /* ─────────────────────────────────────────────
+   SKELETON SCREENS
+   Renders instant placeholder UI into the three
+   above-the-fold sections (Briefing, Top Trends,
+   Top Opportunities) so users see structured
+   content immediately on load — before any network
+   request completes. Real data replaces these
+   automatically when the normal render functions
+   (renderDashTrends, renderOpportunities,
+   loadBriefing) run and overwrite innerHTML.
+───────────────────────────────────────────── */
+(function injectSkeletonStyles() {
+  if (document.getElementById('_skeletonStyles')) return;
+  var s = document.createElement('style');
+  s.id = '_skeletonStyles';
+  s.textContent = [
+    '@keyframes skShimmer {',
+    '  0%   { background-position: -400px 0; }',
+    '  100% { background-position:  400px 0; }',
+    '}',
+    '.sk {',
+    '  background: linear-gradient(90deg, var(--bg2,#1a1d26) 25%, var(--bg3,#22263a) 50%, var(--bg2,#1a1d26) 75%);',
+    '  background-size: 800px 100%;',
+    '  animation: skShimmer 1.4s ease-in-out infinite;',
+    '  border-radius: 6px;',
+    '}',
+    '[data-theme="light"] .sk {',
+    '  background: linear-gradient(90deg, #e8eaf0 25%, #f4f5f8 50%, #e8eaf0 75%);',
+    '  background-size: 800px 100%;',
+    '  animation: skShimmer 1.4s ease-in-out infinite;',
+    '}',
+    '.sk-line  { height:12px; margin-bottom:8px; border-radius:4px; }',
+    '.sk-title { height:18px; width:60%; margin-bottom:10px; border-radius:4px; }',
+    '.sk-badge { height:10px; width:40%; border-radius:10px; margin-bottom:6px; }',
+    '.sk-trend-item { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border,rgba(255,255,255,.06)); }',
+    '.sk-rank  { width:32px; height:32px; border-radius:8px; flex-shrink:0; }',
+    '.sk-info  { flex:1; }',
+    '.sk-bar   { height:4px; border-radius:99px; margin-top:8px; }',
+    '.sk-pill  { width:52px; height:20px; border-radius:10px; flex-shrink:0; }',
+    '.sk-opp-card { background:var(--card,#12151f); border:1px solid var(--border,rgba(255,255,255,.07)); border-radius:12px; padding:14px; margin-bottom:10px; }'
+  ].join("\n");
+  document.head.appendChild(s);
+})();
+
+function renderSkeletons() {
+  // 1. Top Trends list
+  var trendsEl = document.getElementById('dashTrendList');
+  if (trendsEl && !trendsEl.dataset.realData) {
+    var trendSkel = '';
+    var tColors = ['#ff6464','#FFD700','#78b4ff'];
+    var tWidths = [[70,45,80],[55,38,60],[65,50,72]];
+    tWidths.forEach(function(w, i) {
+      trendSkel +=
+        '<div class="sk-trend-item">'
+        + '<div class="sk sk-rank"></div>'
+        + '<div class="sk-info">'
+        +   '<div class="sk sk-title" style="width:' + w[0] + '%"></div>'
+        +   '<div class="sk sk-badge" style="width:' + w[1] + '%"></div>'
+        +   '<div class="sk sk-bar" style="width:' + w[2] + '%;background:' + tColors[i] + '30"></div>'
+        + '</div>'
+        + '<div class="sk sk-pill"></div>'
+        + '</div>';
+    });
+    trendsEl.innerHTML = trendSkel;
+  }
+
+  // 2. Top Opportunities
+  var oppEl = document.getElementById('topOppBox');
+  if (oppEl && !oppEl.dataset.realData) {
+    var oppSkel = '';
+    [80,62,55].forEach(function(w) {
+      oppSkel +=
+        '<div class="sk-opp-card">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
+        +   '<div class="sk sk-badge" style="width:35%"></div>'
+        +   '<div class="sk sk-badge" style="width:18%"></div>'
+        + '</div>'
+        + '<div class="sk sk-line" style="width:' + w + '%"></div>'
+        + '<div class="sk sk-line" style="width:' + (w - 15) + '%;height:8px"></div>'
+        + '<div class="sk sk-line" style="height:3px;width:' + w + '%"></div>'
+        + '</div>';
+    });
+    oppEl.innerHTML = oppSkel;
+  }
+
+  // 3. Dijo Briefing
+  var briefEl = document.getElementById('briefingText');
+  if (briefEl && !briefEl.dataset.realData) {
+    briefEl.innerHTML =
+      '<div class="sk sk-badge" style="width:55%;margin-bottom:10px"></div>'
+      + '<div class="sk sk-title" style="width:80%;height:20px;margin-bottom:10px"></div>'
+      + '<div class="sk sk-line" style="width:95%"></div>'
+      + '<div class="sk sk-line" style="width:80%"></div>'
+      + '<div class="sk sk-line" style="width:60%"></div>';
+  }
+}
+
+// Track page load start for GA timing
+window._pageLoadStart = Date.now();
+
+/* ─────────────────────────────────────────────
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('load', async function() {
   // Auth is handled by auth.js → initAuth() → loadUser().
   // nav.js runs its own checkAuth() for the nav bar.
   // Do NOT call checkAuth() here — it was a duplicate that raced both of them.
+  renderSkeletons(); // show instant skeleton UI before any network requests
   initYouTube();
   initTikTok();
   loadCalendar();
   loadPlatformStatus();
+  // Detect country first so fetchTrends() has geo ready — detectUserCountry()
+  // is fast (cached after first call) and shows a "Detecting…" status in the UI.
+  await detectUserCountry();
   await fetchTrends();
+  // GA: track time-to-content so we can measure skeleton improvement
+  if (typeof gtag === 'function') {
+    gtag('event', 'trends_loaded', {
+      ms_to_load: Date.now() - (window._pageLoadStart || Date.now()),
+      country: _userCountryName || 'unknown'
+    });
+  }
   renderDashTrends();
   loadOpportunities();
   renderRadarGauges();
   renderDijoTopPick();
   loadBriefing();
+  // Wake Render immediately on load — prevents cold-start spinners
+  fetch(DIJO + '/ping').catch(function() {});
   setInterval(function() { fetch(DIJO + '/ping').catch(function() {}); }, 600000);
 
   // Auto-refresh trends every 60 seconds
