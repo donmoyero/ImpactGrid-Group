@@ -715,6 +715,8 @@ function renderAll() {
   renderDijoTopPick();
   // Combined cross-platform chart + winner box (trends panel summary row)
   updateChart();
+  // Trust signals — prediction accuracy badge
+  loadPredictionAccuracy();
 }
 
 async function fetchTrends() {
@@ -746,10 +748,13 @@ async function fetchTrends() {
       videoCount:   t.video_count  || t.total_videos || 0,
       totalViews:   t.total_views  || 0,
       status:       t.status       || 'rising',
-      igPrediction: t.instagram_prediction || 0,
-      dataSource:   t.data_source  || null,
-      confidence:   t.confidence_score || t.velocity_score ||
-                    (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'tiktok_signal' ? 55 : src === 'youtube' ? 70 : 60)
+      igPrediction:  t.instagram_prediction || 0,
+      igReason:      t.instagram_reason     || '',
+      dataSource:    t.data_source          || null,
+      velocityScore: t.velocity_score       || 0,
+      detectedAt:    t.detected_at          || null,
+      confidence:    t.confidence_score || t.velocity_score ||
+                     (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'tiktok_signal' ? 55 : src === 'youtube' ? 70 : 60)
     };
   }
 
@@ -827,22 +832,49 @@ async function fetchTrends() {
 }
 
 function _dataSourceLabel(t) {
-  // Returns a small inline label showing where this trend actually came from.
-  // Only shown when the source is weaker than a real platform API.
-  if (!t.dataSource) return '';
-  switch (t.dataSource) {
-    case 'google_trends': return '✅ Google Trends';
-    case 'news_rss':      return '📰 News RSS';
-    case 'reddit':        return '💬 Reddit';
-    case 'gb_fallback':   return '🔁 Fallback data';
-    default:              return '';
+  // Returns a small inline label showing data origin + quality tier.
+  // Higher-trust sources get green; proxy/fallback get amber.
+  switch (t.dataSource || '') {
+    case 'rapidapi_tiktok': return { text: '🟢 Live TikTok Data',    color: '#4caf50' };
+    case 'google_trends':   return { text: '🟢 Google Trends',       color: '#4caf50' };
+    case 'news_rss':        return { text: '🟡 News RSS',            color: '#f5a623' };
+    case 'reddit':          return { text: '🟡 Reddit Signal',       color: '#f5a623' };
+    case 'youtube_proxy':   return { text: '🟠 YouTube Proxy',       color: '#e67e22' };
+    case 'gb_fallback':     return { text: '🔁 Fallback Data',       color: '#e74c3c' };
+    default:
+      // Infer from platform type when data_source field is absent
+      if (t.plat === 'tt')       return { text: '🟢 Live TikTok Data',   color: '#4caf50' };
+      if (t.plat === 'tt_proxy') return { text: '🟠 YouTube Proxy',      color: '#e67e22' };
+      if (t.plat === 'cross')    return { text: '🟢 Cross-Platform',     color: '#4caf50' };
+      if (t.plat === 'yt')       return { text: '🟢 YouTube Trending',   color: '#4caf50' };
+      return { text: '🔵 Search Demand', color: '#78b4ff' };
   }
 }
 
+function _freshness(detectedAt) {
+  // Returns human-readable "X min ago" / "Xh ago" from a detected_at ISO string
+  if (!detectedAt) return '';
+  var diff = Date.now() - new Date(detectedAt).getTime();
+  var mins = Math.round(diff / 60000);
+  if (mins < 2)   return 'just now';
+  if (mins < 60)  return mins + 'm ago';
+  var hrs = Math.round(mins / 60);
+  if (hrs < 24)   return hrs + 'h ago';
+  return Math.round(hrs / 24) + 'd ago';
+}
+
+function _velocityBar(velocityScore) {
+  // Returns a mini velocity indicator string for display
+  if (!velocityScore || velocityScore < 5) return '';
+  var rounded = Math.round(velocityScore);
+  var arrow = velocityScore >= 70 ? '🔥' : velocityScore >= 40 ? '⚡' : '📈';
+  return arrow + ' ' + rounded + '% velocity';
+}
+
 function trendItemHTML(t) {
-  var pct = Math.round((t.score / 10) * 100);
+  var pct     = Math.round((t.score / 10) * 100);
   var platCls = t.plat === 'yt' ? 'plat-yt' : (t.plat === 'tt' || t.plat === 'tt_proxy') ? 'plat-tt' : 'plat-gt';
-  var meta = t.videoCount > 0
+  var meta    = t.videoCount > 0
     ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
     : t.platLabel + ' · click to generate';
 
@@ -853,21 +885,24 @@ function trendItemHTML(t) {
     : t.plat === 'cross'    ? '🚀 Cross-Platform'
     : '🔍 Search Demand';
 
-  // Confidence indicator
-  var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
+  // ── Trust signals ─────────────────────────────────────────────────────────
+  var srcInfo   = _dataSourceLabel(t);
+  var freshness = _freshness(t.detectedAt);
+  var velTxt    = _velocityBar(t.velocityScore);
 
-  // Data source label — shown for non-platform-API sources so users know signal strength
-  var srcLabel = _dataSourceLabel(t);
-  var srcHtml  = srcLabel
-    ? '<div style="font-size:9px;color:var(--text3);margin-top:2px;font-family:\'DM Mono\',monospace;letter-spacing:.04em">' + srcLabel + '</div>'
-    : '';
+  // Data source badge — colour-coded by quality tier
+  var srcHtml = '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap">'
+    + '<span style="font-size:9px;font-family:\'DM Mono\',monospace;letter-spacing:.04em;color:' + srcInfo.color + '">' + srcInfo.text + '</span>'
+    + (freshness ? '<span style="font-size:9px;color:var(--text3);font-family:\'DM Mono\',monospace">· ' + freshness + '</span>' : '')
+    + (velTxt    ? '<span style="font-size:9px;color:var(--gold);font-family:\'DM Mono\',monospace">· ' + velTxt + '</span>' : '')
+    + '</div>';
 
   return '<div class="trend-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
     + '<div class="ti-rank">#' + t.rank + '</div>'
     + '<div class="ti-info">'
     +   '<div class="ti-topic">' + escH(t.topic) + '</div>'
     +   '<div class="ti-meta">' + escH(meta) + '</div>'
-    +   '<div class="ti-badge">' + badge + escH(conf) + '</div>'
+    +   '<div class="ti-badge">' + badge + '</div>'
     +   srcHtml
     + '</div>'
     + '<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%"></div></div><div class="ti-score">' + t.score.toFixed(1) + '/10</div></div>'
@@ -875,14 +910,7 @@ function trendItemHTML(t) {
     + '</div>';
 }
 
-/* ─────────────────────────────────────────────
-   BEST-PER-PLATFORM PICKER
-   Returns the single highest-scoring trend for
-   each platform from the current _allTrends set.
-   Used by renderDashTrends so the dashboard
-   always shows one meaningful pick per source
-   rather than an arbitrary top-5 slice.
-───────────────────────────────────────────── */
+
 function getBest3(trends) {
   // Cross-platform trends count as candidates for all three platforms.
   // Without this, plat==='cross' rows are invisible to per-platform filters
@@ -983,10 +1011,14 @@ function renderDashTrends() {
     var vidMeta   = t.videoCount > 0
       ? fmtN(t.videoCount) + ' videos · ' + fmtN(t.totalViews) + ' views'
       : t.platLabel + ' trend data';
-    var srcLabel  = _dataSourceLabel(t);
-    var srcHtml   = srcLabel
-      ? '<div style="font-size:9px;color:var(--text3);margin-top:3px;font-family:\'DM Mono\',monospace;letter-spacing:.04em">' + srcLabel + '</div>'
-      : '';
+    var srcInfo   = _dataSourceLabel(t);
+    var freshness = _freshness(t.detectedAt);
+    var velTxt    = _velocityBar(t.velocityScore);
+    var srcHtml   = '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">'
+      + '<span style="font-size:9px;font-family:\'DM Mono\',monospace;letter-spacing:.04em;color:' + srcInfo.color + '">' + srcInfo.text + '</span>'
+      + (freshness ? '<span style="font-size:9px;color:var(--text3);font-family:\'DM Mono\',monospace">· ' + freshness + '</span>' : '')
+      + (velTxt    ? '<span style="font-size:9px;color:var(--gold);font-family:\'DM Mono\',monospace">· ' + velTxt + '</span>' : '')
+      + '</div>';
 
     return '<div class="trend-item" style="cursor:pointer;position:relative;overflow:hidden" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
       // animated progress stripe behind the card
@@ -1491,6 +1523,68 @@ function renderOpportunities(data) {
       + '<div style="font-size:10px;color:var(--text3);font-style:italic">' + escH(pm.hint) + '</div>'
       + '</div>';
   }).join('');
+}
+
+
+/* ─────────────────────────────────────────────
+   PREDICTION ACCURACY BADGE
+   Fetches /trends/predictions and injects a
+   live accuracy % badge wherever the element
+   id="predAccuracyBadge" exists in the HTML.
+   This is the single biggest trust signal —
+   showing users that predictions are verified.
+───────────────────────────────────────────── */
+async function loadPredictionAccuracy() {
+  var badge = document.getElementById('predAccuracyBadge');
+  if (!badge) return;
+
+  try {
+    var geo = _userCountry || 'GB';
+    var res = await fetch(DIJO + '/trends/predictions?geo=' + geo);
+    var data = await res.json();
+
+    var accuracy = data.accuracy_30d;
+    var total    = data.total_verified || 0;
+    var active   = (data.active   || []).length;
+
+    if (accuracy == null || total < 3) {
+      // Not enough data yet — show a neutral building state
+      badge.innerHTML = '<span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">📊 Building accuracy record…</span>';
+      return;
+    }
+
+    var color = accuracy >= 70 ? '#4caf50' : accuracy >= 50 ? '#f5a623' : '#e74c3c';
+    var label = accuracy >= 70 ? 'High accuracy' : accuracy >= 50 ? 'Good accuracy' : 'Developing';
+
+    badge.innerHTML =
+        '<div style="display:inline-flex;align-items:center;gap:8px;background:' + color + '18;border:1px solid ' + color + '40;border-radius:8px;padding:6px 12px">'
+      + '<span style="font-size:18px;font-weight:900;color:' + color + ';font-family:'DM Mono',monospace">' + accuracy + '%</span>'
+      + '<div style="line-height:1.3">'
+      +   '<div style="font-size:10px;font-weight:700;color:' + color + '">' + label + '</div>'
+      +   '<div style="font-size:9px;color:var(--text3)">from ' + total + ' verified predictions · ' + active + ' active now</div>'
+      + '</div>'
+      + '</div>';
+
+    // Also populate active predictions list if element exists
+    var listEl = document.getElementById('activePredictionsList');
+    if (listEl && data.active && data.active.length) {
+      listEl.innerHTML = data.active.slice(0, 5).map(function(p) {
+        var confColor = p.confidence >= 70 ? '#4caf50' : p.confidence >= 50 ? '#f5a623' : 'var(--text3)';
+        var platIcon  = p.predicted_platform === 'instagram' ? '📸' : p.predicted_platform === 'tiktok' ? '⚡' : '🚀';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">'
+          + '<span style="font-size:14px">' + platIcon + '</span>'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-size:12px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(p.topic) + '</div>'
+          +   '<div style="font-size:10px;color:var(--text3)">Peak in ' + escH(p.predicted_peak_window || '24-48h') + '</div>'
+          + '</div>'
+          + '<div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:' + confColor + '">' + p.confidence + '%</div>'
+          + '</div>';
+      }).join('');
+    }
+
+  } catch(e) {
+    console.warn('[PredAccuracy] Failed:', e.message);
+  }
 }
 
 async function loadOpportunities() {
