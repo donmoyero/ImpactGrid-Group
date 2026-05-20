@@ -352,9 +352,27 @@
  if (atBottom) feed.scrollTop = feed.scrollHeight;
  }
 
+ // Get or create the Supabase client using globals set by ig-supabase.js
+ function getSB() {
+ // ig-supabase.js may export the client under various names — try all
+ if (window._igSupa && typeof window._igSupa.from === 'function') return window._igSupa;
+ if (window.igSupa && typeof window.igSupa.from === 'function') return window.igSupa;
+ if (window._supabaseClient && typeof window._supabaseClient.from === 'function') return window._supabaseClient;
+ // If SUPABASE_URL + SUPABASE_ANON_KEY exist, create a fresh client
+ if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+ var lib = window.supabase; // the SDK namespace (not a client)
+ if (lib && lib.createClient) {
+ var client = lib.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+ window._igSupa = client; // cache it
+ return client;
+ }
+ }
+ return null;
+ }
+
  async function loadComments() {
  try {
- var sb = window.supabase || (window._sb);
+ var sb = getSB();
  if (!sb) { setTimeout(loadComments, 800); return; }
  var res = await sb.from('community_comments').select('*').order('created_at', { ascending: true }).limit(100);
  if (res.error) throw res.error;
@@ -373,10 +391,10 @@
  if (tEl) { tEl.style.borderColor='#e05'; setTimeout(function(){ tEl.style.borderColor=''; }, 800); }
  return;
  }
- var btn = document.querySelector('#dashCommFeed ~ div button');
+ var btn = document.querySelector('[onclick="dashCommPost()"]');
  if (btn) { btn.disabled = true; btn.textContent = '…'; }
  try {
- var sb = window.supabase || window._sb;
+ var sb = getSB();
  if (!sb) throw new Error('Supabase not ready');
  var res = await sb.from('community_comments').insert([{ name: name, message: text }]).select();
  if (res.error) throw res.error;
@@ -396,7 +414,8 @@
  if (!isAdmin()) return;
  if (!confirm('Delete this comment?')) return;
  try {
- var sb = window.supabase || window._sb;
+ var sb = getSB();
+ if (!sb) throw new Error('Supabase not ready');
  var res = await sb.from('community_comments').delete().eq('id', id);
  if (res.error) throw res.error;
  await loadComments();
@@ -410,7 +429,7 @@
  // Subscribe to real-time inserts & deletes
  function subscribeRealtime() {
  try {
- var sb = window.supabase || window._sb;
+ var sb = getSB();
  if (!sb || !sb.channel) return;
  sb.channel('community_comments_changes')
  .on('postgres_changes', { event: '*', schema: 'public', table: 'community_comments' }, function() {
@@ -422,9 +441,10 @@
  }
  }
 
- // Init — wait for Supabase to be ready
+ // Init — wait for Supabase SDK + globals to be ready
  function init() {
- if (window.supabase || window._sb) {
+ var sb = getSB();
+ if (sb) {
  loadComments();
  subscribeRealtime();
  } else {
