@@ -1549,7 +1549,7 @@ async function loadPredictionAccuracy() {
 
  if (accuracy == null || total < 3) {
  // Not enough data yet — show a neutral building state
- badge.innerHTML = '<span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace"> Building accuracy record…</span>';
+ badge.innerHTML = '<span style="font-size:10px;color:var(--text3);font-family:\'DM Mono\',monospace"> Building accuracy record…</span>';
  return;
  }
 
@@ -1558,7 +1558,7 @@ async function loadPredictionAccuracy() {
 
  badge.innerHTML =
  '<div style="display:inline-flex;align-items:center;gap:8px;background:' + color + '18;border:1px solid ' + color + '40;border-radius:8px;padding:6px 12px">'
- + '<span style="font-size:18px;font-weight:900;color:' + color + ';font-family:'DM Mono',monospace">' + accuracy + '%</span>'
+ + '<span style="font-size:18px;font-weight:900;color:' + color + ';font-family:\'DM Mono\',monospace">' + accuracy + '%</span>'
  + '<div style="line-height:1.3">'
  + '<div style="font-size:10px;font-weight:700;color:' + color + '">' + label + '</div>'
  + '<div style="font-size:9px;color:var(--text3)">from ' + total + ' verified predictions · ' + active + ' active now</div>'
@@ -1577,7 +1577,7 @@ async function loadPredictionAccuracy() {
  + '<div style="font-size:12px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(p.topic) + '</div>'
  + '<div style="font-size:10px;color:var(--text3)">Peak in ' + escH(p.predicted_peak_window || '24-48h') + '</div>'
  + '</div>'
- + '<div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:' + confColor + '">' + p.confidence + '%</div>'
+ + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;color:' + confColor + '">' + p.confidence + '%</div>'
  + '</div>';
  }).join('');
  }
@@ -1662,14 +1662,14 @@ function renderRadarGauges() {
  @media(max-width:640px){ .rg-grid { grid-template-columns:1fr; } }
  .rg-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 16px 14px; display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; overflow:hidden; }
  .rg-stripe { position:absolute; top:0; left:0; right:0; height:3px; border-radius:3px 3px 0 0; }
- .rg-label { font-size:11px; font-weight:700; color:var(--text2); letter-spacing:.06em; text-transform:uppercase; font-family:'DM Mono',monospace; }
+ .rg-label { font-size:11px; font-weight:700; color:var(--text2); letter-spacing:.06em; text-transform:uppercase; font-family:\'DM Mono\',monospace; }
  .rg-svg-wrap { width:140px; height:80px; position:relative; }
  .rg-score-overlay { position:absolute; bottom:0; left:50%; transform:translateX(-50%); text-align:center; line-height:1; }
  .rg-score-num { font-family:'Syne',sans-serif; font-size:22px; font-weight:900; }
- .rg-score-unit { font-family:'DM Mono',monospace; font-size:9px; color:var(--text3); }
+ .rg-score-unit { font-family:\'DM Mono\',monospace; font-size:9px; color:var(--text3); }
  .rg-topic { font-size:13px; font-weight:700; text-align:center; line-height:1.3; cursor:pointer; max-width:160px; }
  .rg-topic:hover { text-decoration:underline; }
- .rg-status { font-size:10px; font-weight:700; padding:2px 9px; border-radius:99px; border:1px solid; font-family:'DM Mono',monospace; }
+ .rg-status { font-size:10px; font-weight:700; padding:2px 9px; border-radius:99px; border:1px solid; font-family:\'DM Mono\',monospace; }
  .rg-meta { font-size:10px; color:var(--text3); text-align:center; }
  .rg-dot { width:6px; height:6px; border-radius:50%; display:inline-block; animation:meterPulse 1.8s ease-in-out infinite; margin-right:4px; }
  .rg-empty { font-size:12px; color:var(--text3); text-align:center; padding:16px 0; }
