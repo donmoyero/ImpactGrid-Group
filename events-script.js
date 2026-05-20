@@ -9,7 +9,7 @@
    The globals used here: firebase, firebase.initializeApp, firebase.firestore  */
 
 var firebaseConfig = {
-  apiKey           : 'AIzaSyDzI3fDAM46_Gp96YMnrA-DG7oAprHs4g4',
+  apiKey           : 'YOUR_NEW_API_KEY_HERE',
   authDomain       : 'impactgrid-events.firebaseapp.com',
   projectId        : 'impactgrid-events',
   storageBucket    : 'impactgrid-events.firebasestorage.app',
