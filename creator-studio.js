@@ -747,6 +747,7 @@ async function fetchTrends() {
       totalViews:   t.total_views  || 0,
       status:       t.status       || 'rising',
       igPrediction: t.instagram_prediction || 0,
+      dataSource:   t.data_source  || null,
       confidence:   t.confidence_score || t.velocity_score ||
                     (src === 'cross' ? 90 : src === 'tiktok' ? 75 : src === 'tiktok_signal' ? 55 : src === 'youtube' ? 70 : 60)
     };
@@ -825,23 +826,41 @@ async function fetchTrends() {
   } catch(e) { console.error('[fetchTrends] 🔴 All endpoints failed:', e.message); }
 }
 
+function _dataSourceLabel(t) {
+  // Returns a small inline label showing where this trend actually came from.
+  // Only shown when the source is weaker than a real platform API.
+  if (!t.dataSource) return '';
+  switch (t.dataSource) {
+    case 'google_trends': return '✅ Google Trends';
+    case 'news_rss':      return '📰 News RSS';
+    case 'reddit':        return '💬 Reddit';
+    case 'gb_fallback':   return '🔁 Fallback data';
+    default:              return '';
+  }
+}
+
 function trendItemHTML(t) {
   var pct = Math.round((t.score / 10) * 100);
-  var platCls = t.plat === 'yt' ? 'plat-yt' : t.plat === 'tt' ? 'plat-tt' : 'plat-gt';
+  var platCls = t.plat === 'yt' ? 'plat-yt' : (t.plat === 'tt' || t.plat === 'tt_proxy') ? 'plat-tt' : 'plat-gt';
   var meta = t.videoCount > 0
     ? t.videoCount + ' videos · ' + fmtN(t.totalViews) + ' views'
     : t.platLabel + ' · click to generate';
 
-  // 🔥 FIX 2: Platform power badge — VIRAL INTELLIGENCE SYSTEM 🧠
   var badge =
-    t.plat === 'tt'       ? '⚡ TikTok Viral'
-    : t.plat === 'tt_proxy' ? '📡 TikTok Signal'   // YouTube-proxied — honest label
-    : t.plat === 'yt'     ? '🎯 YouTube Validated'
-    : t.plat === 'cross'  ? '🚀 Cross-Platform'
+    t.plat === 'tt'         ? '⚡ TikTok Viral'
+    : t.plat === 'tt_proxy' ? '📡 TikTok Signal'
+    : t.plat === 'yt'       ? '🎯 YouTube Validated'
+    : t.plat === 'cross'    ? '🚀 Cross-Platform'
     : '🔍 Search Demand';
 
   // Confidence indicator
   var conf = t.confidence ? ' · ' + t.confidence + '% confidence' : '';
+
+  // Data source label — shown for non-platform-API sources so users know signal strength
+  var srcLabel = _dataSourceLabel(t);
+  var srcHtml  = srcLabel
+    ? '<div style="font-size:9px;color:var(--text3);margin-top:2px;font-family:\'DM Mono\',monospace;letter-spacing:.04em">' + srcLabel + '</div>'
+    : '';
 
   return '<div class="trend-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
     + '<div class="ti-rank">#' + t.rank + '</div>'
@@ -849,6 +868,7 @@ function trendItemHTML(t) {
     +   '<div class="ti-topic">' + escH(t.topic) + '</div>'
     +   '<div class="ti-meta">' + escH(meta) + '</div>'
     +   '<div class="ti-badge">' + badge + escH(conf) + '</div>'
+    +   srcHtml
     + '</div>'
     + '<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%"></div></div><div class="ti-score">' + t.score.toFixed(1) + '/10</div></div>'
     + '<div class="ti-plat ' + platCls + '">' + escH(t.platLabel) + '</div>'
@@ -955,13 +975,18 @@ function renderDashTrends() {
                   : cls === 'rising_fast' ? 'var(--gold)'
                   : cls === 'early'       ? '#4FB3A5'
                   : 'var(--text3)';
-    var actionHint = t.plat === 'tt'    ? 'Post a 30–60s hook video today'
-                   : t.plat === 'yt'    ? 'Best for a 5–10 min explainer'
-                   : t.plat === 'cross' ? 'Works across TikTok + YouTube'
+    var actionHint = t.plat === 'tt'         ? 'Post a 30–60s hook video today'
+                   : t.plat === 'tt_proxy'  ? 'TikTok signal via YouTube — validate before posting'
+                   : t.plat === 'yt'        ? 'Best for a 5–10 min explainer'
+                   : t.plat === 'cross'     ? 'Works across TikTok + YouTube'
                    : 'High search demand — SEO content wins';
     var vidMeta   = t.videoCount > 0
       ? fmtN(t.videoCount) + ' videos · ' + fmtN(t.totalViews) + ' views'
       : t.platLabel + ' trend data';
+    var srcLabel  = _dataSourceLabel(t);
+    var srcHtml   = srcLabel
+      ? '<div style="font-size:9px;color:var(--text3);margin-top:3px;font-family:\'DM Mono\',monospace;letter-spacing:.04em">' + srcLabel + '</div>'
+      : '';
 
     return '<div class="trend-item" style="cursor:pointer;position:relative;overflow:hidden" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
       // animated progress stripe behind the card
@@ -972,6 +997,7 @@ function renderDashTrends() {
       +   '<div class="ti-meta">' + escH(vidMeta) + '</div>'
       +   '<div class="ti-badge" style="color:' + clsColor + '">' + clsLabel + '</div>'
       +   '<div style="font-size:10px;color:var(--text3);margin-top:2px;font-style:italic">' + escH(actionHint) + '</div>'
+      +   srcHtml
       + '</div>'
       + '<div class="ti-bar-wrap">'
       +   '<div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
@@ -1938,13 +1964,46 @@ function selectStyle(el) {
   _selectedStyle = el.textContent.trim();
 }
 
-function calcScore(topic) {
-  var tl = topic.toLowerCase(); var s = 6.8;
-  if (tl.match(/ai|chatgpt|automation|tech|llm/)) s += 1.3;
-  if (tl.match(/money|finance|invest|income|business/)) s += 1.0;
-  if (tl.match(/viral|trending|2026|growth/)) s += 0.6;
-  if (tl.length < 20) s += 0.3;
-  return Math.min(9.9, parseFloat(s.toFixed(1)));
+/* ─────────────────────────────────────────────
+   TREND SCORE LOOKUP
+   Replaces the old keyword-heuristic calcScore().
+   Searches _allTrends for any trend whose topic
+   overlaps with the user's input topic, then uses
+   its real ingested score. Falls back to 6.0
+   (neutral/unknown) so the UI is honest rather
+   than faking confidence it doesn't have.
+───────────────────────────────────────────── */
+function lookupTrendScore(topic) {
+  if (!topic) return { score: 6.0, trend: null };
+  var tl = topic.toLowerCase().trim();
+
+  // 1. Exact match first
+  var exact = _allTrends.find(function(t) {
+    return t.topic.toLowerCase() === tl;
+  });
+  if (exact) return { score: exact.score, trend: exact };
+
+  // 2. Substring match — topic contains a known trend or vice versa
+  var partial = _allTrends.find(function(t) {
+    var ttl = t.topic.toLowerCase();
+    return tl.includes(ttl) || ttl.includes(tl);
+  });
+  if (partial) return { score: partial.score, trend: partial };
+
+  // 3. Word overlap — at least 2 content words in common
+  var inputWords = tl.split(/\s+/).filter(function(w) { return w.length > 3; });
+  if (inputWords.length >= 2) {
+    var best = null, bestOverlap = 0;
+    _allTrends.forEach(function(t) {
+      var tWords = t.topic.toLowerCase().split(/\s+/);
+      var overlap = inputWords.filter(function(w) { return tWords.includes(w); }).length;
+      if (overlap >= 2 && overlap > bestOverlap) { best = t; bestOverlap = overlap; }
+    });
+    if (best) return { score: best.score, trend: best };
+  }
+
+  // 4. No match — return neutral score (honest: we don't know)
+  return { score: 6.0, trend: null };
 }
 
 async function generateIdea() {
@@ -1968,14 +2027,32 @@ async function fullGenerate() {
   errEl.classList.remove('visible');
   document.getElementById('genLoadingMsg').textContent = 'Dijo is building your content package for "' + topic + '"…';
 
-  var score = calcScore(topic);
+  // Look up real trend score — falls back to 6.0 (neutral) if topic not in current trends
+  var lookup   = lookupTrendScore(topic);
+  var score    = lookup.score;
+  var trend    = lookup.trend;   // the matched trend object, or null if no match
+  var scoreIsReal = !!trend;     // true = backed by live ingested data
+
   updateHint(score);
   var scColor = score >= 9 ? 'var(--green)' : score >= 8 ? 'var(--gold)' : score >= 7 ? 'var(--blue2)' : 'var(--text2)';
-  var verdict = score >= 9 ? '🔥 Exceptional' : score >= 8 ? '⚡ Strong opportunity' : score >= 7 ? '📈 Good momentum' : '💡 Emerging';
+  var verdict = score >= 9 ? '🔥 Exceptional'
+    : score >= 8 ? '⚡ Strong opportunity'
+    : score >= 7 ? '📈 Good momentum'
+    : scoreIsReal ? '💡 Emerging' : '💡 Not in current trends';
+
   document.getElementById('previewScore').textContent = score.toFixed(1);
   document.getElementById('previewScore').style.color = scColor;
   document.getElementById('previewVerdict').textContent = verdict;
   document.getElementById('previewVerdict').style.color = scColor;
+
+  // Show a small "score source" footnote so user knows if it's real or neutral
+  var scoreNote = document.getElementById('previewScoreNote');
+  if (scoreNote) {
+    scoreNote.textContent = scoreIsReal
+      ? '📡 Live score — matched "' + trend.topic + '" (' + trend.platLabel + ')'
+      : '⚪ No trend match — score is neutral (6.0)';
+    scoreNote.style.color = scoreIsReal ? 'var(--text3)' : 'rgba(var(--text3-rgb, 120,120,120),.7)';
+  }
 
   ['outHook', 'outCaption', 'outOutline'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -1986,16 +2063,23 @@ async function fullGenerate() {
   try {
     var nicheCtx = niche ? '\nNiche: ' + niche + '.' : '';
 
-    // Inject real trend data if available for this topic
-    var trend = _allTrends.find(function(t) { return t.topic.toLowerCase() === topic.toLowerCase(); });
+    // Use the trend already found by lookupTrendScore above — no second lookup needed.
+    // If it matched a related topic (not exact), note that in context so Dijo is accurate.
     var trendExtra = '';
     if (trend) {
-      trendExtra = '\n\nReal trend data:'
+      var matchNote = trend.topic.toLowerCase() !== topic.toLowerCase()
+        ? ' (matched related trend: "' + trend.topic + '")'
+        : '';
+      trendExtra = '\n\nReal live trend data' + matchNote + ':'
         + '\n- Platform: ' + trend.platLabel
+        + (trend.dataSource ? ' · Source: ' + _dataSourceLabel(trend) : '')
+        + '\n- Trend score: ' + trend.score + '/10 (live ingested)'
         + '\n- Views: ' + fmtN(trend.totalViews)
         + '\n- Video count: ' + trend.videoCount
-        + '\n- Trend score: ' + trend.score + '/10'
-        + (trend.hashtags.length ? '\n- Suggested hashtags: ' + trend.hashtags.join(', ') : '');
+        + '\n- Status: ' + (trend.status || 'rising')
+        + (trend.hashtags && trend.hashtags.length ? '\n- Trending hashtags: ' + trend.hashtags.join(', ') : '');
+    } else {
+      trendExtra = '\n\nTrend data: Topic not found in current trend database — write evergreen content.';
     }
 
     var prompt =
