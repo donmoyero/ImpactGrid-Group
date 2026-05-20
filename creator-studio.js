@@ -980,13 +980,8 @@ function renderDashTrends() {
  // Show analytical insight cards — the "why" behind Top Opportunities 
  // One best pick per platform with velocity classification + action hint.
  var best = getBest3(_allTrends);
- var picks = [best.tiktok, best.youtube, best.google].filter(Boolean);
-
- if (picks.length < 3) {
- var usedTopics = new Set(picks.map(function(t) { return t.topic; }));
- var extras = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
- while (picks.length < 3 && extras.length) picks.push(extras.shift());
- }
+ // Use top3 — best 3 by score regardless of platform (no forced TikTok slot)
+ var picks = best.top3 || [best.tiktok, best.youtube, best.google].filter(Boolean);
 
  var platColors = { tt: '#ff6464', tt_proxy: '#ff9090', yt: '#FFD700', gt: '#78b4ff', cross: '#4FB3A5' };
  var insightLabels = [' Top Signal', ' Strong Pick', ' Worth Watching'];
@@ -1004,10 +999,9 @@ function renderDashTrends() {
  : cls === 'early' ? '#4FB3A5'
  : 'var(--text3)';
  var actionHint = t.plat === 'tt' ? 'Post a 30–60s hook video today'
- : t.plat === 'tt_proxy' ? 'TikTok signal via YouTube — validate before posting'
  : t.plat === 'yt' ? 'Best for a 5–10 min explainer'
- : t.plat === 'cross' ? 'Works across TikTok + YouTube'
- : 'High search demand — SEO content wins';
+ : t.plat === 'cross' ? 'Works across multiple platforms'
+ : 'High search demand — great for SEO content';
  var vidMeta = t.videoCount > 0
  ? fmtN(t.videoCount) + ' videos · ' + fmtN(t.totalViews) + ' views'
  : t.platLabel + ' trend data';
@@ -1611,26 +1605,16 @@ async function loadOpportunities() {
 function renderDashOpps() {
  if (!_allTrends.length) return;
  var best = getBest3(_allTrends);
- var platOrder = [
- { trend: best.youtube, src: 'youtube' },
- { trend: best.tiktok, src: 'tiktok' },
- { trend: best.google, src: 'google' }
- ].filter(function(p) { return p.trend; });
- if (platOrder.length < 3) {
- var usedTopics = new Set(platOrder.map(function(p) { return p.trend.topic; }));
- var extras = _allTrends.filter(function(t) { return !usedTopics.has(t.topic); });
- while (platOrder.length < 3 && extras.length) {
- var e = extras.shift();
- platOrder.push({ trend: e, src: e.plat === 'yt' ? 'youtube' : e.plat === 'tt' ? 'tiktok' : e.plat === 'cross' ? 'cross' : 'google' });
- }
- }
- renderOpportunities(platOrder.map(function(p) {
+ // Use top3 — no forced TikTok slot, just the 3 highest scoring trends
+ var top3 = best.top3 || [best.youtube, best.tiktok, best.google].filter(Boolean);
+ renderOpportunities(top3.map(function(t) {
+ var src = t.plat === 'yt' ? 'youtube' : t.plat === 'tt' || t.plat === 'tt_proxy' ? 'tiktok' : t.plat === 'cross' ? 'cross' : 'google';
  return {
- topic: p.trend.topic,
- platform_source: p.src,
- _score: p.trend.score,
- status: p.trend.status,
- video_count: p.trend.videoCount
+ topic: t.topic,
+ platform_source: src,
+ _score: t.score,
+ status: t.status,
+ video_count: t.videoCount
  };
  }));
 }
