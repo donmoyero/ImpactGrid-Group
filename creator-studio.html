@@ -1482,5 +1482,114 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+
+
+<style>
+/* ── MOBILE: hide tabs-bar, sidebar becomes a drawer ── */
+@media (max-width: 768px) {
+
+  /* Kill the horizontal tab strip — sidebar handles nav */
+  .tabs-bar { display: none !important; }
+
+  /* Sidebar: normally sits in flow on desktop; on mobile it slides in */
+  .app-sidebar {
+    position: fixed !important;
+    top: 0; left: 0;
+    width: 280px !important;
+    height: 100dvh !important;
+    z-index: 9999;
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: none;
+  }
+  .app-sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 40px rgba(0,0,0,.22);
+  }
+
+  /* The mob-overlay already exists in the HTML — just activate it */
+  #mobOverlay {
+    position: fixed !important;
+    inset: 0;
+    background: rgba(0,0,0,.48);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 9998;
+    display: none !important;
+  }
+  #mobOverlay.active { display: block !important; }
+
+  /* Main content full width */
+  .app-layout { display: block !important; }
+  .app-main { width: 100% !important; }
+}
+@media (min-width: 769px) {
+  .app-sidebar { transform: none !important; }
+}
+</style>
+
+<script>
+/* ── MOBILE SIDEBAR — works alongside nav.js ──
+   nav.js renders the hamburger and may define openSidebar/closeSidebar.
+   We define our own if nav.js hasn't, and hook the hamburger after nav renders. */
+(function () {
+
+  function _open() {
+    document.querySelector('.app-sidebar')?.classList.add('sidebar-open');
+    document.getElementById('mobOverlay')?.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function _close() {
+    document.querySelector('.app-sidebar')?.classList.remove('sidebar-open');
+    document.getElementById('mobOverlay')?.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Expose — nav.js may call these, or already defines them; don't overwrite if present
+  if (typeof window.openSidebar !== 'function')  window.openSidebar  = _open;
+  if (typeof window.closeSidebar !== 'function') window.closeSidebar = _close;
+
+  // Close sidebar when overlay is tapped
+  document.getElementById('mobOverlay')?.addEventListener('click', _close);
+
+  // Close sidebar when a tab item is tapped on mobile
+  document.addEventListener('click', function (e) {
+    if (window.innerWidth > 768) return;
+    if (e.target.closest('.sb-item[data-tab], a.sb-item')) setTimeout(_close, 140);
+  });
+
+  // Hook hamburger — nav.js fires 'ig-nav-ready' when it's done rendering
+  function hookHamburger() {
+    var nav = document.getElementById('ig-nav');
+    if (!nav) return false;
+    // nav.js typically adds class 'ig-hamburger' or aria-label containing "menu"
+    var btn = nav.querySelector('.ig-hamburger, [data-hamburger], [aria-label*="enu" i], button.nav-menu-btn');
+    if (!btn) {
+      // Fallback: any button whose text is a hamburger glyph
+      btn = Array.from(nav.querySelectorAll('button')).find(function(b){
+        return /[☰≡☰]/.test(b.textContent) || b.innerHTML.includes('M4 6h16M4 12h16M4 18h16');
+      });
+    }
+    if (btn && !btn._igMobileHooked) {
+      btn._igMobileHooked = true;
+      btn.addEventListener('click', function (e) { e.stopPropagation(); _open(); });
+      return true;
+    }
+    return false;
+  }
+
+  document.addEventListener('ig-nav-ready', function () { setTimeout(hookHamburger, 30); });
+
+  // Also poll — catches cases where nav.js doesn't fire the event
+  var _attempts = 0;
+  var _iv = setInterval(function () {
+    if (hookHamburger() || ++_attempts > 80) clearInterval(_iv);
+  }, 100);
+
+})();
+</script>
+
 </body>
 </html>
