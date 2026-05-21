@@ -124,8 +124,11 @@
 
 <div class="app-layout">
 
+ <!-- MOBILE SIDEBAR OVERLAY -->
+ <div class="app-sidebar-overlay" id="appSidebarOverlay" onclick="closeAppSidebar()"></div>
+
  <!-- SIDEBAR -->
- <div class="app-sidebar">
+ <div class="app-sidebar" id="appSidebar">
  <aside class="sidebar">
  <div class="sb-close-btn">
  <div class="sb-close-inner">
@@ -1271,14 +1274,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="calendar.js" defer></script>
 <script>
-// Nav — deferred, so wait for it (same pattern as index.html)
-if (typeof renderNav === 'function') {
-  renderNav('creator-studio.html');
-} else {
-  document.addEventListener('DOMContentLoaded', function() {
-    if (typeof renderNav === 'function') renderNav('creator-studio.html');
-  });
-}
+// Nav — wait for nav.js defer to finish before calling renderNav
+window.addEventListener('load', function() {
+  if (typeof renderNav === 'function') renderNav('creator-studio.html');
+});
 </script>
 
 <script>
@@ -1322,6 +1321,57 @@ if (typeof renderNav === 'function') {
  var observer = new MutationObserver(function() { scanAll(); });
  observer.observe(document.body, { childList: true, subtree: true });
 })();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════
+   APP SIDEBAR — mobile slide-in via hamburger
+   openAppSidebar / closeAppSidebar are called by
+   the overlay onclick and the hamburger button.
+═══════════════════════════════════════════════ */
+function openAppSidebar() {
+  var sidebar = document.getElementById('appSidebar');
+  var overlay = document.getElementById('appSidebarOverlay');
+  if (sidebar) sidebar.classList.add('open');
+  if (overlay) overlay.classList.add('open');
+  document.body.style.overflow = 'hidden'; // prevent background scroll
+}
+
+function closeAppSidebar() {
+  var sidebar = document.getElementById('appSidebar');
+  var overlay = document.getElementById('appSidebarOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Hijack nav.js hamburger — on this page it opens the APP sidebar,
+// not the nav.js mobile sidebar.
+window.addEventListener('load', function() {
+  var hamburger = document.getElementById('hamburger');
+  if (hamburger) {
+    // Remove any existing listeners by cloning the node
+    var newHamburger = hamburger.cloneNode(true);
+    hamburger.parentNode.replaceChild(newHamburger, hamburger);
+    newHamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openAppSidebar();
+    });
+  }
+});
+
+// Close app sidebar when a tab is clicked inside it (mobile UX)
+document.addEventListener('click', function(e) {
+  var item = e.target.closest('.sb-item[data-tab]');
+  if (item && window.innerWidth <= 1000) {
+    closeAppSidebar();
+  }
+});
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeAppSidebar();
+});
 </script>
 
 </body>
