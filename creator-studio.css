@@ -1139,3 +1139,49 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   display: flex;
   flex-direction: column;
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE APP SIDEBAR — slides in via hamburger
+   Desktop (>1000px): sidebar always visible (shared.css)
+   Mobile (≤1000px):  hidden off-screen, opens on demand
+═══════════════════════════════════════════════ */
+@media (max-width: 1000px) {
+
+  /* Re-enable the sidebar but hide it off-screen */
+  .app-sidebar {
+    display: block !important;
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 900;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    /* Account for ticker above topbar */
+    top: calc(var(--tick-h) + var(--topbar-h));
+  }
+
+  /* Slide in when open */
+  .app-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Dim overlay behind sidebar */
+  .app-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    top: calc(var(--tick-h) + var(--topbar-h));
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 899;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .app-sidebar-overlay.open {
+    display: block;
+  }
+}
