@@ -473,6 +473,10 @@ function _softPlanCheck() {
   try { plan = (window.igUser && window.igUser.plan) ? window.igUser.plan : (localStorage.getItem('ig_plan') || 'free'); } catch(e) {}
   try { aiUses = (window.igUser && typeof window.igUser.aiUses === 'number') ? window.igUser.aiUses : parseInt(localStorage.getItem('ig_ai_uses') || '0'); } catch(e) {}
 
+  // Admin email is ground truth — bypass regardless of plan field in DB
+  var _csEmail = (window.igUser && window.igUser.email) || '';
+  if (_csEmail === 'admin@impactgridgroup.com' || plan === 'admin') return;
+
   // Increment local use counter
   aiUses++;
   try { localStorage.setItem('ig_ai_uses', String(aiUses)); } catch(e) {}
@@ -486,12 +490,15 @@ function _softPlanCheck() {
     } catch(e) {}
   }
 
-  // Get limit from plan-config.js or fallback
-  var limit = 3;
+  // Get limit from plan-config.js (single source of truth).
+  // Hardcoded fallbacks mirror plan-config.js exactly — only used if script hasn't loaded.
+  var limit = 3; // free fallback
   if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) {
     limit = window.IG_PLAN_CONFIG[plan].ai_uses;
   } else if (plan === 'professional') { limit = 100; }
-  else if (plan === 'enterprise' || plan === 'admin') { limit = Infinity; }
+  else if (plan === 'enterprise')     { limit = Infinity; }
+  // admin already returned early above — this line is a safety net only
+  else if (plan === 'admin')          { return; }
 
   if (!isFinite(limit)) return; // enterprise/admin — no gate
 
