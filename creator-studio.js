@@ -2322,6 +2322,11 @@ async function fullGenerate() {
  incrementUses();
  }
  toast(' Package generated!');
+
+ // Auto-load audience breakdown using the same topic — no manual input needed
+ var audTopicEl = document.getElementById('audTopic');
+ if (audTopicEl) audTopicEl.value = topic;
+ loadAudience();
  } catch(e) {
  errEl.classList.add('visible');
  errEl.textContent = ' ' + (e.message || 'Request failed');
