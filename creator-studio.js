@@ -21,20 +21,72 @@ var _geoDetected = false;
 async function detectUserCountry() {
  if (_geoDetected) return _userCountry;
  _showGeoStatus(' Detecting your location…');
- try {
- var controller = new AbortController();
- var timer = setTimeout(function() { controller.abort(); }, 4000); // 4 s timeout
- var res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
- clearTimeout(timer);
- var data = await res.json();
- if (data && data.country_code) {
- _userCountry = data.country_code; // e.g. 'US', 'NG', 'DE'
- _userCountryName = data.country_name || data.country_code;
- console.log('[Geo] Detected country:', _userCountry, '(' + _userCountryName + ')');
+
+ // Ordered list of geo providers — tries each in turn until one succeeds.
+ // All are free, no-key, and support CORS from any origin.
+ var GEO_PROVIDERS = [
+  {
+   url: 'https://cloudflare.com/cdn-cgi/trace',
+   parse: function(text) {
+    // Plain-text k=v format: "loc=GB"
+    var match = text.match(/loc=([A-Z]{2})/);
+    if (!match) return null;
+    return { country_code: match[1], country_name: match[1] };
+   },
+   isJson: false
+  },
+  {
+   url: 'https://get.geojs.io/v1/ip/country.json',
+   parse: function(data) {
+    if (!data || !data.country) return null;
+    return { country_code: data.country, country_name: data.name || data.country };
+   },
+   isJson: true
+  },
+  {
+   url: 'https://freeipapi.com/api/json',
+   parse: function(data) {
+    if (!data || !data.countryCode) return null;
+    return { country_code: data.countryCode, country_name: data.countryName || data.countryCode };
+   },
+   isJson: true
+  },
+  {
+   url: 'https://ipapi.co/json/',
+   parse: function(data) {
+    if (!data || !data.country_code) return null;
+    return { country_code: data.country_code, country_name: data.country_name || data.country_code };
+   },
+   isJson: true
+  }
+ ];
+
+ for (var i = 0; i < GEO_PROVIDERS.length; i++) {
+  var provider = GEO_PROVIDERS[i];
+  try {
+   var controller = new AbortController();
+   var timer = setTimeout(function() { controller.abort(); }, 4000);
+   var res = await fetch(provider.url, { signal: controller.signal });
+   clearTimeout(timer);
+   if (!res.ok) throw new Error('HTTP ' + res.status);
+   var result = provider.isJson ? await res.json() : await res.text();
+   var geo = provider.parse(result);
+   if (geo && geo.country_code) {
+    _userCountry = geo.country_code;
+    _userCountryName = geo.country_name || geo.country_code;
+    console.log('[Geo] Detected via provider ' + i + ':', _userCountry, '(' + _userCountryName + ')');
+    break; // success — stop trying
+   }
+  } catch(e) {
+   console.warn('[Geo] Provider ' + i + ' failed (' + provider.url + '):', e.message);
+   // continue to next provider
+  }
  }
- } catch(e) {
- console.warn('[Geo] Detection failed — defaulting to GB:', e.message);
+
+ if (!_geoDetected && _userCountry === 'GB') {
+  console.warn('[Geo] All providers failed — defaulting to GB');
  }
+
  _geoDetected = true;
  _showGeoStatus(' ' + _userCountryName);
  return _userCountry;
