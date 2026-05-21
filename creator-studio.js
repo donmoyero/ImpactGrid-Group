@@ -22,16 +22,26 @@ async function detectUserCountry() {
  if (_geoDetected) return _userCountry;
  _showGeoStatus(' Detecting your location…');
 
- // Ordered list of geo providers — tries each in turn until one succeeds.
- // All are free, no-key, and support CORS from any origin.
+ var COUNTRY_NAMES = {
+  GB:'United Kingdom', US:'United States', NG:'Nigeria', GH:'Ghana',
+  KE:'Kenya', ZA:'South Africa', DE:'Germany', FR:'France', CA:'Canada',
+  AU:'Australia', IN:'India', BR:'Brazil', AE:'United Arab Emirates',
+  NL:'Netherlands', SE:'Sweden', NO:'Norway', DK:'Denmark', IT:'Italy',
+  ES:'Spain', PL:'Poland', MX:'Mexico', SG:'Singapore', JP:'Japan'
+ };
+
+ function resolveCountryName(code) {
+  return COUNTRY_NAMES[code] || code;
+ }
+
  var GEO_PROVIDERS = [
   {
    url: 'https://cloudflare.com/cdn-cgi/trace',
    parse: function(text) {
-    // Plain-text k=v format: "loc=GB"
     var match = text.match(/loc=([A-Z]{2})/);
     if (!match) return null;
-    return { country_code: match[1], country_name: match[1] };
+    var code = match[1];
+    return { country_code: code, country_name: resolveCountryName(code) };
    },
    isJson: false
   },
@@ -39,7 +49,7 @@ async function detectUserCountry() {
    url: 'https://get.geojs.io/v1/ip/country.json',
    parse: function(data) {
     if (!data || !data.country) return null;
-    return { country_code: data.country, country_name: data.name || data.country };
+    return { country_code: data.country, country_name: data.name || resolveCountryName(data.country) };
    },
    isJson: true
   },
@@ -47,7 +57,7 @@ async function detectUserCountry() {
    url: 'https://freeipapi.com/api/json',
    parse: function(data) {
     if (!data || !data.countryCode) return null;
-    return { country_code: data.countryCode, country_name: data.countryName || data.countryCode };
+    return { country_code: data.countryCode, country_name: data.countryName || resolveCountryName(data.countryCode) };
    },
    isJson: true
   },
@@ -55,12 +65,13 @@ async function detectUserCountry() {
    url: 'https://ipapi.co/json/',
    parse: function(data) {
     if (!data || !data.country_code) return null;
-    return { country_code: data.country_code, country_name: data.country_name || data.country_code };
+    return { country_code: data.country_code, country_name: data.country_name || resolveCountryName(data.country_code) };
    },
    isJson: true
   }
  ];
 
+ var detected = false;
  for (var i = 0; i < GEO_PROVIDERS.length; i++) {
   var provider = GEO_PROVIDERS[i];
   try {
@@ -73,17 +84,17 @@ async function detectUserCountry() {
    var geo = provider.parse(result);
    if (geo && geo.country_code) {
     _userCountry = geo.country_code;
-    _userCountryName = geo.country_name || geo.country_code;
+    _userCountryName = geo.country_name;
     console.log('[Geo] Detected via provider ' + i + ':', _userCountry, '(' + _userCountryName + ')');
-    break; // success — stop trying
+    detected = true;
+    break;
    }
   } catch(e) {
    console.warn('[Geo] Provider ' + i + ' failed (' + provider.url + '):', e.message);
-   // continue to next provider
   }
  }
 
- if (!_geoDetected && _userCountry === 'GB') {
+ if (!detected) {
   console.warn('[Geo] All providers failed — defaulting to GB');
  }
 
