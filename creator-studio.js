@@ -2254,10 +2254,11 @@ async function fullGenerate() {
  AUDIENCE
  */
 async function loadAudience() {
- var topic = document.getElementById('audTopic').value.trim();
+ var audTopicEl = document.getElementById('audTopic');
+ var topic = audTopicEl ? audTopicEl.value.trim() : '';
  if (!topic) { toast(' Enter a topic'); return; }
  var btn = document.getElementById('audBtn');
- btn.disabled = true; btn.textContent = 'Analysing…';
+ if (btn) { btn.disabled = true; btn.textContent = 'Analysing…'; }
  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
  try {
  var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
@@ -2286,7 +2287,7 @@ async function loadAudience() {
  document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
  toast(' Error — try again');
  }
- btn.disabled = false; btn.textContent = 'Analyse';
+ if (btn) { btn.disabled = false; btn.textContent = 'Analyse'; }
 }
 
 function extractAges(text) {
