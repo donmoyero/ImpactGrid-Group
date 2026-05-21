@@ -1180,36 +1180,52 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="creator-ai.js" defer></script>
 <script src="creator-studio.js" defer></script>
 <script>
-/* AUTO-AUDIENCE — fires loadAudience() automatically when fullGenerate() runs */
+/* AUTO-AUDIENCE — syncs topic + fires loadAudience() when fullGenerate() runs */
 (function() {
+  var _hooked = false;
+
+  function syncAndTriggerAudience() {
+    var topicEl = document.getElementById('genTopic');
+    var audTopicEl = document.getElementById('audTopic');
+    var topic = topicEl ? topicEl.value.trim() : '';
+    if (!topic) return;
+    if (audTopicEl) audTopicEl.value = topic;
+    // Fire after a delay to let the content generator render first
+    setTimeout(function() {
+      if (typeof window.loadAudience === 'function') {
+        window.loadAudience();
+      }
+    }, 600);
+  }
+
   function hookAutoAudience() {
     var _orig = window.fullGenerate;
-    if (typeof _orig !== 'function') return false;
+    if (typeof _orig !== 'function' || _hooked) return false;
+    _hooked = true;
     window.fullGenerate = async function() {
-      // Sync topic into audTopic before calling original
+      // Sync topic first
       var topicEl = document.getElementById('genTopic');
       var audTopicEl = document.getElementById('audTopic');
-      if (topicEl && audTopicEl && topicEl.value.trim()) {
-        audTopicEl.value = topicEl.value.trim();
+      if (topicEl && audTopicEl) audTopicEl.value = topicEl.value.trim();
+      // Run original — wrap in try/catch so audience still fires even on error
+      try {
+        var result = await _orig.apply(this, arguments);
+        syncAndTriggerAudience();
+        return result;
+      } catch(e) {
+        syncAndTriggerAudience();
+        throw e;
       }
-      // Run the original generator
-      var result = await _orig.apply(this, arguments);
-      // Auto-trigger audience breakdown after content generates
-      var topic = audTopicEl ? audTopicEl.value.trim() : '';
-      if (topic && typeof window.loadAudience === 'function') {
-        // Small delay so the generator output renders first
-        setTimeout(function() { window.loadAudience(); }, 400);
-      }
-      return result;
     };
     return true;
   }
-  // Try immediately, then retry after scripts load
+
+  // Try immediately, then keep retrying until scripts have loaded
   if (!hookAutoAudience()) {
     var attempts = 0;
-    var interval = setInterval(function() {
-      if (hookAutoAudience() || ++attempts > 40) clearInterval(interval);
-    }, 200);
+    var iv = setInterval(function() {
+      if (hookAutoAudience() || ++attempts > 60) clearInterval(iv);
+    }, 150);
   }
 })();
 </script>
