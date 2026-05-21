@@ -108,6 +108,16 @@ function _showGeoStatus(text) {
  var el = document.getElementById('geoStatus');
  if (el) el.textContent = text;
 
+ // Also update the auto-location pill in the Live Trends panel
+ var autoText = document.getElementById('geoAutoText');
+ var autoLabel = document.getElementById('geoAutoLabel');
+ if (autoText) {
+  autoText.textContent = _geoDetected ? _userCountryName : text.trim();
+  // Hide the spinner once detection is complete
+  var spinner = autoLabel ? autoLabel.querySelector('.spinner') : null;
+  if (spinner) spinner.style.display = _geoDetected ? 'none' : '';
+ }
+
  // Also update ticker geo labels when country is confirmed (not "Detecting…")
  if (_geoDetected || text.indexOf('Detecting') === -1) {
  var countryName = _userCountryName || text.replace(' ', '');
@@ -870,6 +880,24 @@ async function fetchTrends() {
  renderAll();
  }
  } catch(e) { console.error('[fetchTrends] All endpoints failed:', e.message); }
+
+ // If every endpoint failed or returned empty, show an error state with retry
+ if (!_allTrends.length) {
+  var errMsg = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;line-height:1.6">'
+   + ' Could not load trends right now — the server may be waking up (this can take ~30s on first load).<br><br>'
+   + '<a href="#" onclick="fetchTrends();return false" style="color:var(--gold);font-weight:600;text-decoration:none"> Tap to retry</a>'
+   + '</div>';
+  var dashList = document.getElementById('dashTrendList');
+  if (dashList) dashList.innerHTML = errMsg;
+  var trendsList = document.getElementById('trendList');
+  if (trendsList) trendsList.innerHTML = errMsg;
+  var radarBox = document.getElementById('radarGaugesBox');
+  if (radarBox) radarBox.innerHTML = errMsg;
+  var topPickBox = document.getElementById('dijoTopPickBox');
+  if (topPickBox) topPickBox.innerHTML = errMsg;
+  var loadingIndicator = document.getElementById('geoLoadingIndicator');
+  if (loadingIndicator) loadingIndicator.style.display = 'none';
+ }
 }
 
 function _dataSourceLabel(t) {
