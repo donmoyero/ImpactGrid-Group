@@ -3009,3 +3009,42 @@ window.addEventListener('load', async function() {
  }
  }, 5 * 60 * 1000); // 5 min — ingestion runs every 30 min, no need to poll faster
 });
+
+/* ═══════════════════════════════════════════════
+   APP SIDEBAR — mobile slide-in
+═══════════════════════════════════════════════ */
+function openAppSidebar() {
+  document.getElementById('appSidebar').classList.add('open');
+  document.getElementById('appSidebarOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAppSidebar() {
+  document.getElementById('appSidebar').classList.remove('open');
+  document.getElementById('appSidebarOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Hijack hamburger — opens app sidebar on this page instead of nav.js sidebar
+window.addEventListener('load', function() {
+  var hamburger = document.getElementById('hamburger');
+  if (hamburger) {
+    var newHamburger = hamburger.cloneNode(true);
+    hamburger.parentNode.replaceChild(newHamburger, hamburger);
+    newHamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openAppSidebar();
+    });
+  }
+});
+
+// Close when a sidebar tab item is tapped on mobile
+document.addEventListener('click', function(e) {
+  var item = e.target.closest('.sb-item[data-tab]');
+  if (item && window.innerWidth <= 1000) closeAppSidebar();
+});
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeAppSidebar();
+});
