@@ -52,22 +52,28 @@ let _portfoliosLoadPromise = null;
    All plan limits come from plan-config.js (window.IG_PLAN_CONFIG).
    Do NOT define limits here — edit plan-config.js only.
 
-   Portfolio limits (current):
-     free         → 3 portfolios (deleted from DB after 7 days)
-     professional → 1 portfolio  (permanent while subscription active)
-     enterprise   → 3 portfolios (permanent)
+   Portfolio limits (current) — sourced from plan-config.js:
+     free         → 3 portfolios (deleted from DB after 7 days per data_retention_days)
+     professional → 3 portfolios (permanent while subscription active)
+     enterprise   → unlimited    (permanent)
+     admin        → unlimited    (internal)
 
    Generation costs 1 shared AI use (ig_ai_uses, reset monthly).
-   AI limits: free=3/mo, professional=100/mo, enterprise=unlimited.
+   AI limits: free=3/mo, professional=100/mo, enterprise=unlimited, admin=unlimited.
    Both sourced from window.igUser (set by nav.js from profiles DB).
 ─────────────────────────────────────────────────────────────────────── */
 const PS_ADMIN_EMAIL = "admin@impactgridgroup.com";
 
-/* Read limits from plan-config.js — fall back to safe defaults if not loaded yet */
+/* Read limits from plan-config.js — fall back to safe defaults if not loaded yet.
+   Fallbacks mirror plan-config.js exactly so limits never silently drift.
+   portfolios:0 was wrong — free plan is 3, and blocking at 0 gates everyone if config is slow. */
 function _getPlanCfg(plan) {
   if (plan === 'admin') return { portfolios: Infinity, ai_uses: Infinity };
-  return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
-    || { portfolios: 0, ai_uses: 3 };
+  if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) return window.IG_PLAN_CONFIG[plan];
+  // Hard fallbacks — only used if plan-config.js hasn't loaded yet (should never happen in prod)
+  if (plan === 'enterprise')   return { portfolios: Infinity, ai_uses: Infinity };
+  if (plan === 'professional') return { portfolios: 3,        ai_uses: 100 };
+  return                              { portfolios: 3,        ai_uses: 3   }; // free
 }
 
 function _getPlan() {
