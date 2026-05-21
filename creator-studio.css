@@ -1365,3 +1365,251 @@ html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
     display: block;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   PREMIUM UPGRADE v3.0 — Blank-space fix + design
+   polish for desktop & mobile
+═══════════════════════════════════════════════ */
+
+/* ── Fix blank space at the bottom ─────────────
+   The panel needs padding-bottom to push content
+   above the fixed nav bar (64px) + some breathing
+   room. On mobile the nav height may differ.       */
+.panel {
+  padding-bottom: calc(var(--nav-h, 64px) + 32px);
+}
+@media (max-width: 860px) {
+  .panel {
+    padding-bottom: calc(var(--nav-h, 64px) + 48px);
+  }
+}
+/* content-area itself needs enough room to scroll to the bottom */
+.content-area {
+  padding-bottom: 0;
+  /* ensure the scrollable area fills all available flex height */
+  min-height: 0;
+}
+
+/* ── Scrollbar — thinner, more refined ─────── */
+.content-area::-webkit-scrollbar { width: 5px; }
+.content-area::-webkit-scrollbar-track { background: transparent; }
+.content-area::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 99px;
+}
+.content-area::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ── Card — premium depth + micro-shadow ────── */
+.card {
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+.card:hover { box-shadow: var(--shadow); }
+
+/* ── Card header — slightly richer ──────────── */
+.card-header {
+  background: linear-gradient(180deg, var(--card2) 0%, var(--card) 100%);
+}
+[data-theme="dark"] .card-header {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+}
+
+/* ── Stat cards — glass shimmer on hover ────── */
+.stat-card {
+  background: linear-gradient(135deg, var(--card) 60%, var(--card2));
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(201,126,8,0.04));
+  pointer-events: none;
+}
+.stat-card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+  border-color: var(--gold-glo);
+}
+
+/* ── Tabs bar — premium gradient background ─── */
+.tabs-bar {
+  background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%);
+  border-bottom: 1px solid var(--border2);
+  padding-top: 12px;
+}
+.tab-btn.active {
+  background: var(--bg);
+  font-weight: 700;
+  border-color: var(--border2);
+  border-bottom-color: var(--bg);
+  box-shadow: 0 -2px 0 0 var(--gold) inset;
+}
+.tab-btn:hover:not(.active) {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Sidebar — premium feel ─────────────────── */
+.sidebar {
+  background: linear-gradient(180deg, var(--bg2) 0%, var(--bg3) 100%);
+  border-right: 1px solid var(--border);
+}
+[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #0d1017 0%, #07090f 100%);
+}
+
+/* ── Sidebar items ─────────────────────────── */
+.sb-item {
+  position: relative;
+  border-radius: 9px;
+  transition: background var(--transition), color var(--transition);
+}
+.sb-item.active {
+  background: linear-gradient(135deg, var(--gold-dim) 0%, rgba(201,126,8,0.05));
+  border: 1px solid var(--gold-glo);
+}
+.sb-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 25%; bottom: 25%;
+  width: 3px; border-radius: 0 3px 3px 0;
+  background: var(--gold);
+}
+
+/* ── Trend items — premium hover ──────────── */
+.trend-item {
+  transition: all 0.18s ease;
+  border-radius: 12px;
+}
+.trend-item:hover {
+  background: linear-gradient(135deg, var(--card) 0%, var(--bg2));
+  border-color: var(--gold-glo);
+  transform: translateX(2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Creator Chat card — richer ──────────── */
+#dashCommFeed {
+  padding: 4px 0 8px;
+}
+#dashCommFeed > div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  transition: background var(--transition);
+}
+#dashCommFeed > div:hover {
+  background: var(--card2);
+  border-color: var(--border2);
+}
+#dashCommName, #dashCommText {
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+#dashCommName:focus, #dashCommText:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px var(--gold-dim);
+  outline: none;
+}
+
+/* ── Dijo briefing card — premium glow ───── */
+.dijo-briefing-card {
+  background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 22px;
+  overflow: hidden;
+  position: relative;
+}
+.dijo-briefing-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2), transparent);
+  border-radius: 16px 16px 0 0;
+}
+
+/* ── Quick launch cards ───────────────────── */
+.quick-launch-card {
+  background: linear-gradient(135deg, var(--card) 0%, var(--card2));
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+.quick-launch-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: var(--gold-glo);
+}
+
+/* ── Button polish ────────────────────────── */
+.btn-primary, .cal-autofill-btn, .gen-btn, .dl-btn {
+  box-shadow: 0 4px 14px var(--gold-glo);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-primary:hover, .cal-autofill-btn:hover, .gen-btn:hover, .dl-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--gold-glo);
+}
+.btn-primary:active, .cal-autofill-btn:active, .gen-btn:active, .dl-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px var(--gold-glo);
+}
+
+/* ── Ticker — premium shimmer ──────────────── */
+.ticker {
+  background: linear-gradient(90deg, var(--gold-dim) 0%, rgba(201,126,8,0.04) 50%, var(--gold-dim) 100%);
+}
+
+/* ── Mobile: fill height better ─────────────
+   On narrow screens there can be a gap because
+   the app-layout calc loses a few pixels with
+   the nav bar injected by nav.js. Force stretch.  */
+@media (max-width: 1000px) {
+  .app-layout {
+    height: auto;
+    min-height: calc(100vh - var(--tick-h) - var(--topbar-h) - var(--nav-h, 64px));
+    flex: 1;
+  }
+  .main {
+    min-height: 0;
+    flex: 1;
+  }
+  .content-area {
+    flex: 1;
+    overflow-y: auto;
+  }
+}
+
+/* ── Two-col right column: fix on large screens */
+@media (min-width: 1101px) {
+  .two-col {
+    grid-template-columns: 1fr 380px;
+    align-items: start;
+  }
+}
+
+/* ── Stat grid: fill space on big screens ────  */
+@media (min-width: 1200px) {
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ── Section spacing — eliminate dead space ─── */
+.panel > *:last-child { margin-bottom: 0; }
+.two-col > div:last-child > *:last-child { margin-bottom: 0; }
+
+/* ── Panel animation — smoother ────────────── */
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Card titles — emoji spacing ────────────── */
+.card-title { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+}
