@@ -337,6 +337,10 @@
       font-family: var(--fb);
     }
 
+    .s-nav-btn-danger { color: var(--red, #e74c3c) !important; }
+    .s-nav-btn-danger:hover { background: rgba(231,76,60,.08) !important; color: var(--red, #e74c3c) !important; }
+    .s-nav-link { display: flex; }
+
     /* Avatar circle in settings showing animal emoji */
     .av-circle.av-animal {
       font-size: 38px;
@@ -604,6 +608,16 @@
         <div class="s-nav-group">Billing</div>
         <button class="s-nav-btn" data-panel="plan">
           <span class="s-nav-icon">⭐</span>Plan &amp; Usage
+        </button>
+
+        <div class="s-nav-group">Account Access</div>
+        <!-- Login link (shown when logged out) -->
+        <a href="login.html" class="s-nav-btn s-nav-link" id="sidebarLoginBtn" style="text-decoration:none;display:none">
+          <span class="s-nav-icon">🔑</span>Login
+        </a>
+        <!-- Logout button (shown when logged in) -->
+        <button class="s-nav-btn s-nav-btn-danger" id="sidebarLogoutBtn" onclick="igSignOut()" style="display:none">
+          <span class="s-nav-icon">🚪</span>Sign Out
         </button>
       </aside>
 
@@ -1166,6 +1180,33 @@
       if (typeof window.checkAuth === 'function') window.checkAuth();
       initSettings();
       buildActivityLog();
+    });
+
+    /* ─── Sidebar Login / Logout auth-aware wiring ─── */
+    function _updateSidebarAuth(loggedIn) {
+      var loginBtn  = document.getElementById('sidebarLoginBtn');
+      var logoutBtn = document.getElementById('sidebarLogoutBtn');
+      if (loginBtn)  loginBtn.style.display  = loggedIn ? 'none' : 'flex';
+      if (logoutBtn) logoutBtn.style.display = loggedIn ? 'flex' : 'none';
+    }
+    document.addEventListener('ig-user-ready', function() { _updateSidebarAuth(true);  });
+    document.addEventListener('ig-nav-ready',  function() {
+      // Check session state already resolved
+      if (window.igUser) { _updateSidebarAuth(true); }
+      else {
+        try {
+          var plan = localStorage.getItem('ig_plan');
+          if (plan) _updateSidebarAuth(true);
+          else _updateSidebarAuth(false);
+        } catch(e) { _updateSidebarAuth(false); }
+      }
+    });
+    // Fallback: run after DOMContentLoaded in case events already fired
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        var loggedIn = !!(window.igUser || (function(){ try { return localStorage.getItem('ig_plan'); } catch(e){} })());
+        _updateSidebarAuth(loggedIn);
+      }, 600);
     });
 
     /* ─── Sidebar tabs ─── */
