@@ -2,7 +2,7 @@
  IMPACTGRID CREATOR STUDIO — creator-studio.js
  Merged & deduplicated — aligned to HTML IDs
  v2.1 — Mobile fixes: hamburger X animation,
- sidebar close button, swipe-to-close
+ mobile nav via nav.js
  */
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
@@ -29,7 +29,6 @@ async function detectUserCountry() {
   NL:'Netherlands', SE:'Sweden', NO:'Norway', DK:'Denmark', IT:'Italy',
   ES:'Spain', PL:'Poland', MX:'Mexico', SG:'Singapore', JP:'Japan'
  };
-
  function resolveCountryName(code) {
   return COUNTRY_NAMES[code] || code;
  }
@@ -260,23 +259,19 @@ function updateBriefing(trends) {
  */
 
 /* 
- TABS — matches HTML's switchTab(name, sidebarItem)
+ TABS
  */
-function switchTab(name, sidebarItem) {
+function switchTab(name) {
  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
  document.querySelectorAll('.tab-btn:not(.tab-soon)').forEach(function(b) { b.classList.remove('active'); });
- document.querySelectorAll('.sb-item').forEach(function(i) { i.classList.remove('active'); });
 
  var panel = document.getElementById('panel-' + name);
  if (panel) panel.classList.add('active');
  var tb = document.getElementById('tab-' + name);
  if (tb) tb.classList.add('active');
- if (sidebarItem) sidebarItem.classList.add('active');
 
  var ca = document.getElementById('contentArea');
  if (ca) ca.scrollTop = 0;
-
- closeSidebar();
 
  if (name === 'trends' && _allTrends.length) renderFullTrends();
  if (name === 'evaluator') initEvaluator();
@@ -285,43 +280,7 @@ function switchTab(name, sidebarItem) {
  }
 }
 
-/* 
- STUDIO SIDEBAR (app drawer — #sidebar)
- These functions control the studio's own left
- sidebar (#sidebar), which is separate from
- nav.js's mobile drawer (#mobSidebar).
- nav.js owns window.openSidebar / window.closeSidebar
- for the marketing nav — we must not overwrite those.
- Instead we define studioOpenSidebar / studioCloseSidebar
- and also call nav's version so both drawers stay in sync.
- */
-function studioOpenSidebar() {
- var sb = document.getElementById('sidebar');
- var ov = document.getElementById('mobOverlay');
- var ham = document.querySelector('.hamburger');
- if (sb) sb.classList.add('open');
- if (ov) ov.classList.add('open');
- if (ham) ham.classList.add('is-open');
- document.body.style.overflow = 'hidden';
-}
-function studioCloseSidebar() {
- var sb = document.getElementById('sidebar');
- var ov = document.getElementById('mobOverlay');
- var ham = document.querySelector('.hamburger');
- if (sb) sb.classList.remove('open');
- if (ov) ov.classList.remove('open');
- if (ham) ham.classList.remove('is-open');
- // Also close nav's mobile drawer if it snuck open
- var mobSb = document.getElementById('mobSidebar');
- if (mobSb) mobSb.classList.remove('open');
- document.body.style.overflow = '';
-}
-/* Keep bare names working for HTML onclick="openSidebar()" attributes
- on the studio page — these shadow nav.js's globals only on this page,
- but nav.js's #mobSidebar is not used on creator-studio.html so there
- is no conflict: the studio uses #sidebar, not #mobSidebar. */
-window.openSidebar = studioOpenSidebar;
-window.closeSidebar = studioCloseSidebar;
+
 
 /* 
  USER MENU
@@ -419,7 +378,8 @@ function checkAccess() {
  // AI use limit — uses canUse() from auth.js (covers all plans, not just free)
  if (!canUse('ai_uses')) {
  var _plan = getPlan();
- var _planLabel = _plan.charAt(0).toUpperCase() + _plan.slice(1);
+ // Use igPlanLabel() from plan-config.js as single source of truth for display labels
+ var _planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(_plan) : (_plan.charAt(0).toUpperCase() + _plan.slice(1));
  var _limit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) ? window.IG_PLAN_CONFIG[_plan].ai_uses : 3;
  if (typeof window.showPlanGate === 'function') {
  window.showPlanGate({
@@ -493,6 +453,7 @@ function showUpgrade(message) {
 })();
 
 async function checkCarouselAccess() {
+ // Admin always bypasses all limits
  if (isAdmin()) return true;
 
  if (!getUser()) {
@@ -500,8 +461,25 @@ async function checkCarouselAccess() {
  return false;
  }
 
- if (!canUse('carousel')) {
- showUpgrade('Upgrade for unlimited carousels');
+ // Read carousel limit directly from plan-config.js (single source of truth).
+ // canUse('carousel') used a broken key — correct key is 'carousels'.
+ var _cPlan = getPlan();
+ var _carouselLimit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_cPlan])
+ ? window.IG_PLAN_CONFIG[_cPlan].carousels
+ : 3; // safe free-plan default if config not loaded
+ var _carouselUsed = parseInt(localStorage.getItem('ig_carousel_count') || '0') || 0;
+
+ if (isFinite(_carouselLimit) && _carouselUsed >= _carouselLimit) {
+ var _cLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(_cPlan) : _cPlan;
+ if (typeof window.showPlanGate === 'function') {
+ window.showPlanGate({
+ icon: '🎠',
+ title: 'Carousel limit reached',
+ subtitle: _cLabel + ' plan includes ' + _carouselLimit + ' carousel' + (_carouselLimit !== 1 ? 's' : '') + '. Upgrade to create more.'
+ });
+ } else {
+ showUpgrade('Upgrade for more carousels');
+ }
  return false;
  }
 
@@ -1934,7 +1912,7 @@ function updateHint(score) {
 
 /* 
  PLATFORM STATUS — FIX 5
- Reads /ingestion/status and lights up sidebar dots
+ Reads /ingestion/status and lights up platform indicators
  TikTok = velocity engine YouTube = validation 
  */
 async function loadPlatformStatus() {
@@ -2317,10 +2295,11 @@ async function fullGenerate() {
  AUDIENCE
  */
 async function loadAudience() {
- var topic = document.getElementById('audTopic').value.trim();
+ var audTopicEl = document.getElementById('audTopic');
+ var topic = audTopicEl ? audTopicEl.value.trim() : '';
  if (!topic) { toast(' Enter a topic'); return; }
  var btn = document.getElementById('audBtn');
- btn.disabled = true; btn.textContent = 'Analysing…';
+ if (btn) { btn.disabled = true; btn.textContent = 'Analysing…'; }
  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
  try {
  var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
@@ -2349,7 +2328,7 @@ async function loadAudience() {
  document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
  toast(' Error — try again');
  }
- btn.disabled = false; btn.textContent = 'Analyse';
+ if (btn) { btn.disabled = false; btn.textContent = 'Analyse'; }
 }
 
 function extractAges(text) {
@@ -2854,11 +2833,6 @@ function toast(msg) {
  KEYBOARD SHORTCUTS
  */
 document.addEventListener('keydown', function(e) {
- if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('sb-item')) {
- e.preventDefault();
- e.target.click();
- }
- if (e.key === 'Escape') closeSidebar();
 });
 
 /* 
@@ -2882,32 +2856,7 @@ document.addEventListener('keydown', function(e) {
  }
 })();
 
-/* 
- SWIPE TO CLOSE SIDEBAR (touch devices)
- */
-(function() {
- var startX = 0, startY = 0, isDragging = false;
 
- document.addEventListener('touchstart', function(e) {
- var sb = document.getElementById('sidebar');
- if (!sb || !sb.classList.contains('open')) return;
- startX = e.touches[0].clientX;
- startY = e.touches[0].clientY;
- isDragging = true;
- }, { passive: true });
-
- document.addEventListener('touchmove', function(e) {
- if (!isDragging) return;
- var dx = e.touches[0].clientX - startX;
- var dy = Math.abs(e.touches[0].clientY - startY);
- if (dx < -30 && dy < 60) {
- closeSidebar();
- isDragging = false;
- }
- }, { passive: true });
-
- document.addEventListener('touchend', function() { isDragging = false; }, { passive: true });
-})();
 
 /* 
  CONTENT CALENDAR
