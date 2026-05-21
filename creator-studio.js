@@ -917,7 +917,6 @@ function trendItemHTML(t) {
  + '</div>';
 
  return '<div class="trend-item" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
- + '<div class="ti-header">'
  + '<div class="ti-rank">#' + t.rank + '</div>'
  + '<div class="ti-info">'
  + '<div class="ti-topic">' + escH(t.topic) + '</div>'
@@ -925,9 +924,8 @@ function trendItemHTML(t) {
  + '<div class="ti-badge">' + badge + '</div>'
  + srcHtml
  + '</div>'
- + '<div class="ti-plat ' + platCls + '">' + escH(t.platLabel) + '</div>'
- + '</div>'
  + '<div class="ti-bar-wrap"><div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%"></div></div><div class="ti-score">' + t.score.toFixed(1) + '/10</div></div>'
+ + '<div class="ti-plat ' + platCls + '">' + escH(t.platLabel) + '</div>'
  + '</div>';
 }
 
@@ -1036,8 +1034,8 @@ function renderDashTrends() {
  + '</div>';
 
  return '<div class="trend-item" style="cursor:pointer;position:relative;overflow:hidden" onclick="loadTopic(\'' + escJ(t.topic) + '\')">'
+ // animated progress stripe behind the card
  + '<div style="position:absolute;top:0;left:0;height:3px;width:' + pct + '%;background:' + color + ';border-radius:3px 3px 0 0;transition:width 1s ease"></div>'
- + '<div class="ti-header">'
  + '<div class="ti-rank" style="color:' + color + '">' + escH(insightLabels[idx] || ('#' + (idx + 1))) + '</div>'
  + '<div class="ti-info">'
  + '<div class="ti-topic">' + escH(t.topic) + '</div>'
@@ -1046,12 +1044,11 @@ function renderDashTrends() {
  + '<div style="font-size:10px;color:var(--text3);margin-top:2px;font-style:italic">' + escH(actionHint) + '</div>'
  + srcHtml
  + '</div>'
- + '<div class="ti-plat" style="background:' + color + '20;color:' + color + ';border:1px solid ' + color + '40">' + escH(t.platLabel) + '</div>'
- + '</div>'
  + '<div class="ti-bar-wrap">'
  + '<div class="ti-bar"><div class="ti-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
  + '<div class="ti-score" style="color:' + color + '">' + t.score.toFixed(1) + '</div>'
  + '</div>'
+ + '<div class="ti-plat" style="background:' + color + '20;color:' + color + ';border:1px solid ' + color + '40">' + escH(t.platLabel) + '</div>'
  + '</div>';
  }).join('');
 }
