@@ -356,8 +356,7 @@ function checkAccess() {
  // AI use limit — uses canUse() from auth.js (covers all plans, not just free)
  if (!canUse('ai_uses')) {
  var _plan = getPlan();
- // Use igPlanLabel() from plan-config.js as single source of truth for display labels
- var _planLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(_plan) : (_plan.charAt(0).toUpperCase() + _plan.slice(1));
+ var _planLabel = _plan.charAt(0).toUpperCase() + _plan.slice(1);
  var _limit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) ? window.IG_PLAN_CONFIG[_plan].ai_uses : 3;
  if (typeof window.showPlanGate === 'function') {
  window.showPlanGate({
@@ -431,7 +430,6 @@ function showUpgrade(message) {
 })();
 
 async function checkCarouselAccess() {
- // Admin always bypasses all limits
  if (isAdmin()) return true;
 
  if (!getUser()) {
@@ -439,25 +437,8 @@ async function checkCarouselAccess() {
  return false;
  }
 
- // Read carousel limit directly from plan-config.js (single source of truth).
- // canUse('carousel') used a broken key — correct key is 'carousels'.
- var _cPlan = getPlan();
- var _carouselLimit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_cPlan])
- ? window.IG_PLAN_CONFIG[_cPlan].carousels
- : 3; // safe free-plan default if config not loaded
- var _carouselUsed = parseInt(localStorage.getItem('ig_carousel_count') || '0') || 0;
-
- if (isFinite(_carouselLimit) && _carouselUsed >= _carouselLimit) {
- var _cLabel = (typeof igPlanLabel === 'function') ? igPlanLabel(_cPlan) : _cPlan;
- if (typeof window.showPlanGate === 'function') {
- window.showPlanGate({
- icon: '🎠',
- title: 'Carousel limit reached',
- subtitle: _cLabel + ' plan includes ' + _carouselLimit + ' carousel' + (_carouselLimit !== 1 ? 's' : '') + '. Upgrade to create more.'
- });
- } else {
- showUpgrade('Upgrade for more carousels');
- }
+ if (!canUse('carousel')) {
+ showUpgrade('Upgrade for unlimited carousels');
  return false;
  }
 
@@ -2273,11 +2254,10 @@ async function fullGenerate() {
  AUDIENCE
  */
 async function loadAudience() {
- var audTopicEl = document.getElementById('audTopic');
- var topic = audTopicEl ? audTopicEl.value.trim() : '';
+ var topic = document.getElementById('audTopic').value.trim();
  if (!topic) { toast(' Enter a topic'); return; }
  var btn = document.getElementById('audBtn');
- if (btn) { btn.disabled = true; btn.textContent = 'Analysing…'; }
+ btn.disabled = true; btn.textContent = 'Analysing…';
  document.getElementById('audOutput').innerHTML = '<div style="text-align:center;padding:28px;color:var(--text3)"><span class="spinner spinner-gold"></span> Analysing…</div>';
  try {
  var prompt = 'Audience breakdown for topic: "' + topic + '"\n\nProvide:\n1. Age groups with % (e.g. 18-24: 35%)\n2. Gender split\n3. Top 5 interests\n4. Platform affinity: YouTube %, TikTok %, Instagram %, Google %\n5. Best hook angle\n\nBe specific and data-informed.';
@@ -2306,7 +2286,7 @@ async function loadAudience() {
  document.getElementById('audOutput').innerHTML = '<div style="padding:20px;color:var(--text3)">Dijo unavailable — try again.</div>';
  toast(' Error — try again');
  }
- if (btn) { btn.disabled = false; btn.textContent = 'Analyse'; }
+ btn.disabled = false; btn.textContent = 'Analyse';
 }
 
 function extractAges(text) {
