@@ -375,8 +375,12 @@ function checkAccess() {
  // Admin bypass
  if (isAdmin()) return true;
 
- // Not logged in
- if (!getUser()) {
+ // Not logged in — check BOTH auth sources before deciding the user is logged out.
+ // getUser() comes from auth.js (Supabase session) and window.igUser comes from
+ // nav.js (_loadProfile). On fresh login these resolve at different times.
+ // If either confirms the user is logged in, do NOT show the login/upgrade wall.
+ var _isLoggedIn = !!(getUser() || window.igUser);
+ if (!_isLoggedIn) {
  if (typeof window.showUpgradeBar_gate === 'function') {
  window.showUpgradeBar_gate('Create an account to save and unlock more', false);
  } else {
@@ -422,7 +426,7 @@ function showUpgrade(message) {
 
  var bar = document.createElement('div');
  bar.id = 'upgradeBar';
- var isLoggedIn = !!getUser();
+ var isLoggedIn = !!(getUser() || window.igUser);
 
  bar.innerHTML =
  '<div class="upgrade-inner">'
@@ -474,7 +478,7 @@ async function checkCarouselAccess() {
  // Admin always bypasses all limits
  if (isAdmin()) return true;
 
- if (!getUser()) {
+ if (!(getUser() || window.igUser)) {
  showUpgrade('Login required to create carousels');
  return false;
  }
