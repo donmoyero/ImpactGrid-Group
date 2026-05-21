@@ -15,10 +15,16 @@
   /* ── Helpers ──────────────────────────────────────────── */
   var _ADMIN_EMAIL = 'admin@impactgridgroup.com';
   function getPlan() {
-    // Email is ground truth — admin email always returns 'admin' plan
+    // Admin email is always ground truth — bypasses all plan limits
     var email = (window.igUser && window.igUser.email) || '';
     if (email === _ADMIN_EMAIL) return 'admin';
-    if (window.igUser && window.igUser.plan) return window.igUser.plan;
+    // igUser.plan set by auth.js after login
+    if (window.igUser && window.igUser.plan) {
+      var p = window.igUser.plan;
+      // Validate against known plans in config — reject unknown values
+      if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[p]) return p;
+      return p; // still return it even if config not loaded yet
+    }
     try { return localStorage.getItem('ig_plan') || 'free'; } catch(e) { return 'free'; }
   }
 
@@ -28,8 +34,17 @@
   }
 
   function planCfg(plan) {
-    return (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan])
-      || { label: 'Free', ai_uses: 3, carousels: 3, portfolios: 3, stripe_link: null };
+    // Always read from plan-config.js (single source of truth).
+    // Fallback values only used if plan-config.js hasn't loaded yet — should never happen in prod.
+    if (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[plan]) return window.IG_PLAN_CONFIG[plan];
+    // Hard fallbacks mirror plan-config.js exactly
+    var _fallbacks = {
+      free:         { label: 'Free',         ai_uses: 3,        carousels: 3,        portfolios: 3,        adviser: 0,   evaluator: 3,  content_plan: 3,  support: 'None',            stripe_link: null },
+      professional: { label: 'Professional', ai_uses: 100,      carousels: 10,       portfolios: 3,        adviser: 10,  evaluator: 10, content_plan: 99, support: 'Email',           stripe_link: 'https://buy.stripe.com/cNiaEQgYEgpO0Akgik8N206' },
+      enterprise:   { label: 'Enterprise',   ai_uses: Infinity, carousels: Infinity, portfolios: Infinity, adviser: Infinity, evaluator: Infinity, content_plan: Infinity, support: 'Priority (24hr)', stripe_link: 'https://buy.stripe.com/28E28k4bS8Xmera2ru8N207' },
+      admin:        { label: 'Admin',        ai_uses: Infinity, carousels: Infinity, portfolios: Infinity, adviser: Infinity, evaluator: Infinity, content_plan: Infinity, support: 'Internal',        stripe_link: null }
+    };
+    return _fallbacks[plan] || _fallbacks.free;
   }
 
   function esc(s) {
@@ -38,6 +53,7 @@
 
   /* ── Plan upgrade path ────────────────────────────────── */
   function nextPlan(current) {
+    if (current === 'admin') return null; // admin is never prompted to upgrade
     if (current === 'free')         return 'professional';
     if (current === 'professional') return 'enterprise';
     return null; // enterprise / admin — already at top
@@ -425,6 +441,7 @@
 
   /* ── PUBLIC: SHOW MODAL ───────────────────────────────── */
   window.showPlanGate = function (opts) {
+    if (getPlan() === 'admin') return; // admin sees no gates
     injectModal();
     buildModalContent(opts || {});
     var modal = document.getElementById('igPlanGate');
@@ -449,6 +466,7 @@
   var _barTimer = null;
 
   window.showUpgradeBar_gate = function (message, isLoggedIn, opts) {
+    if (getPlan() === 'admin') return; // admin never sees upgrade prompts
     injectModal();
     opts = opts || {};
 
