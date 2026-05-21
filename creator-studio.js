@@ -2,7 +2,7 @@
  IMPACTGRID CREATOR STUDIO — creator-studio.js
  Merged & deduplicated — aligned to HTML IDs
  v2.1 — Mobile fixes: hamburger X animation,
- sidebar close button, swipe-to-close
+ mobile nav via nav.js
  */
 
 var DIJO = 'https://impactgrid-dijo.onrender.com';
@@ -197,23 +197,19 @@ function updateBriefing(trends) {
  */
 
 /* 
- TABS — matches HTML's switchTab(name, sidebarItem)
+ TABS
  */
-function switchTab(name, sidebarItem) {
+function switchTab(name) {
  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
  document.querySelectorAll('.tab-btn:not(.tab-soon)').forEach(function(b) { b.classList.remove('active'); });
- document.querySelectorAll('.sb-item').forEach(function(i) { i.classList.remove('active'); });
 
  var panel = document.getElementById('panel-' + name);
  if (panel) panel.classList.add('active');
  var tb = document.getElementById('tab-' + name);
  if (tb) tb.classList.add('active');
- if (sidebarItem) sidebarItem.classList.add('active');
 
  var ca = document.getElementById('contentArea');
  if (ca) ca.scrollTop = 0;
-
- closeSidebar();
 
  if (name === 'trends' && _allTrends.length) renderFullTrends();
  if (name === 'evaluator') initEvaluator();
@@ -222,43 +218,7 @@ function switchTab(name, sidebarItem) {
  }
 }
 
-/* 
- STUDIO SIDEBAR (app drawer — #sidebar)
- These functions control the studio's own left
- sidebar (#sidebar), which is separate from
- nav.js's mobile drawer (#mobSidebar).
- nav.js owns window.openSidebar / window.closeSidebar
- for the marketing nav — we must not overwrite those.
- Instead we define studioOpenSidebar / studioCloseSidebar
- and also call nav's version so both drawers stay in sync.
- */
-function studioOpenSidebar() {
- var sb = document.getElementById('sidebar');
- var ov = document.getElementById('mobOverlay');
- var ham = document.querySelector('.hamburger');
- if (sb) sb.classList.add('open');
- if (ov) ov.classList.add('open');
- if (ham) ham.classList.add('is-open');
- document.body.style.overflow = 'hidden';
-}
-function studioCloseSidebar() {
- var sb = document.getElementById('sidebar');
- var ov = document.getElementById('mobOverlay');
- var ham = document.querySelector('.hamburger');
- if (sb) sb.classList.remove('open');
- if (ov) ov.classList.remove('open');
- if (ham) ham.classList.remove('is-open');
- // Also close nav's mobile drawer if it snuck open
- var mobSb = document.getElementById('mobSidebar');
- if (mobSb) mobSb.classList.remove('open');
- document.body.style.overflow = '';
-}
-/* Keep bare names working for HTML onclick="openSidebar()" attributes
- on the studio page — these shadow nav.js's globals only on this page,
- but nav.js's #mobSidebar is not used on creator-studio.html so there
- is no conflict: the studio uses #sidebar, not #mobSidebar. */
-window.openSidebar = studioOpenSidebar;
-window.closeSidebar = studioCloseSidebar;
+
 
 /* 
  USER MENU
@@ -1890,7 +1850,7 @@ function updateHint(score) {
 
 /* 
  PLATFORM STATUS — FIX 5
- Reads /ingestion/status and lights up sidebar dots
+ Reads /ingestion/status and lights up platform indicators
  TikTok = velocity engine YouTube = validation 
  */
 async function loadPlatformStatus() {
@@ -2811,11 +2771,6 @@ function toast(msg) {
  KEYBOARD SHORTCUTS
  */
 document.addEventListener('keydown', function(e) {
- if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('sb-item')) {
- e.preventDefault();
- e.target.click();
- }
- if (e.key === 'Escape') closeSidebar();
 });
 
 /* 
@@ -2839,32 +2794,7 @@ document.addEventListener('keydown', function(e) {
  }
 })();
 
-/* 
- SWIPE TO CLOSE SIDEBAR (touch devices)
- */
-(function() {
- var startX = 0, startY = 0, isDragging = false;
 
- document.addEventListener('touchstart', function(e) {
- var sb = document.getElementById('sidebar');
- if (!sb || !sb.classList.contains('open')) return;
- startX = e.touches[0].clientX;
- startY = e.touches[0].clientY;
- isDragging = true;
- }, { passive: true });
-
- document.addEventListener('touchmove', function(e) {
- if (!isDragging) return;
- var dx = e.touches[0].clientX - startX;
- var dy = Math.abs(e.touches[0].clientY - startY);
- if (dx < -30 && dy < 60) {
- closeSidebar();
- isDragging = false;
- }
- }, { passive: true });
-
- document.addEventListener('touchend', function() { isDragging = false; }, { passive: true });
-})();
 
 /* 
  CONTENT CALENDAR
