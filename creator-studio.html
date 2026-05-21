@@ -209,8 +209,14 @@
  </div>
  <div class="card" style="display:flex;align-items:center;gap:12px;">
  <div data-ig-avatar class="u-av"></div>
- <div>
- <div id="dijoGreeting" data-ig-greeting class="text-sm"></div>
+ <div style="flex:1;min-width:0">
+ <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap;">
+ <div id="dijoGreeting" data-ig-greeting class="text-sm" style="margin:0"></div>
+ <span id="overviewLocationPill" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace;background:rgba(201,126,8,.08);border:1px solid rgba(201,126,8,.18);border-radius:20px;padding:2px 9px;color:var(--gold);white-space:nowrap;flex-shrink:0;">
+ <span style="width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;animation:meterPulse 1.8s ease-in-out infinite;display:inline-block"></span>
+ <span id="overviewLocationLabel">Detecting…</span>
+ </span>
+ </div>
  <div id="dijoBrief" class="text-sm"></div>
  </div>
  </div>
@@ -486,10 +492,13 @@
  <!-- LIVE TREND -->
  <div class="panel" id="panel-trends">
 
- <!-- LOCATION SELECTOR -->
+ <!-- LOCATION SELECTOR — auto-detected, manual override available -->
  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
- <label style="font-size:12px;font-weight:600;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;"> Location</label>
- <select id="geoSelector" onchange="changeGeo(this)" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text1);font-size:13px;padding:6px 10px;cursor:pointer;font-family:'Syne',sans-serif;">
+ <span id="geoAutoTag" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:'DM Mono',monospace;background:rgba(201,126,8,.08);border:1px solid rgba(201,126,8,.2);border-radius:20px;padding:4px 11px;color:var(--gold);white-space:nowrap;">
+ <span style="width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;animation:meterPulse 1.8s ease-in-out infinite;display:inline-block"></span>
+ <span id="geoAutoLabel">Detecting…</span>
+ </span>
+ <select id="geoSelector" onchange="changeGeo(this)" title="Override detected location" style="background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;padding:5px 9px;cursor:pointer;font-family:'DM Mono',monospace;opacity:.7;">
  <option value="GB"> United Kingdom</option>
  <option value="US"> United States</option>
  <option value="AU"> Australia</option>
@@ -1379,6 +1388,109 @@ document.addEventListener('DOMContentLoaded', function() {
  // Watch for dynamically injected trend cards
  var observer = new MutationObserver(function() { scanAll(); });
  observer.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
+
+<script>
+/* ============================================================
+   AUTO GEO DETECTION + SYNC
+   1. Polls for _userCountry (set by creator-studio.js)
+   2. Once known, syncs #geoSelector, #geoAutoLabel, #overviewLocationLabel
+   3. changeGeo() is defined here so the select onchange works
+   4. Falls back to GB after 6 seconds if detection never resolves
+   ============================================================ */
+(function() {
+
+  /* Map ISO code → display name + flag */
+  var GEO_NAMES = {
+    GB: '🇬🇧 United Kingdom', US: '🇺🇸 United States', AU: '🇦🇺 Australia',
+    CA: '🇨🇦 Canada', IE: '🇮🇪 Ireland', ZA: '🇿🇦 South Africa',
+    NG: '🇳🇬 Nigeria', IN: '🇮🇳 India', DE: '🇩🇪 Germany',
+    FR: '🇫🇷 France', ES: '🇪🇸 Spain', IT: '🇮🇹 Italy',
+    NL: '🇳🇱 Netherlands', BR: '🇧🇷 Brazil', MX: '🇲🇽 Mexico',
+    JP: '🇯🇵 Japan', KR: '🇰🇷 South Korea', SG: '🇸🇬 Singapore'
+  };
+
+  function geoDisplayName(code) {
+    return GEO_NAMES[code] || ('🌍 ' + code);
+  }
+
+  /* Update all location UI elements */
+  function syncGeoUI(code) {
+    var name = geoDisplayName(code);
+    var sel = document.getElementById('geoSelector');
+    var autoLabel = document.getElementById('geoAutoLabel');
+    var overviewLabel = document.getElementById('overviewLocationLabel');
+    if (sel) sel.value = code;
+    if (autoLabel) autoLabel.textContent = name;
+    if (overviewLabel) overviewLabel.textContent = name;
+  }
+
+  /* Called by #geoSelector onchange (manual override) */
+  window.changeGeo = function(selectEl) {
+    var code = selectEl ? selectEl.value : (document.getElementById('geoSelector') || {}).value || 'GB';
+    if (typeof window._userCountry !== 'undefined') window._userCountry = code;
+    syncGeoUI(code);
+    /* Reload trends if the trends panel function exists */
+    if (typeof window.loadTrends === 'function') window.loadTrends(code);
+    else if (typeof window.renderTrends === 'function') window.renderTrends();
+    /* Update status badge in cross-platform chart */
+    var badge = document.getElementById('geoStatusBadge');
+    if (badge) badge.textContent = geoDisplayName(code);
+  };
+
+  /* Poll for _userCountry being set by creator-studio.js */
+  var polls = 0;
+  var maxPolls = 60; /* 6 seconds */
+
+  function pollForCountry() {
+    polls++;
+    var code = (typeof window._userCountry !== 'undefined' && window._userCountry)
+                ? window._userCountry : null;
+    if (code) {
+      syncGeoUI(code);
+      /* Also update geo status badge */
+      var badge = document.getElementById('geoStatusBadge');
+      if (badge) badge.textContent = geoDisplayName(code);
+      return;
+    }
+    if (polls >= maxPolls) {
+      /* Fallback: default to GB */
+      syncGeoUI('GB');
+      return;
+    }
+    setTimeout(pollForCountry, 100);
+  }
+
+  /* Also hook detectUserCountry if it exists — wraps it so we sync after it resolves */
+  function hookDetect() {
+    var _orig = window.detectUserCountry;
+    if (typeof _orig !== 'function') return false;
+    window.detectUserCountry = async function() {
+      var result = await _orig.apply(this, arguments);
+      var code = (typeof window._userCountry !== 'undefined' && window._userCountry) || 'GB';
+      syncGeoUI(code);
+      var badge = document.getElementById('geoStatusBadge');
+      if (badge) badge.textContent = geoDisplayName(code);
+      return result;
+    };
+    return true;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    /* Try to hook immediately, retry a few times if scripts haven't loaded yet */
+    if (!hookDetect()) {
+      var attempts = 0;
+      var iv = setInterval(function() {
+        if (hookDetect() || ++attempts > 40) clearInterval(iv);
+      }, 150);
+    }
+    /* Start polling regardless — covers the case where detectUserCountry
+       already ran before our hook */
+    setTimeout(pollForCountry, 300);
+  });
+
 })();
 </script>
 
