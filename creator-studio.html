@@ -99,59 +99,10 @@
 </style>
 
 <style>
-/* ── Creator Studio — mobile sidebar (matches nav.js exactly) ──
-   nav.js openSidebar(): adds class "open" to #sidebar + #studioOverlay
-   nav.js closeSidebar(): removes class "open" from both              */
-
-@media (max-width: 768px) {
-
-  /* Hide the horizontal tab strip — sidebar is nav on mobile */
+/* Hide horizontal tab strip on mobile — nav.js #mobSidebar handles navigation */
+@media (max-width: 860px) {
   .tabs-bar { display: none !important; }
-
-  /* Full-width content area */
-  .app-layout { display: block !important; }
-  .app-main   { width: 100% !important; }
-
-  /* Sidebar: hidden off-screen, slides in when nav.js adds .open */
-  .app-sidebar {
-    position: fixed !important;
-    top: 0; left: 0;
-    width: 82vw !important;
-    max-width: 300px;
-    height: 100dvh !important;
-    z-index: 9999;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    transform: translateX(-100%);
-    transition: transform .28s cubic-bezier(.4,0,.2,1),
-                box-shadow .28s;
-    box-shadow: none;
-  }
-  /* nav.js adds .open to #sidebar */
-  #sidebar.open {
-    transform: translateX(0) !important;
-    box-shadow: 6px 0 40px rgba(0,0,0,.25) !important;
-  }
 }
-
-@media (min-width: 769px) {
-  /* Desktop: sidebar sits in normal flow, no transform */
-  .app-sidebar { transform: none !important; position: relative !important; }
-  #studioOverlay { display: none !important; }
-}
-
-/* Studio overlay — same style as mob-overlay in shared.css */
-#studioOverlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.48);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  z-index: 9998;
-  cursor: pointer;
-}
-#studioOverlay.open { display: block; }
 </style>
 </head>
 <body>
@@ -182,7 +133,7 @@
 
  <!-- SIDEBAR -->
  <div class="app-sidebar">
- <aside class="sidebar" id="sidebar">
+ <aside class="sidebar" id="studioSidebar">
  <div class="sb-close-btn">
  <div class="sb-close-inner">
  <img src="logo.png" alt="ImpactGrid" onerror="this.style.display='none'"/>
@@ -1103,7 +1054,6 @@
 </div><!-- /.app-layout -->
 
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
-<div id="studioOverlay" onclick="closeSidebar()"></div>
 <div class="toast-shelf" id="toastShelf"></div>
 
 <!-- DOWNLOAD BAR (bottom, app-store style) -->
@@ -1540,6 +1490,101 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 
+
+
+<script>
+/* Wire nav.js mobile sidebar links to creator-studio tabs.
+   When a mob-nav link points to creator-studio.html?tab=X (or just has
+   data we can infer), click the matching tab button instead of navigating. */
+document.addEventListener('click', function(e) {
+  var link = e.target.closest('#mobSidebar a');
+  if (!link) return;
+  var href = link.getAttribute('href') || '';
+  var tabMatch = href.match(/[?&]tab=([^&]+)/);
+  if (!tabMatch) return;
+  var tab = tabMatch[1];
+  var btn = document.querySelector('[data-tab="' + tab + '"].tab-btn, #tab-' + tab);
+  if (btn) {
+    e.preventDefault();
+    btn.click();
+    if (typeof window.closeSidebar === 'function') window.closeSidebar();
+  }
+});
+</script>
+
+
+<script>
+(function () {
+  var TABS = [
+    { tab: 'dashboard',  label: 'My Overview',        badge: 'Live' },
+    { tab: 'trends',     label: "What's Trending",    badge: '' },
+    { tab: 'generator',  label: 'Write My Content',   badge: '' },
+    { tab: 'evaluator',  label: 'Analyse My Channel', badge: 'AI' },
+    { tab: 'calendar',   label: 'Content Calendar',   badge: '' },
+    { tab: 'youtube',    label: 'YouTube',             badge: '' },
+    { tab: 'tiktok',     label: 'TikTok',              badge: '' },
+  ];
+
+  function injectStudioNav() {
+    var sidebar = document.getElementById('mobSidebar');
+    if (!sidebar || sidebar.querySelector('#studioMobNav')) return;
+
+    var links = TABS.map(function(t) {
+      return '<a href="#" id="mob-tab-' + t.tab + '" data-studio-tab="' + t.tab + '">'
+        + t.label
+        + (t.badge ? ' <span style="font-size:9px;font-weight:700;letter-spacing:.06em;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glo);border-radius:20px;padding:1px 6px;margin-left:4px">' + t.badge + '</span>' : '')
+        + '</a>';
+    }).join('');
+
+    var section = '<div id="studioMobNav" class="mob-nav" style="border-top:1px solid var(--border);padding-top:8px;">'
+      + '<div style="padding:4px 12px 6px;font-family:var(--fm);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Creator Studio</div>'
+      + links
+      + '</div>';
+
+    // Insert before .mob-auth section
+    var auth = sidebar.querySelector('.mob-auth');
+    if (auth) auth.insertAdjacentHTML('beforebegin', section);
+    else sidebar.insertAdjacentHTML('beforeend', section);
+
+    // Mark the active tab
+    updateActiveTab();
+  }
+
+  function updateActiveTab() {
+    var active = document.querySelector('.tab-btn.active');
+    var activeTab = active ? active.getAttribute('data-tab') : 'dashboard';
+    document.querySelectorAll('[data-studio-tab]').forEach(function(a) {
+      a.classList.toggle('active', a.getAttribute('data-studio-tab') === activeTab);
+    });
+  }
+
+  // Handle tab link clicks
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('[data-studio-tab]');
+    if (!link) return;
+    e.preventDefault();
+    var tab = link.getAttribute('data-studio-tab');
+    var btn = document.getElementById('tab-' + tab)
+           || document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+    if (btn) btn.click();
+    if (typeof window.closeSidebar === 'function') window.closeSidebar();
+    // Update active state
+    document.querySelectorAll('[data-studio-tab]').forEach(function(a) {
+      a.classList.toggle('active', a === link);
+    });
+  });
+
+  // Inject after nav.js renders
+  document.addEventListener('ig-nav-ready', function() {
+    setTimeout(injectStudioNav, 40);
+  });
+  // Fallback poll in case ig-nav-ready already fired
+  var _i = 0, _iv = setInterval(function() {
+    if (document.getElementById('mobSidebar')) { injectStudioNav(); clearInterval(_iv); }
+    if (++_i > 50) clearInterval(_iv);
+  }, 100);
+})();
+</script>
 
 </body>
 </html>
