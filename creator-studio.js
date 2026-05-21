@@ -385,6 +385,14 @@ function checkAccess() {
  return false;
  }
 
+ // FIX: If igUser exists but aiUses hasn't been hydrated from Supabase yet
+ // (undefined means the profile load is still in-flight), allow the action
+ // through. canUse() should never treat a missing value as "limit reached".
+ if (window.igUser && typeof window.igUser.aiUses === 'undefined') {
+ console.warn('[checkAccess] aiUses not yet loaded — allowing action (will recheck on next call)');
+ return true;
+ }
+
  // AI use limit — uses canUse() from auth.js (covers all plans, not just free)
  if (!canUse('ai_uses')) {
  var _plan = getPlan();
@@ -393,7 +401,7 @@ function checkAccess() {
  var _limit = (window.IG_PLAN_CONFIG && window.IG_PLAN_CONFIG[_plan]) ? window.IG_PLAN_CONFIG[_plan].ai_uses : 3;
  if (typeof window.showPlanGate === 'function') {
  window.showPlanGate({
- icon: '',
+ icon: '🚀',
  title: 'Monthly AI limit reached',
  subtitle: "You've used all " + _limit + " AI generations on the " + _planLabel + " plan. Upgrade to keep creating."
  });
@@ -2154,7 +2162,8 @@ function lookupTrendScore(topic) {
 }
 
 async function generateIdea() {
- if (!checkAccess()) return;
+ // checkAccess() is called inside fullGenerate() — do not call it twice here.
+ // A double-check means igUser hydration timing issues cause false blocks.
  await fullGenerate();
 }
 
