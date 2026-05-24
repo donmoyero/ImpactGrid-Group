@@ -3094,3 +3094,220 @@ document.addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeAppSidebar();
 });
+
+
+/* ================================================================
+   LIVE REDDIT HERO SLIDESHOW
+   Moved inline from creator-studio-hero.js — no separate file needed.
+   Reads DIJO, _userCountry, _allTrends, loadTopic() from this file.
+================================================================ */
+(function () {
+  'use strict';
+
+  var SLIDE_DURATION   = 7000;
+  var REFRESH_INTERVAL = 30 * 60 * 1000;
+  var MAX_SLIDES       = 8;
+
+  var _slides       = [];
+  var _currentSlide = 0;
+  var _slideTimer   = null;
+  var _initialized  = false;
+
+  var GRAD_PALETTE = [
+    'linear-gradient(135deg,#1a0a1e 0%,#3d1a4f 50%,#c13584 100%)',
+    'linear-gradient(135deg,#07090f 0%,#1a2744 50%,#2d5be3 100%)',
+    'linear-gradient(135deg,#0a1a0a 0%,#1a3a1a 50%,#0fa876 100%)',
+    'linear-gradient(135deg,#1a1208 0%,#3d2a08 50%,#c97e08 100%)',
+    'linear-gradient(135deg,#1a0a0a 0%,#3d1010 50%,#ff4040 100%)',
+    'linear-gradient(135deg,#0d1a2d 0%,#1a3355 50%,#4f8ef7 100%)',
+    'linear-gradient(135deg,#1a0f00 0%,#3d2200 50%,#ff8c00 100%)',
+    'linear-gradient(135deg,#0f0f1a 0%,#1a1a3a 50%,#8b5cf6 100%)',
+  ];
+
+  /* ── FETCH SLIDES ─────────────────────────────────────────── */
+  async function fetchSlides() {
+    var geo  = (typeof _userCountry !== 'undefined' ? _userCountry : null) || 'GB';
+    var base = (typeof DIJO !== 'undefined' ? DIJO : 'https://impactgrid-dijo.onrender.com');
+
+    try {
+      var res = await fetch(base + '/trends/reddit-feed?geo=' + geo + '&limit=' + MAX_SLIDES + '&ts=' + Date.now());
+      if (res.ok) {
+        var data = await res.json();
+        if (data.ok && data.slides && data.slides.length) {
+          console.log('[CSHero] Reddit feed loaded:', data.slides.length, 'slides');
+          return data.slides;
+        }
+      }
+    } catch (e) {
+      console.warn('[CSHero] reddit-feed failed:', e.message);
+    }
+
+    // Fallback: use _allTrends already loaded by this file
+    if (typeof _allTrends !== 'undefined' && _allTrends.length) {
+      console.warn('[CSHero] Falling back to _allTrends');
+      return _allTrends.slice(0, MAX_SLIDES).map(function (t, i) {
+        return {
+          id:       'trend_' + i,
+          topic:    t.topic,
+          imageUrl: null,
+          subreddit: t.platLabel || 'Trending',
+          score:    Math.round((t.score || 5) * 10),
+          growth:   t.velocityScore >= 70 ? '+320%' : t.velocityScore >= 50 ? '+145%' : '+65%',
+          platform: t.platLabel || 'Trending',
+          recency:  t.detectedAt ? _cshRecency(t.detectedAt) : '',
+        };
+      });
+    }
+
+    // Final fallback — always renders, no server needed
+    return [
+      { id:'fb_1', topic:'AI Action Figure Trend',  growth:'+340%', platform:'TikTok Buzz',    subreddit:'r/TikTok',        score:92, imageUrl:null, recency:'live' },
+      { id:'fb_2', topic:'GRWM Aesthetic Vlog',      growth:'+210%', platform:'YouTube Signal', subreddit:'r/CreatorEcon',   score:81, imageUrl:null, recency:'live' },
+      { id:'fb_3', topic:'Football Edit Reels',      growth:'+185%', platform:'TikTok Buzz',    subreddit:'r/soccer',        score:78, imageUrl:null, recency:'live' },
+      { id:'fb_4', topic:'Fashion Aesthetic Dumps',  growth:'+155%', platform:'Reddit Signal',  subreddit:'r/femalefashion', score:74, imageUrl:null, recency:'live' },
+      { id:'fb_5', topic:'Day-in-the-Life Creator',  growth:'+130%', platform:'YouTube Signal', subreddit:'r/YouTubers',     score:70, imageUrl:null, recency:'live' },
+    ];
+  }
+
+  /* ── RENDER ───────────────────────────────────────────────── */
+  function renderHero() {
+    var container = document.getElementById('csHeroSlider');
+    if (!container) return;
+
+    if (!_slides.length) {
+      container.innerHTML = '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">'
+        + '<div style="font-size:13px;color:var(--text3);">Fetching live trends…</div>'
+        + '<button onclick="cshRefresh()" style="padding:8px 18px;border-radius:999px;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;font-size:12px;">Retry</button>'
+        + '</div>';
+      return;
+    }
+
+    var slidesHtml = _slides.map(function (slide, i) {
+      var imgLayer = slide.imageUrl
+        ? '<div class="csh-img" style="background-image:url(\'' + _cshEscUrl(slide.imageUrl) + '\')"></div>'
+        : '<div class="csh-img-gradient" style="background:' + GRAD_PALETTE[i % GRAD_PALETTE.length] + '"></div>';
+      var scoreColor = slide.score >= 80 ? '#0fa876' : slide.score >= 60 ? 'var(--gold)' : 'rgba(255,255,255,.5)';
+      return '<div class="csh-slide' + (i === 0 ? ' active' : '') + '" id="cshSlide' + i + '">'
+        + imgLayer
+        + '<div class="csh-grad"></div>'
+        + '<div class="csh-scan"></div>'
+        + '<div class="csh-content">'
+        +   '<div class="csh-source"><span class="csh-live-dot"></span>' + _cshEscH(slide.subreddit || slide.platform) + (slide.recency ? ' · ' + _cshEscH(slide.recency) : '') + '</div>'
+        +   '<div class="csh-title">' + _cshEscH(slide.topic) + '</div>'
+        +   '<div class="csh-stats">'
+        +     '<div class="csh-stat"><span class="csh-stat-val green">' + _cshEscH(slide.growth) + '</span><span class="csh-stat-lbl">this week</span></div>'
+        +     '<div class="csh-stat"><span class="csh-stat-val" style="color:' + scoreColor + '">' + slide.score + '/100</span><span class="csh-stat-lbl">score</span></div>'
+        +     '<div class="csh-stat"><span class="csh-stat-val" style="color:rgba(255,255,255,.5)">' + _cshEscH(slide.platform) + '</span></div>'
+        +   '</div>'
+        +   '<div class="csh-cta"><button class="csh-btn-gen" onclick="loadTopic(\'' + _cshEscJ(slide.topic) + '\')">⚡ Generate my post</button></div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    var greetHtml = '<div class="csh-greeting"><div class="csh-greeting-text">— <span class="csh-greeting-name" id="cshGreetName">Creator</span></div></div>';
+    var dotsHtml  = '<div class="csh-nav">' + _slides.map(function(_, i){ return '<button class="csh-dot' + (i===0?' active':'') + '" onclick="cshGoTo(' + i + ')"></button>'; }).join('') + '</div>';
+    var progHtml  = '<div class="csh-progress"><div class="csh-progress-fill" id="cshProgressFill"></div></div>';
+
+    container.innerHTML = slidesHtml + greetHtml + dotsHtml + progHtml;
+    _cshApplyGreeting();
+    cshGoTo(0);
+    _cshStartSlideshow();
+  }
+
+  /* ── CONTROLS ─────────────────────────────────────────────── */
+  window.cshGoTo = function (idx) {
+    var slides = document.querySelectorAll('.csh-slide');
+    var dots   = document.querySelectorAll('.csh-dot');
+    if (slides[_currentSlide]) slides[_currentSlide].classList.remove('active');
+    if (dots[_currentSlide])   dots[_currentSlide].classList.remove('active');
+    _currentSlide = (idx + _slides.length) % _slides.length;
+    if (slides[_currentSlide]) slides[_currentSlide].classList.add('active');
+    if (dots[_currentSlide])   dots[_currentSlide].classList.add('active');
+    _cshResetProgress();
+  };
+
+  function _cshStartSlideshow() {
+    if (_slideTimer) clearInterval(_slideTimer);
+    _slideTimer = setInterval(function(){ cshGoTo(_currentSlide + 1); }, SLIDE_DURATION);
+    _cshResetProgress();
+  }
+
+  function _cshResetProgress() {
+    var fill = document.getElementById('cshProgressFill');
+    if (!fill) return;
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    requestAnimationFrame(function(){
+      fill.style.transition = 'width ' + SLIDE_DURATION + 'ms linear';
+      fill.style.width = '100%';
+    });
+  }
+
+  window.cshRefresh = async function () {
+    var container = document.getElementById('csHeroSlider');
+    if (!container) return;
+    container.innerHTML = '<div class="csh-loading"><div class="csh-load-text">Pulling live trends…</div><div class="csh-load-bar"><div class="csh-load-bar-fill"></div></div></div>';
+    _slides = await fetchSlides();
+    renderHero();
+  };
+
+  /* ── GREETING ─────────────────────────────────────────────── */
+  function _cshApplyGreeting() {
+    var el = document.getElementById('cshGreetName');
+    if (!el) return;
+    function set() {
+      var h = new Date().getHours();
+      var g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+      var n = 'Creator';
+      if (window.igUser) n = window.igUser.firstName || (window.igUser.name||'').split(' ')[0] || 'Creator';
+      el.textContent = g + ', ' + n;
+    }
+    set();
+    document.addEventListener('ig-user-ready', set, { once: true });
+  }
+
+  /* ── HELPERS ──────────────────────────────────────────────── */
+  function _cshRecency(iso) {
+    if (!iso) return '';
+    var m = Math.round((Date.now() - new Date(iso)) / 60000);
+    if (m < 2)  return 'just now';
+    if (m < 60) return m + 'm ago';
+    var h = Math.round(m/60);
+    if (h < 24) return h + 'h ago';
+    return Math.round(h/24) + 'd ago';
+  }
+  function _cshEscH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _cshEscJ(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+  function _cshEscUrl(s){ return String(s||'').replace(/'/g,'%27'); }
+
+  /* ── INIT ─────────────────────────────────────────────────── */
+  async function init() {
+    if (_initialized) return;
+    _initialized = true;
+
+    var container = document.getElementById('csHeroSlider');
+    if (!container) return;
+
+    container.innerHTML = '<div class="csh-loading"><div class="csh-load-text">Pulling live Reddit trends…</div><div class="csh-load-bar"><div class="csh-load-bar-fill"></div></div></div>';
+
+    if (typeof detectUserCountry === 'function') await detectUserCountry();
+
+    _slides = await fetchSlides();
+    renderHero();
+
+    // Touch swipe
+    var tx = 0;
+    container.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive:true });
+    container.addEventListener('touchend',   function(e){ var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx)>50) cshGoTo(_currentSlide + (dx<0?1:-1)); }, { passive:true });
+
+    setInterval(cshRefresh, REFRESH_INTERVAL);
+    console.log('[CSHero] Initialised with', _slides.length, 'slides');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    setTimeout(init, 50);
+  }
+
+})();
