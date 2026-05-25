@@ -185,6 +185,8 @@ body::before{
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
 }
+#heroTopicTitle{transition:opacity .3s ease,transform .3s ease;}
+#heroTopicTitle.fading{opacity:0;transform:translateY(8px);}
 
 .hero-sub{
   font-size:clamp(14px,1.4vw,17px);
@@ -679,39 +681,29 @@ body::before{
   <div class="hero-body">
 
     <div class="hero-left">
-      <div class="hero-eyebrow au au-1">
+      <!-- Source label — mirrors csh-source in creator studio -->
+      <div class="hero-eyebrow au au-1" style="margin-bottom:16px;">
         <span class="hero-pulse" aria-hidden="true"></span>
         <span id="heroEyebrow">Live · Updated every 30 min · Powered by Dijo AI</span>
       </div>
 
-      <h1 class="hero-title au au-2">
-        See what's trending<br/>
-        <span class="line2" id="heroLine2">before everyone else.</span>
+      <!-- Live topic title — updates each slide like creator studio -->
+      <h1 class="hero-title au au-2" id="heroTopicTitle" style="margin-bottom:20px;">
+        Loading live trends…
       </h1>
 
-      <p class="hero-sub au au-3" id="heroSub">
-        Live creator intelligence powered by TikTok, YouTube, Google Trends, and Dijo AI.
-      </p>
-
-      <div class="hero-ctas au au-4">
-        <a href="creator-studio.html?tab=trends" class="btn-enter" onclick="goCreator(event,'creator-studio.html?tab=trends')">
-          See What's Trending <span class="btn-enter-arrow">→</span>
-        </a>
-        <a href="creator-studio.html?tab=generator" class="btn-ghost" onclick="goCreator(event,'creator-studio.html?tab=generator')">
-          Find What To Post
-        </a>
+      <!-- Stats row — mirrors csh-stats -->
+      <div class="au au-3" id="heroStatsRow" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:32px;font-family:var(--fm);font-size:12px;opacity:0;transition:opacity .5s ease .2s;">
+        <div><span id="heroGrowthVal" style="font-weight:700;color:#0fa876;font-size:13px;"></span><span style="color:rgba(255,255,255,.45);margin-left:5px;">this week</span></div>
+        <div><span id="heroScoreVal" style="font-weight:700;font-size:13px;"></span><span style="color:rgba(255,255,255,.45);margin-left:5px;">score</span></div>
+        <div><span id="heroPlatVal" style="color:rgba(255,255,255,.5);letter-spacing:.06em;font-size:11px;text-transform:uppercase;"></span></div>
       </div>
 
-      <div class="au au-5" style="display:flex;gap:20px;margin-top:28px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,.4);font-family:var(--fm);">
-          <span style="color:#4ade80;">✓</span> No credit card required
-        </div>
-        <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,.4);font-family:var(--fm);">
-          <span style="color:#4ade80;">✓</span> Free plan available
-        </div>
-        <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,.4);font-family:var(--fm);">
-          <span style="color:#4ade80;">✓</span> Set up in 2 minutes
-        </div>
+      <!-- Single CTA -->
+      <div class="hero-ctas au au-4">
+        <a href="creator-studio.html?tab=trends" class="btn-enter" id="heroCtaBtn" onclick="goCreator(event,'creator-studio.html?tab=trends')">
+          ⚡ See What's Trending <span class="btn-enter-arrow">→</span>
+        </a>
       </div>
     </div>
 
@@ -1223,23 +1215,51 @@ if('serviceWorker' in navigator){
     startTimer();
   }
 
-  /* ── Update badge text for current slide ── */
+  /* ── Update badge + hero card content for current slide ── */
   function updateBadge(idx) {
     var s = _slides[idx];
     if (!s) return;
+
+    /* Bottom-right trend badge */
     if (TOPIC)  TOPIC.textContent  = s.topic   || '';
     if (GROWTH) GROWTH.textContent = s.growth  || '';
     if (PLATF)  PLATF.textContent  = s.platform|| '';
-    if (EYEBROW) {
-      EYEBROW.textContent = s.growth
-        ? '🔥 Trending now · ' + (s.topic || 'Live trends')
-        : 'Live · Updated every 30 min · Powered by Dijo AI';
+
+    /* Hero card content — mirrors creator studio card */
+    var titleEl  = document.getElementById('heroTopicTitle');
+    var growthEl = document.getElementById('heroGrowthVal');
+    var scoreEl  = document.getElementById('heroScoreVal');
+    var platEl   = document.getElementById('heroPlatVal');
+    var statsRow = document.getElementById('heroStatsRow');
+
+    if (titleEl)  titleEl.textContent  = s.topic    || '';
+    if (growthEl) growthEl.textContent = s.growth   || '';
+    if (platEl)   platEl.textContent   = s.platform || '';
+    if (scoreEl) {
+      var sc = s.score || 0;
+      scoreEl.textContent  = sc + '/100';
+      scoreEl.style.color  = sc >= 80 ? '#0fa876' : sc >= 60 ? 'var(--gold,#c97e08)' : 'rgba(255,255,255,.5)';
     }
-    /* Wire Generate Content button to pre-fill generator with topic */
+    if (statsRow) statsRow.style.opacity = '1';
+
+    /* Eyebrow: source + recency */
+    if (EYEBROW) {
+      var src = s.subreddit || s.platform || '';
+      var rec = s.recency   || '';
+      EYEBROW.textContent = src + (rec ? ' · ' + rec : '');
+    }
+
+    /* Wire CTA */
+    var ctaBtn = document.getElementById('heroCtaBtn');
+    if (ctaBtn && s.topic) {
+      var dest = 'creator-studio.html?tab=trends';
+      ctaBtn.href    = dest;
+      ctaBtn.onclick = function(e){ goCreator(e, dest); };
+    }
     if (CTA && s.topic) {
-      var dest = 'creator-studio.html?tab=generator&topic=' + encodeURIComponent(s.topic);
-      CTA.href = dest;
-      CTA.onclick = function(e){ goCreator(e, dest); };
+      var gDest = 'creator-studio.html?tab=generator&topic=' + encodeURIComponent(s.topic);
+      CTA.href    = gDest;
+      CTA.onclick = function(e){ goCreator(e, gDest); };
     }
   }
 
@@ -1257,7 +1277,17 @@ if('serviceWorker' in navigator){
     allSlides[_cur] && allSlides[_cur].classList.add('active');
     allDots[_cur]   && allDots[_cur].classList.add('active');
 
-    updateBadge(_cur);
+    /* Animate title swap */
+    var titleEl = document.getElementById('heroTopicTitle');
+    if (titleEl && titleEl.textContent.trim()) {
+      titleEl.classList.add('fading');
+      setTimeout(function(){
+        updateBadge(_cur);
+        titleEl.classList.remove('fading');
+      }, 280);
+    } else {
+      updateBadge(_cur);
+    }
   }
 
   /* ── Auto-advance timer ── */
